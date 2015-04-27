@@ -28,39 +28,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'xray/thread_dump_signal_handler'
-
-# Notifier is useful high-level synchronization primitive.
-class Notifier
-  attr_reader :payload, :notified
-  alias_method :notified?, :notified
-
-  def initialize
-    @mutex    = Mutex.new
-    @cvar     = ConditionVariable.new
-    @notified = false
-    @payload  = nil
-  end
-
-  def wait
-    @mutex.synchronize do
-      @cvar.wait(@mutex) until notified?
-    end
-  end
-
-  def notify(payload)
-    @mutex.synchronize do
-      return Error.new('already notified') if notified?
-      @payload  = payload
-      @notified = true
-      @cvar.signal
-      return nil
-    end
-  end
-end
 
 def wakey_thread(&blk)
-  n = Notifier.new
+  n = GRPC::Notifier.new
   t = Thread.new do
     blk.call(n)
   end

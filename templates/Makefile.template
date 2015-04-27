@@ -1,5 +1,7 @@
 # GRPC global makefile
 # This currently builds C and C++ code.
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -40,6 +42,9 @@
     if not m:
       return filename
     return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
+
+  sources_that_need_openssl = set()
+  sources_that_don_t_need_openssl = set()
 %>
 
 
@@ -150,9 +155,9 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
-CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
+CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS_asan = -fsanitize=address
-DEFINES_asan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
+DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -160,7 +165,7 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
@@ -357,8 +362,8 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-PROTOC_CMD = which protoc > /dev/null
-PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
+PROTOC_CHECK_CMD = which protoc > /dev/null
+PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
@@ -384,9 +389,9 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
-HAS_PROTOC = $(shell $(PROTOC_CMD) 2> /dev/null && echo true || echo false)
+HAS_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
 else
 HAS_VALID_PROTOC = false
 endif
@@ -582,7 +587,7 @@ run_dep_checks:
 	$(ZLIB_CHECK_CMD) || true
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
-	$(PROTOC_CHECK_CMD) || true
+	$(PROTOC_CHECK_VERSION_CMD) || true
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
@@ -1078,15 +1083,6 @@ endif
 else
 % endif
 
-ifneq ($(OPENSSL_DEP),)
-# This is to ensure the embedded OpenSSL is built beforehand, properly
-# installing headers to their final destination on the drive. We need this
-# otherwise parallel compilation will fail if a source is compiled first.
-% for src in lib.src:
-${src}: $(OPENSSL_DEP)
-% endfor
-endif
-
 $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
 ## The else here corresponds to the if secure earlier.
 % else:
@@ -1134,6 +1130,7 @@ ifeq ($(SYSTEM),Darwin)
 endif
 
 <%
+
   if lib.language == 'c++':
     ld = '$(LDXX)'
   else:
@@ -1156,6 +1153,11 @@ endif
 
   if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    for src in lib.src:
+      sources_that_need_openssl.add(src)
+  else:
+    for src in lib.src:
+      sources_that_don_t_need_openssl.add(src)
 
   if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
@@ -1206,17 +1208,10 @@ endif
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 endif
 % endif
-
 % for src in lib.src:
-% if not proto_re.match(src):
-$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-% for src2 in lib.src:
-% if proto_re.match(src2):
-    ${proto_to_cc(src2)}\
+% if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
+$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
 % endif
-% endfor
-% endif
-
 % endfor
 </%def>
 
@@ -1337,6 +1332,17 @@ endif
 endif
 % endif
 </%def>
+
+ifneq ($(OPENSSL_DEP),)
+# This is to ensure the embedded OpenSSL is built beforehand, properly
+# installing headers to their final destination on the drive. We need this
+# otherwise parallel compilation will fail if a source is compiled first.
+% for src in sorted(sources_that_need_openssl):
+% if src not in sources_that_don_t_need_openssl:
+${src}: $(OPENSSL_DEP)
+% endif
+% endfor
+endif
 
 .PHONY: all strip tools \
 dep_error openssl_dep_error openssl_dep_message git_update stop \

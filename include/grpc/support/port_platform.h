@@ -45,8 +45,10 @@
 #define GPR_WINSOCK_SOCKET 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
 #else
 #define GPR_WIN32_ATOMIC 1
+#define GPR_MSVC_TLS 1
 #endif
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
@@ -233,7 +235,7 @@
 #endif
 
 #if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + defined(GPR_CUSTOM_TLS) != 1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, defined(GPR_CUSTOM_TLS)
+#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
 #endif
 
 typedef int16_t gpr_int16;

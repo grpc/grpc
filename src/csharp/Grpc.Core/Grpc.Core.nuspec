@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package >
+<package>
   <metadata>
     <id>Grpc.Core</id>
     <title>gRPC Core</title>
@@ -7,7 +7,7 @@
     <description>Core C# implementation of gRPC - an RPC library and framework. See project site for more info.
      This is an experimental release, not ready to use.
     </description>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
     <authors>Google Inc.</authors>
     <owners>jtattermusch</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
@@ -16,6 +16,10 @@
     <releaseNotes>The first experimental release. Not ready to use.</releaseNotes>
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
+	<dependencies>
+	  <dependency id="Microsoft.Bcl.Immutable" version="1.0.34" />
+	  <dependency id="grpc.native.csharp_ext" version="0.6.0.0" />
+    </dependencies>
   </metadata>
   <files>
     <file src="bin/Release/Grpc.Core.dll" target="lib/net45" />

@@ -38,7 +38,6 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/child_channel.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/channel/metadata_buffer.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
@@ -70,9 +69,6 @@ typedef struct {
   int transport_setup_initiated;
 
   grpc_channel_args *args;
-
-  /* metadata cache */
-  grpc_mdelem *cancel_status;
 } channel_data;
 
 typedef enum {
@@ -86,20 +82,16 @@ struct call_data {
   /* owning element */
   grpc_call_element *elem;
 
+  gpr_uint8 got_first_send;
+
   call_state state;
-  grpc_metadata_buffer pending_metadata;
   gpr_timespec deadline;
   union {
     struct {
       /* our child call stack */
       grpc_child_call *child_call;
     } active;
-    struct {
-      void (*on_complete)(void *user_data, grpc_op_error error);
-      void *on_complete_user_data;
-      gpr_uint32 start_flags;
-      grpc_pollset *pollset;
-    } waiting;
+    grpc_call_op waiting_op;
   } s;
 };
 
@@ -127,20 +119,6 @@ static void complete_activate(grpc_call_element *elem, grpc_call_op *op) {
 
   GPR_ASSERT(calld->state == CALL_ACTIVE);
 
-  /* sending buffered metadata down the stack before the start call */
-  grpc_metadata_buffer_flush(&calld->pending_metadata, child_elem);
-
-  if (gpr_time_cmp(calld->deadline, gpr_inf_future) != 0) {
-    grpc_call_op dop;
-    dop.type = GRPC_SEND_DEADLINE;
-    dop.dir = GRPC_CALL_DOWN;
-    dop.flags = 0;
-    dop.data.deadline = calld->deadline;
-    dop.done_cb = do_nothing;
-    dop.user_data = NULL;
-    child_elem->filter->call_op(child_elem, elem, &dop);
-  }
-
   /* continue the start call down the stack, this nees to happen after metadata
      are flushed*/
   child_elem->filter->call_op(child_elem, elem, op);
@@ -152,6 +130,7 @@ static void start_rpc(grpc_call_element *elem, grpc_call_op *op) {
   gpr_mu_lock(&chand->mu);
   if (calld->state == CALL_CANCELLED) {
     gpr_mu_unlock(&chand->mu);
+    grpc_metadata_batch_destroy(&op->data.metadata);
     op->done_cb(op->user_data, GRPC_OP_ERROR);
     return;
   }
@@ -184,10 +163,7 @@ static void start_rpc(grpc_call_element *elem, grpc_call_op *op) {
           gpr_realloc(chand->waiting_children,
                       chand->waiting_child_capacity * sizeof(call_data *));
     }
-    calld->s.waiting.on_complete = op->done_cb;
-    calld->s.waiting.on_complete_user_data = op->user_data;
-    calld->s.waiting.start_flags = op->flags;
-    calld->s.waiting.pollset = op->data.start.pollset;
+    calld->s.waiting_op = *op;
     chand->waiting_children[chand->waiting_child_count++] = calld;
     gpr_mu_unlock(&chand->mu);
 
@@ -212,15 +188,8 @@ static void remove_waiting_child(channel_data *chand, call_data *calld) {
 
 static void send_up_cancelled_ops(grpc_call_element *elem) {
   grpc_call_op finish_op;
-  channel_data *chand = elem->channel_data;
   /* send up a synthesized status */
-  finish_op.type = GRPC_RECV_METADATA;
-  finish_op.dir = GRPC_CALL_UP;
-  finish_op.flags = 0;
-  finish_op.data.metadata = grpc_mdelem_ref(chand->cancel_status);
-  finish_op.done_cb = do_nothing;
-  finish_op.user_data = NULL;
-  grpc_call_next_op(elem, &finish_op);
+  grpc_call_element_recv_status(elem, GRPC_STATUS_CANCELLED, "Cancelled");
   /* send up a finish */
   finish_op.type = GRPC_RECV_FINISH;
   finish_op.dir = GRPC_CALL_UP;
@@ -243,12 +212,12 @@ static void cancel_rpc(grpc_call_element *elem, grpc_call_op *op) {
       child_elem->filter->call_op(child_elem, elem, op);
       return; /* early out */
     case CALL_WAITING:
+      grpc_metadata_batch_destroy(&calld->s.waiting_op.data.metadata);
       remove_waiting_child(chand, calld);
       calld->state = CALL_CANCELLED;
       gpr_mu_unlock(&chand->mu);
       send_up_cancelled_ops(elem);
-      calld->s.waiting.on_complete(calld->s.waiting.on_complete_user_data,
-                                   GRPC_OP_ERROR);
+      calld->s.waiting_op.done_cb(calld->s.waiting_op.user_data, GRPC_OP_ERROR);
       return; /* early out */
     case CALL_CREATED:
       calld->state = CALL_CANCELLED;
@@ -271,15 +240,13 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
 
   switch (op->type) {
     case GRPC_SEND_METADATA:
-      grpc_metadata_buffer_queue(&calld->pending_metadata, op);
-      break;
-    case GRPC_SEND_DEADLINE:
-      calld->deadline = op->data.deadline;
-      op->done_cb(op->user_data, GRPC_OP_OK);
-      break;
-    case GRPC_SEND_START:
-      /* filter out the start event to find which child to send on */
-      start_rpc(elem, op);
+      if (!calld->got_first_send) {
+        /* filter out the start event to find which child to send on */
+        calld->got_first_send = 1;
+        start_rpc(elem, op);
+      } else {
+        grpc_call_next_op(elem, op);
+      }
       break;
     case GRPC_CANCEL_OP:
       cancel_rpc(elem, op);
@@ -382,12 +349,6 @@ static void channel_op(grpc_channel_element *elem,
   }
 }
 
-static void error_bad_on_complete(void *arg, grpc_op_error error) {
-  gpr_log(GPR_ERROR,
-          "Waiting finished but not started? Bad on_complete callback");
-  abort();
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data) {
@@ -398,22 +359,21 @@ static void init_call_elem(grpc_call_element *elem,
   calld->elem = elem;
   calld->state = CALL_CREATED;
   calld->deadline = gpr_inf_future;
-  calld->s.waiting.on_complete = error_bad_on_complete;
-  calld->s.waiting.on_complete_user_data = NULL;
-  grpc_metadata_buffer_init(&calld->pending_metadata);
+  calld->got_first_send = 0;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
 
-  /* if the metadata buffer is not flushed, destroy it here. */
-  grpc_metadata_buffer_destroy(&calld->pending_metadata, GRPC_OP_OK);
   /* if the call got activated, we need to destroy the child stack also, and
      remove it from the in-flight requests tracked by the child_entry we
      picked */
   if (calld->state == CALL_ACTIVE) {
     grpc_child_call_destroy(calld->s.active.child_call);
+  }
+  if (calld->state == CALL_WAITING) {
+    grpc_metadata_batch_destroy(&calld->s.waiting_op.data.metadata);
   }
 }
 
@@ -423,7 +383,6 @@ static void init_channel_elem(grpc_channel_element *elem,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
   channel_data *chand = elem->channel_data;
-  char temp[GPR_LTOA_MIN_BUFSIZE];
 
   GPR_ASSERT(!is_first);
   GPR_ASSERT(is_last);
@@ -437,10 +396,6 @@ static void init_channel_elem(grpc_channel_element *elem,
   chand->transport_setup = NULL;
   chand->transport_setup_initiated = 0;
   chand->args = grpc_channel_args_copy(args);
-
-  gpr_ltoa(GRPC_STATUS_CANCELLED, temp);
-  chand->cancel_status =
-      grpc_mdelem_from_strings(metadata_context, "grpc-status", temp);
 }
 
 /* Destructor for channel_data */
@@ -455,7 +410,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   }
 
   grpc_channel_args_destroy(chand->args);
-  grpc_mdelem_unref(chand->cancel_status);
 
   gpr_mu_destroy(&chand->mu);
   GPR_ASSERT(chand->waiting_child_count == 0);
@@ -463,9 +417,10 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "client-channel", };
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
+    "client-channel",
+};
 
 grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
     grpc_channel_stack *channel_stack, grpc_transport *transport,
@@ -520,13 +475,7 @@ grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
   call_ops = gpr_malloc(sizeof(grpc_call_op) * waiting_child_count);
 
   for (i = 0; i < waiting_child_count; i++) {
-    call_ops[i].type = GRPC_SEND_START;
-    call_ops[i].dir = GRPC_CALL_DOWN;
-    call_ops[i].flags = waiting_children[i]->s.waiting.start_flags;
-    call_ops[i].done_cb = waiting_children[i]->s.waiting.on_complete;
-    call_ops[i].user_data =
-        waiting_children[i]->s.waiting.on_complete_user_data;
-    call_ops[i].data.start.pollset = waiting_children[i]->s.waiting.pollset;
+    call_ops[i] = waiting_children[i]->s.waiting_op;
     if (!prepare_activate(waiting_children[i]->elem, chand->active_child)) {
       waiting_children[i] = NULL;
       call_ops[i].done_cb(call_ops[i].user_data, GRPC_OP_ERROR);

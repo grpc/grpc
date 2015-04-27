@@ -34,10 +34,11 @@
 #ifndef GRPCXX_SERVER_CONTEXT_H
 #define GRPCXX_SERVER_CONTEXT_H
 
-#include <chrono>
 #include <map>
 
+#include <grpc/support/time.h>
 #include <grpc++/config.h>
+#include <grpc++/time.h>
 
 struct gpr_timespec;
 struct grpc_metadata;
@@ -71,9 +72,13 @@ class ServerContext {
   ServerContext();  // for async calls
   ~ServerContext();
 
-  std::chrono::system_clock::time_point absolute_deadline() {
-    return deadline_;
+#ifndef GRPC_CXX0X_NO_CHRONO
+  std::chrono::system_clock::time_point deadline() {
+    return Timespec2Timepoint(deadline_);
   }
+#endif  // !GRPC_CXX0X_NO_CHRONO
+
+  gpr_timespec raw_deadline() { return deadline_; }
 
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
@@ -110,7 +115,7 @@ class ServerContext {
 
   CompletionOp* completion_op_;
 
-  std::chrono::system_clock::time_point deadline_;
+  gpr_timespec deadline_;
   grpc_call* call_;
   CompletionQueue* cq_;
   bool sent_initial_metadata_;

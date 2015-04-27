@@ -31,7 +31,6 @@
  *
  */
 
-#include <chrono>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -65,7 +64,6 @@ const char kMessageData[] = "Test Data";
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Start PUBSUB client");
 
@@ -146,7 +144,5 @@ int main(int argc, char** argv) {
 
   subscriber.Shutdown();
   publisher.Shutdown();
-  channel.reset();
-  grpc_shutdown();
   return 0;
 }

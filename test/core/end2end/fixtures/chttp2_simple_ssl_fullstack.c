@@ -38,7 +38,6 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
 #include "src/core/support/env.h"
 #include "src/core/support/file.h"
 #include "src/core/support/string.h"

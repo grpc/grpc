@@ -40,7 +40,9 @@ cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
 gen_build_json=test/core/end2end/gen_build_json.py
 
-tools/buildgen/build-cleaner.py build.json
+if [ "x$TEST" != "x" ] ; then
+  tools/buildgen/build-cleaner.py build.json
+fi
 
 end2end_test_build=`mktemp /tmp/genXXXXXX`
 $gen_build_json > $end2end_test_build
@@ -57,12 +59,14 @@ for dir in . ; do
   find -L $dir/templates -type f -and -name *.template | while read file ; do
     out=${dir}/${file#$dir/templates/}  # strip templates dir prefix
     out=${out%.*}  # strip template extension
+    echo "generating file: $out"
     json_files="build.json $end2end_test_build"
     data=`for i in $json_files ; do echo $i ; done | awk ' { printf "-d %s ", $0 } '`
     if [ "x$TEST" = "xtrue" ] ; then
       actual_out=$out
       out=`mktemp /tmp/gentXXXXXX`
     fi
+    mkdir -p `dirname $out`  # make sure dest directory exist
     $mako_renderer $plugins $data -o $out $file
     if [ "x$TEST" = "xtrue" ] ; then
       diff -q $out $actual_out
