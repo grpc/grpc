@@ -55,12 +55,7 @@ void *gpr_realloc(void *p, size_t size) {
 }
 
 void *gpr_malloc_aligned(size_t size, size_t alignment_log) {
-#if defined(GPR_WIN32) && defined(GPR_ARCH_64)
-  size_t alignment = 1ULL << alignment_log;
-#else
-  size_t alignment = 1 << alignment_log;
-#endif
-
+  size_t alignment = ((size_t)1) << alignment_log;
   size_t extra = alignment - 1 + sizeof(void *);
   void *p = gpr_malloc(size + extra);
   void **ret = (void **)(((gpr_uintptr)p + extra) & ~(alignment - 1));

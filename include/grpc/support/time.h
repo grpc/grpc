@@ -47,11 +47,7 @@ extern "C" {
 
 typedef struct gpr_timespec {
     time_t tv_sec;
-#if defined(GPR_WIN32) && defined(GPR_ARCH_64)
-	__int64 tv_nsec;
-#else
     int tv_nsec;
-#endif
 } gpr_timespec;
 
 /* Time constants. */
