@@ -45,10 +45,10 @@
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/thread_pool_interface.h>
+#include <grpc++/time.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/proto/proto_utils.h"
-#include "src/cpp/util/time.h"
 
 namespace grpc {
 
@@ -180,6 +180,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
+      sync_methods_(new std::list<SyncRequest>),
       server_(grpc_server_create(cq_.cq(), nullptr)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {}
@@ -196,6 +197,7 @@ Server::~Server() {
   if (thread_pool_owned_) {
     delete thread_pool_;
   }
+  delete sync_methods_;
 }
 
 bool Server::RegisterService(RpcService* service) {
@@ -208,7 +210,8 @@ bool Server::RegisterService(RpcService* service) {
               method->name());
       return false;
     }
-    sync_methods_.emplace_back(method, tag);
+    SyncRequest request(method, tag);
+    sync_methods_->emplace_back(request);
   }
   return true;
 }
@@ -250,8 +253,8 @@ bool Server::Start() {
   grpc_server_start(server_);
 
   // Start processing rpcs.
-  if (!sync_methods_.empty()) {
-    for (auto m = sync_methods_.begin(); m != sync_methods_.end(); m++) {
+  if (!sync_methods_->empty()) {
+    for (auto m = sync_methods_->begin(); m != sync_methods_->end(); m++) {
       m->Request(server_);
     }
 
@@ -353,7 +356,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
     ServerContext* ctx = ctx_ ? ctx_ : generic_ctx_;
     GPR_ASSERT(ctx);
     if (*status) {
-      ctx->deadline_ = Timespec2Timepoint(call_details_.deadline);
+      ctx->deadline_ = call_details_.deadline;
       for (size_t i = 0; i < array_.count; i++) {
         ctx->client_metadata_.insert(std::make_pair(
             grpc::string(array_.metadata[i].key),

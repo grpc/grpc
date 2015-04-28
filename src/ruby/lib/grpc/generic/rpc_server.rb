@@ -54,6 +54,18 @@ module GRPC
   end
   module_function :handle_signals
 
+  # Sets up a signal handler that adds signals to the signal handling global.
+  #
+  # Signal handlers should do as little as humanly possible.
+  # Here, they just add themselves to $grpc_signals
+  #
+  # RpcServer (and later other parts of gRPC) monitors the signals
+  # $grpc_signals in its own non-signal context.
+  def trap_signals
+    %w(INT TERM).each { |sig| trap(sig) { $grpc_signals << sig } }
+  end
+  module_function :trap_signals
+
   # Pool is a simple thread pool.
   class Pool
     # Default keep alive period is 1s
@@ -172,17 +184,6 @@ module GRPC
     # Signal check period is 0.25s
     SIGNAL_CHECK_PERIOD = 0.25
 
-    # Sets up a signal handler that adds signals to the signal handling global.
-    #
-    # Signal handlers should do as little as humanly possible.
-    # Here, they just add themselves to $grpc_signals
-    #
-    # RpcServer (and later other parts of gRPC) monitors the signals
-    # $grpc_signals in its own non-signal context.
-    def self.trap_signals
-      %w(INT TERM).each { |sig| trap(sig) { $grpc_signals << sig } }
-    end
-
     # setup_cq is used by #initialize to constuct a Core::CompletionQueue from
     # its arguments.
     def self.setup_cq(alt_cq)
@@ -299,12 +300,12 @@ module GRPC
     # Runs the server in its own thread, then waits for signal INT or TERM on
     # the current thread to terminate it.
     def run_till_terminated
-      self.class.trap_signals
+      GRPC.trap_signals
       t = Thread.new { run }
       wait_till_running
       loop do
         sleep SIGNAL_CHECK_PERIOD
-        break unless handle_signals
+        break unless GRPC.handle_signals
       end
       stop
       t.join

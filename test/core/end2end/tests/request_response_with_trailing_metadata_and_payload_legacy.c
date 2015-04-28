@@ -114,12 +114,12 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta1 = {"key1", "val1", 4};
-  grpc_metadata meta2 = {"key2", "val2", 4};
-  grpc_metadata meta3 = {"key3", "val3", 4};
-  grpc_metadata meta4 = {"key4", "val4", 4};
-  grpc_metadata meta5 = {"key5", "val5", 4};
-  grpc_metadata meta6 = {"key6", "val6", 4};
+  grpc_metadata meta1 = {"key1", "val1", 4, {{NULL, NULL, NULL}}};
+  grpc_metadata meta2 = {"key2", "val2", 4, {{NULL, NULL, NULL}}};
+  grpc_metadata meta3 = {"key3", "val3", 4, {{NULL, NULL, NULL}}};
+  grpc_metadata meta4 = {"key4", "val4", 4, {{NULL, NULL, NULL}}};
+  grpc_metadata meta5 = {"key5", "val5", 4, {{NULL, NULL, NULL}}};
+  grpc_metadata meta6 = {"key6", "val6", 4, {{NULL, NULL, NULL}}};
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);

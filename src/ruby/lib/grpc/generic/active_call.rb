@@ -188,7 +188,7 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      logger.debug("sending #{req.inspect}, marshalled? #{marshalled}")
+      logger.debug("sending #{req}, marshalled? #{marshalled}")
       if marshalled
         payload = req
       else

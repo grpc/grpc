@@ -43,6 +43,8 @@
 namespace grpc {
 namespace node {
 
+const int max_queue_threads = 2;
+
 using v8::Function;
 using v8::Handle;
 using v8::Object;
@@ -50,6 +52,9 @@ using v8::Persistent;
 using v8::Value;
 
 grpc_completion_queue *CompletionQueueAsyncWorker::queue;
+
+int CompletionQueueAsyncWorker::current_threads;
+int CompletionQueueAsyncWorker::waiting_next_calls;
 
 CompletionQueueAsyncWorker::CompletionQueueAsyncWorker()
     : NanAsyncWorker(NULL) {}
@@ -67,17 +72,30 @@ grpc_completion_queue *CompletionQueueAsyncWorker::GetQueue() { return queue; }
 
 void CompletionQueueAsyncWorker::Next() {
   NanScope();
-  CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
-  NanAsyncQueueWorker(worker);
+  if (current_threads < max_queue_threads) {
+    CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
+    NanAsyncQueueWorker(worker);
+  } else {
+    waiting_next_calls += 1;
+  }
 }
 
 void CompletionQueueAsyncWorker::Init(Handle<Object> exports) {
   NanScope();
+  current_threads = 0;
+  waiting_next_calls = 0;
   queue = grpc_completion_queue_create();
 }
 
 void CompletionQueueAsyncWorker::HandleOKCallback() {
   NanScope();
+  if (waiting_next_calls > 0) {
+    waiting_next_calls -= 1;
+    CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
+    NanAsyncQueueWorker(worker);
+  } else {
+    current_threads -= 1;
+  }
   NanCallback *callback = GetTagCallback(result->tag);
   Handle<Value> argv[] = {NanNull(), GetTagNodeValue(result->tag)};
   callback->Call(2, argv);

@@ -192,7 +192,7 @@ static void start_accept(server_port *port) {
   }
 
   /* TODO(jtattermusch): probably a race here, we regularly get use-after-free on server shutdown */
-  GPR_ASSERT(port->socket != 0xfeeefeee);
+  GPR_ASSERT(port->socket != (grpc_winsocket*)0xfeeefeee);
   success = port->AcceptEx(port->socket->socket, sock, port->addresses, 0,
                            addrlen, addrlen, &bytes_received,
                            &port->socket->read_info.overlapped);

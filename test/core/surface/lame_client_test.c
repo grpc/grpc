@@ -42,7 +42,7 @@ static void *tag(gpr_intptr x) { return (void *)x; }
 int main(int argc, char **argv) {
   grpc_channel *chan;
   grpc_call *call;
-  grpc_metadata md = {"a", "b", 1};
+  grpc_metadata md = {"a", "b", 1, {{NULL, NULL, NULL}}};
   grpc_completion_queue *cq;
   cq_verifier *cqv;
 

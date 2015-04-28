@@ -62,11 +62,13 @@ static void init_rpc_stats(census_rpc_stats* stats) {
 
 static void extract_and_annotate_method_tag(grpc_call_op* op, call_data* calld,
                                             channel_data* chand) {
-  if (op->data.metadata->key == chand->path_str) {
-    gpr_log(GPR_DEBUG,
-            (const char*)GPR_SLICE_START_PTR(op->data.metadata->value->slice));
-    census_add_method_tag(calld->op_id, (const char*)GPR_SLICE_START_PTR(
-                                            op->data.metadata->value->slice));
+  grpc_linked_mdelem* m;
+  for (m = op->data.metadata.list.head; m != NULL; m = m->next) {
+    if (m->md->key == chand->path_str) {
+      gpr_log(GPR_DEBUG, "%s", (const char*)GPR_SLICE_START_PTR(m->md->value->slice));
+      census_add_method_tag(
+          calld->op_id, (const char*)GPR_SLICE_START_PTR(m->md->value->slice));
+    }
   }
 }
 
@@ -178,11 +180,11 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 }
 
 const grpc_channel_filter grpc_client_census_filter = {
-    client_call_op,        channel_op,               sizeof(call_data),
-    client_init_call_elem, client_destroy_call_elem, sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem,     "census-client"};
+    client_call_op, channel_op, sizeof(call_data), client_init_call_elem,
+    client_destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
-    server_call_op,        channel_op,               sizeof(call_data),
-    server_init_call_elem, server_destroy_call_elem, sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem,     "census-server"};
+    server_call_op, channel_op, sizeof(call_data), server_init_call_elem,
+    server_destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "census-server"};

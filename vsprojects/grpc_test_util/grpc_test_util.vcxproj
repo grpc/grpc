@@ -83,19 +83,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
-    </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_key.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\test_root_cert.c">
     </ClCompile>
+    <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
+    </ClCompile>
     <ClCompile Include="..\..\test\core\iomgr\endpoint_tests.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\statistics\census_log_tests.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\transport\transport_end2end_tests.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\grpc_profiler.c">
     </ClCompile>

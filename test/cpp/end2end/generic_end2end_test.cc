@@ -31,11 +31,9 @@
  *
  */
 
-#include <chrono>
 #include <memory>
 
 #include "src/cpp/proto/proto_utils.h"
-#include "src/cpp/util/time.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo.grpc.pb.h"
@@ -55,6 +53,7 @@
 #include <grpc++/slice.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include <grpc++/time.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -280,9 +279,6 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return result;
+  return RUN_ALL_TESTS();
 }
