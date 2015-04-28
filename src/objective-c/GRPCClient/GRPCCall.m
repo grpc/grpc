@@ -107,10 +107,10 @@
     _completionQueue = [GRPCCompletionQueue completionQueue];
 
     _channel = [GRPCChannel channelToHost:host];
-      
-      _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel
-                                                       method:method.HTTP2Path
-                                                         host:host];
+
+    _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel
+                                                     method:method.HTTP2Path
+                                                       host:host];
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("org.grpc.call", NULL);
@@ -134,7 +134,7 @@
 
 - (void)cancelCall {
   // Can be called from any thread, any number of times.
-    [_wrappedCall cancel];
+  [_wrappedCall cancel];
 }
 
 - (void)cancel {
@@ -175,6 +175,7 @@
   dispatch_async(_callQueue, ^{
     [weakSelf startReadWithHandler:^(grpc_byte_buffer *message) {
       if (message == NULL) {
+        // No more messages from the server
         return;
       }
       NSData *data = [NSData grpc_dataWithByteBuffer:message];
