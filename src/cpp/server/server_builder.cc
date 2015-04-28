@@ -66,7 +66,8 @@ void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
 void ServerBuilder::AddListeningPort(const grpc::string& addr,
                                      std::shared_ptr<ServerCredentials> creds,
                                      int* selected_port) {
-  ports_.push_back(Port{addr, creds, selected_port});
+  Port port = {addr, creds, selected_port};
+  ports_.push_back(port);
 }
 
 void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
