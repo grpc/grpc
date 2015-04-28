@@ -1,20 +1,44 @@
 PODS:
-  - GRPCClient (0.0.1):
-    - RxLibrary (~> 0.0)
-  - RxLibrary (0.0.1)
+  - gRPC (0.0.1):
+    - gRPC/C-Core (= 0.0.1)
+    - gRPC/GRPCClient (= 0.0.1)
+    - gRPC/ProtoRPC (= 0.0.1)
+    - gRPC/RxLibrary (= 0.0.1)
+  - gRPC/C-Core (0.0.1):
+    - OpenSSL (~> 1.0.200)
+  - gRPC/GRPCClient (0.0.1):
+    - gRPC/C-Core
+    - gRPC/RxLibrary
+  - gRPC/ProtoRPC (0.0.1):
+    - gRPC/GRPCClient
+    - gRPC/RxLibrary
+  - gRPC/RxLibrary (0.0.1)
+  - OpenSSL (1.0.201)
+  - ProtocolBuffers (1.9.8)
+  - RemoteTest (0.0.1):
+    - gRPC (~> 0.0)
+    - ProtocolBuffers (~> 1.9)
+  - Route_guide (0.0.1):
+    - ProtocolBuffers (~> 1.9)
 
 DEPENDENCIES:
-  - GRPCClient (from `../../GRPCClient`)
-  - RxLibrary (from `../../RxLibrary`)
+  - gRPC (from `../../../..`)
+  - RemoteTest (from `RemoteTestClient`)
+  - Route_guide (from `RouteGuideClient`)
 
 EXTERNAL SOURCES:
-  GRPCClient:
-    :path: ../../GRPCClient
-  RxLibrary:
-    :path: ../../RxLibrary
+  gRPC:
+    :path: ../../../..
+  RemoteTest:
+    :path: RemoteTestClient
+  Route_guide:
+    :path: RouteGuideClient
 
 SPEC CHECKSUMS:
-  GRPCClient: 05c58faab99661384178bb7c5f93b60c2bfc89f8
-  RxLibrary: 70cfcf1573ec16a375b4fe61d976a3188aab9303
+  gRPC: f6c1bf5dde59ab543e4bd1d5e2ea56da4a9a0253
+  OpenSSL: 4e990d04b14015c49c800c400b86ae44a4818a5c
+  ProtocolBuffers: 9a4a171c0c7cc8f21dd29aeca4f9ac775d84a880
+  RemoteTest: 021a51c04d5795f286b379ca5ef14d0be5b2fb9b
+  Route_guide: a277da8eef182774abb050d7b81109f5878f8652
 
-COCOAPODS: 0.35.0
+COCOAPODS: 0.36.0
