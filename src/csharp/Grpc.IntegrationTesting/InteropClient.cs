@@ -344,7 +344,7 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
-            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Assert.AreEqual(ComputeEngineUser, response.Username);
             Console.WriteLine("Passed!");
         }
 
