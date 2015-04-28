@@ -45,4 +45,11 @@
 
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
 
+#define GPR_SWAP(type, a, b) \
+  do {                   \
+    type x = a;          \
+    a = b;               \
+    b = x;               \
+  } while (0)
+
 #endif  /* GRPC_SUPPORT_USEFUL_H */

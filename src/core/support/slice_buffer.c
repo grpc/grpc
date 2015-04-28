@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
@@ -161,17 +162,10 @@ void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb) {
   sb->length = 0;
 }
 
-#define SWAP(type, a, b) \
-  do {                   \
-    type x = a;          \
-    a = b;               \
-    b = x;               \
-  } while (0)
-
 void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
-  SWAP(size_t, a->count, b->count);
-  SWAP(size_t, a->capacity, b->capacity);
-  SWAP(size_t, a->length, b->length);
+  GPR_SWAP(size_t, a->count, b->count);
+  GPR_SWAP(size_t, a->capacity, b->capacity);
+  GPR_SWAP(size_t, a->length, b->length);
 
   if (a->slices == a->inlined) {
     if (b->slices == b->inlined) {
@@ -193,6 +187,6 @@ void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
     memcpy(a->slices, b->inlined, a->count * sizeof(gpr_slice));
   } else {
     /* no inlining: easy swap */
-    SWAP(gpr_slice *, a->slices, b->slices);
+    GPR_SWAP(gpr_slice *, a->slices, b->slices);
   }
 }
