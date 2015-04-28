@@ -43,10 +43,12 @@ std::shared_ptr<grpc::ChannelInterface> SecureCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
-  return std::shared_ptr<ChannelInterface>(new Channel(
-      args.GetSslTargetNameOverride().empty() ? target
-                                              : args.GetSslTargetNameOverride(),
-      grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
+  return std::shared_ptr<ChannelInterface>(static_cast<ChannelInterface*>(
+      new Channel(
+          args.GetSslTargetNameOverride().empty() ?
+              target : args.GetSslTargetNameOverride(),
+          grpc_secure_channel_create(c_creds_, target.c_str(),
+                                     &channel_args))));
 }
 
 namespace {

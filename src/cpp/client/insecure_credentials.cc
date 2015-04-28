@@ -48,8 +48,9 @@ class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
       const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
-    return std::shared_ptr<ChannelInterface>(new Channel(
-        target, grpc_channel_create(target.c_str(), &channel_args)));
+    return std::shared_ptr<ChannelInterface>(static_cast<ChannelInterface*>(
+        new Channel(
+            target, grpc_channel_create(target.c_str(), &channel_args))));
   }
 
   SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
