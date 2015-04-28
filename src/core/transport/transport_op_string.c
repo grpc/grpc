@@ -41,6 +41,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
+/* These routines are here to facilitate debugging - they produce string
+   representations of various transport data structures */
+
 static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
   gpr_strvec_add(b, gpr_strdup("key="));
   gpr_strvec_add(
