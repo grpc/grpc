@@ -158,7 +158,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_finished_with_status(v_client, tag(3),
                                    GRPC_STATUS_DEADLINE_EXCEEDED,
                                    "Deadline Exceeded", NULL);
-    cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_ERROR);
+    cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
     cq_verify(v_client);
 
     grpc_call_destroy(c);

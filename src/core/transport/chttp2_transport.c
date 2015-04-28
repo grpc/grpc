@@ -1890,13 +1890,22 @@ static void patch_metadata_ops(stream *s) {
   size_t j;
   size_t mdidx = 0;
   size_t last_mdidx;
+  int found_metadata = 0;
 
+  /* rework the array of metadata into a linked list, making use
+     of the breadcrumbs we left in metadata batches during 
+     add_metadata_batch */
   for (i = 0; i < nops; i++) {
     grpc_stream_op *op = &ops[i];
     if (op->type != GRPC_OP_METADATA) continue;
+    found_metadata = 1;
+    /* we left a breadcrumb indicating where the end of this list is,
+       and since we add sequentially, we know from the end of the last
+       segment where this segment begins */
     last_mdidx = (size_t)(gpr_intptr)(op->data.metadata.list.tail);
     GPR_ASSERT(last_mdidx > mdidx);
     GPR_ASSERT(last_mdidx <= s->incoming_metadata_count);
+    /* turn the array into a doubly linked list */
     op->data.metadata.list.head = &s->incoming_metadata[mdidx];
     op->data.metadata.list.tail = &s->incoming_metadata[last_mdidx - 1];
     for (j = mdidx + 1; j < last_mdidx; j++) {
@@ -1905,13 +1914,25 @@ static void patch_metadata_ops(stream *s) {
     }
     s->incoming_metadata[mdidx].prev = NULL;
     s->incoming_metadata[last_mdidx-1].next = NULL;
+    /* track where we're up to */
     mdidx = last_mdidx;
   }
-  GPR_ASSERT(mdidx == s->incoming_metadata_count);
-  s->old_incoming_metadata = s->incoming_metadata;
-  s->incoming_metadata = NULL;
-  s->incoming_metadata_count = 0;
-  s->incoming_metadata_capacity = 0;
+  if (found_metadata) {
+    s->old_incoming_metadata = s->incoming_metadata;
+    if (mdidx != s->incoming_metadata_count) {
+      /* we have a partially read metadata batch still in incoming_metadata */
+      size_t new_count = s->incoming_metadata_count - mdidx;
+      size_t copy_bytes = sizeof(*s->incoming_metadata) * new_count;
+      GPR_ASSERT(mdidx < s->incoming_metadata_count);
+      s->incoming_metadata = gpr_malloc(copy_bytes);
+      memcpy(s->old_incoming_metadata + mdidx, s->incoming_metadata, copy_bytes);
+      s->incoming_metadata_count = s->incoming_metadata_capacity = new_count;
+    } else {
+      s->incoming_metadata = NULL;
+      s->incoming_metadata_count = 0;
+      s->incoming_metadata_capacity = 0;
+    }
+  }
 }
 
 static void finish_reads(transport *t) {
