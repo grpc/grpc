@@ -31,6 +31,7 @@
  *
  */
 
+
 #include "src/core/iomgr/sockaddr.h"
 
 #include <grpc/grpc.h>
@@ -48,10 +49,12 @@
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/client.h"
-#include "src/core/support/string.h"
 #include "src/core/transport/chttp2_transport.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -195,6 +198,7 @@ grpc_channel *grpc_channel_create(const char *target,
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
   int n = 0;
+  GRPC_STAP_TIMING_NS_BEGIN(1);
   filters[n++] = &grpc_client_surface_filter;
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
@@ -210,6 +214,6 @@ grpc_channel *grpc_channel_create(const char *target,
   grpc_client_setup_create_and_attach(grpc_channel_get_channel_stack(channel),
                                       args, mdctx, initiate_setup, done_setup,
                                       s);
-
+  GRPC_STAP_TIMING_NS_END(1);
   return channel;
 }
