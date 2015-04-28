@@ -504,7 +504,7 @@ grpc_cloud_prod_auth_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -1428,8 +1428,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_csharp_mono_cmd() {
   local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
   local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags)
-  local added_gfe_flags=$(_grpc_gce_test_flags)
-  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }
 
