@@ -42,13 +42,40 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef struct { void *unused; } call_data;
+typedef struct {
+  grpc_linked_mdelem status;
+  grpc_linked_mdelem details;
+} call_data;
 
-typedef struct { void *unused; } channel_data;
+typedef struct { grpc_mdctx *mdctx; } channel_data;
 
 static void lame_start_transport_op(grpc_call_element *elem,
                                     grpc_transport_op *op) {
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  if (op->send_ops) {
+    op->on_done_send(op->send_user_data, 0);
+  }
+  if (op->recv_ops) {
+    char tmp[GPR_LTOA_MIN_BUFSIZE];
+    grpc_metadata_batch mdb;
+    gpr_ltoa(GRPC_STATUS_UNKNOWN, tmp);
+    calld->status.md =
+        grpc_mdelem_from_strings(chand->mdctx, "grpc-status", tmp);
+    calld->details.md = grpc_mdelem_from_strings(chand->mdctx, "grpc-message",
+                                                 "Rpc sent on a lame channel.");
+    calld->status.prev = calld->details.next = NULL;
+    calld->status.next = &calld->details;
+    calld->details.prev = &calld->status;
+    mdb.list.head = &calld->status;
+    mdb.list.tail = &calld->details;
+    mdb.garbage.head = mdb.garbage.tail = NULL;
+    mdb.deadline = gpr_inf_future;
+    grpc_sopb_add_metadata(op->recv_ops, mdb);
+    *op->recv_state = GRPC_STREAM_CLOSED;
+    op->on_done_recv(op->recv_user_data, 1);
+  }
   grpc_transport_op_finish_with_failure(op);
 }
 
@@ -79,8 +106,10 @@ static void destroy_call_elem(grpc_call_element *elem) {}
 static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
+  channel_data *chand = elem->channel_data;
   GPR_ASSERT(is_first);
   GPR_ASSERT(is_last);
+  chand->mdctx = mdctx;
 }
 
 static void destroy_channel_elem(grpc_channel_element *elem) {}
