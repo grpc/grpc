@@ -1106,6 +1106,7 @@ static void begin_call(grpc_server *server, call_data *calld,
             &rc->data.batch.details->host_capacity, calld->host);
       cpstr(&rc->data.batch.details->method,
             &rc->data.batch.details->method_capacity, calld->path);
+      rc->data.batch.details->deadline = calld->deadline;
       grpc_call_set_completion_queue(calld->call, rc->data.batch.cq_bind);
       *rc->data.batch.call = calld->call;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
