@@ -153,8 +153,6 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
   op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op++;
@@ -172,9 +170,6 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
