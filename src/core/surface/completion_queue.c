@@ -67,6 +67,8 @@ struct grpc_completion_queue {
   /* When refs drops to zero, we are in shutdown mode, and will be destroyable
      once all queued events are drained */
   gpr_refcount refs;
+  /* Once owning_refs drops to zero, we will destroy the cq */
+  gpr_refcount owning_refs;
   /* the set of low level i/o things that concern this cq */
   grpc_pollset pollset;
   /* 0 initially, 1 once we've begun shutting down */
@@ -91,9 +93,27 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
   memset(cc, 0, sizeof(*cc));
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->refs, 1);
+  gpr_ref_init(&cc->owning_refs, 1);
   grpc_pollset_init(&cc->pollset);
   cc->allow_polling = 1;
   return cc;
+}
+
+void grpc_cq_internal_ref(grpc_completion_queue *cc) {
+  gpr_ref(&cc->owning_refs);
+}
+
+static void on_pollset_destroy_done(void *arg) {
+  grpc_completion_queue *cc = arg;
+  grpc_pollset_destroy(&cc->pollset);
+  gpr_free(cc);
+}
+
+void grpc_cq_internal_unref(grpc_completion_queue *cc) {
+  if (gpr_unref(&cc->owning_refs)) {
+    GPR_ASSERT(cc->queue == NULL);
+    grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
+  }
 }
 
 void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc) {
@@ -394,15 +414,8 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   }
 }
 
-static void on_pollset_destroy_done(void *arg) {
-  grpc_completion_queue *cc = arg;
-  grpc_pollset_destroy(&cc->pollset);
-  gpr_free(cc);
-}
-
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
-  GPR_ASSERT(cc->queue == NULL);
-  grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
+  grpc_cq_internal_unref(cc);
 }
 
 void grpc_event_finish(grpc_event *base) {
