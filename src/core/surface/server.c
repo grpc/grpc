@@ -268,6 +268,7 @@ static void server_ref(grpc_server *server) {
 
 static void server_unref(grpc_server *server) {
   registered_method *rm;
+  size_t i;
   if (gpr_unref(&server->internal_refcount)) {
     grpc_channel_args_destroy(server->channel_args);
     gpr_mu_destroy(&server->mu);
@@ -280,6 +281,9 @@ static void server_unref(grpc_server *server) {
       gpr_free(rm->host);
       requested_call_array_destroy(&rm->requested);
       gpr_free(rm);
+    }
+    for (i = 0; i < server->cq_count; i++) {
+      grpc_cq_internal_unref(server->cqs[i]);
     }
     gpr_free(server->cqs);
     gpr_free(server->pollsets);
@@ -613,6 +617,7 @@ static void addcq(grpc_server *server, grpc_completion_queue *cq) {
   for (i = 0; i < server->cq_count; i++) {
     if (server->cqs[i] == cq) return;
   }
+  grpc_cq_internal_ref(cq);
   n = server->cq_count++;
   server->cqs = gpr_realloc(server->cqs,
                             server->cq_count * sizeof(grpc_completion_queue *));
