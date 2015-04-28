@@ -42,7 +42,7 @@ namespace Grpc.Core
     {
         private readonly Status status;
 
-        public RpcException(Status status)
+        public RpcException(Status status) : base(status.ToString())
         {
             this.status = status;
         }
