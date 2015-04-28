@@ -44,7 +44,7 @@
    Thread locals have type gpr_intptr.
 
    Declaring a thread local variable 'foo':
-     GPR_TLS_DECL(foo, initial_value);
+     GPR_TLS_DECL(foo);
    Thread locals always have static scope.
 
    Initializing a thread local (must be done at library initialization 

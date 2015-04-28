@@ -71,7 +71,7 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                                          : context->authority().c_str(),
                                      context->raw_deadline());
   GRPC_TIMER_MARK(CALL_CREATED, c_call);
-  context->set_call(c_call);
+  context->set_call(c_call, shared_from_this());
   return Call(c_call, this, cq);
 }
 
