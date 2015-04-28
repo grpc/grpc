@@ -161,15 +161,38 @@ void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb) {
   sb->length = 0;
 }
 
-void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
-  gpr_slice_buffer temp = *a;
-  *a = *b;
-  *b = temp;
+#define SWAP(type, a, b) \
+  do {                   \
+    type x = a;          \
+    a = b;               \
+    b = x;               \
+  } while (0)
 
-  if (a->slices == b->inlined) {
+void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
+  SWAP(size_t, a->count, b->count);
+  SWAP(size_t, a->capacity, b->capacity);
+  SWAP(size_t, a->length, b->length);
+
+  if (a->slices == a->inlined) {
+    if (b->slices == b->inlined) {
+      /* swap contents of inlined buffer */
+      gpr_slice temp[GRPC_SLICE_BUFFER_INLINE_ELEMENTS];
+      memcpy(temp, a->slices, b->count * sizeof(gpr_slice));
+      memcpy(a->slices, b->slices, a->count * sizeof(gpr_slice));
+      memcpy(b->slices, temp, b->count * sizeof(gpr_slice));
+    } else {
+      /* a is inlined, b is not - copy a inlined into b, fix pointers */
+      a->slices = b->slices;
+      b->slices = b->inlined;
+      memcpy(b->slices, a->inlined, b->count * sizeof(gpr_slice));
+    }
+  } else if (b->slices == b->inlined) {
+    /* b is inlined, a is not - copy b inlined int a, fix pointers */
+    b->slices = a->slices;
     a->slices = a->inlined;
-  }
-  if (b->slices == a->inlined) {
-    b->slices = b->inlined;
+    memcpy(a->slices, b->inlined, a->count * sizeof(gpr_slice));
+  } else {
+    /* no inlining: easy swap */
+    SWAP(gpr_slice *, a->slices, b->slices);
   }
 }
