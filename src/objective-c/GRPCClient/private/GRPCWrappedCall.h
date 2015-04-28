@@ -47,13 +47,15 @@ typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
 @interface GRPCOpSendMetadata : NSObject <GRPCOp>
 
-- (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
+                         handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
 @interface GRPCOpSendMessage : NSObject <GRPCOp>
 
-- (instancetype)initWithMessage:(NSData *)message handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithMessage:(NSData *)message
+                        handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -71,7 +73,7 @@ typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
 @interface GRPCOpRecvMessage : NSObject <GRPCOp>
 
-- (instancetype)initWithHandler:(void(^)(NSData *))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void(^)(grpc_byte_buffer *))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -83,7 +85,9 @@ typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
 @interface GRPCWrappedCall : NSObject
 
-- (instancetype)initWithChannel:(GRPCChannel *)channel method:(NSString *)method host:(NSString *)host NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithChannel:(GRPCChannel *)channel
+                         method:(NSString *)method
+                           host:(NSString *)host NS_DESIGNATED_INITIALIZER;
 
 - (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
 

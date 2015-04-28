@@ -171,7 +171,9 @@
 
 - (void (^)(void))opProcessor {
   return ^{
-    NSDictionary *metadata = [NSDictionary grpc_dictionaryFromMetadata:_recv_initial_metadata->metadata count:_recv_initial_metadata->count];
+    NSDictionary *metadata = [NSDictionary
+                              grpc_dictionaryFromMetadata:_recv_initial_metadata->metadata
+                              count:_recv_initial_metadata->count];
     grpc_metadata_array_destroy(_recv_initial_metadata);
     if (_handler) {
       _handler(metadata);
@@ -182,7 +184,7 @@
 @end
 
 @implementation GRPCOpRecvMessage{
-  void(^_handler)(NSData *);
+  void(^_handler)(grpc_byte_buffer *);
   grpc_byte_buffer **_recv_message;
 }
 
@@ -190,7 +192,7 @@
   return [self initWithHandler:nil];
 }
 
-- (instancetype)initWithHandler:(void (^)(NSData *))handler {
+- (instancetype)initWithHandler:(void (^)(grpc_byte_buffer *))handler {
   if (self = [super init]) {
     _handler = handler;
     _recv_message = gpr_malloc(sizeof(grpc_byte_buffer*));
@@ -205,11 +207,9 @@
 
 - (void (^)(void))opProcessor {
   return ^{
-    NSData *message = [NSData grpc_dataWithByteBuffer:*_recv_message];
-    grpc_byte_buffer_destroy(*_recv_message);
-    gpr_free(_recv_message);
     if (_handler) {
-      _handler(message);
+      _handler(*_recv_message);
+      gpr_free(_recv_message);
     }
   };
 }
@@ -274,9 +274,12 @@
   return [self initWithChannel:nil method:nil host:nil];
 }
 
-- (instancetype)initWithChannel:(GRPCChannel *)channel method:(NSString *)method host:(NSString *)host {
+- (instancetype)initWithChannel:(GRPCChannel *)channel
+                         method:(NSString *)method
+                           host:(NSString *)host {
   if (!channel || !method || !host) {
-    [NSException raise:NSInvalidArgumentException format:@"channel, method, and host cannot be nil."];
+    [NSException raise:NSInvalidArgumentException
+                format:@"channel, method, and host cannot be nil."];
   }
   
   if (self = [super init]) {
@@ -286,7 +289,8 @@
     });
     
     _queue = [GRPCCompletionQueue completionQueue];
-    _call = grpc_channel_create_call(channel.unmanagedChannel, _queue.unmanagedQueue, method.UTF8String, host.UTF8String, gpr_inf_future);
+    _call = grpc_channel_create_call(channel.unmanagedChannel, _queue.unmanagedQueue,
+                                     method.UTF8String, host.UTF8String, gpr_inf_future);
     if (_call == NULL) {
       return nil;
     }
@@ -307,7 +311,8 @@
     [op getOp:&ops_array[i]];
     [opProcessors addObject:[op opProcessor]];
   }
-  grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(grpc_op_error error){
+  grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops,
+                                                (__bridge_retained void *)(^(grpc_op_error error){
     if (error != GRPC_OP_OK) {
       if (errorHandler) {
         errorHandler();

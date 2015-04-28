@@ -67,7 +67,8 @@
     } else if ([value isKindOfClass:[NSString class]]) {
       current->value = [value UTF8String];
     } else {
-      [NSException raise:NSInvalidArgumentException format:@"Metadata values must be NSString or NSData."];
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Metadata values must be NSString or NSData."];
     }
     current->value = [value UTF8String];
     i += 1;

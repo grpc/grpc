@@ -46,19 +46,6 @@
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
 
-// A grpc_call_error represents a precondition failure when invoking the
-// grpc_call_* functions. If one ever happens, it's a bug in this library.
-//
-// TODO(jcanizales): Can an application shut down gracefully when a thread other
-// than the main one throws an exception?
-static void AssertNoErrorInCall(grpc_call_error error) {
-  if (error != GRPC_CALL_OK) {
-    @throw [NSException exceptionWithName:NSInternalInconsistencyException
-                                   reason:@"Precondition of grpc_call_* not met."
-                                 userInfo:nil];
-  }
-}
-
 @interface GRPCCall () <GRXWriteable>
 // Makes it readwrite.
 @property(atomic, strong) NSDictionary *responseMetadata;
@@ -121,7 +108,9 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
     _channel = [GRPCChannel channelToHost:host];
       
-      _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel method:method.HTTP2Path host:host];
+      _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel
+                                                       method:method.HTTP2Path
+                                                         host:host];
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("org.grpc.call", NULL);
@@ -156,8 +145,9 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 }
 
 - (void)dealloc {
+  __block GRPCWrappedCall *wrappedCall = _wrappedCall;
   dispatch_async(_callQueue, ^{
-    _wrappedCall = nil;
+    wrappedCall = nil;
   });
 }
 
@@ -165,7 +155,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 // Only called from the call queue.
 // The handler will be called from the network queue.
-- (void)startReadWithHandler:(void(^)(NSData *))handler {
+- (void)startReadWithHandler:(void(^)(grpc_byte_buffer *))handler {
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMessage alloc] initWithHandler:handler]]];
 }
 
@@ -183,10 +173,12 @@ static void AssertNoErrorInCall(grpc_call_error error) {
   __weak GRPCDelegateWrapper *weakWriteable = _responseWriteable;
 
   dispatch_async(_callQueue, ^{
-    [weakSelf startReadWithHandler:^(NSData *data) {
-      if (data == nil) {
+    [weakSelf startReadWithHandler:^(grpc_byte_buffer *message) {
+      if (message == NULL) {
         return;
       }
+      NSData *data = [NSData grpc_dataWithByteBuffer:message];
+      grpc_byte_buffer_destroy(message);
       if (!data) {
         // The app doesn't have enough memory to hold the server response. We
         // don't want to throw, because the app shouldn't crash for a behavior
@@ -213,7 +205,8 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 // TODO(jcanizales): Rename to commitHeaders.
 - (void)sendHeaders:(NSDictionary *)metadata {
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:metadata ?: @{} handler:nil]]];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc]
+                                            initWithMetadata:metadata ?: @{} handler:nil]]];
 }
 
 #pragma mark GRXWriteable implementation
@@ -231,7 +224,9 @@ static void AssertNoErrorInCall(grpc_call_error error) {
       strongSelf->_requestWriter.state = GRXWriterStateStarted;
     }
   };
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMessage alloc] initWithMessage:message handler:resumingHandler]] errorHandler:errorHandler];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMessage alloc]
+                                            initWithMessage:message
+                                            handler:resumingHandler]] errorHandler:errorHandler];
 }
 
 - (void)didReceiveValue:(id)value {
@@ -254,7 +249,8 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 // Only called from the call queue. The error handler will be called from the
 // network queue if the requests stream couldn't be closed successfully.
 - (void)finishRequestWithErrorHandler:(void (^)())errorHandler {
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendClose alloc] init]] errorHandler:errorHandler];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendClose alloc] init]]
+                            errorHandler:errorHandler];
 }
 
 - (void)didFinishWithError:(NSError *)errorOrNil {
@@ -280,8 +276,10 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 // The second one (completionHandler), whenever the RPC finishes for any reason.
 - (void)invokeCallWithMetadataHandler:(void(^)(NSDictionary *))metadataHandler
                     completionHandler:(void(^)(NSError *))completionHandler {
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMetadata alloc] initWithHandler:metadataHandler]]];
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvStatus alloc] initWithHandler:completionHandler]]];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMetadata alloc]
+                                            initWithHandler:metadataHandler]]];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvStatus alloc]
+                                            initWithHandler:completionHandler]]];
 }
 
 - (void)invokeCall {
