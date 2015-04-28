@@ -258,6 +258,7 @@ typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
+  int iov_size;            /* Number of slices to allocate per read attempt */
   size_t slice_size;
   gpr_refcount refcount;
 
@@ -317,7 +318,6 @@ static void call_read_cb(grpc_tcp *tcp, gpr_slice *slices, size_t nslices,
 #define MAX_READ_IOVEC 4
 static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
-  int iov_size = 1;
   gpr_slice static_read_slices[INLINE_SLICE_BUFFER_SIZE];
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
@@ -340,12 +340,12 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
   /* TODO(klempner): Limit the amount we read at once. */
   for (;;) {
     allocated_bytes = slice_state_append_blocks_into_iovec(
-        &read_state, iov, iov_size, tcp->slice_size);
+        &read_state, iov, tcp->iov_size, tcp->slice_size);
 
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
     msg.msg_iov = iov;
-    msg.msg_iovlen = iov_size;
+    msg.msg_iovlen = tcp->iov_size;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
@@ -368,6 +368,9 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
       /* NB: After calling the user_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
+        if (tcp->iov_size > 1) {
+          tcp->iov_size /= 2;
+        }
         if (slice_state_has_available(&read_state)) {
           /* TODO(klempner): We should probably do the call into the application
              without all this junk on the stack */
@@ -402,8 +405,8 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
       slice_state_destroy(&read_state);
       grpc_tcp_unref(tcp);
       return;
-    } else if (iov_size < MAX_READ_IOVEC) {
-      ++iov_size;
+    } else if (tcp->iov_size < MAX_READ_IOVEC) {
+      ++tcp->iov_size;
     }
   }
   GRPC_TIMER_MARK(HANDLE_READ_END, 0);
@@ -554,6 +557,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   tcp->read_user_data = NULL;
   tcp->write_user_data = NULL;
   tcp->slice_size = slice_size;
+  tcp->iov_size = 1;
   slice_state_init(&tcp->write_state, NULL, 0, 0);
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
