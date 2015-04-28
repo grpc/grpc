@@ -59,15 +59,30 @@ void grpc_sopb_reset(grpc_stream_op_buffer *sopb) {
 }
 
 void grpc_sopb_swap(grpc_stream_op_buffer *a, grpc_stream_op_buffer *b) {
-  grpc_stream_op_buffer temp = *a;
-  *a = *b;
-  *b = temp;
+  GPR_SWAP(size_t, a->nops, b->nops);
+  GPR_SWAP(size_t, a->capacity, b->capacity);
 
-  if (a->ops == b->inlined_ops) {
+  if (a->ops == a->inlined_ops) {
+    if (b->ops == b->inlined_ops) {
+      /* swap contents of inlined buffer */
+      gpr_slice temp[GRPC_SOPB_INLINE_ELEMENTS];
+      memcpy(temp, a->ops, b->nops * sizeof(grpc_stream_op));
+      memcpy(a->ops, b->ops, a->nops * sizeof(grpc_stream_op));
+      memcpy(b->ops, temp, b->nops * sizeof(grpc_stream_op));
+    } else {
+      /* a is inlined, b is not - copy a inlined into b, fix pointers */
+      a->ops = b->ops;
+      b->ops = b->inlined_ops;
+      memcpy(b->ops, a->inlined_ops, b->nops * sizeof(grpc_stream_op));
+    }
+  } else if (b->ops == b->inlined_ops) {
+    /* b is inlined, a is not - copy b inlined int a, fix pointers */
+    b->ops = a->ops;
     a->ops = a->inlined_ops;
-  }
-  if (b->ops == a->inlined_ops) {
-    b->ops = b->inlined_ops;
+    memcpy(a->ops, b->inlined_ops, a->nops * sizeof(grpc_stream_op));
+  } else {
+    /* no inlining: easy swap */
+    GPR_SWAP(grpc_stream_op *, a->ops, b->ops);
   }
 }
 
