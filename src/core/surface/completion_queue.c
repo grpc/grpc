@@ -135,7 +135,7 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
                       grpc_completion_type type) {
   gpr_ref(&cc->refs);
-  if (call) grpc_call_internal_ref(call);
+  if (call) GRPC_CALL_INTERNAL_REF(call, "cq");
 #ifndef NDEBUG
   gpr_atm_no_barrier_fetch_add(&cc->pending_op_count[type], 1);
 #endif
@@ -411,7 +411,7 @@ void grpc_event_finish(grpc_event *base) {
   event *ev = (event *)base;
   ev->on_finish(ev->on_finish_user_data, GRPC_OP_OK);
   if (ev->base.call) {
-    grpc_call_internal_unref(ev->base.call, 1);
+    GRPC_CALL_INTERNAL_UNREF(ev->base.call, "cq", 1);
   }
   gpr_free(ev);
 }
