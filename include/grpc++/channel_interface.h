@@ -49,13 +49,12 @@ class CompletionQueue;
 class RpcMethod;
 class CallInterface;
 
-class ChannelInterface 
-    : public CallHook, 
-      public std::enable_shared_from_this<ChannelInterface> {
+class ChannelInterface : public CallHook,
+                         public std::enable_shared_from_this<ChannelInterface> {
  public:
   virtual ~ChannelInterface() {}
 
-  virtual void *RegisterMethod(const char *method_name) = 0;
+  virtual void* RegisterMethod(const char* method_name) = 0;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
                           CompletionQueue* cq) = 0;
 };
