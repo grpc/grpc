@@ -66,30 +66,20 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 // The following methods of a C gRPC call object aren't reentrant, and thus
 // calls to them must be serialized:
-// - add_metadata
-// - invoke
-// - start_write
-// - writes_done
-// - start_read
+// - start_batch
 // - destroy
-// The first four are called as part of responding to client commands, but
-// start_read we want to call as soon as we're notified that the RPC was
-// successfully established (which happens concurrently in the network queue).
-// Serialization is achieved by using a private serial queue to operate the
-// call object.
-// Because add_metadata and invoke are called and return successfully before
-// any of the other methods is called, they don't need to use the queue.
 //
-// Furthermore, start_write and writes_done can only be called after the
-// WRITE_ACCEPTED event for any previous write is received. This is achieved by
+// start_batch with a SEND_MESSAGE argument can only be called after the
+// OP_COMPLETE event for any previous write is received. This is achieved by
 // pausing the requests writer immediately every time it writes a value, and
-// resuming it again when WRITE_ACCEPTED is received.
+// resuming it again when OP_COMPLETE is received.
 //
-// Similarly, start_read can only be called after the READ event for any
-// previous read is received. This is easier to enforce, as we're writing the
-// received messages into the writeable: start_read is enqueued once upon receiving
-// the CLIENT_METADATA_READ event, and then once after receiving each READ
-// event.
+// Similarly, start_batch with a RECV_MESSAGE argument can only be called after
+// the OP_COMPLETE event for any previous read is received.This is easier to
+// enforce, as we're writing the received messages into the writeable:
+// start_batch is enqueued once upon receiving the OP_COMPLETE event for the
+// RECV_METADATA batch, and then once after receiving each OP_COMPLETE event for
+// each RECV_MESSAGE batch.
 @implementation GRPCCall {
   dispatch_queue_t _callQueue;
 
