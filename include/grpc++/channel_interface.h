@@ -50,7 +50,7 @@ class RpcMethod;
 class CallInterface;
 
 class ChannelInterface 
-	: public CallHook, 
+    : public CallHook, 
       public std::enable_shared_from_this<ChannelInterface> {
  public:
   virtual ~ChannelInterface() {}
