@@ -59,7 +59,7 @@ using helloworld::Greeter;
 
 class GreeterClient {
  public:
-  GreeterClient(std::shared_ptr<ChannelInterface> channel)
+  explicit GreeterClient(std::shared_ptr<ChannelInterface> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
   std::string SayHello(const std::string& user) {
