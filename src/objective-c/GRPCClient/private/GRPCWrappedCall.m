@@ -68,11 +68,14 @@
 
 - (void (^)(void))opProcessor {
   return ^{
-    gpr_free(_send_metadata);
     if (_handler) {
       _handler();
     }
   };
+}
+
+- (void)dealloc {
+  gpr_free(_send_metadata);
 }
 
 @end
@@ -104,11 +107,14 @@
 
 - (void (^)(void))opProcessor {
   return ^{
-    gpr_free(_byte_buffer);
     if (_handler) {
       _handler();
     }
   };
+}
+
+- (void)dealloc {
+  gpr_free(_byte_buffer);
 }
 
 @end
@@ -169,11 +175,14 @@
     NSDictionary *metadata = [NSDictionary
                               grpc_dictionaryFromMetadata:_recv_initial_metadata.metadata
                               count:_recv_initial_metadata.count];
-    grpc_metadata_array_destroy(&_recv_initial_metadata);
     if (_handler) {
       _handler(metadata);
     }
   };
+}
+
+- (void)dealloc {
+  grpc_metadata_array_destroy(&_recv_initial_metadata);
 }
 
 @end
@@ -241,10 +250,13 @@
   return ^{
     if (_handler) {
       NSError *error = [NSError grpc_errorFromStatus:&_status];
-      grpc_metadata_array_destroy(&_status.metadata);
       _handler(error);
     }
   };
+}
+
+- (void)dealloc {
+  grpc_metadata_array_destroy(&_status.metadata);
 }
 
 @end
