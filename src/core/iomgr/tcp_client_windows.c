@@ -86,6 +86,7 @@ static void on_connect(void *acp, int success) {
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
   void(*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
+  int increase_g_orphans = 1;
 
   grpc_alarm_cancel(&ac->alarm);
 
@@ -100,6 +101,7 @@ static void on_connect(void *acp, int success) {
       char *utf8_message = gpr_format_message(WSAGetLastError());
       gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
       gpr_free(utf8_message);
+      increase_g_orphans = 0;
       goto finish;
     } else {
       ep = grpc_tcp_create(ac->socket);
@@ -115,7 +117,7 @@ static void on_connect(void *acp, int success) {
 finish:
   gpr_mu_lock(&ac->mu);
   if (!ep) {
-    grpc_winsocket_orphan(ac->socket);
+    grpc_winsocket_orphan(ac->socket, increase_g_orphans);
   }
   async_connect_cleanup(ac);
   cb(cb_arg, ep);
@@ -202,7 +204,7 @@ failure:
   gpr_log(GPR_ERROR, message, utf8_message);
   gpr_free(utf8_message);
   if (socket) {
-    grpc_winsocket_orphan(socket);
+    grpc_winsocket_orphan(socket, 0);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }

@@ -110,7 +110,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   /* delete ALL the things */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    grpc_winsocket_orphan(sp->socket);
+    grpc_winsocket_orphan(sp->socket, 1);
   }
   gpr_free(s->ports);
   gpr_free(s);
