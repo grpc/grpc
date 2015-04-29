@@ -983,50 +983,6 @@
       ]
     },
     {
-      "name": "echo_client",
-      "build": "test",
-      "run": false,
-      "language": "c",
-      "src": [
-        "test/core/echo/client.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "echo_server",
-      "build": "test",
-      "run": false,
-      "language": "c",
-      "src": [
-        "test/core/echo/server.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "echo_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/echo/echo_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "fd_posix_test",
       "build": "test",
       "language": "c",

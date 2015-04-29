@@ -156,15 +156,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "echo_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "fd_posix_test", 
     "platforms": [
       "windows", 
