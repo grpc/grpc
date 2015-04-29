@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 int grpc_trace_channel = 0;
 
@@ -147,6 +148,7 @@ void grpc_channel_stack_destroy(grpc_channel_stack *stack) {
 
 void grpc_call_stack_init(grpc_channel_stack *channel_stack,
                           const void *transport_server_data,
+                          grpc_transport_op *initial_op,
                           grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   size_t count = channel_stack->count;
@@ -164,7 +166,8 @@ void grpc_call_stack_init(grpc_channel_stack *channel_stack,
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
-    call_elems[i].filter->init_call_elem(&call_elems[i], transport_server_data);
+    call_elems[i].filter->init_call_elem(&call_elems[i], transport_server_data,
+                                         initial_op);
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
@@ -181,12 +184,9 @@ void grpc_call_stack_destroy(grpc_call_stack *stack) {
   }
 }
 
-void grpc_call_next_op(grpc_call_element *elem, grpc_call_op *op) {
-  grpc_call_element *next_elem = elem + op->dir;
-  if (op->type == GRPC_SEND_METADATA || op->type == GRPC_RECV_METADATA) {
-    grpc_metadata_batch_assert_ok(&op->data.metadata);
-  }
-  next_elem->filter->call_op(next_elem, elem, op);
+void grpc_call_next_op(grpc_call_element *elem, grpc_transport_op *op) {
+  grpc_call_element *next_elem = elem + 1;
+  next_elem->filter->start_transport_op(next_elem, op);
 }
 
 void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op) {
@@ -205,39 +205,15 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
       sizeof(grpc_call_stack)));
 }
 
-static void do_nothing(void *user_data, grpc_op_error error) {}
-
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem) {
-  grpc_call_op cancel_op;
-  cancel_op.type = GRPC_CANCEL_OP;
-  cancel_op.dir = GRPC_CALL_DOWN;
-  cancel_op.done_cb = do_nothing;
-  cancel_op.user_data = NULL;
-  cancel_op.flags = 0;
-  cancel_op.bind_pollset = NULL;
-  grpc_call_next_op(cur_elem, &cancel_op);
-}
-
-void grpc_call_element_send_finish(grpc_call_element *cur_elem) {
-  grpc_call_op finish_op;
-  finish_op.type = GRPC_SEND_FINISH;
-  finish_op.dir = GRPC_CALL_DOWN;
-  finish_op.done_cb = do_nothing;
-  finish_op.user_data = NULL;
-  finish_op.flags = 0;
-  finish_op.bind_pollset = NULL;
-  grpc_call_next_op(cur_elem, &finish_op);
+  grpc_transport_op op;
+  memset(&op, 0, sizeof(op));
+  op.cancel_with_status = GRPC_STATUS_CANCELLED;
+  grpc_call_next_op(cur_elem, &op);
 }
 
 void grpc_call_element_recv_status(grpc_call_element *cur_elem,
                                    grpc_status_code status,
                                    const char *message) {
-  grpc_call_op op;
-  op.type = GRPC_RECV_SYNTHETIC_STATUS;
-  op.dir = GRPC_CALL_UP;
-  op.done_cb = do_nothing;
-  op.user_data = NULL;
-  op.data.synthetic_status.status = status;
-  op.data.synthetic_status.message = message;
-  grpc_call_next_op(cur_elem, &op);
+  abort();
 }

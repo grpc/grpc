@@ -42,10 +42,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
 #include <stdio.h>
 
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
+  int tag;
+  gpr_thd_id thd;
   int tag;
   void* id;
   const char* file;
@@ -87,8 +90,8 @@ static void log_report_locked(grpc_timers_log* log) {
     grpc_timer_entry* entry = &(log->log[i]);
     fprintf(fp, "GRPC_LAT_PROF ");
     grpc_precise_clock_print(&entry->tm, fp);
-    fprintf(fp, " %d %p %s %d\n", entry->tag, entry->id, entry->file,
-            entry->line);
+    fprintf(fp, " %p %d %p %s %d\n", (void*)(gpr_intptr)entry->thd, entry->tag,
+            entry->id, entry->file, entry->line);
   }
 
   /* Now clear out the log */
@@ -123,6 +126,7 @@ static void grpc_timers_log_add(grpc_timers_log* log, int tag, void* id,
   entry->id = id;
   entry->file = file;
   entry->line = line;
+  entry->thd = gpr_thd_currentid();
 
   gpr_mu_unlock(&log->mu);
 }
