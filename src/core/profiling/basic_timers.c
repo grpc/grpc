@@ -132,9 +132,7 @@ static void grpc_timers_log_add(grpc_timers_log* log, int tag, void* id,
 
 /* Latency profiler API implementation. */
 void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
-  if (tag <= GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(grpc_timers_log_global, tag, id, file, line);
-  }
+  grpc_timers_log_add(grpc_timers_log_global, tag, id, file, line);
 }
 
 void grpc_timer_begin(int tag, void* id, const char *file, int line) {}
