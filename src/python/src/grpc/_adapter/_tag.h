@@ -31,34 +31,40 @@
  *
  */
 
-#ifndef GRPCXX_CHANNEL_INTERFACE_H
-#define GRPCXX_CHANNEL_INTERFACE_H
+#ifndef _ADAPTER__TAG_H_
+#define _ADAPTER__TAG_H_
 
-#include <memory>
+#include <Python.h>
+#include <grpc/grpc.h>
 
-#include <grpc++/status.h>
-#include <grpc++/impl/call.h>
+#include "grpc/_adapter/_call.h"
+#include "grpc/_adapter/_completion_queue.h"
 
-struct grpc_call;
+/* grpc_completion_type is becoming meaningless in grpc_event; this is a partial
+   replacement for its descriptive functionality until Python can move its whole
+   C and C adapter stack to more closely resemble the core batching API. */
+typedef enum {
+  PYGRPC_SERVER_RPC_NEW       = 0,
+  PYGRPC_INITIAL_METADATA     = 1,
+  PYGRPC_READ                 = 2,
+  PYGRPC_WRITE_ACCEPTED       = 3,
+  PYGRPC_FINISH_ACCEPTED      = 4,
+  PYGRPC_CLIENT_METADATA_READ = 5,
+  PYGRPC_FINISHED_CLIENT      = 6,
+  PYGRPC_FINISHED_SERVER      = 7,
+} pygrpc_tag_type;
 
-namespace grpc {
-class Call;
-class CallOpBuffer;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class CallInterface;
+typedef struct {
+  pygrpc_tag_type type;
+  PyObject *user_tag;
 
-class ChannelInterface : public CallHook,
-                         public std::enable_shared_from_this<ChannelInterface> {
- public:
-  virtual ~ChannelInterface() {}
+  Call *call;
+} pygrpc_tag;
 
-  virtual void* RegisterMethod(const char* method_name) = 0;
-  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                          CompletionQueue* cq) = 0;
-};
+pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
+                           Call *call);
+pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag);
+void pygrpc_tag_destroy(pygrpc_tag *self);
 
-}  // namespace grpc
+#endif /* _ADAPTER__TAG_H_ */
 
-#endif  // GRPCXX_CHANNEL_INTERFACE_H
