@@ -344,13 +344,11 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   cq_expect_completion(v_client, tag(live_call + 3), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s1,
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s2,
                                                       &call_details,
                                                       &request_metadata_recv,
                                                       f.server_cq, tag(201)));
-  cq_expect_server_rpc_new(v_server, &s2, tag(201),
-                           live_call == 300 ? "/alpha" : "/beta",
-                           "foo.test.google.fr", deadline, NULL);
+  cq_expect_completion(v_server, tag(201), GRPC_OP_OK);
   cq_verify(v_server);
 
   op = ops;
