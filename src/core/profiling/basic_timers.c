@@ -47,7 +47,6 @@
 
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
-  int tag;
   gpr_thd_id thd;
   int tag;
   void* id;
