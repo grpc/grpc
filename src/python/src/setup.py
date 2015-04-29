@@ -42,6 +42,7 @@ _EXTENSION_SOURCES = (
     'grpc/_adapter/_server.c',
     'grpc/_adapter/_client_credentials.c',
     'grpc/_adapter/_server_credentials.c',
+    'grpc/_adapter/_tag.c'
 )
 
 _EXTENSION_INCLUDE_DIRECTORIES = (

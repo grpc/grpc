@@ -70,7 +70,7 @@ class SynchronousClient : public Client {
     responses_.resize(num_threads_);
   }
 
-  virtual ~SynchronousClient() { EndThreads(); }
+  virtual ~SynchronousClient() {};
 
  protected:
   size_t num_threads_;
@@ -81,7 +81,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
  public:
   SynchronousUnaryClient(const ClientConfig& config):
     SynchronousClient(config) {StartThreads(num_threads_);}
-  ~SynchronousUnaryClient() {}
+  ~SynchronousUnaryClient() {EndThreads();}
   
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
@@ -105,6 +105,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     StartThreads(num_threads_);
   }
   ~SynchronousStreamingClient() {
+    EndThreads();
     if (stream_) {
       SimpleResponse response;
       stream_->WritesDone();
