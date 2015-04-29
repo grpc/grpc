@@ -198,15 +198,6 @@ typedef struct grpc_metadata {
 typedef enum grpc_completion_type {
   GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
   GRPC_OP_COMPLETE,          /* operation completion */
-  GRPC_READ,                 /* A read has completed */
-  GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
-                                flow control */
-  GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
-  GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
-                                client */
-  GRPC_FINISHED,             /* An RPC has finished. The event contains status.
-                                On the server this will be OK or Cancelled. */
-  GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
   GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
                                 a default: case */
@@ -219,30 +210,7 @@ typedef struct grpc_event {
   /* Data associated with the completion type. Field names match the type of
      completion as listed in grpc_completion_type. */
   union {
-    /* Contains a pointer to the buffer that was read, or NULL at the end of a
-       stream. */
-    grpc_byte_buffer *read;
-    grpc_op_error write_accepted;
-    grpc_op_error finish_accepted;
-    grpc_op_error invoke_accepted;
     grpc_op_error op_complete;
-    struct {
-      size_t count;
-      grpc_metadata *elements;
-    } client_metadata_read;
-    struct {
-      grpc_status_code status;
-      const char *details;
-      size_t metadata_count;
-      grpc_metadata *metadata_elements;
-    } finished;
-    struct {
-      const char *method;
-      const char *host;
-      gpr_timespec deadline;
-      size_t metadata_count;
-      grpc_metadata *metadata_elements;
-    } server_rpc_new;
   } data;
 } grpc_event;
 
