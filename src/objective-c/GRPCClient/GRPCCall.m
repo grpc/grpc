@@ -156,6 +156,7 @@
 // Only called from the call queue.
 // The handler will be called from the network queue.
 - (void)startReadWithHandler:(void(^)(grpc_byte_buffer *))handler {
+  // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMessage alloc] initWithHandler:handler]]];
 }
 
@@ -206,6 +207,7 @@
 
 // TODO(jcanizales): Rename to commitHeaders.
 - (void)sendHeaders:(NSDictionary *)metadata {
+  // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc]
                                             initWithMetadata:metadata ?: @{} handler:nil]]];
 }
@@ -218,8 +220,7 @@
 
   __weak GRPCCall *weakSelf = self;
   void(^resumingHandler)(void) = ^{
-    // Resume the request writer (even in the case of error).
-    // TODO(jcanizales): No need to do it in the case of errors anymore?
+    // Resume the request writer.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
       strongSelf->_requestWriter.state = GRXWriterStateStarted;
@@ -277,6 +278,7 @@
 // The second one (completionHandler), whenever the RPC finishes for any reason.
 - (void)invokeCallWithMetadataHandler:(void(^)(NSDictionary *))metadataHandler
                     completionHandler:(void(^)(NSError *))completionHandler {
+  // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMetadata alloc]
                                             initWithHandler:metadataHandler]]];
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvStatus alloc]
