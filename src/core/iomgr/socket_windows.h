@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H
 
 #include <windows.h>
+#include <winsock2.h>
 
 #include <grpc/support/sync.h>
 #include <grpc/support/atm.h>
