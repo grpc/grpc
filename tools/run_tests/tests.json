@@ -921,15 +921,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_writes_done_hangs_with_pending_read_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_fullstack_bad_hostname_test", 
     "platforms": [
       "windows", 
@@ -1147,15 +1138,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_thread_stress_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "chttp2_fullstack_writes_done_hangs_with_pending_read_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1389,15 +1371,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_bad_hostname_test", 
     "platforms": [
       "windows", 
@@ -1615,15 +1588,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_thread_stress_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1857,15 +1821,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_socket_pair_bad_hostname_test", 
     "platforms": [
       "windows", 
@@ -2083,15 +2038,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_thread_stress_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2325,15 +2271,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_fullstack_bad_hostname_unsecure_test", 
     "platforms": [
       "windows", 
@@ -2551,15 +2488,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_thread_stress_unsecure_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "chttp2_fullstack_writes_done_hangs_with_pending_read_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2793,15 +2721,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_unsecure_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_socket_pair_bad_hostname_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3027,15 +2946,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_unsecure_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3253,15 +3163,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_thread_stress_unsecure_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"

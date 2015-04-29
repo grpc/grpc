@@ -73,7 +73,6 @@ END2END_TESTS = {
     'simple_request': True,
     'registered_call': True,
     'thread_stress': True,
-    'writes_done_hangs_with_pending_read': True,
 }
 
 
