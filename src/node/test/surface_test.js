@@ -47,6 +47,28 @@ var mathService = math_proto.lookup('math.Math');
 
 var capitalize = require('underscore.string/capitalize');
 
+describe('File loader', function() {
+  it('Should load a proto file by default', function() {
+    assert.doesNotThrow(function() {
+      grpc.load(__dirname + '/test_service.proto');
+    });
+  });
+  it('Should load a proto file with the proto format', function() {
+    assert.doesNotThrow(function() {
+      grpc.load(__dirname + '/test_service.proto', 'proto');
+    });
+  });
+  it('Should load a json file with the json format', function() {
+    assert.doesNotThrow(function() {
+      grpc.load(__dirname + '/test_service.json', 'json');
+    });
+  });
+  it('Should fail to load a file with an unknown format', function() {
+    assert.throws(function() {
+      grpc.load(__dirname + '/test_service.proto', 'fake_format');
+    });
+  });
+});
 describe('Surface server constructor', function() {
   it('Should fail with conflicting method names', function() {
     assert.throws(function() {
@@ -123,6 +145,167 @@ describe('Generic client and server', function() {
         assert.strictEqual(response, 'Abc');
         done();
       });
+    });
+  });
+});
+describe('Trailing metadata', function() {
+  var client;
+  var server;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
+    var Server = grpc.buildServer([test_service]);
+    server = new Server({
+      TestService: {
+        unary: function(call, cb) {
+          var req = call.request;
+          if (req.error) {
+            cb(new Error('Requested error'), null, {metadata: ['yes']});
+          } else {
+            cb(null, {count: 1}, {metadata: ['yes']});
+          }
+        },
+        clientStream: function(stream, cb){
+          var count = 0;
+          var errored;
+          stream.on('data', function(data) {
+            if (data.error) {
+              errored = true;
+              cb(new Error('Requested error'), null, {metadata: ['yes']});
+            } else {
+              count += 1;
+            }
+          });
+          stream.on('end', function() {
+            if (!errored) {
+              cb(null, {count: count}, {metadata: ['yes']});
+            }
+          });
+        },
+        serverStream: function(stream) {
+          var req = stream.request;
+          if (req.error) {
+            var err = new Error('Requested error');
+            err.metadata = {metadata: ['yes']};
+            stream.emit('error', err);
+          } else {
+            for (var i = 0; i < 5; i++) {
+              stream.write({count: i});
+            }
+            stream.end({metadata: ['yes']});
+          }
+        },
+        bidiStream: function(stream) {
+          var count = 0;
+          stream.on('data', function(data) {
+            if (data.error) {
+              var err = new Error('Requested error');
+              err.metadata = {
+                metadata: ['yes'],
+                count: ['' + count]
+              };
+              stream.emit('error', err);
+            } else {
+              stream.write({count: count});
+              count += 1;
+            }
+          });
+          stream.on('end', function() {
+            stream.end({metadata: ['yes']});
+          });
+        }
+      }
+    });
+    var port = server.bind('localhost:0');
+    var Client = surface_client.makeProtobufClientConstructor(test_service);
+    client = new Client('localhost:' + port);
+    server.listen();
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('should be present when a unary call succeeds', function(done) {
+    var call = client.unary({error: false}, function(err, data) {
+      assert.ifError(err);
+    });
+    call.on('status', function(status) {
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a unary call fails', function(done) {
+    var call = client.unary({error: true}, function(err, data) {
+      assert(err);
+    });
+    call.on('status', function(status) {
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a client stream call succeeds', function(done) {
+    var call = client.clientStream(function(err, data) {
+      assert.ifError(err);
+    });
+    call.write({error: false});
+    call.write({error: false});
+    call.end();
+    call.on('status', function(status) {
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a client stream call fails', function(done) {
+    var call = client.clientStream(function(err, data) {
+      assert(err);
+    });
+    call.write({error: false});
+    call.write({error: true});
+    call.end();
+    call.on('status', function(status) {
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a server stream call succeeds', function(done) {
+    var call = client.serverStream({error: false});
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a server stream call fails', function(done) {
+    var call = client.serverStream({error: true});
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.notStrictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a bidi stream succeeds', function(done) {
+    var call = client.bidiStream();
+    call.write({error: false});
+    call.write({error: false});
+    call.end();
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('should be present when a bidi stream fails', function(done) {
+    var call = client.bidiStream();
+    call.write({error: false});
+    call.write({error: true});
+    call.end();
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.notStrictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
     });
   });
 });

@@ -40,16 +40,16 @@ class InteropTestCase(object):
   """
 
   def testEmptyUnary(self):
-    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub)
+    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
 
   def testLargeUnary(self):
-    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub)
+    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
 
   def testServerStreaming(self):
-    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub)
+    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
 
   def testClientStreaming(self):
-    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub)
+    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
 
   def testPingPong(self):
-    methods.TestCase.PING_PONG.test_interoperability(self.stub)
+    methods.TestCase.PING_PONG.test_interoperability(self.stub, None)

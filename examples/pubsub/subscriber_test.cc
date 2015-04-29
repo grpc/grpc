@@ -31,8 +31,6 @@
  *
  */
 
-#include <google/protobuf/stubs/common.h>
-
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -95,7 +93,6 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
                      proto2::Empty* response) GRPC_OVERRIDE {
     return Status::OK;
   }
-
 };
 
 class SubscriberTest : public ::testing::Test {
@@ -105,11 +102,13 @@ class SubscriberTest : public ::testing::Test {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(), grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ = CreateChannel(server_address_.str(), grpc::InsecureCredentials(), ChannelArguments());
+    channel_ = CreateChannel(server_address_.str(), grpc::InsecureCredentials(),
+                             ChannelArguments());
 
     subscriber_.reset(new grpc::examples::pubsub::Subscriber(channel_));
   }
@@ -129,17 +128,15 @@ class SubscriberTest : public ::testing::Test {
 };
 
 TEST_F(SubscriberTest, TestSubscriber) {
-  EXPECT_TRUE(subscriber_->CreateSubscription(kTopic,
-                                              kSubscriptionName).IsOk());
+  EXPECT_TRUE(
+      subscriber_->CreateSubscription(kTopic, kSubscriptionName).IsOk());
 
   grpc::string topic;
-  EXPECT_TRUE(subscriber_->GetSubscription(kSubscriptionName,
-                                           &topic).IsOk());
+  EXPECT_TRUE(subscriber_->GetSubscription(kSubscriptionName, &topic).IsOk());
   EXPECT_EQ(topic, kTopic);
 
   grpc::string data;
-  EXPECT_TRUE(subscriber_->Pull(kSubscriptionName,
-                                &data).IsOk());
+  EXPECT_TRUE(subscriber_->Pull(kSubscriptionName, &data).IsOk());
 
   EXPECT_TRUE(subscriber_->DeleteSubscription(kSubscriptionName).IsOk());
 }
@@ -150,10 +147,8 @@ TEST_F(SubscriberTest, TestSubscriber) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   gpr_log(GPR_INFO, "Start test ...");
   int result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }

@@ -51,81 +51,10 @@
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;
 
-/* Call operations - things that can be sent and received.
-
-   Threading:
-     SEND, RECV, and CANCEL ops can be active on a call at the same time, but
-     only one SEND, one RECV, and one CANCEL can be active at a time.
-
-   If state is shared between send/receive/cancel operations, it is up to
-   filters to provide their own protection around that. */
-typedef enum {
-  /* send metadata to the channels peer */
-  GRPC_SEND_METADATA,
-  /* send a deadline */
-  GRPC_SEND_DEADLINE,
-  /* start a connection (corresponds to start_invoke/accept) */
-  GRPC_SEND_START,
-  /* send a message to the channels peer */
-  GRPC_SEND_MESSAGE,
-  /* send a pre-formatted message to the channels peer */
-  GRPC_SEND_PREFORMATTED_MESSAGE,
-  /* send half-close to the channels peer */
-  GRPC_SEND_FINISH,
-  /* request that more data be allowed through flow control */
-  GRPC_REQUEST_DATA,
-  /* metadata was received from the channels peer */
-  GRPC_RECV_METADATA,
-  /* receive a deadline */
-  GRPC_RECV_DEADLINE,
-  /* the end of the first batch of metadata was received */
-  GRPC_RECV_END_OF_INITIAL_METADATA,
-  /* a message was received from the channels peer */
-  GRPC_RECV_MESSAGE,
-  /* half-close was received from the channels peer */
-  GRPC_RECV_HALF_CLOSE,
-  /* full close was received from the channels peer */
-  GRPC_RECV_FINISH,
-  /* the call has been abnormally terminated */
-  GRPC_CANCEL_OP
-} grpc_call_op_type;
-
 /* The direction of the call.
    The values of the enums (1, -1) matter here - they are used to increment
    or decrement a pointer to find the next element to call */
 typedef enum { GRPC_CALL_DOWN = 1, GRPC_CALL_UP = -1 } grpc_call_dir;
-
-/* A single filterable operation to be performed on a call */
-typedef struct {
-  /* The type of operation we're performing */
-  grpc_call_op_type type;
-  /* The directionality of this call - does the operation begin at the bottom
-     of the stack and flow up, or does the operation start at the top of the
-     stack and flow down through the filters. */
-  grpc_call_dir dir;
-
-  /* Flags associated with this call: see GRPC_WRITE_* in grpc.h */
-  gpr_uint32 flags;
-
-  /* Argument data, matching up with grpc_call_op_type names */
-  union {
-    struct {
-      grpc_pollset *pollset;
-    } start;
-    grpc_byte_buffer *message;
-    grpc_mdelem *metadata;
-    gpr_timespec deadline;
-  } data;
-
-  /* Must be called when processing of this call-op is complete.
-     Signature chosen to match transport flow control callbacks */
-  void (*done_cb)(void *user_data, grpc_op_error error);
-  /* User data to be passed into done_cb */
-  void *user_data;
-} grpc_call_op;
-
-/* returns a string representation of op, that can be destroyed with gpr_free */
-char *grpc_call_op_string(grpc_call_op *op);
 
 typedef enum {
   /* send a goaway message to remote channels indicating that we are going
@@ -174,8 +103,7 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*call_op)(grpc_call_element *elem, grpc_call_element *from_elem,
-                  grpc_call_op *op);
+  void (*start_transport_op)(grpc_call_element *elem, grpc_transport_op *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -193,7 +121,8 @@ typedef struct {
      transport and is on the server. Most filters want to ignore this
      argument.*/
   void (*init_call_elem)(grpc_call_element *elem,
-                         const void *server_transport_data);
+                         const void *server_transport_data,
+                         grpc_transport_op *initial_op);
   /* Destroy per call data.
      The filter does not need to do any chaining */
   void (*destroy_call_elem)(grpc_call_element *elem);
@@ -272,12 +201,13 @@ void grpc_channel_stack_destroy(grpc_channel_stack *stack);
    server. */
 void grpc_call_stack_init(grpc_channel_stack *channel_stack,
                           const void *transport_server_data,
+                          grpc_transport_op *initial_op,
                           grpc_call_stack *call_stack);
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack *stack);
 
-/* Call the next operation (depending on call directionality) in a call stack */
-void grpc_call_next_op(grpc_call_element *elem, grpc_call_op *op);
+/* Call the next operation in a call stack */
+void grpc_call_next_op(grpc_call_element *elem, grpc_transport_op *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op);
@@ -289,18 +219,13 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_call_op *op);
+                      grpc_call_element *elem, grpc_transport_op *op);
 
-void grpc_call_element_send_metadata(grpc_call_element *cur_elem,
-                                     grpc_mdelem *elem);
-void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
-                                     grpc_mdelem *elem);
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
-void grpc_call_element_send_finish(grpc_call_element *cur_elem);
 
 extern int grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */

@@ -39,6 +39,7 @@
 
 #include <grpc/support/time.h>
 #include <sys/timeb.h>
+#include <windows.h>
 
 gpr_timespec gpr_now(void) {
   gpr_timespec now_tv;
@@ -47,6 +48,25 @@ gpr_timespec gpr_now(void) {
   now_tv.tv_sec = now_tb.time;
   now_tv.tv_nsec = now_tb.millitm * 1000000;
   return now_tv;
+}
+
+void gpr_sleep_until(gpr_timespec until) {
+  gpr_timespec now;
+  gpr_timespec delta;
+  DWORD sleep_millis;
+
+  for (;;) {
+    /* We could simplify by using clock_nanosleep instead, but it might be
+     * slightly less portable. */
+    now = gpr_now();
+    if (gpr_time_cmp(until, now) <= 0) {
+      return;
+    }
+
+    delta = gpr_time_sub(until, now);
+    sleep_millis = (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+    Sleep(sleep_millis);
+  }
 }
 
 #endif /* GPR_WIN32 */

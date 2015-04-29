@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -39,6 +39,7 @@ import os
 import re
 import sys
 import time
+import platform
 
 import jobset
 import watch_dirs
@@ -60,7 +61,7 @@ class SimpleConfig(object):
     self.environ = environ
     self.environ['CONFIG'] = config
 
-  def job_spec(self, cmdline, hash_targets):
+  def job_spec(self, cmdline, hash_targets, shortname=None):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -73,6 +74,7 @@ class SimpleConfig(object):
                           be listed
     """
     return jobset.JobSpec(cmdline=cmdline,
+                          shortname=shortname,
                           environ=self.environ,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
@@ -101,9 +103,16 @@ class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
+    if platform.system() == 'Windows':
+      plat = 'windows'
+    else:
+      plat = 'posix'
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
-      self.binaries = [tgt for tgt in js if tgt['language'] == test_lang]
+      self.binaries = [tgt
+                       for tgt in js
+                       if tgt['language'] == test_lang and
+                          plat in tgt['platforms']]
 
   def test_specs(self, config, travis):
     out = []
@@ -190,6 +199,7 @@ class PythonLanguage(object):
   def __str__(self):
     return 'python'
 
+
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
@@ -207,10 +217,15 @@ class RubyLanguage(object):
   def __str__(self):
     return 'ruby'
 
-class CSharpLanguage(object):
 
+class CSharpLanguage(object):
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_csharp.sh', None)]
+    assemblies = ['Grpc.Core.Tests',
+                  'Grpc.Examples.Tests',
+                  'Grpc.IntegrationTesting']
+    return [config.job_spec(['tools/run_tests/run_csharp.sh', assembly],
+            None, shortname=assembly)
+            for assembly in assemblies ]
 
   def make_targets(self):
     return ['grpc_csharp_ext']
@@ -223,6 +238,43 @@ class CSharpLanguage(object):
 
   def __str__(self):
     return 'csharp'
+
+
+class Sanity(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec('tools/run_tests/run_sanity.sh', None)]
+
+  def make_targets(self):
+    return ['run_dep_checks']
+
+  def build_steps(self):
+    return []
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'sanity'
+
+
+class Build(object):
+
+  def test_specs(self, config, travis):
+    return []
+
+  def make_targets(self):
+    return ['static']
+
+  def build_steps(self):
+    return []
+
+  def supports_multi_config(self):
+    return True
+
+  def __str__(self):
+    return self.make_target
+
 
 # different configurations we can run under
 _CONFIGS = {
@@ -248,7 +300,9 @@ _LANGUAGES = {
     'php': PhpLanguage(),
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
-    'csharp': CSharpLanguage()
+    'csharp': CSharpLanguage(),
+    'sanity': Sanity(),
+    'build': Build(),
     }
 
 # parse command line
@@ -295,17 +349,27 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-build_steps = [jobset.JobSpec(['make',
-                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
-                               'CONFIG=%s' % cfg] + list(set(
-                                   itertools.chain.from_iterable(
-                                       l.make_targets() for l in languages))))
-               for cfg in build_configs] + list(set(
+if platform.system() == 'Windows':
+  def make_jobspec(cfg, targets):
+    return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
+                          cwd='vsprojects', shell=True)
+else:
+  def make_jobspec(cfg, targets):
+    return jobset.JobSpec(['make',
+                           '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % 
+                               args.slowdown,
+                           'CONFIG=%s' % cfg] + targets)
+
+build_steps = [make_jobspec(cfg, 
+                            list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages))))
+               for cfg in build_configs]
+build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
                    for l in languages
-                   for cmdline in l.build_steps()))
+                   for cmdline in l.build_steps()))               
 one_run = set(
     spec
     for config in run_configs
@@ -385,6 +449,7 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
+                             travis=args.travis,
                              cache=test_cache) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',

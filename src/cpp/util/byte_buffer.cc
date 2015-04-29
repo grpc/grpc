@@ -60,7 +60,6 @@ void ByteBuffer::Dump(std::vector<Slice>* slices) {
   gpr_slice s;
   while (grpc_byte_buffer_reader_next(reader, &s)) {
     slices->push_back(Slice(s, Slice::STEAL_REF));
-    gpr_slice_unref(s);
   }
   grpc_byte_buffer_reader_destroy(reader);
 }

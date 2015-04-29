@@ -40,8 +40,8 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
         file_get_contents(dirname(__FILE__) . '/../data/server1.key'),
         file_get_contents(dirname(__FILE__) . '/../data/server1.pem'));
     $this->server = new Grpc\Server();
-    $port = $this->server->add_secure_http2_port('0.0.0.0:0',
-                                                 $server_credentials);
+    $port = $this->server->addSecureHttp2Port('0.0.0.0:0',
+                                              $server_credentials);
     $this->server->start();
     $this->channel = new Grpc\Channel(
         'localhost:' . $port,
@@ -57,13 +57,13 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testSimpleRequestBody() {
-    $deadline = Grpc\Timeval::inf_future();
+    $deadline = Grpc\Timeval::infFuture();
     $status_text = 'xyz';
     $call = new Grpc\Call($this->channel,
                           'dummy_method',
                           $deadline);
 
-    $event = $call->start_batch([
+    $event = $call->startBatch([
         Grpc\OP_SEND_INITIAL_METADATA => [],
         Grpc\OP_SEND_CLOSE_FROM_CLIENT => true
                                        ]);
@@ -71,12 +71,12 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertTrue($event->send_metadata);
     $this->assertTrue($event->send_close);
 
-    $event = $this->server->request_call();
+    $event = $this->server->requestCall();
     $this->assertSame('dummy_method', $event->method);
     $this->assertSame([], $event->metadata);
     $server_call = $event->call;
 
-    $event = $server_call->start_batch([
+    $event = $server_call->startBatch([
         Grpc\OP_SEND_INITIAL_METADATA => [],
         Grpc\OP_SEND_STATUS_FROM_SERVER => [
             'metadata' => [],
@@ -90,7 +90,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertTrue($event->send_status);
     $this->assertFalse($event->cancelled);
 
-    $event = $call->start_batch([
+    $event = $call->startBatch([
         Grpc\OP_RECV_INITIAL_METADATA => true,
         Grpc\OP_RECV_STATUS_ON_CLIENT => true
                                  ]);
@@ -106,7 +106,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testClientServerFullRequestResponse() {
-    $deadline = Grpc\Timeval::inf_future();
+    $deadline = Grpc\Timeval::infFuture();
     $req_text = 'client_server_full_request_response';
     $reply_text = 'reply:client_server_full_request_response';
     $status_text = 'status:client_server_full_response_text';
@@ -115,7 +115,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
                           'dummy_method',
                           $deadline);
 
-    $event = $call->start_batch([
+    $event = $call->startBatch([
         Grpc\OP_SEND_INITIAL_METADATA => [],
         Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
         Grpc\OP_SEND_MESSAGE => $req_text
@@ -125,11 +125,11 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertTrue($event->send_close);
     $this->assertTrue($event->send_message);
 
-    $event = $this->server->request_call();
+    $event = $this->server->requestCall();
     $this->assertSame('dummy_method', $event->method);
     $server_call = $event->call;
 
-    $event = $server_call->start_batch([
+    $event = $server_call->startBatch([
         Grpc\OP_SEND_INITIAL_METADATA => [],
         Grpc\OP_SEND_MESSAGE => $reply_text,
         Grpc\OP_SEND_STATUS_FROM_SERVER => [
@@ -147,7 +147,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertFalse($event->cancelled);
     $this->assertSame($req_text, $event->message);
 
-    $event = $call->start_batch([
+    $event = $call->startBatch([
         Grpc\OP_RECV_INITIAL_METADATA => true,
         Grpc\OP_RECV_MESSAGE => true,
         Grpc\OP_RECV_STATUS_ON_CLIENT => true,

@@ -38,6 +38,7 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
@@ -60,14 +61,14 @@ static void on_connect(void *arg, grpc_endpoint *tcp) {
 
 static void test_no_op(void) {
   grpc_tcp_server *s = grpc_tcp_server_create();
-  grpc_tcp_server_destroy(s);
+  grpc_tcp_server_destroy(s, NULL, NULL);
 }
 
 static void test_no_op_with_start(void) {
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST();
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
-  grpc_tcp_server_destroy(s);
+  grpc_tcp_server_destroy(s, NULL, NULL);
 }
 
 static void test_no_op_with_port(void) {
@@ -80,7 +81,7 @@ static void test_no_op_with_port(void) {
   GPR_ASSERT(
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
-  grpc_tcp_server_destroy(s);
+  grpc_tcp_server_destroy(s, NULL, NULL);
 }
 
 static void test_no_op_with_port_and_start(void) {
@@ -95,7 +96,7 @@ static void test_no_op_with_port_and_start(void) {
 
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
 
-  grpc_tcp_server_destroy(s);
+  grpc_tcp_server_destroy(s, NULL, NULL);
 }
 
 static void test_connect(int n) {
@@ -144,7 +145,7 @@ static void test_connect(int n) {
 
   gpr_mu_unlock(&mu);
 
-  grpc_tcp_server_destroy(s);
+  grpc_tcp_server_destroy(s, NULL, NULL);
 }
 
 int main(int argc, char **argv) {

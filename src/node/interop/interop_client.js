@@ -318,8 +318,8 @@ var test_cases = {
   empty_stream: emptyStream,
   cancel_after_begin: cancelAfterBegin,
   cancel_after_first_response: cancelAfterFirstResponse,
-  compute_engine_creds: _.partial(authTest, AUTH_USER),
-  service_account_creds: _.partial(authTest, COMPUTE_ENGINE_USER)
+  compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER),
+  service_account_creds: _.partial(authTest, AUTH_USER)
 };
 
 /**

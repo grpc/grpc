@@ -30,10 +30,23 @@
 require 'forwardable'
 require 'grpc/generic/bidi_call'
 
-def assert_event_type(ev, want)
-  fail OutOfTime if ev.nil?
-  got = ev.type
-  fail "Unexpected rpc event: got #{got}, want #{want}" unless got == want
+class Struct
+  # BatchResult is the struct returned by calls to call#start_batch.
+  class BatchResult
+    # check_status returns the status, raising an error if the status
+    # is non-nil and not OK.
+    def check_status
+      return nil if status.nil?
+      fail GRPC::Cancelled if status.code == GRPC::Core::StatusCodes::CANCELLED
+      if status.code != GRPC::Core::StatusCodes::OK
+        # raise BadStatus, propagating the metadata if present.
+        md = status.metadata
+        with_sym_keys = Hash[md.each_pair.collect { |x, y| [x.to_sym, y] }]
+        fail GRPC::BadStatus.new(status.code, status.details, **with_sym_keys)
+      end
+      status
+    end
+  end
 end
 
 # GRPC contains the General RPC module.
@@ -41,10 +54,12 @@ module GRPC
   # The ActiveCall class provides simple methods for sending marshallable
   # data to a call
   class ActiveCall
-    include Core::CompletionType
     include Core::StatusCodes
     include Core::TimeConsts
+    include Core::CallOps
+    extend Forwardable
     attr_reader(:deadline)
+    def_delegators :@call, :cancel, :metadata
 
     # client_invoke begins a client invocation.
     #
@@ -61,15 +76,14 @@ module GRPC
     # @param q [CompletionQueue] the completion queue
     # @param deadline [Fixnum,TimeSpec] the deadline
     def self.client_invoke(call, q, _deadline, **kw)
-      fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
+      fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
-        fail(ArgumentError, 'not a CompletionQueue')
+        fail(TypeError, '!Core::CompletionQueue')
       end
-      call.add_metadata(kw) if kw.length > 0
-      client_metadata_read = Object.new
-      finished_tag = Object.new
-      call.invoke(q, client_metadata_read, finished_tag)
-      [finished_tag, client_metadata_read]
+      metadata_tag = Object.new
+      call.run_batch(q, metadata_tag, INFINITE_FUTURE,
+                     SEND_INITIAL_METADATA => kw)
+      metadata_tag
     end
 
     # Creates an ActiveCall.
@@ -91,69 +105,27 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [Fixnum] the deadline for the call to complete
-    # @param finished_tag [Object] the object used as the call's finish tag,
-    #                              if the call has begun
-    # @param read_metadata_tag [Object] the object used as the call's finish
-    #                                   tag, if the call has begun
+    # @param metadata_tag [Object] the object use obtain metadata for clients
     # @param started [true|false] indicates if the call has begun
-    def initialize(call, q, marshal, unmarshal, deadline, finished_tag: nil,
-                   read_metadata_tag: nil, started: true)
-      fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
+    def initialize(call, q, marshal, unmarshal, deadline, started: true,
+                   metadata_tag: nil)
+      fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
-        fail(ArgumentError, 'not a CompletionQueue')
+        fail(TypeError, '!Core::CompletionQueue')
       end
       @call = call
       @cq = q
       @deadline = deadline
-      @finished_tag = finished_tag
-      @read_metadata_tag = read_metadata_tag
       @marshal = marshal
       @started = started
       @unmarshal = unmarshal
+      @metadata_tag = metadata_tag
     end
 
-    # Obtains the status of the call.
-    #
-    # this value is nil until the call completes
-    # @return this call's status
-    def status
-      @call.status
-    end
-
-    # Obtains the metadata of the call.
-    #
-    # At the start of the call this will be nil.  During the call this gets
-    # some values as soon as the other end of the connection acknowledges the
-    # request.
-    #
-    # @return this calls's metadata
-    def metadata
-      @call.metadata
-    end
-
-    # Cancels the call.
-    #
-    # Cancels the call.  The call does not return any result, but once this it
-    # has been called, the call should eventually terminate.  Due to potential
-    # races between the execution of the cancel and the in-flight request, the
-    # result of the call after calling #cancel is indeterminate:
-    #
-    # - the call may terminate with a BadStatus exception, with code=CANCELLED
-    # - the call may terminate with OK Status, and return a response
-    # - the call may terminate with a different BadStatus exception if that
-    #   was happening
-    def cancel
-      @call.cancel
-    end
-
-    # indicates if the call is shutdown
-    def shutdown
-      @shutdown ||= false
-    end
-
-    # indicates if the call is cancelled.
-    def cancelled
-      @cancelled ||= false
+    # output_metadata are provides access to hash that can be used to
+    # save metadata to be sent as trailer
+    def output_metadata
+      @output_metadata ||= {}
     end
 
     # multi_req_view provides a restricted view of this ActiveCall for use
@@ -176,128 +148,94 @@ module GRPC
 
     # writes_done indicates that all writes are completed.
     #
-    # It blocks until the remote endpoint acknowledges by sending a FINISHED
-    # event, unless assert_finished is set to false.  Any calls to
-    # #remote_send after this call will fail.
+    # It blocks until the remote endpoint acknowledges with at status unless
+    # assert_finished is set to false.  Any calls to #remote_send after this
+    # call will fail.
     #
     # @param assert_finished [true, false] when true(default), waits for
     # FINISHED.
     def writes_done(assert_finished = true)
-      @call.writes_done(self)
-      ev = @cq.pluck(self, INFINITE_FUTURE)
-      begin
-        assert_event_type(ev, FINISH_ACCEPTED)
-        logger.debug("Writes done: waiting for finish? #{assert_finished}")
-      ensure
-        ev.close
-      end
-
+      ops = {
+        SEND_CLOSE_FROM_CLIENT => nil
+      }
+      ops[RECV_STATUS_ON_CLIENT] = nil if assert_finished
+      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
       return unless assert_finished
-      ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
-      fail 'unexpected nil event' if ev.nil?
-      ev.close
-      @call.status
+      batch_result.check_status
     end
 
-    # finished waits until the call is completed.
+    # finished waits until a client call is completed.
     #
-    # It blocks until the remote endpoint acknowledges by sending a FINISHED
-    # event.
+    # It blocks until the remote endpoint acknowledges by sending a status.
     def finished
-      ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
-      begin
-        fail "unexpected event: #{ev.inspect}" unless ev.type == FINISHED
+      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE,
+                                     RECV_STATUS_ON_CLIENT => nil)
+      unless batch_result.status.nil?
         if @call.metadata.nil?
-          @call.metadata = ev.result.metadata
+          @call.metadata = batch_result.status.metadata
         else
-          @call.metadata.merge!(ev.result.metadata)
+          @call.metadata.merge!(batch_result.status.metadata)
         end
-
-        if ev.result.code != Core::StatusCodes::OK
-          fail BadStatus.new(ev.result.code, ev.result.details)
-        end
-        res = ev.result
-      ensure
-        ev.close
       end
-      res
+      batch_result.check_status
     end
 
     # remote_send sends a request to the remote endpoint.
     #
-    # It blocks until the remote endpoint acknowledges by sending a
-    # WRITE_ACCEPTED.  req can be marshalled already.
+    # It blocks until the remote endpoint accepts the message.
     #
     # @param req [Object, String] the object to send or it's marshal form.
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      assert_queue_is_ready
-      logger.debug("sending #{req.inspect}, marshalled? #{marshalled}")
+      logger.debug("sending #{req}, marshalled? #{marshalled}")
       if marshalled
         payload = req
       else
         payload = @marshal.call(req)
       end
-      @call.start_write(Core::ByteBuffer.new(payload), self)
-
-      # call queue#pluck, and wait for WRITE_ACCEPTED, so as not to return
-      # until the flow control allows another send on this call.
-      ev = @cq.pluck(self, INFINITE_FUTURE)
-      begin
-        assert_event_type(ev, WRITE_ACCEPTED)
-      ensure
-        ev.close
-      end
+      @call.run_batch(@cq, self, INFINITE_FUTURE, SEND_MESSAGE => payload)
     end
 
-    # send_status sends a status to the remote endpoint
+    # send_status sends a status to the remote endpoint.
     #
     # @param code [int] the status code to send
     # @param details [String] details
     # @param assert_finished [true, false] when true(default), waits for
     # FINISHED.
-    def send_status(code = OK, details = '', assert_finished = false)
-      assert_queue_is_ready
-      @call.start_write_status(code, details, self)
-      ev = @cq.pluck(self, INFINITE_FUTURE)
-      begin
-        assert_event_type(ev, FINISH_ACCEPTED)
-      ensure
-        ev.close
-      end
-      logger.debug("Status sent: #{code}:'#{details}'")
-      return finished if assert_finished
+    #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    def send_status(code = OK, details = '', assert_finished = false, **kw)
+      ops = {
+        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, kw)
+      }
+      ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
+      @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
       nil
     end
 
     # remote_read reads a response from the remote endpoint.
     #
-    # It blocks until the remote endpoint sends a READ or FINISHED event.  On
-    # a READ, it returns the response after unmarshalling it. On
-    # FINISHED, it returns nil if the status is OK, otherwise raising
-    # BadStatus
+    # It blocks until the remote endpoint replies with a message or status.
+    # On receiving a message, it returns the response after unmarshalling it.
+    # On receiving a status, it returns nil if the status is OK, otherwise
+    # raising BadStatus
     def remote_read
-      if @call.metadata.nil? && !@read_metadata_tag.nil?
-        ev = @cq.pluck(@read_metadata_tag, INFINITE_FUTURE)
-        assert_event_type(ev, CLIENT_METADATA_READ)
-        @call.metadata = ev.result
-        @read_metadata_tag = nil
+      ops = { RECV_MESSAGE => nil }
+      ops[RECV_INITIAL_METADATA] = nil unless @metadata_tag.nil?
+      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
+      unless @metadata_tag.nil?
+        @call.metadata = batch_result.metadata
+        @metadata_tag = nil
       end
-
-      @call.start_read(self)
-      ev = @cq.pluck(self, INFINITE_FUTURE)
-      begin
-        assert_event_type(ev, READ)
-        logger.debug("received req: #{ev.result.inspect}")
-        unless ev.result.nil?
-          logger.debug("received req.to_s: #{ev.result}")
-          res = @unmarshal.call(ev.result.to_s)
-          logger.debug("received_req (unmarshalled): #{res.inspect}")
-          return res
-        end
-      ensure
-        ev.close
+      logger.debug("received req: #{batch_result}")
+      unless batch_result.nil? || batch_result.message.nil?
+        logger.debug("received req.to_s: #{batch_result.message}")
+        res = @unmarshal.call(batch_result.message)
+        logger.debug("received_req (unmarshalled): #{res.inspect}")
+        return res
       end
       logger.debug('found nil; the final response has been sent')
       nil
@@ -324,7 +262,6 @@ module GRPC
       return enum_for(:each_remote_read) unless block_given?
       loop do
         resp = remote_read
-        break if resp.is_a? Struct::Status  # is an OK status
         break if resp.nil?  # the last response was received
         yield resp
       end
@@ -379,6 +316,9 @@ module GRPC
       response = remote_read
       finished unless response.is_a? Struct::Status
       response
+    rescue GRPC::Core::CallError => e
+      finished  # checks for Cancelled
+      raise e
     end
 
     # client_streamer sends a stream of requests to a GRPC server, and
@@ -402,6 +342,9 @@ module GRPC
       response = remote_read
       finished unless response.is_a? Struct::Status
       response
+    rescue GRPC::Core::CallError => e
+      finished  # checks for Cancelled
+      raise e
     end
 
     # server_streamer sends one request to the GRPC server, which yields a
@@ -428,6 +371,9 @@ module GRPC
       replies = enum_for(:each_remote_read_then_finish)
       return replies unless block_given?
       replies.each { |r| yield r }
+    rescue GRPC::Core::CallError => e
+      finished  # checks for Cancelled
+      raise e
     end
 
     # bidi_streamer sends a stream of requests to the GRPC server, and yields
@@ -461,9 +407,11 @@ module GRPC
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, **kw, &blk)
       start_call(**kw) unless @started
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline,
-                        @finished_tag)
+      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
       bd.run_on_client(requests, &blk)
+    rescue GRPC::Core::CallError => e
+      finished  # checks for Cancelled
+      raise e
     end
 
     # run_server_bidi orchestrates a BiDi stream processing on a server.
@@ -478,16 +426,16 @@ module GRPC
     #
     # @param gen_each_reply [Proc] generates the BiDi stream replies
     def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline,
-                        @finished_tag)
+      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
       bd.run_on_server(gen_each_reply)
     end
 
     private
 
+    # Starts the call if not already started
     def start_call(**kw)
-      tags = ActiveCall.client_invoke(@call, @cq, @deadline, **kw)
-      @finished_tag, @read_metadata_tag = tags
+      return if @started
+      @metadata_tag = ActiveCall.client_invoke(@call, @cq, @deadline, **kw)
       @started = true
     end
 
@@ -505,32 +453,17 @@ module GRPC
 
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
-    SingleReqView = view_class(:cancelled, :deadline, :metadata)
+    SingleReqView = view_class(:cancelled, :deadline, :metadata,
+                               :output_metadata)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
     MultiReqView = view_class(:cancelled, :deadline, :each_queued_msg,
-                              :each_remote_read, :metadata)
+                              :each_remote_read, :metadata, :output_metadata)
 
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.
     Operation = view_class(:cancel, :cancelled, :deadline, :execute,
-                           :metadata, :status)
-
-    # confirms that no events are enqueued, and that the queue is not
-    # shutdown.
-    def assert_queue_is_ready
-      ev = nil
-      begin
-        ev = @cq.pluck(self, ZERO)
-        fail "unexpected event #{ev.inspect}" unless ev.nil?
-      rescue OutOfTime
-        logging.debug('timed out waiting for next event')
-        # expected, nothing should be on the queue and the deadline was ZERO,
-        # except things using another tag
-      ensure
-        ev.close unless ev.nil?
-      end
-    end
+                           :metadata, :status, :start_call)
   end
 end

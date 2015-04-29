@@ -1,5 +1,7 @@
 # GRPC global makefile
 # This currently builds C and C++ code.
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -35,17 +37,14 @@
 
   proto_re = re.compile('(.*)\\.proto')
 
-  def excluded(filename, exclude_res):
-    for r in exclude_res:
-      if r.match(filename):
-        return True
-    return False
-
   def proto_to_cc(filename):
     m = proto_re.match(filename)
     if not m:
       return filename
-    return '$(GENDIR)/' + m.group(1) + '.pb.cc'
+    return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
+
+  sources_that_need_openssl = set()
+  sources_that_don_t_need_openssl = set()
 %>
 
 
@@ -102,6 +101,15 @@ CPPFLAGS_opt = -O2
 LDFLAGS_opt =
 DEFINES_opt = NDEBUG
 
+VALID_CONFIG_latprof = 1
+CC_latprof = $(DEFAULT_CC)
+CXX_latprof = $(DEFAULT_CXX)
+LD_latprof = $(DEFAULT_CC)
+LDXX_latprof = $(DEFAULT_CXX)
+CPPFLAGS_latprof = -O2 -DGRPC_LATENCY_PROFILER
+LDFLAGS_latprof =
+DEFINES_latprof = NDEBUG
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
@@ -110,6 +118,15 @@ LDXX_dbg = $(DEFAULT_CXX)
 CPPFLAGS_dbg = -O0
 LDFLAGS_dbg =
 DEFINES_dbg = _DEBUG DEBUG
+
+VALID_CONFIG_mutrace = 1
+CC_mutrace = $(DEFAULT_CC)
+CXX_mutrace = $(DEFAULT_CXX)
+LD_mutrace = $(DEFAULT_CC)
+LDXX_mutrace = $(DEFAULT_CXX)
+CPPFLAGS_mutrace = -O0
+LDFLAGS_mutrace = -rdynamic
+DEFINES_mutrace = _DEBUG DEBUG
 
 VALID_CONFIG_valgrind = 1
 REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
@@ -138,9 +155,9 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
-CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
+CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS_asan = -fsanitize=address
-DEFINES_asan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
+DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -148,7 +165,7 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
@@ -235,7 +252,6 @@ ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
 else
 CXXFLAGS += -std=c++0x
-DEFINES += GRPC_OLD_CXX
 endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g
@@ -346,8 +362,8 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-PROTOC_CMD = which protoc > /dev/null
-PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
+PROTOC_CHECK_CMD = which protoc > /dev/null
+PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
@@ -373,9 +389,9 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
-HAS_PROTOC = $(shell $(PROTOC_CMD) 2> /dev/null && echo true || echo false)
+HAS_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
 else
 HAS_VALID_PROTOC = false
 endif
@@ -571,7 +587,7 @@ run_dep_checks:
 	$(ZLIB_CHECK_CMD) || true
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
-	$(PROTOC_CHECK_CMD) || true
+	$(PROTOC_CHECK_VERSION_CMD) || true
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
@@ -832,11 +848,17 @@ endif
 % for p in protos:
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/${p}.pb.cc: protoc_dep_error
+$(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
 else
 $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 % endfor
@@ -918,10 +940,11 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
 else
-ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.version.major}
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
 endif
 endif
@@ -1060,15 +1083,6 @@ endif
 else
 % endif
 
-ifneq ($(OPENSSL_DEP),)
-# This is to ensure the embedded OpenSSL is built beforehand, properly
-# installing headers to their final destination on the drive. We need this
-# otherwise parallel compilation will fail if a source is compiled first.
-% for src in lib.src:
-${src}: $(OPENSSL_DEP)
-% endfor
-endif
-
 $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
 ## The else here corresponds to the if secure earlier.
 % else:
@@ -1116,6 +1130,7 @@ ifeq ($(SYSTEM),Darwin)
 endif
 
 <%
+
   if lib.language == 'c++':
     ld = '$(LDXX)'
   else:
@@ -1138,6 +1153,11 @@ endif
 
   if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    for src in lib.src:
+      sources_that_need_openssl.add(src)
+  else:
+    for src in lib.src:
+      sources_that_don_t_need_openssl.add(src)
 
   if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
@@ -1158,7 +1178,7 @@ ${out_libbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name lib${lib.name}.$(SHARED_EXT) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
 else
 	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so.${settings.version.major}
@@ -1188,21 +1208,15 @@ endif
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 endif
 % endif
-
 % for src in lib.src:
-% if not proto_re.match(src):
-$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-% for src2 in lib.src:
-% if proto_re.match(src2):
-    ${proto_to_cc(src2)}\
+% if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
+$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
 % endif
-% endfor
-% endif
-
 % endfor
 </%def>
 
-<%def name="maketarget(tgt)">
+<%def name="maketarget(tgt)"><% has_no_sources = not tgt.src %>
+% if not has_no_sources:
 ${tgt.name.upper()}_SRC = \\
 
 % for src in tgt.src:
@@ -1211,7 +1225,7 @@ ${tgt.name.upper()}_SRC = \\
 % endfor
 
 ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-
+% endif
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
@@ -1241,9 +1255,15 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/${tgt.name}: $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: \
+% if not has_no_sources:
+$(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+% endif
 % else:
-$(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
@@ -1254,20 +1274,26 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % if tgt.build == 'protoc':
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % else:
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(LDXX) $(LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
 % endif
-% if tgt.build == 'test':
- $(GTEST_LIB)\
 % endif
 % else:
 ## C-only targets specificities.
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(LD) $(LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
@@ -1289,6 +1315,9 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % elif tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
  $(LDLIBS_SECURE)\
 % endif
+% if tgt.language == 'c++' and tgt.build == 'test':
+ $(GTEST_LIB)\
+% endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
 % if tgt.build == 'protoc' or tgt.language == 'c++':
 
@@ -1306,9 +1335,11 @@ $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 % endfor
 
 % endfor
-
+% if not has_no_sources:
 deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
+% endif
 
+% if not has_no_sources:
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifneq ($(NO_SECURE),true)
 % endif
@@ -1318,7 +1349,19 @@ endif
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 endif
 % endif
+% endif
 </%def>
+
+ifneq ($(OPENSSL_DEP),)
+# This is to ensure the embedded OpenSSL is built beforehand, properly
+# installing headers to their final destination on the drive. We need this
+# otherwise parallel compilation will fail if a source is compiled first.
+% for src in sorted(sources_that_need_openssl):
+% if src not in sources_that_don_t_need_openssl:
+${src}: $(OPENSSL_DEP)
+% endif
+% endfor
+endif
 
 .PHONY: all strip tools \
 dep_error openssl_dep_error openssl_dep_message git_update stop \

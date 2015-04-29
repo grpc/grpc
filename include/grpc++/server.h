@@ -34,15 +34,15 @@
 #ifndef GRPCXX_SERVER_H
 #define GRPCXX_SERVER_H
 
-#include <condition_variable>
 #include <list>
 #include <memory>
-#include <mutex>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/impl/call.h>
+#include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/service_type.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/status.h>
 
 struct grpc_server;
@@ -57,7 +57,8 @@ class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
-class Server GRPC_FINAL : private CallHook,
+class Server GRPC_FINAL : public GrpcLibrary,
+                          private CallHook,
                           private AsynchronousService::DispatchImpl {
  public:
   ~Server();
@@ -79,7 +80,6 @@ class Server GRPC_FINAL : private CallHook,
 
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned);
-  Server() = delete;
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
@@ -110,14 +110,14 @@ class Server GRPC_FINAL : private CallHook,
   CompletionQueue cq_;
 
   // Sever status
-  std::mutex mu_;
+  grpc::mutex mu_;
   bool started_;
   bool shutdown_;
   // The number of threads which are running callbacks.
   int num_running_cb_;
-  std::condition_variable callback_cv_;
+  grpc::condition_variable callback_cv_;
 
-  std::list<SyncRequest> sync_methods_;
+  std::list<SyncRequest>* sync_methods_;
 
   // Pointer to the c grpc server.
   grpc_server* const server_;
@@ -125,6 +125,8 @@ class Server GRPC_FINAL : private CallHook,
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
+ private:
+  Server() : server_(NULL) { abort(); }
 };
 
 }  // namespace grpc

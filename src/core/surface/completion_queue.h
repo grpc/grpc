@@ -43,6 +43,9 @@
    grpc_event_finish */
 typedef void (*grpc_event_finish_func)(void *user_data, grpc_op_error error);
 
+void grpc_cq_internal_ref(grpc_completion_queue *cc);
+void grpc_cq_internal_unref(grpc_completion_queue *cc);
+
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made */
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
@@ -114,4 +117,6 @@ void grpc_cq_dump_pending_ops(grpc_completion_queue *cc);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */
+void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc);
+
+#endif /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */

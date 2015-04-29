@@ -37,7 +37,14 @@
 #include <Python.h>
 #include <grpc/grpc.h>
 
-typedef struct { PyObject_HEAD grpc_server *c_server; } Server;
+#include "grpc/_adapter/_completion_queue.h"
+
+typedef struct {
+  PyObject_HEAD
+
+  CompletionQueue *completion_queue;
+  grpc_server *c_server;
+} Server;
 
 int pygrpc_add_server(PyObject *module);
 

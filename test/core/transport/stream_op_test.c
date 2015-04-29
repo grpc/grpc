@@ -38,10 +38,6 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-static void flow_ctl_cb_fails(void *ignored, grpc_op_error error) {
-  GPR_ASSERT(error == GRPC_OP_ERROR);
-}
-
 static void assert_slices_equal(gpr_slice a, gpr_slice b) {
   GPR_ASSERT(a.refcount == b.refcount);
   if (a.refcount) {
@@ -60,7 +56,6 @@ int main(int argc, char **argv) {
   gpr_slice test_slice_2 = gpr_slice_malloc(2);
   gpr_slice test_slice_3 = gpr_slice_malloc(3);
   gpr_slice test_slice_4 = gpr_slice_malloc(4);
-  char x;
   unsigned i;
 
   grpc_stream_op_buffer buf;
@@ -78,11 +73,10 @@ int main(int argc, char **argv) {
   grpc_sopb_add_slice(&buf, test_slice_2);
   grpc_sopb_add_slice(&buf, test_slice_3);
   grpc_sopb_add_slice(&buf, test_slice_4);
-  grpc_sopb_add_flow_ctl_cb(&buf, flow_ctl_cb_fails, &x);
   grpc_sopb_add_no_op(&buf);
 
   /* verify that the data went in ok */
-  GPR_ASSERT(buf.nops == 7);
+  GPR_ASSERT(buf.nops == 6);
   GPR_ASSERT(buf.ops[0].type == GRPC_OP_BEGIN_MESSAGE);
   GPR_ASSERT(buf.ops[0].data.begin_message.length == 1);
   GPR_ASSERT(buf.ops[0].data.begin_message.flags == 2);
@@ -94,10 +88,7 @@ int main(int argc, char **argv) {
   assert_slices_equal(buf.ops[3].data.slice, test_slice_3);
   GPR_ASSERT(buf.ops[4].type == GRPC_OP_SLICE);
   assert_slices_equal(buf.ops[4].data.slice, test_slice_4);
-  GPR_ASSERT(buf.ops[5].type == GRPC_OP_FLOW_CTL_CB);
-  GPR_ASSERT(buf.ops[5].data.flow_ctl_cb.cb == flow_ctl_cb_fails);
-  GPR_ASSERT(buf.ops[5].data.flow_ctl_cb.arg == &x);
-  GPR_ASSERT(buf.ops[6].type == GRPC_NO_OP);
+  GPR_ASSERT(buf.ops[5].type == GRPC_NO_OP);
 
   /* initialize the second buffer */
   grpc_sopb_init(&buf2);

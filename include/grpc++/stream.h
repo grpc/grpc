@@ -173,7 +173,7 @@ class ClientWriter GRPC_FINAL : public ClientStreamingInterface,
     buf.AddRecvMessage(response_);
     buf.AddClientRecvStatus(context_, &status);
     call_.PerformOps(&buf);
-    GPR_ASSERT(cq_.Pluck(&buf) && buf.got_message);
+    GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 

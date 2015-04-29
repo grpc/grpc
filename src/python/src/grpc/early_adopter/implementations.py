@@ -114,7 +114,7 @@ class _Stub(interfaces.Stub):
 
   def __init__(
       self, breakdown, host, port, secure, root_certificates, private_key,
-      certificate_chain, server_host_override=None):
+      certificate_chain, metadata_transformer=None, server_host_override=None):
     self._lock = threading.Lock()
     self._breakdown = breakdown
     self._host = host
@@ -123,6 +123,7 @@ class _Stub(interfaces.Stub):
     self._root_certificates = root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._metadata_transformer = metadata_transformer
     self._server_host_override = server_host_override
 
     self._pool = None
@@ -141,6 +142,7 @@ class _Stub(interfaces.Stub):
             self._breakdown.request_serializers,
             self._breakdown.response_deserializers, self._secure,
             self._root_certificates, self._private_key, self._certificate_chain,
+            metadata_transformer=self._metadata_transformer,
             server_host_override=self._server_host_override)
         self._front.join_rear_link(self._rear_link)
         self._rear_link.join_fore_link(self._front)
@@ -188,22 +190,11 @@ class _Stub(interfaces.Stub):
           raise AttributeError(attr)
 
 
-def _build_stub(
-    service_name, methods, host, port, secure, root_certificates, private_key,
-    certificate_chain, server_host_override=None):
-  breakdown = _face_utilities.break_down_invocation(service_name, methods)
-  return _Stub(
-      breakdown, host, port, secure, root_certificates, private_key,
-      certificate_chain, server_host_override=server_host_override)
-
-
-def _build_server(service_name, methods, port, private_key, certificate_chain):
-  breakdown = _face_utilities.break_down_service(service_name, methods)
-  return _Server(breakdown, port, private_key, certificate_chain)
-
-
-def insecure_stub(service_name, methods, host, port):
-  """Constructs an insecure interfaces.Stub.
+def stub(
+    service_name, methods, host, port, metadata_transformer=None, secure=False,
+    root_certificates=None, private_key=None, certificate_chain=None,
+    server_host_override=None):
+  """Constructs an interfaces.Stub.
 
   Args:
     service_name: The package-qualified full name of the service.
@@ -213,27 +204,10 @@ def insecure_stub(service_name, methods, host, port):
       not qualified by the service name or decorated in any other way.
     host: The host to which to connect for RPC service.
     port: The port to which to connect for RPC service.
-
-  Returns:
-    An interfaces.Stub affording RPC invocation.
-  """
-  return _build_stub(
-      service_name, methods, host, port, False, None, None, None)
-
-
-def secure_stub(
-    service_name, methods, host, port, root_certificates, private_key,
-    certificate_chain, server_host_override=None):
-  """Constructs an insecure interfaces.Stub.
-
-  Args:
-    service_name: The package-qualified full name of the service.
-    methods: A dictionary from RPC method name to
-      interfaces.RpcMethodInvocationDescription describing the RPCs to be
-      supported by the created stub. The RPC method names in the dictionary are
-      not qualified by the service name or decorated in any other way.
-    host: The host to which to connect for RPC service.
-    port: The port to which to connect for RPC service.
+    metadata_transformer: A callable that given a metadata object produces
+      another metadata object to be used in the underlying communication on the
+      wire.
+    secure: Whether or not to construct the stub with a secure connection.
     root_certificates: The PEM-encoded root certificates or None to ask for
       them to be retrieved from a default location.
     private_key: The PEM-encoded private key to use or None if no private key
@@ -246,32 +220,16 @@ def secure_stub(
   Returns:
     An interfaces.Stub affording RPC invocation.
   """
-  return _build_stub(
-      service_name, methods, host, port, True, root_certificates, private_key,
-      certificate_chain, server_host_override=server_host_override)
+  breakdown = _face_utilities.break_down_invocation(service_name, methods)
+  return _Stub(
+      breakdown, host, port, secure, root_certificates, private_key,
+      certificate_chain, server_host_override=server_host_override,
+      metadata_transformer=metadata_transformer)
 
 
-def insecure_server(service_name, methods, port):
-  """Constructs an insecure interfaces.Server.
-
-  Args:
-    service_name: The package-qualified full name of the service.
-    methods: A dictionary from RPC method name to
-      interfaces.RpcMethodServiceDescription describing the RPCs to
-      be serviced by the created server. The RPC method names in the dictionary
-      are not qualified by the service name or decorated in any other way.
-    port: The desired port on which to serve or zero to ask for a port to
-      be automatically selected.
-
-  Returns:
-    An interfaces.Server that will run with no security and
-      service unsecured raw requests.
-  """
-  return _build_server(service_name, methods, port, None, None)
-
-
-def secure_server(service_name, methods, port, private_key, certificate_chain):
-  """Constructs a secure interfaces.Server.
+def server(
+    service_name, methods, port, private_key=None, certificate_chain=None):
+  """Constructs an interfaces.Server.
 
   Args:
     service_name: The package-qualified full name of the service.
@@ -281,11 +239,12 @@ def secure_server(service_name, methods, port, private_key, certificate_chain):
       are not qualified by the service name or decorated in any other way.
     port: The port on which to serve or zero to ask for a port to be
       automatically selected.
-    private_key: A pem-encoded private key.
-    certificate_chain: A pem-encoded certificate chain.
+    private_key: A pem-encoded private key, or None for an insecure server.
+    certificate_chain: A pem-encoded certificate chain, or None for an insecure
+      server.
 
   Returns:
     An interfaces.Server that will serve secure traffic.
   """
-  return _build_server(
-      service_name, methods, port, private_key, certificate_chain)
+  breakdown = _face_utilities.break_down_service(service_name, methods)
+  return _Server(breakdown, port, private_key, certificate_chain)

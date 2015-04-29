@@ -35,13 +35,17 @@ $LOAD_PATH.unshift(spec_dir)
 $LOAD_PATH.unshift(lib_dir)
 $LOAD_PATH.uniq!
 
-require 'faraday'
+# set up coverage
+require 'simplecov'
+SimpleCov.start do
+  add_filter 'spec'
+  add_filter 'bin'
+  SimpleCov.command_name ENV['COVERAGE_NAME']
+end if ENV['COVERAGE_NAME']
+
 require 'rspec'
 require 'logging'
 require 'rspec/logging_helper'
-
-# Allow Faraday to support test stubs
-Faraday::Adapter.load_middleware(:test)
 
 # Configure RSpec to capture log messages for each test. The output from the
 # logs will be stored in the @log_output variable. It is a StringIO instance.

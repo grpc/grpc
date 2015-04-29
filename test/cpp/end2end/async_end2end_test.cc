@@ -31,13 +31,12 @@
  *
  */
 
-#include <chrono>
 #include <memory>
 
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo_duplicate.pb.h"
-#include "test/cpp/util/echo.pb.h"
-#include "src/cpp/util/time.h"
+#include "test/cpp/util/echo_duplicate.grpc.pb.h"
+#include "test/cpp/util/echo.grpc.pb.h"
 #include <grpc++/async_unary_call.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
@@ -50,7 +49,7 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/core/util/port.h"
+#include <grpc++/time.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -532,15 +531,19 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   send_request.set_message("Hello");
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2(
-      "key2-bin", {"\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13});
+      "key2-bin",
+      grpc::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
+		   13));
   std::pair<grpc::string, grpc::string> meta3("key3", "val3");
   std::pair<grpc::string, grpc::string> meta6(
       "key4-bin",
-      {"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d", 14});
+      grpc::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
+		   14));
   std::pair<grpc::string, grpc::string> meta5("key5", "val5");
   std::pair<grpc::string, grpc::string> meta4(
       "key6-bin",
-      {"\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15});
+      grpc::string("\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
+		   15));
 
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
@@ -591,10 +594,6 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  grpc_shutdown();
-  google::protobuf::ShutdownProtobufLibrary();
-  return result;
+  return RUN_ALL_TESTS();
 }

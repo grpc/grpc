@@ -50,16 +50,12 @@ typedef enum grpc_stream_op_code {
      Must be ignored by receivers */
   GRPC_NO_OP,
   GRPC_OP_METADATA,
-  GRPC_OP_DEADLINE,
-  GRPC_OP_METADATA_BOUNDARY,
   /* Begin a message/metadata element/status - as defined by
      grpc_message_type. */
   GRPC_OP_BEGIN_MESSAGE,
   /* Add a slice of data to the current message/metadata element/status.
      Must not overflow the forward declared length. */
-  GRPC_OP_SLICE,
-  /* Call some function once this operation has passed flow control. */
-  GRPC_OP_FLOW_CTL_CB
+  GRPC_OP_SLICE
 } grpc_stream_op_code;
 
 /* Arguments for GRPC_OP_BEGIN */
@@ -70,11 +66,52 @@ typedef struct grpc_begin_message {
   gpr_uint32 flags;
 } grpc_begin_message;
 
-/* Arguments for GRPC_OP_FLOW_CTL_CB */
-typedef struct grpc_flow_ctl_cb {
-  void (*cb)(void *arg, grpc_op_error error);
-  void *arg;
-} grpc_flow_ctl_cb;
+typedef struct grpc_linked_mdelem {
+  grpc_mdelem *md;
+  struct grpc_linked_mdelem *next;
+  struct grpc_linked_mdelem *prev;
+} grpc_linked_mdelem;
+
+typedef struct grpc_mdelem_list {
+  grpc_linked_mdelem *head;
+  grpc_linked_mdelem *tail;
+} grpc_mdelem_list;
+
+typedef struct grpc_metadata_batch {
+  grpc_mdelem_list list;
+  grpc_mdelem_list garbage;
+  gpr_timespec deadline;
+} grpc_metadata_batch;
+
+void grpc_metadata_batch_init(grpc_metadata_batch *comd);
+void grpc_metadata_batch_destroy(grpc_metadata_batch *comd);
+void grpc_metadata_batch_merge(grpc_metadata_batch *target,
+                               grpc_metadata_batch *add);
+
+void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
+                                   grpc_linked_mdelem *storage);
+void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
+                                   grpc_linked_mdelem *storage);
+
+void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add);
+void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add);
+
+void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
+                                grpc_mdelem *(*filter)(void *user_data,
+                                                       grpc_mdelem *elem),
+                                void *user_data);
+
+#ifndef NDEBUG
+void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
+#else
+#define grpc_metadata_batch_assert_ok(comd) \
+  do {                                      \
+  } while (0)
+#endif
 
 /* Represents a single operation performed on a stream/transport */
 typedef struct grpc_stream_op {
@@ -84,10 +121,8 @@ typedef struct grpc_stream_op {
      associated op-code */
   union {
     grpc_begin_message begin_message;
-    grpc_mdelem *metadata;
-    gpr_timespec deadline;
+    grpc_metadata_batch metadata;
     gpr_slice slice;
-    grpc_flow_ctl_cb flow_ctl_cb;
   } data;
 } grpc_stream_op;
 
@@ -118,17 +153,14 @@ void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb);
 /* Append a GRPC_OP_BEGIN to a buffer */
 void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
                                  gpr_uint32 flags);
-void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_mdelem *metadata);
-void grpc_sopb_add_deadline(grpc_stream_op_buffer *sopb, gpr_timespec deadline);
-void grpc_sopb_add_metadata_boundary(grpc_stream_op_buffer *sopb);
+void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
+                            grpc_metadata_batch metadata);
 /* Append a GRPC_SLICE to a buffer - does not ref/unref the slice */
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
-/* Append a GRPC_OP_FLOW_CTL_CB to a buffer */
-void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
-                               void (*cb)(void *arg, grpc_op_error error),
-                               void *arg);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */
+char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
+
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */

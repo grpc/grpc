@@ -30,7 +30,11 @@
 """Implementations of interoperability test methods."""
 
 import enum
+import json
+import os
 import threading
+
+from oauth2client import client as oauth2client_client
 
 from grpc.framework.alpha import utilities
 
@@ -150,6 +154,23 @@ SERVER_METHODS = {
 }
 
 
+def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope):
+  with stub:
+    request = messages_pb2.SimpleRequest(
+        response_type=messages_pb2.COMPRESSABLE, response_size=314159,
+        payload=messages_pb2.Payload(body=b'\x00' * 271828),
+        fill_username=fill_username, fill_oauth_scope=fill_oauth_scope)
+    response_future = stub.UnaryCall.async(request, _TIMEOUT)
+    response = response_future.result()
+    if response.payload.type is not messages_pb2.COMPRESSABLE:
+      raise ValueError(
+          'response payload type is "%s"!' % type(response.payload.type))
+    if len(response.payload.body) != 314159:
+      raise ValueError(
+          'response body of incorrect size %d!' % len(response.payload.body))
+    return response
+
+
 def _empty_unary(stub):
   with stub:
     response = stub.EmptyCall(empty_pb2.Empty(), _TIMEOUT)
@@ -159,18 +180,7 @@ def _empty_unary(stub):
 
 
 def _large_unary(stub):
-  with stub:
-    request = messages_pb2.SimpleRequest(
-        response_type=messages_pb2.COMPRESSABLE, response_size=314159,
-        payload=messages_pb2.Payload(body=b'\x00' * 271828))
-    response_future = stub.UnaryCall.async(request, _TIMEOUT)
-    response = response_future.result()
-    if response.payload.type is not messages_pb2.COMPRESSABLE:
-      raise ValueError(
-          'response payload type is "%s"!' % type(response.payload.type))
-    if len(response.payload.body) != 314159:
-      raise ValueError(
-          'response body of incorrect size %d!' % len(response.payload.body))
+  _large_unary_common_behavior(stub, False, False)
 
 
 def _client_streaming(stub):
@@ -266,6 +276,28 @@ def _ping_pong(stub):
     pipe.close()
 
 
+def _compute_engine_creds(stub, args):
+  response = _large_unary_common_behavior(stub, True, True)
+  if args.default_service_account != response.username:
+    raise ValueError(
+        'expected username %s, got %s' % (args.default_service_account,
+                                          response.username))
+
+
+def _service_account_creds(stub, args):
+  json_key_filename = os.environ[
+      oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+  wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+  response = _large_unary_common_behavior(stub, True, True)
+  if wanted_email != response.username:
+    raise ValueError(
+        'expected username %s, got %s' % (wanted_email, response.username))
+  if args.oauth_scope.find(response.oauth_scope) == -1:
+    raise ValueError(
+        'expected to find oauth scope "%s" in received "%s"' %
+            (response.oauth_scope, args.oauth_scope))
+
+
 @enum.unique
 class TestCase(enum.Enum):
   EMPTY_UNARY = 'empty_unary'
@@ -273,8 +305,10 @@ class TestCase(enum.Enum):
   SERVER_STREAMING = 'server_streaming'
   CLIENT_STREAMING = 'client_streaming'
   PING_PONG = 'ping_pong'
+  COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
+  SERVICE_ACCOUNT_CREDS = 'service_account_creds'
 
-  def test_interoperability(self, stub):
+  def test_interoperability(self, stub, args):
     if self is TestCase.EMPTY_UNARY:
       _empty_unary(stub)
     elif self is TestCase.LARGE_UNARY:
@@ -285,5 +319,9 @@ class TestCase(enum.Enum):
       _client_streaming(stub)
     elif self is TestCase.PING_PONG:
       _ping_pong(stub)
+    elif self is TestCase.COMPUTE_ENGINE_CREDS:
+      _compute_engine_creds(stub, args)
+    elif self is TestCase.SERVICE_ACCOUNT_CREDS:
+      _service_account_creds(stub, args)
     else:
       raise NotImplementedError('Test case "%s" not implemented!' % self.name)

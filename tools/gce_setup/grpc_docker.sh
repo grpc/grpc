@@ -504,7 +504,7 @@ grpc_cloud_prod_auth_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -673,7 +673,7 @@ _grpc_build_proto_bins_args() {
 }
 
 # grpc_build_proto_bins
-# 
+#
 # - rebuilds the dist_proto docker image
 #   * doing this builds the protoc and the ruby, python and cpp bins statically
 #
@@ -693,11 +693,11 @@ grpc_build_proto_bins() {
   gce_has_instance $grpc_project $host || return 1;
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
-  
+
   # rebuild the dist_proto image
   local label='dist_proto'
   grpc_update_image -- -h $host $label || return 1
- 
+
   # run a command to copy the generated archive to the docker host
   local docker_prefix='sudo docker run -v /tmp:/tmp/proto_bins_out'
   local tar_name='proto-bins*.tar.gz'
@@ -713,6 +713,63 @@ grpc_build_proto_bins() {
   local rmt_tar="$host:/tmp/$tar_name"
   local local_copy="$(pwd)"
   gcloud compute copy-files $rmt_tar $local_copy $project_opt $zone_opt || return 1
+}
+
+_grpc_build_debs_args() {
+  [[ -n $1 ]] && {  # host
+    host=$1
+    shift
+  } || {
+    host='grpc-docker-builder'
+  }
+}
+
+# grpc_build_debs
+#
+# - rebuilds the build_debs
+#   * doing this builds a deb package for release debs
+#
+# - runs a docker command that copies the debs from the docker instance to its
+#   host
+# - copies the debs from the host to the local machine
+grpc_build_debs() {
+  _grpc_ensure_gcloud_ssh || return 1;
+
+  # declare vars local so that they don't pollute the shell environment
+  # where this func is used.
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  # set by _grpc_build_debs_args
+  local host
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f _grpc_build_debs_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+
+  # Update the remote distpackages_dir
+  local src_dist_dir='tools/distpackages'
+  local rmt_dist_dir="$host:~"
+  gcloud compute copy-files $src_dist_dir $rmt_dist_dir $project_opt $zone_opt || return 1
+
+  # rebuild the build_deb image
+  local label='build_deb'
+  grpc_update_image -- -h $host $label || return 1
+
+  # run a command to copy the debs from the docker instance to the host.
+  local docker_prefix='sudo docker run -v /tmp:/tmp/host_deb_out'
+  local cp_cmd="/bin/bash -c 'cp -v /tmp/deb_out/*.deb /tmp/host_deb_out'"
+  local cmd="$docker_prefix grpc/$label $cp_cmd"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" || return 1
+
+  # copy the debs from host machine to the local one.
+  local rmt_debs="$host:/tmp/*.deb"
+  local local_copy="$(pwd)"
+  gcloud compute copy-files $rmt_debs $local_copy $project_opt $zone_opt || return 1
 }
 
 _grpc_launch_servers_args() {
@@ -984,7 +1041,49 @@ grpc_interop_gen_python_cmd() {
   echo $the_cmd
 }
 
-# constructs the full dockerized java interop test cmd.
+# constructs the full dockerized python interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c"
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  local the_cmd="$cmd_prefix '$env_prefix python -B -m interop.client --use_tls $gfe_flags $@'"
+  echo $the_cmd
+}
+
+# constructs the full dockerized python service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local added_gfe_flags=$(_grpc_default_creds_test_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
+  local the_cmd="$cmd_prefix '$env_prefix python -B -m interop.client --use_tls $gfe_flags $added_gfe_flags $@'"
+  echo $the_cmd
+}
+
+# constructs the full dockerized python gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local added_gfe_flags=$(_grpc_gce_test_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  local the_cmd="$cmd_prefix '$env_prefix python -B -m interop.client --use_tls $gfe_flags $added_gfe_flags $@'"
+  echo $the_cmd
+}
+
+# constructs the full dockerized ruby interop test cmd.
 #
 # call-seq:
 #   flags= .... # generic flags to include the command
@@ -1060,6 +1159,22 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_ruby_cmd() {
   local gfe_flags=$(_grpc_prod_gfe_flags)
   local added_gfe_flags=$(_grpc_gce_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
+  echo $the_cmd
+}
+
+# constructs the full dockerized ruby jwt_tokens auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_jwt_token_creds_gen_ruby_cmd() {
+  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c";
+  local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
+  local test_script+=" --use_tls"
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
   local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
   echo $the_cmd
 }
@@ -1286,6 +1401,37 @@ grpc_cloud_prod_gen_csharp_mono_cmd() {
   echo $the_cmd
 }
 
+# constructs the full dockerized csharp-mono service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
 # outputs the flags passed to gfe tests
 _grpc_prod_gfe_flags() {
   echo " --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
@@ -1310,5 +1456,3 @@ _grpc_default_creds_test_flags() {
 _grpc_gce_test_flags() {
   echo " --default_service_account=155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel@developer.gserviceaccount.com --oauth_scope=https://www.googleapis.com/auth/xapi.zoo"
 }
-
-# TODO(grpc-team): add grpc_interop_gen_xxx_cmd for python

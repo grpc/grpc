@@ -38,6 +38,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/channel_interface.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/cpp/proto/proto_utils.h"
 
 namespace grpc {
@@ -60,7 +61,8 @@ CallOpBuffer::CallOpBuffer()
       status_code_(GRPC_STATUS_OK),
       status_details_(nullptr),
       status_details_capacity_(0),
-      send_status_(nullptr),
+      send_status_available_(false),
+      send_status_code_(GRPC_STATUS_OK),
       trailing_metadata_count_(0),
       trailing_metadata_(nullptr),
       cancelled_buf_(0),
@@ -104,7 +106,9 @@ void CallOpBuffer::Reset(void* next_return_tag) {
 
   status_code_ = GRPC_STATUS_OK;
 
-  send_status_ = nullptr;
+  send_status_available_ = false;
+  send_status_code_ = GRPC_STATUS_OK;
+  send_status_details_.clear();
   trailing_metadata_count_ = 0;
   trailing_metadata_ = nullptr;
 
@@ -148,7 +152,7 @@ void FillMetadataMap(grpc_metadata_array* arr,
     // TODO(yangg) handle duplicates?
     metadata->insert(std::pair<grpc::string, grpc::string>(
         arr->metadata[i].key,
-        {arr->metadata[i].value, arr->metadata[i].value_length}));
+        grpc::string(arr->metadata[i].value, arr->metadata[i].value_length)));
   }
   grpc_metadata_array_destroy(arr);
   grpc_metadata_array_init(arr);
@@ -186,6 +190,7 @@ void CallOpBuffer::AddRecvMessage(grpc::protobuf::Message* message) {
 
 void CallOpBuffer::AddRecvMessage(ByteBuffer* message) {
   recv_message_buffer_ = message;
+  recv_message_buffer_->Clear();
 }
 
 void CallOpBuffer::AddClientSendClose() { client_send_close_ = true; }
@@ -207,7 +212,9 @@ void CallOpBuffer::AddServerSendStatus(
   } else {
     trailing_metadata_count_ = 0;
   }
-  send_status_ = &status;
+  send_status_available_ = true;
+  send_status_code_ = static_cast<grpc_status_code>(status.code());
+  send_status_details_ = status.details();
 }
 
 void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
@@ -225,11 +232,13 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
   }
   if (send_message_ || send_message_buffer_) {
     if (send_message_) {
+      GRPC_TIMER_MARK(SER_PROTO_BEGIN, 0);
       bool success = SerializeProto(*send_message_, &send_buf_);
       if (!success) {
         abort();
         // TODO handle parse failure
       }
+      GRPC_TIMER_MARK(SER_PROTO_END, 0);
     } else {
       send_buf_ = send_message_buffer_->buffer();
     }
@@ -256,16 +265,15 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
         &status_details_capacity_;
     (*nops)++;
   }
-  if (send_status_) {
+  if (send_status_available_) {
     ops[*nops].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     ops[*nops].data.send_status_from_server.trailing_metadata_count =
         trailing_metadata_count_;
     ops[*nops].data.send_status_from_server.trailing_metadata =
         trailing_metadata_;
-    ops[*nops].data.send_status_from_server.status =
-        static_cast<grpc_status_code>(send_status_->code());
+    ops[*nops].data.send_status_from_server.status = send_status_code_;
     ops[*nops].data.send_status_from_server.status_details =
-        send_status_->details().c_str();
+        send_status_details_.empty() ? nullptr : send_status_details_.c_str();
     (*nops)++;
   }
   if (recv_closed_) {
@@ -302,8 +310,10 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
     if (recv_buf_) {
       got_message = *status;
       if (recv_message_) {
+        GRPC_TIMER_MARK(DESER_PROTO_BEGIN, 0);
         *status = *status && DeserializeProto(recv_buf_, recv_message_);
         grpc_byte_buffer_destroy(recv_buf_);
+        GRPC_TIMER_MARK(DESER_PROTO_END, 0);
       } else {
         recv_message_buffer_->set_buffer(recv_buf_);
       }

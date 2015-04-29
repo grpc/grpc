@@ -65,7 +65,6 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   int s;
   size_t i;
   grpc_resolved_addresses *addrs = NULL;
-  const gpr_timespec start_time = gpr_now();
 
   /* parse name, splitting it into host and port parts */
   gpr_split_host_port(name, &host, &port);
@@ -107,18 +106,11 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
     i++;
   }
 
-  /* Temporary logging, to help identify flakiness in dualstack_socket_test. */
   {
-    const gpr_timespec delay = gpr_time_sub(gpr_now(), start_time);
-    const int delay_ms =
-        delay.tv_sec * GPR_MS_PER_SEC + delay.tv_nsec / GPR_NS_PER_MS;
-    gpr_log(GPR_INFO, "logspam: getaddrinfo(%s, %s) resolved %d addrs in %dms:",
-            host, port, addrs->naddrs, delay_ms);
     for (i = 0; i < addrs->naddrs; i++) {
       char *buf;
       grpc_sockaddr_to_string(&buf, (struct sockaddr *)&addrs->addrs[i].addr,
                               0);
-      gpr_log(GPR_INFO, "logspam:   [%d] %s", i, buf);
       gpr_free(buf);
     }
   }

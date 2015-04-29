@@ -35,13 +35,19 @@
 #include <grpc/support/log.h>
 
 #include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/stats.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(num_clients, 1, "Number of client binaries");
 DEFINE_int32(num_servers, 1, "Number of server binaries");
 
+DEFINE_int32(warmup_seconds, 5, "Warmup time (in seconds)");
+DEFINE_int32(benchmark_seconds, 30, "Benchmark time (in seconds)");
+DEFINE_int32(local_workers, 0, "Number of local workers to start");
+
 // Common config
 DEFINE_bool(enable_ssl, false, "Use SSL");
+DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
 DEFINE_int32(server_threads, 1, "Number of server threads");
@@ -59,19 +65,14 @@ using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
 using grpc::testing::ServerType;
+using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
-using grpc::testing::sum;
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
 
 int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
+
+  RpcType rpc_type;
+  GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
   ClientType client_type;
   ServerType server_type;
@@ -86,47 +87,21 @@ int main(int argc, char** argv) {
   client_config.set_client_channels(FLAGS_client_channels);
   client_config.set_payload_size(FLAGS_payload_size);
   client_config.set_async_client_threads(FLAGS_async_client_threads);
+  client_config.set_rpc_type(rpc_type);
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
   server_config.set_threads(FLAGS_server_threads);
   server_config.set_enable_ssl(FLAGS_enable_ssl);
 
-  auto result = RunScenario(client_config, FLAGS_num_clients, server_config,
-                            FLAGS_num_servers);
+  auto result = RunScenario(client_config, FLAGS_num_clients,
+                            server_config, FLAGS_num_servers,
+                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
+                            FLAGS_local_workers);
 
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          result.latencies.Count() /
-              average(result.client_resources,
-                      [](ResourceUsage u) { return u.wall_time; }));
+  ReportQPSPerCore(result, server_config);
+  ReportLatency(result);
+  ReportTimes(result);
 
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
-
-  gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_resources,
-                      [](ResourceUsage u) { return u.system_time; }) /
-              sum(result.server_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_resources,
-                      [](ResourceUsage u) { return u.user_time; }) /
-              sum(result.server_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_resources,
-                      [](ResourceUsage u) { return u.system_time; }) /
-              sum(result.client_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_resources,
-                      [](ResourceUsage u) { return u.user_time; }) /
-              sum(result.client_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-
-  grpc_shutdown();
   return 0;
 }

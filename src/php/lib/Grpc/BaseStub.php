@@ -32,7 +32,6 @@
  *
  */
 namespace Grpc;
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
 /**
  * Base class for generated client stubs. Stub methods are expected to call
@@ -42,7 +41,24 @@ class BaseStub {
 
   private $channel;
 
+  // a callback function
+  private $update_metadata;
+
+  /**
+   * @param $hostname string
+   * @param $opts array
+   *  - 'update_metadata': (optional) a callback function which takes in a
+   * metadata array, and returns an updated metadata array
+   */
   public function __construct($hostname, $opts) {
+    $this->update_metadata = null;
+    if (isset($opts['update_metadata'])) {
+      if (is_callable($opts['update_metadata'])) {
+        $this->update_metadata = $opts['update_metadata'];
+      }
+      unset($opts['update_metadata']);
+    }
+         
     $this->channel = new Channel($hostname, $opts);
   }
 
@@ -69,11 +85,14 @@ class BaseStub {
                                  $argument,
                                  callable $deserialize,
                                  $metadata = array()) {
-    return new SimpleSurfaceActiveCall($this->channel,
-                                       $method,
-                                       $deserialize,
-                                       $argument,
-                                       $metadata);
+    $call = new UnaryCall($this->channel, $method, $deserialize);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($argument, $actual_metadata);
+    return $call;
   }
 
   /**
@@ -91,11 +110,14 @@ class BaseStub {
                                        $arguments,
                                        callable $deserialize,
                                        $metadata = array()) {
-    return new ClientStreamingSurfaceActiveCall($this->channel,
-                                                $method,
-                                                $deserialize,
-                                                $arguments,
-                                                $metadata);
+    $call = new ClientStreamingCall($this->channel, $method, $deserialize);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($arguments, $actual_metadata);
+    return $call;
   }
 
   /**
@@ -112,11 +134,14 @@ class BaseStub {
                                        $argument,
                                        callable $deserialize,
                                        $metadata = array()) {
-    return new ServerStreamingSurfaceActiveCall($this->channel,
-                                                $method,
-                                                $deserialize,
-                                                $argument,
-                                                $metadata);
+    $call = new ServerStreamingCall($this->channel, $method, $deserialize);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($argument, $actual_metadata);
+    return $call;
   }
 
   /**
@@ -130,9 +155,13 @@ class BaseStub {
   public function _bidiRequest($method,
                                callable $deserialize,
                                $metadata = array()) {
-    return new BidiStreamingSurfaceActiveCall($this->channel,
-                                              $method,
-                                              $deserialize,
-                                              $metadata);
+    $call = new BidiStreamingCall($this->channel, $method, $deserialize);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($actual_metadata);
+    return $call;
   }
 }

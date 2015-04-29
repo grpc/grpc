@@ -32,10 +32,12 @@
  */
 
 #include <grpc/grpc.h>
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/debug/trace.h"
-#include "src/core/statistics/census_interface.h"
 #include "src/core/channel/channel_stack.h"
+#include "src/core/debug/trace.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/statistics/census_interface.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/surface/call.h"
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
@@ -57,10 +59,12 @@ void grpc_init(void) {
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);
+    grpc_register_tracer("batch", &grpc_trace_batch);
     grpc_security_pre_init();
-    grpc_tracer_init("GRPC_TRACE");
     grpc_iomgr_init();
+    grpc_tracer_init("GRPC_TRACE");
     census_init();
+    grpc_timers_log_global_init();
   }
   gpr_mu_unlock(&g_init_mu);
 }
@@ -70,6 +74,7 @@ void grpc_shutdown(void) {
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
     census_shutdown();
+    grpc_timers_log_global_destroy();
   }
   gpr_mu_unlock(&g_init_mu);
 }
@@ -82,4 +87,3 @@ int grpc_is_initialized(void) {
   gpr_mu_unlock(&g_init_mu);
   return r;
 }
-

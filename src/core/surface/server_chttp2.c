@@ -33,7 +33,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/channel/http_filter.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_server.h"
@@ -46,8 +45,8 @@
 static grpc_transport_setup_result setup_transport(void *server,
                                                    grpc_transport *transport,
                                                    grpc_mdctx *mdctx) {
-  static grpc_channel_filter const *extra_filters[] = {&grpc_http_server_filter,
-                                                       &grpc_http_filter};
+  static grpc_channel_filter const *extra_filters[] = {
+      &grpc_http_server_filter};
   return grpc_server_setup_transport(server, transport, extra_filters,
                                      GPR_ARRAY_SIZE(extra_filters), mdctx);
 }
@@ -66,7 +65,8 @@ static void new_transport(void *server, grpc_endpoint *tcp) {
 }
 
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets, size_t pollset_count) {
+static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets,
+                  size_t pollset_count) {
   grpc_tcp_server *tcp = tcpp;
   grpc_tcp_server_start(tcp, pollsets, pollset_count, new_transport, server);
 }
@@ -75,7 +75,7 @@ static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets, size
    callbacks) */
 static void destroy(grpc_server *server, void *tcpp) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_destroy(tcp);
+  grpc_tcp_server_destroy(tcp, grpc_server_listener_destroy_done, server);
 }
 
 int grpc_server_add_http2_port(grpc_server *server, const char *addr) {
@@ -131,7 +131,7 @@ error:
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
-    grpc_tcp_server_destroy(tcp);
+    grpc_tcp_server_destroy(tcp, NULL, NULL);
   }
   return 0;
 }

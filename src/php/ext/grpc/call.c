@@ -37,20 +37,20 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "ext/spl/spl_exceptions.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
 
-#include "zend_exceptions.h"
-#include "zend_hash.h"
+#include <zend_exceptions.h>
+#include <zend_hash.h>
 
 #include <stdbool.h>
 
-#include "grpc/support/log.h"
-#include "grpc/support/alloc.h"
-#include "grpc/grpc.h"
+#include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
 
 #include "timeval.h"
 #include "channel.h"
@@ -263,7 +263,7 @@ PHP_METHOD(Call, __construct) {
  * @param array batch Array of actions to take
  * @return object Object with results of all actions
  */
-PHP_METHOD(Call, start_batch) {
+PHP_METHOD(Call, startBatch) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   grpc_op ops[8];
@@ -443,22 +443,29 @@ PHP_METHOD(Call, start_batch) {
         add_property_bool(result, "send_status", true);
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
-        add_property_zval(result, "metadata",
-                          grpc_parse_metadata_array(&recv_metadata));
+        array = grpc_parse_metadata_array(&recv_metadata);
+        add_property_zval(result, "metadata", array);
+        Z_DELREF_P(array);
         break;
       case GRPC_OP_RECV_MESSAGE:
         byte_buffer_to_string(message, &message_str, &message_len);
-        add_property_stringl(result, "message", message_str, message_len,
-                             false);
+        if (message_str == NULL) {
+          add_property_null(result, "message");
+        } else {
+          add_property_stringl(result, "message", message_str, message_len,
+                               false);
+        }
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         MAKE_STD_ZVAL(recv_status);
         object_init(recv_status);
-        add_property_zval(recv_status, "metadata",
-                          grpc_parse_metadata_array(&recv_trailing_metadata));
+        array = grpc_parse_metadata_array(&recv_trailing_metadata);
+        add_property_zval(recv_status, "metadata", array);
+        Z_DELREF_P(array);
         add_property_long(recv_status, "code", status);
         add_property_string(recv_status, "details", status_details, true);
         add_property_zval(result, "status", recv_status);
+        Z_DELREF_P(recv_status);
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         add_property_bool(result, "cancelled", cancelled);
@@ -478,9 +485,20 @@ cleanup:
   RETURN_DESTROY_ZVAL(result);
 }
 
+/**
+ * Cancel the call. This will cause the call to end with STATUS_CANCELLED if it
+ * has not already ended with another status.
+ */
+PHP_METHOD(Call, cancel) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  grpc_call_cancel(call->wrapped);
+}
+
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Call, start_batch, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Call, startBatch, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;
