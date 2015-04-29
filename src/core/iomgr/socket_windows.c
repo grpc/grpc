@@ -64,8 +64,10 @@ void grpc_winsocket_shutdown(grpc_winsocket *socket) {
   shutdown_op(&socket->write_info);
 }
 
-void grpc_winsocket_orphan(grpc_winsocket *socket) {
-  grpc_iocp_socket_orphan(socket);
+void grpc_winsocket_orphan(grpc_winsocket *socket, int increase_g_orphans) {
+  if (increase_g_orphans) {
+    grpc_iocp_socket_orphan(socket);
+  }
   socket->orphan = 1;
   grpc_iomgr_unref();
   closesocket(socket->socket);
