@@ -5,6 +5,8 @@
  * For dinamically built ones, point to the location of the libgprc.so being
  * used. */
 
+global starts, times, times_per_tag
+
 probe process(@1).mark("timing_ns_begin") {
   starts[$arg1, tid()] = gettimeofday_ns();
 }
