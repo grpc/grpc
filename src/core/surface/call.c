@@ -1138,7 +1138,7 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
 }
 
 static void finish_batch(grpc_call *call, grpc_op_error result, void *tag) {
-  grpc_cq_end_op_complete(call->cq, tag, call, do_nothing, NULL, GRPC_OP_OK);
+  grpc_cq_end_op(call->cq, tag, call, do_nothing, NULL, GRPC_OP_OK);
 }
 
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
@@ -1153,7 +1153,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
   if (nops == 0) {
     grpc_cq_begin_op(call->cq, call, GRPC_OP_COMPLETE);
-    grpc_cq_end_op_complete(call->cq, tag, call, do_nothing, NULL, GRPC_OP_OK);
+    grpc_cq_end_op(call->cq, tag, call, do_nothing, NULL, GRPC_OP_OK);
     return GRPC_CALL_OK;
   }
 

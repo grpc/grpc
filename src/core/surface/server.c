@@ -1118,14 +1118,14 @@ static void fail_call(grpc_server *server, requested_call *rc) {
     case BATCH_CALL:
       *rc->data.batch.call = NULL;
       rc->data.batch.initial_metadata->count = 0;
-      grpc_cq_end_op_complete(server->unregistered_cq, rc->tag, NULL,
-                              do_nothing, NULL, GRPC_OP_ERROR);
+      grpc_cq_end_op(server->unregistered_cq, rc->tag, NULL, do_nothing, NULL,
+                     GRPC_OP_ERROR);
       break;
     case REGISTERED_CALL:
       *rc->data.registered.call = NULL;
       rc->data.registered.initial_metadata->count = 0;
-      grpc_cq_end_op_complete(rc->data.registered.registered_method->cq,
-                              rc->tag, NULL, do_nothing, NULL, GRPC_OP_ERROR);
+      grpc_cq_end_op(rc->data.registered.registered_method->cq, rc->tag, NULL,
+                     do_nothing, NULL, GRPC_OP_ERROR);
       break;
   }
 }
@@ -1135,7 +1135,7 @@ static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   call_data *calld = elem->call_data;
-  grpc_cq_end_op_complete(calld->cq_new, tag, call, do_nothing, NULL, status);
+  grpc_cq_end_op(calld->cq_new, tag, call, do_nothing, NULL, status);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {
