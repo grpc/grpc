@@ -2814,7 +2814,8 @@ $(GENDIR)/test/proto/test.grpc.pb.cc: test/proto/test.proto $(PROTOBUF_DEP) $(PR
 endif
 
 
-ifeq ($(CONFIG), stapprof)
+ifeq ($(CONFIG),stapprof)
+src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
 ifeq ($(HAS_SYSTEMTAP),true)
 $(GENDIR)/src/core/profiling/stap_probes.h: src/core/profiling/stap_probes.d
 	$(E) "[DTRACE]  Compiling $<"

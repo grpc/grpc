@@ -124,12 +124,12 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       std::unique_ptr<grpc::protobuf::Message> req;
       std::unique_ptr<grpc::protobuf::Message> res;
       if (has_request_payload_) {
-        GRPC_TIMER_BEGIN(PTAG_PROTO_DESERIALIZE, call_.call());
+        GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
         req.reset(method_->AllocateRequestProto());
         if (!DeserializeProto(request_payload_, req.get())) {
           abort();  // for now
         }
-        GRPC_TIMER_END(PTAG_PROTO_DESERIALIZE, call_.call());
+        GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
       }
       if (has_response_payload_) {
         res.reset(method_->AllocateResponseProto());
@@ -346,9 +346,9 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
     bool orig_status = *status;
     if (*status && request_) {
       if (payload_) {
-        GRPC_TIMER_BEGIN(PTAG_PROTO_DESERIALIZE, call_);
+        GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, call_);
         *status = DeserializeProto(payload_, request_);
-        GRPC_TIMER_END(PTAG_PROTO_DESERIALIZE, call_);
+        GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, call_);
       } else {
         *status = false;
       }
