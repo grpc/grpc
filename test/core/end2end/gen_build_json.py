@@ -72,7 +72,6 @@ END2END_TESTS = {
     'simple_delayed_request': True,
     'simple_request': True,
     'registered_call': True,
-    'thread_stress': True,
 }
 
 
