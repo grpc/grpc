@@ -66,12 +66,10 @@
   op->data.send_initial_metadata.metadata = _send_metadata;
 }
 
-- (void (^)(void))opProcessor {
-  return ^{
-    if (_handler) {
-      _handler();
-    }
-  };
+- (void)finish {
+  if (_handler) {
+    _handler();
+  }
 }
 
 - (void)dealloc {
@@ -91,7 +89,7 @@
 
 - (instancetype)initWithMessage:(NSData *)message handler:(void (^)(void))handler {
   if (!message) {
-    [NSException raise:NSInvalidArgumentException format:@"message cannot be null"];
+    [NSException raise:NSInvalidArgumentException format:@"message cannot be nil"];
   }
   if (self = [super init]) {
     _byte_buffer = [message grpc_byteBuffer];
@@ -105,12 +103,10 @@
   op->data.send_message = _byte_buffer;
 }
 
-- (void (^)(void))opProcessor {
-  return ^{
-    if (_handler) {
-      _handler();
-    }
-  };
+- (void)finish {
+  if (_handler) {
+    _handler();
+  }
 }
 
 - (void)dealloc {
@@ -138,12 +134,10 @@
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
 }
 
-- (void (^)(void))opProcessor {
-  return ^{
-    if (_handler) {
-      _handler();
-    }
-  };
+- (void)finish {
+  if (_handler) {
+    _handler();
+  }
 }
 
 @end
@@ -170,15 +164,13 @@
   op->data.recv_initial_metadata = &_recv_initial_metadata;
 }
 
-- (void (^)(void))opProcessor {
-  return ^{
-    NSDictionary *metadata = [NSDictionary
-                              grpc_dictionaryFromMetadata:_recv_initial_metadata.metadata
-                              count:_recv_initial_metadata.count];
-    if (_handler) {
-      _handler(metadata);
-    }
-  };
+- (void)finish {
+  NSDictionary *metadata = [NSDictionary
+                            grpc_dictionaryFromMetadata:_recv_initial_metadata.metadata
+                            count:_recv_initial_metadata.count];
+  if (_handler) {
+    _handler(metadata);
+  }
 }
 
 - (void)dealloc {
@@ -208,12 +200,10 @@
   op->data.recv_message = &_recv_message;
 }
 
-- (void (^)(void))opProcessor {
-  return ^{
-    if (_handler) {
-      _handler(_recv_message);
-    }
-  };
+- (void)finish {
+  if (_handler) {
+    _handler(_recv_message);
+  }
 }
 
 @end
@@ -246,13 +236,11 @@
   op->data.recv_status_on_client.trailing_metadata = &_status.metadata;
 }
 
-- (void (^)(void))opProcessor {
-  return ^{
-    if (_handler) {
-      NSError *error = [NSError grpc_errorFromStatus:&_status];
-      _handler(error);
-    }
-  };
+- (void)opProcessor {
+  if (_handler) {
+    NSError *error = [NSError grpc_errorFromStatus:&_status];
+    _handler(error);
+  }
 }
 
 - (void)dealloc {
@@ -302,13 +290,11 @@
 }
 
 - (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
-  NSMutableArray *opProcessors = [NSMutableArray array];
   size_t nops = operations.count;
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
   size_t i = 0;
   for (id op in operations) {
     [op getOp:&ops_array[i++]];
-    [opProcessors addObject:[op opProcessor]];
   }
   grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops,
                                                 (__bridge_retained void *)(^(grpc_op_error error){
@@ -319,8 +305,8 @@
         return;
       }
     }
-    for (void(^processor)(void) in opProcessors) {
-      processor();
+    for (id<GRPCOp> operation in operations) {
+      [operation finish];
     }
   }));
   

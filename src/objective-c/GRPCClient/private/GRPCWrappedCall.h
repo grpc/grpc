@@ -41,7 +41,7 @@ typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
 - (void)getOp:(grpc_op *)op;
 
-- (void(^)(void))opProcessor;
+- (void)finish;
 
 @end
 
