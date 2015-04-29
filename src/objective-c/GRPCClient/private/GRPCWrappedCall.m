@@ -273,6 +273,9 @@
     });
     
     _queue = [GRPCCompletionQueue completionQueue];
+    if (!_queue) {
+      return nil;
+    }
     _call = grpc_channel_create_call(channel.unmanagedChannel, _queue.unmanagedQueue,
                                      method.UTF8String, host.UTF8String, gpr_inf_future);
     if (_call == NULL) {
