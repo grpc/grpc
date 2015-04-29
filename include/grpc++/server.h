@@ -80,7 +80,6 @@ class Server GRPC_FINAL : public GrpcLibrary,
 
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned);
-  Server() = delete;
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
@@ -118,7 +117,7 @@ class Server GRPC_FINAL : public GrpcLibrary,
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
 
-  std::list<SyncRequest> sync_methods_;
+  std::list<SyncRequest>* sync_methods_;
 
   // Pointer to the c grpc server.
   grpc_server* const server_;
@@ -126,6 +125,8 @@ class Server GRPC_FINAL : public GrpcLibrary,
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
+ private:
+  Server() : server_(NULL) { abort(); }
 };
 
 }  // namespace grpc
