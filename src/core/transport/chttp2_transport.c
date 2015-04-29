@@ -914,8 +914,8 @@ static int prepare_write(transport *t) {
     window_delta = grpc_chttp2_preencode(
         s->outgoing_sopb->ops, &s->outgoing_sopb->nops,
         GPR_MIN(t->outgoing_window, s->outgoing_window), &s->writing_sopb);
-    FLOWCTL_TRACE(t, t, outgoing, 0, -window_delta);
-    FLOWCTL_TRACE(t, s, outgoing, s->id, -window_delta);
+    FLOWCTL_TRACE(t, t, outgoing, 0, -(gpr_int64)window_delta);
+    FLOWCTL_TRACE(t, s, outgoing, s->id, -(gpr_int64)window_delta);
     t->outgoing_window -= window_delta;
     s->outgoing_window -= window_delta;
 
@@ -1277,8 +1277,8 @@ static grpc_chttp2_parse_error update_incoming_window(transport *t, stream *s) {
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
 
-  FLOWCTL_TRACE(t, t, incoming, 0, -t->incoming_frame_size);
-  FLOWCTL_TRACE(t, s, incoming, s->id, -t->incoming_frame_size);
+  FLOWCTL_TRACE(t, t, incoming, 0, -(gpr_int64)t->incoming_frame_size);
+  FLOWCTL_TRACE(t, s, incoming, s->id, -(gpr_int64)t->incoming_frame_size);
   t->incoming_window -= t->incoming_frame_size;
   s->incoming_window -= t->incoming_frame_size;
 
