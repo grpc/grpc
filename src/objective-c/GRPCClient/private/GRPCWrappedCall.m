@@ -301,7 +301,7 @@
       if (errorHandler) {
         errorHandler();
       } else {
-        [NSException raise:@"Operation Exception" format:@"The batch failed with an unknown error"];
+        return;
       }
     }
     for (void(^processor)(void) in opProcessors) {
