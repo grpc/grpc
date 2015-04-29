@@ -292,14 +292,6 @@ int main(int argc, char **argv) {
             break;
         }
         break;
-      case GRPC_SERVER_RPC_NEW:
-      case GRPC_WRITE_ACCEPTED:
-      case GRPC_READ:
-      case GRPC_FINISH_ACCEPTED:
-      case GRPC_FINISHED:
-        gpr_log(GPR_ERROR, "Unexpected event type.");
-        abort();
-        break;
       case GRPC_QUEUE_SHUTDOWN:
         GPR_ASSERT(shutdown_started);
         shutdown_finished = 1;
