@@ -1272,7 +1272,8 @@ $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) 
 % endfor
 </%def>
 
-<%def name="maketarget(tgt)">
+<%def name="maketarget(tgt)"><% has_no_sources = not tgt.src %>
+% if not has_no_sources:
 ${tgt.name.upper()}_SRC = \\
 
 % for src in tgt.src:
@@ -1281,7 +1282,7 @@ ${tgt.name.upper()}_SRC = \\
 % endfor
 
 ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-
+% endif
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
@@ -1311,9 +1312,15 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/${tgt.name}: $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: \
+% if not has_no_sources:
+$(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+% endif
 % else:
-$(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
@@ -1324,17 +1331,26 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % if tgt.build == 'protoc':
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % else:
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(LDXX) $(LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % else:
 ## C-only targets specificities.
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(LD) $(LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
@@ -1376,9 +1392,11 @@ $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 % endfor
 
 % endfor
-
+% if not has_no_sources:
 deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
+% endif
 
+% if not has_no_sources:
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifneq ($(NO_SECURE),true)
 % endif
@@ -1387,6 +1405,7 @@ ifneq ($(NO_DEPS),true)
 endif
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 endif
+% endif
 % endif
 </%def>
 
