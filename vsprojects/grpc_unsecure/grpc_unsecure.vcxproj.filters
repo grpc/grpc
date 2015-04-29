@@ -160,7 +160,10 @@
     <ClCompile Include="..\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\profiling\timers.c">
+    <ClCompile Include="..\..\src\core\profiling\basic_timers.c">
+      <Filter>src\core\profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
       <Filter>src\core\profiling</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">

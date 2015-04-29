@@ -198,7 +198,7 @@ grpc_channel *grpc_channel_create(const char *target,
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
   int n = 0;
-  GRPC_STAP_TIMING_NS_BEGIN(1);
+  GRPC_TIMER_BEGIN(PTAG_OTHER_BASE + 2, NULL);
   filters[n++] = &grpc_client_surface_filter;
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
@@ -214,6 +214,6 @@ grpc_channel *grpc_channel_create(const char *target,
   grpc_client_setup_create_and_attach(grpc_channel_get_channel_stack(channel),
                                       args, mdctx, initiate_setup, done_setup,
                                       s);
-  GRPC_STAP_TIMING_NS_END(1);
+  GRPC_TIMER_END(PTAG_OTHER_BASE + 2, NULL);
   return channel;
 }

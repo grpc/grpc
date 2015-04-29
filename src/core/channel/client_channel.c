@@ -129,7 +129,7 @@ static void complete_activate(grpc_call_element *elem, grpc_call_op *op) {
 static void start_rpc(grpc_call_element *elem, grpc_call_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  GRPC_STAP_TIMING_NS_BEGIN(2);
+  GRPC_TIMER_BEGIN(PTAG_OTHER_BASE + 1, NULL);
   gpr_mu_lock(&chand->mu);
   if (calld->state == CALL_CANCELLED) {
     gpr_mu_unlock(&chand->mu);
@@ -175,7 +175,7 @@ static void start_rpc(grpc_call_element *elem, grpc_call_op *op) {
       grpc_transport_setup_initiate(chand->transport_setup);
     }
   }
-  GRPC_STAP_TIMING_NS_END(2);
+  GRPC_TIMER_BEGIN(PTAG_OTHER_BASE + 1, NULL);
 }
 
 static void remove_waiting_child(channel_data *chand, call_data *calld) {

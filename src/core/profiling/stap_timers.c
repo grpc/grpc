@@ -31,59 +31,27 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/debug/trace.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/statistics/census_interface.h"
+#include <grpc/support/port_platform.h>
+
+#ifdef GRPC_STAP_PROFILER
+
 #include "src/core/profiling/timers.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/init.h"
-#include "src/core/surface/surface_trace.h"
-#include "src/core/transport/chttp2_transport.h"
 
-static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
-static int g_initializations;
+#include <sys/sdt.h>
+/* Generated from src/core/profiling/stap_probes.d */
+#include "src/core/profiling/stap_probes.h"
 
-static void do_basic_init(void) {
-  gpr_mu_init(&g_init_mu);
-  g_initializations = 0;
+/* Latency profiler API implementation. */
+void grpc_timer_add_mark(int tag, void* id, const char *file, int line) {
+  _STAP_ADD_MARK(tag);
 }
 
-void grpc_init(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-
-  gpr_mu_lock(&g_init_mu);
-  if (++g_initializations == 1) {
-    grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("surface", &grpc_surface_trace);
-    grpc_register_tracer("http", &grpc_http_trace);
-    grpc_register_tracer("batch", &grpc_trace_batch);
-    grpc_security_pre_init();
-    grpc_iomgr_init();
-    grpc_tracer_init("GRPC_TRACE");
-    census_init();
-    grpc_timers_global_init();
-  }
-  gpr_mu_unlock(&g_init_mu);
+void grpc_timer_begin(int tag, void* id, const char *file, int line) {
+  _STAP_TIMING_NS_BEGIN(tag);
 }
 
-void grpc_shutdown(void) {
-  gpr_mu_lock(&g_init_mu);
-  if (--g_initializations == 0) {
-    grpc_iomgr_shutdown();
-    census_shutdown();
-    grpc_timers_global_destroy();
-  }
-  gpr_mu_unlock(&g_init_mu);
+void grpc_timer_end(int tag, void* id, const char *file, int line) {
+  _STAP_TIMING_NS_END(tag);
 }
 
-int grpc_is_initialized(void) {
-  int r;
-  gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
-  r = g_initializations > 0;
-  gpr_mu_unlock(&g_init_mu);
-  return r;
-}
+#endif /* GRPC_STAP_PROFILER */
