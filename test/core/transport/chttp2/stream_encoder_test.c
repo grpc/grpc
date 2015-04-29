@@ -102,15 +102,10 @@ static void verify_sopb(size_t window_available, int eof,
   gpr_slice_unref(expect);
 }
 
-static void assert_result_ok(void *user_data, grpc_op_error error) {
-  GPR_ASSERT(error == GRPC_OP_OK);
-}
-
 static void test_small_data_framing(void) {
   grpc_sopb_add_no_op(&g_sopb);
   verify_sopb(10, 0, 0, "");
 
-  grpc_sopb_add_flow_ctl_cb(&g_sopb, assert_result_ok, NULL);
   grpc_sopb_add_slice(&g_sopb, create_test_slice(3));
   verify_sopb(10, 0, 3, "000003 0000 deadbeef 000102");
 

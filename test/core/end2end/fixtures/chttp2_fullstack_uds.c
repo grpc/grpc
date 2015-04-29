@@ -39,7 +39,6 @@
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_filter.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/channel.h"

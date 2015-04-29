@@ -92,6 +92,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   SynchronousUnaryClient(const ClientConfig& config):
     SynchronousClient(config) {StartThreads(num_threads_);}
   ~SynchronousUnaryClient() {EndThreads();}
+
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
