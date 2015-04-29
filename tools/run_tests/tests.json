@@ -315,6 +315,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "grpc_auth_context_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "grpc_base64_test", 
     "platforms": [
       "windows", 

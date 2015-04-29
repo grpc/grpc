@@ -33,6 +33,7 @@
 
 #include "src/core/security/auth_filters.h"
 #include "src/core/security/security_connector.h"
+#include "src/core/security/security_context.h"
 
 #include <grpc/support/log.h>
 
@@ -44,20 +45,6 @@ typedef struct channel_data {
   grpc_security_connector *security_connector;
 } channel_data;
 
-/* used to silence 'variable not used' warnings */
-static void ignore_unused(void *ignored) {}
-
-static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
-  /* grab pointers to our data from the call element */
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-
-  ignore_unused(calld);
-  ignore_unused(chand);
-
-  /* do nothing */
-}
-
 /* Called either:
      - in response to an API call (or similar) from above, to send something
      - a network event (or similar) from below, to receive something
@@ -65,7 +52,7 @@ static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
    that is being sent or received. */
 static void auth_start_transport_op(grpc_call_element *elem,
                                     grpc_transport_op *op) {
-  noop_mutate_op(elem, op);
+  /* TODO(jboeuf): Get the metadata and get a new context from it. */
 
   /* pass control down the stack */
   grpc_call_next_op(elem, op);
@@ -75,17 +62,7 @@ static void auth_start_transport_op(grpc_call_element *elem,
    calls on the server */
 static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
-  /* grab pointers to our data from the channel element */
-  channel_data *chand = elem->channel_data;
-
-  ignore_unused(chand);
-
-  switch (op->type) {
-    default:
-      /* pass control up or down the stack depending on op->dir */
-      grpc_channel_next_op(elem, op);
-      break;
-  }
+  grpc_channel_next_op(elem, op);
 }
 
 /* Constructor for call_data */
@@ -94,21 +71,28 @@ static void init_call_elem(grpc_call_element *elem,
                            grpc_transport_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  grpc_server_security_context *server_ctx = NULL;
 
   /* initialize members */
   calld->unused = 0;
 
-  if (initial_op) noop_mutate_op(elem, initial_op);
+  GPR_ASSERT(initial_op && initial_op->contexts != NULL &&
+             chand->security_connector->auth_context != NULL &&
+             initial_op->contexts[GRPC_CONTEXT_SECURITY].value == NULL);
+
+  /* Create a security context for the call and reference the auth context from
+     the channel. */
+  server_ctx = grpc_server_security_context_create();
+  server_ctx->auth_context =
+      grpc_auth_context_ref(chand->security_connector->auth_context);
+  initial_op->contexts[GRPC_CONTEXT_SECURITY].value = server_ctx;
+  initial_op->contexts[GRPC_CONTEXT_SECURITY].destroy =
+      grpc_server_security_context_destroy;
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element *elem) {
-  /* grab pointers to our data from the call element */
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-
-  ignore_unused(calld);
-  ignore_unused(chand);
 }
 
 /* Constructor for channel_data */

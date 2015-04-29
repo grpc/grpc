@@ -189,6 +189,8 @@ static void auth_start_transport_op(grpc_call_element *elem,
   grpc_linked_mdelem *l;
   size_t i;
 
+  /* TODO(jboeuf): write the call auth context. */
+
   if (op->send_ops && !calld->sent_initial_metadata) {
     size_t nops = op->send_ops->nops;
     grpc_stream_op *ops = op->send_ops->ops;

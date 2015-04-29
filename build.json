@@ -1268,6 +1268,20 @@
       ]
     },
     {
+      "name": "grpc_auth_context_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/security/auth_context_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_base64_test",
       "build": "test",
       "language": "c",
