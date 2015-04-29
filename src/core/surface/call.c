@@ -34,6 +34,7 @@
 #include "src/core/surface/call.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/channel.h"
@@ -694,6 +695,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
 static void call_on_done_recv(void *pc, int success) {
   grpc_call *call = pc;
   size_t i;
+  GRPC_TIMER_MARK(CALL_ON_DONE_RECV_BEGIN, 0);
   lock(call);
   call->receiving = 0;
   if (success) {
@@ -734,6 +736,7 @@ static void call_on_done_recv(void *pc, int success) {
   unlock(call);
 
   GRPC_CALL_INTERNAL_UNREF(call, "receiving", 0);
+  GRPC_TIMER_MARK(CALL_ON_DONE_RECV_END, 0);
 }
 
 static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,

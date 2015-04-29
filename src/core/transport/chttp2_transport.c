@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
@@ -783,6 +784,8 @@ static void unlock(transport *t) {
   grpc_stream_op_buffer nuke_now;
   const grpc_transport_callbacks *cb = t->cb;
 
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_BEGIN, 0);
+
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
     grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
@@ -831,6 +834,8 @@ static void unlock(transport *t) {
   /* finally unlock */
   gpr_mu_unlock(&t->mu);
 
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_CLEANUP, 0);
+
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
     cb->goaway(t->cb_user_data, &t->base, goaways[i].status, goaways[i].debug);
@@ -861,6 +866,8 @@ static void unlock(transport *t) {
   grpc_sopb_destroy(&nuke_now);
 
   gpr_free(goaways);
+
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_END, 0);
 }
 
 /*
@@ -907,8 +914,8 @@ static int prepare_write(transport *t) {
     window_delta = grpc_chttp2_preencode(
         s->outgoing_sopb->ops, &s->outgoing_sopb->nops,
         GPR_MIN(t->outgoing_window, s->outgoing_window), &s->writing_sopb);
-    FLOWCTL_TRACE(t, t, outgoing, 0, -window_delta);
-    FLOWCTL_TRACE(t, s, outgoing, s->id, -window_delta);
+    FLOWCTL_TRACE(t, t, outgoing, 0, -(gpr_int64)window_delta);
+    FLOWCTL_TRACE(t, s, outgoing, s->id, -(gpr_int64)window_delta);
     t->outgoing_window -= window_delta;
     s->outgoing_window -= window_delta;
 
@@ -1270,8 +1277,8 @@ static grpc_chttp2_parse_error update_incoming_window(transport *t, stream *s) {
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
 
-  FLOWCTL_TRACE(t, t, incoming, 0, -t->incoming_frame_size);
-  FLOWCTL_TRACE(t, s, incoming, s->id, -t->incoming_frame_size);
+  FLOWCTL_TRACE(t, t, incoming, 0, -(gpr_int64)t->incoming_frame_size);
+  FLOWCTL_TRACE(t, s, incoming, s->id, -(gpr_int64)t->incoming_frame_size);
   t->incoming_window -= t->incoming_frame_size;
   s->incoming_window -= t->incoming_frame_size;
 
@@ -1411,7 +1418,10 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
       gpr_log(GPR_ERROR,
               "ignoring out of order new stream request on server; last stream "
               "id=%d, new stream id=%d",
-              t->last_incoming_stream_id, t->incoming_stream);
+              t->last_incoming_stream_id, t->incoming_stream_id);
+      return init_skip_frame(t, 1);
+    } else if ((t->incoming_stream_id & 1) == 0) {
+      gpr_log(GPR_ERROR, "ignoring stream with non-client generated index %d", t->incoming_stream_id);
       return init_skip_frame(t, 1);
     }
     t->incoming_stream = NULL;

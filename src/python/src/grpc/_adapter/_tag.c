@@ -31,34 +31,35 @@
  *
  */
 
-#ifndef GRPCXX_CHANNEL_INTERFACE_H
-#define GRPCXX_CHANNEL_INTERFACE_H
+#include "grpc/_adapter/_tag.h"
 
-#include <memory>
+#include <Python.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
-#include <grpc++/status.h>
-#include <grpc++/impl/call.h>
+pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
+                           Call *call) {
+  pygrpc_tag *self = (pygrpc_tag *)gpr_malloc(sizeof(pygrpc_tag));
+  memset(self, 0, sizeof(pygrpc_tag));
+  if (user_tag == NULL) {
+    self->user_tag = Py_None;
+  } else {
+    self->user_tag = user_tag;
+  }
+  Py_INCREF(self->user_tag);
+  self->type = type;
+  self->call = call;
+  Py_INCREF(call);
+  return self;
+}
 
-struct grpc_call;
+pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag) {
+  return pygrpc_tag_new(PYGRPC_SERVER_RPC_NEW, user_tag,
+                        (Call *)pygrpc_CallType.tp_alloc(&pygrpc_CallType, 0));
+}
 
-namespace grpc {
-class Call;
-class CallOpBuffer;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class CallInterface;
-
-class ChannelInterface : public CallHook,
-                         public std::enable_shared_from_this<ChannelInterface> {
- public:
-  virtual ~ChannelInterface() {}
-
-  virtual void* RegisterMethod(const char* method_name) = 0;
-  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                          CompletionQueue* cq) = 0;
-};
-
-}  // namespace grpc
-
-#endif  // GRPCXX_CHANNEL_INTERFACE_H
+void pygrpc_tag_destroy(pygrpc_tag *self) {
+  Py_XDECREF(self->user_tag);
+  Py_XDECREF(self->call);
+  gpr_free(self);
+}

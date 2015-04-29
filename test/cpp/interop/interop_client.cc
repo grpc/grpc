@@ -307,5 +307,49 @@ void InteropClient::DoPingPong() {
   gpr_log(GPR_INFO, "Ping pong streaming done.");
 }
 
+void InteropClient::DoCancelAfterBegin() {
+  gpr_log(GPR_INFO, "Sending request steaming rpc ...");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  StreamingInputCallRequest request;
+  StreamingInputCallResponse response;
+
+  std::unique_ptr<ClientWriter<StreamingInputCallRequest>> stream(
+      stub->StreamingInputCall(&context, &response));
+
+  gpr_log(GPR_INFO, "Trying to cancel...");
+  context.TryCancel();
+  Status s = stream->Finish();
+  GPR_ASSERT(s.code() == StatusCode::CANCELLED);
+  gpr_log(GPR_INFO, "Canceling streaming done.");
+}
+
+void InteropClient::DoCancelAfterFirstResponse() {
+  gpr_log(GPR_INFO, "Sending Ping Pong streaming rpc ...");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(stub->FullDuplexCall(&context));
+
+  StreamingOutputCallRequest request;
+  request.set_response_type(PayloadType::COMPRESSABLE);
+  ResponseParameters* response_parameter = request.add_response_parameters();
+  response_parameter->set_size(31415);
+  request.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  StreamingOutputCallResponse response;
+  GPR_ASSERT(stream->Write(request));
+  GPR_ASSERT(stream->Read(&response));
+  GPR_ASSERT(response.payload().has_body());
+  GPR_ASSERT(response.payload().body() == grpc::string(31415, '\0'));
+  gpr_log(GPR_INFO, "Trying to cancel...");
+  context.TryCancel();
+
+  Status s = stream->Finish();
+  gpr_log(GPR_INFO, "Canceling pingpong streaming done.");
+}
+
 }  // namespace testing
 }  // namespace grpc
