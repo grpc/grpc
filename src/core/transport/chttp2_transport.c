@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
@@ -783,6 +784,8 @@ static void unlock(transport *t) {
   grpc_stream_op_buffer nuke_now;
   const grpc_transport_callbacks *cb = t->cb;
 
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_BEGIN, 0);
+
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
     grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
@@ -831,6 +834,8 @@ static void unlock(transport *t) {
   /* finally unlock */
   gpr_mu_unlock(&t->mu);
 
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_CLEANUP, 0);
+
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
     cb->goaway(t->cb_user_data, &t->base, goaways[i].status, goaways[i].debug);
@@ -861,6 +866,8 @@ static void unlock(transport *t) {
   grpc_sopb_destroy(&nuke_now);
 
   gpr_free(goaways);
+
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_END, 0);
 }
 
 /*
