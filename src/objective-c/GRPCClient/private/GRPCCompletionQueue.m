@@ -71,11 +71,14 @@
           case GRPC_OP_COMPLETE:
             handler = (__bridge_transfer GRPCQueueCompletionHandler)event->tag;
             handler(event->data.op_complete);
+            grpc_event_finish(event);
             break;
           case GRPC_QUEUE_SHUTDOWN:
+            grpc_event_finish(event);
             grpc_completion_queue_destroy(unmanagedQueue);
             return;
           default:
+            grpc_event_finish(event);
             [NSException raise:@"Unrecognized completion type" format:@""];
         }
       };

@@ -53,13 +53,8 @@
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void (^)(void))handler {
   if (self = [super init]) {
-    if (metadata) {
-      [metadata grpc_getMetadataArray:&_send_metadata];
-      _count = metadata.count;
-    } else {
-      _send_metadata = NULL;
-      _count = 0;
-    }
+    _send_metadata = [metadata grpc_getMetadataArray];
+    _count = metadata.count;
     _handler = handler;
   }
   return self;
@@ -68,6 +63,7 @@
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = _count;
+  op->data.send_initial_metadata.metadata = _send_metadata;
 }
 
 - (void (^)(void))opProcessor {
@@ -148,7 +144,7 @@
 
 @implementation GRPCOpRecvMetadata{
   void(^_handler)(NSDictionary *);
-  grpc_metadata_array *_recv_initial_metadata;
+  grpc_metadata_array _recv_initial_metadata;
 }
 
 - (instancetype) init {
@@ -158,23 +154,22 @@
 - (instancetype) initWithHandler:(void (^)(NSDictionary *))handler {
   if (self = [super init]) {
     _handler = handler;
-    _recv_initial_metadata = gpr_malloc(sizeof(grpc_metadata_array));
-    grpc_metadata_array_init(_recv_initial_metadata);
+    grpc_metadata_array_init(&_recv_initial_metadata);
   }
   return self;
 }
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = _recv_initial_metadata;
+  op->data.recv_initial_metadata = &_recv_initial_metadata;
 }
 
 - (void (^)(void))opProcessor {
   return ^{
     NSDictionary *metadata = [NSDictionary
-                              grpc_dictionaryFromMetadata:_recv_initial_metadata->metadata
-                              count:_recv_initial_metadata->count];
-    grpc_metadata_array_destroy(_recv_initial_metadata);
+                              grpc_dictionaryFromMetadata:_recv_initial_metadata.metadata
+                              count:_recv_initial_metadata.count];
+    grpc_metadata_array_destroy(&_recv_initial_metadata);
     if (_handler) {
       _handler(metadata);
     }
@@ -185,7 +180,7 @@
 
 @implementation GRPCOpRecvMessage{
   void(^_handler)(grpc_byte_buffer *);
-  grpc_byte_buffer **_recv_message;
+  grpc_byte_buffer *_recv_message;
 }
 
 - (instancetype)init {
@@ -195,21 +190,19 @@
 - (instancetype)initWithHandler:(void (^)(grpc_byte_buffer *))handler {
   if (self = [super init]) {
     _handler = handler;
-    _recv_message = gpr_malloc(sizeof(grpc_byte_buffer*));
   }
   return self;
 }
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = _recv_message;
+  op->data.recv_message = &_recv_message;
 }
 
 - (void (^)(void))opProcessor {
   return ^{
     if (_handler) {
-      _handler(*_recv_message);
-      gpr_free(_recv_message);
+      _handler(_recv_message);
     }
   };
 }
@@ -218,10 +211,8 @@
 
 @implementation GRPCOpRecvStatus{
   void(^_handler)(NSError *);
-  grpc_status_code *_code;
-  char **_details;
-  size_t *_details_capacity;
-  grpc_metadata_array *_recv_trailing_metadata;
+  size_t _details_capacity;
+  grpc_status _status;
 }
 
 - (instancetype) init {
@@ -231,34 +222,27 @@
 - (instancetype) initWithHandler:(void (^)(NSError *))handler {
   if (self = [super init]) {
     _handler = handler;
-    _code = gpr_malloc(sizeof(grpc_status_code));
-    _details = gpr_malloc(sizeof(char*));
-    _details_capacity = gpr_malloc(sizeof(size_t));
-    *_details_capacity = 0;
-    _recv_trailing_metadata = gpr_malloc(sizeof(grpc_metadata_array));
+    _status.details = NULL;
+    _details_capacity = 0;
+    grpc_metadata_array_init(&_status.metadata);
   }
   return self;
 }
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.status = _code;
-  op->data.recv_status_on_client.status_details = _details;
-  op->data.recv_status_on_client.status_details_capacity = _details_capacity;
-  op->data.recv_status_on_client.trailing_metadata = _recv_trailing_metadata;
+  op->data.recv_status_on_client.status = &_status.status;
+  op->data.recv_status_on_client.status_details = &_status.details;
+  op->data.recv_status_on_client.status_details_capacity = &_details_capacity;
+  op->data.recv_status_on_client.trailing_metadata = &_status.metadata;
 }
 
 - (void (^)(void))opProcessor {
   return ^{
-    grpc_status status;
-    status.status = *_code;
-    status.details = *_details;
-    status.metadata = _recv_trailing_metadata;
-    gpr_free(_code);
-    gpr_free(_details);
-    gpr_free(_details_capacity);
     if (_handler) {
-      _handler([NSError grpc_errorFromStatus:&status]);
+      NSError *error = [NSError grpc_errorFromStatus:&_status];
+      grpc_metadata_array_destroy(&_status.metadata);
+      _handler(error);
     }
   };
 }
@@ -326,7 +310,8 @@
   }));
   
   if (error != GRPC_CALL_OK) {
-    [NSException raise:NSInvalidArgumentException format:@"The batch did not start successfully"];
+    [NSException raise:NSInternalInconsistencyException
+                format:@"A precondition for calling grpc_call_start_batch wasn't met"];
   }
 }
 
