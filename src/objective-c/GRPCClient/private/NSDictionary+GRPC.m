@@ -54,7 +54,7 @@
   return metadata;
 }
 
-- (grpc_metadata *)grpc_getMetadataArray {
+- (grpc_metadata *)grpc_metadataArray {
   grpc_metadata *metadata = gpr_malloc([self count] * sizeof(grpc_metadata));
   int i = 0;
   for (id key in self) {

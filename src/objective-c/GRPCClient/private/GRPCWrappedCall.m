@@ -53,7 +53,7 @@
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void (^)(void))handler {
   if (self = [super init]) {
-    _send_metadata = [metadata grpc_getMetadataArray];
+    _send_metadata = [metadata grpc_metadataArray];
     _count = metadata.count;
     _handler = handler;
   }
@@ -292,7 +292,7 @@
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
   size_t i = 0;
   for (id op in operations) {
-    [op getOp:&ops_array[i]];
+    [op getOp:&ops_array[i++]];
     [opProcessors addObject:[op opProcessor]];
   }
   grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops,
