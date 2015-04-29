@@ -31,21 +31,35 @@
  *
  */
 
-#ifndef _ADAPTER__SERVER_H_
-#define _ADAPTER__SERVER_H_
+#include "grpc/_adapter/_tag.h"
 
 #include <Python.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
-#include "grpc/_adapter/_completion_queue.h"
+pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
+                           Call *call) {
+  pygrpc_tag *self = (pygrpc_tag *)gpr_malloc(sizeof(pygrpc_tag));
+  memset(self, 0, sizeof(pygrpc_tag));
+  if (user_tag == NULL) {
+    self->user_tag = Py_None;
+  } else {
+    self->user_tag = user_tag;
+  }
+  Py_INCREF(self->user_tag);
+  self->type = type;
+  self->call = call;
+  Py_INCREF(call);
+  return self;
+}
 
-typedef struct {
-  PyObject_HEAD
+pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag) {
+  return pygrpc_tag_new(PYGRPC_SERVER_RPC_NEW, user_tag,
+                        (Call *)pygrpc_CallType.tp_alloc(&pygrpc_CallType, 0));
+}
 
-  CompletionQueue *completion_queue;
-  grpc_server *c_server;
-} Server;
-
-int pygrpc_add_server(PyObject *module);
-
-#endif /* _ADAPTER__SERVER_H_ */
+void pygrpc_tag_destroy(pygrpc_tag *self) {
+  Py_XDECREF(self->user_tag);
+  Py_XDECREF(self->call);
+  gpr_free(self);
+}
