@@ -1327,7 +1327,10 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
       gpr_log(GPR_ERROR,
               "ignoring out of order new stream request on server; last stream "
               "id=%d, new stream id=%d",
-              t->last_incoming_stream_id, t->incoming_stream);
+              t->last_incoming_stream_id, t->incoming_stream_id);
+      return init_skip_frame(t, 1);
+    } else if ((t->incoming_stream_id & 1) == 0) {
+      gpr_log(GPR_ERROR, "ignoring stream with non-client generated index %d", t->incoming_stream_id);
       return init_skip_frame(t, 1);
     }
     t->incoming_stream = NULL;
