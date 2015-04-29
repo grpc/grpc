@@ -3146,7 +3146,6 @@ LIBGRPC_SRC = \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
-    src/core/channel/call_op_string.c \
     src/core/channel/census_filter.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
@@ -3155,7 +3154,6 @@ LIBGRPC_SRC = \
     src/core/channel/client_setup.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
-    src/core/channel/http_filter.c \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
     src/core/compression/algorithm.c \
@@ -3243,6 +3241,7 @@ LIBGRPC_SRC = \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
     src/core/transport/transport.c \
+    src/core/transport/transport_op_string.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_security.h \
@@ -3395,7 +3394,6 @@ endif
 
 LIBGRPC_UNSECURE_SRC = \
     src/core/surface/init_unsecure.c \
-    src/core/channel/call_op_string.c \
     src/core/channel/census_filter.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
@@ -3404,7 +3402,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/client_setup.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
-    src/core/channel/http_filter.c \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
     src/core/compression/algorithm.c \
@@ -3492,6 +3489,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
     src/core/transport/transport.c \
+    src/core/transport/transport_op_string.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \

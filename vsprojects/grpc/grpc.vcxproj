@@ -178,7 +178,6 @@
     <ClInclude Include="..\..\src\core\channel\client_setup.h" />
     <ClInclude Include="..\..\src\core\channel\connected_channel.h" />
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h" />
-    <ClInclude Include="..\..\src\core\channel\http_filter.h" />
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h" />
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\src\core\compression\algorithm.h" />
@@ -300,8 +299,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\tsi\transport_security.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\call_op_string.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\census_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
@@ -317,8 +314,6 @@
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\http_client_filter.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\http_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\http_server_filter.c">
     </ClCompile>
@@ -493,6 +488,8 @@
     <ClCompile Include="..\..\src\core\transport\stream_op.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\transport_op_string.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
