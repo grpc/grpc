@@ -86,7 +86,7 @@ _PACKAGE_DIRECTORIES = {
 
 setuptools.setup(
     name='grpcio',
-    version='0.5.0a0',
+    version='0.5.0a1',
     ext_modules=[_EXTENSION_MODULE],
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
