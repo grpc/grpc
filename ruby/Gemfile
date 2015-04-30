@@ -3,13 +3,4 @@
 
 source 'https://rubygems.org/'
 
-# Update this to reflect the local installation of gRPC.
-gem 'grpc', path: '~/grpc/src/ruby'
-
-# TODO: fix this if/when the gRPC repo structure changes.
-#
-# At the moment it's not possible to use grpc Ruby via git/github reference
-#
-# git 'git@github.com:grpc/grpc.git' do
-#   gem 'grpc'
-# end
+gemspec
