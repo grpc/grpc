@@ -232,6 +232,11 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   v_server = cq_verifier_create(f.server_cq);
 
   grpc_metadata_array_init(&request_metadata_recv);
+  grpc_metadata_array_init(&initial_metadata_recv1);
+  grpc_metadata_array_init(&trailing_metadata_recv1);
+  grpc_metadata_array_init(&initial_metadata_recv2);
+  grpc_metadata_array_init(&trailing_metadata_recv2);
+  grpc_call_details_init(&call_details);
 
   /* perform a ping-pong to ensure that settings have had a chance to round
      trip */
@@ -241,7 +246,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
-  deadline = five_seconds_time();
+  deadline = n_seconds_time(10);
   c1 = grpc_channel_create_call(f.client, f.client_cq, "/alpha",
                                 "foo.test.google.fr:1234", deadline);
   GPR_ASSERT(c1);
@@ -298,8 +303,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(c2, ops, op - ops, tag(402)));
 
-  ev = grpc_completion_queue_next(
-      f.client_cq, gpr_time_add(gpr_now(), gpr_time_from_seconds(10)));
+  ev = grpc_completion_queue_next(f.client_cq,
+                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3));
   GPR_ASSERT(ev);
   GPR_ASSERT(ev->type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev->data.op_complete == GRPC_OP_OK);
@@ -310,7 +315,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   live_call = ((int)(gpr_intptr)ev->tag) - 1;
   grpc_event_finish(ev);
 
-  cq_expect_completion(v_server, tag(100), GRPC_OP_OK);
+  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
   op = ops;
@@ -323,7 +328,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(s1, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_client, tag(live_call + 1), GRPC_OP_OK);
+  cq_expect_completion(v_client, tag(live_call + 2), GRPC_OP_OK);
   cq_verify(v_client);
 
   op = ops;
@@ -335,13 +340,13 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(s1, ops, op - ops, tag(103)));
 
+  cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
   cq_expect_completion(v_server, tag(103), GRPC_OP_OK);
   cq_verify(v_server);
 
   /* first request is finished, we should be able to start the second */
-  cq_expect_completion(v_client, tag(live_call + 2), GRPC_OP_OK);
   live_call = (live_call == 300) ? 400 : 300;
-  cq_expect_completion(v_client, tag(live_call + 3), GRPC_OP_OK);
+  cq_expect_completion(v_client, tag(live_call + 1), GRPC_OP_OK);
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s2,
@@ -361,7 +366,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(s2, ops, op - ops, tag(202)));
 
-  cq_expect_completion(v_client, tag(live_call + 1), GRPC_OP_OK);
+  cq_expect_completion(v_client, tag(live_call + 2), GRPC_OP_OK);
   cq_verify(v_client);
 
   op = ops;
@@ -373,11 +378,9 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(s2, ops, op - ops, tag(203)));
 
+  cq_expect_completion(v_server, tag(202), GRPC_OP_OK);
   cq_expect_completion(v_server, tag(203), GRPC_OP_OK);
   cq_verify(v_server);
-
-  cq_expect_completion(v_client, tag(live_call + 2), GRPC_OP_OK);
-  cq_verify(v_client);
 
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);

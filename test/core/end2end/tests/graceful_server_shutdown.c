@@ -173,16 +173,19 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
+  cq_verify(v_server);
+
+  grpc_call_destroy(s);
   cq_expect_server_shutdown(v_server, tag(0xdead));
   cq_verify(v_server);
 
   cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -191,7 +194,6 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_call_details_destroy(&call_details);
 
   grpc_call_destroy(c);
-  grpc_call_destroy(s);
 
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);

@@ -155,6 +155,12 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+
   /* shutdown and destroy the server */
   shutdown_server(&f);
 

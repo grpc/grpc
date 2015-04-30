@@ -120,7 +120,7 @@ static void test_early_server_shutdown_finishes_tags(
                                                       &request_metadata_recv,
                                                       f.server_cq, tag(101)));
   grpc_server_shutdown(f.server);
-  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
+  cq_expect_completion(v_server, tag(101), GRPC_OP_ERROR);
   cq_verify(v_server);
   GPR_ASSERT(s == NULL);
 

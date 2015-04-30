@@ -218,9 +218,6 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(3)));
 
   op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
@@ -238,9 +235,6 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);
-
-  end_test(&f);
-  config.tear_down_data(&f);
 
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);
