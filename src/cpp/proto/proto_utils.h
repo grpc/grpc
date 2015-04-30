@@ -47,7 +47,8 @@ bool SerializeProto(const grpc::protobuf::Message& msg,
                     grpc_byte_buffer** buffer);
 
 // The caller keeps ownership of buffer and msg.
-bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg);
+bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
+                      int max_message_size);
 
 }  // namespace grpc
 

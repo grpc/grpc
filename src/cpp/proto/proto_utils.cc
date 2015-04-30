@@ -158,9 +158,14 @@ bool SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
   return msg.SerializeToZeroCopyStream(&writer);
 }
 
-bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg) {
+bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
+                      int max_message_size) {
   GrpcBufferReader reader(buffer);
-  return msg->ParseFromZeroCopyStream(&reader);
+  ::grpc::protobuf::io::CodedInputStream decoder(&reader);
+  if (max_message_size > 0) {
+    decoder.SetTotalBytesLimit(max_message_size, max_message_size);
+  }
+  return msg->ParseFromCodedStream(&decoder) && decoder.ConsumedEntireMessage();
 }
 
 }  // namespace grpc
