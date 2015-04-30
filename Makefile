@@ -87,14 +87,23 @@ CPPFLAGS_opt = -O2
 LDFLAGS_opt =
 DEFINES_opt = NDEBUG
 
-VALID_CONFIG_latprof = 1
-CC_latprof = $(DEFAULT_CC)
-CXX_latprof = $(DEFAULT_CXX)
-LD_latprof = $(DEFAULT_CC)
-LDXX_latprof = $(DEFAULT_CXX)
-CPPFLAGS_latprof = -O2 -DGRPC_LATENCY_PROFILER
-LDFLAGS_latprof =
-DEFINES_latprof = NDEBUG
+VALID_CONFIG_basicprof = 1
+CC_basicprof = $(DEFAULT_CC)
+CXX_basicprof = $(DEFAULT_CXX)
+LD_basicprof = $(DEFAULT_CC)
+LDXX_basicprof = $(DEFAULT_CXX)
+CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER
+LDFLAGS_basicprof =
+DEFINES_basicprof = NDEBUG
+
+VALID_CONFIG_stapprof = 1
+CC_stapprof = $(DEFAULT_CC)
+CXX_stapprof = $(DEFAULT_CXX)
+LD_stapprof = $(DEFAULT_CC)
+LDXX_stapprof = $(DEFAULT_CXX)
+CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
+LDFLAGS_stapprof =
+DEFINES_stapprof = NDEBUG
 
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
@@ -174,7 +183,7 @@ LD_gcov = gcc
 LDXX_gcov = g++
 CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
 LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
-DEFINES_gcov = NDEBUG
+DEFINES_gcov = _DEBUG DEBUG
 
 
 # General settings.
@@ -183,6 +192,7 @@ DEFINES_gcov = NDEBUG
 prefix ?= /usr/local
 
 PROTOC = protoc
+DTRACE = dtrace
 CONFIG ?= opt
 CC = $(CC_$(CONFIG))
 CXX = $(CXX_$(CONFIG))
@@ -350,6 +360,8 @@ PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perfto
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 PROTOC_CHECK_CMD = which protoc > /dev/null
 PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
+DTRACE_CHECK_CMD = which dtrace > /dev/null
+SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
@@ -380,6 +392,18 @@ ifeq ($(HAS_PROTOC),true)
 HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
 else
 HAS_VALID_PROTOC = false
+endif
+
+# Check for Systemtap (https://sourceware.org/systemtap/), first by making sure <sys/sdt.h> is present
+# in the system and secondly by checking for the "dtrace" binary (on Linux, this is part of the Systemtap
+# distribution. It's part of the base system on BSD/Solaris machines).
+HAS_SYSTEMTAP_HEADERS = $(shell $(SYSTEMTAP_HEADERS_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_DTRACE = $(shell $(DTRACE_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEMTAP = false
+ifeq ($(HAS_SYSTEMTAP_HEADERS),true)
+ifeq ($(HAS_DTRACE),true)
+HAS_SYSTEMTAP = true
+endif
 endif
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
@@ -547,6 +571,17 @@ protoc_dep_message:
 	@echo "If you need information about why these tests failed, run:"
 	@echo
 	@echo "  make run_dep_checks"
+	@echo
+
+systemtap_dep_error:
+	@echo
+	@echo "DEPENDENCY ERROR"
+	@echo
+	@echo "Under the '$(CONFIG)' configutation, the target you are trying "
+	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
+	@echo "platforms such as Solaris and *BSD). "
+	@echo
+	@echo "Please consult INSTALL to get more information."
 	@echo
 
 stop:
@@ -1916,6 +1951,18 @@ $(GENDIR)/test/proto/test.grpc.pb.cc: test/proto/test.proto $(PROTOBUF_DEP) $(PR
 endif
 
 
+ifeq ($(CONFIG),stapprof)
+src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
+ifeq ($(HAS_SYSTEMTAP),true)
+$(GENDIR)/src/core/profiling/stap_probes.h: src/core/profiling/stap_probes.d
+	$(E) "[DTRACE]  Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(DTRACE) -C -h -s $< -o $@
+else
+$(GENDIR)/src/core/profiling/stap_probes.h: systemtap_dep_error stop
+endif
+endif
+
 $(OBJDIR)/$(CONFIG)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
@@ -1935,7 +1982,6 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
-
 
 install: install_c install_cxx install-plugins install-certs verify-install
 
@@ -2333,7 +2379,8 @@ LIBGRPC_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
-    src/core/profiling/timers.c \
+    src/core/profiling/basic_timers.c \
+    src/core/profiling/stap_timers.c \
     src/core/statistics/census_init.c \
     src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
@@ -2581,7 +2628,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
-    src/core/profiling/timers.c \
+    src/core/profiling/basic_timers.c \
+    src/core/profiling/stap_timers.c \
     src/core/statistics/census_init.c \
     src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
