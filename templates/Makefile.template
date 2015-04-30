@@ -362,8 +362,8 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-PROTOC_CMD = which protoc > /dev/null
-PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
+PROTOC_CHECK_CMD = which protoc > /dev/null
+PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
@@ -389,9 +389,9 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
-HAS_PROTOC = $(shell $(PROTOC_CMD) 2> /dev/null && echo true || echo false)
+HAS_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
 else
 HAS_VALID_PROTOC = false
 endif
@@ -587,7 +587,7 @@ run_dep_checks:
 	$(ZLIB_CHECK_CMD) || true
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
-	$(PROTOC_CHECK_CMD) || true
+	$(PROTOC_CHECK_VERSION_CMD) || true
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
@@ -1208,21 +1208,15 @@ endif
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 endif
 % endif
-
 % for src in lib.src:
-% if not proto_re.match(src):
-$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-% for src2 in lib.src:
-% if proto_re.match(src2):
-    ${proto_to_cc(src2)}\
+% if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
+$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
 % endif
-% endfor
-% endif
-
 % endfor
 </%def>
 
-<%def name="maketarget(tgt)">
+<%def name="maketarget(tgt)"><% has_no_sources = not tgt.src %>
+% if not has_no_sources:
 ${tgt.name.upper()}_SRC = \\
 
 % for src in tgt.src:
@@ -1231,7 +1225,7 @@ ${tgt.name.upper()}_SRC = \\
 % endfor
 
 ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-
+% endif
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
@@ -1261,9 +1255,15 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/${tgt.name}: $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: \
+% if not has_no_sources:
+$(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+% endif
 % else:
-$(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
@@ -1274,17 +1274,26 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % if tgt.build == 'protoc':
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % else:
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(LDXX) $(LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % else:
 ## C-only targets specificities.
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+	$(Q) $(LD) $(LDFLAGS) \
+% if not has_no_sources:
+$(${tgt.name.upper()}_OBJS)\
+% endif
 % endif
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
@@ -1326,9 +1335,11 @@ $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 % endfor
 
 % endfor
-
+% if not has_no_sources:
 deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
+% endif
 
+% if not has_no_sources:
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifneq ($(NO_SECURE),true)
 % endif
@@ -1337,6 +1348,7 @@ ifneq ($(NO_DEPS),true)
 endif
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 endif
+% endif
 % endif
 </%def>
 

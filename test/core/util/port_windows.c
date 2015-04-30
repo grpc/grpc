@@ -57,7 +57,7 @@ static int is_port_available(int *port, int is_tcp) {
 
   GPR_ASSERT(*port >= 0);
   GPR_ASSERT(*port <= 65535);
-  if (fd < 0) {
+  if (INVALID_SOCKET == fd) {
     gpr_log(GPR_ERROR, "socket() failed: %s", strerror(errno));
     return 0;
   }
