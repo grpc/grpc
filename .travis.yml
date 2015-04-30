@@ -14,6 +14,7 @@ env:
   global:
     - RUBY_VERSION=2.1
     - COVERALLS_PARALLEL=true
+    - CPPFLAGS=-I/tmp/prebuilt/include
     - NUGET="mono nuget.exe"
   matrix:
     - CONFIG=opt TEST=sanity
@@ -29,6 +30,7 @@ env:
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
+  - ./tools/run_tests/prepare_travis.sh
   - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 after_success:
