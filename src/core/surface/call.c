@@ -35,6 +35,7 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
 #include "src/core/support/string.h"
+#include "src/core/statistics/work_annotation.h"
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
@@ -246,6 +247,9 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
 static void execute_op(grpc_call *call, grpc_transport_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
+static void cancel_with_status(grpc_call *c,
+                                             grpc_status_code status,
+                                             const char *description);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
@@ -627,7 +631,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
     gpr_asprintf(
         &message, "Message terminated early; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    grpc_call_cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
     gpr_free(message);
     return 0;
   }
@@ -638,7 +642,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
         &message,
         "Maximum message length of %d exceeded by a message of length %d",
         grpc_channel_get_max_message_length(call->channel), msg.length);
-    grpc_call_cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
     gpr_free(message);
     return 0;
   } else if (msg.length > 0) {
@@ -658,7 +662,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
-    grpc_call_cancel_with_status(
+    cancel_with_status(
         call, GRPC_STATUS_INVALID_ARGUMENT,
         "Received payload data while not reading a message");
     return 0;
@@ -671,7 +675,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
     gpr_asprintf(
         &message, "Receiving message overflow; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    grpc_call_cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
     gpr_free(message);
     return 0;
   } else if (call->incoming_message.length == call->incoming_message_length) {
@@ -981,7 +985,7 @@ void grpc_call_destroy(grpc_call *c) {
   }
   cancel = c->read_state != READ_STATE_STREAM_CLOSED;
   unlock(c);
-  if (cancel) grpc_call_cancel(c);
+  if (cancel) cancel_with_status(c, GRPC_STATUS_CANCELLED, "Cancelled");
   GRPC_CALL_INTERNAL_UNREF(c, "destroy", 1);
 }
 
@@ -989,7 +993,7 @@ grpc_call_error grpc_call_cancel(grpc_call *call) {
   return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled");
 }
 
-grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
+static void cancel_with_status(grpc_call *c,
                                              grpc_status_code status,
                                              const char *description) {
   grpc_transport_op op;
@@ -1005,7 +1009,12 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   unlock(c);
 
   execute_op(c, &op);
+}
 
+grpc_call_error grpc_call_cancel_with_status(grpc_call *c, grpc_status_code status, const char *description) {
+  census_grpc_begin_work();
+  cancel_with_status(c, status, description);
+  census_grpc_end_work(c);
   return GRPC_CALL_OK;
 }
 
@@ -1022,12 +1031,8 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
-    if (call->is_client) {
-      grpc_call_cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
-                                   "Deadline Exceeded");
-    } else {
-      grpc_call_cancel(call);
-    }
+    cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                                 "Deadline Exceeded");
   }
   GRPC_CALL_INTERNAL_UNREF(call, "alarm", 1);
 }
@@ -1148,6 +1153,9 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   size_t out;
   const grpc_op *op;
   grpc_ioreq *req;
+  grpc_call_error error;
+
+  census_grpc_begin_work();
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
@@ -1246,6 +1254,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
   grpc_cq_begin_op(call->cq, call, GRPC_OP_COMPLETE);
 
-  return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
+  error = grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
                                              tag);
+  census_grpc_end_work(call);
+  return error;
 }

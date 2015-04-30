@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "src/core/iomgr/pollset.h"
+#include "src/core/statistics/work_annotation.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/event_string.h"
@@ -208,6 +209,8 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cc,
                                        gpr_timespec deadline) {
   event *ev = NULL;
 
+  census_grpc_begin_work();
+
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     if (cc->queue != NULL) {
@@ -240,11 +243,13 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cc,
     if (gpr_cv_wait(GRPC_POLLSET_CV(&cc->pollset),
                     GRPC_POLLSET_MU(&cc->pollset), deadline)) {
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      census_grpc_end_work(NULL);
       return NULL;
     }
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ev->base);
+  census_grpc_end_work(ev->base.call);
   return &ev->base;
 }
 
@@ -281,6 +286,7 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
                                         gpr_timespec deadline) {
   event *ev = NULL;
 
+  census_grpc_begin_work();
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     if ((ev = pluck_event(cc, tag))) {
@@ -296,11 +302,13 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
     if (gpr_cv_wait(GRPC_POLLSET_CV(&cc->pollset),
                     GRPC_POLLSET_MU(&cc->pollset), deadline)) {
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      census_grpc_end_work(NULL);
       return NULL;
     }
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ev->base);
+  census_grpc_end_work(ev->base.call);
   return &ev->base;
 }
 
@@ -326,10 +334,12 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
 
 void grpc_event_finish(grpc_event *base) {
   event *ev = (event *)base;
+  census_grpc_begin_work();
   ev->on_finish(ev->on_finish_user_data, GRPC_OP_OK);
   if (ev->base.call) {
     GRPC_CALL_INTERNAL_UNREF(ev->base.call, "cq", 1);
   }
+  census_grpc_end_work(base->call);
   gpr_free(ev);
 }
 

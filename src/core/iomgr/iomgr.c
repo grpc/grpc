@@ -37,6 +37,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/alarm_internal.h"
+#include "src/core/statistics/work_annotation.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -69,7 +70,9 @@ static void background_callback_executor(void *ignored) {
       g_cbs_head = cb->next;
       if (!g_cbs_head) g_cbs_tail = NULL;
       gpr_mu_unlock(&g_mu);
+      census_grpc_begin_work();
       cb->cb(cb->cb_arg, cb->success);
+      census_grpc_end_work(NULL);
       gpr_free(cb);
       gpr_mu_lock(&g_mu);
     } else if (grpc_alarm_check(&g_mu, gpr_now(), &deadline)) {

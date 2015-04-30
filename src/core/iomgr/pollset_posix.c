@@ -48,6 +48,7 @@
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/profiling/timers.h"
+#include "src/core/statistics/work_annotation.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -68,7 +69,9 @@ static void backup_poller(void *p) {
   gpr_mu_lock(&g_backup_pollset.mu);
   while (g_shutdown_backup_poller == 0) {
     gpr_timespec next_poll = gpr_time_add(last_poll, delta);
+    census_grpc_begin_work();
     grpc_pollset_work(&g_backup_pollset, gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
+    census_grpc_end_work(NULL);
     gpr_mu_unlock(&g_backup_pollset.mu);
     gpr_sleep_until(next_poll);
     gpr_mu_lock(&g_backup_pollset.mu);
