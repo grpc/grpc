@@ -17,16 +17,13 @@ env:
     - NUGET="mono nuget.exe"
   matrix:
     - CONFIG=opt TEST=sanity
-    - CONFIG=dbg TEST=c
-    - CONFIG=dbg TEST=c++
-    - CONFIG=opt TEST=c
-    - CONFIG=opt TEST=c++
+    - CONFIG=dbg TEST="c c++"
+    - CONFIG=opt TEST="c c++"
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
     - CONFIG=opt TEST=csharp
-    - CONFIG=gcov TEST=c
-    - CONFIG=gcov TEST=c++
+    - CONFIG=gcov TEST="c c++"
     - USE_GCC=4.4 CONFIG=opt TEST=build
     - USE_GCC=4.5 CONFIG=opt TEST=build
 script:
