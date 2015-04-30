@@ -188,7 +188,7 @@ LD_gcov = gcc
 LDXX_gcov = g++
 CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
 LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
-DEFINES_gcov = NDEBUG
+DEFINES_gcov = _DEBUG DEBUG
 
 
 # General settings.
