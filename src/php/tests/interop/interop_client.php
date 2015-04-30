@@ -38,6 +38,7 @@ require 'empty.php';
 require 'message_set.php';
 require 'messages.php';
 require 'test.php';
+
 /**
  * Assertion function that always exits with an error code if the assertion is
  * falsy
@@ -126,7 +127,7 @@ function serviceAccountCreds($stub, $args) {
 
 /**
  * Run the client_streaming test.
- * Not tested against any server as of 2014-12-04.
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function clientStreaming($stub) {
@@ -149,7 +150,7 @@ function clientStreaming($stub) {
 
 /**
  * Run the server_streaming test.
- * Not tested against any server as of 2014-12-04.
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function serverStreaming($stub) {
@@ -180,7 +181,7 @@ function serverStreaming($stub) {
 
 /**
  * Run the ping_pong test.
- * Not tested against any server as of 2014-12-04.
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function pingPong($stub) {
@@ -214,6 +215,11 @@ function pingPong($stub) {
               'Call did not complete successfully');
 }
 
+/**
+ * Run the cancel_after_first_response test.
+ * Passes when run against the Node server as of 2015-04-30
+ * @param $stub Stub object that has service methods.
+ */
 function cancelAfterFirstResponse($stub) {
   $call = $stub->FullDuplexCall();
   $request = new grpc\testing\StreamingOutputCallRequest();
