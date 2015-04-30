@@ -488,6 +488,7 @@ function makeClientConstructor(methods) {
         callback(null, metadata);
       };
     }
+    this.server_address = address;
     this.channel = new grpc.Channel(address, options);
   }
 
