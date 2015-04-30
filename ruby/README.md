@@ -8,30 +8,33 @@ For this sample, we've already generated the server and client stubs from [hello
 PREREQUISITES
 -------------
 
-This requires Ruby 2.1, as the gRPC API surface uses keyword args.
-If you don't have that installed locally, you can use [RVM](https://www.rvm.io/) to use Ruby 2.1 for testing without upgrading the version of Ruby on your whole system.
+- Ruby 2.x
+
+This requires Ruby 2.x, as the gRPC API surface uses keyword args.
+If you don't have that installed locally, you can use [RVM](https://www.rvm.io/) to use Ruby 2.x for testing without upgrading the version of Ruby on your whole system.
 RVM is also useful if you don't have the necessary privileges to update your system's Ruby.
 ```sh
 $ # RVM installation as specified at https://rvm.io/rvm/install
 $ gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-$ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-2.1
+$ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-2
 $
 $ # follow the instructions to ensure that your're using the latest stable version of Ruby
 $ # and that the rvm command is installed
 ```
 - *N.B* Make sure your run `source $HOME/.rvm/scripts/rvm` as instructed to complete the set-up of RVM.
 
+- Homebrew/Linuxbrew
+
+The gRPC core will be installed using [Linuxbrew][Linuxbrew] for Linux and [Homebrew][Homebrew] on Macs.
+Please ensure these are installed before proceeding.
+
 INSTALL
 -------
 
-- Clone this repository.
-
-- Download the grpc debian packages from the [latest grpc release](https://github.com/grpc/grpc/releases) and install them.
-  - Later, it will possible to install them directly using `apt-get install`
+- Clone this repository
+- Install gRPC Ruby using the brew-based installer
 ```sh
-$ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc_0.5.0_amd64.deb
-$ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc-dev_0.5.0_amd64.deb
-$ sudo dpkg -i libgrpc_0.5.0_amd64.deb libgrpc-dev_0.5.0_amd64.deb
+$ curl -fsSL https://raw.githubusercontent.com/tbetbetbe/homebrew-grpc/master/scripts/install | bash -s ruby
 ```
 
 - Use bundler to install the example package's dependencies
@@ -60,3 +63,6 @@ Tutorial
 --------
 
 You can find a more detailed tutorial in [gRPC Basics: Ruby](https://github.com/grpc/grpc-common/blob/master/ruby/route_guide/README.md)
+
+[Homebrew]: https://github.com/Homebrew/homebrew
+[Linuxbrew]: https://github.com/Homebrew/linuxbrew
