@@ -159,8 +159,8 @@ types as protocol buffer message types. Both the client and the
 server use interface code generated from the service definition.
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](https://github.com/grpc/grpc-java/tree/master/examples/src/main/proto). The `Greeting`
-service has one method, `hello`, that lets the server receive a single
+[helloworld.proto](https://github.com/grpc/grpc-java/tree/master/examples/src/main/proto). The `Greeter`
+service has one method, `SayHello`, that lets the server receive a single
 `HelloRequest`
 message from the remote client containing the user's name, then send back
 a greeting in a single `HelloReply`. This is the simplest type of RPC you
@@ -173,7 +173,7 @@ option java_package = "io.grpc.examples";
 
 package helloworld;
 
-// The greeting service definition.
+// The greeter service definition.
 service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
@@ -200,7 +200,7 @@ our application - right now we're going to generate Java code, though you
 can generate gRPC code in any gRPC-supported language (as you'll see later
 in this example). The generated code contains both stub code for clients to
 use and an abstract interface for servers to implement, both with the method
-defined in our `Greeting` service.
+defined in our `Greeter` service.
 
 (If you didn't install the gRPC plugins and protoc on your system and are just reading along with
 the example, you can skip this step and move
@@ -258,7 +258,7 @@ network: [HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/e
 #### Service implementation
 
 [GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java#L51)
-actually implements our GreetingService's required behaviour.
+actually implements our `Greeter` service's required behaviour.
 
 As you can see, the class `GreeterImpl` implements the interface
 `GreeterGrpc.Greeter` that we [generated](#generating) from our proto
@@ -272,7 +272,7 @@ As you can see, the class `GreeterImpl` implements the interface
       responseObserver.onCompleted();
     }
 ```
-- `hello` takes two parameters:
+- `sayHello` takes two parameters:
     - `HelloRequest`: the request
     - `StreamObserver<HelloReply>`: a response observer, which is
     a special interface for the server to call with its response
@@ -313,7 +313,7 @@ implementation available from the network.
 
 ```
 
-Here we create an appropriate gRPC server, binding the `GreeterService`
+Here we create an appropriate gRPC server, binding the `Greeter` service
 implementation that we created to a port. Then we start the server running: the server is now ready to receive
 requests from `Greeter` service clients on our specified port. We'll cover
 how all this works in a bit more detail in our language-specific documentation.
@@ -331,7 +331,7 @@ we'll leave that for the tutorial.
 
 #### Connecting to the service
 
-First let's look at how we connect to the `Greetings` server. First we need
+First let's look at how we connect to the `Greeter` server. First we need
 to create a gRPC channel, specifying the hostname and port of the server we
 want to connect to. Then we use the channel to construct the stub instance.
 
