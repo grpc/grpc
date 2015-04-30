@@ -43,7 +43,7 @@ using Grpc.Core.Utils;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Handles server side native call lifecycle.
+    /// Manages server side native call lifecycle.
     /// </summary>
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>
     {
@@ -61,20 +61,17 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Starts a server side call. Currently, all server side calls are implemented as duplex 
-        /// streaming call and they are adapted to the appropriate streaming arity.
+        /// Starts a server side call.
         /// </summary>
-        public Task ServerSideCallAsync(IObserver<TRequest> readObserver)
+        public Task ServerSideCallAsync()
         {
             lock (myLock)
             {
                 Preconditions.CheckNotNull(call);
 
                 started = true;
-                this.readObserver = readObserver;
 
                 call.StartServerSide(finishedServersideHandler);
-                StartReceiveMessage();
                 return finishedServersideTcs.Task;
             }
         }
@@ -83,9 +80,18 @@ namespace Grpc.Core.Internal
         /// Sends a streaming response. Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TResponse msg, AsyncCompletionDelegate completionDelegate)
+        public void StartSendMessage(TResponse msg, AsyncCompletionDelegate<object> completionDelegate)
         {
             StartSendMessageInternal(msg, completionDelegate);
+        }
+
+        /// <summary>
+        /// Receives a streaming request. Only one pending read action is allowed at any given time.
+        /// completionDelegate is called when the operation finishes.
+        /// </summary>
+        public void StartReadMessage(AsyncCompletionDelegate<TRequest> completionDelegate)
+        {
+            StartReadMessageInternal(completionDelegate);
         }
 
         /// <summary>
@@ -93,7 +99,7 @@ namespace Grpc.Core.Internal
         /// Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, AsyncCompletionDelegate completionDelegate)
+        public void StartSendStatusFromServer(Status status, AsyncCompletionDelegate<object> completionDelegate)
         {
             lock (myLock)
             {

@@ -1,4 +1,4 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -33,33 +33,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
-namespace Grpc.Core.Utils
+namespace Grpc.Core
 {
-    public class RecordingObserver<T> : IObserver<T>
+    /// <summary>
+    /// A stream of messages to be read.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IAsyncStreamReader<T>
     {
-        TaskCompletionSource<List<T>> tcs = new TaskCompletionSource<List<T>>();
-        List<T> data = new List<T>();
-
-        public void OnCompleted()
-        {
-            tcs.SetResult(data);
-        }
-
-        public void OnError(Exception error)
-        {
-            tcs.SetException(error);
-        }
-
-        public void OnNext(T value)
-        {
-            data.Add(value);
-        }
-
-        public Task<List<T>> ToList()
-        {
-            return tcs.Task;
-        }
+        /// <summary>
+        /// Reads a single message. Returns default(T) if the last message was already read.
+        /// A following read can only be started when the previous one finishes.
+        /// </summary>
+        Task<T> ReadNext();
     }
 }

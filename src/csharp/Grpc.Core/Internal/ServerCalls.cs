@@ -32,38 +32,32 @@
 #endregion
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
-    /// <summary>
-    /// Return type for client streaming async method.
-    /// </summary>
-    public struct ClientStreamingAsyncResult<TRequest, TResponse>
+    internal static class ServerCalls
     {
-        readonly Task<TResponse> task;
-        readonly IObserver<TRequest> inputs;
-
-        public ClientStreamingAsyncResult(Task<TResponse> task, IObserver<TRequest> inputs)
+        public static IServerCallHandler UnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryServerMethod<TRequest, TResponse> handler)
         {
-            this.task = task;
-            this.inputs = inputs;
+            return new UnaryServerCallHandler<TRequest, TResponse>(method, handler);
         }
 
-        public Task<TResponse> Task
+        public static IServerCallHandler ClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, ClientStreamingServerMethod<TRequest, TResponse> handler)
         {
-            get
-            {
-                return this.task;
-            }
+            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, handler);
         }
 
-        public IObserver<TRequest> Inputs
+        public static IServerCallHandler ServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, ServerStreamingServerMethod<TRequest, TResponse> handler)
         {
-            get
-            {
-                return this.inputs;
-            }
+            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, handler);
+        }
+
+        public static IServerCallHandler DuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, DuplexStreamingServerMethod<TRequest, TResponse> handler)
+        {
+            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, handler);
         }
     }
 }

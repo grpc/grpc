@@ -87,7 +87,7 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void LargeUnary()
         {
-            InteropClient.RunEmptyUnary(client);
+            InteropClient.RunLargeUnary(client);
         }
 
         [Test]

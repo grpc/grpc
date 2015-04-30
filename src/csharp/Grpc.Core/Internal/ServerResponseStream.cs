@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,30 +27,38 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
 
 using System;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
-    // TODO: perhaps add also serverSideStreaming and clientSideStreaming
-
-    public delegate void UnaryRequestServerMethod<TRequest, TResponse>(TRequest request, IObserver<TResponse> responseObserver);
-
-    public delegate IObserver<TRequest> StreamingRequestServerMethod<TRequest, TResponse>(IObserver<TResponse> responseObserver);
-
-    internal static class ServerCalls
+    /// <summary>
+    /// Writes responses asynchronously to an underlying AsyncCallServer object.
+    /// </summary>
+    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>
     {
-        public static IServerCallHandler UnaryRequestCall<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryRequestServerMethod<TRequest, TResponse> handler)
+        readonly AsyncCallServer<TRequest, TResponse> call;
+
+        public ServerResponseStream(AsyncCallServer<TRequest, TResponse> call)
         {
-            return new UnaryRequestServerCallHandler<TRequest, TResponse>(method, handler);
+            this.call = call;
         }
 
-        public static IServerCallHandler StreamingRequestCall<TRequest, TResponse>(Method<TRequest, TResponse> method, StreamingRequestServerMethod<TRequest, TResponse> handler)
+        public Task Write(TResponse message)
         {
-            return new StreamingRequestServerCallHandler<TRequest, TResponse>(method, handler);
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendMessage(message, taskSource.CompletionDelegate);
+            return taskSource.Task;
+        }
+
+        public Task WriteStatus(Status status)
+        {
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendStatusFromServer(status, taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
     }
 }

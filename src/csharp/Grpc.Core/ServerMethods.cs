@@ -32,52 +32,30 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace Grpc.Core.Utils
+using Grpc.Core.Internal;
+
+namespace Grpc.Core
 {
-    // TODO: replace this by something that implements IAsyncEnumerator.
     /// <summary>
-    /// Observer that allows us to await incoming messages one-by-one.
-    /// The implementation is not ideal and class will be probably replaced
-    /// by something more versatile in the future.
+    /// Server-side handler for unary call.
     /// </summary>
-    public class RecordingQueue<T> : IObserver<T>
-    {
-        readonly BlockingCollection<T> queue = new BlockingCollection<T>();
-        TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
+    public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(TRequest request);
 
-        public void OnCompleted()
-        {
-            tcs.SetResult(null);
-        }
+    /// <summary>
+    /// Server-side handler for client streaming call.
+    /// </summary>
+    public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream);
 
-        public void OnError(Exception error)
-        {
-            tcs.SetException(error);
-        }
+    /// <summary>
+    /// Server-side handler for server streaming call.
+    /// </summary>
+    public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream);
 
-        public void OnNext(T value)
-        {
-            queue.Add(value);
-        }
-
-        public BlockingCollection<T> Queue
-        {
-            get
-            {
-                return queue;
-            }
-        }
-
-        public Task Finished
-        {
-            get
-            {
-                return tcs.Task;
-            }
-        }
-    }
+    /// <summary>
+    /// Server-side handler for bidi streaming call.
+    /// </summary>
+    public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream);
 }

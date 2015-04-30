@@ -1,11 +1,11 @@
 #region Copyright notice and license
 // Copyright 2015, Google Inc.
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -15,7 +15,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,43 +29,35 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 using System;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
-    /// and then halfcloses the call. Used for server-side call handling.
+    /// Writes requests asynchronously to an underlying AsyncCall object.
     /// </summary>
-    internal class ServerStreamingOutputObserver<TRequest, TResponse> : IObserver<TResponse>
+    internal class ClientRequestStream<TRequest, TResponse> : IClientStreamWriter<TRequest>
     {
-        readonly AsyncCallServer<TRequest, TResponse> call;
+        readonly AsyncCall<TRequest, TResponse> call;
 
-        public ServerStreamingOutputObserver(AsyncCallServer<TRequest, TResponse> call)
+        public ClientRequestStream(AsyncCall<TRequest, TResponse> call)
         {
             this.call = call;
         }
 
-        public void OnCompleted()
+        public Task Write(TRequest message)
         {
-            var taskSource = new AsyncCompletionTaskSource();
-            call.StartSendStatusFromServer(new Status(StatusCode.OK, ""), taskSource.CompletionDelegate);
-            // TODO: how bad is the Wait here?
-            taskSource.Task.Wait();
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendMessage(message, taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
 
-        public void OnError(Exception error)
+        public Task Close()
         {
-            // TODO: implement this...
-            throw new InvalidOperationException("This should never be called.");
-        }
-
-        public void OnNext(TResponse value)
-        {
-            var taskSource = new AsyncCompletionTaskSource();
-            call.StartSendMessage(value, taskSource.CompletionDelegate);
-            // TODO: how bad is the Wait here?
-            taskSource.Task.Wait();
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendCloseFromClient(taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
     }
 }
