@@ -121,6 +121,12 @@ namespace Grpc.Core.Internal
             {
                 finished = true;
 
+                if (readCompletionDelegate == null)
+                {
+                    // allow disposal of native call
+                    readingDone = true;
+                }
+
                 ReleaseResourcesIfPossible();
             }
             // TODO: handle error ...

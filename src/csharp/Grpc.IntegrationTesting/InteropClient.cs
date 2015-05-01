@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Google.ProtocolBuffers;
@@ -165,6 +166,12 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "compute_engine_creds":
                     RunComputeEngineCreds(client);
+                    break;
+                case "cancel_after_begin":
+                    RunCancelAfterBegin(client);
+                    break;
+                case "cancel_after_first_response":
+                    RunCancelAfterFirstResponse(client);
                     break;
                 case "benchmark_empty_unary":
                     RunBenchmarkEmptyUnary(client);
@@ -349,6 +356,64 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
             Assert.AreEqual(ComputeEngineUser, response.Username);
             Console.WriteLine("Passed!");
+        }
+
+        public static void RunCancelAfterBegin(TestServiceGrpc.ITestServiceClient client)
+        {
+            Task.Run(async () =>
+            {
+                Console.WriteLine("running cancel_after_begin");
+
+                var cts = new CancellationTokenSource();
+                var call = client.StreamingInputCall(cts.Token);
+                cts.Cancel();
+
+                try
+                {
+                    var response = await call.Result;
+                    Assert.Fail();
+                } 
+                catch (RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+                }
+                Console.WriteLine("Passed!");
+            }).Wait();
+        }
+
+        public static void RunCancelAfterFirstResponse(TestServiceGrpc.ITestServiceClient client)
+        {
+            Task.Run(async () =>
+            {
+                Console.WriteLine("running cancel_after_first_response");
+
+                var cts = new CancellationTokenSource();
+                var call = client.FullDuplexCall(cts.Token);
+
+                StreamingOutputCallResponse response;
+
+                await call.RequestStream.Write(StreamingOutputCallRequest.CreateBuilder()
+                    .SetResponseType(PayloadType.COMPRESSABLE)
+                    .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
+                    .SetPayload(CreateZerosPayload(27182)).Build());
+
+                response = await call.ResponseStream.ReadNext();
+                Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
+                Assert.AreEqual(31415, response.Payload.Body.Length);
+
+                cts.Cancel();
+
+                try
+                {
+                    response = await call.ResponseStream.ReadNext();
+                    Assert.Fail();
+                }
+                catch (RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+                }
+                Console.WriteLine("Passed!");
+            }).Wait();
         }
 
         // This is not an official interop test, but it's useful.

@@ -47,23 +47,59 @@ namespace Grpc.Core.Tests
         const string Host = "localhost";
         const string ServiceName = "/tests.Test";
 
-        static readonly Method<string, string> UnaryEchoStringMethod = new Method<string, string>(
+        static readonly Method<string, string> EchoMethod = new Method<string, string>(
             MethodType.Unary,
-            "/tests.Test/UnaryEchoString",
+            "/tests.Test/Echo",
+            Marshallers.StringMarshaller,
+            Marshallers.StringMarshaller);
+
+        static readonly Method<string, string> ConcatAndEchoMethod = new Method<string, string>(
+            MethodType.ClientStreaming,
+            "/tests.Test/ConcatAndEcho",
+            Marshallers.StringMarshaller,
+            Marshallers.StringMarshaller);
+
+        static readonly Method<string, string> NonexistentMethod = new Method<string, string>(
+            MethodType.Unary,
+            "/tests.Test/NonexistentMethod",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
         static readonly ServerServiceDefinition ServiceDefinition = ServerServiceDefinition.CreateBuilder(ServiceName)
-            .AddMethod(UnaryEchoStringMethod, HandleUnaryEchoString).Build();
+            .AddMethod(EchoMethod, EchoHandler)
+            .AddMethod(ConcatAndEchoMethod, ConcatAndEchoHandler)
+            .Build();
+
+        Server server;
+        Channel channel;
 
         [TestFixtureSetUp]
-        public void Init()
+        public void InitClass()
         {
             GrpcEnvironment.Initialize();
         }
 
-        [TestFixtureTearDown]
+        [SetUp]
+        public void Init()
+        {
+            GrpcEnvironment.Initialize();
+
+            server = new Server();
+            server.AddServiceDefinition(ServiceDefinition);
+            int port = server.AddListeningPort(Host + ":0");
+            server.Start();
+            channel = new Channel(Host + ":" + port);
+        }
+
+        [TearDown]
         public void Cleanup()
+        {
+            channel.Dispose();
+            server.ShutdownAsync().Wait();
+        }
+
+        [TestFixtureTearDown]
+        public void CleanupClass()
         {
             GrpcEnvironment.Shutdown();
         }
@@ -71,93 +107,160 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall()
         {
-            var server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddListeningPort(Host + ":0");
-            server.Start();
-
-            using (Channel channel = new Channel(Host + ":" + port))
-            {
-                var call = new Call<string, string>(ServiceName, UnaryEchoStringMethod, channel, Metadata.Empty);
-                Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)));
-            }
-
-            server.ShutdownAsync().Wait();
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", CancellationToken.None));
         }
 
         [Test]
-        public void CallOnDisposedChannel()
+        public void UnaryCall_ServerHandlerThrows()
         {
-            var server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddListeningPort(Host + ":0");
-            server.Start();
-
-            Channel channel = new Channel(Host + ":" + port);
-            channel.Dispose();
-
-            var call = new Call<string, string>(ServiceName, UnaryEchoStringMethod, channel, Metadata.Empty);
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
             try
             {
-              Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
-              Assert.Fail();
+                Calls.BlockingUnaryCall(call, "THROW", CancellationToken.None);
+                Assert.Fail();
             }
-            catch (ObjectDisposedException e)
+            catch (RpcException e)
             {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
             }
+        }
 
-            server.ShutdownAsync().Wait();
+        [Test]
+        public void AsyncUnaryCall()
+        {
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).Result;
+            Assert.AreEqual("ABC", result);
+        }
+
+        [Test]
+        public void AsyncUnaryCall_ServerHandlerThrows()
+        {
+            Task.Run(async () => 
+            {
+                var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+                try
+                {
+                    await Calls.AsyncUnaryCall(call, "THROW", CancellationToken.None);
+                    Assert.Fail();
+                }
+                catch (RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
+                }
+            }).Wait();
+        }
+
+        [Test]
+        public void ClientStreamingCall()
+        {
+            Task.Run(async () => 
+            {
+                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+                var callResult = Calls.AsyncClientStreamingCall(call, CancellationToken.None);
+
+                await callResult.RequestStream.WriteAll(new string[] { "A", "B", "C" });
+                Assert.AreEqual("ABC", await callResult.Result);
+            }).Wait();
+        }
+
+        [Test]
+        public void ClientStreamingCall_ServerHandlerThrows()
+        {
+            Task.Run(async () => 
+                     {
+                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+                var callResult = Calls.AsyncClientStreamingCall(call, CancellationToken.None);
+                // TODO(jtattermusch): if we send "A", "THROW", "C", server hangs.
+                await callResult.RequestStream.WriteAll(new string[] { "A", "B", "THROW" });
+
+                try
+                {
+                    await callResult.Result;
+                }
+                catch(RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
+                }
+            }).Wait();
+        }
+
+        [Test]
+        public void ClientStreamingCall_CancelAfterBegin()
+        {
+            Task.Run(async () => 
+            {
+                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+
+                var cts = new CancellationTokenSource();
+                var callResult = Calls.AsyncClientStreamingCall(call, cts.Token);
+                cts.Cancel();
+
+                try
+                {
+                    await callResult.Result;
+                }
+                catch(RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode); 
+                }
+            }).Wait();
+        }
+
+        [Test]
+        public void UnaryCall_DisposedChannel()
+        {
+            channel.Dispose();
+
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(call, "ABC", CancellationToken.None));
         }
 
         [Test]
         public void UnaryCallPerformance()
         {
-            var server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddListeningPort(Host + ":0");
-            server.Start();
-
-            using (Channel channel = new Channel(Host + ":" + port))
-            {
-                var call = new Call<string, string>(ServiceName, UnaryEchoStringMethod, channel, Metadata.Empty);
-                BenchmarkUtil.RunBenchmark(100, 100,
-                                           () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
-            }
-
-            server.ShutdownAsync().Wait();
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            BenchmarkUtil.RunBenchmark(100, 100,
+                                       () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
         }
 
         [Test]
         public void UnknownMethodHandler()
         {
-            var server = new Server();
-            server.AddServiceDefinition(ServerServiceDefinition.CreateBuilder(ServiceName).Build());
-            int port = server.AddListeningPort(Host + ":0");
-            server.Start();
-
-            using (Channel channel = new Channel(Host + ":" + port))
+            var call = new Call<string, string>(ServiceName, NonexistentMethod, channel, Metadata.Empty);
+            try
             {
-                var call = new Call<string, string>(ServiceName, UnaryEchoStringMethod, channel, Metadata.Empty);
-                try
-                {
-                    Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
-                    Assert.Fail();
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
-                }
+                Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
+                Assert.Fail();
             }
-
-            server.ShutdownAsync().Wait();
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
+            }
         }
 
-        /// <summary>
-        /// Handler for unaryEchoString method.
-        /// </summary>
-        private static Task<string> HandleUnaryEchoString(string request)
+        private static async Task<string> EchoHandler(string request)
         {
-            return Task.FromResult(request);
+            if (request == "THROW")
+            {
+                throw new Exception("This was thrown on purpose by a test");
+            }
+            return request;
+        }
+
+        private static async Task<string> ConcatAndEchoHandler(IAsyncStreamReader<string> requestStream)
+        {
+            string result = "";
+            await requestStream.ForEach(async (request) =>
+            {
+                if (request == "THROW")
+                {
+                    throw new Exception("This was thrown on purpose by a test");
+                }
+                result += request;
+            });
+            return result;   
         }
     }
 }
