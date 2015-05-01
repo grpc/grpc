@@ -191,12 +191,17 @@ namespace Grpc.Core.Internal
 
         private void ReleaseResources()
         {
+            OnReleaseResources();
             if (call != null)
             {
                 call.Dispose();
             }
             gchandle.Free();
             disposed = true;
+        }
+
+        protected virtual void OnReleaseResources()
+        {
         }
 
         protected void CheckSendingAllowed()

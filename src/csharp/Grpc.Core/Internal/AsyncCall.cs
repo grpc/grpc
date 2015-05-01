@@ -67,6 +67,7 @@ namespace Grpc.Core.Internal
         public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName)
         {
             var call = CallSafeHandle.Create(channel.Handle, cq, methodName, channel.Target, Timespec.InfFuture);
+            DebugStats.ActiveClientCalls.Increment();
             InitializeInternal(call);
         }
 
@@ -263,6 +264,11 @@ namespace Grpc.Core.Internal
                     }
                 }
             }
+        }
+
+        protected override void OnReleaseResources()
+        {
+            DebugStats.ActiveClientCalls.Decrement();
         }
 
         /// <summary>

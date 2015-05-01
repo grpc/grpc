@@ -5,7 +5,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -94,6 +94,8 @@
     <Compile Include="Internal\ClientResponseStream.cs" />
     <Compile Include="Internal\ServerRequestStream.cs" />
     <Compile Include="Internal\ServerResponseStream.cs" />
+    <Compile Include="Internal\AtomicCounter.cs" />
+    <Compile Include="Internal\DebugStats.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

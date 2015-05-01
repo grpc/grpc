@@ -57,6 +57,7 @@ namespace Grpc.Core.Internal
 
         public void Initialize(CallSafeHandle call)
         {
+            DebugStats.ActiveServerCalls.Increment();
             InitializeInternal(call);
         }
 
@@ -110,6 +111,11 @@ namespace Grpc.Core.Internal
                 halfcloseRequested = true;
                 sendCompletionDelegate = completionDelegate;
             }
+        }
+
+        protected override void OnReleaseResources()
+        {
+            DebugStats.ActiveServerCalls.Decrement();
         }
 
         /// <summary>
