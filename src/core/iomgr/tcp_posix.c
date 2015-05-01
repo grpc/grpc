@@ -375,7 +375,7 @@ static void grpc_tcp_continue_read(grpc_tcp *tcp) {
         slice_state_destroy(&read_state);
         grpc_tcp_unref(tcp);
       } else {
-        /* Spurious read event, consume it here */
+        /* We've consumed the edge, request a new one */
         slice_state_destroy(&read_state);
         grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
       }

@@ -89,13 +89,8 @@ static void log_report_locked(grpc_timers_log* log) {
     grpc_timer_entry* entry = &(log->log[i]);
     fprintf(fp, "GRPC_LAT_PROF ");
     grpc_precise_clock_print(&entry->tm, fp);
-<<<<<<< HEAD:src/core/profiling/timers.c
-    fprintf(fp, " %p %s %p %s %d\n", (void*)(gpr_intptr)entry->thd, entry->tag, entry->id, entry->file,
-            entry->line);
-=======
     fprintf(fp, " %p %d %p %s %d\n", (void*)(gpr_intptr)entry->thd, entry->tag,
             entry->id, entry->file, entry->line);
->>>>>>> 5ae895a5d06fad59a89ce6e8923b1145dea663bd:src/core/profiling/basic_timers.c
   }
 
   /* Now clear out the log */
