@@ -32,9 +32,9 @@
 <%namespace file="packages.include" import="get_openssl,get_zlib"/>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
-  allowed_dependencies = set(['gpr', 'grpc', 'gpr_test_util', 'grpc_test_util'])
+  disallowed_dependencies = set(['end2end_certs'])
   buildable_targets = [ target for target in targets
-                        if set(target.deps).issubset(allowed_dependencies) and
+                        if not disallowed_dependencies.intersection(target.deps) and
                         all([src.endswith('.c') for src in target.src]) and
                         'windows' in target.platforms ]
   c_test_targets = [ target for target in buildable_targets if target.build == 'test' and not target.language == 'c++' ]

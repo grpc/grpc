@@ -51,7 +51,6 @@ class Credentials;
 class StreamContextInterface;
 
 class Channel GRPC_FINAL : public GrpcLibrary,
-                           public std::enable_shared_from_this<Channel>,
                            public ChannelInterface {
  public:
   Channel(const grpc::string& target, grpc_channel* c_channel);

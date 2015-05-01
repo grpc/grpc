@@ -31,34 +31,12 @@
  *
  */
 
-#ifndef GRPCXX_CHANNEL_INTERFACE_H
-#define GRPCXX_CHANNEL_INTERFACE_H
+#include <sys/sdt.h>
 
-#include <memory>
+#ifndef _SYS_SDT_H
+#error "_SYS_SDT_H not defined, despite <sys/sdt.h> being present."
+#endif
 
-#include <grpc++/status.h>
-#include <grpc++/impl/call.h>
-
-struct grpc_call;
-
-namespace grpc {
-class Call;
-class CallOpBuffer;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class CallInterface;
-
-class ChannelInterface : public CallHook,
-                         public std::enable_shared_from_this<ChannelInterface> {
- public:
-  virtual ~ChannelInterface() {}
-
-  virtual void* RegisterMethod(const char* method_name) = 0;
-  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                          CompletionQueue* cq) = 0;
-};
-
-}  // namespace grpc
-
-#endif  // GRPCXX_CHANNEL_INTERFACE_H
+int main() {
+  return 0;
+}
