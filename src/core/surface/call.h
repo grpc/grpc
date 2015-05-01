@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_SURFACE_CALL_H
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/channel/context.h"
 #include <grpc/grpc.h>
 
 /* Primitive operation types - grpc_op's get rewritten into these */
@@ -119,6 +120,13 @@ extern int grpc_trace_batch;
 void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
+
+/* Set a context pointer.
+   No thread safety guarantees are made wrt this value. */
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
+                           void (*destroy)(void *value));
+/* Get a context pointer. */
+void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
