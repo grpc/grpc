@@ -57,20 +57,7 @@ void cq_verify_empty(cq_verifier *v);
    Any functions taking ... expect a NULL terminated list of key/value pairs
    (each pair using two parameter slots) of metadata that MUST be present in
    the event. */
-void cq_expect_write_accepted(cq_verifier *v, void *tag, grpc_op_error result);
-void cq_expect_finish_accepted(cq_verifier *v, void *tag, grpc_op_error result);
-void cq_expect_read(cq_verifier *v, void *tag, gpr_slice bytes);
-void cq_expect_empty_read(cq_verifier *v, void *tag);
 void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result);
-/* *output_call is set the the server call instance */
-void cq_expect_server_rpc_new(cq_verifier *v, grpc_call **output_call,
-                              void *tag, const char *method, const char *host,
-                              gpr_timespec deadline, ...);
-void cq_expect_client_metadata_read(cq_verifier *v, void *tag, ...);
-void cq_expect_finished_with_status(cq_verifier *v, void *tag,
-                                    grpc_status_code status_code,
-                                    const char *details, ...);
-void cq_expect_finished(cq_verifier *v, void *tag, ...);
 void cq_expect_server_shutdown(cq_verifier *v, void *tag);
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
