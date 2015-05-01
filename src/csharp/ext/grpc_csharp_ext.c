@@ -415,16 +415,6 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
   grpc_call_destroy(call);
 }
 
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_call_start_write_from_copied_buffer(grpc_call *call,
-                                              const char *buffer, size_t len,
-                                              void *tag, gpr_uint32 flags) {
-  grpc_byte_buffer *byte_buffer = string_to_byte_buffer(buffer, len);
-  GPR_ASSERT(grpc_call_start_write_old(call, byte_buffer, tag, flags) ==
-             GRPC_CALL_OK);
-  grpc_byte_buffer_destroy(byte_buffer);
-}
-
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_start_unary(grpc_call *call, callback_funcptr callback,
                            const char *send_buffer, size_t send_buffer_len,
