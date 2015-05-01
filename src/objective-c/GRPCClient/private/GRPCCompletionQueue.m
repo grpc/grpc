@@ -66,30 +66,21 @@
       while (YES) {
         // The following call blocks until an event is available.
         grpc_event *event = grpc_completion_queue_next(unmanagedQueue, gpr_inf_future);
+        GRPCQueueCompletionHandler handler;
         switch (event->type) {
-          case GRPC_WRITE_ACCEPTED:
-          case GRPC_FINISH_ACCEPTED:
-          case GRPC_CLIENT_METADATA_READ:
-          case GRPC_READ:
-          case GRPC_FINISHED:
-            if (event->tag) {
-              GRPCEventHandler handler = (__bridge_transfer GRPCEventHandler) event->tag;
-              handler(event);
-            }
+          case GRPC_OP_COMPLETE:
+            handler = (__bridge_transfer GRPCQueueCompletionHandler)event->tag;
+            handler(event->data.op_complete);
             grpc_event_finish(event);
-            continue;
+            break;
           case GRPC_QUEUE_SHUTDOWN:
-            grpc_completion_queue_destroy(unmanagedQueue);
             grpc_event_finish(event);
+            grpc_completion_queue_destroy(unmanagedQueue);
             return;
-          case GRPC_SERVER_RPC_NEW:
-            NSAssert(NO, @"C gRPC library produced a server-only event.");
-            continue;
+          default:
+            grpc_event_finish(event);
+            [NSException raise:@"Unrecognized completion type" format:@""];
         }
-        // This means the C gRPC library produced an event that wasn't known
-        // when this library was written. To preserve evolvability, ignore the
-        // unknown event on release builds.
-        NSAssert(NO, @"C gRPC library produced an unknown event.");
       };
     });
   }
