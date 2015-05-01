@@ -218,52 +218,62 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
 
 void PrintHeaderClientMethod(grpc::protobuf::io::Printer *printer,
                              const grpc::protobuf::MethodDescriptor *method,
-                             std::map<grpc::string, grpc::string> *vars) {
+                             std::map<grpc::string, grpc::string> *vars,
+                             bool is_abstract) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] =
       grpc_cpp_generator::ClassName(method->input_type(), true);
   (*vars)["Response"] =
       grpc_cpp_generator::ClassName(method->output_type(), true);
+  (*vars)["IsAbstract"] = is_abstract ? " = 0" : "";
+  (*vars)["IsVirtual"] = is_abstract ? "virtual " : "";
   if (NoStreaming(method)) {
-    printer->Print(*vars,
-                   "::grpc::Status $Method$(::grpc::ClientContext* context, "
-                   "const $Request$& request, $Response$* response);\n");
     printer->Print(
         *vars,
+        "$IsVirtual$::grpc::Status $Method$(::grpc::ClientContext* context, "
+        "const $Request$& request, $Response$* response)$IsAbstract$;\n");
+    printer->Print(
+        *vars,
+        "$IsVirtual$"
         "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
         "Async$Method$(::grpc::ClientContext* context, "
         "const $Request$& request, "
-        "::grpc::CompletionQueue* cq, void* tag);\n");
+        "::grpc::CompletionQueue* cq, void* tag)$IsAbstract$;\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientWriter< $Request$>> $Method$("
-        "::grpc::ClientContext* context, $Response$* response);\n");
+        "$IsVirtual$std::unique_ptr< ::grpc::ClientWriter< $Request$>>"
+        " $Method$("
+        "::grpc::ClientContext* context, $Response$* response)$IsAbstract$;\n");
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>> Async$Method$("
-        "::grpc::ClientContext* context, $Response$* response, "
-        "::grpc::CompletionQueue* cq, void* tag);\n");
+        "$IsVirtual$std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>>"
+        " Async$Method$(::grpc::ClientContext* context, $Response$* response, "
+        "::grpc::CompletionQueue* cq, void* tag)$IsAbstract$;\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientReader< $Response$>> $Method$("
-        "::grpc::ClientContext* context, const $Request$& request);\n");
-    printer->Print(*vars,
-                   "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
-                   "Async$Method$("
-                   "::grpc::ClientContext* context, const $Request$& request, "
-                   "::grpc::CompletionQueue* cq, void* tag);\n");
+        "$IsVirtual$std::unique_ptr< ::grpc::ClientReader< $Response$>>"
+        " $Method$(::grpc::ClientContext* context, const $Request$& request)"
+        "$IsAbstract$;\n");
+    printer->Print(
+        *vars,
+        "$IsVirtual$std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
+        "Async$Method$("
+        "::grpc::ClientContext* context, const $Request$& request, "
+        "::grpc::CompletionQueue* cq, void* tag)$IsAbstract$;\n");
   } else if (BidiStreaming(method)) {
     printer->Print(
         *vars,
+        "$IsVirtual$"
         "std::unique_ptr< ::grpc::ClientReaderWriter< $Request$, $Response$>> "
-        "$Method$(::grpc::ClientContext* context);\n");
-    printer->Print(*vars,
-                   "std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< "
-                   "$Request$, $Response$>> "
-                   "Async$Method$(::grpc::ClientContext* context, "
-                   "::grpc::CompletionQueue* cq, void* tag);\n");
+        "$Method$(::grpc::ClientContext* context)$IsAbstract$;\n");
+    printer->Print(
+        *vars,
+        "$IsVirtual$std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< "
+        "$Request$, $Response$>> "
+        "Async$Method$(::grpc::ClientContext* context, "
+        "::grpc::CompletionQueue* cq, void* tag)$IsAbstract$;\n");
   }
 }
 
@@ -357,13 +367,24 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
 
   // Client side
   printer->Print(
-      "class Stub GRPC_FINAL : public ::grpc::InternalStub {\n"
+      "class StubInterface {\n"
       " public:\n");
+  printer->Indent();
+  printer->Print("StubInterface() {}\n");
+  printer->Print("virtual ~StubInterface() {}\n");
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintHeaderClientMethod(printer, service->method(i), vars, true);
+  }
+  printer->Outdent();
+  printer->Print("};\n");
+  printer->Print(
+      "class Stub GRPC_FINAL : public StubInterface,"
+      " public ::grpc::InternalStub {\n public:\n");
   printer->Indent();
   printer->Print(
       "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderClientMethod(printer, service->method(i), vars);
+    PrintHeaderClientMethod(printer, service->method(i), vars, false);
   }
   printer->Outdent();
   printer->Print(" private:\n");
