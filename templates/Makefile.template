@@ -1191,6 +1191,9 @@ endif
   lib_deps = ' $(ZLIB_DEP)'
   mingw_libs = ''
   mingw_lib_deps = ' $(ZLIB_DEP)'
+  if lib.language == 'c++':
+    lib_deps += ' $(PROTOBUF_DEP)'
+    mingw_lib_deps += ' $(PROTOBUF_DEP)'
   for dep in lib.get('deps', []):
     libs = libs + ' -l' + dep
     lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
