@@ -6,7 +6,7 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 6,
+      "minor": 7,
       "micro": 0,
       "build": 0
     }
@@ -231,7 +231,8 @@
         "src/core/json/json_reader.c",
         "src/core/json/json_string.c",
         "src/core/json/json_writer.c",
-        "src/core/profiling/timers.c",
+        "src/core/profiling/basic_timers.c",
+        "src/core/profiling/stap_timers.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -980,50 +981,6 @@
       ],
       "platforms": [
         "posix"
-      ]
-    },
-    {
-      "name": "echo_client",
-      "build": "test",
-      "run": false,
-      "language": "c",
-      "src": [
-        "test/core/echo/client.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "echo_server",
-      "build": "test",
-      "run": false,
-      "language": "c",
-      "src": [
-        "test/core/echo/server.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "echo_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/echo/echo_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
       ]
     },
     {

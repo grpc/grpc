@@ -31,53 +31,40 @@
  *
  */
 
-#include "src/core/profiling/timers.h"
-#include <stdlib.h>
-#include "test/core/util/test_config.h"
+#ifndef _ADAPTER__TAG_H_
+#define _ADAPTER__TAG_H_
 
-void test_log_events(int num_seqs) {
-  int start = 0;
-  int *state;
-  state = calloc(num_seqs, sizeof(state[0]));
-  while (start < num_seqs) {
-    int i;
-    int row;
-    if (state[start] == 3) { /* Already done with this posn */
-      start++;
-      continue;
-    }
+#include <Python.h>
+#include <grpc/grpc.h>
 
-    row = rand() % 10; /* how many in a row */
-    for (i = start; (i < start + row) && (i < num_seqs); i++) {
-      int j;
-      int advance = 1 + rand() % 3; /* how many to advance by */
-      for (j = 0; j < advance; j++) {
-        switch (state[i]) {
-          case 0:
-            GRPC_TIMER_MARK(STATE_0, i);
-            state[i]++;
-            break;
-          case 1:
-            GRPC_TIMER_MARK(STATE_1, i);
-            state[i]++;
-            break;
-          case 2:
-            GRPC_TIMER_MARK(STATE_2, i);
-            state[i]++;
-            break;
-          case 3:
-            break;
-        }
-      }
-    }
-  }
-  free(state);
-}
+#include "grpc/_adapter/_call.h"
+#include "grpc/_adapter/_completion_queue.h"
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_timers_global_init();
-  test_log_events(1000000);
-  grpc_timers_global_destroy();
-  return 0;
-}
+/* grpc_completion_type is becoming meaningless in grpc_event; this is a partial
+   replacement for its descriptive functionality until Python can move its whole
+   C and C adapter stack to more closely resemble the core batching API. */
+typedef enum {
+  PYGRPC_SERVER_RPC_NEW       = 0,
+  PYGRPC_INITIAL_METADATA     = 1,
+  PYGRPC_READ                 = 2,
+  PYGRPC_WRITE_ACCEPTED       = 3,
+  PYGRPC_FINISH_ACCEPTED      = 4,
+  PYGRPC_CLIENT_METADATA_READ = 5,
+  PYGRPC_FINISHED_CLIENT      = 6,
+  PYGRPC_FINISHED_SERVER      = 7
+} pygrpc_tag_type;
+
+typedef struct {
+  pygrpc_tag_type type;
+  PyObject *user_tag;
+
+  Call *call;
+} pygrpc_tag;
+
+pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
+                           Call *call);
+pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag);
+void pygrpc_tag_destroy(pygrpc_tag *self);
+
+#endif /* _ADAPTER__TAG_H_ */
+

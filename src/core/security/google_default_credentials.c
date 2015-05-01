@@ -163,7 +163,7 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
   gpr_mu_lock(&g_mu);
 
   if (default_credentials != NULL) {
-    result = default_credentials;
+    result = grpc_credentials_ref(default_credentials);
     serving_cached_credentials = 1;
     goto end;
   }

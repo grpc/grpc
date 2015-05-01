@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 
 #include "grpc/_adapter/_call.h"
+#include "grpc/_adapter/_tag.h"
 
 static PyObject *status_class;
 static PyObject *service_acceptance_class;
@@ -138,74 +139,70 @@ static PyObject *pygrpc_stop_event_args(grpc_event *c_event) {
 }
 
 static PyObject *pygrpc_write_event_args(grpc_event *c_event) {
-  PyObject *write_accepted =
-      c_event->data.write_accepted == GRPC_OP_OK ? Py_True : Py_False;
-  return PyTuple_Pack(8, write_event_kind, (PyObject *)c_event->tag,
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
+  PyObject *write_accepted = Py_True;
+  return PyTuple_Pack(8, write_event_kind, user_tag,
                       write_accepted, Py_None, Py_None, Py_None, Py_None,
                       Py_None);
 }
 
 static PyObject *pygrpc_complete_event_args(grpc_event *c_event) {
-  PyObject *complete_accepted =
-      c_event->data.finish_accepted == GRPC_OP_OK ? Py_True : Py_False;
-  return PyTuple_Pack(8, complete_event_kind, (PyObject *)c_event->tag,
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
+  PyObject *complete_accepted = Py_True;
+  return PyTuple_Pack(8, complete_event_kind, user_tag,
                       Py_None, complete_accepted, Py_None, Py_None, Py_None,
                       Py_None);
 }
 
 static PyObject *pygrpc_service_event_args(grpc_event *c_event) {
-  if (c_event->data.server_rpc_new.method == NULL) {
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
+  if (tag->call->call_details.method == NULL) {
     return PyTuple_Pack(
-        8, service_event_kind, c_event->tag, Py_None, Py_None, Py_None, Py_None,
+        8, service_event_kind, user_tag, Py_None, Py_None, Py_None, Py_None,
         Py_None, Py_None);
   } else {
     PyObject *method = NULL;
     PyObject *host = NULL;
     PyObject *service_deadline = NULL;
-    Call *call = NULL;
     PyObject *service_acceptance = NULL;
     PyObject *metadata = NULL;
     PyObject *event_args = NULL;
 
-    method = PyBytes_FromString(c_event->data.server_rpc_new.method);
+    method = PyBytes_FromString(tag->call->call_details.method);
     if (method == NULL) {
       goto error;
     }
-    host = PyBytes_FromString(c_event->data.server_rpc_new.host);
+    host = PyBytes_FromString(tag->call->call_details.host);
     if (host == NULL) {
       goto error;
     }
     service_deadline =
-        pygrpc_as_py_time(&c_event->data.server_rpc_new.deadline);
+        pygrpc_as_py_time(&tag->call->call_details.deadline);
     if (service_deadline == NULL) {
       goto error;
     }
 
-    call = PyObject_New(Call, &pygrpc_CallType);
-    if (call == NULL) {
-      goto error;
-    }
-    call->c_call = c_event->call;
-
     service_acceptance =
-        PyObject_CallFunctionObjArgs(service_acceptance_class, call, method,
-                                     host, service_deadline, NULL);
+        PyObject_CallFunctionObjArgs(service_acceptance_class, tag->call,
+                                     method, host, service_deadline, NULL);
     if (service_acceptance == NULL) {
       goto error;
     }
 
     metadata = pygrpc_metadata_collection_get(
-        c_event->data.server_rpc_new.metadata_elements,
-        c_event->data.server_rpc_new.metadata_count);
+        tag->call->recv_metadata.metadata,
+        tag->call->recv_metadata.count);
     event_args = PyTuple_Pack(8, service_event_kind,
-                              (PyObject *)c_event->tag, Py_None, Py_None,
+                              user_tag, Py_None, Py_None,
                               service_acceptance, Py_None, Py_None,
                               metadata);
 
     Py_DECREF(service_acceptance);
     Py_DECREF(metadata);
 error:
-    Py_XDECREF(call);
     Py_XDECREF(method);
     Py_XDECREF(host);
     Py_XDECREF(service_deadline);
@@ -215,8 +212,10 @@ error:
 }
 
 static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
-  if (c_event->data.read == NULL) {
-    return PyTuple_Pack(8, read_event_kind, (PyObject *)c_event->tag,
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
+  if (tag->call->recv_message == NULL) {
+    return PyTuple_Pack(8, read_event_kind, user_tag,
                         Py_None, Py_None, Py_None, Py_None, Py_None, Py_None);
   } else {
     size_t length;
@@ -227,8 +226,8 @@ static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
     PyObject *bytes;
     PyObject *event_args;
 
-    length = grpc_byte_buffer_length(c_event->data.read);
-    reader = grpc_byte_buffer_reader_create(c_event->data.read);
+    length = grpc_byte_buffer_length(tag->call->recv_message);
+    reader = grpc_byte_buffer_reader_create(tag->call->recv_message);
     c_bytes = gpr_malloc(length);
     offset = 0;
     while (grpc_byte_buffer_reader_next(reader, &slice)) {
@@ -242,7 +241,7 @@ static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
     if (bytes == NULL) {
       return NULL;
     }
-    event_args = PyTuple_Pack(8, read_event_kind, (PyObject *)c_event->tag,
+    event_args = PyTuple_Pack(8, read_event_kind, user_tag,
                               Py_None, Py_None, Py_None, bytes, Py_None,
                               Py_None);
     Py_DECREF(bytes);
@@ -251,32 +250,65 @@ static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
 }
 
 static PyObject *pygrpc_metadata_event_args(grpc_event *c_event) {
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
   PyObject *metadata = pygrpc_metadata_collection_get(
-      c_event->data.client_metadata_read.elements,
-      c_event->data.client_metadata_read.count);
+      tag->call->recv_metadata.metadata,
+      tag->call->recv_metadata.count);
   PyObject* result = PyTuple_Pack(
-      8, metadata_event_kind, (PyObject *)c_event->tag, Py_None, Py_None,
+      8, metadata_event_kind, user_tag, Py_None, Py_None,
       Py_None, Py_None, Py_None, metadata);
   Py_DECREF(metadata);
   return result;
 }
 
-static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
+static PyObject *pygrpc_finished_server_event_args(grpc_event *c_event) {
+  PyObject *code;
+  PyObject *details;
+  PyObject *status;
+  PyObject *event_args;
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
+
+  code = pygrpc_status_code(tag->call->cancelled ? GRPC_STATUS_CANCELLED : GRPC_STATUS_OK);
+  if (code == NULL) {
+    PyErr_SetString(PyExc_RuntimeError, "Unrecognized status code!");
+    return NULL;
+  }
+  details = PyBytes_FromString("");
+  if (details == NULL) {
+    return NULL;
+  }
+  status = PyObject_CallFunctionObjArgs(status_class, code, details, NULL);
+  Py_DECREF(details);
+  if (status == NULL) {
+    return NULL;
+  }
+  event_args = PyTuple_Pack(8, finish_event_kind, user_tag,
+                            Py_None, Py_None, Py_None, Py_None, status,
+                            Py_None);
+  Py_DECREF(status);
+  return event_args;
+}
+
+static PyObject *pygrpc_finished_client_event_args(grpc_event *c_event) {
   PyObject *code;
   PyObject *details;
   PyObject *status;
   PyObject *event_args;
   PyObject *metadata;
+  pygrpc_tag *tag = (pygrpc_tag *)(c_event->tag);
+  PyObject *user_tag = tag->user_tag;
 
-  code = pygrpc_status_code(c_event->data.finished.status);
+  code = pygrpc_status_code(tag->call->status);
   if (code == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Unrecognized status code!");
     return NULL;
   }
-  if (c_event->data.finished.details == NULL) {
+  if (tag->call->status_details == NULL) {
     details = PyBytes_FromString("");
   } else {
-    details = PyBytes_FromString(c_event->data.finished.details);
+    details = PyBytes_FromString(tag->call->status_details);
   }
   if (details == NULL) {
     return NULL;
@@ -287,9 +319,9 @@ static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
     return NULL;
   }
   metadata = pygrpc_metadata_collection_get(
-      c_event->data.finished.metadata_elements,
-      c_event->data.finished.metadata_count);
-  event_args = PyTuple_Pack(8, finish_event_kind, (PyObject *)c_event->tag,
+      tag->call->recv_trailing_metadata.metadata,
+      tag->call->recv_trailing_metadata.count);
+  event_args = PyTuple_Pack(8, finish_event_kind, user_tag,
                             Py_None, Py_None, Py_None, Py_None, status,
                             metadata);
   Py_DECREF(status);
@@ -322,6 +354,8 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   PyObject *event_args;
   PyObject *event;
 
+  pygrpc_tag *tag;
+
   if (!(PyArg_ParseTuple(args, "O:get", &deadline))) {
     return NULL;
   }
@@ -348,28 +382,51 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
     Py_RETURN_NONE;
   }
 
+  tag = (pygrpc_tag *)c_event->tag;
+
   switch (c_event->type) {
     case GRPC_QUEUE_SHUTDOWN:
       event_args = pygrpc_stop_event_args(c_event);
       break;
-    case GRPC_WRITE_ACCEPTED:
-      event_args = pygrpc_write_event_args(c_event);
+    case GRPC_OP_COMPLETE: {
+      if (!tag) {
+        PyErr_SetString(PyExc_Exception, "Unrecognized event type!");
+        return NULL;
+      }
+      switch (tag->type) {
+        case PYGRPC_INITIAL_METADATA:
+          if (tag) {
+            pygrpc_tag_destroy(tag);
+          }
+          grpc_event_finish(c_event);
+          return pygrpc_completion_queue_get(self, args);
+        case PYGRPC_WRITE_ACCEPTED:
+          event_args = pygrpc_write_event_args(c_event);
+          break;
+        case PYGRPC_FINISH_ACCEPTED:
+          event_args = pygrpc_complete_event_args(c_event);
+          break;
+        case PYGRPC_SERVER_RPC_NEW:
+          event_args = pygrpc_service_event_args(c_event);
+          break;
+        case PYGRPC_READ:
+          event_args = pygrpc_read_event_args(c_event);
+          break;
+        case PYGRPC_CLIENT_METADATA_READ:
+          event_args = pygrpc_metadata_event_args(c_event);
+          break;
+        case PYGRPC_FINISHED_CLIENT:
+          event_args = pygrpc_finished_client_event_args(c_event);
+          break;
+        case PYGRPC_FINISHED_SERVER:
+          event_args = pygrpc_finished_server_event_args(c_event);
+          break;
+        default:
+          PyErr_SetString(PyExc_Exception, "Unrecognized op event type!");
+          return NULL;
+      }
       break;
-    case GRPC_FINISH_ACCEPTED:
-      event_args = pygrpc_complete_event_args(c_event);
-      break;
-    case GRPC_SERVER_RPC_NEW:
-      event_args = pygrpc_service_event_args(c_event);
-      break;
-    case GRPC_READ:
-      event_args = pygrpc_read_event_args(c_event);
-      break;
-    case GRPC_CLIENT_METADATA_READ:
-      event_args = pygrpc_metadata_event_args(c_event);
-      break;
-    case GRPC_FINISHED:
-      event_args = pygrpc_finished_event_args(c_event);
-      break;
+    }
     default:
       PyErr_SetString(PyExc_Exception, "Unrecognized event type!");
       return NULL;
@@ -382,7 +439,9 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   event = PyObject_CallObject(event_class, event_args);
 
   Py_DECREF(event_args);
-  Py_XDECREF((PyObject *)c_event->tag);
+  if (tag) {
+    pygrpc_tag_destroy(tag);
+  }
   grpc_event_finish(c_event);
 
   return event;

@@ -14,24 +14,22 @@ env:
   global:
     - RUBY_VERSION=2.1
     - COVERALLS_PARALLEL=true
+    - CPPFLAGS=-I/tmp/prebuilt/include
     - NUGET="mono nuget.exe"
   matrix:
     - CONFIG=opt TEST=sanity
-    - CONFIG=dbg TEST=c
-    - CONFIG=dbg TEST=c++
-    - CONFIG=opt TEST=c
-    - CONFIG=opt TEST=c++
+    - CONFIG=gcov TEST="c c++"
+    - CONFIG=opt TEST="c c++"
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
     - CONFIG=opt TEST=csharp
-    - CONFIG=gcov TEST=c
-    - CONFIG=gcov TEST=c++
     - USE_GCC=4.4 CONFIG=opt TEST=build
     - USE_GCC=4.5 CONFIG=opt TEST=build
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
+  - ./tools/run_tests/prepare_travis.sh
   - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 after_success:

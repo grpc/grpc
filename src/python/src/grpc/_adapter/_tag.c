@@ -31,53 +31,35 @@
  *
  */
 
-#include "src/core/profiling/timers.h"
-#include <stdlib.h>
-#include "test/core/util/test_config.h"
+#include "grpc/_adapter/_tag.h"
 
-void test_log_events(int num_seqs) {
-  int start = 0;
-  int *state;
-  state = calloc(num_seqs, sizeof(state[0]));
-  while (start < num_seqs) {
-    int i;
-    int row;
-    if (state[start] == 3) { /* Already done with this posn */
-      start++;
-      continue;
-    }
+#include <Python.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
-    row = rand() % 10; /* how many in a row */
-    for (i = start; (i < start + row) && (i < num_seqs); i++) {
-      int j;
-      int advance = 1 + rand() % 3; /* how many to advance by */
-      for (j = 0; j < advance; j++) {
-        switch (state[i]) {
-          case 0:
-            GRPC_TIMER_MARK(STATE_0, i);
-            state[i]++;
-            break;
-          case 1:
-            GRPC_TIMER_MARK(STATE_1, i);
-            state[i]++;
-            break;
-          case 2:
-            GRPC_TIMER_MARK(STATE_2, i);
-            state[i]++;
-            break;
-          case 3:
-            break;
-        }
-      }
-    }
+pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
+                           Call *call) {
+  pygrpc_tag *self = (pygrpc_tag *)gpr_malloc(sizeof(pygrpc_tag));
+  memset(self, 0, sizeof(pygrpc_tag));
+  if (user_tag == NULL) {
+    self->user_tag = Py_None;
+  } else {
+    self->user_tag = user_tag;
   }
-  free(state);
+  Py_INCREF(self->user_tag);
+  self->type = type;
+  self->call = call;
+  Py_INCREF(call);
+  return self;
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_timers_global_init();
-  test_log_events(1000000);
-  grpc_timers_global_destroy();
-  return 0;
+pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag) {
+  return pygrpc_tag_new(PYGRPC_SERVER_RPC_NEW, user_tag,
+                        (Call *)pygrpc_CallType.tp_alloc(&pygrpc_CallType, 0));
+}
+
+void pygrpc_tag_destroy(pygrpc_tag *self) {
+  Py_XDECREF(self->user_tag);
+  Py_XDECREF(self->call);
+  gpr_free(self);
 }

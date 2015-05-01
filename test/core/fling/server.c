@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
@@ -165,7 +166,7 @@ static void start_send_status(void) {
                                  tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING)));
 }
 
-static void sigint_handler(int x) { got_sigint = 1; }
+static void sigint_handler(int x) { _exit(0); }
 
 int main(int argc, char **argv) {
   grpc_event *ev;
@@ -291,14 +292,6 @@ int main(int argc, char **argv) {
             if (!shutdown_started) request_call();
             break;
         }
-        break;
-      case GRPC_SERVER_RPC_NEW:
-      case GRPC_WRITE_ACCEPTED:
-      case GRPC_READ:
-      case GRPC_FINISH_ACCEPTED:
-      case GRPC_FINISHED:
-        gpr_log(GPR_ERROR, "Unexpected event type.");
-        abort();
         break;
       case GRPC_QUEUE_SHUTDOWN:
         GPR_ASSERT(shutdown_started);
