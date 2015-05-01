@@ -107,13 +107,20 @@ static void test_early_server_shutdown_finishes_tags(
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
   grpc_call *s = (void *)1;
+  grpc_call_details call_details;
+  grpc_metadata_array request_metadata_recv;
+
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
 
   /* upon shutdown, the server should finish all requested calls indicating
      no new call */
-  grpc_server_request_call_old(f.server, tag(1000));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
+                                                      &call_details,
+                                                      &request_metadata_recv,
+                                                      f.server_cq, tag(101)));
   grpc_server_shutdown(f.server);
-  cq_expect_server_rpc_new(v_server, &s, tag(1000), NULL, NULL, gpr_inf_past,
-                           NULL);
+  cq_expect_completion(v_server, tag(101), GRPC_OP_ERROR);
   cq_verify(v_server);
   GPR_ASSERT(s == NULL);
 
