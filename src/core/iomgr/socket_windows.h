@@ -71,7 +71,7 @@ This takes ownership of closing it. */
 grpc_winsocket *grpc_winsocket_create(SOCKET socket);
 
 void grpc_winsocket_shutdown(grpc_winsocket *socket);
-void grpc_winsocket_orphan(grpc_winsocket *socket);
+void grpc_winsocket_orphan(grpc_winsocket *socket, int increase_g_orphans);
 void grpc_winsocket_destroy(grpc_winsocket *socket);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H */

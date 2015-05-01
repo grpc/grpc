@@ -99,7 +99,7 @@ static void tcp_ref(grpc_tcp *tcp) {
 static void tcp_unref(grpc_tcp *tcp) {
   if (gpr_unref(&tcp->refcount)) {
     gpr_slice_buffer_destroy(&tcp->write_slices);
-    grpc_winsocket_orphan(tcp->socket);
+    grpc_winsocket_orphan(tcp->socket, 1);
     gpr_free(tcp);
   }
 }
