@@ -1195,7 +1195,7 @@ endif
     libs = libs + ' -l' + dep
     lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-    mingw_lib_deps = mingw_lib_deps + '$(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
+    mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
   if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
