@@ -61,7 +61,7 @@ typedef NS_ENUM(NSInteger, GRPCErrorCode) {
 #include <grpc/grpc.h>
 typedef struct grpc_status {
     grpc_status_code status;
-    const char *details;
+    char *details;
     grpc_metadata_array metadata;
 } grpc_status;
 

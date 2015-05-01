@@ -243,6 +243,7 @@
 
 - (void)dealloc {
   grpc_metadata_array_destroy(&_status.metadata);
+  gpr_free(_status.details);
 }
 
 @end
