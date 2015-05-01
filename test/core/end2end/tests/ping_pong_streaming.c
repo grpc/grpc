@@ -239,6 +239,12 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);
 
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  gpr_free(details);
+
   end_test(&f);
   config.tear_down_data(&f);
 }

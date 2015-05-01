@@ -35,6 +35,7 @@
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 static void *tag(gpr_intptr x) { return (void *)x; }
@@ -85,6 +86,9 @@ int main(int argc, char **argv) {
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
+
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  gpr_free(details);
 
   grpc_shutdown();
 

@@ -32,6 +32,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
@@ -93,6 +94,9 @@ int main(int argc, char **argv) {
   grpc_call_destroy(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
+
+  gpr_free(details);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_shutdown();
 
