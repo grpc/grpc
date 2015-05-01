@@ -378,6 +378,15 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_call_destroy(c2);
   grpc_call_destroy(s2);
 
+  gpr_free(details1);
+  gpr_free(details2);
+  grpc_metadata_array_destroy(&initial_metadata_recv1);
+  grpc_metadata_array_destroy(&trailing_metadata_recv1);
+  grpc_metadata_array_destroy(&initial_metadata_recv2);
+  grpc_metadata_array_destroy(&trailing_metadata_recv2);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
   end_test(&f);
   config.tear_down_data(&f);
 }

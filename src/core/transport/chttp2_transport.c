@@ -611,17 +611,19 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
   if (!server_data) {
     lock(t);
     s->id = 0;
+    s->outgoing_window = 0;
+    s->incoming_window = 0;
   } else {
     /* already locked */
     s->id = (gpr_uint32)(gpr_uintptr)server_data;
+    s->outgoing_window =
+        t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    s->incoming_window =
+        t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
 
-  s->outgoing_window =
-      t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  s->incoming_window =
-      t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   s->incoming_deadline = gpr_inf_future;
   grpc_sopb_init(&s->writing_sopb);
   grpc_sopb_init(&s->callback_sopb);
@@ -1017,6 +1019,10 @@ static void maybe_start_some_streams(transport *t) {
     GPR_ASSERT(s->id == 0);
     s->id = t->next_stream_id;
     t->next_stream_id += 2;
+    s->outgoing_window =
+        t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    s->incoming_window =
+        t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     stream_list_join(t, s, WRITABLE);
   }
