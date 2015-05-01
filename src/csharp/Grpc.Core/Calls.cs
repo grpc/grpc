@@ -95,7 +95,7 @@ namespace Grpc.Core
         {
             if (token.CanBeCanceled)
             {
-                token.Register( () => asyncCall.Cancel() );
+                token.Register(() => asyncCall.Cancel());
             }
         }
 

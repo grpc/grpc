@@ -179,7 +179,7 @@ namespace Grpc.Core.Tests
                 {
                     await callResult.Result;
                 }
-                catch(RpcException e)
+                catch (RpcException e)
                 {
                     Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
                 }
@@ -201,7 +201,7 @@ namespace Grpc.Core.Tests
                 {
                     await callResult.Result;
                 }
-                catch(RpcException e)
+                catch (RpcException e)
                 {
                     Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode); 
                 }
