@@ -354,6 +354,8 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   PyObject *event_args;
   PyObject *event;
 
+  pygrpc_tag *tag;
+
   if (!(PyArg_ParseTuple(args, "O:get", &deadline))) {
     return NULL;
   }
@@ -380,7 +382,7 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
     Py_RETURN_NONE;
   }
 
-  pygrpc_tag *tag = (pygrpc_tag *)c_event->tag;
+  tag = (pygrpc_tag *)c_event->tag;
 
   switch (c_event->type) {
     case GRPC_QUEUE_SHUTDOWN:
