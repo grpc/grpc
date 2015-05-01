@@ -727,6 +727,10 @@ static void call_on_done_recv(void *pc, int success) {
     if (call->recv_state == GRPC_STREAM_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
+      if (call->have_alarm) {
+        grpc_alarm_cancel(&call->alarm);
+        call->have_alarm = 0;
+      }
     }
     finish_read_ops(call);
   } else {

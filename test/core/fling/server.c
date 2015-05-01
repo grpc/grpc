@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
@@ -165,7 +166,7 @@ static void start_send_status(void) {
                                  tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING)));
 }
 
-static void sigint_handler(int x) { got_sigint = 1; }
+static void sigint_handler(int x) { _exit(0); }
 
 int main(int argc, char **argv) {
   grpc_event *ev;
