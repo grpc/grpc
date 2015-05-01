@@ -107,72 +107,121 @@ static gpr_slice large_slice(void) {
 }
 
 static void test_invoke_large_request(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+
+  gpr_slice request_payload_slice = large_slice();
+  gpr_slice response_payload_slice = large_slice();
   grpc_call *c;
   grpc_call *s;
-  gpr_slice request_payload_slice = large_slice();
   grpc_byte_buffer *request_payload =
       grpc_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer *response_payload =
+      grpc_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = n_seconds_time(30);
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_byte_buffer *request_payload_recv = NULL;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  char *details = NULL;
+  size_t details_capacity = 0;
+  int was_cancelled = 2;
 
-  /* byte buffer holds the slice, we can unref it already */
-  gpr_slice_unref(request_payload_slice);
-
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
-
-  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",
-                                   deadline);
+  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+                               "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_old(c, request_payload, tag(4), 0));
-  /* destroy byte buffer early to ensure async code keeps track of its contents
-     correctly */
-  grpc_byte_buffer_destroy(request_payload);
-  /* write should not be accepted until the server is willing to read the
-     request (as this request is very large) */
-  cq_verify_empty(v_client);
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.fr",
-                           deadline, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
+                                                      &call_details,
+                                                      &request_metadata_recv,
+                                                      f.server_cq, tag(101)));
+  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_server_accept_old(s, f.server_cq, tag(102)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata_old(s, 0));
-  cq_expect_client_metadata_read(v_client, tag(2), NULL);
-  cq_verify(v_client);
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = response_payload;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status_details = "xyz";
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read_old(s, tag(5)));
-  /* now the write can be accepted */
-  cq_expect_write_accepted(v_client, tag(4), GRPC_OP_OK);
-  cq_verify(v_client);
-  cq_expect_read(v_server, tag(5), large_slice());
+  cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(8)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status_old(
-                                 s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(9)));
-
-  cq_expect_finish_accepted(v_client, tag(8), GRPC_OP_OK);
-  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
-                                 "xyz", NULL);
+  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
-  cq_expect_finish_accepted(v_server, tag(9), GRPC_OP_OK);
-  cq_expect_finished(v_server, tag(102), NULL);
-  cq_verify(v_server);
+  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT(0 == strcmp(details, "xyz"));
+  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+  GPR_ASSERT(was_cancelled == 0);
+
+  gpr_free(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);
+
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload);
+  grpc_byte_buffer_destroy(request_payload_recv);
+  grpc_byte_buffer_destroy(response_payload_recv);
+  gpr_slice_unref(request_payload_slice);
+  gpr_slice_unref(response_payload_slice);
 
   end_test(&f);
   config.tear_down_data(&f);

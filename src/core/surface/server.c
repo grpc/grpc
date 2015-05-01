@@ -69,7 +69,7 @@ typedef struct {
   call_data *prev;
 } call_link;
 
-typedef enum { LEGACY_CALL, BATCH_CALL, REGISTERED_CALL } requested_call_type;
+typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
 
 typedef struct {
   requested_call_type type;
@@ -165,10 +165,6 @@ typedef enum {
   ZOMBIED
 } call_state;
 
-typedef struct legacy_data {
-  grpc_metadata_array initial_metadata;
-} legacy_data;
-
 struct call_data {
   grpc_call *call;
 
@@ -178,7 +174,6 @@ struct call_data {
   gpr_timespec deadline;
   int got_initial_metadata;
 
-  legacy_data *legacy;
   grpc_completion_queue *cq_new;
 
   grpc_stream_op_buffer *recv_ops;
@@ -555,11 +550,6 @@ static void destroy_call_elem(grpc_call_element *elem) {
   }
   if (calld->path) {
     grpc_mdstr_unref(calld->path);
-  }
-
-  if (calld->legacy) {
-    gpr_free(calld->legacy->initial_metadata.metadata);
-    gpr_free(calld->legacy);
   }
 
   server_unref(chand->server);
@@ -998,7 +988,6 @@ static grpc_call_error queue_call_request(grpc_server *server,
     return GRPC_CALL_OK;
   }
   switch (rc->type) {
-    case LEGACY_CALL:
     case BATCH_CALL:
       calld =
           call_list_remove_head(&server->lists[PENDING_START], PENDING_START);
@@ -1057,16 +1046,6 @@ grpc_call_error grpc_server_request_registered_call(
   return queue_call_request(server, &rc);
 }
 
-grpc_call_error grpc_server_request_call_old(grpc_server *server,
-                                             void *tag_new) {
-  requested_call rc;
-  grpc_cq_begin_op(server->unregistered_cq, NULL, GRPC_SERVER_RPC_NEW);
-  rc.type = LEGACY_CALL;
-  rc.tag = tag_new;
-  return queue_call_request(server, &rc);
-}
-
-static void publish_legacy(grpc_call *call, grpc_op_error status, void *tag);
 static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
                                         void *tag);
 static void publish_was_not_set(grpc_call *call, grpc_op_error status,
@@ -1098,14 +1077,6 @@ static void begin_call(grpc_server *server, call_data *calld,
      an ioreq op, that should complete immediately. */
 
   switch (rc->type) {
-    case LEGACY_CALL:
-      calld->legacy = gpr_malloc(sizeof(legacy_data));
-      memset(calld->legacy, 0, sizeof(legacy_data));
-      r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
-      r->data.recv_metadata = &calld->legacy->initial_metadata;
-      r++;
-      publish = publish_legacy;
-      break;
     case BATCH_CALL:
       cpstr(&rc->data.batch.details->host,
             &rc->data.batch.details->host_capacity, calld->host);
@@ -1144,41 +1115,18 @@ static void begin_call(grpc_server *server, call_data *calld,
 
 static void fail_call(grpc_server *server, requested_call *rc) {
   switch (rc->type) {
-    case LEGACY_CALL:
-      grpc_cq_end_new_rpc(server->unregistered_cq, rc->tag, NULL, do_nothing,
-                          NULL, NULL, NULL, gpr_inf_past, 0, NULL);
-      break;
     case BATCH_CALL:
       *rc->data.batch.call = NULL;
       rc->data.batch.initial_metadata->count = 0;
-      grpc_cq_end_op_complete(server->unregistered_cq, rc->tag, NULL,
-                              do_nothing, NULL, GRPC_OP_ERROR);
+      grpc_cq_end_op(server->unregistered_cq, rc->tag, NULL, do_nothing, NULL,
+                     GRPC_OP_ERROR);
       break;
     case REGISTERED_CALL:
       *rc->data.registered.call = NULL;
       rc->data.registered.initial_metadata->count = 0;
-      grpc_cq_end_op_complete(rc->data.registered.registered_method->cq,
-                              rc->tag, NULL, do_nothing, NULL, GRPC_OP_ERROR);
+      grpc_cq_end_op(rc->data.registered.registered_method->cq, rc->tag, NULL,
+                     do_nothing, NULL, GRPC_OP_ERROR);
       break;
-  }
-}
-
-static void publish_legacy(grpc_call *call, grpc_op_error status, void *tag) {
-  grpc_call_element *elem =
-      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
-  call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-  grpc_server *server = chand->server;
-
-  if (status == GRPC_OP_OK) {
-    grpc_cq_end_new_rpc(server->unregistered_cq, tag, call, do_nothing, NULL,
-                        grpc_mdstr_as_c_string(calld->path),
-                        grpc_mdstr_as_c_string(calld->host), calld->deadline,
-                        calld->legacy->initial_metadata.count,
-                        calld->legacy->initial_metadata.metadata);
-  } else {
-    gpr_log(GPR_ERROR, "should never reach here");
-    abort();
   }
 }
 
@@ -1187,7 +1135,7 @@ static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   call_data *calld = elem->call_data;
-  grpc_cq_end_op_complete(calld->cq_new, tag, call, do_nothing, NULL, status);
+  grpc_cq_end_op(calld->cq_new, tag, call, do_nothing, NULL, status);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {

@@ -327,7 +327,7 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
   gpr_slice *final_slices;
   size_t final_nslices;
 
-  GRPC_TIMER_MARK(HANDLE_READ_BEGIN, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HANDLE_READ, 0);
   slice_state_init(&read_state, static_read_slices, INLINE_SLICE_BUFFER_SIZE,
                    0);
 
@@ -350,11 +350,11 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
-    GRPC_TIMER_MARK(RECVMSG_BEGIN, 0);
+    GRPC_TIMER_BEGIN(GRPC_PTAG_RECVMSG, 0);
     do {
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
-    GRPC_TIMER_MARK(RECVMSG_END, 0);
+    GRPC_TIMER_END(GRPC_PTAG_RECVMSG, 0);
 
     if (read_bytes < allocated_bytes) {
       /* TODO(klempner): Consider a second read first, in hopes of getting a
@@ -406,7 +406,7 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
       ++iov_size;
     }
   }
-  GRPC_TIMER_MARK(HANDLE_READ_END, 0);
+  GRPC_TIMER_END(GRPC_PTAG_HANDLE_READ, 0);
 }
 
 static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
@@ -438,12 +438,12 @@ static grpc_endpoint_write_status grpc_tcp_flush(grpc_tcp *tcp) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
-    GRPC_TIMER_MARK(SENDMSG_BEGIN, 0);
+    GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 0);
     do {
       /* TODO(klempner): Cork if this is a partial write */
       sent_length = sendmsg(tcp->fd, &msg, 0);
     } while (sent_length < 0 && errno == EINTR);
-    GRPC_TIMER_MARK(SENDMSG_END, 0);
+    GRPC_TIMER_END(GRPC_PTAG_SENDMSG, 0);
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {
@@ -479,7 +479,7 @@ static void grpc_tcp_handle_write(void *arg /* grpc_tcp */, int success) {
     return;
   }
 
-  GRPC_TIMER_MARK(CB_WRITE_BEGIN, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_TCP_CB_WRITE, 0);
   write_status = grpc_tcp_flush(tcp);
   if (write_status == GRPC_ENDPOINT_WRITE_PENDING) {
     grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_closure);
@@ -495,7 +495,7 @@ static void grpc_tcp_handle_write(void *arg /* grpc_tcp */, int success) {
     cb(tcp->write_user_data, cb_status);
     grpc_tcp_unref(tcp);
   }
-  GRPC_TIMER_MARK(CB_WRITE_END, 0);
+  GRPC_TIMER_END(GRPC_PTAG_TCP_CB_WRITE, 0);
 }
 
 static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
@@ -518,7 +518,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
     }
   }
 
-  GRPC_TIMER_MARK(WRITE_BEGIN, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_TCP_WRITE, 0);
   GPR_ASSERT(tcp->write_cb == NULL);
   slice_state_init(&tcp->write_state, slices, nslices, nslices);
 
@@ -532,7 +532,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
     grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_closure);
   }
 
-  GRPC_TIMER_MARK(WRITE_END, 0);
+  GRPC_TIMER_END(GRPC_PTAG_TCP_WRITE, 0);
   return status;
 }
 

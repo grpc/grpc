@@ -205,7 +205,6 @@ class End2endTest : public ::testing::Test {
   ThreadPool thread_pool_;
 };
 
-/*
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
                     int num_rpcs) {
   EchoRequest request;
@@ -578,7 +577,18 @@ TEST_F(End2endTest, ClientCancelsBidi) {
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
 }
-*/
+
+TEST_F(End2endTest, ThreadStress) {
+  ResetStub();
+  std::vector<std::thread*> threads;
+  for (int i = 0; i < 100; ++i) {
+    threads.push_back(new std::thread(SendRpc, stub_.get(), 1000));
+  }
+  for (int i = 0; i < 100; ++i) {
+    threads[i]->join();
+    delete threads[i];
+  }
+}
 
 TEST_F(End2endTest, RpcMaxMessageSize) {
   ResetStub();
