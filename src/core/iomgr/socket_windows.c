@@ -69,13 +69,12 @@ void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
   SOCKET socket = winsocket->socket;
   if (!winsocket->closed_early) {
     grpc_iocp_socket_orphan(winsocket);
-    winsocket->orphan = 1;
   }
-  grpc_iomgr_unref();
   if (winsocket->closed_early) {
     grpc_winsocket_destroy(winsocket);
   }
   closesocket(socket);
+  grpc_iomgr_unref();
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
