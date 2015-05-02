@@ -399,7 +399,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\json\json_writer.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\profiling\timers.c">
+    <ClCompile Include="..\..\src\core\profiling\basic_timers.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
     </ClCompile>

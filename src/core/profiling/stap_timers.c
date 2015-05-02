@@ -31,53 +31,27 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GRPC_STAP_PROFILER
+
 #include "src/core/profiling/timers.h"
-#include <stdlib.h>
-#include "test/core/util/test_config.h"
 
-void test_log_events(int num_seqs) {
-  int start = 0;
-  int *state;
-  state = calloc(num_seqs, sizeof(state[0]));
-  while (start < num_seqs) {
-    int i;
-    int row;
-    if (state[start] == 3) { /* Already done with this posn */
-      start++;
-      continue;
-    }
+#include <sys/sdt.h>
+/* Generated from src/core/profiling/stap_probes.d */
+#include "src/core/profiling/stap_probes.h"
 
-    row = rand() % 10; /* how many in a row */
-    for (i = start; (i < start + row) && (i < num_seqs); i++) {
-      int j;
-      int advance = 1 + rand() % 3; /* how many to advance by */
-      for (j = 0; j < advance; j++) {
-        switch (state[i]) {
-          case 0:
-            GRPC_TIMER_MARK(STATE_0, i);
-            state[i]++;
-            break;
-          case 1:
-            GRPC_TIMER_MARK(STATE_1, i);
-            state[i]++;
-            break;
-          case 2:
-            GRPC_TIMER_MARK(STATE_2, i);
-            state[i]++;
-            break;
-          case 3:
-            break;
-        }
-      }
-    }
-  }
-  free(state);
+/* Latency profiler API implementation. */
+void grpc_timer_add_mark(int tag, void* id, const char *file, int line) {
+  _STAP_ADD_MARK(tag);
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_timers_global_init();
-  test_log_events(1000000);
-  grpc_timers_global_destroy();
-  return 0;
+void grpc_timer_begin(int tag, void* id, const char *file, int line) {
+  _STAP_TIMING_NS_BEGIN(tag);
 }
+
+void grpc_timer_end(int tag, void* id, const char *file, int line) {
+  _STAP_TIMING_NS_END(tag);
+}
+
+#endif /* GRPC_STAP_PROFILER */

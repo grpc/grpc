@@ -289,7 +289,7 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
     return ret;
   }
 
-  memset(&socket->write_info, 0, sizeof(OVERLAPPED));
+  memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSASend(socket->socket, buffers, tcp->write_slices.count,
                    &bytes_sent, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
