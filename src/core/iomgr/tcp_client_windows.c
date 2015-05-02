@@ -115,6 +115,9 @@ static void on_connect(void *acp, int success) {
 finish:
   gpr_mu_lock(&ac->mu);
   if (!ep) {
+    if (success) {
+      ac->socket->closed_early = 1;
+    }
     grpc_winsocket_orphan(ac->socket);
   }
   async_connect_cleanup(ac);
@@ -202,6 +205,7 @@ failure:
   gpr_log(GPR_ERROR, message, utf8_message);
   gpr_free(utf8_message);
   if (socket) {
+    socket->closed_early = 1;
     grpc_winsocket_orphan(socket);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);

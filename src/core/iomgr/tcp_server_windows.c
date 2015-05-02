@@ -60,6 +60,7 @@ typedef struct server_port {
   grpc_winsocket *socket;
   grpc_tcp_server *server;
   LPFN_ACCEPTEX AcceptEx;
+  int shutting_down;
 } server_port;
 
 /* the overall server */
@@ -110,6 +111,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   /* delete ALL the things */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
+    sp->socket->closed_early = 1;
     grpc_winsocket_orphan(sp->socket);
   }
   gpr_free(s->ports);
@@ -191,8 +193,6 @@ static void start_accept(server_port *port) {
     goto failure;
   }
 
-  /* TODO(jtattermusch): probably a race here, we regularly get use-after-free on server shutdown */
-  GPR_ASSERT(port->socket != (grpc_winsocket*)0xfeeefeee);
   success = port->AcceptEx(port->socket->socket, sock, port->addresses, 0,
                            addrlen, addrlen, &bytes_received,
                            &port->socket->read_info.overlapped);
@@ -223,6 +223,16 @@ static void on_accept(void *arg, int success) {
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
 
+  if (sp->shutting_down) {
+    sp->shutting_down = 0;
+    gpr_mu_lock(&sp->server->mu);
+    if (0 == --sp->server->active_ports) {
+      gpr_cv_broadcast(&sp->server->cv);
+    }
+    gpr_mu_unlock(&sp->server->mu);
+    return;
+  }
+
   if (success) {
     DWORD transfered_bytes = 0;
     DWORD flags;
@@ -237,12 +247,9 @@ static void on_accept(void *arg, int success) {
       ep = grpc_tcp_create(grpc_winsocket_create(sock));
     }
   } else {
+    sp->shutting_down = 1;
+    sp->new_socket = INVALID_SOCKET;
     closesocket(sock);
-    gpr_mu_lock(&sp->server->mu);
-    if (0 == --sp->server->active_ports) {
-      gpr_cv_broadcast(&sp->server->cv);
-    }
-    gpr_mu_unlock(&sp->server->mu);
   }
 
   if (ep) sp->server->cb(sp->server->cb_arg, ep);
@@ -286,6 +293,7 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     sp = &s->ports[s->nports++];
     sp->server = s;
     sp->socket = grpc_winsocket_create(sock);
+    sp->shutting_down = 0;
     sp->AcceptEx = AcceptEx;
     GPR_ASSERT(sp->socket);
     gpr_mu_unlock(&s->mu);
