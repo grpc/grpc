@@ -59,6 +59,7 @@ typedef struct {
   gpr_timespec deadline;
   grpc_alarm alarm;
   int refs;
+  int aborted;
 } async_connect;
 
 static void async_connect_cleanup(async_connect *ac) {
@@ -70,26 +71,31 @@ static void async_connect_cleanup(async_connect *ac) {
   }
 }
 
-static void on_alarm(void *acp, int success) {
+static void on_alarm(void *acp, int occured) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  if (ac->socket != NULL && success) {
+  /* If the alarm didn't occor, it got cancelled. */
+  if (ac->socket != NULL && occured) {
     grpc_winsocket_shutdown(ac->socket);
   }
   async_connect_cleanup(ac);
 }
 
-static void on_connect(void *acp, int success) {
+static void on_connect(void *acp, int from_iocp) {
   async_connect *ac = acp;
   SOCKET sock = ac->socket->socket;
   grpc_endpoint *ep = NULL;
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
   void(*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
+  int aborted;
 
   grpc_alarm_cancel(&ac->alarm);
 
-  if (success) {
+  gpr_mu_lock(&ac->mu);
+  aborted = ac->aborted;
+
+  if (from_iocp) {
     DWORD transfered_bytes = 0;
     DWORD flags;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
@@ -107,20 +113,40 @@ static void on_connect(void *acp, int success) {
     }
   } else {
     gpr_log(GPR_ERROR, "on_connect is shutting down");
-    goto finish;
+    /* If the connection timeouts, we will still get a notification from
+       the IOCP whatever happens. So we're just going to flag that connection
+       as being in the process of being aborted, and wait for the IOCP. We
+       can't just orphan the socket now, because the IOCP might already have
+       gotten a successful connection, which is our worst-case scenario.
+       We need to call our callback now to respect the deadline. */
+    ac->aborted = 1;
+    gpr_mu_unlock(&ac->mu);
+    cb(cb_arg, NULL);
+    return;
   }
 
   abort();
 
 finish:
-  gpr_mu_lock(&ac->mu);
-  if (!ep) {
+  /* If we don't have an endpoint, it means the connection failed,
+     so it doesn't matter if it aborted or failed. We need to orphan
+     that socket. */
+  if (!ep || aborted) {
+    /* If the connection failed, it means we won't get an IOCP notification,
+       so let's flag it as already closed. But if the connection was aborted,
+       while we still got an endpoint, we have to wait for the IOCP to collect
+       that socket. So let's properly flag that. */
+    ac->socket->closed_early = !ep;
     grpc_winsocket_orphan(ac->socket);
   }
   async_connect_cleanup(ac);
-  cb(cb_arg, ep);
+  /* If the connection was aborted, the callback was already called when
+     the deadline was met. */
+  if (!aborted) cb(cb_arg, ep);
 }
 
+/* Tries to issue one async connection, then schedules both an IOCP
+   notification request for the connection, and one timeout alert. */
 void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
                              void *arg, const struct sockaddr *addr,
                              int addr_len, gpr_timespec deadline) {
@@ -156,6 +182,8 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
     goto failure;
   }
 
+  /* Grab the function pointer for ConnectEx for that specific socket.
+     It may change depending on the interface. */
   status = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
                     &guid, sizeof(guid), &ConnectEx, sizeof(ConnectEx),
                     &ioctl_num_bytes, NULL, NULL);
@@ -178,6 +206,8 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
   info = &socket->write_info;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);
 
+  /* It wouldn't be unusual to get a success immediately. But we'll still get
+     an IOCP notification, so let's ignore it. */
   if (!success) {
     int error = WSAGetLastError();
     if (error != ERROR_IO_PENDING) {
@@ -192,6 +222,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
   ac->socket = socket;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
+  ac->aborted = 0;
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
   grpc_socket_notify_on_write(socket, on_connect, ac);
@@ -202,6 +233,7 @@ failure:
   gpr_log(GPR_ERROR, message, utf8_message);
   gpr_free(utf8_message);
   if (socket) {
+    socket->closed_early = 1;
     grpc_winsocket_orphan(socket);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);

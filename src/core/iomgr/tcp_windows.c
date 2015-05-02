@@ -130,6 +130,7 @@ static void on_read(void *tcpp, int success) {
     gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
     gpr_free(utf8_message);
     status = GRPC_ENDPOINT_CB_ERROR;
+    socket->closed_early = 1;
   } else {
     if (info->bytes_transfered != 0) {
       sub = gpr_slice_sub(tcp->read_slice, 0, info->bytes_transfered);
@@ -225,6 +226,7 @@ static void on_write(void *tcpp, int success) {
     gpr_log(GPR_ERROR, "WSASend overlapped error: %s", utf8_message);
     gpr_free(utf8_message);
     status = GRPC_ENDPOINT_CB_ERROR;
+    tcp->socket->closed_early = 1;
   } else {
     GPR_ASSERT(info->bytes_transfered == tcp->write_slices.length);
   }
