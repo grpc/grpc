@@ -106,7 +106,7 @@ CC_basicprof = $(DEFAULT_CC)
 CXX_basicprof = $(DEFAULT_CXX)
 LD_basicprof = $(DEFAULT_CC)
 LDXX_basicprof = $(DEFAULT_CXX)
-CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER
+CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
 LDFLAGS_basicprof =
 DEFINES_basicprof = NDEBUG
 
