@@ -36,6 +36,9 @@
 
 #include <grpc/support/sync.h>
 
+/* There isn't really any such thing as a pollset under Windows, due to the
+   nature of the IO completion ports. */
+
 struct grpc_kick_fd_info;
 
 typedef struct grpc_pollset_kick_state {

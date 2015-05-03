@@ -41,6 +41,11 @@
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset_windows.h"
 
+/* There isn't really any such thing as a pollset under Windows, due to the
+   nature of the IO completion ports. We're still going to provide a minimal
+   set of features for the sake of the rest of grpc. But grpc_pollset_work
+   won't actually do any polling, and return as quickly as possible. */
+
 void grpc_pollset_init(grpc_pollset *pollset) {
   gpr_mu_init(&pollset->mu);
   gpr_cv_init(&pollset->cv);

@@ -40,10 +40,10 @@
 #include "src/core/iomgr/pollset_kick.h"
 #include "src/core/iomgr/socket_windows.h"
 
-/* forward declare only in this file to avoid leaking impl details via
-   pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
-   use the struct tag */
-struct grpc_fd;
+/* There isn't really any such thing as a pollset under Windows, due to the
+   nature of the IO completion ports. A Windows "pollset" is merely a mutex
+   and a condition variable, as this is the minimal set of features we need
+   implemented for the rest of grpc. But we won't use them directly. */
 
 typedef struct grpc_pollset {
   gpr_mu mu;

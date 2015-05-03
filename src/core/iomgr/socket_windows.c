@@ -41,9 +41,9 @@
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/socket_windows.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_windows.h"
+#include "src/core/iomgr/socket_windows.h"
 
 grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
   grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
@@ -55,16 +55,29 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
   return r;
 }
 
-static void shutdown_op(grpc_winsocket_callback_info *info) {
-  if (!info->cb) return;
-  grpc_iomgr_add_delayed_callback(info->cb, info->opaque, 0);
-}
-
+/* Schedule a shutdown of the socket operations. Will call the pending
+   operations to abort them. We need to do that this way because of the
+   various callsites of that function, which happens to be in various
+   mutex hold states, and that'd be unsafe to call them directly. */
 void grpc_winsocket_shutdown(grpc_winsocket *socket) {
-  shutdown_op(&socket->read_info);
-  shutdown_op(&socket->write_info);
+  gpr_mu_lock(&socket->state_mu);
+  if (socket->read_info.cb) {
+    grpc_iomgr_add_delayed_callback(socket->read_info.cb,
+                                    socket->read_info.opaque, 0);
+  }
+  if (socket->write_info.cb) {
+    grpc_iomgr_add_delayed_callback(socket->write_info.cb,
+                                    socket->write_info.opaque, 0);
+  }
+  gpr_mu_unlock(&socket->state_mu);
 }
 
+/* Abandons a socket. Either we're going to queue it up for garbage collecting
+   from the IO Completion Port thread, or destroy it immediately. Note that this
+   mechanisms assumes that we're either always waiting for an operation, or we
+   explicitely know that we don't. If there is a future case where we can have
+   an "idle" socket which is neither trying to read or write, we'd start leaking
+   both memory and sockets. */
 void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
   SOCKET socket = winsocket->socket;
   if (!winsocket->closed_early) {
