@@ -247,7 +247,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
 static void execute_op(grpc_call *call, grpc_transport_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
-static grpc_call_error grpc_call_cancel_with_status_internal(
+static grpc_call_error cancel_with_status(
     grpc_call *c, grpc_status_code status, const char *description,
     gpr_uint8 locked);
 
@@ -631,8 +631,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
     gpr_asprintf(
         &message, "Message terminated early; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    grpc_call_cancel_with_status_internal(call, GRPC_STATUS_INVALID_ARGUMENT,
-                                          message, 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
     gpr_free(message);
     return 0;
   }
@@ -643,8 +642,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
         &message,
         "Maximum message length of %d exceeded by a message of length %d",
         grpc_channel_get_max_message_length(call->channel), msg.length);
-    grpc_call_cancel_with_status_internal(call, GRPC_STATUS_INVALID_ARGUMENT,
-                                          message, 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
     gpr_free(message);
     return 0;
   } else if (msg.length > 0) {
@@ -664,7 +662,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
-    grpc_call_cancel_with_status_internal(
+    cancel_with_status(
         call, GRPC_STATUS_INVALID_ARGUMENT,
         "Received payload data while not reading a message", 1);
     return 0;
@@ -677,8 +675,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
     gpr_asprintf(
         &message, "Receiving message overflow; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    grpc_call_cancel_with_status_internal(call, GRPC_STATUS_INVALID_ARGUMENT,
-                                          message, 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
     gpr_free(message);
     return 0;
   } else if (call->incoming_message.length == call->incoming_message_length) {
@@ -1005,10 +1002,10 @@ grpc_call_error grpc_call_cancel(grpc_call *call) {
 grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
                                              grpc_status_code status,
                                              const char *description) {
-  return grpc_call_cancel_with_status_internal(c, status, description, 0);
+  return cancel_with_status(c, status, description, 0);
 }
 
-static grpc_call_error grpc_call_cancel_with_status_internal(
+static grpc_call_error cancel_with_status(
     grpc_call *c, grpc_status_code status, const char *description,
     gpr_uint8 locked) {
   grpc_transport_op op;
@@ -1046,8 +1043,8 @@ static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
     if (call->is_client) {
-      grpc_call_cancel_with_status_internal(call, GRPC_STATUS_DEADLINE_EXCEEDED,
-                                            "Deadline Exceeded", 0);
+      cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                         "Deadline Exceeded", 0);
     } else {
       grpc_call_cancel(call);
     }
