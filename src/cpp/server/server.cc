@@ -127,7 +127,9 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
         GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
         req.reset(method_->AllocateRequestProto());
         if (!DeserializeProto(request_payload_, req.get(), call_.max_message_size())) {
-          abort();  // for now
+          // FIXME(yangg) deal with deserialization failure
+          cq_.Shutdown();
+          return;
         }
         GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
       }
