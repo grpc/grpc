@@ -438,9 +438,6 @@ static grpc_endpoint_write_status grpc_tcp_flush(grpc_tcp *tcp) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
-    GRPC_TIMER_BEGIN(10000, 0);
-    GRPC_TIMER_END(10000, 0);
-
     GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 0);
     do {
       /* TODO(klempner): Cork if this is a partial write */
