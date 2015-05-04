@@ -903,6 +903,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fake_security_simple_request_with_high_initial_sequence_number_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_bad_hostname_test", 
     "platforms": [
       "windows", 
@@ -1111,6 +1120,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_simple_request_with_high_initial_sequence_number_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1335,6 +1353,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_bad_hostname_test", 
     "platforms": [
       "windows", 
@@ -1543,6 +1570,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_simple_request_with_high_initial_sequence_number_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1767,6 +1803,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_request_with_high_initial_sequence_number_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_bad_hostname_test", 
     "platforms": [
       "windows", 
@@ -1975,6 +2020,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_simple_request_with_high_initial_sequence_number_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2199,6 +2253,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_bad_hostname_unsecure_test", 
     "platforms": [
       "windows", 
@@ -2407,6 +2470,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_simple_request_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2631,6 +2703,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_bad_hostname_unsecure_test", 
     "platforms": [
       "windows", 
@@ -2847,6 +2928,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3055,6 +3145,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"
