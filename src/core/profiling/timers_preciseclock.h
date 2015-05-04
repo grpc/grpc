@@ -71,9 +71,8 @@ static double grpc_precise_clock_scaling_factor() {
 	gpr_once_init(&precise_clock_init, grpc_precise_clock_init);
 	return 1e6 / cycles_per_second;
 }
-static void grpc_precise_clock_print(const grpc_precise_clock* clk, FILE* fp) {
-  fprintf(fp, "%f", *clk * grpc_precise_clock_scaling_factor());
-}
+#define GRPC_PRECISE_CLOCK_FORMAT "%f"
+#define GRPC_PRECISE_CLOCK_PRINTF_ARGS(clk) (*(clk) * grpc_precise_clock_scaling_factor())
 #else
 typedef struct grpc_precise_clock grpc_precise_clock;
 struct grpc_precise_clock {
@@ -82,6 +81,8 @@ struct grpc_precise_clock {
 static void grpc_precise_clock_now(grpc_precise_clock* clk) {
   clk->clock = gpr_now();
 }
+#define GRPC_PRECISE_CLOCK_FORMAT "%ld.%09d"
+#define GRPC_PRECISE_CLOCK_PRINTF_ARGS(clk) (clk)->clock.tv_sec, (clk)->clock.tv_nsec
 static void grpc_precise_clock_print(const grpc_precise_clock* clk, FILE* fp) {
   fprintf(fp, "%ld.%09d", clk->clock.tv_sec, clk->clock.tv_nsec);
 }

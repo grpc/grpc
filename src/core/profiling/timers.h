@@ -109,9 +109,7 @@ enum grpc_profiling_tags {
 #endif /* GRPC_STAP_PROFILER */
 
 #ifdef GRPC_BASIC_PROFILER
-typedef struct grpc_timers_log grpc_timers_log;
-
-extern grpc_timers_log *grpc_timers_log_global;
+/* Empty placeholder for now. */
 #endif /* GRPC_BASIC_PROFILER */
 
 #endif /* at least one profiler requested. */
