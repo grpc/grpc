@@ -1767,7 +1767,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_5:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id = (((gpr_uint32)*cur) << 24) & 0x7f;
+      t->incoming_stream_id = (((gpr_uint32)*cur) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = DTS_FH_6;
         return 1;
