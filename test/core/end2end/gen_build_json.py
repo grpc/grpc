@@ -72,6 +72,7 @@ END2END_TESTS = {
     'request_with_payload': True,
     'simple_delayed_request': True,
     'simple_request': True,
+    'simple_request_with_high_initial_sequence_number': True,
     'registered_call': True,
 }
 
