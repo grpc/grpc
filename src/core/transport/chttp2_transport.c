@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
@@ -64,6 +65,7 @@
 #define CLIENT_CONNECT_STRLEN 24
 
 int grpc_http_trace = 0;
+int grpc_flowctl_trace = 0;
 
 typedef struct transport transport;
 typedef struct stream stream;
@@ -73,6 +75,12 @@ typedef struct stream stream;
     ;                     \
   else                    \
   stmt
+
+#define FLOWCTL_TRACE(t, obj, dir, id, delta) \
+  if (!grpc_flowctl_trace)                    \
+    ;                                         \
+  else                                        \
+  flowctl_trace(t, #dir, obj->dir##_window, id, delta)
 
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
@@ -381,6 +389,12 @@ static void finish_reads(transport *t);
 static void add_to_pollset_locked(transport *t, grpc_pollset *pollset);
 static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op);
 static void add_metadata_batch(transport *t, stream *s);
+
+static void flowctl_trace(transport *t, const char *flow, gpr_int32 window,
+                          gpr_uint32 id, gpr_int32 delta) {
+  gpr_log(GPR_DEBUG, "HTTP:FLOW:%p:%d:%s: %d + %d = %d", t, id, flow, window,
+          delta, window + delta);
+}
 
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -772,6 +786,8 @@ static void unlock(transport *t) {
   grpc_stream_op_buffer nuke_now;
   const grpc_transport_callbacks *cb = t->cb;
 
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_BEGIN, 0);
+
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
     grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
@@ -820,6 +836,8 @@ static void unlock(transport *t) {
   /* finally unlock */
   gpr_mu_unlock(&t->mu);
 
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_CLEANUP, 0);
+
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
     cb->goaway(t->cb_user_data, &t->base, goaways[i].status, goaways[i].debug);
@@ -850,6 +868,8 @@ static void unlock(transport *t) {
   grpc_sopb_destroy(&nuke_now);
 
   gpr_free(goaways);
+
+  GRPC_TIMER_MARK(HTTP2_UNLOCK_END, 0);
 }
 
 /*
@@ -896,6 +916,8 @@ static int prepare_write(transport *t) {
     window_delta = grpc_chttp2_preencode(
         s->outgoing_sopb->ops, &s->outgoing_sopb->nops,
         GPR_MIN(t->outgoing_window, s->outgoing_window), &s->writing_sopb);
+    FLOWCTL_TRACE(t, t, outgoing, 0, -(gpr_int64)window_delta);
+    FLOWCTL_TRACE(t, s, outgoing, s->id, -(gpr_int64)window_delta);
     t->outgoing_window -= window_delta;
     s->outgoing_window -= window_delta;
 
@@ -924,6 +946,7 @@ static int prepare_write(transport *t) {
     if (!s->read_closed && window_delta) {
       gpr_slice_buffer_add(
           &t->outbuf, grpc_chttp2_window_update_create(s->id, window_delta));
+      FLOWCTL_TRACE(t, s, incoming, s->id, window_delta);
       s->incoming_window += window_delta;
     }
   }
@@ -933,6 +956,7 @@ static int prepare_write(transport *t) {
     window_delta = t->connection_window_target - t->incoming_window;
     gpr_slice_buffer_add(&t->outbuf,
                          grpc_chttp2_window_update_create(0, window_delta));
+    FLOWCTL_TRACE(t, t, incoming, 0, window_delta);
     t->incoming_window += window_delta;
   }
 
@@ -1259,6 +1283,8 @@ static grpc_chttp2_parse_error update_incoming_window(transport *t, stream *s) {
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
 
+  FLOWCTL_TRACE(t, t, incoming, 0, -(gpr_int64)t->incoming_frame_size);
+  FLOWCTL_TRACE(t, s, incoming, s->id, -(gpr_int64)t->incoming_frame_size);
   t->incoming_window -= t->incoming_frame_size;
   s->incoming_window -= t->incoming_frame_size;
 
@@ -1608,6 +1634,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
         for (i = 0; i < t->stream_map.count; i++) {
           stream *s = (stream *)(t->stream_map.values[i]);
           int was_window_empty = s->outgoing_window <= 0;
+          FLOWCTL_TRACE(t, s, outgoing, s->id, st.initial_window_update);
           s->outgoing_window += st.initial_window_update;
           if (was_window_empty && s->outgoing_window > 0 && s->outgoing_sopb &&
               s->outgoing_sopb->nops > 0) {
@@ -1626,6 +1653,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
                                       GRPC_CHTTP2_FLOW_CONTROL_ERROR),
                             GRPC_CHTTP2_FLOW_CONTROL_ERROR, NULL, 1);
             } else {
+              FLOWCTL_TRACE(t, s, outgoing, s->id, st.window_update);
               s->outgoing_window += st.window_update;
               /* if this window update makes outgoing ops writable again,
                  flag that */
@@ -1640,6 +1668,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
           if (!is_window_update_legal(st.window_update, t->outgoing_window)) {
             drop_connection(t);
           } else {
+            FLOWCTL_TRACE(t, t, outgoing, 0, st.window_update);
             t->outgoing_window += st.window_update;
           }
         }
