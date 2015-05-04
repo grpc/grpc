@@ -45,15 +45,10 @@
 #include <grpc/support/thd.h>
 #include <stdio.h>
 
-typedef enum {
-  BEGIN = '{',
-  END = '}',
-  MARK = '.'
-} marker_type;
+typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
-  gpr_thd_id thd;
   int tag;
   marker_type type;
   void* id;
@@ -61,71 +56,35 @@ typedef struct grpc_timer_entry {
   int line;
 } grpc_timer_entry;
 
-struct grpc_timers_log {
-  gpr_mu mu;
-  grpc_timer_entry* log;
-  int num_entries;
-  int capacity;
-  int capacity_limit;
-  FILE* fp;
-};
+#define MAX_COUNT (1024 * 1024 / sizeof(grpc_timer_entry))
 
-grpc_timers_log* grpc_timers_log_global = NULL;
+static __thread grpc_timer_entry log[MAX_COUNT];
+static __thread int count;
 
-static grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE* dump) {
-  grpc_timers_log* log = gpr_malloc(sizeof(*log));
-
-  /* TODO (vpai): Allow allocation below limit */
-  log->log = gpr_malloc(capacity_limit * sizeof(*log->log));
-
-  /* TODO (vpai): Improve concurrency, do per-thread logging? */
-  gpr_mu_init(&log->mu);
-
-  log->num_entries = 0;
-  log->capacity = log->capacity_limit = capacity_limit;
-
-  log->fp = dump;
-
-  return log;
-}
-
-static void log_report_locked(grpc_timers_log* log) {
-  FILE* fp = log->fp;
+static void log_report() {
   int i;
-  for (i = 0; i < log->num_entries; i++) {
-    grpc_timer_entry* entry = &(log->log[i]);
-    fprintf(fp, "GRPC_LAT_PROF ");
-    grpc_precise_clock_print(&entry->tm, fp);
-    fprintf(fp, " %p %c %d %p %s %d\n", (void*)(gpr_intptr)entry->thd, entry->type, entry->tag,
-            entry->id, entry->file, entry->line);
+  for (i = 0; i < count; i++) {
+    grpc_timer_entry* entry = &(log[i]);
+    printf("GRPC_LAT_PROF " GRPC_PRECISE_CLOCK_FORMAT " %p %c %d %p %s %d\n",
+           GRPC_PRECISE_CLOCK_PRINTF_ARGS(&entry->tm),
+           (void*)(gpr_intptr)gpr_thd_currentid(), entry->type, entry->tag,
+           entry->id, entry->file, entry->line);
   }
 
   /* Now clear out the log */
-  log->num_entries = 0;
+  count = 0;
 }
 
-static void grpc_timers_log_destroy(grpc_timers_log* log) {
-  gpr_mu_lock(&log->mu);
-  log_report_locked(log);
-  gpr_mu_unlock(&log->mu);
-
-  gpr_free(log->log);
-  gpr_mu_destroy(&log->mu);
-
-  gpr_free(log);
-}
-
-static void grpc_timers_log_add(grpc_timers_log* log, int tag, marker_type type, void* id,
+static void grpc_timers_log_add(int tag, marker_type type, void* id,
                                 const char* file, int line) {
   grpc_timer_entry* entry;
 
   /* TODO (vpai) : Improve concurrency */
-  gpr_mu_lock(&log->mu);
-  if (log->num_entries == log->capacity_limit) {
-    log_report_locked(log);
+  if (count == MAX_COUNT) {
+    log_report();
   }
 
-  entry = &log->log[log->num_entries++];
+  entry = &log[count++];
 
   grpc_precise_clock_now(&entry->tm);
   entry->tag = tag;
@@ -133,39 +92,31 @@ static void grpc_timers_log_add(grpc_timers_log* log, int tag, marker_type type,
   entry->id = id;
   entry->file = file;
   entry->line = line;
-  entry->thd = gpr_thd_currentid();
-
-  gpr_mu_unlock(&log->mu);
 }
 
 /* Latency profiler API implementation. */
 void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(grpc_timers_log_global, tag, MARK, id, file, line);
+    grpc_timers_log_add(tag, MARK, id, file, line);
   }
 }
 
-void grpc_timer_begin(int tag, void* id, const char *file, int line) {
+void grpc_timer_begin(int tag, void* id, const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(grpc_timers_log_global, tag, BEGIN, id, file, line);
+    grpc_timers_log_add(tag, BEGIN, id, file, line);
   }
 }
 
-void grpc_timer_end(int tag, void* id, const char *file, int line) {
+void grpc_timer_end(int tag, void* id, const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(grpc_timers_log_global, tag, END, id, file, line);
+    grpc_timers_log_add(tag, END, id, file, line);
   }
 }
 
 /* Basic profiler specific API functions. */
-void grpc_timers_global_init(void) {
-  grpc_timers_log_global = grpc_timers_log_create(100000, stdout);
-}
+void grpc_timers_global_init(void) {}
 
-void grpc_timers_global_destroy(void) {
-  grpc_timers_log_destroy(grpc_timers_log_global);
-}
-
+void grpc_timers_global_destroy(void) {}
 
 #else  /* !GRPC_BASIC_PROFILER */
 void grpc_timers_global_init(void) {}
