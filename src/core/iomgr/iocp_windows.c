@@ -172,7 +172,9 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
 }
 
 void grpc_iocp_socket_orphan(grpc_winsocket *socket) {
+  GPR_ASSERT(!socket->orphan);
   gpr_atm_full_fetch_add(&g_orphans, 1);
+  socket->orphan = 1;
 }
 
 static void socket_notify_on_iocp(grpc_winsocket *socket,

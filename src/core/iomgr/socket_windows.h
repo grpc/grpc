@@ -64,6 +64,7 @@ typedef struct grpc_winsocket {
 
   int added_to_iocp;
   int orphan;
+  int closed_early;
 } grpc_winsocket;
 
 /* Create a wrapped windows handle.

@@ -45,10 +45,17 @@
 #include <grpc/support/thd.h>
 #include <stdio.h>
 
+typedef enum {
+  BEGIN = '{',
+  END = '}',
+  MARK = '.'
+} marker_type;
+
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
   gpr_thd_id thd;
   int tag;
+  marker_type type;
   void* id;
   const char* file;
   int line;
@@ -89,7 +96,7 @@ static void log_report_locked(grpc_timers_log* log) {
     grpc_timer_entry* entry = &(log->log[i]);
     fprintf(fp, "GRPC_LAT_PROF ");
     grpc_precise_clock_print(&entry->tm, fp);
-    fprintf(fp, " %p %d %p %s %d\n", (void*)(gpr_intptr)entry->thd, entry->tag,
+    fprintf(fp, " %p %c %d %p %s %d\n", (void*)(gpr_intptr)entry->thd, entry->type, entry->tag,
             entry->id, entry->file, entry->line);
   }
 
@@ -108,7 +115,7 @@ static void grpc_timers_log_destroy(grpc_timers_log* log) {
   gpr_free(log);
 }
 
-static void grpc_timers_log_add(grpc_timers_log* log, int tag, void* id,
+static void grpc_timers_log_add(grpc_timers_log* log, int tag, marker_type type, void* id,
                                 const char* file, int line) {
   grpc_timer_entry* entry;
 
@@ -122,6 +129,7 @@ static void grpc_timers_log_add(grpc_timers_log* log, int tag, void* id,
 
   grpc_precise_clock_now(&entry->tm);
   entry->tag = tag;
+  entry->type = type;
   entry->id = id;
   entry->file = file;
   entry->line = line;
@@ -132,11 +140,22 @@ static void grpc_timers_log_add(grpc_timers_log* log, int tag, void* id,
 
 /* Latency profiler API implementation. */
 void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
-  grpc_timers_log_add(grpc_timers_log_global, tag, id, file, line);
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
+    grpc_timers_log_add(grpc_timers_log_global, tag, MARK, id, file, line);
+  }
 }
 
-void grpc_timer_begin(int tag, void* id, const char* file, int line) {}
-void grpc_timer_end(int tag, void* id, const char* file, int line) {}
+void grpc_timer_begin(int tag, void* id, const char *file, int line) {
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
+    grpc_timers_log_add(grpc_timers_log_global, tag, BEGIN, id, file, line);
+  }
+}
+
+void grpc_timer_end(int tag, void* id, const char *file, int line) {
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
+    grpc_timers_log_add(grpc_timers_log_global, tag, END, id, file, line);
+  }
+}
 
 /* Basic profiler specific API functions. */
 void grpc_timers_global_init(void) {

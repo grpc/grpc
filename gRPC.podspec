@@ -4,7 +4,8 @@ Pod::Spec.new do |s|
   s.summary  = 'Generic gRPC client library for iOS'
   s.homepage = 'https://www.grpc.io'
   s.license  = 'New BSD'
-  s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
+  s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com'
+                 'Michael Lumish' => 'mlumish@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',  :tag => 'release-0_5_0' }
 
