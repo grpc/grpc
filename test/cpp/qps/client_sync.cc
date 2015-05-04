@@ -97,10 +97,10 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
 class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
  public:
   SynchronousStreamingClient(const ClientConfig& config):
-    SynchronousClient(config) {
+      SynchronousClient(config), context_(num_threads_) {
     for (size_t thread_idx=0;thread_idx<num_threads_;thread_idx++){
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
-      stream_ = stub->StreamingCall(&context_);
+      stream_ = stub->StreamingCall(&context_[thread_idx]);
     }
     StartThreads(num_threads_);
   }
@@ -122,7 +122,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     return false;
   }
   private:
-    grpc::ClientContext context_;
+    std::vector<grpc::ClientContext> context_;
     std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest,
                                              SimpleResponse>> stream_;
 };
