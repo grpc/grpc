@@ -217,4 +217,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config, int 
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
   test_invoke_10_simple_requests(config, 16777213);
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) {
+    test_invoke_10_simple_requests(config, 2147483645);
+  }
 }
