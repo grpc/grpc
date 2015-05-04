@@ -366,6 +366,8 @@ namespace Grpc.IntegrationTesting
 
                 var cts = new CancellationTokenSource();
                 var call = client.StreamingInputCall(cts.Token);
+                // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
+                await Task.Delay(1000);
                 cts.Cancel();
 
                 try

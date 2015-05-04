@@ -166,27 +166,6 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void ClientStreamingCall_ServerHandlerThrows()
-        {
-            Task.Run(async () => 
-                     {
-                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-                var callResult = Calls.AsyncClientStreamingCall(call, CancellationToken.None);
-                // TODO(jtattermusch): if we send "A", "THROW", "C", server hangs.
-                await callResult.RequestStream.WriteAll(new string[] { "A", "B", "THROW" });
-
-                try
-                {
-                    await callResult.Result;
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
-                }
-            }).Wait();
-        }
-
-        [Test]
         public void ClientStreamingCall_CancelAfterBegin()
         {
             Task.Run(async () => 
@@ -195,6 +174,9 @@ namespace Grpc.Core.Tests
 
                 var cts = new CancellationTokenSource();
                 var callResult = Calls.AsyncClientStreamingCall(call, cts.Token);
+
+                // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
+                await Task.Delay(1000);
                 cts.Cancel();
 
                 try
@@ -260,7 +242,9 @@ namespace Grpc.Core.Tests
                 }
                 result += request;
             });
-            return result;   
+            // simulate processing takes some time.
+            await Task.Delay(250);
+            return result;
         }
     }
 }

@@ -80,7 +80,14 @@ namespace Grpc.Core.Internal
                 Console.WriteLine("Exception occured in handler: " + e);
                 status = HandlerUtils.StatusFromException(e);
             }
-            await responseStream.WriteStatus(status);
+            try
+            {
+                await responseStream.WriteStatus(status);
+            }
+            catch (OperationCanceledException)
+            {
+                // Call has been already cancelled.
+            }
             await finishedTask;
         }
     }
@@ -121,7 +128,15 @@ namespace Grpc.Core.Internal
                 Console.WriteLine("Exception occured in handler: " + e);
                 status = HandlerUtils.StatusFromException(e);
             }
-            await responseStream.WriteStatus(status);
+
+            try
+            {
+                await responseStream.WriteStatus(status);
+            }
+            catch (OperationCanceledException)
+            {
+                // Call has been already cancelled.
+            }
             await finishedTask;
         }
     }
@@ -151,15 +166,30 @@ namespace Grpc.Core.Internal
             Status status = Status.DefaultSuccess;
             try
             {
-              var result = await handler(requestStream);
-              await responseStream.Write(result);
-            } 
+                var result = await handler(requestStream);
+                try
+                {
+                    await responseStream.Write(result);
+                }
+                catch (OperationCanceledException)
+                {
+                    status = Status.DefaultCancelled;
+                }
+            }
             catch (Exception e)
             {
                 Console.WriteLine("Exception occured in handler: " + e);
                 status = HandlerUtils.StatusFromException(e);
             }
-            await responseStream.WriteStatus(status);
+
+            try
+            {
+                await responseStream.WriteStatus(status);
+            }
+            catch (OperationCanceledException)
+            {
+                // Call has been already cancelled.
+            }
             await finishedTask;
         }
     }
@@ -196,7 +226,14 @@ namespace Grpc.Core.Internal
                 Console.WriteLine("Exception occured in handler: " + e);
                 status = HandlerUtils.StatusFromException(e);
             }
-            await responseStream.WriteStatus(status);
+            try
+            {
+                await responseStream.WriteStatus(status);
+            }
+            catch (OperationCanceledException)
+            {
+                // Call has been already cancelled.
+            }
             await finishedTask;
         }
     }

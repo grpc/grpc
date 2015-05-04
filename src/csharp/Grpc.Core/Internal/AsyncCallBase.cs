@@ -180,7 +180,8 @@ namespace Grpc.Core.Internal
         {
             if (!disposed && call != null)
             {
-                if (halfclosed && readingDone && finished)
+                bool noMoreSendCompletions = halfclosed || (cancelRequested && sendCompletionDelegate == null);
+                if (noMoreSendCompletions && readingDone && finished)
                 {
                     ReleaseResources();
                     return true;
@@ -207,8 +208,9 @@ namespace Grpc.Core.Internal
         protected void CheckSendingAllowed()
         {
             Preconditions.CheckState(started);
-            Preconditions.CheckState(!disposed);
             Preconditions.CheckState(!errorOccured);
+            CheckNotCancelled();
+            Preconditions.CheckState(!disposed);
 
             Preconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
             Preconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
@@ -221,7 +223,14 @@ namespace Grpc.Core.Internal
             Preconditions.CheckState(!errorOccured);
 
             Preconditions.CheckState(!readingDone, "Stream has already been closed.");
-            Preconditions.CheckState(readCompletionDelegate == null, "Only one write can be pending at a time");
+            Preconditions.CheckState(readCompletionDelegate == null, "Only one read can be pending at a time");
+        }
+
+        protected void CheckNotCancelled() {
+            if (cancelRequested)
+            {
+                throw new OperationCanceledException("Remote call has been cancelled.");
+            }
         }
 
         protected byte[] UnsafeSerialize(TWrite msg)
@@ -291,6 +300,8 @@ namespace Grpc.Core.Internal
                 }
             });
         }
+
+
 
         /// <summary>
         /// Handles send completion.

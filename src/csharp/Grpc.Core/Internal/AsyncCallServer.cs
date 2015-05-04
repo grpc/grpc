@@ -123,18 +123,23 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinishedServerside(bool wasError, BatchContextSafeHandleNotOwned ctx)
         {
+            bool cancelled = ctx.GetReceivedCloseOnServerCancelled();
+
             lock (myLock)
             {
                 finished = true;
 
-                if (readCompletionDelegate == null)
+                if (cancelled)
                 {
-                    // allow disposal of native call
-                    readingDone = true;
+                    // Once we cancel, we don't have to care that much 
+                    // about reads and writes.
+                    Cancel();
                 }
 
                 ReleaseResourcesIfPossible();
             }
+            // TODO(jtattermusch): check if call was cancelled.
+
             // TODO: handle error ...
 
             finishedServersideTcs.SetResult(null);

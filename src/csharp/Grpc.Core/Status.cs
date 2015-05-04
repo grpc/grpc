@@ -44,6 +44,11 @@ namespace Grpc.Core
         /// </summary>
         public static readonly Status DefaultSuccess = new Status(StatusCode.OK, "");
 
+        /// <summary>
+        /// Default result of a cancelled RPC. StatusCode=Cancelled, empty details message.
+        /// </summary>
+        public static readonly Status DefaultCancelled = new Status(StatusCode.Cancelled, "");
+
         readonly StatusCode statusCode;
         readonly string detail;
 
