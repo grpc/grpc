@@ -109,7 +109,8 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   /* First, shutdown all fd's. This will queue abortion calls for all
      of the pending accepts. */
   for (i = 0; i < s->nports; i++) {
-    grpc_winsocket_shutdown(s->ports[i].socket);
+    server_port *sp = &s->ports[i];
+    grpc_winsocket_shutdown(sp->socket);
   }
   /* This happens asynchronously. Wait while that happens. */
   while (s->active_ports) {
@@ -275,22 +276,28 @@ static void on_accept(void *arg, int from_iocp) {
     /* If we're not notified from the IOCP, it means we are asked to shutdown.
        This will initiate that shutdown. Calling closesocket will trigger an
        IOCP notification, that will call this function a second time, from
-       the IOCP thread. */
+       the IOCP thread. Of course, this only works if the socket was, in fact,
+       listening. If that's not the case, we'd wait indefinitely. That's a bit
+       of a degenerate case, but it can happen if you create a server, but
+       don't start it. So let's support that by recursing once. */
     sp->shutting_down = 1;
     sp->new_socket = INVALID_SOCKET;
-    closesocket(sock);
+    if (sock != INVALID_SOCKET) {
+      closesocket(sock);
+    } else {
+      on_accept(sp, 1);
+    }
+    return;
   }
 
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) sp->server->cb(sp->server->cb_arg, ep);
-  if (from_iocp) {
-    /* As we were notified from the IOCP of one and exactly one accept,
-       the former socked we created has now either been destroy or assigned
-       to the new connection. We need to create a new one for the next
-       connection. */
-    start_accept(sp);
-  }
+  /* As we were notified from the IOCP of one and exactly one accept,
+      the former socked we created has now either been destroy or assigned
+      to the new connection. We need to create a new one for the next
+      connection. */
+  start_accept(sp);
 }
 
 static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
@@ -332,6 +339,7 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     sp->socket = grpc_winsocket_create(sock);
     sp->shutting_down = 0;
     sp->AcceptEx = AcceptEx;
+    sp->new_socket = INVALID_SOCKET;
     GPR_ASSERT(sp->socket);
     gpr_mu_unlock(&s->mu);
   }

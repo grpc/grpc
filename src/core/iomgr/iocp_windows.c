@@ -177,6 +177,10 @@ void grpc_iocp_socket_orphan(grpc_winsocket *socket) {
   socket->orphan = 1;
 }
 
+/* Calling notify_on_read or write means either of two things:
+   -) The IOCP already completed in the background, and we need to call
+   the callback now.
+   -) The IOCP hasn't completed yet, and we're queuing it for later. */
 static void socket_notify_on_iocp(grpc_winsocket *socket,
                                   void(*cb)(void *, int), void *opaque,
                                   grpc_winsocket_callback_info *info) {
