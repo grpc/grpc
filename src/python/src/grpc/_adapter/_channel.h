@@ -42,7 +42,7 @@ typedef struct {
   grpc_channel *c_channel;
 } Channel;
 
-PyTypeObject pygrpc_ChannelType;
+extern PyTypeObject pygrpc_ChannelType;
 
 int pygrpc_add_channel(PyObject *module);
 

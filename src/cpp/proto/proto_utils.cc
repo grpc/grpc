@@ -159,6 +159,7 @@ bool SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
 }
 
 bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg) {
+  if (!buffer) return false;
   GrpcBufferReader reader(buffer);
   return msg->ParseFromZeroCopyStream(&reader);
 }

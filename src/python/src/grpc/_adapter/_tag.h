@@ -51,7 +51,7 @@ typedef enum {
   PYGRPC_FINISH_ACCEPTED      = 4,
   PYGRPC_CLIENT_METADATA_READ = 5,
   PYGRPC_FINISHED_CLIENT      = 6,
-  PYGRPC_FINISHED_SERVER      = 7,
+  PYGRPC_FINISHED_SERVER      = 7
 } pygrpc_tag_type;
 
 typedef struct {

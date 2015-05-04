@@ -538,6 +538,19 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
           push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
                        channel_args->args[i].value.integer);
         }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER);
+        } else if ((t->next_stream_id & 1) !=
+                   (channel_args->args[i].value.integer & 1)) {
+          gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
+                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
+                  t->is_client ? "client" : "server");
+        } else {
+          t->next_stream_id = channel_args->args[i].value.integer;
+        }
       }
     }
   }
@@ -625,17 +638,19 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
   if (!server_data) {
     lock(t);
     s->id = 0;
+    s->outgoing_window = 0;
+    s->incoming_window = 0;
   } else {
     /* already locked */
     s->id = (gpr_uint32)(gpr_uintptr)server_data;
+    s->outgoing_window =
+        t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    s->incoming_window =
+        t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
 
-  s->outgoing_window =
-      t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  s->incoming_window =
-      t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   s->incoming_deadline = gpr_inf_future;
   grpc_sopb_init(&s->writing_sopb);
   grpc_sopb_init(&s->callback_sopb);
@@ -1041,6 +1056,10 @@ static void maybe_start_some_streams(transport *t) {
     GPR_ASSERT(s->id == 0);
     s->id = t->next_stream_id;
     t->next_stream_id += 2;
+    s->outgoing_window =
+        t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    s->incoming_window =
+        t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     stream_list_join(t, s, WRITABLE);
   }
@@ -1777,7 +1796,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_5:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id = (((gpr_uint32)*cur) << 24) & 0x7f;
+      t->incoming_stream_id = (((gpr_uint32)*cur) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = DTS_FH_6;
         return 1;

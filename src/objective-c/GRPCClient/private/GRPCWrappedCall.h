@@ -33,20 +33,65 @@
 
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
+#import "GRPCChannel.h"
 
-typedef void(^GRPCQueueCompletionHandler)(grpc_op_error error);
+typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
-// This class lets one more easily use grpc_completion_queue. To use it, pass
-// the value of the unmanagedQueue property of an instance of this class to
-// grpc_call_start_invoke. Then for every grpc_call_* method that accepts a tag,
-// you can pass a block of type GRPCEventHandler (remembering to cast it using
-// __bridge_retained). The block is guaranteed to eventually be called, by a
-// concurrent queue, and then released. Each such block is passed a pointer to
-// the grpc_event that carried it (in event->tag).
-// Release the GRPCCompletionQueue object only after you are not going to pass
-// any more blocks to the grpc_call that's using it.
-@interface GRPCCompletionQueue : NSObject
-@property(nonatomic, readonly) grpc_completion_queue *unmanagedQueue;
+@protocol GRPCOp <NSObject>
 
-+ (instancetype)completionQueue;
+- (void)getOp:(grpc_op *)op;
+
+- (void)finish;
+
+@end
+
+@interface GRPCOpSendMetadata : NSObject <GRPCOp>
+
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
+                         handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpSendMessage : NSObject <GRPCOp>
+
+- (instancetype)initWithMessage:(NSData *)message
+                        handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpSendClose : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpRecvMetadata : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpRecvMessage : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(grpc_byte_buffer *))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpRecvStatus : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(NSError *))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCWrappedCall : NSObject
+
+- (instancetype)initWithChannel:(GRPCChannel *)channel
+                         method:(NSString *)method
+                           host:(NSString *)host NS_DESIGNATED_INITIALIZER;
+
+- (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
+
+- (void)startBatchWithOperations:(NSArray *)ops;
+
+- (void)cancel;
 @end

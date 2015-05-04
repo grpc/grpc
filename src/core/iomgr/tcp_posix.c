@@ -408,6 +408,7 @@ static void grpc_tcp_continue_read(grpc_tcp *tcp) {
     slice_state_destroy(&read_state);
     grpc_tcp_unref(tcp);
   }
+
   GRPC_TIMER_END(GRPC_PTAG_HANDLE_READ, 0);
 }
 

@@ -112,7 +112,7 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
   char *tmp;
   size_t i;
   gpr_log(file, line, severity,
-          "grpc_call_start_batch(%p, %p, %d, 0x%x)", call, ops, nops, tag);
+          "grpc_call_start_batch(call=%p, ops=%p, nops=%d, tag=%p)", call, ops, nops, tag);
   for(i = 0; i < nops; i++) {
     tmp = grpc_op_string(&ops[i]);
     gpr_log(file, line, severity, "ops[%d]: %s", i, tmp);

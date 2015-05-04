@@ -41,9 +41,9 @@ extern "C" {
 void grpc_timers_global_init(void);
 void grpc_timers_global_destroy(void);
 
-void grpc_timer_add_mark(int tag, void* id, const char *file, int line);
-void grpc_timer_begin(int tag, void* id, const char *file, int line);
-void grpc_timer_end(int tag, void* id, const char *file, int line);
+void grpc_timer_add_mark(int tag, void *id, const char *file, int line);
+void grpc_timer_begin(int tag, void *id, const char *file, int line);
+void grpc_timer_end(int tag, void *id, const char *file, int line);
 
 enum grpc_profiling_tags {
   /* Any GRPC_PTAG_* >= than the threshold won't generate any profiling mark. */
@@ -74,13 +74,16 @@ enum grpc_profiling_tags {
 #if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */
 #define GRPC_TIMER_MARK(tag, id) \
-  do {} while(0)
+  do {                           \
+  } while (0)
 
 #define GRPC_TIMER_BEGIN(tag, id) \
-  do {} while(0)
+  do {                            \
+  } while (0)
 
 #define GRPC_TIMER_END(tag, id) \
-  do {} while(0)
+  do {                          \
+  } while (0)
 
 #else /* at least one profiler requested... */
 /* ... hopefully only one. */
@@ -94,14 +97,14 @@ enum grpc_profiling_tags {
     grpc_timer_add_mark(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
   }
 
-#define GRPC_TIMER_BEGIN(tag, id)                                             \
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                     \
-    grpc_timer_begin(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__);    \
+#define GRPC_TIMER_BEGIN(tag, id)                                          \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                  \
+    grpc_timer_begin(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
   }
 
-#define GRPC_TIMER_END(tag, id)                                               \
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                     \
-    grpc_timer_end(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__);      \
+#define GRPC_TIMER_END(tag, id)                                          \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                \
+    grpc_timer_end(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
   }
 
 #ifdef GRPC_STAP_PROFILER
@@ -109,9 +112,7 @@ enum grpc_profiling_tags {
 #endif /* GRPC_STAP_PROFILER */
 
 #ifdef GRPC_BASIC_PROFILER
-typedef struct grpc_timers_log grpc_timers_log;
-
-extern grpc_timers_log *grpc_timers_log_global;
+/* Empty placeholder for now. */
 #endif /* GRPC_BASIC_PROFILER */
 
 #endif /* at least one profiler requested. */

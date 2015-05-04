@@ -106,7 +106,7 @@ CC_basicprof = $(DEFAULT_CC)
 CXX_basicprof = $(DEFAULT_CXX)
 LD_basicprof = $(DEFAULT_CC)
 LDXX_basicprof = $(DEFAULT_CXX)
-CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER
+CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
 LDFLAGS_basicprof =
 DEFINES_basicprof = NDEBUG
 
@@ -1191,11 +1191,14 @@ endif
   lib_deps = ' $(ZLIB_DEP)'
   mingw_libs = ''
   mingw_lib_deps = ' $(ZLIB_DEP)'
+  if lib.language == 'c++':
+    lib_deps += ' $(PROTOBUF_DEP)'
+    mingw_lib_deps += ' $(PROTOBUF_DEP)'
   for dep in lib.get('deps', []):
     libs = libs + ' -l' + dep
     lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-    mingw_lib_deps = mingw_lib_deps + '$(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
+    mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
   if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'

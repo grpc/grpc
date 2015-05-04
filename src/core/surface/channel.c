@@ -128,13 +128,6 @@ static grpc_call *grpc_channel_create_call_internal(
                           GPR_ARRAY_SIZE(send_metadata), deadline);
 }
 
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
-                                        const char *method, const char *host,
-                                        gpr_timespec absolute_deadline) {
-  return grpc_channel_create_call(channel, NULL, method, host,
-                                  absolute_deadline);
-}
-
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *cq,
                                     const char *method, const char *host,
