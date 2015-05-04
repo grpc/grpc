@@ -312,7 +312,8 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
       got_message = *status;
       if (recv_message_) {
         GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, 0);
-        *status = *status && DeserializeProto(recv_buf_, recv_message_, max_message_size_);
+        *status = *status &&
+                  DeserializeProto(recv_buf_, recv_message_, max_message_size_);
         grpc_byte_buffer_destroy(recv_buf_);
         GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, 0);
       } else {
@@ -343,7 +344,9 @@ Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
 
 Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
            int max_message_size)
-    : call_hook_(call_hook), cq_(cq), call_(call),
+    : call_hook_(call_hook),
+      cq_(cq),
+      call_(call),
       max_message_size_(max_message_size) {}
 
 void Call::PerformOps(CallOpBuffer* buffer) {

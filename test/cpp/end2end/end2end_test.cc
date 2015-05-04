@@ -182,7 +182,8 @@ class End2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterService(&service_);
-    builder.SetMaxMessageSize(kMaxMessageSize_);  // For testing max message size.
+    builder.SetMaxMessageSize(
+        kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
     builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
@@ -428,8 +429,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
-  std::unique_ptr<Credentials> bad_creds =
-      ServiceAccountCredentials("", "", 1);
+  std::unique_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(nullptr, bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
@@ -503,14 +503,13 @@ TEST_F(End2endTest, ClientCancelsRequestStream) {
   auto stream = stub_->RequestStream(&context, &response);
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Write(request));
-  
+
   context.TryCancel();
 
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
-  
-  EXPECT_EQ(response.message(), "");
 
+  EXPECT_EQ(response.message(), "");
 }
 
 // Client cancels server stream after sending some messages
@@ -594,7 +593,7 @@ TEST_F(End2endTest, RpcMaxMessageSize) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
-  request.set_message(string(kMaxMessageSize_*2, 'a'));
+  request.set_message(string(kMaxMessageSize_ * 2, 'a'));
 
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);

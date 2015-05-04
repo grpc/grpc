@@ -126,7 +126,8 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       if (has_request_payload_) {
         GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
         req.reset(method_->AllocateRequestProto());
-        if (!DeserializeProto(request_payload_, req.get(), call_.max_message_size())) {
+        if (!DeserializeProto(request_payload_, req.get(),
+                              call_.max_message_size())) {
           // FIXME(yangg) deal with deserialization failure
           cq_.Shutdown();
           return;
@@ -237,7 +238,7 @@ bool Server::RegisterAsyncService(AsynchronousService* service) {
   GPR_ASSERT(service->dispatch_impl_ == nullptr &&
              "Can only register an asynchronous service against one server.");
   service->dispatch_impl_ = this;
-  service->request_args_ = new void* [service->method_count_];
+  service->request_args_ = new void*[service->method_count_];
   for (size_t i = 0; i < service->method_count_; ++i) {
     void* tag =
         grpc_server_register_method(server_, service->method_names_[i], nullptr,
@@ -364,8 +365,8 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
     if (*status && request_) {
       if (payload_) {
         GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, call_);
-        *status = DeserializeProto(payload_, request_,
-                                   server_->max_message_size_);
+        *status =
+            DeserializeProto(payload_, request_, server_->max_message_size_);
         GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, call_);
       } else {
         *status = false;

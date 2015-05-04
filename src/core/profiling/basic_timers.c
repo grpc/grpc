@@ -135,8 +135,8 @@ void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
   grpc_timers_log_add(grpc_timers_log_global, tag, id, file, line);
 }
 
-void grpc_timer_begin(int tag, void* id, const char *file, int line) {}
-void grpc_timer_end(int tag, void* id, const char *file, int line) {}
+void grpc_timer_begin(int tag, void* id, const char* file, int line) {}
+void grpc_timer_end(int tag, void* id, const char* file, int line) {}
 
 /* Basic profiler specific API functions. */
 void grpc_timers_global_init(void) {
@@ -146,7 +146,6 @@ void grpc_timers_global_init(void) {
 void grpc_timers_global_destroy(void) {
   grpc_timers_log_destroy(grpc_timers_log_global);
 }
-
 
 #else  /* !GRPC_BASIC_PROFILER */
 void grpc_timers_global_init(void) {}
