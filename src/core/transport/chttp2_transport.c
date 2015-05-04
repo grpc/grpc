@@ -538,6 +538,19 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
           push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
                        channel_args->args[i].value.integer);
         }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER);
+        } else if ((t->next_stream_id & 1) !=
+                   (channel_args->args[i].value.integer & 1)) {
+          gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
+                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
+                  t->is_client ? "client" : "server");
+        } else {
+          t->next_stream_id = channel_args->args[i].value.integer;
+        }
       }
     }
   }
@@ -1783,7 +1796,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_5:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id = (((gpr_uint32)*cur) << 24) & 0x7f;
+      t->incoming_stream_id = (((gpr_uint32)*cur) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = DTS_FH_6;
         return 1;
