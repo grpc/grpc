@@ -799,7 +799,7 @@ static void unlock(transport *t) {
   grpc_stream_op_buffer nuke_now;
   const grpc_transport_callbacks *cb = t->cb;
 
-  GRPC_TIMER_MARK(HTTP2_UNLOCK_BEGIN, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_UNLOCK, 0);
 
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
@@ -849,7 +849,7 @@ static void unlock(transport *t) {
   /* finally unlock */
   gpr_mu_unlock(&t->mu);
 
-  GRPC_TIMER_MARK(HTTP2_UNLOCK_CLEANUP, 0);
+  GRPC_TIMER_MARK(GRPC_PTAG_HTTP2_UNLOCK_CLEANUP, 0);
 
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
@@ -882,7 +882,7 @@ static void unlock(transport *t) {
 
   gpr_free(goaways);
 
-  GRPC_TIMER_MARK(HTTP2_UNLOCK_END, 0);
+  GRPC_TIMER_END(GRPC_PTAG_HTTP2_UNLOCK, 0);
 }
 
 /*
