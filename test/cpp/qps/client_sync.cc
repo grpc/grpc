@@ -66,11 +66,11 @@ class SynchronousClient : public Client {
  public:
   SynchronousClient(const ClientConfig& config) : Client(config) {
     num_threads_ =
-      config.outstanding_rpcs_per_channel() * config.client_channels();
+        config.outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads_);
   }
 
-  virtual ~SynchronousClient() {};
+  virtual ~SynchronousClient(){};
 
  protected:
   size_t num_threads_;
@@ -79,10 +79,12 @@ class SynchronousClient : public Client {
 
 class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
  public:
-  SynchronousUnaryClient(const ClientConfig& config):
-    SynchronousClient(config) {StartThreads(num_threads_);}
-  ~SynchronousUnaryClient() {EndThreads();}
-  
+  SynchronousUnaryClient(const ClientConfig& config)
+      : SynchronousClient(config) {
+    StartThreads(num_threads_);
+  }
+  ~SynchronousUnaryClient() { EndThreads(); }
+
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = Timer::Now();
@@ -96,9 +98,9 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
 
 class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
  public:
-  SynchronousStreamingClient(const ClientConfig& config):
-      SynchronousClient(config), context_(num_threads_) {
-    for (size_t thread_idx=0;thread_idx<num_threads_;thread_idx++){
+  SynchronousStreamingClient(const ClientConfig& config)
+      : SynchronousClient(config), context_(num_threads_) {
+    for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
       stream_ = stub->StreamingCall(&context_[thread_idx]);
     }
@@ -121,18 +123,19 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     }
     return false;
   }
-  private:
-    std::vector<grpc::ClientContext> context_;
-    std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest,
-                                             SimpleResponse>> stream_;
+
+ private:
+  std::vector<grpc::ClientContext> context_;
+  std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>
+      stream_;
 };
 
-std::unique_ptr<Client>
-CreateSynchronousUnaryClient(const ClientConfig& config) {
+std::unique_ptr<Client> CreateSynchronousUnaryClient(
+    const ClientConfig& config) {
   return std::unique_ptr<Client>(new SynchronousUnaryClient(config));
 }
-std::unique_ptr<Client>
-CreateSynchronousStreamingClient(const ClientConfig& config) {
+std::unique_ptr<Client> CreateSynchronousStreamingClient(
+    const ClientConfig& config) {
   return std::unique_ptr<Client>(new SynchronousStreamingClient(config));
 }
 
