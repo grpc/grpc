@@ -133,8 +133,8 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
 class AsyncClient : public Client {
  public:
   explicit AsyncClient(const ClientConfig& config,
-                       void (*setup_ctx)(CompletionQueue*, TestService::Stub*,
-                                         const SimpleRequest&)) :
+		       std::function<void(CompletionQueue*, TestService::Stub*,
+					  const SimpleRequest&)> setup_ctx) :
       Client(config) {
     for (int i = 0; i < config.async_client_threads(); i++) {
       cli_cqs_.emplace_back(new CompletionQueue);
@@ -145,7 +145,7 @@ class AsyncClient : public Client {
 	   channel++) {
         auto* cq = cli_cqs_[t].get();
         t = (t + 1) % cli_cqs_.size();
-        (*setup_ctx)(cq, channel->get_stub(), request_);
+        setup_ctx(cq, channel->get_stub(), request_);
       }
     }
   }
