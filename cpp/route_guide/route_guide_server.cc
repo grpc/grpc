@@ -111,14 +111,14 @@ class RouteGuideImpl final : public RouteGuide::Service {
     return Status::OK;
   }
 
-  Status ListFeatures(ServerContext* context, const Rectangle* rectangle,
+  Status ListFeatures(ServerContext* context, const examples::Rectangle* rectangle,
                       ServerWriter<Feature>* writer) override {
     auto lo = rectangle->lo();
     auto hi = rectangle->hi();
-    long left = std::min(lo.longitude(), hi.longitude());
-    long right = std::max(lo.longitude(), hi.longitude());
-    long top = std::max(lo.latitude(), hi.latitude());
-    long bottom = std::min(lo.latitude(), hi.latitude());
+    long left = (std::min)(lo.longitude(), hi.longitude());
+    long right = (std::max)(lo.longitude(), hi.longitude());
+    long top = (std::max)(lo.latitude(), hi.latitude());
+    long bottom = (std::min)(lo.latitude(), hi.latitude());
     for (const Feature& f : feature_list_) {
       if (f.location().longitude() >= left &&
           f.location().longitude() <= right &&
