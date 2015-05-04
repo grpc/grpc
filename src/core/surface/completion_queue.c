@@ -163,6 +163,7 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
   ev->base.success = success;
   end_op_locked(cc, GRPC_OP_COMPLETE);
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+  if (call) GRPC_CALL_INTERNAL_UNREF(call, "cq", 0);
 }
 
 /* Create a GRPC_QUEUE_SHUTDOWN event without queuing it anywhere */
