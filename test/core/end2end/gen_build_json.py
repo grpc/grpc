@@ -39,7 +39,7 @@ import simplejson
 END2END_FIXTURES = {
     'chttp2_fake_security': True,
     'chttp2_fullstack': False,
-    'chttp2_fullstack_uds': False,
+    'chttp2_fullstack_uds_posix': False,
     'chttp2_simple_ssl_fullstack': True,
     'chttp2_simple_ssl_with_oauth2_fullstack': True,
     'chttp2_socket_pair': False,
@@ -87,7 +87,8 @@ def main():
               'build': 'private',
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f] else 'no',
-              'src': ['test/core/end2end/fixtures/%s.c' % f]
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {
@@ -117,6 +118,7 @@ def main():
               'language': 'c',
               'src': [],
               'flaky': not END2END_TESTS[t],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -136,6 +138,7 @@ def main():
               'secure': 'no',
               'src': [],
               'flaky': 'invoke_large_request' in t,
+              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,

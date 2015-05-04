@@ -35,8 +35,6 @@
 
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/iomgr/endpoint_pair.h"

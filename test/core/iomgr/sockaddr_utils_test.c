@@ -34,7 +34,6 @@
 #include "src/core/iomgr/sockaddr_utils.h"
 
 #include <errno.h>
-#include <netinet/in.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>

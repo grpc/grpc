@@ -999,6 +999,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1043,6 +1046,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1057,6 +1063,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1612,6 +1621,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1668,6 +1680,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1682,6 +1697,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1696,6 +1714,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
