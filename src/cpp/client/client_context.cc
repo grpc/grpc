@@ -49,15 +49,11 @@ ClientContext::~ClientContext() {
     grpc_call_destroy(call_);
   }
   if (cq_) {
-    grpc_completion_queue_shutdown(cq_);
     // Drain cq_.
-    grpc_event* ev;
-    grpc_completion_type t;
-    do {
-      ev = grpc_completion_queue_next(cq_, gpr_inf_future);
-      t = ev->type;
-      grpc_event_finish(ev);
-    } while (t != GRPC_QUEUE_SHUTDOWN);
+    grpc_completion_queue_shutdown(cq_);
+    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
+           GRPC_QUEUE_SHUTDOWN)
+      ;
     grpc_completion_queue_destroy(cq_);
   }
 }

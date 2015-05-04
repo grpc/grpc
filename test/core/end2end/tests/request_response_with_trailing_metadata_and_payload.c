@@ -170,7 +170,7 @@ static void test_request_response_with_metadata_and_payload(
                                                       &call_details,
                                                       &request_metadata_recv,
                                                       f.server_cq, tag(101)));
-  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
+  cq_expect_completion(v_server, tag(101), 1);
   cq_verify(v_server);
 
   op = ops;
@@ -195,10 +195,10 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
+  cq_expect_completion(v_server, tag(102), 1);
   cq_verify(v_server);
 
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
+  cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);

@@ -188,8 +188,6 @@ struct call_data {
 #define SERVER_FROM_CALL_ELEM(elem) \
   (((channel_data *)(elem)->channel_data)->server)
 
-static void do_nothing(void *unused, grpc_op_error ignored) {}
-
 static void begin_call(grpc_server *server, call_data *calld,
                        requested_call *rc);
 static void fail_call(grpc_server *server, requested_call *rc);
@@ -538,8 +536,8 @@ static void destroy_call_elem(grpc_call_element *elem) {
   if (chand->server->shutdown && chand->server->lists[ALL_CALLS] == NULL) {
     for (i = 0; i < chand->server->num_shutdown_tags; i++) {
       for (j = 0; j < chand->server->cq_count; j++) {
-        grpc_cq_end_server_shutdown(chand->server->cqs[j],
-                                    chand->server->shutdown_tags[i]);
+        grpc_cq_end_op(chand->server->cqs[j], chand->server->shutdown_tags[i],
+                       NULL, 1);
       }
     }
   }
@@ -817,7 +815,7 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   gpr_mu_lock(&server->mu);
   if (have_shutdown_tag) {
     for (i = 0; i < server->cq_count; i++) {
-      grpc_cq_begin_op(server->cqs[i], NULL, GRPC_SERVER_SHUTDOWN);
+      grpc_cq_begin_op(server->cqs[i], NULL);
     }
     server->shutdown_tags =
         gpr_realloc(server->shutdown_tags,
@@ -867,7 +865,7 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   if (server->lists[ALL_CALLS] == NULL) {
     for (i = 0; i < server->num_shutdown_tags; i++) {
       for (j = 0; j < server->cq_count; j++) {
-        grpc_cq_end_server_shutdown(server->cqs[j], server->shutdown_tags[i]);
+        grpc_cq_end_op(server->cqs[j], server->shutdown_tags[i], NULL, 1);
       }
     }
   }
@@ -1018,7 +1016,7 @@ grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
                                          grpc_completion_queue *cq_bind,
                                          void *tag) {
   requested_call rc;
-  grpc_cq_begin_op(server->unregistered_cq, NULL, GRPC_OP_COMPLETE);
+  grpc_cq_begin_op(server->unregistered_cq, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
   rc.data.batch.cq_bind = cq_bind;
@@ -1034,7 +1032,7 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_completion_queue *cq_bind, void *tag) {
   requested_call rc;
   registered_method *registered_method = rm;
-  grpc_cq_begin_op(registered_method->cq, NULL, GRPC_OP_COMPLETE);
+  grpc_cq_begin_op(registered_method->cq, NULL);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
   rc.data.registered.cq_bind = cq_bind;
@@ -1046,10 +1044,9 @@ grpc_call_error grpc_server_request_registered_call(
   return queue_call_request(server, &rc);
 }
 
-static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
+static void publish_registered_or_batch(grpc_call *call, int success,
                                         void *tag);
-static void publish_was_not_set(grpc_call *call, grpc_op_error status,
-                                void *tag) {
+static void publish_was_not_set(grpc_call *call, int success, void *tag) {
   abort();
 }
 
@@ -1118,24 +1115,23 @@ static void fail_call(grpc_server *server, requested_call *rc) {
     case BATCH_CALL:
       *rc->data.batch.call = NULL;
       rc->data.batch.initial_metadata->count = 0;
-      grpc_cq_end_op(server->unregistered_cq, rc->tag, NULL, do_nothing, NULL,
-                     GRPC_OP_ERROR);
+      grpc_cq_end_op(server->unregistered_cq, rc->tag, NULL, 0);
       break;
     case REGISTERED_CALL:
       *rc->data.registered.call = NULL;
       rc->data.registered.initial_metadata->count = 0;
       grpc_cq_end_op(rc->data.registered.registered_method->cq, rc->tag, NULL,
-                     do_nothing, NULL, GRPC_OP_ERROR);
+                     0);
       break;
   }
 }
 
-static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
+static void publish_registered_or_batch(grpc_call *call, int success,
                                         void *tag) {
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   call_data *calld = elem->call_data;
-  grpc_cq_end_op(calld->cq_new, tag, call, do_nothing, NULL, status);
+  grpc_cq_end_op(calld->cq_new, tag, call, success);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {

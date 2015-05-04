@@ -39,17 +39,12 @@
 #include "src/core/iomgr/pollset.h"
 #include <grpc/grpc.h>
 
-/* A finish func is executed whenever the event consumer calls
-   grpc_event_finish */
-typedef void (*grpc_event_finish_func)(void *user_data, grpc_op_error error);
-
 void grpc_cq_internal_ref(grpc_completion_queue *cc);
 void grpc_cq_internal_unref(grpc_completion_queue *cc);
 
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made */
-void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
-                      grpc_completion_type type);
+void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
 
 /* grpc_cq_end_* functions pair with a grpc_cq_begin_op
 
@@ -64,15 +59,10 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
 
 /* Queue a GRPC_OP_COMPLETED operation */
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                    grpc_event_finish_func on_finish, void *user_data,
-                    grpc_op_error error);
-
-void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag);
+                    int success);
 
 /* disable polling for some tests */
 void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc);
-
-void grpc_cq_dump_pending_ops(grpc_completion_queue *cc);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 

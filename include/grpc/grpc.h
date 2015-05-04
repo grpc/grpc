@@ -140,14 +140,6 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_FLAGS
 } grpc_call_error;
 
-/* Result of a grpc operation */
-typedef enum grpc_op_error {
-  /* everything went ok */
-  GRPC_OP_OK = 0,
-  /* something failed, we don't know what */
-  GRPC_OP_ERROR
-} grpc_op_error;
-
 /* Write Flags: */
 /* Hint that the write may be buffered and need not go out on the wire
    immediately. GRPC is free to buffer the message until the next non-buffered
@@ -196,22 +188,15 @@ typedef struct grpc_metadata {
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
-  GRPC_OP_COMPLETE,          /* operation completion */
-  GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
-  GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
-                                a default: case */
+  GRPC_QUEUE_SHUTDOWN, /* Shutting down */
+  GRPC_QUEUE_TIMEOUT,  /* No event before timeout */
+  GRPC_OP_COMPLETE     /* operation completion */
 } grpc_completion_type;
 
 typedef struct grpc_event {
   grpc_completion_type type;
+  int success;
   void *tag;
-  grpc_call *call;
-  /* Data associated with the completion type. Field names match the type of
-     completion as listed in grpc_completion_type. */
-  union {
-    grpc_op_error op_complete;
-  } data;
 } grpc_event;
 
 typedef struct {
@@ -352,8 +337,8 @@ grpc_completion_queue *grpc_completion_queue_create(void);
 
    Callers must not call grpc_completion_queue_next and
    grpc_completion_queue_pluck simultaneously on the same completion queue. */
-grpc_event *grpc_completion_queue_next(grpc_completion_queue *cq,
-                                       gpr_timespec deadline);
+grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
+                                      gpr_timespec deadline);
 
 /* Blocks until an event with tag 'tag' is available, the completion queue is
    being shutdown or deadline is reached. Returns NULL on timeout, or a pointer
@@ -362,11 +347,8 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cq,
 
    Callers must not call grpc_completion_queue_next and
    grpc_completion_queue_pluck simultaneously on the same completion queue. */
-grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
-                                        gpr_timespec deadline);
-
-/* Clean up any data owned by the event */
-void grpc_event_finish(grpc_event *event);
+grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
+                                       gpr_timespec deadline);
 
 /* Begin destruction of a completion queue. Once all possible events are
    drained then grpc_completion_queue_next will start to produce

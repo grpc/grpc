@@ -50,15 +50,10 @@ static gpr_timespec ms_from_now(int ms) {
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
-  grpc_event *ev;
-  grpc_completion_type type;
+  grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, ms_from_now(5000));
-    GPR_ASSERT(ev);
-    type = ev->type;
-    grpc_event_finish(ev);
-    gpr_log(GPR_INFO, "Drained event type %d", type);
-  } while (type != GRPC_QUEUE_SHUTDOWN);
+  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 void test_connect(const char *server_host, const char *client_host, int port,
@@ -159,7 +154,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
                                                         &call_details,
                                                         &request_metadata_recv,
                                                         server_cq, tag(101)));
-    cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
+    cq_expect_completion(v_server, tag(101), 1);
     cq_verify(v_server);
 
     op = ops;
@@ -177,10 +172,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-    cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
+    cq_expect_completion(v_server, tag(102), 1);
     cq_verify(v_server);
 
-    cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
+    cq_expect_completion(v_client, tag(1), 1);
     cq_verify(v_client);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
@@ -192,7 +187,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     grpc_call_destroy(s);
   } else {
     /* Check for a failed connection. */
-    cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
+    cq_expect_completion(v_client, tag(1), 1);
     cq_verify(v_client);
 
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);

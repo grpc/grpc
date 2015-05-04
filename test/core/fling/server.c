@@ -169,7 +169,7 @@ static void start_send_status(void) {
 static void sigint_handler(int x) { _exit(0); }
 
 int main(int argc, char **argv) {
-  grpc_event *ev;
+  grpc_event ev;
   call_state *s;
   char *addr_buf = NULL;
   gpr_cmdline *cl;
@@ -233,9 +233,8 @@ int main(int argc, char **argv) {
     }
     ev = grpc_completion_queue_next(
         cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
-    if (!ev) continue;
-    s = ev->tag;
-    switch (ev->type) {
+    s = ev.tag;
+    switch (ev.type) {
       case GRPC_OP_COMPLETE:
         switch ((gpr_intptr)s) {
           case FLING_SERVER_NEW_REQUEST:
@@ -297,10 +296,9 @@ int main(int argc, char **argv) {
         GPR_ASSERT(shutdown_started);
         shutdown_finished = 1;
         break;
-      default:
-        GPR_ASSERT(0);
+      case GRPC_QUEUE_TIMEOUT:
+        break;
     }
-    grpc_event_finish(ev);
   }
   grpc_profiler_stop();
   grpc_call_details_destroy(&call_details);
