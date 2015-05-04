@@ -45,11 +45,7 @@
 #include <grpc/support/thd.h>
 #include <stdio.h>
 
-typedef enum {
-  BEGIN = '{',
-  END = '}',
-  MARK = '.'
-} marker_type;
+typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
@@ -60,7 +56,7 @@ typedef struct grpc_timer_entry {
   int line;
 } grpc_timer_entry;
 
-#define MAX_COUNT (1024*1024/sizeof(grpc_timer_entry))
+#define MAX_COUNT (1024 * 1024 / sizeof(grpc_timer_entry))
 
 static __thread grpc_timer_entry log[MAX_COUNT];
 static __thread int count;
@@ -69,8 +65,10 @@ static void log_report() {
   int i;
   for (i = 0; i < count; i++) {
     grpc_timer_entry* entry = &(log[i]);
-    printf("GRPC_LAT_PROF " GRPC_PRECISE_CLOCK_FORMAT " %p %c %d %p %s %d\n", GRPC_PRECISE_CLOCK_PRINTF_ARGS(&entry->tm), (void*)(gpr_intptr)gpr_thd_currentid(), entry->type, entry->tag,
-            entry->id, entry->file, entry->line);
+    printf("GRPC_LAT_PROF " GRPC_PRECISE_CLOCK_FORMAT " %p %c %d %p %s %d\n",
+           GRPC_PRECISE_CLOCK_PRINTF_ARGS(&entry->tm),
+           (void*)(gpr_intptr)gpr_thd_currentid(), entry->type, entry->tag,
+           entry->id, entry->file, entry->line);
   }
 
   /* Now clear out the log */
@@ -103,25 +101,22 @@ void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
   }
 }
 
-void grpc_timer_begin(int tag, void* id, const char *file, int line) {
+void grpc_timer_begin(int tag, void* id, const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
     grpc_timers_log_add(tag, BEGIN, id, file, line);
   }
 }
 
-void grpc_timer_end(int tag, void* id, const char *file, int line) {
+void grpc_timer_end(int tag, void* id, const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
     grpc_timers_log_add(tag, END, id, file, line);
   }
 }
 
 /* Basic profiler specific API functions. */
-void grpc_timers_global_init(void) {
-}
+void grpc_timers_global_init(void) {}
 
-void grpc_timers_global_destroy(void) {
-}
-
+void grpc_timers_global_destroy(void) {}
 
 #else  /* !GRPC_BASIC_PROFILER */
 void grpc_timers_global_init(void) {}
