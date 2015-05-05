@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,79 +27,38 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
 
 using System;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
-using Grpc.Core.Utils;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Abstraction of a call to be invoked on a client.
+    /// Writes responses asynchronously to an underlying AsyncCallServer object.
     /// </summary>
-    public class Call<TRequest, TResponse>
+    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>
     {
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-        readonly Channel channel;
-        readonly Metadata headers;
+        readonly AsyncCallServer<TRequest, TResponse> call;
 
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
+        public ServerResponseStream(AsyncCallServer<TRequest, TResponse> call)
         {
-            this.name = Preconditions.CheckNotNull(serviceName) + "/" + method.Name;
-            this.requestMarshaller = method.RequestMarshaller;
-            this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.headers = Preconditions.CheckNotNull(headers);
+            this.call = call;
         }
 
-        public Channel Channel
+        public Task Write(TResponse message)
         {
-            get
-            {
-                return this.channel;
-            }
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendMessage(message, taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
 
-        /// <summary>
-        /// Full methods name including the service name.
-        /// </summary>
-        public string Name
+        public Task WriteStatus(Status status)
         {
-            get
-            {
-                return name;
-            }
-        }
-
-        /// <summary>
-        /// Headers to send at the beginning of the call.
-        /// </summary>
-        public Metadata Headers
-        {
-            get
-            {
-                return headers;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return responseMarshaller;
-            }
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendStatusFromServer(status, taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
     }
 }

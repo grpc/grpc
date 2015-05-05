@@ -45,22 +45,22 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// If error != null, there's been an error or operation has been cancelled.
     /// </summary>
-    internal delegate void AsyncCompletionDelegate(Exception error);
+    internal delegate void AsyncCompletionDelegate<T>(T result, Exception error);
 
     /// <summary>
     /// Helper for transforming AsyncCompletionDelegate into full-fledged Task.
     /// </summary>
-    internal class AsyncCompletionTaskSource
+    internal class AsyncCompletionTaskSource<T>
     {
-        readonly TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
-        readonly AsyncCompletionDelegate completionDelegate;
+        readonly TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
+        readonly AsyncCompletionDelegate<T> completionDelegate;
 
         public AsyncCompletionTaskSource()
         {
-            completionDelegate = new AsyncCompletionDelegate(HandleCompletion);
+            completionDelegate = new AsyncCompletionDelegate<T>(HandleCompletion);
         }
 
-        public Task Task
+        public Task<T> Task
         {
             get
             {
@@ -68,7 +68,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public AsyncCompletionDelegate CompletionDelegate
+        public AsyncCompletionDelegate<T> CompletionDelegate
         {
             get
             {
@@ -76,11 +76,11 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private void HandleCompletion(Exception error)
+        private void HandleCompletion(T value, Exception error)
         {
             if (error == null)
             {
-                tcs.SetResult(null);
+                tcs.SetResult(value);
                 return;
             }
             if (error is OperationCanceledException)

@@ -32,74 +32,40 @@
 #endregion
 
 using System;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Abstraction of a call to be invoked on a client.
+    /// Return type for server streaming calls.
     /// </summary>
-    public class Call<TRequest, TResponse>
+    public struct AsyncServerStreamingCall<TResponse>
     {
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-        readonly Channel channel;
-        readonly Metadata headers;
+        readonly IAsyncStreamReader<TResponse> responseStream;
 
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
+        public AsyncServerStreamingCall(IAsyncStreamReader<TResponse> responseStream)
         {
-            this.name = Preconditions.CheckNotNull(serviceName) + "/" + method.Name;
-            this.requestMarshaller = method.RequestMarshaller;
-            this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.headers = Preconditions.CheckNotNull(headers);
-        }
-
-        public Channel Channel
-        {
-            get
-            {
-                return this.channel;
-            }
+            this.responseStream = responseStream;
         }
 
         /// <summary>
-        /// Full methods name including the service name.
+        /// Reads the next response from ResponseStream
         /// </summary>
-        public string Name
+        /// <returns></returns>
+        public Task<TResponse> ReadNext()
         {
-            get
-            {
-                return name;
-            }
+            return responseStream.ReadNext();
         }
 
         /// <summary>
-        /// Headers to send at the beginning of the call.
+        /// Async stream to read streaming responses.
         /// </summary>
-        public Metadata Headers
+        public IAsyncStreamReader<TResponse> ResponseStream
         {
             get
             {
-                return headers;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return responseMarshaller;
+                return responseStream;
             }
         }
     }
