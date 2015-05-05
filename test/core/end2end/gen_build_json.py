@@ -62,6 +62,7 @@ END2END_TESTS = {
     'graceful_server_shutdown': True,
     'invoke_large_request': False,
     'max_concurrent_streams': True,
+    'max_message_length': True,
     'no_op': True,
     'ping_pong_streaming': True,
     'request_response_with_binary_metadata_and_payload': True,
