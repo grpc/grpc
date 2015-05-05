@@ -440,7 +440,6 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   if (tag) {
     pygrpc_tag_destroy(tag);
   }
-  grpc_event_finish(c_event);
 
   return event;
 }

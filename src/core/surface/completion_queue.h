@@ -46,17 +46,6 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc);
    shutdown until a corrensponding grpc_cq_end_* call is made */
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
 
-/* grpc_cq_end_* functions pair with a grpc_cq_begin_op
-
-   grpc_cq_end_* common arguments:
-   cc        - the completion channel to queue on
-   tag       - the user supplied operation tag
-   on_finish - grpc_event_finish_func that is called during grpc_event_finish
-               can be NULL to not get a callback
-   user_data - user_data parameter to be passed to on_finish
-
-   Other parameters match the data member of grpc_event */
-
 /* Queue a GRPC_OP_COMPLETED operation */
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     int success);
