@@ -302,13 +302,12 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected CompletionCallbackDelegate CreateBatchCompletionCallback(Action<bool, BatchContextSafeHandleNotOwned> handler)
         {
-            return new CompletionCallbackDelegate((error, batchContextPtr) =>
+            return new CompletionCallbackDelegate((success, batchContextPtr) =>
             {
                 try
                 {
                     var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
-                    bool wasError = (error != GRPCOpError.GRPC_OP_OK);
-                    handler(wasError, ctx);
+                    handler(success, ctx);
                 }
                 catch (Exception e)
                 {
@@ -320,7 +319,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles send completion.
         /// </summary>
-        private void HandleSendFinished(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleSendFinished(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             AsyncCompletionDelegate origCompletionDelegate = null;
             lock (myLock)
@@ -331,7 +330,7 @@ namespace Grpc.Core.Internal
                 ReleaseResourcesIfPossible();
             }
 
-            if (wasError)
+            if (!success)
             {
                 FireCompletion(origCompletionDelegate, new OperationFailedException("Send failed"));
             }
@@ -344,7 +343,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles halfclose completion.
         /// </summary>
-        private void HandleHalfclosed(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleHalfclosed(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             AsyncCompletionDelegate origCompletionDelegate = null;
             lock (myLock)
@@ -356,7 +355,7 @@ namespace Grpc.Core.Internal
                 ReleaseResourcesIfPossible();
             }
 
-            if (wasError)
+            if (!success)
             {
                 FireCompletion(origCompletionDelegate, new OperationFailedException("Halfclose failed"));
             }
@@ -369,7 +368,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles streaming read completion.
         /// </summary>
-        private void HandleReadFinished(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleReadFinished(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             var payload = ctx.GetReceivedMessage();
 
