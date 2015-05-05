@@ -61,6 +61,8 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 
+#define MAX_CLIENT_STREAM_ID 0x7fffffffu
+
 #define CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define CLIENT_CONNECT_STRLEN 24
 
@@ -538,6 +540,19 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
           push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
                        channel_args->args[i].value.integer);
         }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER);
+        } else if ((t->next_stream_id & 1) !=
+                   (channel_args->args[i].value.integer & 1)) {
+          gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
+                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
+                  t->is_client ? "client" : "server");
+        } else {
+          t->next_stream_id = channel_args->args[i].value.integer;
+        }
       }
     }
   }
@@ -786,7 +801,7 @@ static void unlock(transport *t) {
   grpc_stream_op_buffer nuke_now;
   const grpc_transport_callbacks *cb = t->cb;
 
-  GRPC_TIMER_MARK(HTTP2_UNLOCK_BEGIN, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_UNLOCK, 0);
 
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
@@ -836,7 +851,7 @@ static void unlock(transport *t) {
   /* finally unlock */
   gpr_mu_unlock(&t->mu);
 
-  GRPC_TIMER_MARK(HTTP2_UNLOCK_CLEANUP, 0);
+  GRPC_TIMER_MARK(GRPC_PTAG_HTTP2_UNLOCK_CLEANUP, 0);
 
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
@@ -869,7 +884,7 @@ static void unlock(transport *t) {
 
   gpr_free(goaways);
 
-  GRPC_TIMER_MARK(HTTP2_UNLOCK_END, 0);
+  GRPC_TIMER_END(GRPC_PTAG_HTTP2_UNLOCK, 0);
 }
 
 /*
@@ -1030,15 +1045,35 @@ static void perform_write(transport *t, grpc_endpoint *ep) {
   }
 }
 
+static void add_goaway(transport *t, gpr_uint32 goaway_error, gpr_slice goaway_text) {
+  if (t->num_pending_goaways == t->cap_pending_goaways) {
+    t->cap_pending_goaways = GPR_MAX(1, t->cap_pending_goaways * 2);
+    t->pending_goaways =
+        gpr_realloc(t->pending_goaways,
+                    sizeof(pending_goaway) * t->cap_pending_goaways);
+  }
+  t->pending_goaways[t->num_pending_goaways].status =
+      grpc_chttp2_http2_error_to_grpc_status(goaway_error);
+  t->pending_goaways[t->num_pending_goaways].debug = goaway_text;
+  t->num_pending_goaways++;
+}
+
+
 static void maybe_start_some_streams(transport *t) {
+  /* start streams where we have free stream ids and free concurrency */
   while (
+      t->next_stream_id <= MAX_CLIENT_STREAM_ID &&
       grpc_chttp2_stream_map_size(&t->stream_map) <
       t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS]) {
     stream *s = stream_list_remove_head(t, WAITING_FOR_CONCURRENCY);
-    if (!s) break;
+    if (!s) return;
 
     IF_TRACING(gpr_log(GPR_DEBUG, "HTTP:%s: Allocating new stream %p to id %d",
                        t->is_client ? "CLI" : "SVR", s, t->next_stream_id));
+
+    if (t->next_stream_id == MAX_CLIENT_STREAM_ID) {
+      add_goaway(t, GRPC_CHTTP2_NO_ERROR, gpr_slice_from_copied_string("Exceeded sequence number limit"));
+    }
 
     GPR_ASSERT(s->id == 0);
     s->id = t->next_stream_id;
@@ -1049,6 +1084,13 @@ static void maybe_start_some_streams(transport *t) {
         t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     stream_list_join(t, s, WRITABLE);
+  }
+  /* cancel out streams that will never be started */
+  while (t->next_stream_id > MAX_CLIENT_STREAM_ID) {
+    stream *s = stream_list_remove_head(t, WAITING_FOR_CONCURRENCY);
+    if (!s) return;
+
+    cancel_stream(t, s, GRPC_STATUS_UNAVAILABLE, grpc_chttp2_grpc_status_to_http2_error(GRPC_STATUS_UNAVAILABLE), NULL, 0);
   }
 }
 
@@ -1607,16 +1649,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
             grpc_chttp2_ping_create(1, t->simple_parsers.ping.opaque_8bytes));
       }
       if (st.goaway) {
-        if (t->num_pending_goaways == t->cap_pending_goaways) {
-          t->cap_pending_goaways = GPR_MAX(1, t->cap_pending_goaways * 2);
-          t->pending_goaways =
-              gpr_realloc(t->pending_goaways,
-                          sizeof(pending_goaway) * t->cap_pending_goaways);
-        }
-        t->pending_goaways[t->num_pending_goaways].status =
-            grpc_chttp2_http2_error_to_grpc_status(st.goaway_error);
-        t->pending_goaways[t->num_pending_goaways].debug = st.goaway_text;
-        t->num_pending_goaways++;
+        add_goaway(t, st.goaway_error, st.goaway_text);
       }
       if (st.process_ping_reply) {
         for (i = 0; i < t->ping_count; i++) {
@@ -1783,7 +1816,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_5:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id = (((gpr_uint32)*cur) << 24) & 0x7f;
+      t->incoming_stream_id = (((gpr_uint32)*cur) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = DTS_FH_6;
         return 1;
