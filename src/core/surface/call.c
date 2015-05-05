@@ -34,6 +34,7 @@
 #include "src/core/surface/call.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/channel.h"
@@ -204,6 +205,9 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
+  void *context[GRPC_CONTEXT_COUNT];
+  void (*destroy_context[GRPC_CONTEXT_COUNT])(void *);
+
   /* Deadline alarm - if have_alarm is non-zero */
   grpc_alarm alarm;
 
@@ -246,6 +250,9 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
 static void execute_op(grpc_call *call, grpc_transport_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
+static grpc_call_error cancel_with_status(
+    grpc_call *c, grpc_status_code status, const char *description,
+    gpr_uint8 locked);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
@@ -291,6 +298,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
     initial_op.recv_state = &call->recv_state;
     initial_op.on_done_recv = call_on_done_recv;
     initial_op.recv_user_data = call;
+    initial_op.context = call->context;
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
     initial_op_ptr = &initial_op;
@@ -342,6 +350,11 @@ static void destroy_call(void *call, int ignored_success) {
   }
   for (i = 0; i < c->send_initial_metadata_count; i++) {
     grpc_mdelem_unref(c->send_initial_metadata[i].md);
+  }
+  for (i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+    if (c->destroy_context[i]) {
+      c->destroy_context[i](c->context[i]);
+    }
   }
   grpc_sopb_destroy(&c->send_ops);
   grpc_sopb_destroy(&c->recv_ops);
@@ -405,14 +418,14 @@ static void lock(grpc_call *call) { gpr_mu_lock(&call->mu); }
 
 static int need_more_data(grpc_call *call) {
   return is_op_live(call, GRPC_IOREQ_RECV_INITIAL_METADATA) ||
-         is_op_live(call, GRPC_IOREQ_RECV_MESSAGE) ||
+         (is_op_live(call, GRPC_IOREQ_RECV_MESSAGE) && grpc_bbq_empty(&call->incoming_queue)) ||
          is_op_live(call, GRPC_IOREQ_RECV_TRAILING_METADATA) ||
          is_op_live(call, GRPC_IOREQ_RECV_STATUS) ||
          is_op_live(call, GRPC_IOREQ_RECV_STATUS_DETAILS) ||
          (is_op_live(call, GRPC_IOREQ_RECV_CLOSE) &&
           grpc_bbq_empty(&call->incoming_queue)) ||
          (call->write_state == WRITE_STATE_INITIAL && !call->is_client &&
-          call->read_state != READ_STATE_STREAM_CLOSED);
+          call->read_state < READ_STATE_GOT_INITIAL_METADATA);
 }
 
 static void unlock(grpc_call *call) {
@@ -627,7 +640,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
     gpr_asprintf(
         &message, "Message terminated early; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    grpc_call_cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
     gpr_free(message);
     return 0;
   }
@@ -638,7 +651,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
         &message,
         "Maximum message length of %d exceeded by a message of length %d",
         grpc_channel_get_max_message_length(call->channel), msg.length);
-    grpc_call_cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
     gpr_free(message);
     return 0;
   } else if (msg.length > 0) {
@@ -658,9 +671,9 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
-    grpc_call_cancel_with_status(
+    cancel_with_status(
         call, GRPC_STATUS_INVALID_ARGUMENT,
-        "Received payload data while not reading a message");
+        "Received payload data while not reading a message", 1);
     return 0;
   }
   /* append the slice to the incoming buffer */
@@ -671,7 +684,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
     gpr_asprintf(
         &message, "Receiving message overflow; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    grpc_call_cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
     gpr_free(message);
     return 0;
   } else if (call->incoming_message.length == call->incoming_message_length) {
@@ -685,6 +698,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
 static void call_on_done_recv(void *pc, int success) {
   grpc_call *call = pc;
   size_t i;
+  GRPC_TIMER_BEGIN(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
   lock(call);
   call->receiving = 0;
   if (success) {
@@ -729,6 +743,7 @@ static void call_on_done_recv(void *pc, int success) {
   unlock(call);
 
   GRPC_CALL_INTERNAL_UNREF(call, "receiving", 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
 }
 
 static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
@@ -996,6 +1011,12 @@ grpc_call_error grpc_call_cancel(grpc_call *call) {
 grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
                                              grpc_status_code status,
                                              const char *description) {
+  return cancel_with_status(c, status, description, 0);
+}
+
+static grpc_call_error cancel_with_status(
+    grpc_call *c, grpc_status_code status, const char *description,
+    gpr_uint8 locked) {
   grpc_transport_op op;
   grpc_mdstr *details =
       description ? grpc_mdstr_from_string(c->metadata_context, description)
@@ -1003,10 +1024,14 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   memset(&op, 0, sizeof(op));
   op.cancel_with_status = status;
 
-  lock(c);
+  if (locked == 0) {
+    lock(c);
+  }
   set_status_code(c, STATUS_FROM_API_OVERRIDE, status);
   set_status_details(c, STATUS_FROM_API_OVERRIDE, details);
-  unlock(c);
+  if (locked == 0) {
+    unlock(c);
+  }
 
   execute_op(c, &op);
 
@@ -1016,6 +1041,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
 static void execute_op(grpc_call *call, grpc_transport_op *op) {
   grpc_call_element *elem;
   elem = CALL_ELEM_FROM_CALL(call, 0);
+  op->context = call->context;
   elem->filter->start_transport_op(elem, op);
 }
 
@@ -1027,8 +1053,8 @@ static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
     if (call->is_client) {
-      grpc_call_cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
-                                   "Deadline Exceeded");
+      cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                         "Deadline Exceeded", 0);
     } else {
       grpc_call_cancel(call);
     }
@@ -1252,4 +1278,17 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
   return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
                                              tag);
+}
+
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
+                           void (*destroy)(void *value)) {
+  if (call->destroy_context[elem]) {
+    call->destroy_context[elem](value);
+  }
+  call->context[elem] = value;
+  call->destroy_context[elem] = destroy;
+}
+
+void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
+  return call->context[elem];
 }

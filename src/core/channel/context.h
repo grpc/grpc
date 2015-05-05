@@ -31,18 +31,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H
 
-#ifdef GPR_WIN32
-#include <windows.h>
-#include <grpc/support/log.h>
+/* Call object context pointers */
+typedef enum {
+  GRPC_CONTEXT_SECURITY = 0,
+  GRPC_CONTEXT_TRACING,
+  GRPC_CONTEXT_COUNT
+} grpc_context_index;
 
-unsigned gpr_cpu_num_cores(void) {
-  SYSTEM_INFO si;
-  GetSystemInfo(&si);
-  return si.dwNumberOfProcessors;
-}
-
-unsigned gpr_cpu_current_cpu(void) { return GetCurrentProcessorNumber(); }
-
-#endif /* GPR_WIN32 */
+#endif

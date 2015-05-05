@@ -38,6 +38,7 @@
 #include "src/core/transport/transport.h"
 
 extern int grpc_http_trace;
+extern int grpc_flowctl_trace;
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,

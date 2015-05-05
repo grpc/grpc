@@ -48,6 +48,13 @@ RUN cd /var/local/git/grpc/src/php/ext/grpc \
 
 RUN cd /var/local/git/grpc/src/php && composer install
 
+# Add a cacerts directory containing the Google root pem file, allowing the
+# php client to access the production test instance
+ADD cacerts cacerts
+
+# Add a service_account directory containing the auth creds file
+ADD service_account service_account
+
 RUN cd /var/local/git/grpc/src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto
 
 RUN cd /var/local/git/grpc/src/php && ./bin/run_tests.sh
