@@ -205,6 +205,9 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
+  void *context[GRPC_CONTEXT_COUNT];
+  void (*destroy_context[GRPC_CONTEXT_COUNT])(void *);
+
   /* Deadline alarm - if have_alarm is non-zero */
   grpc_alarm alarm;
 
@@ -295,6 +298,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
     initial_op.recv_state = &call->recv_state;
     initial_op.on_done_recv = call_on_done_recv;
     initial_op.recv_user_data = call;
+    initial_op.context = call->context;
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
     initial_op_ptr = &initial_op;
@@ -346,6 +350,11 @@ static void destroy_call(void *call, int ignored_success) {
   }
   for (i = 0; i < c->send_initial_metadata_count; i++) {
     grpc_mdelem_unref(c->send_initial_metadata[i].md);
+  }
+  for (i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+    if (c->destroy_context[i]) {
+      c->destroy_context[i](c->context[i]);
+    }
   }
   grpc_sopb_destroy(&c->send_ops);
   grpc_sopb_destroy(&c->recv_ops);
@@ -1032,6 +1041,7 @@ static grpc_call_error cancel_with_status(
 static void execute_op(grpc_call *call, grpc_transport_op *op) {
   grpc_call_element *elem;
   elem = CALL_ELEM_FROM_CALL(call, 0);
+  op->context = call->context;
   elem->filter->start_transport_op(elem, op);
 }
 
@@ -1268,4 +1278,17 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
   return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
                                              tag);
+}
+
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
+                           void (*destroy)(void *value)) {
+  if (call->destroy_context[elem]) {
+    call->destroy_context[elem](value);
+  }
+  call->context[elem] = value;
+  call->destroy_context[elem] = destroy;
+}
+
+void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
+  return call->context[elem];
 }
