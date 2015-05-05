@@ -226,7 +226,8 @@ namespace Grpc.Core.Internal
             Preconditions.CheckState(readCompletionDelegate == null, "Only one read can be pending at a time");
         }
 
-        protected void CheckNotCancelled() {
+        protected void CheckNotCancelled()
+        {
             if (cancelRequested)
             {
                 throw new OperationCanceledException("Remote call has been cancelled.");
@@ -300,8 +301,6 @@ namespace Grpc.Core.Internal
                 }
             });
         }
-
-
 
         /// <summary>
         /// Handles send completion.
