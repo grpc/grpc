@@ -669,6 +669,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "mock_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "status_test", 
     "platforms": [
       "windows", 
