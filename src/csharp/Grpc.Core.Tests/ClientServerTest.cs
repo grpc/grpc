@@ -82,8 +82,6 @@ namespace Grpc.Core.Tests
         [SetUp]
         public void Init()
         {
-            GrpcEnvironment.Initialize();
-
             server = new Server();
             server.AddServiceDefinition(ServiceDefinition);
             int port = server.AddListeningPort(Host + ":0");
@@ -137,7 +135,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void AsyncUnaryCall_ServerHandlerThrows()
         {
-            Task.Run(async () => 
+            Task.Run(async () =>
             {
                 var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
                 try
@@ -147,7 +145,7 @@ namespace Grpc.Core.Tests
                 }
                 catch (RpcException e)
                 {
-                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode); 
+                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
                 }
             }).Wait();
         }
