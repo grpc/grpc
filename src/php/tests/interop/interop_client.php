@@ -126,6 +126,24 @@ function serviceAccountCreds($stub, $args) {
 }
 
 /**
+ * Run the compute engine credentials auth test.
+ * Has not been run from gcloud as of 2015-05-05
+ * @param $stub Stub object that has service methods
+ * @param $args array command line args
+ */
+function computeEngineCreds($stub, $args) {
+  if (!array_key_exists('oauth_scope', $args)) {
+    throw new Exception('Missing oauth scope');
+  }
+  if (!array_key_exists('default_service_account', $args)) {
+    throw new Exception('Missing default_service_account');
+  }
+  $result = performLargeUnary($stub, $fillUsername=true, $fillOauthScope=true);
+  hardAssert($args['default_service_account'] == $result->getUsername(),
+             'invalid email returned');
+}
+
+/**
  * Run the client_streaming test.
  * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
@@ -240,7 +258,8 @@ function cancelAfterFirstResponse($stub) {
 }
 
 $args = getopt('', array('server_host:', 'server_port:', 'test_case:',
-                         'server_host_override:', 'oauth_scope:'));
+                         'server_host_override:', 'oauth_scope:',
+                         'default_service_account:'));
 if (!array_key_exists('server_host', $args) ||
     !array_key_exists('server_port', $args) ||
     !array_key_exists('test_case', $args)) {
@@ -300,6 +319,9 @@ switch ($args['test_case']) {
     break;
   case 'service_account_creds':
     serviceAccountCreds($stub, $args);
+    break;
+  case 'compute_engine_creds':
+    computeEngineCreds($stub, $args);
     break;
   default:
     exit(1);
