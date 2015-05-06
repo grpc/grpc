@@ -32,38 +32,25 @@
 #endregion
 
 using System;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-
-using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Server-side handler for unary call.
+    /// Context for a server-side call.
     /// </summary>
-    public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(ServerCallContext context, TRequest request)
-        where TRequest : class
-        where TResponse : class;
+    public sealed class ServerCallContext
+    {
+        
+        // TODO(jtattermusch): add cancellationToken
 
-    /// <summary>
-    /// Server-side handler for client streaming call.
-    /// </summary>
-    public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(ServerCallContext context, IAsyncStreamReader<TRequest> requestStream)
-        where TRequest : class
-        where TResponse : class;
+        // TODO(jtattermusch): add deadline info
 
-    /// <summary>
-    /// Server-side handler for server streaming call.
-    /// </summary>
-    public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(ServerCallContext context, TRequest request, IServerStreamWriter<TResponse> responseStream)
-        where TRequest : class
-        where TResponse : class;
+        // TODO(jtattermusch): expose initial metadata sent by client for reading
 
-    /// <summary>
-    /// Server-side handler for bidi streaming call.
-    /// </summary>
-    public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(ServerCallContext context, IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream)
-        where TRequest : class
-        where TResponse : class;
+        // TODO(jtattermusch): expose method to send initial metadata back to client
+
+        // TODO(jtattermusch): allow setting status and trailing metadata to send after handler completes.
+    }
 }

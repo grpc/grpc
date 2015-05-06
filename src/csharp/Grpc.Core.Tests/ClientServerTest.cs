@@ -220,7 +220,7 @@ namespace Grpc.Core.Tests
             }
         }
 
-        private static async Task<string> EchoHandler(string request)
+        private static async Task<string> EchoHandler(ServerCallContext context, string request)
         {
             if (request == "THROW")
             {
@@ -229,7 +229,7 @@ namespace Grpc.Core.Tests
             return request;
         }
 
-        private static async Task<string> ConcatAndEchoHandler(IAsyncStreamReader<string> requestStream)
+        private static async Task<string> ConcatAndEchoHandler(ServerCallContext context, IAsyncStreamReader<string> requestStream)
         {
             string result = "";
             await requestStream.ForEach(async (request) =>
