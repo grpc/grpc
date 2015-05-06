@@ -90,6 +90,7 @@ def print_grouped_imark_statistics(group_key, imarks_group):
   print '{:>40s}: {:>15s} {:>15s} {:>15s} {:>15s}'.format(
         'Relative mark', '50th p.', '90th p.', '95th p.', '99th p.')
   for key, time_values in values.iteritems():
+    time_values = sorted(time_values)
     print '{:>40s}: {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}'.format(
           key, percentile(time_values, 50), percentile(time_values, 90),
           percentile(time_values, 95), percentile(time_values, 99))
@@ -132,10 +133,9 @@ for entry in entries():
         imark.append_post_entry(entry)
 
 def percentile(vals, percent):
-  """ Calculates the interpolated percentile given a (possibly unsorted sequence)
-  and a percent (in the usual 0-100 range)."""
+  """ Calculates the interpolated percentile given a sorted sequence and a
+  percent (in the usual 0-100 range)."""
   assert vals, "Empty input sequence."
-  vals = sorted(vals)
   percent /= 100.0
   k = (len(vals)-1) * percent
   f = math.floor(k)
@@ -149,7 +149,7 @@ def percentile(vals, percent):
 
 print 'tag 50%/90%/95%/99% us'
 for tag in sorted(times.keys()):
-  vals = times[tag]
+  vals = sorted(times[tag])
   print '%d %.2f/%.2f/%.2f/%.2f' % (tag,
                                     percentile(vals, 50),
                                     percentile(vals, 90),
