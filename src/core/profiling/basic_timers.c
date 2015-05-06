@@ -45,7 +45,12 @@
 #include <grpc/support/thd.h>
 #include <stdio.h>
 
-typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
+typedef enum {
+  BEGIN = '{',
+  END = '}',
+  MARK = '.',
+  IMPORTANT = '!'
+} marker_type;
 
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
@@ -98,6 +103,13 @@ static void grpc_timers_log_add(int tag, marker_type type, void* id,
 void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
     grpc_timers_log_add(tag, MARK, id, file, line);
+  }
+}
+
+void grpc_timer_add_important_mark(int tag, void* id, const char* file,
+                                   int line) {
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
+    grpc_timers_log_add(tag, IMPORTANT, id, file, line);
   }
 }
 

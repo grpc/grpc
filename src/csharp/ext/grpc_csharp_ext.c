@@ -276,6 +276,12 @@ grpcsharp_batch_context_server_rpc_new_method(
   return ctx->server_rpc_new.call_details.method;
 }
 
+GPR_EXPORT gpr_int32 GPR_CALLTYPE
+grpcsharp_batch_context_recv_close_on_server_cancelled(
+    const grpcsharp_batch_context *ctx) {
+  return (gpr_int32) ctx->recv_close_on_server_cancelled;
+}
+
 /* Init & shutdown */
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_init(void) { grpc_init(); }

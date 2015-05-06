@@ -34,7 +34,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake', '~> 10.4'
   s.add_development_dependency 'rake-compiler', '~> 0.9'
   s.add_development_dependency 'rspec', '~> 3.2'
-  s.add_development_dependency 'rubocop', '~> 0.30'
+  s.add_development_dependency 'rubocop', '~> 0.30.0'
 
   s.extensions = %w(ext/grpc/extconf.rb)
 end

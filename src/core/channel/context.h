@@ -31,32 +31,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H
 
-#ifdef GRPC_STAP_PROFILER
+/* Call object context pointers */
+typedef enum {
+  GRPC_CONTEXT_SECURITY = 0,
+  GRPC_CONTEXT_TRACING,
+  GRPC_CONTEXT_COUNT
+} grpc_context_index;
 
-#include "src/core/profiling/timers.h"
-
-#include <sys/sdt.h>
-/* Generated from src/core/profiling/stap_probes.d */
-#include "src/core/profiling/stap_probes.h"
-
-/* Latency profiler API implementation. */
-void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
-  _STAP_ADD_MARK(tag);
-}
-
-void grpc_timer_add_important_mark(int tag, void* id, const char* file,
-                                   int line) {
-  _STAP_ADD_IMPORTANT_MARK(tag);
-}
-
-void grpc_timer_begin(int tag, void* id, const char* file, int line) {
-  _STAP_TIMING_NS_BEGIN(tag);
-}
-
-void grpc_timer_end(int tag, void* id, const char* file, int line) {
-  _STAP_TIMING_NS_END(tag);
-}
-
-#endif /* GRPC_STAP_PROFILER */
+#endif
