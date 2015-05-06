@@ -65,9 +65,9 @@ class ImportantMark(object):
   def entry(self):
     return self._entry
 
-  def append_post_entry(self, entry):
-    if self._n > 0:
-      self._post_stack.append(entry)
+  def append_post_entry(self, post_entry):
+    if self._n > 0 and post_entry.thread == self._entry.thread:
+      self._post_stack.append(post_entry)
       self._n -= 1
 
   def get_deltas(self):
@@ -112,25 +112,29 @@ def entries():
 threads = collections.defaultdict(lambda: collections.defaultdict(list))
 times = collections.defaultdict(list)
 important_marks = collections.defaultdict(list)
+stack_depth = 0
 
 for entry in entries():
   thread = threads[entry.thread]
   if entry.type == '{':
     thread[entry.tag].append(entry)
+    stack_depth += 1
   if entry.type == '!':
     # Save a snapshot of the current stack inside a new ImportantMark instance.
-    # Get all entries with type '{' from "thread".
-    stack = [e for entries_for_tag in thread.values()
-               for e in entries_for_tag if e.type == '{']
-    imark_group_key = '{tag}@{file}:{line}'.format(**entry._asdict())
+    # Get all entries _for any tag in the thread_.
+    stack = [e for entries_for_tag in thread.itervalues()
+               for e in entries_for_tag]
+    imark_group_key = '{tag}/{thread}@{file}:{line}'.format(**entry._asdict())
     important_marks[imark_group_key].append(ImportantMark(entry, stack))
   elif entry.type == '}':
     last = thread[entry.tag].pop()
     times[entry.tag].append(entry.time - last.time)
     # Update accounting for important marks.
     for imarks_group in important_marks.itervalues():
-      for imark in imarks_group:
+      # only access the last "stack_depth" imarks.
+      for imark in imarks_group[-stack_depth:]:
         imark.append_post_entry(entry)
+    stack_depth -= 1
 
 def percentile(vals, percent):
   """ Calculates the interpolated percentile given a sorted sequence and a
