@@ -54,30 +54,7 @@
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
 
-static grpc_pollset g_backup_pollset;
-static int g_shutdown_backup_poller;
-static gpr_event g_backup_poller_done;
-static gpr_event g_backup_pollset_shutdown_done;
-
 GPR_TLS_DECL(g_current_thread_poller);
-
-static void backup_poller(void *p) {
-  gpr_timespec delta = gpr_time_from_millis(100);
-  gpr_timespec last_poll = gpr_now();
-
-  gpr_mu_lock(&g_backup_pollset.mu);
-  while (g_shutdown_backup_poller == 0) {
-    gpr_timespec next_poll = gpr_time_add(last_poll, delta);
-    grpc_pollset_work(&g_backup_pollset, gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
-    gpr_mu_unlock(&g_backup_pollset.mu);
-    gpr_sleep_until(next_poll);
-    gpr_mu_lock(&g_backup_pollset.mu);
-    last_poll = next_poll;
-  }
-  gpr_mu_unlock(&g_backup_pollset.mu);
-
-  gpr_event_set(&g_backup_poller_done, (void *)1);
-}
 
 void grpc_pollset_kick(grpc_pollset *p) {
   if (gpr_tls_get(&g_current_thread_poller) != (gpr_intptr)p && p->counter) {
@@ -99,44 +76,14 @@ static void kick_using_pollset_kick(grpc_pollset *p) {
 
 /* global state management */
 
-grpc_pollset *grpc_backup_pollset(void) { return &g_backup_pollset; }
-
 void grpc_pollset_global_init(void) {
-  gpr_thd_id id;
-
   gpr_tls_init(&g_current_thread_poller);
 
   /* Initialize kick fd state */
   grpc_pollset_kick_global_init();
-
-  /* initialize the backup pollset */
-  grpc_pollset_init(&g_backup_pollset);
-
-  /* start the backup poller thread */
-  g_shutdown_backup_poller = 0;
-  gpr_event_init(&g_backup_poller_done);
-  gpr_event_init(&g_backup_pollset_shutdown_done);
-  gpr_thd_new(&id, backup_poller, NULL, NULL);
-}
-
-static void on_backup_pollset_shutdown_done(void *arg) {
-  gpr_event_set(&g_backup_pollset_shutdown_done, (void *)1);
 }
 
 void grpc_pollset_global_shutdown(void) {
-  /* terminate the backup poller thread */
-  gpr_mu_lock(&g_backup_pollset.mu);
-  g_shutdown_backup_poller = 1;
-  gpr_mu_unlock(&g_backup_pollset.mu);
-  gpr_event_wait(&g_backup_poller_done, gpr_inf_future);
-
-  grpc_pollset_shutdown(&g_backup_pollset, on_backup_pollset_shutdown_done,
-                        NULL);
-  gpr_event_wait(&g_backup_pollset_shutdown_done, gpr_inf_future);
-
-  /* destroy the backup pollset */
-  grpc_pollset_destroy(&g_backup_pollset);
-
   /* destroy the kick pipes */
   grpc_pollset_kick_global_destroy();
 

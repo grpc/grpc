@@ -94,12 +94,6 @@ int grpc_kick_read_fd(grpc_pollset *p);
 /* Call after polling has been kicked to leave the kicked state */
 void grpc_kick_drain(grpc_pollset *p);
 
-/* All fds get added to a backup pollset to ensure that progress is made
-   regardless of applications listening to events. Relying on this is slow
-   however (the backup pollset only listens every 100ms or so) - so it's not
-   to be relied on. */
-grpc_pollset *grpc_backup_pollset(void);
-
 /* turn a pollset into a multipoller: platform specific */
 void grpc_platform_become_multipoller(grpc_pollset *pollset,
                                       struct grpc_fd **fds, size_t fd_count);

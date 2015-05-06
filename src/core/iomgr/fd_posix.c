@@ -139,7 +139,6 @@ static void do_nothing(void *ignored, int success) {}
 grpc_fd *grpc_fd_create(int fd) {
   grpc_fd *r = alloc_fd(fd);
   grpc_iomgr_ref();
-  grpc_pollset_add_fd(grpc_backup_pollset(), r);
   return r;
 }
 
