@@ -104,7 +104,7 @@ class RouteGuideClient {
   }
 
   void ListFeatures() {
-    Rectangle rect;
+    examples::Rectangle rect;
     Feature feature;
     ClientContext context;
 
