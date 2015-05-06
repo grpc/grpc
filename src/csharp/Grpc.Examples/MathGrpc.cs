@@ -32,8 +32,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -43,7 +41,7 @@ namespace math
     /// <summary>
     /// Math service definitions (this is handwritten version of code that will normally be generated).
     /// </summary>
-    public class MathGrpc
+    public static class MathGrpc
     {
         static readonly string ServiceName = "/math.Math";
 
