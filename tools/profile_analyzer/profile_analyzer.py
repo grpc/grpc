@@ -38,18 +38,42 @@ Usage:
 
 
 import collections
+import itertools
 import re
 import sys
 
 # Create a regex to parse output of the C core basic profiler,
 # as defined in src/core/profiling/basic_timers.c.
 _RE_LINE = re.compile(r'GRPC_LAT_PROF ' +
-                      r'([0-9]+\.[0-9]+) 0x([0-9a-f]+) ([{}.]) ([0-9]+) ' +
+                      r'([0-9]+\.[0-9]+) 0x([0-9a-f]+) ([{}.!]) ([0-9]+) ' +
                       r'([^ ]+) ([^ ]+) ([0-9]+)')
 
 Entry = collections.namedtuple(
     'Entry',
     ['time', 'thread', 'type', 'tag', 'id', 'file', 'line'])
+
+
+class ImportantMark(object):
+  def __init__(self, entry, stack):
+    self._entry = entry
+    self._pre_stack = stack
+    self._post_stack = list()
+    self._n = len(stack)  # we'll also compute times to that many closing }s
+
+  @property
+  def entry(self):
+    return self._entry
+
+  def append_post_entry(self, entry):
+    if self._n > 0:
+      self._post_stack.append(entry)
+      self._n -= 1
+
+  def get_deltas(self):
+    pre_and_post_stacks = itertools.chain(self._pre_stack, self._post_stack)
+    return collections.OrderedDict((stack_entry,
+                                   (self._entry.time - stack_entry.time))
+                                   for stack_entry in pre_and_post_stacks)
 
 def entries():
   for line in sys.stdin:
@@ -66,13 +90,27 @@ def entries():
 threads = collections.defaultdict(lambda: collections.defaultdict(list))
 times = collections.defaultdict(list)
 
+# Indexed by the mark's tag. Items in the value list correspond to the mark in
+# different stack situations.
+important_marks = collections.defaultdict(list)
+
 for entry in entries():
   thread = threads[entry.thread]
   if entry.type == '{':
     thread[entry.tag].append(entry)
+  if entry.type == '!':
+    # Save a snapshot of the current stack inside a new ImportantMark instance.
+    # Get all entries with type '{' from "thread".
+    stack = [e for entries_for_tag in thread.values()
+               for e in entries_for_tag if e.type == '{']
+    important_marks[entry.tag].append(ImportantMark(entry, stack))
   elif entry.type == '}':
     last = thread[entry.tag].pop()
     times[entry.tag].append(entry.time - last.time)
+    # Update accounting for important marks.
+    for imarks_for_tag in important_marks.itervalues():
+      for imark in imarks_for_tag:
+        imark.append_post_entry(entry)
 
 def percentile(vals, pct):
   return sorted(vals)[int(len(vals) * pct / 100.0)]
@@ -80,8 +118,22 @@ def percentile(vals, pct):
 print 'tag 50%/90%/95%/99% us'
 for tag in sorted(times.keys()):
   vals = times[tag]
-  print '%d %.2f/%.2f/%.2f/%.2f' % (tag, 
+  print '%d %.2f/%.2f/%.2f/%.2f' % (tag,
                                     percentile(vals, 50),
                                     percentile(vals, 90),
                                     percentile(vals, 95),
                                     percentile(vals, 99))
+
+print
+print 'Important marks:'
+print '================'
+for tag, imark_for_tag in important_marks.iteritems():
+  for imark in imarks_for_tag:
+    deltas = imark.get_deltas()
+    print '{tag} @ {file}:{line}'.format(**imark.entry._asdict())
+    for entry, time_delta_us in deltas.iteritems():
+      format_dict = entry._asdict()
+      format_dict['time_delta_us']  = time_delta_us
+      print '{tag} {type} ({file}:{line}): {time_delta_us:12.3f} us'.format(
+          **format_dict)
+    print
