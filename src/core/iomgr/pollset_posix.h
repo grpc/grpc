@@ -68,6 +68,7 @@ typedef struct grpc_pollset {
 struct grpc_pollset_vtable {
   void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
   void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
+  void (*become_pointer)(grpc_pollset *pollset, grpc_pollset *point_to);
   int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
                     gpr_timespec now, int allow_synchronous_callback);
   void (*kick)(grpc_pollset *pollset);
@@ -103,5 +104,7 @@ grpc_pollset *grpc_backup_pollset(void);
 /* turn a pollset into a multipoller: platform specific */
 void grpc_platform_become_multipoller(grpc_pollset *pollset,
                                       struct grpc_fd **fds, size_t fd_count);
+
+void grpc_pollset_finally_become_pointer_and_add_fds(grpc_pollset *pollset, grpc_pollset *point_to, struct grpc_fd **fds, size_t fd_count);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */

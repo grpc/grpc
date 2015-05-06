@@ -171,6 +171,12 @@ void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_unlock(&pollset->mu);
 }
 
+void grpc_pollset_become_pointer(grpc_pollset *pollset, grpc_pollset *point_to) {
+  gpr_mu_lock(&pollset->mu);
+  pollset->vtable->become_pointer(pollset, point_to);
+  gpr_mu_unlock(&pollset->mu);
+}
+
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
   gpr_timespec now = gpr_now();
@@ -232,8 +238,12 @@ static int empty_pollset_maybe_work(grpc_pollset *pollset,
 
 static void empty_pollset_destroy(grpc_pollset *pollset) {}
 
+static void empty_pollset_become_pointer(grpc_pollset *pollset, grpc_pollset *point_to) {
+  grpc_pollset_finally_become_pointer_and_add_fds(pollset, point_to, NULL, 0);
+}
+
 static const grpc_pollset_vtable empty_pollset = {
-    empty_pollset_add_fd, empty_pollset_del_fd, empty_pollset_maybe_work,
+    empty_pollset_add_fd, empty_pollset_del_fd, empty_pollset_become_pointer, empty_pollset_maybe_work,
     kick_using_pollset_kick, empty_pollset_destroy};
 
 static void become_empty_pollset(grpc_pollset *pollset) {
@@ -354,6 +364,91 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
   grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+
+  grpc_pollset_kick(pollset);
+}
+
+typedef struct {
+  grpc_pollset *pollset;
+  grpc_pollset *point_to;
+  grpc_pollset_vtable *original_vtable;
+} grpc_unary_become_args;
+
+static void unary_poll_do_become(void *args, int success) {
+  grpc_unary_become_args *up_args = args;
+  const grpc_pollset_vtable *original_vtable = up_args->original_vtable;
+  grpc_pollset *pollset = up_args->pollset;
+  grpc_pollset *point_to = up_args->point_to;
+  int do_shutdown_cb = 0;
+  gpr_free(up_args);
+
+  gpr_mu_lock(&pollset->mu);
+  /* First we need to ensure that nobody is polling concurrently */
+  while (pollset->counter != 0) {
+    grpc_pollset_kick(pollset);
+    gpr_cv_wait(&pollset->cv, &pollset->mu, gpr_inf_future);
+  }
+  /* At this point the pollset may no longer be a unary poller. In that case
+   * we should just call the right add function and be done. */
+  /* TODO(klempner): If we're not careful this could cause infinite recursion.
+   * That's not a problem for now because empty_pollset has a trivial poller
+   * and we don't have any mechanism to unbecome multipoller. */
+  pollset->in_flight_cbs--;
+  if (pollset->shutting_down) {
+    /* We don't care about this pollset anymore. */
+    if (pollset->in_flight_cbs == 0) {
+      do_shutdown_cb = 1;
+    }
+  } else if (grpc_fd_is_orphaned(fd)) {
+    /* Don't try to add it to anything, we'll drop our ref on it below */
+  } else if (pollset->vtable != original_vtable) {
+    pollset->vtable->add_fd(pollset, fd);
+  } else if (fd != pollset->data.ptr) {
+    grpc_fd *fds[2];
+    fds[0] = pollset->data.ptr;
+    fds[1] = fd;
+
+    if (!grpc_fd_is_orphaned(fds[0])) {
+      grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
+      grpc_fd_unref(fds[0]);
+    } else {
+      /* old fd is orphaned and we haven't cleaned it up until now, so remain a
+       * unary poller */
+      /* Note that it is possible that fds[1] is also orphaned at this point.
+       * That's okay, we'll correct it at the next add or poll. */
+      grpc_fd_unref(fds[0]);
+      pollset->data.ptr = fd;
+      grpc_fd_ref(fd);
+    }
+  }
+
+  gpr_cv_broadcast(&pollset->cv);
+  gpr_mu_unlock(&pollset->mu);
+
+  if (do_shutdown_cb) {
+    pollset->shutdown_done_cb(pollset->shutdown_done_arg);
+  }
+
+  /* Matching ref in unary_poll_pollset_add_fd */
+  grpc_fd_unref(fd);
+}
+
+static void unary_poll_pollset_become_pointer(grpc_pollset *pollset, grpc_pollset *point_to) {
+  grpc_unary_become_args *up_args;
+
+  if (!pollset->counter) {
+    /* Fast path -- no in flight cbs */
+    grpc_fd *fd = pollset->data.ptr;
+    grpc_pollset_finally_become_pointer_and_add_fds(pollset, point_to, &fd, 1);
+    return;
+  }
+
+  pollset->in_flight_cbs++;
+  up_args = gpr_malloc(sizeof(*up_args));
+  up_args->pollset = pollset;
+  up_args->point_to = point_to;
+  up_args->original_vtable = pollset->vtable;
+  grpc_iomgr_add_callback(unary_poll_do_become, up_args);
 
   grpc_pollset_kick(pollset);
 }
