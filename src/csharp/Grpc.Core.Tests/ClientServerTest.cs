@@ -84,7 +84,7 @@ namespace Grpc.Core.Tests
         {
             server = new Server();
             server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddListeningPort(Host + ":0");
+            int port = server.AddListeningPort(Host, Server.PickUnusedPort);
             server.Start();
             channel = new Channel(Host + ":" + port);
         }
