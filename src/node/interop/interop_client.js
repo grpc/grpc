@@ -260,8 +260,8 @@ function cancelAfterFirstResponse(client, done) {
   call.on('data', function(data) {
     call.cancel();
   });
-  call.on('status', function(status) {
-    assert.strictEqual(status.code, grpc.status.CANCELLED);
+  call.on('error', function(error) {
+    assert.strictEqual(error.code, grpc.status.CANCELLED);
     done();
   });
 }
