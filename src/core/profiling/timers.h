@@ -42,6 +42,8 @@ void grpc_timers_global_init(void);
 void grpc_timers_global_destroy(void);
 
 void grpc_timer_add_mark(int tag, void *id, const char *file, int line);
+void grpc_timer_add_important_mark(int tag, void *id, const char *file,
+                                   int line);
 void grpc_timer_begin(int tag, void *id, const char *file, int line);
 void grpc_timer_end(int tag, void *id, const char *file, int line);
 
@@ -82,6 +84,10 @@ enum grpc_profiling_tags {
   do {                           \
   } while (0)
 
+#define GRPC_TIMER_IMPORTANT_MARK(tag, id) \
+  do {                           \
+  } while (0)
+
 #define GRPC_TIMER_BEGIN(tag, id) \
   do {                            \
   } while (0)
@@ -100,6 +106,12 @@ enum grpc_profiling_tags {
 #define GRPC_TIMER_MARK(tag, id)                                              \
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                     \
     grpc_timer_add_mark(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
+  }
+
+#define GRPC_TIMER_IMPORTANT_MARK(tag, id)                                   \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                    \
+    grpc_timer_add_important_mark(tag, ((void *)(gpr_intptr)(id)), __FILE__, \
+                                  __LINE__);                                 \
   }
 
 #define GRPC_TIMER_BEGIN(tag, id)                                          \
