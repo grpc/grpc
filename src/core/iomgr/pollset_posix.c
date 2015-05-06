@@ -127,6 +127,7 @@ void grpc_pollset_global_shutdown(void) {
   /* terminate the backup poller thread */
   gpr_mu_lock(&g_backup_pollset.mu);
   g_shutdown_backup_poller = 1;
+  grpc_pollset_kick(&g_backup_pollset);
   gpr_mu_unlock(&g_backup_pollset.mu);
   gpr_event_wait(&g_backup_poller_done, gpr_inf_future);
 
