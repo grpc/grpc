@@ -102,6 +102,7 @@ int main(int argc, char** argv) {
   ReportQPSPerCore(result, server_config);
   ReportLatency(result);
   ReportTimes(result);
+  ReportCallCounts(result);
 
   return 0;
 }

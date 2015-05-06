@@ -50,6 +50,10 @@ void ReportLatency(const ScenarioResult& result);
 // Client system time: XX%
 // Client user time: XX%
 void ReportTimes(const ScenarioResult& result);
+// Mallocs: XX/rpc
+// Locks: XX/rpc
+// Waits: XX/rpc
+void ReportCallCounts(const ScenarioResult& result);
 
 }  // namespace testing
 }  // namespace grpc

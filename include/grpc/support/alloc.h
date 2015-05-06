@@ -40,6 +40,12 @@
 extern "C" {
 #endif
 
+#ifdef GPR_PERF_COUNTERS
+#include "grpc/support/sync.h"
+extern gpr_stats_counter gpr_alloc_calls;
+extern gpr_stats_counter gpr_free_calls;
+#endif
+
 /* malloc, never returns NULL */
 void *gpr_malloc(size_t size);
 /* free */

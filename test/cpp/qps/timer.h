@@ -42,6 +42,10 @@ class Timer {
     double wall;
     double user;
     double system;
+
+    int64_t malloc_calls;
+    int64_t mutex_locks;
+    int64_t cv_waits;
   };
 
   Result Mark();
@@ -51,7 +55,7 @@ class Timer {
  private:
   static Result Sample();
 
-  const Result start_;
+  Result start_;
 };
 
 #endif  // TEST_QPS_TIMER_H

@@ -43,6 +43,10 @@ struct ResourceUsage {
   double wall_time;
   double user_time;
   double system_time;
+
+  double malloc_calls;
+  double mutex_locks;
+  double cv_waits;
 };
 
 struct ScenarioResult {

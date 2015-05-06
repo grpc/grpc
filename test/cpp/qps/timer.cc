@@ -35,6 +35,8 @@
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpc++/config.h>
 
@@ -59,6 +61,13 @@ Timer::Result Timer::Sample() {
   r.wall = time_double(&tv);
   r.user = time_double(&usage.ru_utime);
   r.system = time_double(&usage.ru_stime);
+#ifdef GPR_PERF_COUNTERS
+  r.malloc_calls = gpr_stats_read(&gpr_alloc_calls);
+  r.mutex_locks = gpr_stats_read(&gpr_mutex_locks);
+  r.cv_waits = gpr_stats_read(&gpr_cv_waits);
+#else
+  r.malloc_calls = r.mutex_locks = r.cv_waits = 0;
+#endif
   return r;
 }
 
@@ -68,5 +77,9 @@ Timer::Result Timer::Mark() {
   r.wall = s.wall - start_.wall;
   r.user = s.user - start_.user;
   r.system = s.system - start_.system;
+  r.malloc_calls = s.malloc_calls - start_.malloc_calls;
+  r.mutex_locks = s.mutex_locks - start_.mutex_locks;
+  r.cv_waits = s.cv_waits - start_.cv_waits;
+  start_ = s;
   return r;
 }

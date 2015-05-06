@@ -76,6 +76,9 @@ class Client {
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
+    stats.set_malloc_calls(timer_result.malloc_calls);
+    stats.set_mutex_locks(timer_result.mutex_locks);
+    stats.set_cv_waits(timer_result.cv_waits);
     return stats;
   }
 

@@ -90,5 +90,20 @@ void ReportTimes(const ScenarioResult& result) {
                   [](ResourceUsage u) { return u.wall_time; }));
 }
 
+template <class F>
+static void RpcUsage(const char* name, const ScenarioResult& result, F f) {
+  auto n = (sum(result.server_resources, f) + sum(result.client_resources, f)) /
+           result.latencies.Count();
+  if (n) {
+    gpr_log(GPR_INFO, "%s: %.2f/rpc", name, n);
+  }
+}
+
+void ReportCallCounts(const ScenarioResult& result) {
+  RpcUsage("Mallocs", result, [](ResourceUsage u) { return u.malloc_calls; });
+  RpcUsage("Locks", result, [](ResourceUsage u) { return u.mutex_locks; });
+  RpcUsage("CV Waits", result, [](ResourceUsage u) { return u.cv_waits; });
+}
+
 }  // namespace testing
 }  // namespace grpc

@@ -105,6 +105,15 @@ CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
 LDFLAGS_stapprof =
 DEFINES_stapprof = NDEBUG
 
+VALID_CONFIG_resprof = 1
+CC_resprof = $(DEFAULT_CC)
+CXX_resprof = $(DEFAULT_CXX)
+LD_resprof = $(DEFAULT_CC)
+LDXX_resprof = $(DEFAULT_CXX)
+CPPFLAGS_resprof = -O2 -DGPR_PERF_COUNTERS
+LDFLAGS_resprof =
+DEFINES_resprof = NDEBUG
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)

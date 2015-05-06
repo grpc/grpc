@@ -41,11 +41,21 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#ifdef GPR_PERF_COUNTERS
+gpr_stats_counter gpr_mutex_locks = GPR_STATS_INIT;
+gpr_stats_counter gpr_cv_waits = GPR_STATS_INIT;
+#endif
+
 void gpr_mu_init(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
 
 void gpr_mu_destroy(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_destroy(mu) == 0); }
 
-void gpr_mu_lock(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_lock(mu) == 0); }
+void gpr_mu_lock(gpr_mu *mu) {
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_mutex_locks, 1);
+#endif
+  GPR_ASSERT(pthread_mutex_lock(mu) == 0);
+}
 
 void gpr_mu_unlock(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_unlock(mu) == 0); }
 
@@ -63,6 +73,9 @@ void gpr_cv_destroy(gpr_cv *cv) { GPR_ASSERT(pthread_cond_destroy(cv) == 0); }
 
 int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
   int err = 0;
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_cv_waits, 1);
+#endif
   if (gpr_time_cmp(abs_deadline, gpr_inf_future) == 0) {
     err = pthread_cond_wait(cv, mu);
   } else {
