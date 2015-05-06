@@ -554,7 +554,6 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
   EXPECT_EQ(static_cast<size_t>(2), client_initial_metadata.size());
-  client_ok(1);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
