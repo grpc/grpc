@@ -25,7 +25,6 @@ env:
     - CONFIG=opt TEST=python
     - CONFIG=opt TEST=csharp
     - USE_GCC=4.4 CONFIG=opt TEST=build
-    - USE_GCC=4.5 CONFIG=opt TEST=build
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler

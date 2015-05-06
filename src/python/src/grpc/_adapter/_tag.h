@@ -44,14 +44,14 @@
    replacement for its descriptive functionality until Python can move its whole
    C and C adapter stack to more closely resemble the core batching API. */
 typedef enum {
-  PYGRPC_SERVER_RPC_NEW       = 0,
-  PYGRPC_INITIAL_METADATA     = 1,
-  PYGRPC_READ                 = 2,
-  PYGRPC_WRITE_ACCEPTED       = 3,
-  PYGRPC_FINISH_ACCEPTED      = 4,
+  PYGRPC_SERVER_RPC_NEW = 0,
+  PYGRPC_INITIAL_METADATA = 1,
+  PYGRPC_READ = 2,
+  PYGRPC_WRITE_ACCEPTED = 3,
+  PYGRPC_FINISH_ACCEPTED = 4,
   PYGRPC_CLIENT_METADATA_READ = 5,
-  PYGRPC_FINISHED_CLIENT      = 6,
-  PYGRPC_FINISHED_SERVER      = 7
+  PYGRPC_FINISHED_CLIENT = 6,
+  PYGRPC_FINISHED_SERVER = 7
 } pygrpc_tag_type;
 
 typedef struct {

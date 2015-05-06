@@ -37,6 +37,4 @@
 #error "_SYS_SDT_H not defined, despite <sys/sdt.h> being present."
 #endif
 
-int main() {
-  return 0;
-}
+int main() { return 0; }
