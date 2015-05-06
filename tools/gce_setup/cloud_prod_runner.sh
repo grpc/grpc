@@ -32,7 +32,7 @@ thisfile=$(readlink -ne "${BASH_SOURCE[0]}")
 current_time=$(date "+%Y-%m-%d-%H-%M-%S")
 result_file_name=cloud_prod_result.$current_time.html
 echo $result_file_name
-log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/log_history
+log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/log/cloud_prod_log_history
 
 main() {
   source grpc_docker.sh
@@ -46,10 +46,10 @@ main() {
       log_file_name=cloud_{$test_case}_{$client}.txt 
       if grpc_cloud_prod_test $test_case grpc-docker-testclients $client > /tmp/$log_file_name 2>&1
       then
-        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/log_history/$log_file_name
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_log_history/$log_file_name
         echo "          ['$test_case', '$client', 'prod', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       else
-        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/log_history/$log_file_name
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_log_history/$log_file_name
         echo "          ['$test_case', '$client', 'prod', false, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       fi
     done
@@ -61,10 +61,10 @@ main() {
       log_file_name=cloud_{$test_case}_{$client}.txt 
       if grpc_cloud_prod_auth_test $test_case grpc-docker-testclients $client > /tmp/$log_file_name 2>&1
       then
-        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/log_history/$log_file_name
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_log_history/$log_file_name
         echo "          ['$test_case', '$client', 'prod', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       else
-        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/log_history/$log_file_name    
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_log_history/$log_file_name    
         echo "          ['$test_case', '$client', 'prod', false, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       fi
     done
@@ -72,6 +72,7 @@ main() {
   if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     cat pre.html /tmp/cloud_prod_result.txt post.html > /tmp/cloud_prod_result.html
     gsutil cp /tmp/cloud_prod_result.txt gs://stoked-keyword-656-output/cloud_prod_result.txt
+    gsutil cp -R gs://stoked-keyword-656-output/cloud_prod_log_history gs://stoked-keyword-656-output/log
     gsutil cp /tmp/cloud_prod_result.html gs://stoked-keyword-656-output/cloud_prod_result.html
     gsutil cp /tmp/cloud_prod_result.html gs://stoked-keyword-656-output/result_history/$result_file_name
     rm /tmp/cloud_prod_result.txt
