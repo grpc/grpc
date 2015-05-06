@@ -123,6 +123,14 @@ class CallOpBuffer : public CompletionQueueTag {
   bool* recv_closed_;
 };
 
+// SneakyCallOpBuffer does not post completions to the completion queue
+class SneakyCallOpBuffer GRPC_FINAL : public CallOpBuffer {
+ public:
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    return CallOpBuffer::FinalizeResult(tag, status) && false;
+  }
+};
+
 // Channel and Server implement this to allow them to hook performing ops
 class CallHook {
  public:

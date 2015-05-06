@@ -233,7 +233,7 @@ void PrintHeaderClientMethod(grpc::protobuf::io::Printer *printer,
         "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
         "Async$Method$(::grpc::ClientContext* context, "
         "const $Request$& request, "
-        "::grpc::CompletionQueue* cq, void* tag);\n");
+        "::grpc::CompletionQueue* cq);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -538,14 +538,14 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
         "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
         "$ns$$Service$::Stub::Async$Method$(::grpc::ClientContext* context, "
         "const $Request$& request, "
-        "::grpc::CompletionQueue* cq, void* tag) {\n");
+        "::grpc::CompletionQueue* cq) {\n");
     printer->Print(*vars,
                    "  return std::unique_ptr< "
                    "::grpc::ClientAsyncResponseReader< $Response$>>(new "
                    "::grpc::ClientAsyncResponseReader< $Response$>("
                    "channel(), cq, "
                    "rpcmethod_$Method$_, "
-                   "context, request, tag));\n"
+                   "context, request));\n"
                    "}\n\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
