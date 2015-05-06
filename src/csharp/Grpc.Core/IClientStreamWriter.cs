@@ -1,4 +1,4 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -32,68 +32,22 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Method types supported by gRPC.
+    /// Client-side writable stream of messages with Close capability.
     /// </summary>
-    public enum MethodType
+    /// <typeparam name="T"></typeparam>
+    public interface IClientStreamWriter<T> : IAsyncStreamWriter<T>
     {
-        Unary,  // Unary request, unary response.
-        ClientStreaming,  // Streaming request, unary response.
-        ServerStreaming,  // Unary request, streaming response.
-        DuplexStreaming  // Streaming request, streaming response.
-    }
-
-    /// <summary>
-    /// A description of a service method.
-    /// </summary>
-    public class Method<TRequest, TResponse>
-    {
-        readonly MethodType type;
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-
-        public Method(MethodType type, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
-        {
-            this.type = type;
-            this.name = name;
-            this.requestMarshaller = requestMarshaller;
-            this.responseMarshaller = responseMarshaller;
-        }
-
-        public MethodType Type
-        {
-            get
-            {
-                return this.type;
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                return this.name;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return this.requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return this.responseMarshaller;
-            }
-        }
+        /// <summary>
+        /// Closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
+        /// </summary>
+        Task Close();
     }
 }
