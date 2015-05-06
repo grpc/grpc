@@ -39,6 +39,7 @@ Usage:
 
 import collections
 import itertools
+import math
 import re
 import sys
 
@@ -72,8 +73,28 @@ class ImportantMark(object):
   def get_deltas(self):
     pre_and_post_stacks = itertools.chain(self._pre_stack, self._post_stack)
     return collections.OrderedDict((stack_entry,
-                                   (self._entry.time - stack_entry.time))
+                                   abs(self._entry.time - stack_entry.time))
                                    for stack_entry in pre_and_post_stacks)
+
+
+def print_grouped_imark_statistics(group_key, imarks_group):
+  values = collections.OrderedDict()
+  for imark in imarks_group:
+    deltas = imark.get_deltas()
+    for relative_entry, time_delta_us in deltas.iteritems():
+      key = '{tag} {type} ({file}:{line})'.format(**relative_entry._asdict())
+      l = values.setdefault(key, list())
+      l.append(time_delta_us)
+
+  print group_key
+  print '{:>40s}: {:>15s} {:>15s} {:>15s} {:>15s}'.format(
+        'Relative mark', '50th p.', '90th p.', '95th p.', '99th p.')
+  for key, time_values in values.iteritems():
+    print '{:>40s}: {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}'.format(
+          key, percentile(time_values, 50), percentile(time_values, 90),
+          percentile(time_values, 95), percentile(time_values, 99))
+  print
+
 
 def entries():
   for line in sys.stdin:
@@ -89,9 +110,6 @@ def entries():
 
 threads = collections.defaultdict(lambda: collections.defaultdict(list))
 times = collections.defaultdict(list)
-
-# Indexed by the mark's tag. Items in the value list correspond to the mark in
-# different stack situations.
 important_marks = collections.defaultdict(list)
 
 for entry in entries():
@@ -103,17 +121,31 @@ for entry in entries():
     # Get all entries with type '{' from "thread".
     stack = [e for entries_for_tag in thread.values()
                for e in entries_for_tag if e.type == '{']
-    important_marks[entry.tag].append(ImportantMark(entry, stack))
+    imark_group_key = '{tag}@{file}:{line}'.format(**entry._asdict())
+    important_marks[imark_group_key].append(ImportantMark(entry, stack))
   elif entry.type == '}':
     last = thread[entry.tag].pop()
     times[entry.tag].append(entry.time - last.time)
     # Update accounting for important marks.
-    for imarks_for_tag in important_marks.itervalues():
-      for imark in imarks_for_tag:
+    for imarks_group in important_marks.itervalues():
+      for imark in imarks_group:
         imark.append_post_entry(entry)
 
-def percentile(vals, pct):
-  return sorted(vals)[int(len(vals) * pct / 100.0)]
+def percentile(vals, percent):
+  """ Calculates the interpolated percentile given a (possibly unsorted sequence)
+  and a percent (in the usual 0-100 range)."""
+  assert vals, "Empty input sequence."
+  vals = sorted(vals)
+  percent /= 100.0
+  k = (len(vals)-1) * percent
+  f = math.floor(k)
+  c = math.ceil(k)
+  if f == c:
+      return vals[int(k)]
+  # else, interpolate
+  d0 = vals[int(f)] * (c-k)
+  d1 = vals[int(c)] * (k-f)
+  return d0 + d1
 
 print 'tag 50%/90%/95%/99% us'
 for tag in sorted(times.keys()):
@@ -127,13 +159,5 @@ for tag in sorted(times.keys()):
 print
 print 'Important marks:'
 print '================'
-for tag, imark_for_tag in important_marks.iteritems():
-  for imark in imarks_for_tag:
-    deltas = imark.get_deltas()
-    print '{tag} @ {file}:{line}'.format(**imark.entry._asdict())
-    for entry, time_delta_us in deltas.iteritems():
-      format_dict = entry._asdict()
-      format_dict['time_delta_us']  = time_delta_us
-      print '{tag} {type} ({file}:{line}): {time_delta_us:12.3f} us'.format(
-          **format_dict)
-    print
+for group_key, imarks_group in important_marks.iteritems():
+  print_grouped_imark_statistics(group_key, imarks_group)
