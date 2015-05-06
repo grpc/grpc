@@ -40,7 +40,9 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for client streaming calls.
     /// </summary>
-    public struct AsyncClientStreamingCall<TRequest, TResponse>
+    public sealed class AsyncClientStreamingCall<TRequest, TResponse>
+        where TRequest : class
+        where TResponse : class
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly Task<TResponse> result;

@@ -42,20 +42,28 @@ namespace Grpc.Core
     /// <summary>
     /// Server-side handler for unary call.
     /// </summary>
-    public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(TRequest request);
+    public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(TRequest request)
+        where TRequest : class
+        where TResponse : class;
 
     /// <summary>
     /// Server-side handler for client streaming call.
     /// </summary>
-    public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream);
+    public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream)
+        where TRequest : class
+        where TResponse : class;
 
     /// <summary>
     /// Server-side handler for server streaming call.
     /// </summary>
-    public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream);
+    public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream)
+        where TRequest : class
+        where TResponse : class;
 
     /// <summary>
     /// Server-side handler for bidi streaming call.
     /// </summary>
-    public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream);
+    public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream)
+        where TRequest : class
+        where TResponse : class;
 }

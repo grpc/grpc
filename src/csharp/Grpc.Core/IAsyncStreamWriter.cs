@@ -44,6 +44,7 @@ namespace Grpc.Core
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public interface IAsyncStreamWriter<T>
+        where T : class
     {
         /// <summary>
         /// Writes a single message. Only one write can be pending at a time.

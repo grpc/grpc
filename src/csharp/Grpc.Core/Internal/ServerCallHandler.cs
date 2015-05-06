@@ -45,6 +45,8 @@ namespace Grpc.Core.Internal
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
+        where TRequest : class
+        where TResponse : class
     {
         readonly Method<TRequest, TResponse> method;
         readonly UnaryServerMethod<TRequest, TResponse> handler;
@@ -93,6 +95,8 @@ namespace Grpc.Core.Internal
     }
 
     internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
+        where TRequest : class
+        where TResponse : class
     {
         readonly Method<TRequest, TResponse> method;
         readonly ServerStreamingServerMethod<TRequest, TResponse> handler;
@@ -142,6 +146,8 @@ namespace Grpc.Core.Internal
     }
 
     internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
+        where TRequest : class
+        where TResponse : class
     {
         readonly Method<TRequest, TResponse> method;
         readonly ClientStreamingServerMethod<TRequest, TResponse> handler;
@@ -195,6 +201,8 @@ namespace Grpc.Core.Internal
     }
 
     internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
+        where TRequest : class
+        where TResponse : class
     {
         readonly Method<TRequest, TResponse> method;
         readonly DuplexStreamingServerMethod<TRequest, TResponse> handler;
