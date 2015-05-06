@@ -813,6 +813,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fake_security_max_message_length_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fake_security_no_op_test", 
     "platforms": [
       "windows", 
@@ -1030,6 +1039,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_max_message_length_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1263,6 +1281,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_max_message_length_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_no_op_test", 
     "platforms": [
       "windows", 
@@ -1480,6 +1507,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_max_message_length_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1713,6 +1749,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_max_message_length_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_no_op_test", 
     "platforms": [
       "windows", 
@@ -1930,6 +1975,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_max_message_length_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2163,6 +2217,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_max_message_length_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_no_op_test", 
     "platforms": [
       "windows", 
@@ -2380,6 +2443,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_max_concurrent_streams_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_max_message_length_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2613,6 +2685,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_max_message_length_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_no_op_unsecure_test", 
     "platforms": [
       "windows", 
@@ -2838,6 +2919,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_max_message_length_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_no_op_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3055,6 +3145,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"

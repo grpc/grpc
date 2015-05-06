@@ -343,11 +343,11 @@ static void grpc_tcp_continue_read(grpc_tcp *tcp) {
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  GRPC_TIMER_MARK(RECVMSG_BEGIN, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_RECVMSG, 0);
   do {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
-  GRPC_TIMER_MARK(RECVMSG_END, 0);
+  GRPC_TIMER_END(GRPC_PTAG_RECVMSG, 0);
 
   if (read_bytes < allocated_bytes) {
     /* TODO(klempner): Consider a second read first, in hopes of getting a

@@ -37,9 +37,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -104,14 +102,19 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->client_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void test_max_message_length(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f;
+  grpc_arg server_arg;
+  grpc_channel_args server_args;
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  cq_verifier *v_client;
+  cq_verifier *v_server;
   grpc_op ops[6];
   grpc_op *op;
+  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_byte_buffer *request_payload =
+      grpc_byte_buffer_create(&request_payload_slice, 1);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -121,8 +124,19 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
+  server_arg.key = GRPC_ARG_MAX_MESSAGE_LENGTH;
+  server_arg.type = GRPC_ARG_INTEGER;
+  server_arg.value.integer = 5;
+
+  server_args.num_args = 1;
+  server_args.args = &server_arg;
+
+  f = begin_test(config, __FUNCTION__, NULL, &server_args);
+  v_client = cq_verifier_create(f.client_cq);
+  v_server = cq_verifier_create(f.server_cq);
+
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
-                               "foo.test.google.fr:1234", deadline);
+                               "foo.test.google.fr:1234", gpr_inf_future);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -133,6 +147,9 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
@@ -155,14 +172,6 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(v_server);
 
   op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  op->data.send_status_from_server.status_details = "xyz";
-  op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
@@ -174,11 +183,11 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
+  GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
+  GPR_ASSERT(0 == strcmp(details, "Cancelled"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -191,33 +200,11 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
 
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);
-}
 
-static void test_invoke_10_simple_requests(grpc_end2end_test_config config, int initial_sequence_number) {
-  int i;
-  grpc_end2end_test_fixture f;
-  grpc_arg client_arg;
-  grpc_channel_args client_args;
-
-  client_arg.type = GRPC_ARG_INTEGER;
-  client_arg.key = GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER;
-  client_arg.value.integer = initial_sequence_number;
-
-  client_args.num_args = 1;
-  client_args.args = &client_arg;
-
-  f = begin_test(config, __FUNCTION__, &client_args, NULL);
-  for (i = 0; i < 10; i++) {
-    simple_request_body(f);
-    gpr_log(GPR_INFO, "Passed simple request %d", i);
-  }
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  test_invoke_10_simple_requests(config, 16777213);
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) {
-    test_invoke_10_simple_requests(config, 2147483645);
-  }
+  test_max_message_length(config);
 }

@@ -1250,6 +1250,37 @@ grpc_interop_gen_php_cmd() {
     echo $the_cmd
 }
 
+# constructs the full dockerized php service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local added_gfe_flags=$(_grpc_default_creds_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized php compute_engine auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local added_gfe_flags=$(_grpc_gce_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized node interop test cmd.
 #
 # call-seq:
