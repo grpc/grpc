@@ -117,8 +117,8 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
                                           grpc_channel_args *server_args) {
   grpc_endpoint_pair *sfd = f->fixture_data;
   GPR_ASSERT(!f->server);
-  f->server =
-      grpc_server_create_from_filters(f->server_cq, NULL, 0, server_args);
+  f->server = grpc_server_create_from_filters(NULL, 0, server_args);
+  grpc_server_register_completion_queue(f->server, f->server_cq);
   grpc_server_start(f->server);
   grpc_create_chttp2_transport(server_setup_transport, f, server_args,
                                sfd->server, NULL, 0, grpc_mdctx_create(), 0);

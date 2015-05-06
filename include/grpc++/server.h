@@ -101,11 +101,15 @@ class Server GRPC_FINAL : public GrpcLibrary,
   void RequestAsyncCall(void* registered_method, ServerContext* context,
                         grpc::protobuf::Message* request,
                         ServerAsyncStreamingInterface* stream,
-                        CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
+                        CompletionQueue* call_cq,
+                        ServerCompletionQueue* notification_cq,
+                        void* tag) GRPC_OVERRIDE;
 
   void RequestAsyncGenericCall(GenericServerContext* context,
                                ServerAsyncStreamingInterface* stream,
-                               CompletionQueue* cq, void* tag);
+                               CompletionQueue* cq,
+                               ServerCompletionQueue* notification_cq,
+                               void* tag);
 
   const int max_message_size_;
 

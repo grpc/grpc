@@ -91,7 +91,7 @@ void verify_timed_ok(
 
 class AsyncEnd2endTest : public ::testing::Test {
  protected:
-  AsyncEnd2endTest() : service_(&srv_cq_) {}
+  AsyncEnd2endTest() {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -100,6 +100,7 @@ class AsyncEnd2endTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(), grpc::InsecureServerCredentials());
     builder.RegisterAsyncService(&service_);
+    srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
 
@@ -108,10 +109,10 @@ class AsyncEnd2endTest : public ::testing::Test {
     void* ignored_tag;
     bool ignored_ok;
     cli_cq_.Shutdown();
-    srv_cq_.Shutdown();
+    srv_cq_->Shutdown();
     while (cli_cq_.Next(&ignored_tag, &ignored_ok))
       ;
-    while (srv_cq_.Next(&ignored_tag, &ignored_ok))
+    while (srv_cq_->Next(&ignored_tag, &ignored_ok))
       ;
   }
 
@@ -121,9 +122,9 @@ class AsyncEnd2endTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
-  void server_ok(int i) { verify_ok(&srv_cq_, i, true); }
+  void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }
   void client_ok(int i) { verify_ok(&cli_cq_, i, true); }
-  void server_fail(int i) { verify_ok(&srv_cq_, i, false); }
+  void server_fail(int i) { verify_ok(srv_cq_.get(), i, false); }
   void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
@@ -142,8 +143,8 @@ class AsyncEnd2endTest : public ::testing::Test {
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
           stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-      service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-                           tag(2));
+      service_.RequestEcho(&srv_ctx, &recv_request, &response_writer,
+                           srv_cq_.get(), srv_cq_.get(), tag(2));
 
       server_ok(2);
       EXPECT_EQ(send_request.message(), recv_request.message());
@@ -162,7 +163,7 @@ class AsyncEnd2endTest : public ::testing::Test {
   }
 
   CompletionQueue cli_cq_;
-  CompletionQueue srv_cq_;
+  std::unique_ptr<ServerCompletionQueue> srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   grpc::cpp::test::util::TestService::AsyncService service_;
@@ -200,19 +201,19 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
   std::chrono::system_clock::time_point time_now(
       std::chrono::system_clock::now()),
       time_limit(std::chrono::system_clock::now() + std::chrono::seconds(5));
-  verify_timed_ok(&srv_cq_, -1, true, time_now, CompletionQueue::TIMEOUT);
+  verify_timed_ok(srv_cq_.get(), -1, true, time_now, CompletionQueue::TIMEOUT);
   verify_timed_ok(&cli_cq_, -1, true, time_now, CompletionQueue::TIMEOUT);
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-                       tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, srv_cq_.get(),
+                       srv_cq_.get(), tag(2));
 
-  verify_timed_ok(&srv_cq_, 2, true, time_limit);
+  verify_timed_ok(srv_cq_.get(), 2, true, time_limit);
   EXPECT_EQ(send_request.message(), recv_request.message());
   verify_timed_ok(&cli_cq_, 1, true, time_limit);
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
-  verify_timed_ok(&srv_cq_, 3, true);
+  verify_timed_ok(srv_cq_.get(), 3, true);
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
   verify_timed_ok(&cli_cq_, 4, true);
@@ -238,7 +239,8 @@ TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
   std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
 
-  service_.RequestRequestStream(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
+  service_.RequestRequestStream(&srv_ctx, &srv_stream, srv_cq_.get(),
+                                srv_cq_.get(), tag(2));
 
   server_ok(2);
   client_ok(1);
@@ -291,8 +293,8 @@ TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
   std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, &srv_cq_,
-                                 tag(2));
+  service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
+                                 srv_cq_.get(), srv_cq_.get(), tag(2));
 
   server_ok(2);
   client_ok(1);
@@ -342,7 +344,8 @@ TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
       cli_stream(stub_->AsyncBidiStream(&cli_ctx, &cli_cq_, tag(1)));
 
-  service_.RequestBidiStream(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
+  service_.RequestBidiStream(&srv_ctx, &srv_stream, srv_cq_.get(),
+                             srv_cq_.get(), tag(2));
 
   server_ok(2);
   client_ok(1);
@@ -400,8 +403,8 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-                       tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, srv_cq_.get(),
+                       srv_cq_.get(), tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   auto client_initial_metadata = srv_ctx.client_metadata();
@@ -442,8 +445,8 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-                       tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, srv_cq_.get(),
+                       srv_cq_.get(), tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
@@ -490,8 +493,8 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-                       tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, srv_cq_.get(),
+                       srv_cq_.get(), tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   response_writer.SendInitialMetadata(tag(3));
@@ -551,8 +554,8 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-                       tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, srv_cq_.get(),
+                       srv_cq_.get(), tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   auto client_initial_metadata = srv_ctx.client_metadata();

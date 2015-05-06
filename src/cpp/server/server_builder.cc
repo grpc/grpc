@@ -44,6 +44,12 @@ namespace grpc {
 ServerBuilder::ServerBuilder()
     : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {}
 
+std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
+  ServerCompletionQueue* cq = new ServerCompletionQueue();
+  cqs_.push_back(cq);
+  return std::unique_ptr<ServerCompletionQueue>(cq);
+}
+
 void ServerBuilder::RegisterService(SynchronousService* service) {
   services_.push_back(service->service());
 }
@@ -88,6 +94,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   std::unique_ptr<Server> server(
       new Server(thread_pool_, thread_pool_owned, max_message_size_));
+  for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
+    grpc_server_register_completion_queue(server->server_, (*cq)->cq());
+  }
   for (auto service = services_.begin(); service != services_.end();
        service++) {
     if (!server->RegisterService(*service)) {
