@@ -181,7 +181,7 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private void InvokeCallHandler(CallSafeHandle call, string method)
+        private async Task InvokeCallHandler(CallSafeHandle call, string method)
         {
             try
             {
@@ -190,7 +190,7 @@ namespace Grpc.Core
                 {
                     callHandler = new NoSuchMethodCallHandler();
                 }
-                callHandler.StartCall(method, call, GetCompletionQueue());
+                await callHandler.HandleCall(method, call, GetCompletionQueue());
             }
             catch (Exception e)
             {
@@ -218,7 +218,7 @@ namespace Grpc.Core
                 // after server shutdown, the callback returns with null call
                 if (!call.IsInvalid)
                 {
-                    Task.Run(() => InvokeCallHandler(call, method));
+                    Task.Run(async () => await InvokeCallHandler(call, method));
                 }
 
                 AllowOneRpc();

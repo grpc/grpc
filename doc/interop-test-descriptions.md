@@ -532,7 +532,7 @@ pushback (i.e., attempts to send succeed only after appropriate delays).
 
 ### TODO Tests
 
-High priority:
+#### High priority:
 
 Propagation of status code and message (yangg)
 
@@ -553,7 +553,7 @@ OAuth2 tokens + JWT signing key (GCE->prod only) (abhishek)
 
 Metadata: client headers, server headers + trailers, binary+ascii (chenw)
 
-Normal priority:
+#### Normal priority:
 
 Cancel before start (ctiller)
 
@@ -565,7 +565,7 @@ Timeout but completed before expire (zhaoq)
 
 Multiple thousand simultaneous calls timeout on same Channel (ctiller)
 
-Lower priority:
+#### Lower priority:
 
 Flow control. Pushback at client for large messages (abhishek)
 
@@ -580,7 +580,7 @@ Multiple thousand simultaneous calls on different Channels (ctiller)
 
 Failed TLS hostname verification (ejona?)
 
-To priorize:
+#### To priorize:
 
 Start streaming RPC but don't send any requests, server responds
 
