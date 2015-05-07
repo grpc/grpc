@@ -55,6 +55,22 @@ module GRPC
   # Is intended to be used to support both client and server
   # IDL-schema-derived servers.
   module GenericService
+    # creates a new string that is the underscore separate version of s.
+    #
+    # E.g,
+    # PrintHTML -> print_html
+    # AMethod -> a_method
+    # AnRpc -> an_rpc
+    #
+    # @param s [String] the string to be converted.
+    def self.underscore(s)
+      s.gsub!(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+      s.gsub!(/([a-z\d])([A-Z])/, '\1_\2')
+      s.tr!('-', '_')
+      s.downcase!
+      s
+    end
+
     # Used to indicate that a name has already been specified
     class DuplicateRpcName < StandardError
       def initialize(name)
@@ -171,7 +187,7 @@ module GRPC
           # Used define_method to add a method for each rpc_desc.  Each method
           # calls the base class method for the given descriptor.
           descs.each_pair do |name, desc|
-            mth_name = name.to_s.underscore.to_sym
+            mth_name = GenericService.underscore(name.to_s).to_sym
             marshal = desc.marshal_proc
             unmarshal = desc.unmarshal_proc(:output)
             route = "/#{route_prefix}/#{name}"
@@ -207,7 +223,7 @@ module GRPC
       # implemented.
       def assert_rpc_descs_have_methods
         rpc_descs.each_pair do |m, spec|
-          mth_name = m.to_s.underscore.to_sym
+          mth_name = GenericService.underscore(m.to_s).to_sym
           unless instance_methods.include?(mth_name)
             fail "#{self} does not provide instance method '#{mth_name}'"
           end
