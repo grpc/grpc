@@ -41,7 +41,6 @@ import collections
 import itertools
 import math
 import re
-import sys
 
 # Create a regex to parse output of the C core basic profiler,
 # as defined in src/core/profiling/basic_timers.c.
@@ -65,6 +64,10 @@ class ImportantMark(object):
   def entry(self):
     return self._entry
 
+  @property
+  def max_depth(self):
+    return self._n
+
   def append_post_entry(self, post_entry):
     if self._n > 0 and post_entry.thread == self._entry.thread:
       self._post_stack.append(post_entry)
@@ -77,6 +80,16 @@ class ImportantMark(object):
                                    for stack_entry in pre_and_post_stacks)
 
 
+def print_block_statistics(block_times):
+  print '{:<12s}  {:>12s} {:>12s} {:>12s} {:>12s}'.format(
+          'Block tag', '50th p.', '90th p.', '95th p.', '99th p.')
+  for tag, tag_times in sorted(block_times.iteritems()):
+    times = sorted(tag_times)
+    print '{:<12d}: {:>12.3f} {:>12.3f} {:>12.3f} {:>12.3f}'.format(
+            tag, percentile(times, 50), percentile(times, 90),
+            percentile(times, 95), percentile(times, 99))
+  print
+
 def print_grouped_imark_statistics(group_key, imarks_group):
   values = collections.OrderedDict()
   for imark in imarks_group:
@@ -87,54 +100,14 @@ def print_grouped_imark_statistics(group_key, imarks_group):
       l.append(time_delta_us)
 
   print group_key
-  print '{:>40s}: {:>15s} {:>15s} {:>15s} {:>15s}'.format(
+  print '{:<50s}  {:>12s} {:>12s} {:>12s} {:>12s}'.format(
         'Relative mark', '50th p.', '90th p.', '95th p.', '99th p.')
   for key, time_values in values.iteritems():
     time_values = sorted(time_values)
-    print '{:>40s}: {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}'.format(
+    print '{:<50s}: {:>12.3f} {:>12.3f} {:>12.3f} {:>12.3f}'.format(
           key, percentile(time_values, 50), percentile(time_values, 90),
           percentile(time_values, 95), percentile(time_values, 99))
   print
-
-
-def entries():
-  for line in sys.stdin:
-    m = _RE_LINE.match(line)
-    if not m: continue
-    yield Entry(time=float(m.group(1)),
-                thread=m.group(2),
-                type=m.group(3),
-                tag=int(m.group(4)),
-                id=m.group(5),
-                file=m.group(6),
-                line=m.group(7))
-
-threads = collections.defaultdict(lambda: collections.defaultdict(list))
-times = collections.defaultdict(list)
-important_marks = collections.defaultdict(list)
-stack_depth = 0
-
-for entry in entries():
-  thread = threads[entry.thread]
-  if entry.type == '{':
-    thread[entry.tag].append(entry)
-    stack_depth += 1
-  if entry.type == '!':
-    # Save a snapshot of the current stack inside a new ImportantMark instance.
-    # Get all entries _for any tag in the thread_.
-    stack = [e for entries_for_tag in thread.itervalues()
-               for e in entries_for_tag]
-    imark_group_key = '{tag}/{thread}@{file}:{line}'.format(**entry._asdict())
-    important_marks[imark_group_key].append(ImportantMark(entry, stack))
-  elif entry.type == '}':
-    last = thread[entry.tag].pop()
-    times[entry.tag].append(entry.time - last.time)
-    # Update accounting for important marks.
-    for imarks_group in important_marks.itervalues():
-      # only access the last "stack_depth" imarks.
-      for imark in imarks_group[-stack_depth:]:
-        imark.append_post_entry(entry)
-    stack_depth -= 1
 
 def percentile(vals, percent):
   """ Calculates the interpolated percentile given a sorted sequence and a
@@ -151,17 +124,65 @@ def percentile(vals, percent):
   d1 = vals[int(c)] * (k-f)
   return d0 + d1
 
-print 'tag 50%/90%/95%/99% us'
-for tag in sorted(times.keys()):
-  vals = sorted(times[tag])
-  print '%d %.2f/%.2f/%.2f/%.2f' % (tag,
-                                    percentile(vals, 50),
-                                    percentile(vals, 90),
-                                    percentile(vals, 95),
-                                    percentile(vals, 99))
+def entries(f):
+  for line in f:
+    m = _RE_LINE.match(line)
+    if not m: continue
+    yield Entry(time=float(m.group(1)),
+                thread=m.group(2),
+                type=m.group(3),
+                tag=int(m.group(4)),
+                id=m.group(5),
+                file=m.group(6),
+                line=m.group(7))
 
-print
-print 'Important marks:'
-print '================'
-for group_key, imarks_group in important_marks.iteritems():
-  print_grouped_imark_statistics(group_key, imarks_group)
+def main(f):
+  percentiles = (50, 90, 95, 99)
+  threads = collections.defaultdict(lambda: collections.defaultdict(list))
+  times = collections.defaultdict(list)
+  important_marks = collections.defaultdict(list)
+  stack_depth = collections.defaultdict(int)
+  for entry in entries(f):
+    thread = threads[entry.thread]
+    if entry.type == '{':
+      thread[entry.tag].append(entry)
+      stack_depth[entry.thread] += 1
+    if entry.type == '!':
+      # Save a snapshot of the current stack inside a new ImportantMark instance.
+      # Get all entries _for any tag in the thread_.
+      stack = [e for entries_for_tag in thread.itervalues()
+                 for e in entries_for_tag]
+      imark_group_key = '{tag}/{thread}@{file}:{line}'.format(**entry._asdict())
+      important_marks[imark_group_key].append(ImportantMark(entry, stack))
+    elif entry.type == '}':
+      last = thread[entry.tag].pop()
+      times[entry.tag].append(entry.time - last.time)
+      # only access the last "depth" imarks for the tag.
+      depth = stack_depth[entry.thread]
+      for imarks_group in important_marks.itervalues():
+        for imark in imarks_group[-depth:]:
+          # if at a '}' deeper than where the current "imark" was found, ignore.
+          if depth > imark.max_depth: continue
+          imark.append_post_entry(entry)
+      stack_depth[entry.thread] -= 1
+
+  print
+  print 'Block marks:'
+  print '============'
+  print_block_statistics(times)
+
+  print
+  print 'Important marks:'
+  print '================'
+  for group_key, imarks_group in important_marks.iteritems():
+    print_grouped_imark_statistics(group_key, imarks_group)
+
+
+if __name__ == '__main__':
+  # If invoked without arguments, read off sys.stdin. If one argument is given,
+  # take it as a file name and open it for reading.
+  import sys
+  f = sys.stdin
+  if len(sys.argv) == 2:
+    f = open(sys.argv[1], 'r')
+  main(f)
