@@ -42,11 +42,11 @@ typedef struct grpc_pollset_set {
 	
 	size_t pollset_count;
 	size_t pollset_capacity;
-	grpc_pollset *pollsets;
+	grpc_pollset **pollsets;
 
 	size_t fd_count;
 	size_t fd_capacity;
-	grpc_fd *fd;
+	grpc_fd **fds;
 } grpc_pollset_set;
 
 void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
