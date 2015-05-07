@@ -30,24 +30,6 @@
 require 'grpc/generic/client_stub'
 require 'grpc/generic/rpc_desc'
 
-# Extend String to add a method underscore
-class String
-  # creates a new string that is the underscore separate version of this one.
-  #
-  # E.g,
-  # PrintHTML -> print_html
-  # AMethod -> a_method
-  # AnRpc -> an_rpc
-  def underscore
-    word = dup
-    word.gsub!(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-    word.gsub!(/([a-z\d])([A-Z])/, '\1_\2')
-    word.tr!('-', '_')
-    word.downcase!
-    word
-  end
-end
-
 # GRPC contains the General RPC module.
 module GRPC
   # Provides behaviour used to implement schema-derived service classes.
