@@ -172,7 +172,6 @@ static void win_notify_on_read(grpc_endpoint *ep,
   int status;
   DWORD bytes_read = 0;
   DWORD flags = 0;
-  int error;
   WSABUF buffer;
 
   GPR_ASSERT(!tcp->socket->read_info.outstanding);
@@ -207,6 +206,15 @@ static void win_notify_on_read(grpc_endpoint *ep,
   memset(&tcp->socket->read_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSARecv(tcp->socket->socket, &buffer, 1, &bytes_read, &flags,
                    &info->overlapped, NULL);
+
+  if (status != 0) {
+    int wsa_error = WSAGetLastError();
+    if (wsa_error != WSA_IO_PENDING) {
+      info->wsa_error = wsa_error;
+      on_read(tcp, 1);
+      return;
+    }
+  }
 
   grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
 }
@@ -323,6 +331,16 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
   status = WSASend(socket->socket, buffers, tcp->write_slices.count,
                    &bytes_sent, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
+
+  if (status != 0) {
+    int wsa_error = WSAGetLastError();
+    if (wsa_error != WSA_IO_PENDING) {
+      gpr_slice_buffer_reset_and_unref(&tcp->write_slices);
+      tcp->socket->write_info.outstanding = 0;
+      tcp_unref(tcp);
+      return GRPC_ENDPOINT_WRITE_ERROR;
+    }
+  }
 
   /* As all is now setup, we can now ask for the IOCP notification. It may
      trigger the callback immediately however, but no matter. */

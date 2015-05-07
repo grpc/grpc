@@ -74,7 +74,7 @@ static void async_connect_cleanup(async_connect *ac) {
 static void on_alarm(void *acp, int occured) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  /* If the alarm didn't occor, it got cancelled. */
+  /* If the alarm didn't occur, it got cancelled. */
   if (ac->socket != NULL && occured) {
     grpc_winsocket_shutdown(ac->socket);
   }
@@ -98,6 +98,7 @@ static void on_connect(void *acp, int from_iocp) {
   if (from_iocp) {
     DWORD transfered_bytes = 0;
     DWORD flags;
+    info->outstanding = 0;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                               &transfered_bytes, FALSE,
                                               &flags);
@@ -194,6 +195,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
 
   socket = grpc_winsocket_create(sock);
   info = &socket->write_info;
+  info->outstanding = 1;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
