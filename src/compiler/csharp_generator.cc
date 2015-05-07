@@ -489,7 +489,7 @@ grpc::string GetServices(const FileDescriptor *file) {
   }
   out.Outdent();
   out.Print("}\n");
-  out.Print("#endregion");
+  out.Print("#endregion\n");
   return output;
 }
 
