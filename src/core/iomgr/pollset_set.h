@@ -31,43 +31,27 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
+#include "src/core/iomgr/pollset.h"
 
-/* A grpc_pollset is a set of file descriptors that a higher level item is
-   interested in. For example:
-    - a server will typically keep a pollset containing all connected channels,
-      so that it can find new calls to service
-    - a completion queue might keep a pollset with an entry for each transport
-      that is servicing a call that it's tracking */
+/* A grpc_pollset_set is a set of pollsets that are interested in an
+   action. Adding a pollset to a pollset_set automatically adds any
+   fd's (etc) that have been registered with the set_set with that pollset.
+   Registering fd's automatically iterates all current pollsets. */
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
 #endif
 
 #ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_windows.h"
+#include "src/core/iomgr/pollset_set_windows.h"
 #endif
 
-void grpc_pollset_init(grpc_pollset *pollset);
-void grpc_pollset_shutdown(grpc_pollset *pollset,
-                           void (*shutdown_done)(void *arg),
-                           void *shutdown_done_arg);
-void grpc_pollset_destroy(grpc_pollset *pollset);
-
-
-/* Do some work on a pollset.
-   May involve invoking asynchronous callbacks, or actually polling file
-   descriptors.
-   Requires GRPC_POLLSET_MU(pollset) locked.
-   May unlock GRPC_POLLSET_MU(pollset) during its execution. */
-int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
-
-/* Break a pollset out of polling work
-   Requires GRPC_POLLSET_MU(pollset) locked. */
-void grpc_pollset_kick(grpc_pollset *pollset);
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set);
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set);
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set, grpc_pollset *pollset);
+void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set, grpc_pollset *pollset);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

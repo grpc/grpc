@@ -31,43 +31,25 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-/* A grpc_pollset is a set of file descriptors that a higher level item is
-   interested in. For example:
-    - a server will typically keep a pollset containing all connected channels,
-      so that it can find new calls to service
-    - a completion queue might keep a pollset with an entry for each transport
-      that is servicing a call that it's tracking */
-
-#ifdef GPR_POSIX_SOCKET
+#include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/pollset_posix.h"
-#endif
 
-#ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_windows.h"
-#endif
+typedef struct grpc_pollset_set {
+	gpr_mu mu;
+	
+	size_t pollset_count;
+	size_t pollset_capacity;
+	grpc_pollset *pollsets;
 
-void grpc_pollset_init(grpc_pollset *pollset);
-void grpc_pollset_shutdown(grpc_pollset *pollset,
-                           void (*shutdown_done)(void *arg),
-                           void *shutdown_done_arg);
-void grpc_pollset_destroy(grpc_pollset *pollset);
+	size_t fd_count;
+	size_t fd_capacity;
+	grpc_fd *fd;
+} grpc_pollset_set;
 
+void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-/* Do some work on a pollset.
-   May involve invoking asynchronous callbacks, or actually polling file
-   descriptors.
-   Requires GRPC_POLLSET_MU(pollset) locked.
-   May unlock GRPC_POLLSET_MU(pollset) during its execution. */
-int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
-
-/* Break a pollset out of polling work
-   Requires GRPC_POLLSET_MU(pollset) locked. */
-void grpc_pollset_kick(grpc_pollset *pollset);
-
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
