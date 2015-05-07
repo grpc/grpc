@@ -65,12 +65,14 @@ typedef struct grpc_winsocket_callback_info {
   /* The results of the overlapped operation. */
   DWORD bytes_transfered;
   int wsa_error;
+  /* A boolean indicating that we started an operation. */
+  int outstanding;
 } grpc_winsocket_callback_info;
 
 /* This is a wrapper to a Windows socket. A socket can have one outstanding
    read, and one outstanding write. Doing an asynchronous accept means waiting
    for a read operation. Doing an asynchronous connect means waiting for a
-   write operation. These are completely abitrary ties between the operation
+   write operation. These are completely arbitrary ties between the operation
    and the kind of event, because we can have one overlapped per pending
    operation, whichever its nature is. So we could have more dedicated pending
    operation callbacks for connect and listen. But given the scope of listen
@@ -87,17 +89,10 @@ typedef struct grpc_winsocket {
   /* You can't add the same socket twice to the same IO Completion Port.
      This prevents that. */
   int added_to_iocp;
-  /* A boolean to indicate that the caller has abandonned that socket, but
+  /* A boolean to indicate that the caller has abandoned that socket, but
      there is a pending operation that the IO Completion Port will have to
      wait for. The socket will be collected at that time. */
   int orphan;
-  /* A boolean to indicate that the socket was already closed somehow, and
-     that no operation is going to be pending. Trying to abandon a socket in
-     that state won't result in an orphan, but will instead be destroyed
-     without further delay. We could avoid that boolean by adding one into
-     grpc_winsocket_callback_info describing that the operation is pending,
-     but that 1) waste memory more and 2) obfuscate the intent a bit more. */
-  int closed_early;
 } grpc_winsocket;
 
 /* Create a wrapped windows handle. This takes ownership of it, meaning that

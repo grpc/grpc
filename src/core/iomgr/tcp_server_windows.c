@@ -123,7 +123,6 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
      closed by the system. */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    sp->socket->closed_early = 1;
     grpc_winsocket_orphan(sp->socket);
   }
   gpr_free(s->ports);
