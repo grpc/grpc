@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "src/compiler/config.h"
+#include "src/compiler/csharp_generator_helpers.h"
 #include "src/compiler/csharp_generator.h"
 
 using grpc::protobuf::FileDescriptor;
@@ -44,34 +45,17 @@ using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
+using grpc_generator::MethodType;
+using grpc_generator::GetMethodType;
+using grpc_generator::METHODTYPE_NO_STREAMING;
+using grpc_generator::METHODTYPE_CLIENT_STREAMING;
+using grpc_generator::METHODTYPE_SERVER_STREAMING;
+using grpc_generator::METHODTYPE_BIDI_STREAMING;
 using std::map;
 using std::vector;
 
 namespace grpc_csharp_generator {
 namespace {
-
-enum MethodType {
-  METHODTYPE_NO_STREAMING,
-  METHODTYPE_CLIENT_STREAMING,
-  METHODTYPE_SERVER_STREAMING,
-  METHODTYPE_BIDI_STREAMING
-};
-
-MethodType GetMethodType(const MethodDescriptor *method) {
-  if (method->client_streaming()) {
-    if (method->server_streaming()) {
-      return METHODTYPE_BIDI_STREAMING;
-    } else {
-      return METHODTYPE_CLIENT_STREAMING;
-    }
-  } else {
-    if (method->server_streaming()) {
-      return METHODTYPE_SERVER_STREAMING;
-    } else {
-      return METHODTYPE_NO_STREAMING;
-    }
-  }
-}
 
 std::string GetCSharpNamespace(const FileDescriptor* file) {
   // TODO(jtattermusch): this should be based on csharp_namespace option
