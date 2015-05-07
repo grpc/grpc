@@ -57,12 +57,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/google/google-auth-library-php.git",
-                "reference": "70ff1c9b27b1678827465c72ce81a067e1653442"
+                "reference": "732e11f276216932dcfa3bbc46a644164c2bdf70"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/google/google-auth-library-php/zipball/70ff1c9b27b1678827465c72ce81a067e1653442",
-                "reference": "70ff1c9b27b1678827465c72ce81a067e1653442",
+                "url": "https://api.github.com/repos/google/google-auth-library-php/zipball/732e11f276216932dcfa3bbc46a644164c2bdf70",
+                "reference": "732e11f276216932dcfa3bbc46a644164c2bdf70",
                 "shasum": ""
             },
             "require": {
@@ -94,7 +94,7 @@
                 "google",
                 "oauth2"
             ],
-            "time": "2015-05-06 16:31:42"
+            "time": "2015-05-07 17:24:56"
         },
         {
             "name": "guzzlehttp/guzzle",
