@@ -49,10 +49,6 @@ static int seed(void) { return _getpid(); }
 #endif
 
 void grpc_test_init(int argc, char **argv) {
-#ifndef GPR_WIN32
-  /* disable SIGPIPE */
-  signal(SIGPIPE, SIG_IGN);
-#endif
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
           GRPC_TEST_SLOWDOWN_MACHINE_FACTOR, GRPC_TEST_SLOWDOWN_BUILD_FACTOR,
           GRPC_TEST_SLOWDOWN_FACTOR);
