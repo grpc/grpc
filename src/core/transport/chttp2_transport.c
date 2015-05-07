@@ -824,12 +824,9 @@ static void unlock(transport *t) {
 
   /* gather any callbacks that need to be made */
   if (!t->calling_back) {
-    perform_callbacks = prepare_callbacks(t);
-    if (perform_callbacks) {
-      t->calling_back = 1;
-    }
+    t->calling_back = perform_callbacks = prepare_callbacks(t);
     if (cb) {
-      if (t->error_state == ERROR_STATE_SEEN && !t->writing && !t->calling_back) {
+      if (t->error_state == ERROR_STATE_SEEN && !t->writing) {
         call_closed = 1;
         t->calling_back = 1;
         t->cb = NULL; /* no more callbacks */
