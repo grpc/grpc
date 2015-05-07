@@ -711,6 +711,10 @@ static void call_on_done_recv(void *pc, int success) {
           break;
       }
     }
+    if (!success) {
+      grpc_stream_ops_unref_owned_objects(&call->recv_ops.ops[i],
+                                          call->recv_ops.nops - i);
+    }
     if (call->recv_state == GRPC_STREAM_RECV_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_READ_CLOSED);
       call->read_state = READ_STATE_READ_CLOSED;
