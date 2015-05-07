@@ -235,6 +235,9 @@
     <ClCompile Include="..\..\src\core\statistics\window_stats.c">
       <Filter>src\core\statistics</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\statistics\work_annotation.c">
+      <Filter>src\core\statistics</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -582,6 +585,9 @@
       <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\window_stats.h">
+      <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\statistics\work_annotation.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">

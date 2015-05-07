@@ -2453,6 +2453,7 @@ LIBGRPC_SRC = \
     src/core/statistics/census_tracing.c \
     src/core/statistics/hash_table.c \
     src/core/statistics/window_stats.c \
+    src/core/statistics/work_annotation.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
@@ -2702,6 +2703,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/statistics/census_tracing.c \
     src/core/statistics/hash_table.c \
     src/core/statistics/window_stats.c \
+    src/core/statistics/work_annotation.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \

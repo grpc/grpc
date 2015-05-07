@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/statistics/work_annotation.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/client.h"
 #include "src/core/surface/init.h"
@@ -132,7 +133,9 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *cq,
                                     const char *method, const char *host,
                                     gpr_timespec deadline) {
-  return grpc_channel_create_call_internal(
+  grpc_call *call;
+  census_grpc_begin_work();
+  call = grpc_channel_create_call_internal(
       channel, cq,
       grpc_mdelem_from_metadata_strings(
           channel->metadata_context, grpc_mdstr_ref(channel->path_string),
@@ -141,11 +144,16 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
           channel->metadata_context, grpc_mdstr_ref(channel->authority_string),
           grpc_mdstr_from_string(channel->metadata_context, host)),
       deadline);
+  census_grpc_end_work(call);
+  return call;
 }
 
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host) {
-  registered_call *rc = gpr_malloc(sizeof(registered_call));
+  registered_call *rc;
+
+  census_grpc_begin_work();
+  rc = gpr_malloc(sizeof(registered_call));
   rc->path = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, grpc_mdstr_ref(channel->path_string),
       grpc_mdstr_from_string(channel->metadata_context, method));
@@ -156,6 +164,7 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
   gpr_mu_unlock(&channel->registered_call_mu);
+  census_grpc_end_work(NULL);
   return rc;
 }
 
@@ -163,9 +172,13 @@ grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_completion_queue *completion_queue,
     void *registered_call_handle, gpr_timespec deadline) {
   registered_call *rc = registered_call_handle;
-  return grpc_channel_create_call_internal(
+  grpc_call *call;
+  census_grpc_begin_work();
+  call = grpc_channel_create_call_internal(
       channel, completion_queue, grpc_mdelem_ref(rc->path),
       grpc_mdelem_ref(rc->authority), deadline);
+  census_grpc_end_work(call);
+  return call;
 }
 
 void grpc_channel_internal_ref(grpc_channel *channel) {
@@ -201,6 +214,8 @@ void grpc_channel_destroy(grpc_channel *channel) {
   grpc_channel_op op;
   grpc_channel_element *elem;
 
+  census_grpc_begin_work();
+
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
 
   op.type = GRPC_CHANNEL_GOAWAY;
@@ -214,6 +229,8 @@ void grpc_channel_destroy(grpc_channel *channel) {
   elem->filter->channel_op(elem, NULL, &op);
 
   grpc_channel_internal_unref(channel);
+
+  census_grpc_end_work(NULL);
 }
 
 void grpc_client_channel_closed(grpc_channel_element *elem) {

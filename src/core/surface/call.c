@@ -36,6 +36,7 @@
 #include "src/core/iomgr/alarm.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
+#include "src/core/statistics/work_annotation.h"
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
@@ -993,7 +994,7 @@ void grpc_call_destroy(grpc_call *c) {
   }
   cancel = c->read_state != READ_STATE_STREAM_CLOSED;
   unlock(c);
-  if (cancel) grpc_call_cancel(c);
+  if (cancel) cancel_with_status(c, GRPC_STATUS_CANCELLED, "Cancelled");
   GRPC_CALL_INTERNAL_UNREF(c, "destroy", 1);
 }
 
@@ -1001,7 +1002,7 @@ grpc_call_error grpc_call_cancel(grpc_call *call) {
   return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled");
 }
 
-grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
+static void cancel_with_status(grpc_call *c,
                                              grpc_status_code status,
                                              const char *description) {
   return cancel_with_status(c, status, description, 0);
@@ -1027,7 +1028,12 @@ static grpc_call_error cancel_with_status(
   }
 
   execute_op(c, &op);
+}
 
+grpc_call_error grpc_call_cancel_with_status(grpc_call *c, grpc_status_code status, const char *description) {
+  census_grpc_begin_work();
+  cancel_with_status(c, status, description);
+  census_grpc_end_work(c);
   return GRPC_CALL_OK;
 }
 
@@ -1045,12 +1051,8 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
-    if (call->is_client) {
-      cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
-                         "Deadline Exceeded", 0);
-    } else {
-      grpc_call_cancel(call);
-    }
+    cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                                 "Deadline Exceeded");
   }
   GRPC_CALL_INTERNAL_UNREF(call, "alarm", 1);
 }
@@ -1171,6 +1173,9 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   size_t out;
   const grpc_op *op;
   grpc_ioreq *req;
+  grpc_call_error error;
+
+  census_grpc_begin_work();
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
@@ -1269,8 +1274,10 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
   grpc_cq_begin_op(call->cq, call, GRPC_OP_COMPLETE);
 
-  return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
+  error = grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
                                              tag);
+  census_grpc_end_work(call);
+  return error;
 }
 
 void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,

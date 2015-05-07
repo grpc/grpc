@@ -40,6 +40,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/statistics/work_annotation.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
@@ -1017,7 +1018,9 @@ grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
                                          grpc_metadata_array *initial_metadata,
                                          grpc_completion_queue *cq_bind,
                                          void *tag) {
+  grpc_call_error err;
   requested_call rc;
+  census_grpc_begin_work();
   grpc_cq_begin_op(server->unregistered_cq, NULL, GRPC_OP_COMPLETE);
   rc.type = BATCH_CALL;
   rc.tag = tag;
@@ -1025,15 +1028,20 @@ grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
   rc.data.batch.call = call;
   rc.data.batch.details = details;
   rc.data.batch.initial_metadata = initial_metadata;
-  return queue_call_request(server, &rc);
+  err = queue_call_request(server, &rc);
+  census_grpc_end_work(NULL);
+  return err;
 }
 
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *rm, grpc_call **call, gpr_timespec *deadline,
     grpc_metadata_array *initial_metadata, grpc_byte_buffer **optional_payload,
     grpc_completion_queue *cq_bind, void *tag) {
+  grpc_call_error err;
   requested_call rc;
-  registered_method *registered_method = rm;
+  registered_method *registered_method;
+  census_grpc_begin_work();
+  registered_method = rm;
   grpc_cq_begin_op(registered_method->cq, NULL, GRPC_OP_COMPLETE);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
@@ -1043,7 +1051,9 @@ grpc_call_error grpc_server_request_registered_call(
   rc.data.registered.deadline = deadline;
   rc.data.registered.initial_metadata = initial_metadata;
   rc.data.registered.optional_payload = optional_payload;
-  return queue_call_request(server, &rc);
+  err = queue_call_request(server, &rc);
+  census_grpc_end_work(NULL);
+  return err;
 }
 
 static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
