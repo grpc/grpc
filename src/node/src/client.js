@@ -469,27 +469,28 @@ var requester_makers = {
  * requestSerialize: function to serialize request objects
  * responseDeserialize: function to deserialize response objects
  * @param {Object} methods An object mapping method names to method attributes
+ * @param {string} serviceName The name of the service
  * @return {function(string, Object)} New client constructor
  */
-function makeClientConstructor(methods) {
+function makeClientConstructor(methods, serviceName) {
   /**
    * Create a client with the given methods
    * @constructor
    * @param {string} address The address of the server to connect to
    * @param {Object} options Options to pass to the underlying channel
-   * @param {function(Object, function)=} updateMetadata function to update the
-   *     metadata for each request
+   * @param {function(string, Object, function)=} updateMetadata function to
+   *     update the metadata for each request
    */
   function Client(address, options, updateMetadata) {
-    if (updateMetadata) {
-      this.updateMetadata = updateMetadata;
-    } else {
-      this.updateMetadata = function(metadata, callback) {
+    if (!updateMetadata) {
+      updateMetadata = function(uri, metadata, callback) {
         callback(null, metadata);
       };
     }
-    this.server_address = address;
+    this.server_address = address.replace(/\/$/, '');
     this.channel = new grpc.Channel(address, options);
+    this.updateMetadata = _.partial(updateMetadata,
+                                    this.server_address + '/' + serviceName);
   }
 
   _.each(methods, function(attrs, name) {
@@ -525,7 +526,7 @@ function makeClientConstructor(methods) {
  * @return {function(string, Object)} New client constructor
  */
 function makeProtobufClientConstructor(service) {
-  var method_attrs = common.getProtobufServiceAttrs(service);
+  var method_attrs = common.getProtobufServiceAttrs(service, service.name);
   var Client = makeClientConstructor(method_attrs);
   Client.service = service;
 
