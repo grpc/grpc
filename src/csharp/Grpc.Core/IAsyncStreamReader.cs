@@ -44,9 +44,10 @@ namespace Grpc.Core
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public interface IAsyncStreamReader<T>
+        where T : class
     {
         /// <summary>
-        /// Reads a single message. Returns default(T) if the last message was already read.
+        /// Reads a single message. Returns null if the last message was already read.
         /// A following read can only be started when the previous one finishes.
         /// </summary>
         Task<T> ReadNext();

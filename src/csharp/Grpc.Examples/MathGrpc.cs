@@ -133,13 +133,13 @@ namespace math
         // server-side interface
         public interface IMathService
         {
-            Task<DivReply> Div(DivArgs request);
+            Task<DivReply> Div(ServerCallContext context, DivArgs request);
 
-            Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream);
+            Task Fib(ServerCallContext context, FibArgs request, IServerStreamWriter<Num> responseStream);
 
-            Task<Num> Sum(IAsyncStreamReader<Num> requestStream);
+            Task<Num> Sum(ServerCallContext context, IAsyncStreamReader<Num> requestStream);
 
-            Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream);
+            Task DivMany(ServerCallContext context, IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream);
         }
 
         public static ServerServiceDefinition BindService(IMathService serviceImpl)
