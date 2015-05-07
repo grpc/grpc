@@ -823,24 +823,26 @@ static void unlock(transport *t) {
   finish_reads(t);
 
   /* gather any callbacks that need to be made */
-  if (!t->calling_back && cb) {
+  if (!t->calling_back) {
     perform_callbacks = prepare_callbacks(t);
     if (perform_callbacks) {
       t->calling_back = 1;
     }
-    if (t->error_state == ERROR_STATE_SEEN && !t->writing) {
-      call_closed = 1;
-      t->calling_back = 1;
-      t->cb = NULL; /* no more callbacks */
-      t->error_state = ERROR_STATE_NOTIFIED;
-    }
-    if (t->num_pending_goaways) {
-      goaways = t->pending_goaways;
-      num_goaways = t->num_pending_goaways;
-      t->pending_goaways = NULL;
-      t->num_pending_goaways = 0;
-      t->cap_pending_goaways = 0;
-      t->calling_back = 1;
+    if (cb) {
+      if (t->error_state == ERROR_STATE_SEEN && !t->writing && !t->calling_back) {
+        call_closed = 1;
+        t->calling_back = 1;
+        t->cb = NULL; /* no more callbacks */
+        t->error_state = ERROR_STATE_NOTIFIED;
+      }
+      if (t->num_pending_goaways) {
+        goaways = t->pending_goaways;
+        num_goaways = t->num_pending_goaways;
+        t->pending_goaways = NULL;
+        t->num_pending_goaways = 0;
+        t->cap_pending_goaways = 0;
+        t->calling_back = 1;
+      }
     }
   }
 
