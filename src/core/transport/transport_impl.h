@@ -43,25 +43,17 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_transport *self, grpc_stream *stream,
-                     const void *server_data);
+                     const void *server_data, grpc_transport_op *initial_op);
 
   /* implementation of grpc_transport_send_batch */
-  void (*send_batch)(grpc_transport *self, grpc_stream *stream,
-                     grpc_stream_op *ops, size_t ops_count, int is_last);
-
-  /* implementation of grpc_transport_set_allow_window_updates */
-  void (*set_allow_window_updates)(grpc_transport *self, grpc_stream *stream,
-                                   int allow);
+  void (*perform_op)(grpc_transport *self, grpc_stream *stream,
+                     grpc_transport_op *op);
 
   /* implementation of grpc_transport_add_to_pollset */
   void (*add_to_pollset)(grpc_transport *self, grpc_pollset *pollset);
 
   /* implementation of grpc_transport_destroy_stream */
   void (*destroy_stream)(grpc_transport *self, grpc_stream *stream);
-
-  /* implementation of grpc_transport_abort_stream */
-  void (*abort_stream)(grpc_transport *self, grpc_stream *stream,
-                       grpc_status_code status);
 
   /* implementation of grpc_transport_goaway */
   void (*goaway)(grpc_transport *self, grpc_status_code status,
@@ -84,4 +76,4 @@ struct grpc_transport {
   const grpc_transport_vtable *vtable;
 };
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_IMPL_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_IMPL_H */

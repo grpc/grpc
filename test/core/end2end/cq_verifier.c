@@ -61,23 +61,7 @@ typedef struct expectation {
   grpc_completion_type type;
   void *tag;
   union {
-    grpc_op_error finish_accepted;
-    grpc_op_error write_accepted;
     grpc_op_error op_complete;
-    struct {
-      const char *method;
-      const char *host;
-      gpr_timespec deadline;
-      grpc_call **output_call;
-      metadata *metadata;
-    } server_rpc_new;
-    metadata *client_metadata_read;
-    struct {
-      grpc_status_code status;
-      const char *details;
-      metadata *metadata;
-    } finished;
-    gpr_slice *read;
   } data;
 } expectation;
 
@@ -121,17 +105,6 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
   return has_metadata(array->metadata, array->count, key, value);
 }
 
-static void verify_and_destroy_metadata(metadata *md, grpc_metadata *elems,
-                                        size_t count) {
-  size_t i;
-  for (i = 0; i < md->count; i++) {
-    GPR_ASSERT(has_metadata(elems, count, md->keys[i], md->values[i]));
-  }
-  gpr_free(md->keys);
-  gpr_free(md->values);
-  gpr_free(md);
-}
-
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
@@ -168,59 +141,12 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   return byte_buffer_eq_slice(bb, gpr_slice_from_copied_string(str));
 }
 
-static int string_equivalent(const char *a, const char *b) {
-  if (a == NULL) return b == NULL || b[0] == 0;
-  if (b == NULL) return a[0] == 0;
-  return strcmp(a, b) == 0;
-}
-
 static void verify_matches(expectation *e, grpc_event *ev) {
   GPR_ASSERT(e->type == ev->type);
   switch (e->type) {
-    case GRPC_FINISH_ACCEPTED:
-      GPR_ASSERT(e->data.finish_accepted == ev->data.finish_accepted);
-      break;
-    case GRPC_WRITE_ACCEPTED:
-      GPR_ASSERT(e->data.write_accepted == ev->data.write_accepted);
-      break;
-    case GRPC_SERVER_RPC_NEW:
-      GPR_ASSERT(string_equivalent(e->data.server_rpc_new.method,
-                                   ev->data.server_rpc_new.method));
-      GPR_ASSERT(string_equivalent(e->data.server_rpc_new.host,
-                                   ev->data.server_rpc_new.host));
-      GPR_ASSERT(gpr_time_cmp(e->data.server_rpc_new.deadline,
-                              ev->data.server_rpc_new.deadline) <= 0);
-      *e->data.server_rpc_new.output_call = ev->call;
-      verify_and_destroy_metadata(e->data.server_rpc_new.metadata,
-                                  ev->data.server_rpc_new.metadata_elements,
-                                  ev->data.server_rpc_new.metadata_count);
-      break;
-    case GRPC_CLIENT_METADATA_READ:
-      verify_and_destroy_metadata(e->data.client_metadata_read,
-                                  ev->data.client_metadata_read.elements,
-                                  ev->data.client_metadata_read.count);
-      break;
-    case GRPC_FINISHED:
-      if (e->data.finished.status != GRPC_STATUS__DO_NOT_USE) {
-        GPR_ASSERT(e->data.finished.status == ev->data.finished.status);
-        GPR_ASSERT(string_equivalent(e->data.finished.details,
-                                     ev->data.finished.details));
-      }
-      verify_and_destroy_metadata(e->data.finished.metadata,
-                                  ev->data.finished.metadata_elements,
-                                  ev->data.finished.metadata_count);
-      break;
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "premature queue shutdown");
       abort();
-      break;
-    case GRPC_READ:
-      if (e->data.read) {
-        GPR_ASSERT(byte_buffer_eq_slice(ev->data.read, *e->data.read));
-        gpr_free(e->data.read);
-      } else {
-        GPR_ASSERT(ev->data.read == NULL);
-      }
       break;
     case GRPC_OP_COMPLETE:
       GPR_ASSERT(e->data.op_complete == ev->data.op_complete);
@@ -234,65 +160,13 @@ static void verify_matches(expectation *e, grpc_event *ev) {
   }
 }
 
-static void metadata_expectation(gpr_strvec *buf, metadata *md) {
-  size_t i;
-  char *tmp;
-
-  if (!md) {
-    gpr_strvec_add(buf, gpr_strdup("nil"));
-  } else {
-    for (i = 0; i < md->count; i++) {
-      gpr_asprintf(&tmp, "%c%s:%s", i ? ',' : '{', md->keys[i], md->values[i]);
-      gpr_strvec_add(buf, tmp);
-    }
-    if (md->count) {
-      gpr_strvec_add(buf, gpr_strdup("}"));
-    }
-  }
-}
-
 static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
-  gpr_timespec timeout;
   char *tmp;
 
   switch (e->type) {
-    case GRPC_FINISH_ACCEPTED:
-      gpr_asprintf(&tmp, "GRPC_FINISH_ACCEPTED result=%d",
-                   e->data.finish_accepted);
-      gpr_strvec_add(buf, tmp);
-      break;
-    case GRPC_WRITE_ACCEPTED:
-      gpr_asprintf(&tmp, "GRPC_WRITE_ACCEPTED result=%d",
-                   e->data.write_accepted);
-      gpr_strvec_add(buf, tmp);
-      break;
     case GRPC_OP_COMPLETE:
       gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->data.op_complete);
       gpr_strvec_add(buf, tmp);
-      break;
-    case GRPC_SERVER_RPC_NEW:
-      timeout = gpr_time_sub(e->data.server_rpc_new.deadline, gpr_now());
-      gpr_asprintf(&tmp, "GRPC_SERVER_RPC_NEW method=%s host=%s timeout=%fsec",
-                   e->data.server_rpc_new.method, e->data.server_rpc_new.host,
-                   timeout.tv_sec + 1e-9 * timeout.tv_nsec);
-      gpr_strvec_add(buf, tmp);
-      break;
-    case GRPC_CLIENT_METADATA_READ:
-      gpr_strvec_add(buf, gpr_strdup("GRPC_CLIENT_METADATA_READ "));
-      metadata_expectation(buf, e->data.client_metadata_read);
-      break;
-    case GRPC_FINISHED:
-      gpr_asprintf(&tmp, "GRPC_FINISHED status=%d details=%s ",
-                   e->data.finished.status, e->data.finished.details);
-      gpr_strvec_add(buf, tmp);
-      metadata_expectation(buf, e->data.finished.metadata);
-      break;
-    case GRPC_READ:
-      gpr_strvec_add(buf, gpr_strdup("GRPC_READ data="));
-      gpr_strvec_add(
-          buf,
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
-                      GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT));
       break;
     case GRPC_SERVER_SHUTDOWN:
       gpr_strvec_add(buf, gpr_strdup("GRPC_SERVER_SHUTDOWN"));
@@ -395,102 +269,8 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-static metadata *metadata_from_args(va_list args) {
-  metadata *md = gpr_malloc(sizeof(metadata));
-  const char *key, *value;
-  md->count = 0;
-  md->cap = 0;
-  md->keys = NULL;
-  md->values = NULL;
-
-  for (;;) {
-    key = va_arg(args, const char *);
-    if (!key) return md;
-    value = va_arg(args, const char *);
-    GPR_ASSERT(value);
-
-    if (md->cap == md->count) {
-      md->cap = GPR_MAX(md->cap + 1, md->cap * 3 / 2);
-      md->keys = gpr_realloc(md->keys, sizeof(char *) * md->cap);
-      md->values = gpr_realloc(md->values, sizeof(char *) * md->cap);
-    }
-    md->keys[md->count] = (char *)key;
-    md->values[md->count] = (char *)value;
-    md->count++;
-  }
-}
-
-void cq_expect_write_accepted(cq_verifier *v, void *tag, grpc_op_error result) {
-  add(v, GRPC_WRITE_ACCEPTED, tag)->data.write_accepted = result;
-}
-
 void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result) {
   add(v, GRPC_OP_COMPLETE, tag)->data.op_complete = result;
-}
-
-void cq_expect_finish_accepted(cq_verifier *v, void *tag,
-                               grpc_op_error result) {
-  add(v, GRPC_FINISH_ACCEPTED, tag)->data.finish_accepted = result;
-}
-
-void cq_expect_read(cq_verifier *v, void *tag, gpr_slice bytes) {
-  expectation *e = add(v, GRPC_READ, tag);
-  e->data.read = gpr_malloc(sizeof(gpr_slice));
-  *e->data.read = bytes;
-}
-
-void cq_expect_empty_read(cq_verifier *v, void *tag) {
-  expectation *e = add(v, GRPC_READ, tag);
-  e->data.read = NULL;
-}
-
-void cq_expect_server_rpc_new(cq_verifier *v, grpc_call **output_call,
-                              void *tag, const char *method, const char *host,
-                              gpr_timespec deadline, ...) {
-  va_list args;
-  expectation *e = add(v, GRPC_SERVER_RPC_NEW, tag);
-  e->data.server_rpc_new.method = method;
-  e->data.server_rpc_new.host = host;
-  e->data.server_rpc_new.deadline = deadline;
-  e->data.server_rpc_new.output_call = output_call;
-
-  va_start(args, deadline);
-  e->data.server_rpc_new.metadata = metadata_from_args(args);
-  va_end(args);
-}
-
-void cq_expect_client_metadata_read(cq_verifier *v, void *tag, ...) {
-  va_list args;
-  expectation *e = add(v, GRPC_CLIENT_METADATA_READ, tag);
-
-  va_start(args, tag);
-  e->data.client_metadata_read = metadata_from_args(args);
-  va_end(args);
-}
-
-static void finished_internal(cq_verifier *v, void *tag,
-                              grpc_status_code status, const char *details,
-                              va_list args) {
-  expectation *e = add(v, GRPC_FINISHED, tag);
-  e->data.finished.status = status;
-  e->data.finished.details = details;
-  e->data.finished.metadata = metadata_from_args(args);
-}
-
-void cq_expect_finished_with_status(cq_verifier *v, void *tag,
-                                    grpc_status_code status,
-                                    const char *details, ...) {
-  va_list args;
-  va_start(args, details);
-  finished_internal(v, tag, status, details, args);
-  va_end(args);
-}
-
-void cq_expect_finished(cq_verifier *v, void *tag, ...) {
-  va_list args;
-  va_start(args, tag);
-  finished_internal(v, tag, GRPC_STATUS__DO_NOT_USE, NULL, args);
-  va_end(args);
 }
 
 void cq_expect_server_shutdown(cq_verifier *v, void *tag) {

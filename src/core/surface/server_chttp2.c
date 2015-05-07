@@ -33,7 +33,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/channel/http_filter.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_server.h"
@@ -46,8 +45,8 @@
 static grpc_transport_setup_result setup_transport(void *server,
                                                    grpc_transport *transport,
                                                    grpc_mdctx *mdctx) {
-  static grpc_channel_filter const *extra_filters[] = {&grpc_http_server_filter,
-                                                       &grpc_http_filter};
+  static grpc_channel_filter const *extra_filters[] = {
+      &grpc_http_server_filter};
   return grpc_server_setup_transport(server, transport, extra_filters,
                                      GPR_ARRAY_SIZE(extra_filters), mdctx);
 }

@@ -5,7 +5,8 @@
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
   "require": {
-    "php": ">=5.5.0"
+    "php": ">=5.5.0",
+    "google/auth": "dev-master"
   },
   "autoload": {
     "psr-4": {

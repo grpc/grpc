@@ -58,10 +58,10 @@ $(OUT_DIR):
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: alarm_heap_test.exe alarm_list_test.exe alarm_test.exe alpn_test.exe bin_encoder_test.exe census_hash_table_test.exe census_statistics_multiple_writers_circular_buffer_test.exe census_statistics_multiple_writers_test.exe census_statistics_performance_test.exe census_statistics_quick_test.exe census_statistics_small_log_test.exe census_stub_test.exe census_window_stats_test.exe chttp2_status_conversion_test.exe chttp2_stream_encoder_test.exe chttp2_stream_map_test.exe echo_client.exe echo_server.exe echo_test.exe fd_posix_test.exe fling_client.exe fling_server.exe fling_stream_test.exe fling_test.exe gpr_cancellable_test.exe gpr_cmdline_test.exe gpr_env_test.exe gpr_file_test.exe gpr_histogram_test.exe gpr_host_port_test.exe gpr_log_test.exe gpr_slice_buffer_test.exe gpr_slice_test.exe gpr_string_test.exe gpr_sync_test.exe gpr_thd_test.exe gpr_time_test.exe gpr_tls_test.exe gpr_useful_test.exe grpc_base64_test.exe grpc_byte_buffer_reader_test.exe grpc_channel_stack_test.exe grpc_completion_queue_test.exe grpc_credentials_test.exe grpc_json_token_test.exe grpc_stream_op_test.exe hpack_parser_test.exe hpack_table_test.exe httpcli_format_request_test.exe httpcli_parser_test.exe httpcli_test.exe json_rewrite.exe json_rewrite_test.exe json_test.exe lame_client_test.exe message_compress_test.exe multi_init_test.exe murmur_hash_test.exe no_server_test.exe poll_kick_posix_test.exe resolve_address_test.exe secure_endpoint_test.exe sockaddr_utils_test.exe tcp_client_posix_test.exe tcp_posix_test.exe tcp_server_posix_test.exe time_averaged_stats_test.exe time_test.exe timeout_encoding_test.exe timers_test.exe transport_metadata_test.exe transport_security_test.exe 
+buildtests_c: alarm_heap_test.exe alarm_list_test.exe alarm_test.exe alpn_test.exe bin_encoder_test.exe census_hash_table_test.exe census_statistics_multiple_writers_circular_buffer_test.exe census_statistics_multiple_writers_test.exe census_statistics_performance_test.exe census_statistics_quick_test.exe census_statistics_small_log_test.exe census_stub_test.exe census_window_stats_test.exe chttp2_status_conversion_test.exe chttp2_stream_encoder_test.exe chttp2_stream_map_test.exe fd_posix_test.exe fling_client.exe fling_server.exe fling_stream_test.exe fling_test.exe gpr_cancellable_test.exe gpr_cmdline_test.exe gpr_env_test.exe gpr_file_test.exe gpr_histogram_test.exe gpr_host_port_test.exe gpr_log_test.exe gpr_slice_buffer_test.exe gpr_slice_test.exe gpr_string_test.exe gpr_sync_test.exe gpr_thd_test.exe gpr_time_test.exe gpr_tls_test.exe gpr_useful_test.exe grpc_base64_test.exe grpc_byte_buffer_reader_test.exe grpc_channel_stack_test.exe grpc_completion_queue_test.exe grpc_credentials_test.exe grpc_json_token_test.exe grpc_stream_op_test.exe hpack_parser_test.exe hpack_table_test.exe httpcli_format_request_test.exe httpcli_parser_test.exe httpcli_test.exe json_rewrite.exe json_rewrite_test.exe json_test.exe lame_client_test.exe message_compress_test.exe multi_init_test.exe murmur_hash_test.exe no_server_test.exe poll_kick_posix_test.exe resolve_address_test.exe secure_endpoint_test.exe sockaddr_utils_test.exe tcp_client_posix_test.exe tcp_posix_test.exe tcp_server_posix_test.exe time_averaged_stats_test.exe time_test.exe timeout_encoding_test.exe timers_test.exe transport_metadata_test.exe transport_security_test.exe chttp2_fullstack_bad_hostname_unsecure_test.exe chttp2_fullstack_cancel_after_accept_unsecure_test.exe chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test.exe chttp2_fullstack_cancel_after_invoke_unsecure_test.exe chttp2_fullstack_cancel_before_invoke_unsecure_test.exe chttp2_fullstack_cancel_in_a_vacuum_unsecure_test.exe chttp2_fullstack_census_simple_request_unsecure_test.exe chttp2_fullstack_disappearing_server_unsecure_test.exe chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test.exe chttp2_fullstack_empty_batch_unsecure_test.exe chttp2_fullstack_graceful_server_shutdown_unsecure_test.exe chttp2_fullstack_invoke_large_request_unsecure_test.exe chttp2_fullstack_max_concurrent_streams_unsecure_test.exe chttp2_fullstack_max_message_length_unsecure_test.exe chttp2_fullstack_no_op_unsecure_test.exe chttp2_fullstack_ping_pong_streaming_unsecure_test.exe chttp2_fullstack_registered_call_unsecure_test.exe chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test.exe chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test.exe chttp2_fullstack_request_response_with_payload_unsecure_test.exe chttp2_fullstack_request_with_large_metadata_unsecure_test.exe chttp2_fullstack_request_with_payload_unsecure_test.exe chttp2_fullstack_simple_delayed_request_unsecure_test.exe chttp2_fullstack_simple_request_unsecure_test.exe chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test.exe chttp2_fullstack_uds_bad_hostname_unsecure_test.exe chttp2_fullstack_uds_cancel_after_accept_unsecure_test.exe chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test.exe chttp2_fullstack_uds_cancel_after_invoke_unsecure_test.exe chttp2_fullstack_uds_cancel_before_invoke_unsecure_test.exe chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test.exe chttp2_fullstack_uds_census_simple_request_unsecure_test.exe chttp2_fullstack_uds_disappearing_server_unsecure_test.exe chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test.exe chttp2_fullstack_uds_empty_batch_unsecure_test.exe chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test.exe chttp2_fullstack_uds_invoke_large_request_unsecure_test.exe chttp2_fullstack_uds_max_concurrent_streams_unsecure_test.exe chttp2_fullstack_uds_max_message_length_unsecure_test.exe chttp2_fullstack_uds_no_op_unsecure_test.exe chttp2_fullstack_uds_ping_pong_streaming_unsecure_test.exe chttp2_fullstack_uds_registered_call_unsecure_test.exe chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test.exe chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test.exe chttp2_fullstack_uds_request_response_with_payload_unsecure_test.exe chttp2_fullstack_uds_request_with_large_metadata_unsecure_test.exe chttp2_fullstack_uds_request_with_payload_unsecure_test.exe chttp2_fullstack_uds_simple_delayed_request_unsecure_test.exe chttp2_fullstack_uds_simple_request_unsecure_test.exe chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test.exe chttp2_socket_pair_bad_hostname_unsecure_test.exe chttp2_socket_pair_cancel_after_accept_unsecure_test.exe chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test.exe chttp2_socket_pair_cancel_after_invoke_unsecure_test.exe chttp2_socket_pair_cancel_before_invoke_unsecure_test.exe chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test.exe chttp2_socket_pair_census_simple_request_unsecure_test.exe chttp2_socket_pair_disappearing_server_unsecure_test.exe chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test.exe chttp2_socket_pair_empty_batch_unsecure_test.exe chttp2_socket_pair_graceful_server_shutdown_unsecure_test.exe chttp2_socket_pair_invoke_large_request_unsecure_test.exe chttp2_socket_pair_max_concurrent_streams_unsecure_test.exe chttp2_socket_pair_max_message_length_unsecure_test.exe chttp2_socket_pair_no_op_unsecure_test.exe chttp2_socket_pair_ping_pong_streaming_unsecure_test.exe chttp2_socket_pair_registered_call_unsecure_test.exe chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test.exe chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test.exe chttp2_socket_pair_request_response_with_payload_unsecure_test.exe chttp2_socket_pair_request_with_large_metadata_unsecure_test.exe chttp2_socket_pair_request_with_payload_unsecure_test.exe chttp2_socket_pair_simple_delayed_request_unsecure_test.exe chttp2_socket_pair_simple_request_unsecure_test.exe chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test.exe chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test.exe 
 	echo All tests built.
 
-buildtests_cxx: 
+buildtests_cxx: interop_client.exe interop_server.exe 
 	echo All tests built.
 
 alarm_heap_test.exe: build_grpc_test_util $(OUT_DIR)
@@ -207,30 +207,6 @@ chttp2_stream_map_test.exe: build_grpc_test_util $(OUT_DIR)
 chttp2_stream_map_test: chttp2_stream_map_test.exe
 	echo Running chttp2_stream_map_test
 	$(OUT_DIR)\chttp2_stream_map_test.exe
-
-echo_client.exe: build_grpc_test_util $(OUT_DIR)
-	echo Building echo_client
-	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\echo\client.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\echo_client.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\client.obj 
-echo_client: echo_client.exe
-	echo Running echo_client
-	$(OUT_DIR)\echo_client.exe
-
-echo_server.exe: build_grpc_test_util $(OUT_DIR)
-	echo Building echo_server
-	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\echo\server.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\echo_server.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\server.obj 
-echo_server: echo_server.exe
-	echo Running echo_server
-	$(OUT_DIR)\echo_server.exe
-
-echo_test.exe: build_grpc_test_util $(OUT_DIR)
-	echo Building echo_test
-	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\echo\echo_test.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\echo_test.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\echo_test.obj 
-echo_test: echo_test.exe
-	echo Running echo_test
-	$(OUT_DIR)\echo_test.exe
 
 fd_posix_test.exe: build_grpc_test_util $(OUT_DIR)
 	echo Building fd_posix_test
@@ -703,4 +679,852 @@ transport_security_test.exe: build_grpc_test_util $(OUT_DIR)
 transport_security_test: transport_security_test.exe
 	echo Running transport_security_test
 	$(OUT_DIR)\transport_security_test.exe
+
+interop_client.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building interop_client
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\interop_client.exe" Debug\interop_client_main.lib Debug\interop_client_helper.lib Debug\grpc++_test_util.lib Debug\grpc_test_util.lib Debug\grpc++.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib Debug\grpc++_test_config.lib $(LIBS) 
+interop_client: interop_client.exe
+	echo Running interop_client
+	$(OUT_DIR)\interop_client.exe
+
+interop_server.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building interop_server
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\interop_server.exe" Debug\interop_server_main.lib Debug\interop_server_helper.lib Debug\grpc++_test_util.lib Debug\grpc_test_util.lib Debug\grpc++.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib Debug\grpc++_test_config.lib $(LIBS) 
+interop_server: interop_server.exe
+	echo Running interop_server
+	$(OUT_DIR)\interop_server.exe
+
+chttp2_fullstack_bad_hostname_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_bad_hostname_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_bad_hostname_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_bad_hostname.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_bad_hostname_unsecure_test: chttp2_fullstack_bad_hostname_unsecure_test.exe
+	echo Running chttp2_fullstack_bad_hostname_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_bad_hostname_unsecure_test.exe
+
+chttp2_fullstack_cancel_after_accept_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_cancel_after_accept_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_cancel_after_accept_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_cancel_after_accept.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_cancel_after_accept_unsecure_test: chttp2_fullstack_cancel_after_accept_unsecure_test.exe
+	echo Running chttp2_fullstack_cancel_after_accept_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_cancel_after_accept_unsecure_test.exe
+
+chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_cancel_after_accept_and_writes_closed.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test: chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test.exe
+	echo Running chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_cancel_after_accept_and_writes_closed_unsecure_test.exe
+
+chttp2_fullstack_cancel_after_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_cancel_after_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_cancel_after_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_cancel_after_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_cancel_after_invoke_unsecure_test: chttp2_fullstack_cancel_after_invoke_unsecure_test.exe
+	echo Running chttp2_fullstack_cancel_after_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_cancel_after_invoke_unsecure_test.exe
+
+chttp2_fullstack_cancel_before_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_cancel_before_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_cancel_before_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_cancel_before_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_cancel_before_invoke_unsecure_test: chttp2_fullstack_cancel_before_invoke_unsecure_test.exe
+	echo Running chttp2_fullstack_cancel_before_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_cancel_before_invoke_unsecure_test.exe
+
+chttp2_fullstack_cancel_in_a_vacuum_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_cancel_in_a_vacuum_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_cancel_in_a_vacuum_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_cancel_in_a_vacuum.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_cancel_in_a_vacuum_unsecure_test: chttp2_fullstack_cancel_in_a_vacuum_unsecure_test.exe
+	echo Running chttp2_fullstack_cancel_in_a_vacuum_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_cancel_in_a_vacuum_unsecure_test.exe
+
+chttp2_fullstack_census_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_census_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_census_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_census_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_census_simple_request_unsecure_test: chttp2_fullstack_census_simple_request_unsecure_test.exe
+	echo Running chttp2_fullstack_census_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_census_simple_request_unsecure_test.exe
+
+chttp2_fullstack_disappearing_server_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_disappearing_server_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_disappearing_server_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_disappearing_server.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_disappearing_server_unsecure_test: chttp2_fullstack_disappearing_server_unsecure_test.exe
+	echo Running chttp2_fullstack_disappearing_server_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_disappearing_server_unsecure_test.exe
+
+chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_early_server_shutdown_finishes_inflight_calls.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test: chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+	echo Running chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+
+chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_early_server_shutdown_finishes_tags.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test: chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test.exe
+	echo Running chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_early_server_shutdown_finishes_tags_unsecure_test.exe
+
+chttp2_fullstack_empty_batch_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_empty_batch_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_empty_batch_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_empty_batch.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_empty_batch_unsecure_test: chttp2_fullstack_empty_batch_unsecure_test.exe
+	echo Running chttp2_fullstack_empty_batch_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_empty_batch_unsecure_test.exe
+
+chttp2_fullstack_graceful_server_shutdown_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_graceful_server_shutdown_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_graceful_server_shutdown_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_graceful_server_shutdown.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_graceful_server_shutdown_unsecure_test: chttp2_fullstack_graceful_server_shutdown_unsecure_test.exe
+	echo Running chttp2_fullstack_graceful_server_shutdown_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_graceful_server_shutdown_unsecure_test.exe
+
+chttp2_fullstack_invoke_large_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_invoke_large_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_invoke_large_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_invoke_large_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_invoke_large_request_unsecure_test: chttp2_fullstack_invoke_large_request_unsecure_test.exe
+	echo Running chttp2_fullstack_invoke_large_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_invoke_large_request_unsecure_test.exe
+
+chttp2_fullstack_max_concurrent_streams_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_max_concurrent_streams_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_max_concurrent_streams_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_max_concurrent_streams.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_max_concurrent_streams_unsecure_test: chttp2_fullstack_max_concurrent_streams_unsecure_test.exe
+	echo Running chttp2_fullstack_max_concurrent_streams_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_max_concurrent_streams_unsecure_test.exe
+
+chttp2_fullstack_max_message_length_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_max_message_length_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_max_message_length_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_max_message_length.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_max_message_length_unsecure_test: chttp2_fullstack_max_message_length_unsecure_test.exe
+	echo Running chttp2_fullstack_max_message_length_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_max_message_length_unsecure_test.exe
+
+chttp2_fullstack_no_op_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_no_op_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_no_op_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_no_op.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_no_op_unsecure_test: chttp2_fullstack_no_op_unsecure_test.exe
+	echo Running chttp2_fullstack_no_op_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_no_op_unsecure_test.exe
+
+chttp2_fullstack_ping_pong_streaming_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_ping_pong_streaming_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_ping_pong_streaming_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_ping_pong_streaming.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_ping_pong_streaming_unsecure_test: chttp2_fullstack_ping_pong_streaming_unsecure_test.exe
+	echo Running chttp2_fullstack_ping_pong_streaming_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_ping_pong_streaming_unsecure_test.exe
+
+chttp2_fullstack_registered_call_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_registered_call_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_registered_call_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_registered_call.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_registered_call_unsecure_test: chttp2_fullstack_registered_call_unsecure_test.exe
+	echo Running chttp2_fullstack_registered_call_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_registered_call_unsecure_test.exe
+
+chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_request_response_with_binary_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test: chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+
+chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_request_response_with_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test: chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_request_response_with_metadata_and_payload_unsecure_test.exe
+
+chttp2_fullstack_request_response_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_request_response_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_request_response_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_request_response_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_request_response_with_payload_unsecure_test: chttp2_fullstack_request_response_with_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_request_response_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_request_response_with_payload_unsecure_test.exe
+
+chttp2_fullstack_request_with_large_metadata_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_request_with_large_metadata_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_request_with_large_metadata_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_request_with_large_metadata.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_request_with_large_metadata_unsecure_test: chttp2_fullstack_request_with_large_metadata_unsecure_test.exe
+	echo Running chttp2_fullstack_request_with_large_metadata_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_request_with_large_metadata_unsecure_test.exe
+
+chttp2_fullstack_request_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_request_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_request_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_request_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_request_with_payload_unsecure_test: chttp2_fullstack_request_with_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_request_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_request_with_payload_unsecure_test.exe
+
+chttp2_fullstack_simple_delayed_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_simple_delayed_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_simple_delayed_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_simple_delayed_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_simple_delayed_request_unsecure_test: chttp2_fullstack_simple_delayed_request_unsecure_test.exe
+	echo Running chttp2_fullstack_simple_delayed_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_simple_delayed_request_unsecure_test.exe
+
+chttp2_fullstack_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_simple_request_unsecure_test: chttp2_fullstack_simple_request_unsecure_test.exe
+	echo Running chttp2_fullstack_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_simple_request_unsecure_test.exe
+
+chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack.lib Debug\end2end_test_simple_request_with_high_initial_sequence_number.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test: chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+	echo Running chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+
+chttp2_fullstack_uds_bad_hostname_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_bad_hostname_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_bad_hostname_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_bad_hostname.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_bad_hostname_unsecure_test: chttp2_fullstack_uds_bad_hostname_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_bad_hostname_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_bad_hostname_unsecure_test.exe
+
+chttp2_fullstack_uds_cancel_after_accept_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_cancel_after_accept_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_cancel_after_accept_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_cancel_after_accept.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_cancel_after_accept_unsecure_test: chttp2_fullstack_uds_cancel_after_accept_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_cancel_after_accept_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_cancel_after_accept_unsecure_test.exe
+
+chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_cancel_after_accept_and_writes_closed.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test: chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test.exe
+
+chttp2_fullstack_uds_cancel_after_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_cancel_after_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_cancel_after_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_cancel_after_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_cancel_after_invoke_unsecure_test: chttp2_fullstack_uds_cancel_after_invoke_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_cancel_after_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_cancel_after_invoke_unsecure_test.exe
+
+chttp2_fullstack_uds_cancel_before_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_cancel_before_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_cancel_before_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_cancel_before_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_cancel_before_invoke_unsecure_test: chttp2_fullstack_uds_cancel_before_invoke_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_cancel_before_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_cancel_before_invoke_unsecure_test.exe
+
+chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_cancel_in_a_vacuum.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test: chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test.exe
+
+chttp2_fullstack_uds_census_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_census_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_census_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_census_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_census_simple_request_unsecure_test: chttp2_fullstack_uds_census_simple_request_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_census_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_census_simple_request_unsecure_test.exe
+
+chttp2_fullstack_uds_disappearing_server_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_disappearing_server_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_disappearing_server_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_disappearing_server.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_disappearing_server_unsecure_test: chttp2_fullstack_uds_disappearing_server_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_disappearing_server_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_disappearing_server_unsecure_test.exe
+
+chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_early_server_shutdown_finishes_inflight_calls.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test: chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+
+chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_early_server_shutdown_finishes_tags.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test: chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test.exe
+
+chttp2_fullstack_uds_empty_batch_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_empty_batch_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_empty_batch_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_empty_batch.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_empty_batch_unsecure_test: chttp2_fullstack_uds_empty_batch_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_empty_batch_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_empty_batch_unsecure_test.exe
+
+chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_graceful_server_shutdown.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test: chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test.exe
+
+chttp2_fullstack_uds_invoke_large_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_invoke_large_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_invoke_large_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_invoke_large_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_invoke_large_request_unsecure_test: chttp2_fullstack_uds_invoke_large_request_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_invoke_large_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_invoke_large_request_unsecure_test.exe
+
+chttp2_fullstack_uds_max_concurrent_streams_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_max_concurrent_streams_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_max_concurrent_streams_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_max_concurrent_streams.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_max_concurrent_streams_unsecure_test: chttp2_fullstack_uds_max_concurrent_streams_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_max_concurrent_streams_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_max_concurrent_streams_unsecure_test.exe
+
+chttp2_fullstack_uds_max_message_length_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_max_message_length_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_max_message_length_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_max_message_length.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_max_message_length_unsecure_test: chttp2_fullstack_uds_max_message_length_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_max_message_length_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_max_message_length_unsecure_test.exe
+
+chttp2_fullstack_uds_no_op_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_no_op_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_no_op_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_no_op.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_no_op_unsecure_test: chttp2_fullstack_uds_no_op_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_no_op_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_no_op_unsecure_test.exe
+
+chttp2_fullstack_uds_ping_pong_streaming_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_ping_pong_streaming_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_ping_pong_streaming_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_ping_pong_streaming.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_ping_pong_streaming_unsecure_test: chttp2_fullstack_uds_ping_pong_streaming_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_ping_pong_streaming_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_ping_pong_streaming_unsecure_test.exe
+
+chttp2_fullstack_uds_registered_call_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_registered_call_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_registered_call_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_registered_call.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_registered_call_unsecure_test: chttp2_fullstack_uds_registered_call_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_registered_call_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_registered_call_unsecure_test.exe
+
+chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_request_response_with_binary_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test: chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+
+chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_request_response_with_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test: chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test.exe
+
+chttp2_fullstack_uds_request_response_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_request_response_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_request_response_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_request_response_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_request_response_with_payload_unsecure_test: chttp2_fullstack_uds_request_response_with_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_request_response_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_request_response_with_payload_unsecure_test.exe
+
+chttp2_fullstack_uds_request_with_large_metadata_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_request_with_large_metadata_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_request_with_large_metadata_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_request_with_large_metadata.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_request_with_large_metadata_unsecure_test: chttp2_fullstack_uds_request_with_large_metadata_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_request_with_large_metadata_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_request_with_large_metadata_unsecure_test.exe
+
+chttp2_fullstack_uds_request_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_request_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_request_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_request_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_request_with_payload_unsecure_test: chttp2_fullstack_uds_request_with_payload_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_request_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_request_with_payload_unsecure_test.exe
+
+chttp2_fullstack_uds_simple_delayed_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_simple_delayed_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_simple_delayed_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_simple_delayed_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_simple_delayed_request_unsecure_test: chttp2_fullstack_uds_simple_delayed_request_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_simple_delayed_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_simple_delayed_request_unsecure_test.exe
+
+chttp2_fullstack_uds_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_simple_request_unsecure_test: chttp2_fullstack_uds_simple_request_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_simple_request_unsecure_test.exe
+
+chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test.exe" Debug\end2end_fixture_chttp2_fullstack_uds.lib Debug\end2end_test_simple_request_with_high_initial_sequence_number.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test: chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+	echo Running chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(OUT_DIR)\chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+
+chttp2_socket_pair_bad_hostname_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_bad_hostname_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_bad_hostname_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_bad_hostname.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_bad_hostname_unsecure_test: chttp2_socket_pair_bad_hostname_unsecure_test.exe
+	echo Running chttp2_socket_pair_bad_hostname_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_bad_hostname_unsecure_test.exe
+
+chttp2_socket_pair_cancel_after_accept_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_cancel_after_accept_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_cancel_after_accept_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_cancel_after_accept.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_cancel_after_accept_unsecure_test: chttp2_socket_pair_cancel_after_accept_unsecure_test.exe
+	echo Running chttp2_socket_pair_cancel_after_accept_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_cancel_after_accept_unsecure_test.exe
+
+chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_cancel_after_accept_and_writes_closed.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test: chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test.exe
+	echo Running chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_cancel_after_accept_and_writes_closed_unsecure_test.exe
+
+chttp2_socket_pair_cancel_after_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_cancel_after_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_cancel_after_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_cancel_after_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_cancel_after_invoke_unsecure_test: chttp2_socket_pair_cancel_after_invoke_unsecure_test.exe
+	echo Running chttp2_socket_pair_cancel_after_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_cancel_after_invoke_unsecure_test.exe
+
+chttp2_socket_pair_cancel_before_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_cancel_before_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_cancel_before_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_cancel_before_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_cancel_before_invoke_unsecure_test: chttp2_socket_pair_cancel_before_invoke_unsecure_test.exe
+	echo Running chttp2_socket_pair_cancel_before_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_cancel_before_invoke_unsecure_test.exe
+
+chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_cancel_in_a_vacuum.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test: chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test.exe
+	echo Running chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_cancel_in_a_vacuum_unsecure_test.exe
+
+chttp2_socket_pair_census_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_census_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_census_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_census_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_census_simple_request_unsecure_test: chttp2_socket_pair_census_simple_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_census_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_census_simple_request_unsecure_test.exe
+
+chttp2_socket_pair_disappearing_server_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_disappearing_server_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_disappearing_server_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_disappearing_server.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_disappearing_server_unsecure_test: chttp2_socket_pair_disappearing_server_unsecure_test.exe
+	echo Running chttp2_socket_pair_disappearing_server_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_disappearing_server_unsecure_test.exe
+
+chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_early_server_shutdown_finishes_inflight_calls.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test: chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+	echo Running chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+
+chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_early_server_shutdown_finishes_tags.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test: chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test.exe
+	echo Running chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_early_server_shutdown_finishes_tags_unsecure_test.exe
+
+chttp2_socket_pair_empty_batch_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_empty_batch_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_empty_batch_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_empty_batch.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_empty_batch_unsecure_test: chttp2_socket_pair_empty_batch_unsecure_test.exe
+	echo Running chttp2_socket_pair_empty_batch_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_empty_batch_unsecure_test.exe
+
+chttp2_socket_pair_graceful_server_shutdown_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_graceful_server_shutdown_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_graceful_server_shutdown_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_graceful_server_shutdown.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_graceful_server_shutdown_unsecure_test: chttp2_socket_pair_graceful_server_shutdown_unsecure_test.exe
+	echo Running chttp2_socket_pair_graceful_server_shutdown_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_graceful_server_shutdown_unsecure_test.exe
+
+chttp2_socket_pair_invoke_large_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_invoke_large_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_invoke_large_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_invoke_large_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_invoke_large_request_unsecure_test: chttp2_socket_pair_invoke_large_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_invoke_large_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_invoke_large_request_unsecure_test.exe
+
+chttp2_socket_pair_max_concurrent_streams_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_max_concurrent_streams_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_max_concurrent_streams_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_max_concurrent_streams.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_max_concurrent_streams_unsecure_test: chttp2_socket_pair_max_concurrent_streams_unsecure_test.exe
+	echo Running chttp2_socket_pair_max_concurrent_streams_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_max_concurrent_streams_unsecure_test.exe
+
+chttp2_socket_pair_max_message_length_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_max_message_length_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_max_message_length_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_max_message_length.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_max_message_length_unsecure_test: chttp2_socket_pair_max_message_length_unsecure_test.exe
+	echo Running chttp2_socket_pair_max_message_length_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_max_message_length_unsecure_test.exe
+
+chttp2_socket_pair_no_op_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_no_op_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_no_op_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_no_op.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_no_op_unsecure_test: chttp2_socket_pair_no_op_unsecure_test.exe
+	echo Running chttp2_socket_pair_no_op_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_no_op_unsecure_test.exe
+
+chttp2_socket_pair_ping_pong_streaming_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_ping_pong_streaming_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_ping_pong_streaming_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_ping_pong_streaming.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_ping_pong_streaming_unsecure_test: chttp2_socket_pair_ping_pong_streaming_unsecure_test.exe
+	echo Running chttp2_socket_pair_ping_pong_streaming_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_ping_pong_streaming_unsecure_test.exe
+
+chttp2_socket_pair_registered_call_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_registered_call_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_registered_call_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_registered_call.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_registered_call_unsecure_test: chttp2_socket_pair_registered_call_unsecure_test.exe
+	echo Running chttp2_socket_pair_registered_call_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_registered_call_unsecure_test.exe
+
+chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_request_response_with_binary_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test: chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+
+chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_request_response_with_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test: chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_request_response_with_metadata_and_payload_unsecure_test.exe
+
+chttp2_socket_pair_request_response_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_request_response_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_request_response_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_request_response_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_request_response_with_payload_unsecure_test: chttp2_socket_pair_request_response_with_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_request_response_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_request_response_with_payload_unsecure_test.exe
+
+chttp2_socket_pair_request_with_large_metadata_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_request_with_large_metadata_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_request_with_large_metadata_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_request_with_large_metadata.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_request_with_large_metadata_unsecure_test: chttp2_socket_pair_request_with_large_metadata_unsecure_test.exe
+	echo Running chttp2_socket_pair_request_with_large_metadata_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_request_with_large_metadata_unsecure_test.exe
+
+chttp2_socket_pair_request_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_request_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_request_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_request_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_request_with_payload_unsecure_test: chttp2_socket_pair_request_with_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_request_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_request_with_payload_unsecure_test.exe
+
+chttp2_socket_pair_simple_delayed_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_simple_delayed_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_simple_delayed_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_simple_delayed_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_simple_delayed_request_unsecure_test: chttp2_socket_pair_simple_delayed_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_simple_delayed_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_simple_delayed_request_unsecure_test.exe
+
+chttp2_socket_pair_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_simple_request_unsecure_test: chttp2_socket_pair_simple_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_simple_request_unsecure_test.exe
+
+chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair.lib Debug\end2end_test_simple_request_with_high_initial_sequence_number.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test: chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+	echo Running chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_bad_hostname.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_bad_hostname_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_cancel_after_accept.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_cancel_after_accept_and_writes_closed.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_cancel_after_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_cancel_before_invoke.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_cancel_in_a_vacuum.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_census_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_census_simple_request_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_disappearing_server.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_disappearing_server_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_early_server_shutdown_finishes_inflight_calls.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_early_server_shutdown_finishes_tags.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_empty_batch.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_empty_batch_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_graceful_server_shutdown.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_invoke_large_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_max_concurrent_streams.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_max_message_length.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_max_message_length_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_no_op.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_no_op_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_ping_pong_streaming.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_registered_call.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_registered_call_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_request_response_with_binary_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_request_response_with_metadata_and_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_request_response_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_request_with_large_metadata.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_request_with_payload.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_request_with_payload_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_simple_delayed_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_simple_request.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_simple_request_unsecure_test.exe
+
+chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test.exe: build_grpc_test_util $(OUT_DIR)
+	echo Building chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test.exe" Debug\end2end_fixture_chttp2_socket_pair_one_byte_at_a_time.lib Debug\end2end_test_simple_request_with_high_initial_sequence_number.lib Debug\grpc_test_util_unsecure.lib Debug\grpc_unsecure.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) 
+chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test: chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test.exe
+	echo Running chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test
+	$(OUT_DIR)\chttp2_socket_pair_one_byte_at_a_time_simple_request_with_high_initial_sequence_number_unsecure_test.exe
 

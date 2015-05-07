@@ -62,7 +62,6 @@ static void adderr(gpr_strvec *buf, grpc_op_error err) {
 
 char *grpc_event_string(grpc_event *ev) {
   char *out;
-  char *tmp;
   gpr_strvec buf;
 
   if (ev == NULL) return gpr_strdup("null");
@@ -76,54 +75,10 @@ char *grpc_event_string(grpc_event *ev) {
     case GRPC_QUEUE_SHUTDOWN:
       gpr_strvec_add(&buf, gpr_strdup("QUEUE_SHUTDOWN"));
       break;
-    case GRPC_READ:
-      gpr_strvec_add(&buf, gpr_strdup("READ: "));
-      addhdr(&buf, ev);
-      if (ev->data.read) {
-        gpr_asprintf(&tmp, " %d bytes",
-                     (int)grpc_byte_buffer_length(ev->data.read));
-        gpr_strvec_add(&buf, tmp);
-      } else {
-        gpr_strvec_add(&buf, gpr_strdup(" end-of-stream"));
-      }
-      break;
     case GRPC_OP_COMPLETE:
       gpr_strvec_add(&buf, gpr_strdup("OP_COMPLETE: "));
       addhdr(&buf, ev);
       adderr(&buf, ev->data.op_complete);
-      break;
-    case GRPC_WRITE_ACCEPTED:
-      gpr_strvec_add(&buf, gpr_strdup("WRITE_ACCEPTED: "));
-      addhdr(&buf, ev);
-      adderr(&buf, ev->data.write_accepted);
-      break;
-    case GRPC_FINISH_ACCEPTED:
-      gpr_strvec_add(&buf, gpr_strdup("FINISH_ACCEPTED: "));
-      addhdr(&buf, ev);
-      adderr(&buf, ev->data.write_accepted);
-      break;
-    case GRPC_CLIENT_METADATA_READ:
-      gpr_strvec_add(&buf, gpr_strdup("CLIENT_METADATA_READ: "));
-      addhdr(&buf, ev);
-      gpr_asprintf(&tmp, " %d elements",
-                   (int)ev->data.client_metadata_read.count);
-      gpr_strvec_add(&buf, tmp);
-      break;
-    case GRPC_FINISHED:
-      gpr_strvec_add(&buf, gpr_strdup("FINISHED: "));
-      addhdr(&buf, ev);
-      gpr_asprintf(&tmp, " status=%d details='%s' %d metadata elements",
-                   ev->data.finished.status, ev->data.finished.details,
-                   (int)ev->data.finished.metadata_count);
-      gpr_strvec_add(&buf, tmp);
-      break;
-    case GRPC_SERVER_RPC_NEW:
-      gpr_strvec_add(&buf, gpr_strdup("SERVER_RPC_NEW: "));
-      addhdr(&buf, ev);
-      gpr_asprintf(&tmp, " method='%s' host='%s' %d metadata elements",
-                   ev->data.server_rpc_new.method, ev->data.server_rpc_new.host,
-                   (int)ev->data.server_rpc_new.metadata_count);
-      gpr_strvec_add(&buf, tmp);
       break;
     case GRPC_COMPLETION_DO_NOT_USE:
       gpr_strvec_add(&buf, gpr_strdup("DO_NOT_USE (this is a bug)"));

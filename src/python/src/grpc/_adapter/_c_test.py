@@ -83,8 +83,11 @@ class _CTest(unittest.TestCase):
     _c.init()
 
     channel = _c.Channel('%s:%d' % (host, 12345), None)
-    call = _c.Call(channel, method, host, time.time() + _TIMEOUT)
+    completion_queue = _c.CompletionQueue()
+    call = _c.Call(channel, completion_queue, method, host,
+                   time.time() + _TIMEOUT)
     del call
+    del completion_queue
     del channel
 
     _c.shut_down()

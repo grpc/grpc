@@ -34,35 +34,105 @@
 #ifndef GRPC_CORE_PROFILING_TIMERS_H
 #define GRPC_CORE_PROFILING_TIMERS_H
 
-#include <stdio.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef GRPC_LATENCY_PROFILER
+void grpc_timers_global_init(void);
+void grpc_timers_global_destroy(void);
 
-typedef struct grpc_timers_log grpc_timers_log;
+void grpc_timer_add_mark(int tag, void *id, const char *file, int line);
+void grpc_timer_add_important_mark(int tag, void *id, const char *file,
+                                   int line);
+void grpc_timer_begin(int tag, void *id, const char *file, int line);
+void grpc_timer_end(int tag, void *id, const char *file, int line);
 
-grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE* dump);
-void grpc_timers_log_add(grpc_timers_log*, const char* tag, void* id,
-                         const char* file, int line);
-void grpc_timers_log_destroy(grpc_timers_log *);
+enum grpc_profiling_tags {
+  /* Any GRPC_PTAG_* >= than the threshold won't generate any profiling mark. */
+  GRPC_PTAG_IGNORE_THRESHOLD = 1000000,
 
-extern grpc_timers_log *grpc_timers_log_global;
+  /* Re. Protos. */
+  GRPC_PTAG_PROTO_SERIALIZE = 100 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_PROTO_DESERIALIZE = 101 + GRPC_PTAG_IGNORE_THRESHOLD,
 
-#define GRPC_TIMER_MARK(x, s) \
-  grpc_timers_log_add(grpc_timers_log_global, #x, ((void *)(gpr_intptr)(s)), \
-                      __FILE__, __LINE__)
+  /* Re. sockets. */
+  GRPC_PTAG_HANDLE_READ = 200 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_SENDMSG = 201 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_RECVMSG = 202 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_POLL_FINISHED = 203 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_TCP_CB_WRITE = 204 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_TCP_WRITE = 205 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_CALL_ON_DONE_RECV = 206 + GRPC_PTAG_IGNORE_THRESHOLD,
 
-#else /* !GRPC_LATENCY_PROFILER */
-#define GRPC_TIMER_MARK(x, s) \
-  do {                        \
+  /* C++ */
+  GRPC_PTAG_CPP_CALL_CREATED = 300 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_CPP_PERFORM_OPS = 301 + GRPC_PTAG_IGNORE_THRESHOLD,
+
+  /* Transports */
+  GRPC_PTAG_HTTP2_UNLOCK = 401 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_HTTP2_UNLOCK_CLEANUP = 402 + GRPC_PTAG_IGNORE_THRESHOLD,
+
+  /* > 1024 Unassigned reserved. For any miscellaneous use.
+  * Use addition to generate tags from this base or take advantage of the 10
+  * zero'd bits for OR-ing. */
+  GRPC_PTAG_OTHER_BASE = 1024
+};
+
+#if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+/* No profiling. No-op all the things. */
+#define GRPC_TIMER_MARK(tag, id) \
+  do {                           \
   } while (0)
-#endif /* GRPC_LATENCY_PROFILER */
 
-void grpc_timers_log_global_init(void);
-void grpc_timers_log_global_destroy(void);
+#define GRPC_TIMER_IMPORTANT_MARK(tag, id) \
+  do {                           \
+  } while (0)
+
+#define GRPC_TIMER_BEGIN(tag, id) \
+  do {                            \
+  } while (0)
+
+#define GRPC_TIMER_END(tag, id) \
+  do {                          \
+  } while (0)
+
+#else /* at least one profiler requested... */
+/* ... hopefully only one. */
+#if defined(GRPC_STAP_PROFILER) && defined(GRPC_BASIC_PROFILER)
+#error "GRPC_STAP_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
+#endif
+
+/* Generic profiling interface. */
+#define GRPC_TIMER_MARK(tag, id)                                              \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                     \
+    grpc_timer_add_mark(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
+  }
+
+#define GRPC_TIMER_IMPORTANT_MARK(tag, id)                                   \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                    \
+    grpc_timer_add_important_mark(tag, ((void *)(gpr_intptr)(id)), __FILE__, \
+                                  __LINE__);                                 \
+  }
+
+#define GRPC_TIMER_BEGIN(tag, id)                                          \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                  \
+    grpc_timer_begin(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
+  }
+
+#define GRPC_TIMER_END(tag, id)                                          \
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                \
+    grpc_timer_end(tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
+  }
+
+#ifdef GRPC_STAP_PROFILER
+/* Empty placeholder for now. */
+#endif /* GRPC_STAP_PROFILER */
+
+#ifdef GRPC_BASIC_PROFILER
+/* Empty placeholder for now. */
+#endif /* GRPC_BASIC_PROFILER */
+
+#endif /* at least one profiler requested. */
 
 #ifdef __cplusplus
 }

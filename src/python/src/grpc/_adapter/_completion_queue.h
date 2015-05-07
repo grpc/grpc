@@ -42,7 +42,7 @@ typedef struct {
   grpc_completion_queue *c_completion_queue;
 } CompletionQueue;
 
-PyTypeObject pygrpc_CompletionQueueType;
+extern PyTypeObject pygrpc_CompletionQueueType;
 
 int pygrpc_add_completion_queue(PyObject *module);
 

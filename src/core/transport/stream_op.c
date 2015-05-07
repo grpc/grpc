@@ -59,15 +59,30 @@ void grpc_sopb_reset(grpc_stream_op_buffer *sopb) {
 }
 
 void grpc_sopb_swap(grpc_stream_op_buffer *a, grpc_stream_op_buffer *b) {
-  grpc_stream_op_buffer temp = *a;
-  *a = *b;
-  *b = temp;
+  GPR_SWAP(size_t, a->nops, b->nops);
+  GPR_SWAP(size_t, a->capacity, b->capacity);
 
-  if (a->ops == b->inlined_ops) {
+  if (a->ops == a->inlined_ops) {
+    if (b->ops == b->inlined_ops) {
+      /* swap contents of inlined buffer */
+      gpr_slice temp[GRPC_SOPB_INLINE_ELEMENTS];
+      memcpy(temp, a->ops, b->nops * sizeof(grpc_stream_op));
+      memcpy(a->ops, b->ops, a->nops * sizeof(grpc_stream_op));
+      memcpy(b->ops, temp, b->nops * sizeof(grpc_stream_op));
+    } else {
+      /* a is inlined, b is not - copy a inlined into b, fix pointers */
+      a->ops = b->ops;
+      b->ops = b->inlined_ops;
+      memcpy(b->ops, a->inlined_ops, b->nops * sizeof(grpc_stream_op));
+    }
+  } else if (b->ops == b->inlined_ops) {
+    /* b is inlined, a is not - copy b inlined int a, fix pointers */
+    b->ops = a->ops;
     a->ops = a->inlined_ops;
-  }
-  if (b->ops == a->inlined_ops) {
-    b->ops = b->inlined_ops;
+    memcpy(a->ops, b->inlined_ops, a->nops * sizeof(grpc_stream_op));
+  } else {
+    /* no inlining: easy swap */
+    GPR_SWAP(grpc_stream_op *, a->ops, b->ops);
   }
 }
 
@@ -81,9 +96,6 @@ void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops) {
       case GRPC_OP_METADATA:
         grpc_metadata_batch_destroy(&ops[i].data.metadata);
         break;
-      case GRPC_OP_FLOW_CTL_CB:
-        ops[i].data.flow_ctl_cb.cb(ops[i].data.flow_ctl_cb.arg, GRPC_OP_ERROR);
-        break;
       case GRPC_NO_OP:
       case GRPC_OP_BEGIN_MESSAGE:
         break;
@@ -91,34 +103,20 @@ void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops) {
   }
 }
 
-static void assert_contained_metadata_ok(grpc_stream_op *ops, size_t nops) {
-#ifndef NDEBUG
-  size_t i;
-  for (i = 0; i < nops; i++) {
-    if (ops[i].type == GRPC_OP_METADATA) {
-      grpc_metadata_batch_assert_ok(&ops[i].data.metadata);
-    }
-  }
-#endif /* NDEBUG */
-}
-
 static void expandto(grpc_stream_op_buffer *sopb, size_t new_capacity) {
   sopb->capacity = new_capacity;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
   if (sopb->ops == sopb->inlined_ops) {
     sopb->ops = gpr_malloc(sizeof(grpc_stream_op) * new_capacity);
     memcpy(sopb->ops, sopb->inlined_ops, sopb->nops * sizeof(grpc_stream_op));
   } else {
     sopb->ops = gpr_realloc(sopb->ops, sizeof(grpc_stream_op) * new_capacity);
   }
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 static grpc_stream_op *add(grpc_stream_op_buffer *sopb) {
   grpc_stream_op *out;
 
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
-
+  GPR_ASSERT(sopb->nops <= sopb->capacity);
   if (sopb->nops == sopb->capacity) {
     expandto(sopb, GROW(sopb->capacity));
   }
@@ -129,7 +127,6 @@ static grpc_stream_op *add(grpc_stream_op_buffer *sopb) {
 
 void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb) {
   add(sopb)->type = GRPC_NO_OP;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
@@ -138,34 +135,19 @@ void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
   op->type = GRPC_OP_BEGIN_MESSAGE;
   op->data.begin_message.length = length;
   op->data.begin_message.flags = flags;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
                             grpc_metadata_batch b) {
   grpc_stream_op *op = add(sopb);
-  grpc_metadata_batch_assert_ok(&b);
   op->type = GRPC_OP_METADATA;
   op->data.metadata = b;
-  grpc_metadata_batch_assert_ok(&op->data.metadata);
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice) {
   grpc_stream_op *op = add(sopb);
   op->type = GRPC_OP_SLICE;
   op->data.slice = slice;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
-}
-
-void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
-                               void (*cb)(void *arg, grpc_op_error error),
-                               void *arg) {
-  grpc_stream_op *op = add(sopb);
-  op->type = GRPC_OP_FLOW_CTL_CB;
-  op->data.flow_ctl_cb.cb = cb;
-  op->data.flow_ctl_cb.arg = arg;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
@@ -173,15 +155,12 @@ void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
   size_t orig_nops = sopb->nops;
   size_t new_nops = orig_nops + nops;
 
-  assert_contained_metadata_ok(ops, nops);
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
   if (new_nops > sopb->capacity) {
     expandto(sopb, GPR_MAX(GROW(sopb->capacity), new_nops));
   }
 
   memcpy(sopb->ops + orig_nops, ops, sizeof(grpc_stream_op) * nops);
   sopb->nops = new_nops;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 static void assert_valid_list(grpc_mdelem_list *list) {

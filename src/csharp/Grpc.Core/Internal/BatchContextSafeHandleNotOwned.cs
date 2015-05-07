@@ -61,6 +61,9 @@ namespace Grpc.Core.Internal
         [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpcsharp_batch_context_server_rpc_new_method(BatchContextSafeHandleNotOwned ctx);  // returns const char*
 
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandleNotOwned ctx);
+
         public BatchContextSafeHandleNotOwned(IntPtr handle) : base(false)
         {
             SetHandle(handle);
@@ -93,6 +96,11 @@ namespace Grpc.Core.Internal
         public string GetServerRpcNewMethod()
         {
             return Marshal.PtrToStringAnsi(grpcsharp_batch_context_server_rpc_new_method(this));
+        }
+
+        public bool GetReceivedCloseOnServerCancelled()
+        {
+            return grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
         }
     }
 }

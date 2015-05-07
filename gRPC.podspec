@@ -4,7 +4,8 @@ Pod::Spec.new do |s|
   s.summary  = 'Generic gRPC client library for iOS'
   s.homepage = 'https://www.grpc.io'
   s.license  = 'New BSD'
-  s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
+  s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com',
+                 'Michael Lumish' => 'mlumish@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',  :tag => 'release-0_5_0' }
 
@@ -16,7 +17,9 @@ Pod::Spec.new do |s|
     rs.summary  = 'Reactive Extensions library for iOS.'
     rs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
 
-    rs.source_files = 'src/objective-c/RxLibrary/*.{h,m}', 'src/objective-c/RxLibrary/transformations/*.{h,m}', 'src/objective-c/RxLibrary/private/*.{h,m}'
+    rs.source_files = 'src/objective-c/RxLibrary/*.{h,m}',
+                      'src/objective-c/RxLibrary/transformations/*.{h,m}',
+                      'src/objective-c/RxLibrary/private/*.{h,m}'
     rs.private_header_files = 'src/objective-c/RxLibrary/private/*.h'
   end
 
@@ -36,35 +39,38 @@ Pod::Spec.new do |s|
     cs.requires_arc = false
     cs.libraries = 'z'
     cs.dependency 'OpenSSL', '~> 1.0.200'
-
-    # This is a workaround for Cocoapods Issue #1437.
-    # It renames time.h and string.h to grpc_time.h and grpc_string.h.
-    cs.prepare_command = <<-CMD
-      DIR_TIME="grpc/support"
-      BAD_TIME="$DIR_TIME/time.h"
-      GOOD_TIME="$DIR_TIME/grpc_time.h"
-      if [ -f "include/$BAD_TIME" ];
-      then
-        grep -rl "$BAD_TIME" include/grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
-        mv "include/$BAD_TIME" "include/$GOOD_TIME"
-      fi
-
-      DIR_STRING="src/core/support"
-      BAD_STRING="$DIR_STRING/string.h"
-      GOOD_STRING="$DIR_STRING/grpc_string.h"
-      if [ -f "$BAD_STRING" ];
-      then
-        grep -rl "$BAD_STRING" include/grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
-        mv "$BAD_STRING" "$GOOD_STRING"
-      fi
-    CMD
   end
+
+  # This is a workaround for Cocoapods Issue #1437.
+  # It renames time.h and string.h to grpc_time.h and grpc_string.h.
+  # It needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
+  # prepare_command's of subspecs.
+  s.prepare_command = <<-CMD
+    DIR_TIME="grpc/support"
+    BAD_TIME="$DIR_TIME/time.h"
+    GOOD_TIME="$DIR_TIME/grpc_time.h"
+    if [ -f "include/$BAD_TIME" ];
+    then
+      grep -rl "$BAD_TIME" include/grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
+      mv "include/$BAD_TIME" "include/$GOOD_TIME"
+    fi
+
+    DIR_STRING="src/core/support"
+    BAD_STRING="$DIR_STRING/string.h"
+    GOOD_STRING="$DIR_STRING/grpc_string.h"
+    if [ -f "$BAD_STRING" ];
+    then
+      grep -rl "$BAD_STRING" include/grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
+      mv "$BAD_STRING" "$GOOD_STRING"
+    fi
+  CMD
 
   s.subspec 'GRPCClient' do |gs|
     gs.summary = 'Objective-C wrapper around the core gRPC library.'
     gs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
 
-    gs.source_files = 'src/objective-c/GRPCClient/*.{h,m}', 'src/objective-c/GRPCClient/private/*.{h,m}'
+    gs.source_files = 'src/objective-c/GRPCClient/*.{h,m}',
+                      'src/objective-c/GRPCClient/private/*.{h,m}'
     gs.private_header_files = 'src/objective-c/GRPCClient/private/*.h'
 
     gs.dependency 'gRPC/C-Core'

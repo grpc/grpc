@@ -76,8 +76,8 @@ void test_log_events(int num_seqs) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_timers_log_global_init();
+  grpc_timers_global_init();
   test_log_events(1000000);
-  grpc_timers_log_global_destroy();
+  grpc_timers_global_destroy();
   return 0;
 }

@@ -38,12 +38,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef struct {
-  grpc_mdelem *path;
-  grpc_mdelem *content_type;
-  grpc_byte_buffer *content;
-} gettable;
-
 typedef struct call_data {
   gpr_uint8 got_initial_metadata;
   gpr_uint8 seen_path;
@@ -52,6 +46,10 @@ typedef struct call_data {
   gpr_uint8 seen_scheme;
   gpr_uint8 seen_te_trailers;
   grpc_linked_mdelem status;
+
+  grpc_stream_op_buffer *recv_ops;
+  void (*on_done_recv)(void *user_data, int success);
+  void *recv_user_data;
 } call_data;
 
 typedef struct channel_data {
@@ -69,9 +67,6 @@ typedef struct channel_data {
   grpc_mdstr *host_key;
 
   grpc_mdctx *mdctx;
-
-  size_t gettable_count;
-  gettable *gettables;
 } channel_data;
 
 /* used to silence 'variable not used' warnings */
@@ -143,66 +138,80 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   }
 }
 
-/* Called either:
-     - in response to an API call (or similar) from above, to send something
-     - a network event (or similar) from below, to receive something
-   op contains type and call direction information, in addition to the data
-   that is being sent or received. */
-static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
-                    grpc_call_op *op) {
+static void hs_on_recv(void *user_data, int success) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  if (success) {
+    size_t i;
+    size_t nops = calld->recv_ops->nops;
+    grpc_stream_op *ops = calld->recv_ops->ops;
+    for (i = 0; i < nops; i++) {
+      grpc_stream_op *op = &ops[i];
+      if (op->type != GRPC_OP_METADATA) continue;
+      calld->got_initial_metadata = 1;
+      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
+      /* Have we seen the required http2 transport headers?
+         (:method, :scheme, content-type, with :path and :authority covered
+         at the channel level right now) */
+      if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
+          calld->seen_path) {
+        /* do nothing */
+      } else {
+        if (!calld->seen_path) {
+          gpr_log(GPR_ERROR, "Missing :path header");
+        }
+        if (!calld->seen_post) {
+          gpr_log(GPR_ERROR, "Missing :method header");
+        }
+        if (!calld->seen_scheme) {
+          gpr_log(GPR_ERROR, "Missing :scheme header");
+        }
+        if (!calld->seen_te_trailers) {
+          gpr_log(GPR_ERROR, "Missing te trailers header");
+        }
+        /* Error this call out */
+        success = 0;
+        grpc_call_element_send_cancel(elem);
+      }
+    }
+  }
+  calld->on_done_recv(calld->recv_user_data, success);
+}
+
+static void hs_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  size_t i;
 
-  switch (op->type) {
-    case GRPC_RECV_METADATA:
-      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
-      if (!calld->got_initial_metadata) {
-        calld->got_initial_metadata = 1;
-        /* Have we seen the required http2 transport headers?
-           (:method, :scheme, content-type, with :path and :authority covered
-           at the channel level right now) */
-        if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
-            calld->seen_path) {
-          grpc_call_next_op(elem, op);
-        } else {
-          if (!calld->seen_path) {
-            gpr_log(GPR_ERROR, "Missing :path header");
-          }
-          if (!calld->seen_post) {
-            gpr_log(GPR_ERROR, "Missing :method header");
-          }
-          if (!calld->seen_scheme) {
-            gpr_log(GPR_ERROR, "Missing :scheme header");
-          }
-          if (!calld->seen_te_trailers) {
-            gpr_log(GPR_ERROR, "Missing te trailers header");
-          }
-          /* Error this call out */
-          grpc_metadata_batch_destroy(&op->data.metadata);
-          op->done_cb(op->user_data, GRPC_OP_OK);
-          grpc_call_element_send_cancel(elem);
-        }
-      } else {
-        grpc_call_next_op(elem, op);
-      }
+  if (op->send_ops && !calld->sent_status) {
+    size_t nops = op->send_ops->nops;
+    grpc_stream_op *ops = op->send_ops->ops;
+    for (i = 0; i < nops; i++) {
+      grpc_stream_op *op = &ops[i];
+      if (op->type != GRPC_OP_METADATA) continue;
+      calld->sent_status = 1;
+      grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
+                                   grpc_mdelem_ref(channeld->status_ok));
       break;
-    case GRPC_SEND_METADATA:
-      /* If we haven't sent status 200 yet, we need to so so because it needs to
-         come before any non : prefixed metadata. */
-      if (!calld->sent_status) {
-        calld->sent_status = 1;
-        grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
-                                     grpc_mdelem_ref(channeld->status_ok));
-      }
-      grpc_call_next_op(elem, op);
-      break;
-    default:
-      /* pass control up or down the stack depending on op->dir */
-      grpc_call_next_op(elem, op);
-      break;
+    }
   }
+
+  if (op->recv_ops && !calld->got_initial_metadata) {
+    /* substitute our callback for the higher callback */
+    calld->recv_ops = op->recv_ops;
+    calld->on_done_recv = op->on_done_recv;
+    calld->recv_user_data = op->recv_user_data;
+    op->on_done_recv = hs_on_recv;
+    op->recv_user_data = elem;
+  }
+}
+
+static void hs_start_transport_op(grpc_call_element *elem,
+                                  grpc_transport_op *op) {
+  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  hs_mutate_op(elem, op);
+  grpc_call_next_op(elem, op);
 }
 
 /* Called on special channel events, such as disconnection or new incoming
@@ -224,15 +233,13 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data) {
+                           const void *server_transport_data,
+                           grpc_transport_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
-
-  ignore_unused(channeld);
-
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
+  if (initial_op) hs_mutate_op(elem, initial_op);
 }
 
 /* Destructor for call_data */
@@ -242,9 +249,6 @@ static void destroy_call_elem(grpc_call_element *elem) {}
 static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
-  size_t i;
-  size_t gettable_capacity = 0;
-
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -270,45 +274,12 @@ static void init_channel_elem(grpc_channel_element *elem,
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 
   channeld->mdctx = mdctx;
-
-  /* initialize http download support */
-  channeld->gettable_count = 0;
-  channeld->gettables = NULL;
-  for (i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_SERVE_OVER_HTTP)) {
-      gettable *g;
-      gpr_slice slice;
-      grpc_http_server_page *p = args->args[i].value.pointer.p;
-      if (channeld->gettable_count == gettable_capacity) {
-        gettable_capacity =
-            GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
-        channeld->gettables = gpr_realloc(channeld->gettables,
-                                          gettable_capacity * sizeof(gettable));
-      }
-      g = &channeld->gettables[channeld->gettable_count++];
-      g->path = grpc_mdelem_from_strings(mdctx, ":path", p->path);
-      g->content_type =
-          grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
-      slice = gpr_slice_from_copied_string(p->content);
-      g->content = grpc_byte_buffer_create(&slice, 1);
-      gpr_slice_unref(slice);
-    }
-  }
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
-  size_t i;
-
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
-
-  for (i = 0; i < channeld->gettable_count; i++) {
-    grpc_mdelem_unref(channeld->gettables[i].path);
-    grpc_mdelem_unref(channeld->gettables[i].content_type);
-    grpc_byte_buffer_destroy(channeld->gettables[i].content);
-  }
-  gpr_free(channeld->gettables);
 
   grpc_mdelem_unref(channeld->te_trailers);
   grpc_mdelem_unref(channeld->status_ok);
@@ -324,6 +295,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_server_filter = {
-    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    "http-server"};
+    hs_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "http-server"};

@@ -246,7 +246,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
       timeout: A duration of time in seconds to allow for the RPC.
     """
     request_serializer = self._request_serializers[name]
-    call = _low.Call(self._channel, name, self._host, time.time() + timeout)
+    call = _low.Call(self._channel, self._completion_queue, name, self._host, time.time() + timeout)
     if self._metadata_transformer is not None:
       metadata = self._metadata_transformer([])
       for metadata_key, metadata_value in metadata:

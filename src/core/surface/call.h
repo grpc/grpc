@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_SURFACE_CALL_H
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/channel/context.h"
 #include <grpc/grpc.h>
 
 /* Primitive operation types - grpc_op's get rewritten into these */
@@ -93,29 +94,23 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
 void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
+#ifdef GRPC_CALL_REF_COUNT_DEBUG
+void grpc_call_internal_ref(grpc_call *call, const char *reason);
+void grpc_call_internal_unref(grpc_call *call, const char *reason, int allow_immediate_deletion);
+#define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call, reason)
+#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) grpc_call_internal_unref(call, reason, allow_immediate_deletion)
+#else
 void grpc_call_internal_ref(grpc_call *call);
 void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
+#define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
+#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) grpc_call_internal_unref(call, allow_immediate_deletion)
+#endif
 
-/* Helpers for grpc_client, grpc_server filters to publish received data to
-   the completion queue/surface layer */
-/* receive metadata - returns 1 if this was initial metadata */
-int grpc_call_recv_metadata(grpc_call_element *surface_element,
-                            grpc_metadata_batch *md);
-void grpc_call_recv_message(grpc_call_element *surface_element,
-                            grpc_byte_buffer *message);
-void grpc_call_read_closed(grpc_call_element *surface_element);
-void grpc_call_stream_closed(grpc_call_element *surface_element);
-
-void grpc_call_execute_op(grpc_call *call, grpc_call_op *op);
 grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_call *call, const grpc_ioreq *reqs, size_t nreqs,
     grpc_ioreq_completion_func on_complete, void *user_data);
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
-
-void grpc_call_recv_synthetic_status(grpc_call_element *elem,
-                                     grpc_status_code status,
-                                     const char *message);
 
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
@@ -125,6 +120,13 @@ extern int grpc_trace_batch;
 void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
+
+/* Set a context pointer.
+   No thread safety guarantees are made wrt this value. */
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
+                           void (*destroy)(void *value));
+/* Get a context pointer. */
+void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)

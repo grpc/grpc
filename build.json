@@ -6,7 +6,7 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 6,
+      "minor": 7,
       "micro": 0,
       "build": 0
     }
@@ -100,7 +100,6 @@
         "src/core/channel/client_setup.h",
         "src/core/channel/connected_channel.h",
         "src/core/channel/http_client_filter.h",
-        "src/core/channel/http_filter.h",
         "src/core/channel/http_server_filter.h",
         "src/core/channel/noop_filter.h",
         "src/core/compression/algorithm.h",
@@ -182,7 +181,6 @@
         "src/core/transport/transport_impl.h"
       ],
       "src": [
-        "src/core/channel/call_op_string.c",
         "src/core/channel/census_filter.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
@@ -191,7 +189,6 @@
         "src/core/channel/client_setup.c",
         "src/core/channel/connected_channel.c",
         "src/core/channel/http_client_filter.c",
-        "src/core/channel/http_filter.c",
         "src/core/channel/http_server_filter.c",
         "src/core/channel/noop_filter.c",
         "src/core/compression/algorithm.c",
@@ -234,7 +231,8 @@
         "src/core/json/json_reader.c",
         "src/core/json/json_string.c",
         "src/core/json/json_writer.c",
-        "src/core/profiling/timers.c",
+        "src/core/profiling/basic_timers.c",
+        "src/core/profiling/stap_timers.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -278,7 +276,8 @@
         "src/core/transport/chttp2_transport.c",
         "src/core/transport/metadata.c",
         "src/core/transport/stream_op.c",
-        "src/core/transport/transport.c"
+        "src/core/transport/transport.c",
+        "src/core/transport/transport_op_string.c"
       ]
     },
     {
@@ -982,50 +981,6 @@
       ],
       "platforms": [
         "posix"
-      ]
-    },
-    {
-      "name": "echo_client",
-      "build": "test",
-      "run": false,
-      "language": "c",
-      "src": [
-        "test/core/echo/client.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "echo_server",
-      "build": "test",
-      "run": false,
-      "language": "c",
-      "src": [
-        "test/core/echo/server.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "echo_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/echo/echo_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
       ]
     },
     {

@@ -79,8 +79,8 @@ class Server GRPC_FINAL : public GrpcLibrary,
   class AsyncRequest;
 
   // ServerBuilder use only
-  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned);
-  Server() = delete;
+  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
+         int max_message_size);
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
@@ -107,6 +107,8 @@ class Server GRPC_FINAL : public GrpcLibrary,
                                ServerAsyncStreamingInterface* stream,
                                CompletionQueue* cq, void* tag);
 
+  const int max_message_size_;
+
   // Completion queue.
   CompletionQueue cq_;
 
@@ -118,7 +120,7 @@ class Server GRPC_FINAL : public GrpcLibrary,
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
 
-  std::list<SyncRequest> sync_methods_;
+  std::list<SyncRequest>* sync_methods_;
 
   // Pointer to the c grpc server.
   grpc_server* const server_;
@@ -126,6 +128,8 @@ class Server GRPC_FINAL : public GrpcLibrary,
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
+ private:
+  Server() : max_message_size_(-1), server_(NULL) { abort(); }
 };
 
 }  // namespace grpc

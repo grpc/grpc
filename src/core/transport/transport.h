@@ -60,26 +60,29 @@ typedef enum grpc_stream_state {
   GRPC_STREAM_CLOSED
 } grpc_stream_state;
 
+/* Transport op: a set of operations to perform on a transport */
+typedef struct grpc_transport_op {
+  grpc_stream_op_buffer *send_ops;
+  int is_last_send;
+  void (*on_done_send)(void *user_data, int success);
+  void *send_user_data;
+
+  grpc_stream_op_buffer *recv_ops;
+  grpc_stream_state *recv_state;
+  void (*on_done_recv)(void *user_data, int success);
+  void *recv_user_data;
+
+  grpc_pollset *bind_pollset;
+
+  grpc_status_code cancel_with_status;
+  grpc_mdstr *cancel_message;
+
+  /* Indexes correspond to grpc_context_index enum values */
+  void *const *context;
+} grpc_transport_op;
+
 /* Callbacks made from the transport to the upper layers of grpc. */
 struct grpc_transport_callbacks {
-  /* Allocate a buffer to receive data into.
-     It's safe to call grpc_slice_new() to do this, but performance minded
-     proxies may want to carefully place data into optimal locations for
-     transports.
-     This function must return a valid, non-empty slice.
-
-     Arguments:
-       user_data - the transport user data set at transport creation time
-       transport - the grpc_transport instance making this call
-       stream    - the grpc_stream instance the buffer will be used for, or
-                   NULL if this is not known
-       size_hint - how big of a buffer would the transport optimally like?
-                   the actual returned buffer can be smaller or larger than
-                   size_hint as the implementation finds convenient */
-  struct gpr_slice (*alloc_recv_buffer)(void *user_data,
-                                        grpc_transport *transport,
-                                        grpc_stream *stream, size_t size_hint);
-
   /* Initialize a new stream on behalf of the transport.
      Must result in a call to
      grpc_transport_init_stream(transport, ..., request) in the same call
@@ -96,28 +99,6 @@ struct grpc_transport_callbacks {
   void (*accept_stream)(void *user_data, grpc_transport *transport,
                         const void *server_data);
 
-  /* Process a set of stream ops that have been received by the transport.
-     Called by network threads, so must be careful not to block on network
-     activity.
-
-     If final_state == GRPC_STREAM_CLOSED, the upper layers should arrange to
-     call grpc_transport_destroy_stream.
-
-     Ownership of any objects contained in ops is transferred to the callee.
-
-     Arguments:
-       user_data   - the transport user data set at transport creation time
-       transport   - the grpc_transport instance making this call
-       stream      - the stream this data was received for
-       ops         - stream operations that are part of this batch
-       ops_count   - the number of stream operations in this batch
-       final_state - the state of the stream as of the final operation in this
-                     batch */
-  void (*recv_batch)(void *user_data, grpc_transport *transport,
-                     grpc_stream *stream, grpc_stream_op *ops, size_t ops_count,
-                     grpc_stream_state final_state);
-
-  /* The transport received a goaway */
   void (*goaway)(void *user_data, grpc_transport *transport,
                  grpc_status_code status, gpr_slice debug);
 
@@ -139,7 +120,8 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
      server_data - either NULL for a client initiated stream, or a pointer
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data);
+                               const void *server_data,
+                               grpc_transport_op *initial_op);
 
 /* Destroy transport data for a stream.
 
@@ -154,20 +136,17 @@ int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
 void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream);
 
-/* Enable/disable incoming data for a stream.
+void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
 
-   This effectively disables new window becoming available for a given stream,
-   but does not prevent existing window from being consumed by a sender: the
-   caller must still be prepared to receive some additional data after this
-   call.
+void grpc_transport_op_add_cancellation(grpc_transport_op *op,
+                                        grpc_status_code status,
+                                        grpc_mdstr *message);
 
-   Arguments:
-     transport - the transport on which to create this stream
-     stream    - the grpc_stream to destroy (memory is still owned by the
-                 caller, but any child memory must be cleaned up)
-     allow     - is it allowed that new window be opened up? */
-void grpc_transport_set_allow_window_updates(grpc_transport *transport,
-                                             grpc_stream *stream, int allow);
+/* TODO(ctiller): remove this */
+void grpc_transport_add_to_pollset(grpc_transport *transport,
+                                   grpc_pollset *pollset);
+
+char *grpc_transport_op_string(grpc_transport_op *op);
 
 /* Send a batch of operations on a transport
 
@@ -177,13 +156,9 @@ void grpc_transport_set_allow_window_updates(grpc_transport *transport,
      transport - the transport on which to initiate the stream
      stream    - the stream on which to send the operations. This must be
                  non-NULL and previously initialized by the same transport.
-     ops       - an array of operations to apply to the stream - can be NULL
-                 if ops_count == 0.
-     ops_count - the number of elements in ops
-     is_last   - is this the last batch of operations to be sent out */
-void grpc_transport_send_batch(grpc_transport *transport, grpc_stream *stream,
-                               grpc_stream_op *ops, size_t ops_count,
-                               int is_last);
+     op        - a grpc_transport_op specifying the op to perform */
+void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
+                               grpc_transport_op *op);
 
 /* Send a ping on a transport
 
@@ -192,19 +167,6 @@ void grpc_transport_send_batch(grpc_transport *transport, grpc_stream *stream,
    to call into the transport during cb. */
 void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
                          void *user_data);
-
-/* Abort a stream
-
-   Terminate reading and writing for a stream. A final recv_batch with no
-   operations and final_state == GRPC_STREAM_CLOSED will be received locally,
-   and no more data will be presented to the up-layer.
-
-   TODO(ctiller): consider adding a HTTP/2 reason to this function. */
-void grpc_transport_abort_stream(grpc_transport *transport, grpc_stream *stream,
-                                 grpc_status_code status);
-
-void grpc_transport_add_to_pollset(grpc_transport *transport,
-                                   grpc_pollset *pollset);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
@@ -254,4 +216,4 @@ void grpc_transport_setup_initiate(grpc_transport_setup *setup);
    used as a destruction call by setup). */
 void grpc_transport_setup_cancel(grpc_transport_setup *setup);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */

@@ -504,7 +504,7 @@ grpc_cloud_prod_auth_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -1250,6 +1250,51 @@ grpc_interop_gen_php_cmd() {
     echo $the_cmd
 }
 
+# constructs the full dockerized php gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized php service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local added_gfe_flags=$(_grpc_default_creds_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized php compute_engine auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local added_gfe_flags=$(_grpc_gce_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized node interop test cmd.
 #
 # call-seq:
@@ -1397,6 +1442,37 @@ grpc_cloud_prod_gen_csharp_mono_cmd() {
   local cmd_prefix="sudo docker run $env_flag $workdir_flag grpc/csharp_mono";
   local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
   local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }

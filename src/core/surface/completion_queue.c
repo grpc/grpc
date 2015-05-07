@@ -67,6 +67,8 @@ struct grpc_completion_queue {
   /* When refs drops to zero, we are in shutdown mode, and will be destroyable
      once all queued events are drained */
   gpr_refcount refs;
+  /* Once owning_refs drops to zero, we will destroy the cq */
+  gpr_refcount owning_refs;
   /* the set of low level i/o things that concern this cq */
   grpc_pollset pollset;
   /* 0 initially, 1 once we've begun shutting down */
@@ -91,9 +93,27 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
   memset(cc, 0, sizeof(*cc));
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->refs, 1);
+  gpr_ref_init(&cc->owning_refs, 1);
   grpc_pollset_init(&cc->pollset);
   cc->allow_polling = 1;
   return cc;
+}
+
+void grpc_cq_internal_ref(grpc_completion_queue *cc) {
+  gpr_ref(&cc->owning_refs);
+}
+
+static void on_pollset_destroy_done(void *arg) {
+  grpc_completion_queue *cc = arg;
+  grpc_pollset_destroy(&cc->pollset);
+  gpr_free(cc);
+}
+
+void grpc_cq_internal_unref(grpc_completion_queue *cc) {
+  if (gpr_unref(&cc->owning_refs)) {
+    GPR_ASSERT(cc->queue == NULL);
+    grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
+  }
 }
 
 void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc) {
@@ -135,7 +155,7 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
                       grpc_completion_type type) {
   gpr_ref(&cc->refs);
-  if (call) grpc_call_internal_ref(call);
+  if (call) GRPC_CALL_INTERNAL_REF(call, "cq");
 #ifndef NDEBUG
   gpr_atm_no_barrier_fetch_add(&cc->pending_op_count[type], 1);
 #endif
@@ -163,108 +183,14 @@ void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 
-void grpc_cq_end_read(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                      grpc_event_finish_func on_finish, void *user_data,
-                      grpc_byte_buffer *read) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_READ, tag, call, on_finish, user_data);
-  ev->base.data.read = read;
-  end_op_locked(cc, GRPC_READ);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
-void grpc_cq_end_write_accepted(grpc_completion_queue *cc, void *tag,
-                                grpc_call *call,
-                                grpc_event_finish_func on_finish,
-                                void *user_data, grpc_op_error error) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_WRITE_ACCEPTED, tag, call, on_finish, user_data);
-  ev->base.data.write_accepted = error;
-  end_op_locked(cc, GRPC_WRITE_ACCEPTED);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
-void grpc_cq_end_op_complete(grpc_completion_queue *cc, void *tag,
-                             grpc_call *call, grpc_event_finish_func on_finish,
-                             void *user_data, grpc_op_error error) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_OP_COMPLETE, tag, call, on_finish, user_data);
-  ev->base.data.write_accepted = error;
-  end_op_locked(cc, GRPC_OP_COMPLETE);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     grpc_event_finish_func on_finish, void *user_data,
                     grpc_op_error error) {
   event *ev;
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   ev = add_locked(cc, GRPC_OP_COMPLETE, tag, call, on_finish, user_data);
-  ev->base.data.write_accepted = error;
+  ev->base.data.op_complete = error;
   end_op_locked(cc, GRPC_OP_COMPLETE);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
-void grpc_cq_end_finish_accepted(grpc_completion_queue *cc, void *tag,
-                                 grpc_call *call,
-                                 grpc_event_finish_func on_finish,
-                                 void *user_data, grpc_op_error error) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_FINISH_ACCEPTED, tag, call, on_finish, user_data);
-  ev->base.data.finish_accepted = error;
-  end_op_locked(cc, GRPC_FINISH_ACCEPTED);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
-void grpc_cq_end_client_metadata_read(grpc_completion_queue *cc, void *tag,
-                                      grpc_call *call,
-                                      grpc_event_finish_func on_finish,
-                                      void *user_data, size_t count,
-                                      grpc_metadata *elements) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_CLIENT_METADATA_READ, tag, call, on_finish,
-                  user_data);
-  ev->base.data.client_metadata_read.count = count;
-  ev->base.data.client_metadata_read.elements = elements;
-  end_op_locked(cc, GRPC_CLIENT_METADATA_READ);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
-void grpc_cq_end_finished(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                          grpc_event_finish_func on_finish, void *user_data,
-                          grpc_status_code status, const char *details,
-                          grpc_metadata *metadata_elements,
-                          size_t metadata_count) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_FINISHED, tag, call, on_finish, user_data);
-  ev->base.data.finished.status = status;
-  ev->base.data.finished.details = details;
-  ev->base.data.finished.metadata_count = metadata_count;
-  ev->base.data.finished.metadata_elements = metadata_elements;
-  end_op_locked(cc, GRPC_FINISHED);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
-void grpc_cq_end_new_rpc(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                         grpc_event_finish_func on_finish, void *user_data,
-                         const char *method, const char *host,
-                         gpr_timespec deadline, size_t metadata_count,
-                         grpc_metadata *metadata_elements) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_SERVER_RPC_NEW, tag, call, on_finish, user_data);
-  ev->base.data.server_rpc_new.method = method;
-  ev->base.data.server_rpc_new.host = host;
-  ev->base.data.server_rpc_new.deadline = deadline;
-  ev->base.data.server_rpc_new.metadata_count = metadata_count;
-  ev->base.data.server_rpc_new.metadata_elements = metadata_elements;
-  end_op_locked(cc, GRPC_SERVER_RPC_NEW);
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 
@@ -394,22 +320,15 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   }
 }
 
-static void on_pollset_destroy_done(void *arg) {
-  grpc_completion_queue *cc = arg;
-  grpc_pollset_destroy(&cc->pollset);
-  gpr_free(cc);
-}
-
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
-  GPR_ASSERT(cc->queue == NULL);
-  grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
+  grpc_cq_internal_unref(cc);
 }
 
 void grpc_event_finish(grpc_event *base) {
   event *ev = (event *)base;
   ev->on_finish(ev->on_finish_user_data, GRPC_OP_OK);
   if (ev->base.call) {
-    grpc_call_internal_unref(ev->base.call, 1);
+    GRPC_CALL_INTERNAL_UNREF(ev->base.call, "cq", 1);
   }
   gpr_free(ev);
 }

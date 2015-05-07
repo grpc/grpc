@@ -56,7 +56,7 @@ class LonelyClientTest(unittest.TestCase):
 
     completion_queue = _low.CompletionQueue()
     channel = _low.Channel('%s:%d' % (host, port), None)
-    client_call = _low.Call(channel, method, host, deadline)
+    client_call = _low.Call(channel, completion_queue, method, host, deadline)
 
     client_call.invoke(completion_queue, metadata_tag, finish_tag)
     first_event = completion_queue.get(after_deadline)
@@ -138,7 +138,8 @@ class EchoTest(unittest.TestCase):
     server_data = []
     client_data = []
 
-    client_call = _low.Call(self.channel, method, self.host, deadline)
+    client_call = _low.Call(self.channel, self.client_completion_queue,
+                            method, self.host, deadline)
     client_call.add_metadata(client_metadata_key, client_metadata_value)
     client_call.add_metadata(client_binary_metadata_key,
                              client_binary_metadata_value)
@@ -335,7 +336,8 @@ class CancellationTest(unittest.TestCase):
     server_data = []
     client_data = []
 
-    client_call = _low.Call(self.channel, method, self.host, deadline)
+    client_call = _low.Call(self.channel, self.client_completion_queue,
+                            method, self.host, deadline)
 
     client_call.invoke(self.client_completion_queue, metadata_tag, finish_tag)
 

@@ -32,6 +32,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
@@ -46,22 +47,42 @@ int main(int argc, char **argv) {
   cq_verifier *cqv;
   grpc_event *ev;
   int done;
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_status_code status;
+  char *details = NULL;
+  size_t details_capacity = 0;
 
   grpc_test_init(argc, argv);
   grpc_init();
+
+  grpc_metadata_array_init(&trailing_metadata_recv);
 
   cq = grpc_completion_queue_create();
   cqv = cq_verifier_create(cq);
 
   /* create a call, channel to a non existant server */
   chan = grpc_channel_create("nonexistant:54321", NULL);
-  call = grpc_channel_create_call_old(chan, "/foo", "nonexistant", deadline);
-  GPR_ASSERT(grpc_call_invoke_old(call, cq, tag(2), tag(3), 0) == GRPC_CALL_OK);
+  call = grpc_channel_create_call(chan, cq, "/Foo", "nonexistant", deadline);
+
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, op - ops, tag(1)));
   /* verify that all tags get completed */
-  cq_expect_client_metadata_read(cqv, tag(2), NULL);
-  cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_DEADLINE_EXCEEDED,
-                                 "Deadline Exceeded", NULL);
+  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
   cq_verify(cqv);
+
+  GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
   grpc_completion_queue_shutdown(cq);
   for (done = 0; !done;) {
@@ -73,6 +94,9 @@ int main(int argc, char **argv) {
   grpc_call_destroy(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
+
+  gpr_free(details);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_shutdown();
 

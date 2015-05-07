@@ -5,7 +5,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -34,18 +34,23 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.0.34.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="System.Collections.Immutable">
       <HintPath>..\packages\Microsoft.Bcl.Immutable.1.0.34\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsyncDuplexStreamingCall.cs" />
+    <Compile Include="AsyncServerStreamingCall.cs" />
+    <Compile Include="IClientStreamWriter.cs" />
+    <Compile Include="IServerStreamWriter.cs" />
+    <Compile Include="IAsyncStreamWriter.cs" />
+    <Compile Include="IAsyncStreamReader.cs" />
     <Compile Include="Internal\GrpcLog.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
     <Compile Include="Call.cs" />
-    <Compile Include="ClientStreamingAsyncResult.cs" />
+    <Compile Include="AsyncClientStreamingCall.cs" />
     <Compile Include="GrpcEnvironment.cs" />
     <Compile Include="Status.cs" />
     <Compile Include="StatusCode.cs" />
@@ -60,14 +65,10 @@
     <Compile Include="Internal\GrpcThreadPool.cs" />
     <Compile Include="Internal\ServerSafeHandle.cs" />
     <Compile Include="Method.cs" />
-    <Compile Include="ServerCalls.cs" />
     <Compile Include="Internal\ServerCallHandler.cs" />
     <Compile Include="Marshaller.cs" />
     <Compile Include="ServerServiceDefinition.cs" />
-    <Compile Include="Utils\RecordingObserver.cs" />
-    <Compile Include="Utils\RecordingQueue.cs" />
-    <Compile Include="Internal\ClientStreamingInputObserver.cs" />
-    <Compile Include="Internal\ServerStreamingOutputObserver.cs" />
+    <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
@@ -87,6 +88,14 @@
     <Compile Include="Internal\MetadataArraySafeHandle.cs" />
     <Compile Include="Stub\AbstractStub.cs" />
     <Compile Include="Stub\StubConfiguration.cs" />
+    <Compile Include="Internal\ServerCalls.cs" />
+    <Compile Include="ServerMethods.cs" />
+    <Compile Include="Internal\ClientRequestStream.cs" />
+    <Compile Include="Internal\ClientResponseStream.cs" />
+    <Compile Include="Internal\ServerRequestStream.cs" />
+    <Compile Include="Internal\ServerResponseStream.cs" />
+    <Compile Include="Internal\AtomicCounter.cs" />
+    <Compile Include="Internal\DebugStats.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

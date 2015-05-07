@@ -122,6 +122,12 @@ static void begin_frame(framer_state *st, frame_type type) {
   st->output_length_at_start_of_frame = st->output->length;
 }
 
+static void begin_new_frame(framer_state *st, frame_type type) {
+  finish_frame(st, 1, 0);
+  st->last_was_header = 0;
+  begin_frame(st, type);
+}
+
 /* make sure that the current frame is of the type desired, and has sufficient
    space to add at least about_to_add bytes -- finishes the current frame if
    needed */
@@ -481,7 +487,6 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
         break;
       case GRPC_OP_METADATA:
         grpc_metadata_batch_assert_ok(&op->data.metadata);
-      case GRPC_OP_FLOW_CTL_CB:
         /* these just get copied as they don't impact the number of flow
            controlled bytes */
         grpc_sopb_append(outops, op, 1);
@@ -567,15 +572,12 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
             GPR_ERROR,
             "These stream ops should be filtered out by grpc_chttp2_preencode");
         abort();
-      case GRPC_OP_FLOW_CTL_CB:
-        op->data.flow_ctl_cb.cb(op->data.flow_ctl_cb.arg, GRPC_OP_OK);
-        curop++;
-        break;
       case GRPC_OP_METADATA:
         /* Encode a metadata batch; store the returned values, representing
            a metadata element that needs to be unreffed back into the metadata
            slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
            updated). After this loop, we'll do a batch unref of elements. */
+        begin_new_frame(&st, HEADER);
         need_unref |= op->data.metadata.garbage.head != NULL;
         grpc_metadata_batch_assert_ok(&op->data.metadata);
         for (l = op->data.metadata.list.head; l; l = l->next) {
@@ -585,9 +587,6 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
         if (gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future) != 0) {
           deadline_enc(compressor, op->data.metadata.deadline, &st);
         }
-        ensure_frame_type(&st, HEADER, 0);
-        finish_frame(&st, 1, 0);
-        st.last_was_header = 0; /* force a new header frame */
         curop++;
         break;
       case GRPC_OP_SLICE:

@@ -66,14 +66,6 @@ namespace Grpc.Core
             this.target = GetOverridenTarget(target, channelArgs);
         }
 
-        internal ChannelSafeHandle Handle
-        {
-            get
-            {
-                return this.handle;
-            }
-        }
-
         public string Target
         {
             get
@@ -86,6 +78,14 @@ namespace Grpc.Core
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        internal ChannelSafeHandle Handle
+        {
+            get
+            {
+                return this.handle;
+            }
         }
 
         protected virtual void Dispose(bool disposing)
