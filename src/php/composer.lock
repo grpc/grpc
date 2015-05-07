@@ -1,7 +1,7 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
     "hash": "bb81ea5f72ddea2f594a172ff0f3b44d",
@@ -57,12 +57,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/google/google-auth-library-php.git",
-                "reference": "35f87159b327fa6416266948c1747c585a4ae3ad"
+                "reference": "70ff1c9b27b1678827465c72ce81a067e1653442"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/google/google-auth-library-php/zipball/35f87159b327fa6416266948c1747c585a4ae3ad",
-                "reference": "35f87159b327fa6416266948c1747c585a4ae3ad",
+                "url": "https://api.github.com/repos/google/google-auth-library-php/zipball/70ff1c9b27b1678827465c72ce81a067e1653442",
+                "reference": "70ff1c9b27b1678827465c72ce81a067e1653442",
                 "shasum": ""
             },
             "require": {
@@ -94,7 +94,7 @@
                 "google",
                 "oauth2"
             ],
-            "time": "2015-04-30 11:57:19"
+            "time": "2015-05-06 16:31:42"
         },
         {
             "name": "guzzlehttp/guzzle",
