@@ -46,6 +46,11 @@ void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
   _STAP_ADD_MARK(tag);
 }
 
+void grpc_timer_add_important_mark(int tag, void* id, const char* file,
+                                   int line) {
+  _STAP_ADD_IMPORTANT_MARK(tag);
+}
+
 void grpc_timer_begin(int tag, void* id, const char* file, int line) {
   _STAP_TIMING_NS_BEGIN(tag);
 }

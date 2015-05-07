@@ -32,75 +32,70 @@
 #endregion
 
 using System;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Abstraction of a call to be invoked on a client.
+    /// Return type for client streaming calls.
     /// </summary>
-    public class Call<TRequest, TResponse>
+    public struct AsyncClientStreamingCall<TRequest, TResponse>
     {
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-        readonly Channel channel;
-        readonly Metadata headers;
+        readonly IClientStreamWriter<TRequest> requestStream;
+        readonly Task<TResponse> result;
 
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
+        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> result)
         {
-            this.name = Preconditions.CheckNotNull(serviceName) + "/" + method.Name;
-            this.requestMarshaller = method.RequestMarshaller;
-            this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.headers = Preconditions.CheckNotNull(headers);
+            this.requestStream = requestStream;
+            this.result = result;
         }
 
-        public Channel Channel
+        /// <summary>
+        /// Writes a request to RequestStream.
+        /// </summary>
+        public Task Write(TRequest message)
+        {
+            return requestStream.Write(message);
+        }
+
+        /// <summary>
+        /// Closes the RequestStream.
+        /// </summary>
+        public Task Close()
+        {
+            return requestStream.Close();
+        }
+
+        /// <summary>
+        /// Asynchronous call result.
+        /// </summary>
+        public Task<TResponse> Result
         {
             get
             {
-                return this.channel;
+                return this.result;
             }
         }
 
         /// <summary>
-        /// Full methods name including the service name.
+        /// Async stream to send streaming requests.
         /// </summary>
-        public string Name
+        public IClientStreamWriter<TRequest> RequestStream
         {
             get
             {
-                return name;
+                return requestStream;
             }
         }
 
         /// <summary>
-        /// Headers to send at the beginning of the call.
+        /// Allows awaiting this object directly.
         /// </summary>
-        public Metadata Headers
+        /// <returns></returns>
+        public TaskAwaiter<TResponse> GetAwaiter()
         {
-            get
-            {
-                return headers;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return responseMarshaller;
-            }
+            return result.GetAwaiter();
         }
     }
 }

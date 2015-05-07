@@ -32,68 +32,25 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
-    /// <summary>
-    /// Method types supported by gRPC.
-    /// </summary>
-    public enum MethodType
+    internal class ServerRequestStream<TRequest, TResponse> : IAsyncStreamReader<TRequest>
     {
-        Unary,  // Unary request, unary response.
-        ClientStreaming,  // Streaming request, unary response.
-        ServerStreaming,  // Unary request, streaming response.
-        DuplexStreaming  // Streaming request, streaming response.
-    }
+        readonly AsyncCallServer<TRequest, TResponse> call;
 
-    /// <summary>
-    /// A description of a service method.
-    /// </summary>
-    public class Method<TRequest, TResponse>
-    {
-        readonly MethodType type;
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-
-        public Method(MethodType type, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
+        public ServerRequestStream(AsyncCallServer<TRequest, TResponse> call)
         {
-            this.type = type;
-            this.name = name;
-            this.requestMarshaller = requestMarshaller;
-            this.responseMarshaller = responseMarshaller;
+            this.call = call;
         }
 
-        public MethodType Type
+        public Task<TRequest> ReadNext()
         {
-            get
-            {
-                return this.type;
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                return this.name;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return this.requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return this.responseMarshaller;
-            }
+            var taskSource = new AsyncCompletionTaskSource<TRequest>();
+            call.StartReadMessage(taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
     }
 }
