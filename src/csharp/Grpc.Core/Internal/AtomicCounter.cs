@@ -32,74 +32,29 @@
 #endregion
 
 using System;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
+using System.Threading;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
-    /// <summary>
-    /// Abstraction of a call to be invoked on a client.
-    /// </summary>
-    public class Call<TRequest, TResponse>
+    internal class AtomicCounter
     {
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-        readonly Channel channel;
-        readonly Metadata headers;
+        long counter = 0;
 
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
+        public void Increment()
         {
-            this.name = Preconditions.CheckNotNull(serviceName) + "/" + method.Name;
-            this.requestMarshaller = method.RequestMarshaller;
-            this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.headers = Preconditions.CheckNotNull(headers);
+            Interlocked.Increment(ref counter);
         }
 
-        public Channel Channel
+        public void Decrement()
+        {
+            Interlocked.Decrement(ref counter);
+        }
+
+        public long Count
         {
             get
             {
-                return this.channel;
-            }
-        }
-
-        /// <summary>
-        /// Full methods name including the service name.
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-        }
-
-        /// <summary>
-        /// Headers to send at the beginning of the call.
-        /// </summary>
-        public Metadata Headers
-        {
-            get
-            {
-                return headers;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return responseMarshaller;
+                return counter;
             }
         }
     }

@@ -235,13 +235,6 @@ struct grpc_call {
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-#define SWAP(type, x, y) \
-  do {                   \
-    type temp = x;       \
-    x = y;               \
-    y = temp;            \
-  } while (0)
-
 static void do_nothing(void *ignored, grpc_op_error also_ignored) {}
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline);
 static void call_on_done_recv(void *call, int success);
@@ -572,12 +565,12 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
                             call->request_data[GRPC_IOREQ_RECV_STATUS_DETAILS]);
           break;
         case GRPC_IOREQ_RECV_INITIAL_METADATA:
-          SWAP(grpc_metadata_array, call->buffered_metadata[0],
+          GPR_SWAP(grpc_metadata_array, call->buffered_metadata[0],
                *call->request_data[GRPC_IOREQ_RECV_INITIAL_METADATA]
                     .recv_metadata);
           break;
         case GRPC_IOREQ_RECV_TRAILING_METADATA:
-          SWAP(grpc_metadata_array, call->buffered_metadata[1],
+          GPR_SWAP(grpc_metadata_array, call->buffered_metadata[1],
                *call->request_data[GRPC_IOREQ_RECV_TRAILING_METADATA]
                     .recv_metadata);
           break;
