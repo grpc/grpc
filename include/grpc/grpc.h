@@ -111,6 +111,9 @@ typedef struct {
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
 /* Maximum message length that the channel can receive */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH "grpc.max_message_length"
+/* Initial sequence number for http2 transports */
+#define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
+  "grpc.http2.initial_sequence_number"
 
 /* Result of a grpc call. If the caller satisfies the prerequisites of a
    particular operation, the grpc_call_error returned will be GRPC_CALL_OK.

@@ -37,6 +37,9 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
+    /// <summary>
+    /// Abstraction of a call to be invoked on a client.
+    /// </summary>
     public class Call<TRequest, TResponse>
     {
         readonly string name;
