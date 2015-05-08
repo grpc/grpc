@@ -43,6 +43,9 @@
     <ClCompile Include="..\..\src\core\security\security_connector.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\security_context.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
@@ -405,6 +408,9 @@
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\security_connector.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\security_context.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\tsi\fake_transport_security.h">

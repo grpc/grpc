@@ -40,6 +40,7 @@
 
 #include "src/core/support/string.h"
 #include "src/core/channel/channel_stack.h"
+#include "src/core/security/security_context.h"
 #include "src/core/security/security_connector.h"
 #include "src/core/security/credentials.h"
 #include "src/core/surface/call.h"
@@ -67,6 +68,15 @@ typedef struct {
   grpc_mdstr *status_key;
 } channel_data;
 
+static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  grpc_transport_op_add_cancellation(
+      &calld->op, GRPC_STATUS_UNAUTHENTICATED,
+      grpc_mdstr_from_string(chand->md_ctx, error_msg));
+  grpc_call_next_op(elem, &calld->op);
+}
+
 static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
                                     size_t num_md,
                                     grpc_credentials_status status) {
@@ -75,6 +85,10 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
   grpc_transport_op *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
+  if (status != GRPC_CREDENTIALS_OK) {
+    bubble_up_error(elem, "Credentials failed to get metadata.");
+    return;
+  }
   GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
   GPR_ASSERT(op->send_ops && op->send_ops->nops > calld->op_md_idx &&
              op->send_ops->ops[calld->op_md_idx].type == GRPC_OP_METADATA);
@@ -108,37 +122,48 @@ static char *build_service_url(const char *url_scheme, call_data *calld) {
 
 static void send_security_metadata(grpc_call_element *elem,
                                    grpc_transport_op *op) {
-  /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
-
+  channel_data *chand = elem->channel_data;
+  grpc_client_security_context *ctx =
+      (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY];
+  char *service_url = NULL;
   grpc_credentials *channel_creds =
-      channeld->security_connector->request_metadata_creds;
-  /* TODO(jboeuf):
-     Decide on the policy in this case:
-     - populate both channel and call?
-     - the call takes precedence over the channel?
-     - leave this decision up to the channel credentials?  */
-  if (calld->creds != NULL) {
-    gpr_log(GPR_ERROR, "Ignoring per call credentials for now.");
-  }
-  if (channel_creds != NULL &&
-      grpc_credentials_has_request_metadata(channel_creds)) {
-    char *service_url =
-        build_service_url(channeld->security_connector->base.url_scheme, calld);
-    calld->op = *op; /* Copy op (originates from the caller's stack). */
-    grpc_credentials_get_request_metadata(channel_creds, service_url,
-                                          on_credentials_metadata, elem);
-    gpr_free(service_url);
-  } else {
+      chand->security_connector->request_metadata_creds;
+  int channel_creds_has_md =
+      (channel_creds != NULL) &&
+      grpc_credentials_has_request_metadata(channel_creds);
+  int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL) &&
+                          grpc_credentials_has_request_metadata(ctx->creds);
+
+  if (!channel_creds_has_md && !call_creds_has_md) {
+    /* Skip sending metadata altogether. */
     grpc_call_next_op(elem, op);
+    return;
   }
+
+  if (channel_creds_has_md && call_creds_has_md) {
+    calld->creds = grpc_composite_credentials_create(channel_creds, ctx->creds);
+    if (calld->creds == NULL) {
+      bubble_up_error(elem,
+                      "Incompatible credentials set on channel and call.");
+      return;
+    }
+  } else {
+    calld->creds =
+        grpc_credentials_ref(call_creds_has_md ? ctx->creds : channel_creds);
+  }
+
+  service_url =
+      build_service_url(chand->security_connector->base.url_scheme, calld);
+  calld->op = *op; /* Copy op (originates from the caller's stack). */
+  grpc_credentials_get_request_metadata(calld->creds, service_url,
+                                        on_credentials_metadata, elem);
+  gpr_free(service_url);
 }
 
 static void on_host_checked(void *user_data, grpc_security_status status) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
 
   if (status == GRPC_SECURITY_OK) {
     send_security_metadata(elem, &calld->op);
@@ -146,11 +171,8 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
     char *error_msg;
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
-    grpc_transport_op_add_cancellation(
-        &calld->op, GRPC_STATUS_UNAUTHENTICATED,
-        grpc_mdstr_from_string(chand->md_ctx, error_msg));
+    bubble_up_error(elem, error_msg);
     gpr_free(error_msg);
-    grpc_call_next_op(elem, &calld->op);
   }
 }
 
@@ -163,7 +185,7 @@ static void auth_start_transport_op(grpc_call_element *elem,
                                     grpc_transport_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
+  channel_data *chand = elem->channel_data;
   grpc_linked_mdelem *l;
   size_t i;
 
@@ -179,10 +201,10 @@ static void auth_start_transport_op(grpc_call_element *elem,
         grpc_mdelem *md = l->md;
         /* Pointer comparison is OK for md_elems created from the same context.
          */
-        if (md->key == channeld->authority_string) {
+        if (md->key == chand->authority_string) {
           if (calld->host != NULL) grpc_mdstr_unref(calld->host);
           calld->host = grpc_mdstr_ref(md->value);
-        } else if (md->key == channeld->path_string) {
+        } else if (md->key == chand->path_string) {
           if (calld->method != NULL) grpc_mdstr_unref(calld->method);
           calld->method = grpc_mdstr_ref(md->value);
         }
@@ -192,18 +214,15 @@ static void auth_start_transport_op(grpc_call_element *elem,
         const char *call_host = grpc_mdstr_as_c_string(calld->host);
         calld->op = *op; /* Copy op (originates from the caller's stack). */
         status = grpc_channel_security_connector_check_call_host(
-            channeld->security_connector, call_host, on_host_checked, elem);
+            chand->security_connector, call_host, on_host_checked, elem);
         if (status != GRPC_SECURITY_OK) {
           if (status == GRPC_SECURITY_ERROR) {
             char *error_msg;
             gpr_asprintf(&error_msg,
                          "Invalid host %s set in :authority metadata.",
                          call_host);
-            grpc_transport_op_add_cancellation(
-                &calld->op, GRPC_STATUS_UNAUTHENTICATED,
-                grpc_mdstr_from_string(channeld->md_ctx, error_msg));
+            bubble_up_error(elem, error_msg);
             gpr_free(error_msg);
-            grpc_call_next_op(elem, &calld->op);
           }
           return; /* early exit */
         }
@@ -228,8 +247,6 @@ static void channel_op(grpc_channel_element *elem,
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_op *initial_op) {
-  /* TODO(jboeuf):
-     Find a way to pass-in the credentials from the caller here.  */
   call_data *calld = elem->call_data;
   calld->creds = NULL;
   calld->host = NULL;
@@ -242,9 +259,7 @@ static void init_call_elem(grpc_call_element *elem,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  if (calld->creds != NULL) {
-    grpc_credentials_unref(calld->creds);
-  }
+  grpc_credentials_unref(calld->creds);
   if (calld->host != NULL) {
     grpc_mdstr_unref(calld->host);
   }
@@ -260,7 +275,7 @@ static void init_channel_elem(grpc_channel_element *elem,
                               int is_last) {
   grpc_security_connector *ctx = grpc_find_security_connector_in_args(args);
   /* grab pointers to our data from the channel element */
-  channel_data *channeld = elem->channel_data;
+  channel_data *chand = elem->channel_data;
 
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
@@ -271,35 +286,35 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   /* initialize members */
   GPR_ASSERT(ctx->is_client_side);
-  channeld->security_connector =
+  chand->security_connector =
       (grpc_channel_security_connector *)grpc_security_connector_ref(ctx);
-  channeld->md_ctx = metadata_context;
-  channeld->authority_string =
-      grpc_mdstr_from_string(channeld->md_ctx, ":authority");
-  channeld->path_string = grpc_mdstr_from_string(channeld->md_ctx, ":path");
-  channeld->error_msg_key =
-      grpc_mdstr_from_string(channeld->md_ctx, "grpc-message");
-  channeld->status_key =
-      grpc_mdstr_from_string(channeld->md_ctx, "grpc-status");
+  chand->md_ctx = metadata_context;
+  chand->authority_string =
+      grpc_mdstr_from_string(chand->md_ctx, ":authority");
+  chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
+  chand->error_msg_key =
+      grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
+  chand->status_key =
+      grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
-  channel_data *channeld = elem->channel_data;
-  grpc_channel_security_connector *ctx = channeld->security_connector;
+  channel_data *chand = elem->channel_data;
+  grpc_channel_security_connector *ctx = chand->security_connector;
   if (ctx != NULL) grpc_security_connector_unref(&ctx->base);
-  if (channeld->authority_string != NULL) {
-    grpc_mdstr_unref(channeld->authority_string);
+  if (chand->authority_string != NULL) {
+    grpc_mdstr_unref(chand->authority_string);
   }
-  if (channeld->error_msg_key != NULL) {
-    grpc_mdstr_unref(channeld->error_msg_key);
+  if (chand->error_msg_key != NULL) {
+    grpc_mdstr_unref(chand->error_msg_key);
   }
-  if (channeld->status_key != NULL) {
-    grpc_mdstr_unref(channeld->status_key);
+  if (chand->status_key != NULL) {
+    grpc_mdstr_unref(chand->status_key);
   }
-  if (channeld->path_string != NULL) {
-    grpc_mdstr_unref(channeld->path_string);
+  if (chand->path_string != NULL) {
+    grpc_mdstr_unref(chand->path_string);
   }
 }
 
