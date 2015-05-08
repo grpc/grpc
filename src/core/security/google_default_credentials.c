@@ -60,8 +60,7 @@ static void init_default_credentials(void) {
 }
 
 typedef struct {
-  gpr_cv cv;
-  gpr_mu mu;
+  grpc_pollset pollset;
   int is_done;
   int success;
 } compute_engine_detector;
@@ -82,22 +81,22 @@ static void on_compute_engine_detection_http_response(
       }
     }
   }
-  gpr_mu_lock(&detector->mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(&detector->pollset));
   detector->is_done = 1;
-  gpr_mu_unlock(&detector->mu);
-  gpr_cv_signal(&detector->cv);
+  grpc_pollset_kick(&detector->pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
 
 static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
   grpc_httpcli_request request;
+  grpc_pollset_set pollset_set;
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
   gpr_timespec max_detection_delay = {1, 0};
 
-  gpr_mu_init(&detector.mu);
-  gpr_cv_init(&detector.cv);
+  grpc_pollset_init(&detector.pollset);
   detector.is_done = 0;
   detector.success = 0;
 
@@ -105,19 +104,24 @@ static int is_stack_running_on_compute_engine(void) {
   request.host = GRPC_COMPUTE_ENGINE_DETECTION_HOST;
   request.path = "/";
 
+  grpc_pollset_set_init(&pollset_set);
+  grpc_pollset_set_add_pollset(&pollset_set, &detector.pollset);
+
   grpc_httpcli_get(&request, gpr_time_add(gpr_now(), max_detection_delay),
-                   on_compute_engine_detection_http_response, &detector);
+                   &pollset_set, on_compute_engine_detection_http_response,
+                   &detector);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
-  gpr_mu_lock(&detector.mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    gpr_cv_wait(&detector.cv, &detector.mu, gpr_inf_future);
+    grpc_pollset_work(&detector.pollset, gpr_inf_future);
   }
-  gpr_mu_unlock(&detector.mu);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
-  gpr_mu_destroy(&detector.mu);
-  gpr_cv_destroy(&detector.cv);
+  grpc_pollset_set_destroy(&pollset_set);
+  grpc_pollset_destroy(&detector.pollset);
+
   return detector.success;
 }
 
