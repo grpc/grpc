@@ -2000,6 +2000,22 @@
       ]
     },
     {
+      "name": "mock_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/mock_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "pubsub_client",
       "build": "do_not_build",
       "run": false,
