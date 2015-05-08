@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,14 +28,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Dockerfile for the gRPC Java dev image
-FROM grpc/java_base
+# Regenerates gRPC service stubs from proto files.
+set +e
+cd $(dirname $0)
 
-RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git /var/local/git/grpc-java
-RUN cd /var/local/git/grpc-java/lib/netty && \
-  mvn -pl codec-http2 -am -DskipTests install clean
-RUN cd /var/local/git/grpc-java && \
-  ./gradlew build installDist
+PLUGIN=protoc-gen-grpc=../../bins/opt/grpc_csharp_plugin
+EXAMPLES_DIR=Grpc.Examples
+INTEROP_DIR=Grpc.IntegrationTesting
 
-# Specify the default command such that the interop server runs on its known testing port
-CMD ["/var/local/git/grpc-java/run-test-server.sh", "--use_tls=true", "--port=8030"]
+protoc --plugin=$PLUGIN --grpc_out=$EXAMPLES_DIR \
+    -I $EXAMPLES_DIR/proto $EXAMPLES_DIR/proto/math.proto
+
+protoc --plugin=$PLUGIN --grpc_out=$INTEROP_DIR \
+    -I $INTEROP_DIR/proto $INTEROP_DIR/proto/test.proto

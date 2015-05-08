@@ -31,28 +31,15 @@
  *
  */
 
-#include "test/core/util/test_config.h"
+#ifndef GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
+#define GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
-#include <stdlib.h>
-#include <signal.h>
+#include "src/compiler/config.h"
 
-#if GPR_GETPID_IN_UNISTD_H
-#include <unistd.h>
-static int seed(void) { return getpid(); }
-#endif
+namespace grpc_csharp_generator {
 
-#if GPR_GETPID_IN_PROCESS_H
-#include <process.h>
-static int seed(void) { return _getpid(); }
-#endif
+grpc::string GetServices(const grpc::protobuf::FileDescriptor *file);
 
-void grpc_test_init(int argc, char **argv) {
-  gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
-          GRPC_TEST_SLOWDOWN_MACHINE_FACTOR, GRPC_TEST_SLOWDOWN_BUILD_FACTOR,
-          GRPC_TEST_SLOWDOWN_FACTOR);
-  /* seed rng with pid, so we don't end up with the same random numbers as a
-     concurrently running test binary */
-  srand(seed());
-}
+}  // namespace grpc_csharp_generator
+
+#endif  // GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
