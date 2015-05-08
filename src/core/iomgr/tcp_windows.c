@@ -217,8 +217,7 @@ static void win_notify_on_read(grpc_endpoint *ep,
 
   if (error != WSA_IO_PENDING) {
     char *utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "WSARecv error: %s - this means we're going to leak.",
-            utf8_message);
+    gpr_log(GPR_ERROR, "WSARecv error: %s", utf8_message);
     gpr_free(utf8_message);
     /* I'm pretty sure this is a very bad situation there. Hence the log.
        What will happen now is that the socket will neither wait for read
@@ -229,12 +228,22 @@ static void win_notify_on_read(grpc_endpoint *ep,
        specific case however, aside from a parameter error from our call.
        Normal read errors would actually happen during the overlapped
        operation, which is the supported way to go for that. */
-    tcp->outstanding_read = 0;
+	
+	/* This is not bad situation. It is possible in case of connection-lost 
+       at issuing WSARecv time above, especially WSAECONNRESET (10054).
+       At this situation, we should just do close the connection and free
+       the resources. */
+
+	tcp->outstanding_read = 0;
+	gpr_slice_unref(tcp->read_slice);
     tcp_unref(tcp);
     cb(arg, NULL, 0, GRPC_ENDPOINT_CB_ERROR);
     /* Per the comment above, I'm going to treat that case as a hard failure
        for now, and leave the option to catch that and debug. */
-    __debugbreak();
+
+	/* __debugbreak(); */
+	/* If we remove below debugbreak(), this works well.
+       But we had better check a resource leak. (TODO) */
     return;
   }
 

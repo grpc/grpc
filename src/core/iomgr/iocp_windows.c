@@ -93,8 +93,12 @@ static void do_iocp_work() {
     gpr_log(GPR_ERROR, "Unknown IOCP operation");
     abort();
   }
+  /* At this point, we've already had overlapped result by GQCS. 
+    Why do you issues a syscall again? 
+
   success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
                                    FALSE, &flags);
+  */
   if (socket->orphan) {
     grpc_winsocket_destroy(socket);
     gpr_atm_full_fetch_add(&g_orphans, -1);
