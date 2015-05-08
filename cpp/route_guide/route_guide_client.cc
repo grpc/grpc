@@ -205,8 +205,6 @@ class RouteGuideClient {
     }
   }
 
-  void Shutdown() { stub_.reset(); }
-
  private:
 
   bool GetOneFeature(const Point& point, Feature* feature) {
@@ -238,8 +236,6 @@ class RouteGuideClient {
 };
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = examples::GetDbFileContent(argc, argv);
   RouteGuideClient guide(
@@ -256,7 +252,5 @@ int main(int argc, char** argv) {
   std::cout << "-------------- RouteChat --------------" << std::endl;
   guide.RouteChat();
 
-  guide.Shutdown();
-
-  grpc_shutdown();
+  return 0;
 }
