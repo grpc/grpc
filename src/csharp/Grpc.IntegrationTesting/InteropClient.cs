@@ -132,14 +132,14 @@ namespace Grpc.IntegrationTesting
                     stubConfig = new StubConfiguration(OAuth2InterceptorFactory.Create(credential));
                 }
 
-                TestServiceGrpc.ITestServiceClient client = new TestServiceGrpc.TestServiceClientStub(channel, stubConfig);
+                TestService.ITestServiceClient client = new TestService.TestServiceClient(channel, stubConfig);
                 RunTestCase(options.testCase, client);
             }
 
             GrpcEnvironment.Shutdown();
         }
 
-        private void RunTestCase(string testCase, TestServiceGrpc.ITestServiceClient client)
+        private void RunTestCase(string testCase, TestService.ITestServiceClient client)
         {
             switch (testCase)
             {
@@ -181,7 +181,7 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        public static void RunEmptyUnary(TestServiceGrpc.ITestServiceClient client)
+        public static void RunEmptyUnary(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running empty_unary");
             var response = client.EmptyCall(Empty.DefaultInstance);
@@ -189,7 +189,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunLargeUnary(TestServiceGrpc.ITestServiceClient client)
+        public static void RunLargeUnary(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running large_unary");
             var request = SimpleRequest.CreateBuilder()
@@ -205,7 +205,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunClientStreaming(TestServiceGrpc.ITestServiceClient client)
+        public static void RunClientStreaming(TestService.ITestServiceClient client)
         {
             Task.Run(async () =>
             {
@@ -222,7 +222,7 @@ namespace Grpc.IntegrationTesting
             }).Wait();
         }
 
-        public static void RunServerStreaming(TestServiceGrpc.ITestServiceClient client)
+        public static void RunServerStreaming(TestService.ITestServiceClient client)
         {
             Task.Run(async () =>
             {
@@ -248,7 +248,7 @@ namespace Grpc.IntegrationTesting
             }).Wait();
         }
 
-        public static void RunPingPong(TestServiceGrpc.ITestServiceClient client)
+        public static void RunPingPong(TestService.ITestServiceClient client)
         {
             Task.Run(async () =>
             {
@@ -303,7 +303,7 @@ namespace Grpc.IntegrationTesting
             }).Wait();
         }
 
-        public static void RunEmptyStream(TestServiceGrpc.ITestServiceClient client)
+        public static void RunEmptyStream(TestService.ITestServiceClient client)
         {
             Task.Run(async () =>
             {
@@ -318,7 +318,7 @@ namespace Grpc.IntegrationTesting
             }).Wait();
         }
 
-        public static void RunServiceAccountCreds(TestServiceGrpc.ITestServiceClient client)
+        public static void RunServiceAccountCreds(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running service_account_creds");
             var request = SimpleRequest.CreateBuilder()
@@ -338,7 +338,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunComputeEngineCreds(TestServiceGrpc.ITestServiceClient client)
+        public static void RunComputeEngineCreds(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running compute_engine_creds");
             var request = SimpleRequest.CreateBuilder()
@@ -358,7 +358,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunCancelAfterBegin(TestServiceGrpc.ITestServiceClient client)
+        public static void RunCancelAfterBegin(TestService.ITestServiceClient client)
         {
             Task.Run(async () =>
             {
@@ -383,7 +383,7 @@ namespace Grpc.IntegrationTesting
             }).Wait();
         }
 
-        public static void RunCancelAfterFirstResponse(TestServiceGrpc.ITestServiceClient client)
+        public static void RunCancelAfterFirstResponse(TestService.ITestServiceClient client)
         {
             Task.Run(async () =>
             {
@@ -419,7 +419,7 @@ namespace Grpc.IntegrationTesting
         }
 
         // This is not an official interop test, but it's useful.
-        public static void RunBenchmarkEmptyUnary(TestServiceGrpc.ITestServiceClient client)
+        public static void RunBenchmarkEmptyUnary(TestService.ITestServiceClient client)
         {
             BenchmarkUtil.RunBenchmark(10000, 10000,
                                        () => { client.EmptyCall(Empty.DefaultInstance); });

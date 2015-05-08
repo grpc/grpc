@@ -33,7 +33,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -44,7 +43,7 @@ namespace math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : MathGrpc.IMathService
+    public class MathServiceImpl : Math.IMath
     {
         public Task<DivReply> Div(ServerCallContext context, DivArgs request)
         {

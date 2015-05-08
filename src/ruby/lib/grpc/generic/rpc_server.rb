@@ -468,10 +468,11 @@ module GRPC
         route = "/#{cls.service_name}/#{name}".to_sym
         fail "already registered: rpc #{route} from #{spec}" if specs.key? route
         specs[route] = spec
+        rpc_name = GenericService.underscore(name.to_s).to_sym
         if service.is_a?(Class)
-          handlers[route] = cls.new.method(name.to_s.underscore.to_sym)
+          handlers[route] = cls.new.method(rpc_name)
         else
-          handlers[route] = service.method(name.to_s.underscore.to_sym)
+          handlers[route] = service.method(rpc_name)
         end
         logger.info("handling #{route} with #{handlers[route]}")
       end
