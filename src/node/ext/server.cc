@@ -161,7 +161,7 @@ NAN_METHOD(Server::New) {
   grpc_server *wrapped_server;
   grpc_completion_queue *queue = CompletionQueueAsyncWorker::GetQueue();
   if (args[0]->IsUndefined()) {
-    wrapped_server = grpc_server_create(queue, NULL);
+    wrapped_server = grpc_server_create(NULL);
   } else if (args[0]->IsObject()) {
     Handle<Object> args_hash(args[0]->ToObject());
     Handle<Array> keys(args_hash->GetOwnPropertyNames());
@@ -190,11 +190,12 @@ NAN_METHOD(Server::New) {
         return NanThrowTypeError("Arg values must be strings");
       }
     }
-    wrapped_server = grpc_server_create(queue, &channel_args);
+    wrapped_server = grpc_server_create(&channel_args);
     free(channel_args.args);
   } else {
     return NanThrowTypeError("Server expects an object");
   }
+  grpc_server_register_completion_queue(wrapped_server, queue);
   Server *server = new Server(wrapped_server);
   server->Wrap(args.This());
   NanReturnValue(args.This());
