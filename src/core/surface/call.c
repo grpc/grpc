@@ -375,18 +375,10 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
 
 static void set_status_code(grpc_call *call, status_source source,
                             gpr_uint32 status) {
-  int flush;
-
   call->status[source].is_set = 1;
   call->status[source].code = status;
 
-  if (call->is_client) {
-    flush = status == GRPC_STATUS_CANCELLED;
-  } else {
-    flush = status != GRPC_STATUS_OK;
-  }
-
-  if (flush && !grpc_bbq_empty(&call->incoming_queue)) {
+  if (status != GRPC_STATUS_OK && !grpc_bbq_empty(&call->incoming_queue)) {
     grpc_bbq_flush(&call->incoming_queue);
   }
 }
@@ -710,6 +702,10 @@ static void call_on_done_recv(void *pc, int success) {
           success = add_slice_to_message(call, op->data.slice);
           break;
       }
+    }
+    if (!success) {
+      grpc_stream_ops_unref_owned_objects(&call->recv_ops.ops[i],
+                                          call->recv_ops.nops - i);
     }
     if (call->recv_state == GRPC_STREAM_RECV_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_READ_CLOSED);
