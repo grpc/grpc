@@ -38,6 +38,8 @@ using System.Threading.Tasks;
 namespace Grpc.Core.Internal
 {
     internal class ClientResponseStream<TRequest, TResponse> : IAsyncStreamReader<TResponse>
+        where TRequest : class
+        where TResponse : class
     {
         readonly AsyncCall<TRequest, TResponse> call;
 

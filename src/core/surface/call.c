@@ -708,6 +708,10 @@ static void call_on_done_recv(void *pc, int success) {
           break;
       }
     }
+    if (!success) {
+      grpc_stream_ops_unref_owned_objects(&call->recv_ops.ops[i],
+                                          call->recv_ops.nops - i);
+    }
     if (call->recv_state == GRPC_STREAM_RECV_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_READ_CLOSED);
       call->read_state = READ_STATE_READ_CLOSED;
@@ -736,14 +740,9 @@ static void call_on_done_recv(void *pc, int success) {
   GRPC_TIMER_BEGIN(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
 }
 
-static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
-                                                grpc_metadata *metadata) {
+static int prepare_application_metadata(grpc_call *call, size_t count,
+                                        grpc_metadata *metadata) {
   size_t i;
-  grpc_mdelem_list out;
-  if (count == 0) {
-    out.head = out.tail = NULL;
-    return out;
-  }
   for (i = 0; i < count; i++) {
     grpc_metadata *md = &metadata[i];
     grpc_metadata *next_md = (i == count - 1) ? NULL : &metadata[i + 1];
@@ -753,8 +752,26 @@ static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
     l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length);
+    if (!grpc_mdstr_is_legal_header(l->md->key)) {
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key");
+      return 0;
+    } else if (!grpc_mdstr_is_bin_suffixed(l->md->key) &&
+               !grpc_mdstr_is_legal_header(l->md->value)) {
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
+      return 0;
+    }
     l->next = next_md ? (grpc_linked_mdelem *)&next_md->internal_data : NULL;
     l->prev = prev_md ? (grpc_linked_mdelem *)&prev_md->internal_data : NULL;
+  }
+  return 1;
+}
+
+static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
+                                                grpc_metadata *metadata) {
+  grpc_mdelem_list out;
+  if (count == 0) {
+    out.head = out.tail = NULL;
+    return out;
   }
   out.head = (grpc_linked_mdelem *)&(metadata[0].internal_data);
   out.tail = (grpc_linked_mdelem *)&(metadata[count - 1].internal_data);
@@ -951,8 +968,16 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     } else if (call->request_set[op] == REQSET_DONE) {
       return start_ioreq_error(call, have_ops, GRPC_CALL_ERROR_ALREADY_INVOKED);
     }
-    have_ops |= 1u << op;
     data = reqs[i].data;
+    if (op == GRPC_IOREQ_SEND_INITIAL_METADATA ||
+        op == GRPC_IOREQ_SEND_TRAILING_METADATA) {
+      if (!prepare_application_metadata(call, data.send_metadata.count,
+                                        data.send_metadata.metadata)) {
+        return start_ioreq_error(call, have_ops,
+                                 GRPC_CALL_ERROR_INVALID_METADATA);
+      }
+    }
+    have_ops |= 1u << op;
 
     call->request_data[op] = data;
     call->request_set[op] = set;

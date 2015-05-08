@@ -171,17 +171,17 @@ namespace grpc.testing
         // server-side interface
         public interface ITestService
         {
-            Task<Empty> EmptyCall(Empty request);
+            Task<Empty> EmptyCall(ServerCallContext context, Empty request);
 
-            Task<SimpleResponse> UnaryCall(SimpleRequest request);
+            Task<SimpleResponse> UnaryCall(ServerCallContext context, SimpleRequest request);
 
-            Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream);
+            Task StreamingOutputCall(ServerCallContext context, StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream);
 
-            Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream);
+            Task<StreamingInputCallResponse> StreamingInputCall(ServerCallContext context, IAsyncStreamReader<StreamingInputCallRequest> requestStream);
 
-            Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream);
+            Task FullDuplexCall(ServerCallContext context, IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream);
 
-            Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream);
+            Task HalfDuplexCall(ServerCallContext context, IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream);
         }
 
         public static ServerServiceDefinition BindService(ITestService serviceImpl)

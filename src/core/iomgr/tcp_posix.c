@@ -53,6 +53,12 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#ifdef GPR_HAVE_MSG_NOSIGNAL
+#define SENDMSG_FLAGS MSG_NOSIGNAL
+#else
+#define SENDMSG_FLAGS 0
+#endif
+
 /* Holds a slice array and associated state. */
 typedef struct grpc_tcp_slice_state {
   gpr_slice *slices;       /* Array of slices */
@@ -461,7 +467,7 @@ static grpc_endpoint_write_status grpc_tcp_flush(grpc_tcp *tcp) {
     GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 0);
     do {
       /* TODO(klempner): Cork if this is a partial write */
-      sent_length = sendmsg(tcp->fd, &msg, 0);
+      sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
     GRPC_TIMER_END(GRPC_PTAG_SENDMSG, 0);
 
