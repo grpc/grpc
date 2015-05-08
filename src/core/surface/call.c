@@ -375,18 +375,10 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
 
 static void set_status_code(grpc_call *call, status_source source,
                             gpr_uint32 status) {
-  int flush;
-
   call->status[source].is_set = 1;
   call->status[source].code = status;
 
-  if (call->is_client) {
-    flush = status == GRPC_STATUS_CANCELLED;
-  } else {
-    flush = status != GRPC_STATUS_OK;
-  }
-
-  if (flush && !grpc_bbq_empty(&call->incoming_queue)) {
+  if (status != GRPC_STATUS_OK && !grpc_bbq_empty(&call->incoming_queue)) {
     grpc_bbq_flush(&call->incoming_queue);
   }
 }
