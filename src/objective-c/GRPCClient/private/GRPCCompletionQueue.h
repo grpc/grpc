@@ -34,7 +34,7 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-typedef void(^GRPCQueueCompletionHandler)(grpc_op_error error);
+typedef void(^GRPCQueueCompletionHandler)(bool success);
 
 // This class lets one more easily use grpc_completion_queue. To use it, pass
 // the value of the unmanagedQueue property of an instance of this class to
