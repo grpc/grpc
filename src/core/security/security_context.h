@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_CONTEXT_H
-#define GRPC_INTERNAL_CORE_SECURITY_CONTEXT_H
+#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
+#define GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
 
 #include "src/core/security/credentials.h"
 
@@ -44,5 +44,5 @@ typedef struct {
 grpc_client_security_context *grpc_client_security_context_create(void);
 void grpc_client_security_context_destroy(void *ctx);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_CONTEXT_H */
+#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
 

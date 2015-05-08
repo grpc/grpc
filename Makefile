@@ -2411,7 +2411,6 @@ LIBGRPC_SRC = \
     src/core/httpcli/parser.c \
     src/core/security/auth.c \
     src/core/security/base64.c \
-    src/core/security/context.c \
     src/core/security/credentials.c \
     src/core/security/credentials_posix.c \
     src/core/security/credentials_win32.c \
@@ -2420,6 +2419,7 @@ LIBGRPC_SRC = \
     src/core/security/secure_endpoint.c \
     src/core/security/secure_transport_setup.c \
     src/core/security/security_connector.c \
+    src/core/security/security_context.c \
     src/core/security/server_secure_chttp2.c \
     src/core/surface/init_secure.c \
     src/core/surface/secure_channel_create.c \
@@ -12004,7 +12004,6 @@ src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/httpcli/parser.c: $(OPENSSL_DEP)
 src/core/security/auth.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
-src/core/security/context.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
 src/core/security/credentials_posix.c: $(OPENSSL_DEP)
 src/core/security/credentials_win32.c: $(OPENSSL_DEP)
@@ -12013,6 +12012,7 @@ src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
 src/core/security/security_connector.c: $(OPENSSL_DEP)
+src/core/security/security_context.c: $(OPENSSL_DEP)
 src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)

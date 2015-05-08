@@ -33,6 +33,7 @@
 
 
 import simplejson
+import collections
 
 
 # maps fixture name to whether it requires the security library
@@ -46,40 +47,38 @@ END2END_FIXTURES = {
     'chttp2_socket_pair_one_byte_at_a_time': False,
 }
 
-class TestOptions(object):
-  def __init__(self, flaky=False, secure=False):
-    self.flaky = flaky
-    self.secure = secure
+TestOptions = collections.namedtuple('TestOptions', 'flaky secure')
+default_test_options = TestOptions(False, False)
 
 # maps test names to options
 END2END_TESTS = {
-    'bad_hostname': TestOptions(),
-    'cancel_after_accept': TestOptions(flaky=True),
-    'cancel_after_accept_and_writes_closed': TestOptions(),
-    'cancel_after_invoke': TestOptions(),
-    'cancel_before_invoke': TestOptions(),
-    'cancel_in_a_vacuum': TestOptions(),
-    'census_simple_request': TestOptions(),
-    'disappearing_server': TestOptions(),
-    'early_server_shutdown_finishes_inflight_calls': TestOptions(),
-    'early_server_shutdown_finishes_tags': TestOptions(),
-    'empty_batch': TestOptions(),
-    'graceful_server_shutdown': TestOptions(),
-    'invoke_large_request': TestOptions(flaky=False),
-    'max_concurrent_streams': TestOptions(),
-    'max_message_length': TestOptions(),
-    'no_op': TestOptions(),
-    'ping_pong_streaming': TestOptions(),
-    'registered_call': TestOptions(),
-    'request_response_with_binary_metadata_and_payload': TestOptions(),
-    'request_response_with_metadata_and_payload': TestOptions(),
-    'request_response_with_payload': TestOptions(),
-    'request_response_with_payload_and_call_creds': TestOptions(secure=True),
-    'request_with_large_metadata': TestOptions(),
-    'request_with_payload': TestOptions(),
-    'simple_delayed_request': TestOptions(),
-    'simple_request': TestOptions(),
-    'simple_request_with_high_initial_sequence_number': TestOptions(),
+    'bad_hostname': default_test_options,
+    'cancel_after_accept': TestOptions(flaky=True, secure=False),
+    'cancel_after_accept_and_writes_closed': default_test_options,
+    'cancel_after_invoke': default_test_options,
+    'cancel_before_invoke': default_test_options,
+    'cancel_in_a_vacuum': default_test_options,
+    'census_simple_request': default_test_options,
+    'disappearing_server': default_test_options,
+    'early_server_shutdown_finishes_inflight_calls': default_test_options,
+    'early_server_shutdown_finishes_tags': default_test_options,
+    'empty_batch': default_test_options,
+    'graceful_server_shutdown': default_test_options,
+    'invoke_large_request': TestOptions(flaky=True, secure=False),
+    'max_concurrent_streams': default_test_options,
+    'max_message_length': default_test_options,
+    'no_op': default_test_options,
+    'ping_pong_streaming': default_test_options,
+    'registered_call': default_test_options,
+    'request_response_with_binary_metadata_and_payload': default_test_options,
+    'request_response_with_metadata_and_payload': default_test_options,
+    'request_response_with_payload': default_test_options,
+    'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
+    'request_with_large_metadata': default_test_options,
+    'request_with_payload': default_test_options,
+    'simple_delayed_request': default_test_options,
+    'simple_request': default_test_options,
+    'simple_request_with_high_initial_sequence_number': default_test_options,
 }
 
 

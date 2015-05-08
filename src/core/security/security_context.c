@@ -33,7 +33,7 @@
 
 #include <string.h>
 
-#include "src/core/security/context.h"
+#include "src/core/security/security_context.h"
 #include "src/core/surface/call.h"
 
 #include <grpc/grpc_security.h>

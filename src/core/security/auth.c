@@ -40,7 +40,7 @@
 
 #include "src/core/support/string.h"
 #include "src/core/channel/channel_stack.h"
-#include "src/core/security/context.h"
+#include "src/core/security/security_context.h"
 #include "src/core/security/security_connector.h"
 #include "src/core/security/credentials.h"
 #include "src/core/surface/call.h"
