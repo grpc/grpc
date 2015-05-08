@@ -234,8 +234,8 @@ static void win_notify_on_read(grpc_endpoint *ep,
        At this situation, we should just do close the connection and free
        the resources. */
 
-	tcp->outstanding_read = 0;
-	gpr_slice_unref(tcp->read_slice);
+    tcp->outstanding_read = 0;
+    gpr_slice_unref(tcp->read_slice);
     tcp_unref(tcp);
     cb(arg, NULL, 0, GRPC_ENDPOINT_CB_ERROR);
     /* Per the comment above, I'm going to treat that case as a hard failure
