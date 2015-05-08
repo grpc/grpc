@@ -64,6 +64,8 @@ namespace Grpc.Core
         /// Creates a new call to given method.
         /// </summary>
         protected Call<TRequest, TResponse> CreateCall<TRequest, TResponse>(string serviceName, Method<TRequest, TResponse> method)
+            where TRequest : class
+            where TResponse : class
         {
             var headerBuilder = Metadata.CreateBuilder();
             config.HeaderInterceptor(headerBuilder);

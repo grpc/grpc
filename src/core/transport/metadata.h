@@ -135,6 +135,9 @@ void grpc_mdelem_unref(grpc_mdelem *md);
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
+int grpc_mdstr_is_legal_header(grpc_mdstr *s);
+int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
+
 /* Batch mode metadata functions.
    These API's have equivalents above, but allow taking the mdctx just once,
    performing a bunch of work, and then leaving the mdctx. */

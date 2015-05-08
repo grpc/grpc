@@ -59,7 +59,7 @@ namespace Grpc.IntegrationTesting
 
             server = new Server();
             server.AddServiceDefinition(TestServiceGrpc.BindService(new TestServiceImpl()));
-            int port = server.AddListeningPort(host + ":0", TestCredentials.CreateTestServerCredentials());
+            int port = server.AddListeningPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
             server.Start();
 
             var channelArgs = ChannelArgs.CreateBuilder()
