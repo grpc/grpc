@@ -39,6 +39,7 @@
 #include "src/core/channel/child_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/pollset_set.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
