@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,91 +28,84 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#endregion
-using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core.Internal;
 
-namespace Grpc.Core
+#endregion
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Grpc.Core.Utils
 {
     /// <summary>
-    /// gRPC Channel
+    /// Extension methods that simplify work with gRPC streaming calls.
     /// </summary>
-    public class Channel : IDisposable
+    public static class AsyncStreamExtensions
     {
-        readonly ChannelSafeHandle handle;
-        readonly string target;
+        /// <summary>
+        /// Reads the entire stream and executes an async action for each element.
+        /// </summary>
+        public static async Task ForEach<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
+            where T : class
+        {
+            while (true)
+            {
+                var elem = await streamReader.ReadNext();
+                if (elem == null)
+                {
+                    break;
+                }
+                await asyncAction(elem);
+            }
+        }
 
         /// <summary>
-        /// Creates a channel.
+        /// Reads the entire stream and creates a list containing all the elements read.
         /// </summary>
-        public Channel(string target, Credentials credentials = null, ChannelArgs channelArgs = null)
+        public static async Task<List<T>> ToList<T>(this IAsyncStreamReader<T> streamReader)
+            where T : class
         {
-            using (ChannelArgsSafeHandle nativeChannelArgs = CreateNativeChannelArgs(channelArgs))
+            var result = new List<T>();
+            while (true)
             {
-                if (credentials != null)
+                var elem = await streamReader.ReadNext();
+                if (elem == null)
                 {
-                    using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-                    {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
-                    }
+                    break;
                 }
-                else
-                {
-                    this.handle = ChannelSafeHandle.Create(target, nativeChannelArgs);
-                }
+                result.Add(elem);
             }
-            this.target = GetOverridenTarget(target, channelArgs);
+            return result;
         }
 
-        public string Target
+        /// <summary>
+        /// Writes all elements from given enumerable to the stream.
+        /// Closes the stream afterwards unless close = false.
+        /// </summary>
+        public static async Task WriteAll<T>(this IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool close = true)
+            where T : class
         {
-            get
+            foreach (var element in elements)
             {
-                return this.target;
+                await streamWriter.Write(element);
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        internal ChannelSafeHandle Handle
-        {
-            get
+            if (close)
             {
-                return this.handle;
+                await streamWriter.Close();
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        /// <summary>
+        /// Writes all elements from given enumerable to the stream.
+        /// </summary>
+        public static async Task WriteAll<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
+            where T : class
         {
-            if (handle != null && !handle.IsInvalid)
+            foreach (var element in elements)
             {
-                handle.Dispose();
+                await streamWriter.Write(element);
             }
-        }
-
-        private static string GetOverridenTarget(string target, ChannelArgs args)
-        {
-            if (args != null && !string.IsNullOrEmpty(args.GetSslTargetNameOverride()))
-            {
-                return args.GetSslTargetNameOverride();
-            }
-            return target;
-        }
-
-        private static ChannelArgsSafeHandle CreateNativeChannelArgs(ChannelArgs args)
-        {
-            if (args == null)
-            {
-                return ChannelArgsSafeHandle.CreateNull();
-            }
-            return args.ToNativeChannelArgs();
         }
     }
 }

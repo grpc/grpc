@@ -114,9 +114,9 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {{"key1", "val1", 4}, {"key2", "val2", 4}};
-  grpc_metadata meta_s[2] = {{"key3", "val3", 4}, {"key4", "val4", 4}};
-  grpc_metadata meta_t[2] = {{"key5", "val5", 4}, {"key6", "val6", 4}};
+  grpc_metadata meta_c[2] = {{"key1", "val1", 4, {{NULL, NULL, NULL}}}, {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
+  grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}}, {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
+  grpc_metadata meta_t[2] = {{"key5", "val5", 4, {{NULL, NULL, NULL}}}, {"key6", "val6", 4, {{NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
@@ -169,7 +169,8 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq, tag(101)));
+                                                      f.server_cq, f.server_cq,
+                                                      tag(101)));
   cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
@@ -205,7 +206,6 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 1);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));

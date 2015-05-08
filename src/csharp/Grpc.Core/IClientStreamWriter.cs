@@ -1,11 +1,12 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -15,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -27,40 +28,27 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
-using Grpc.Core.Internal;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core
 {
-    internal class ClientStreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
+    /// <summary>
+    /// Client-side writable stream of messages with Close capability.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IClientStreamWriter<T> : IAsyncStreamWriter<T>
+        where T : class
     {
-        readonly AsyncCall<TWrite, TRead> call;
-
-        public ClientStreamingInputObserver(AsyncCall<TWrite, TRead> call)
-        {
-            this.call = call;
-        }
-
-        public void OnCompleted()
-        {
-            var taskSource = new AsyncCompletionTaskSource();
-            call.StartSendCloseFromClient(taskSource.CompletionDelegate);
-            // TODO: how bad is the Wait here?
-            taskSource.Task.Wait();
-        }
-
-        public void OnError(Exception error)
-        {
-            throw new InvalidOperationException("This should never be called.");
-        }
-
-        public void OnNext(TWrite value)
-        {
-            var taskSource = new AsyncCompletionTaskSource();
-            call.StartSendMessage(value, taskSource.CompletionDelegate);
-            // TODO: how bad is the Wait here?
-            taskSource.Task.Wait();
-        }
+        /// <summary>
+        /// Closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
+        /// </summary>
+        Task Close();
     }
 }

@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,30 +27,40 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
 
 using System;
-using Grpc.Core;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core.Internal
 {
-    public class ServerTest
+    /// <summary>
+    /// Writes responses asynchronously to an underlying AsyncCallServer object.
+    /// </summary>
+    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>
+        where TRequest : class
+        where TResponse : class
     {
-        [Test]
-        public void StartAndShutdownServer()
+        readonly AsyncCallServer<TRequest, TResponse> call;
+
+        public ServerResponseStream(AsyncCallServer<TRequest, TResponse> call)
         {
-            GrpcEnvironment.Initialize();
+            this.call = call;
+        }
 
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
-            server.Start();
-            server.ShutdownAsync().Wait();
+        public Task Write(TResponse message)
+        {
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendMessage(message, taskSource.CompletionDelegate);
+            return taskSource.Task;
+        }
 
-            GrpcEnvironment.Shutdown();
+        public Task WriteStatus(Status status)
+        {
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendStatusFromServer(status, taskSource.CompletionDelegate);
+            return taskSource.Task;
         }
     }
 }

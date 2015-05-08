@@ -32,68 +32,72 @@
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Method types supported by gRPC.
+    /// Return type for client streaming calls.
     /// </summary>
-    public enum MethodType
+    public sealed class AsyncClientStreamingCall<TRequest, TResponse>
+        where TRequest : class
+        where TResponse : class
     {
-        Unary,  // Unary request, unary response.
-        ClientStreaming,  // Streaming request, unary response.
-        ServerStreaming,  // Unary request, streaming response.
-        DuplexStreaming  // Streaming request, streaming response.
-    }
+        readonly IClientStreamWriter<TRequest> requestStream;
+        readonly Task<TResponse> result;
 
-    /// <summary>
-    /// A description of a service method.
-    /// </summary>
-    public class Method<TRequest, TResponse>
-    {
-        readonly MethodType type;
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-
-        public Method(MethodType type, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
+        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> result)
         {
-            this.type = type;
-            this.name = name;
-            this.requestMarshaller = requestMarshaller;
-            this.responseMarshaller = responseMarshaller;
+            this.requestStream = requestStream;
+            this.result = result;
         }
 
-        public MethodType Type
+        /// <summary>
+        /// Writes a request to RequestStream.
+        /// </summary>
+        public Task Write(TRequest message)
+        {
+            return requestStream.Write(message);
+        }
+
+        /// <summary>
+        /// Closes the RequestStream.
+        /// </summary>
+        public Task Close()
+        {
+            return requestStream.Close();
+        }
+
+        /// <summary>
+        /// Asynchronous call result.
+        /// </summary>
+        public Task<TResponse> Result
         {
             get
             {
-                return this.type;
+                return this.result;
             }
         }
 
-        public string Name
+        /// <summary>
+        /// Async stream to send streaming requests.
+        /// </summary>
+        public IClientStreamWriter<TRequest> RequestStream
         {
             get
             {
-                return this.name;
+                return requestStream;
             }
         }
 
-        public Marshaller<TRequest> RequestMarshaller
+        /// <summary>
+        /// Allows awaiting this object directly.
+        /// </summary>
+        /// <returns></returns>
+        public TaskAwaiter<TResponse> GetAwaiter()
         {
-            get
-            {
-                return this.requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return this.responseMarshaller;
-            }
+            return result.GetAwaiter();
         }
     }
 }

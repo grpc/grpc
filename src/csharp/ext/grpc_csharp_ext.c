@@ -277,6 +277,12 @@ grpcsharp_batch_context_server_rpc_new_method(
   return ctx->server_rpc_new.call_details.method;
 }
 
+GPR_EXPORT gpr_int32 GPR_CALLTYPE
+grpcsharp_batch_context_recv_close_on_server_cancelled(
+    const grpcsharp_batch_context *ctx) {
+  return (gpr_int32) ctx->recv_close_on_server_cancelled;
+}
+
 /* Init & shutdown */
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_init(void) { grpc_init(); }
@@ -667,7 +673,9 @@ grpcsharp_call_start_serverside(grpc_call *call, callback_funcptr callback) {
 GPR_EXPORT grpc_server *GPR_CALLTYPE
 grpcsharp_server_create(grpc_completion_queue *cq,
                         const grpc_channel_args *args) {
-  return grpc_server_create(cq, args);
+  grpc_server *server = grpc_server_create(args);
+  grpc_server_register_completion_queue(server, cq);
+  return server;
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
@@ -700,7 +708,7 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
 
   return grpc_server_request_call(
       server, &(ctx->server_rpc_new.call), &(ctx->server_rpc_new.call_details),
-      &(ctx->server_rpc_new.request_metadata), cq, ctx);
+      &(ctx->server_rpc_new.request_metadata), cq, cq, ctx);
 }
 
 /* Security */

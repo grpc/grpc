@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,45 +28,18 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
-using Grpc.Core.Internal;
+using System.Threading;
 
 namespace Grpc.Core.Internal
 {
-    /// <summary>
-    /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
-    /// and then halfcloses the call. Used for server-side call handling.
-    /// </summary>
-    internal class ServerStreamingOutputObserver<TRequest, TResponse> : IObserver<TResponse>
+    internal static class DebugStats
     {
-        readonly AsyncCallServer<TRequest, TResponse> call;
+        public static readonly AtomicCounter ActiveClientCalls = new AtomicCounter();
 
-        public ServerStreamingOutputObserver(AsyncCallServer<TRequest, TResponse> call)
-        {
-            this.call = call;
-        }
-
-        public void OnCompleted()
-        {
-            var taskSource = new AsyncCompletionTaskSource();
-            call.StartSendStatusFromServer(new Status(StatusCode.OK, ""), taskSource.CompletionDelegate);
-            // TODO: how bad is the Wait here?
-            taskSource.Task.Wait();
-        }
-
-        public void OnError(Exception error)
-        {
-            // TODO: implement this...
-            throw new InvalidOperationException("This should never be called.");
-        }
-
-        public void OnNext(TResponse value)
-        {
-            var taskSource = new AsyncCompletionTaskSource();
-            call.StartSendMessage(value, taskSource.CompletionDelegate);
-            // TODO: how bad is the Wait here?
-            taskSource.Task.Wait();
-        }
+        public static readonly AtomicCounter ActiveServerCalls = new AtomicCounter();
     }
 }

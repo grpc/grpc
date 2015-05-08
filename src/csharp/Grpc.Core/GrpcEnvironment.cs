@@ -86,6 +86,8 @@ namespace Grpc.Core
                 {
                     instance.Close();
                     instance = null;
+
+                    CheckDebugStats();
                 }
             }
         }
@@ -131,6 +133,20 @@ namespace Grpc.Core
 
             // TODO: use proper logging here
             Console.WriteLine("GRPC shutdown.");
+        }
+
+        private static void CheckDebugStats()
+        {
+            var remainingClientCalls = DebugStats.ActiveClientCalls.Count;
+            if (remainingClientCalls != 0)
+            {
+                Console.WriteLine("Warning: Detected {0} client calls that weren't disposed properly.", remainingClientCalls);
+            }
+            var remainingServerCalls = DebugStats.ActiveServerCalls.Count;
+            if (remainingServerCalls != 0)
+            {
+                Console.WriteLine("Warning: Detected {0} server calls that weren't disposed properly.", remainingServerCalls);
+            }
         }
     }
 }

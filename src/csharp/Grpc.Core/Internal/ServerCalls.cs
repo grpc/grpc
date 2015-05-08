@@ -32,26 +32,40 @@
 #endregion
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core.Internal
 {
-    public class ServerTest
+    internal static class ServerCalls
     {
-        [Test]
-        public void StartAndShutdownServer()
+        public static IServerCallHandler UnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryServerMethod<TRequest, TResponse> handler)
+            where TRequest : class
+            where TResponse : class
         {
-            GrpcEnvironment.Initialize();
+            return new UnaryServerCallHandler<TRequest, TResponse>(method, handler);
+        }
 
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
-            server.Start();
-            server.ShutdownAsync().Wait();
+        public static IServerCallHandler ClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, ClientStreamingServerMethod<TRequest, TResponse> handler)
+            where TRequest : class
+            where TResponse : class
+        {
+            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, handler);
+        }
 
-            GrpcEnvironment.Shutdown();
+        public static IServerCallHandler ServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, ServerStreamingServerMethod<TRequest, TResponse> handler)
+            where TRequest : class
+            where TResponse : class
+        {
+            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, handler);
+        }
+
+        public static IServerCallHandler DuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, DuplexStreamingServerMethod<TRequest, TResponse> handler)
+            where TRequest : class
+            where TResponse : class
+        {
+            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, handler);
         }
     }
 }

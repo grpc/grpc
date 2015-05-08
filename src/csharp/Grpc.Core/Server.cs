@@ -47,6 +47,11 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
+        /// <summary>
+        /// Pass this value as port to have the server choose an unused listening port for you.
+        /// </summary>
+        public const int PickUnusedPort = 0;
+
         // TODO(jtattermusch) : make sure the delegate doesn't get garbage collected while
         // native callbacks are in the completion queue.
         readonly ServerShutdownCallbackDelegate serverShutdownHandler;
@@ -89,29 +94,25 @@ namespace Grpc.Core
         /// Add a non-secure port on which server should listen.
         /// Only call this before Start().
         /// </summary>
-        public int AddListeningPort(string addr)
+        /// <returns>The port on which server will be listening.</returns>
+        /// <param name="host">the host</param>
+        /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
+        public int AddListeningPort(string host, int port)
         {
-            lock (myLock)
-            {
-                Preconditions.CheckState(!startRequested);
-                return handle.AddListeningPort(addr);
-            }
+            return AddListeningPortInternal(host, port, null);
         }
 
         /// <summary>
-        /// Add a secure port on which server should listen.
+        /// Add a non-secure port on which server should listen.
         /// Only call this before Start().
         /// </summary>
-        public int AddListeningPort(string addr, ServerCredentials credentials)
+        /// <returns>The port on which server will be listening.</returns>
+        /// <param name="host">the host</param>
+        /// <param name="port">the port. If zero, , an unused port is chosen automatically.</param>
+        public int AddListeningPort(string host, int port, ServerCredentials credentials)
         {
-            lock (myLock)
-            {
-                Preconditions.CheckState(!startRequested);
-                using (var nativeCredentials = credentials.ToNativeCredentials())
-                {
-                    return handle.AddListeningPort(addr, nativeCredentials);
-                }
-            }
+            Preconditions.CheckNotNull(credentials);
+            return AddListeningPortInternal(host, port, credentials);
         }
 
         /// <summary>
@@ -164,6 +165,26 @@ namespace Grpc.Core
             handle.Dispose();
         }
 
+        private int AddListeningPortInternal(string host, int port, ServerCredentials credentials)
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckState(!startRequested);    
+                var address = string.Format("{0}:{1}", host, port);
+                if (credentials != null)
+                {
+                    using (var nativeCredentials = credentials.ToNativeCredentials())
+                    {
+                        return handle.AddListeningPort(address, nativeCredentials);
+                    }
+                }
+                else
+                {
+                    return handle.AddListeningPort(address);    
+                }
+            }
+        }
+
         /// <summary>
         /// Allows one new RPC call to be received by server.
         /// </summary>
@@ -181,7 +202,7 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private void InvokeCallHandler(CallSafeHandle call, string method)
+        private async Task InvokeCallHandler(CallSafeHandle call, string method)
         {
             try
             {
@@ -190,7 +211,7 @@ namespace Grpc.Core
                 {
                     callHandler = new NoSuchMethodCallHandler();
                 }
-                callHandler.StartCall(method, call, GetCompletionQueue());
+                await callHandler.HandleCall(method, call, GetCompletionQueue());
             }
             catch (Exception e)
             {
@@ -218,7 +239,7 @@ namespace Grpc.Core
                 // after server shutdown, the callback returns with null call
                 if (!call.IsInvalid)
                 {
-                    Task.Run(() => InvokeCallHandler(call, method));
+                    Task.Run(async () => await InvokeCallHandler(call, method));
                 }
 
                 AllowOneRpc();

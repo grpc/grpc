@@ -32,26 +32,25 @@
 #endregion
 
 using System;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core
 {
-    public class ServerTest
+    /// <summary>
+    /// Context for a server-side call.
+    /// </summary>
+    public sealed class ServerCallContext
     {
-        [Test]
-        public void StartAndShutdownServer()
-        {
-            GrpcEnvironment.Initialize();
+        
+        // TODO(jtattermusch): add cancellationToken
 
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
-            server.Start();
-            server.ShutdownAsync().Wait();
+        // TODO(jtattermusch): add deadline info
 
-            GrpcEnvironment.Shutdown();
-        }
+        // TODO(jtattermusch): expose initial metadata sent by client for reading
+
+        // TODO(jtattermusch): expose method to send initial metadata back to client
+
+        // TODO(jtattermusch): allow setting status and trailing metadata to send after handler completes.
     }
 }
