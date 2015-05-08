@@ -1795,6 +1795,24 @@
       ]
     },
     {
+      "name": "async_unary_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/async_unary_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",
@@ -2086,12 +2104,12 @@
       ]
     },
     {
-      "name": "qps_smoke_test",
+      "name": "qps_test",
       "build": "test",
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/smoke_test.cc"
+        "test/cpp/qps/qps_test.cc"
       ],
       "deps": [
         "qps",
@@ -2133,6 +2151,42 @@
         "test/cpp/util/status_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "sync_streaming_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/sync_streaming_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "sync_unary_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/sync_unary_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
