@@ -66,50 +66,6 @@ bool BidiStreaming(const grpc::protobuf::MethodDescriptor *method) {
   return method->client_streaming() && method->server_streaming();
 }
 
-bool HasUnaryCalls(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (NoStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool HasClientOnlyStreaming(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (ClientOnlyStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool HasServerOnlyStreaming(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (ServerOnlyStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool HasBidiStreaming(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (BidiStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 grpc::string FilenameIdentifier(const grpc::string &filename) {
   grpc::string result;
   for (unsigned i = 0; i < filename.size(); i++) {
