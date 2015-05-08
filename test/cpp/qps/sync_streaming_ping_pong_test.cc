@@ -44,28 +44,6 @@ namespace testing {
 static const int WARMUP = 5;
 static const int BENCHMARK = 10;
 
-static void RunSynchronousUnaryPingPong() {
-  gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
-
-  ClientConfig client_config;
-  client_config.set_client_type(SYNCHRONOUS_CLIENT);
-  client_config.set_enable_ssl(false);
-  client_config.set_outstanding_rpcs_per_channel(1);
-  client_config.set_client_channels(1);
-  client_config.set_payload_size(1);
-  client_config.set_rpc_type(UNARY);
-
-  ServerConfig server_config;
-  server_config.set_server_type(SYNCHRONOUS_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(1);
-
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  ReportQPS(result);
-  ReportLatency(result);
-}
-
 static void RunSynchronousStreamingPingPong() {
   gpr_log(GPR_INFO, "Running Synchronous Streaming Ping Pong");
 
@@ -82,55 +60,10 @@ static void RunSynchronousStreamingPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   ReportQPS(result);
-  ReportLatency(result);
-}
-
-static void RunAsyncUnaryPingPong() {
-  gpr_log(GPR_INFO, "Running Async Unary Ping Pong");
-
-  ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
-  client_config.set_outstanding_rpcs_per_channel(1);
-  client_config.set_client_channels(1);
-  client_config.set_payload_size(1);
-  client_config.set_async_client_threads(1);
-  client_config.set_rpc_type(UNARY);
-
-  ServerConfig server_config;
-  server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(1);
-
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  ReportQPS(result);
-  ReportLatency(result);
-}
-
-static void RunQPS() {
-  gpr_log(GPR_INFO, "Running QPS test");
-
-  ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
-  client_config.set_outstanding_rpcs_per_channel(1000);
-  client_config.set_client_channels(8);
-  client_config.set_payload_size(1);
-  client_config.set_async_client_threads(8);
-  client_config.set_rpc_type(UNARY);
-
-  ServerConfig server_config;
-  server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(4);
-
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  ReportQPSPerCore(result, server_config);
   ReportLatency(result);
 }
 
@@ -138,11 +71,8 @@ static void RunQPS() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  using namespace grpc::testing;
-  RunSynchronousStreamingPingPong();
-  RunSynchronousUnaryPingPong();
-  RunAsyncUnaryPingPong();
-  RunQPS();
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::RunSynchronousStreamingPingPong();
 
   return 0;
 }
