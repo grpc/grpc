@@ -177,8 +177,9 @@ finish:
 }
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
-                             void *arg, const struct sockaddr *addr,
-                             int addr_len, gpr_timespec deadline) {
+                             void *arg, grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;

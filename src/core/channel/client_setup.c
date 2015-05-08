@@ -69,6 +69,11 @@ gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r) {
   return r->deadline;
 }
 
+grpc_pollset_set *grpc_client_setup_get_interested_parties(
+    grpc_client_setup_request *r) {
+  return r->interested_parties;
+}
+
 static void destroy_setup(grpc_client_setup *s) {
   gpr_mu_destroy(&s->mu);
   gpr_cv_destroy(&s->cv);

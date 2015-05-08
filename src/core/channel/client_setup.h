@@ -67,6 +67,8 @@ void grpc_client_setup_cb_end(grpc_client_setup_request *r);
 /* Get the deadline for a request passed in to initiate. Implementations should
    make a best effort to honor this deadline. */
 gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r);
+grpc_pollset_set *grpc_client_setup_get_interested_parties(
+    grpc_client_setup_request *r);
 
 grpc_mdctx *grpc_client_setup_get_mdctx(grpc_client_setup_request *r);
 

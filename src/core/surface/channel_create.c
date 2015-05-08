@@ -125,9 +125,10 @@ static int maybe_try_next_resolved(request *r) {
   if (!r->resolved) return 0;
   if (r->resolved_index == r->resolved->naddrs) return 0;
   addr = &r->resolved->addrs[r->resolved_index++];
-  grpc_tcp_client_connect(on_connect, r, (struct sockaddr *)&addr->addr,
-                          addr->len,
-                          grpc_client_setup_request_deadline(r->cs_request));
+  grpc_tcp_client_connect(
+      on_connect, r, grpc_client_setup_get_interested_parties(r->cs_request),
+      (struct sockaddr *)&addr->addr, addr->len,
+      grpc_client_setup_request_deadline(r->cs_request));
   return 1;
 }
 
