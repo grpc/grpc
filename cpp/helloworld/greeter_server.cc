@@ -73,10 +73,7 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   RunServer();
 
-  grpc_shutdown();
   return 0;
 }

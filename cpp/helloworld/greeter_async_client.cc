@@ -90,22 +90,16 @@ class GreeterClient {
     }
   }
 
-  void Shutdown() { stub_.reset(); }
-
  private:
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   GreeterClient greeter(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureCredentials(), ChannelArguments()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
 
-  greeter.Shutdown();
-
-  grpc_shutdown();
+  return 0;
 }
