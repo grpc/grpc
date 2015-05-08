@@ -322,7 +322,6 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         request_(request),
         stream_(stream),
         call_cq_(call_cq),
-        notification_cq_(notification_cq),
         ctx_(ctx),
         generic_ctx_(nullptr),
         server_(server),
@@ -345,7 +344,6 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         request_(nullptr),
         stream_(stream),
         call_cq_(call_cq),
-        notification_cq_(notification_cq),
         ctx_(nullptr),
         generic_ctx_(ctx),
         server_(server),
@@ -415,7 +413,6 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc::protobuf::Message* const request_;
   ServerAsyncStreamingInterface* const stream_;
   CompletionQueue* const call_cq_;
-  ServerCompletionQueue* const notification_cq_;
   ServerContext* const ctx_;
   GenericServerContext* const generic_ctx_;
   Server* const server_;
@@ -462,7 +459,7 @@ void Server::RunRpc() {
       {
         grpc::unique_lock<grpc::mutex> lock(mu_);
         if (!shutdown_) {
-          mrd->Request(server_);
+          mrd->Request(server_, cq_.cq());
         }
       }
       cd.Run();
