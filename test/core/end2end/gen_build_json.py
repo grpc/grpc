@@ -70,6 +70,7 @@ END2END_TESTS = {
     'max_message_length': TestOptions(),
     'no_op': TestOptions(),
     'ping_pong_streaming': TestOptions(),
+    'registered_call': TestOptions(),
     'request_response_with_binary_metadata_and_payload': TestOptions(),
     'request_response_with_metadata_and_payload': TestOptions(),
     'request_response_with_payload': TestOptions(),
@@ -79,7 +80,6 @@ END2END_TESTS = {
     'simple_delayed_request': TestOptions(),
     'simple_request': TestOptions(),
     'simple_request_with_high_initial_sequence_number': TestOptions(),
-    'registered_call': TestOptions(),
 }
 
 

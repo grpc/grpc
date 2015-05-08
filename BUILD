@@ -739,6 +739,8 @@ cc_library(
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
     "src/compiler/cpp_generator_helpers.h",
+    "src/compiler/csharp_generator.h",
+    "src/compiler/csharp_generator_helpers.h",
     "src/compiler/generator_helpers.h",
     "src/compiler/objective_c_generator.h",
     "src/compiler/objective_c_generator_helpers.h",
@@ -748,6 +750,7 @@ cc_library(
     "src/compiler/ruby_generator_map-inl.h",
     "src/compiler/ruby_generator_string-inl.h",
     "src/compiler/cpp_generator.cc",
+    "src/compiler/csharp_generator.cc",
     "src/compiler/objective_c_generator.cc",
     "src/compiler/python_generator.cc",
     "src/compiler/ruby_generator.cc",
@@ -787,6 +790,18 @@ cc_binary(
   name = "grpc_cpp_plugin",
   srcs = [
     "src/compiler/cpp_plugin.cc",
+  ],
+  deps = [
+    "//external:protobuf_compiler",
+    ":grpc_plugin_support",
+  ],
+)
+
+
+cc_binary(
+  name = "grpc_csharp_plugin",
+  srcs = [
+    "src/compiler/csharp_plugin.cc",
   ],
   deps = [
     "//external:protobuf_compiler",

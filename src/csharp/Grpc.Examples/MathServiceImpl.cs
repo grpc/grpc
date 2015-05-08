@@ -44,14 +44,14 @@ namespace math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : MathGrpc.IMathService
+    public class MathServiceImpl : Math.IMath
     {
-        public Task<DivReply> Div(DivArgs request)
+        public Task<DivReply> Div(ServerCallContext context, DivArgs request)
         {
             return Task.FromResult(DivInternal(request));
         }
 
-        public async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream)
+        public async Task Fib(ServerCallContext context, FibArgs request, IServerStreamWriter<Num> responseStream)
         {
             if (request.Limit <= 0)
             {
@@ -68,7 +68,7 @@ namespace math
             }
         }
 
-        public async Task<Num> Sum(IAsyncStreamReader<Num> requestStream)
+        public async Task<Num> Sum(ServerCallContext context, IAsyncStreamReader<Num> requestStream)
         {
             long sum = 0;
             await requestStream.ForEach(async num =>
@@ -78,7 +78,7 @@ namespace math
             return Num.CreateBuilder().SetNum_(sum).Build();
         }
 
-        public async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream)
+        public async Task DivMany(ServerCallContext context, IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream)
         {
             await requestStream.ForEach(async divArgs =>
             {

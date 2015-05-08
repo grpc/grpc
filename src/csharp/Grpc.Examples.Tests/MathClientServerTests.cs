@@ -50,7 +50,7 @@ namespace math.Tests
         string host = "localhost";
         Server server;
         Channel channel;
-        MathGrpc.IMathServiceClient client;
+        Math.IMathClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -58,8 +58,8 @@ namespace math.Tests
             GrpcEnvironment.Initialize();
 
             server = new Server();
-            server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
-            int port = server.AddListeningPort(host + ":0");
+            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
+            int port = server.AddListeningPort(host, Server.PickUnusedPort);
             server.Start();
             channel = new Channel(host + ":" + port);
 
@@ -69,7 +69,7 @@ namespace math.Tests
             {
                 headerBuilder.Add(new Metadata.MetadataEntry("customHeader", "abcdef"));
             });
-            client = MathGrpc.NewStub(channel, stubConfig);
+            client = Math.NewStub(channel, stubConfig);
         }
 
         [TestFixtureTearDown]

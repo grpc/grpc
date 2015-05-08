@@ -68,6 +68,8 @@ static void create_sockets(SOCKET sv[2]) {
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
+  grpc_tcp_prepare_socket(cli_sock);
+  grpc_tcp_prepare_socket(svr_sock);
 
   sv[1] = cli_sock;
   sv[0] = svr_sock;

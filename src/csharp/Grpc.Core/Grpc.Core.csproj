@@ -96,6 +96,7 @@
     <Compile Include="Internal\ServerResponseStream.cs" />
     <Compile Include="Internal\AtomicCounter.cs" />
     <Compile Include="Internal\DebugStats.cs" />
+    <Compile Include="ServerCallContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
