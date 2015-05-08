@@ -198,8 +198,9 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
       stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   std::chrono::system_clock::time_point time_now(
-      std::chrono::system_clock::now()),
-      time_limit(std::chrono::system_clock::now() + std::chrono::seconds(5));
+      std::chrono::system_clock::now());
+  std::chrono::system_clock::time_point time_limit(
+      std::chrono::system_clock::now() + std::chrono::seconds(10));
   verify_timed_ok(&srv_cq_, -1, true, time_now, CompletionQueue::TIMEOUT);
   verify_timed_ok(&cli_cq_, -1, true, time_now, CompletionQueue::TIMEOUT);
 
