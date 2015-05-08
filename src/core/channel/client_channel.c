@@ -212,6 +212,7 @@ static void cc_start_transport_op(grpc_call_element *elem,
           if (!chand->transport_setup_initiated) {
             chand->transport_setup_initiated = 1;
             initiate_transport_setup = 1;
+            grpc_pollset_set_init(&chand->waiting_pollsets);
           }
           /* add this call to the waiting set to be resumed once we have a child
              channel stack, growing the waiting set if needed */
@@ -222,9 +223,6 @@ static void cc_start_transport_op(grpc_call_element *elem,
                 chand->waiting_children,
                 chand->waiting_child_capacity * sizeof(call_data *));
           }
-          if (chand->waiting_child_count == 0) {
-            grpc_pollset_set_init(&chand->waiting_pollsets);
-          }
           grpc_pollset_set_add_pollset(&chand->waiting_pollsets, op->bind_pollset);
           calld->s.waiting_op = *op;
           chand->waiting_children[chand->waiting_child_count++] = calld;
@@ -232,7 +230,8 @@ static void cc_start_transport_op(grpc_call_element *elem,
 
           /* finally initiate transport setup if needed */
           if (initiate_transport_setup) {
-            grpc_transport_setup_initiate(chand->transport_setup);
+            grpc_transport_setup_initiate(chand->transport_setup,
+                                          &chand->waiting_pollsets);
           }
         }
       }

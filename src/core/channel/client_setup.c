@@ -61,6 +61,7 @@ struct grpc_client_setup {
 struct grpc_client_setup_request {
   /* pointer back to the setup object */
   grpc_client_setup *setup;
+  grpc_pollset_set *interested_parties;
   gpr_timespec deadline;
 };
 
@@ -77,12 +78,14 @@ static void destroy_setup(grpc_client_setup *s) {
 }
 
 /* initiate handshaking */
-static void setup_initiate(grpc_transport_setup *sp) {
+static void setup_initiate(grpc_transport_setup *sp,
+                           grpc_pollset_set *interested_parties) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
   grpc_client_setup_request *r = gpr_malloc(sizeof(grpc_client_setup_request));
   int in_alarm = 0;
 
   r->setup = s;
+  r->interested_parties = interested_parties;
   /* TODO(klempner): Actually set a deadline */
   r->deadline = gpr_inf_future;
 

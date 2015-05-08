@@ -82,8 +82,9 @@ void grpc_transport_setup_cancel(grpc_transport_setup *setup) {
   setup->vtable->cancel(setup);
 }
 
-void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
-  setup->vtable->initiate(setup);
+void grpc_transport_setup_initiate(grpc_transport_setup *setup,
+                                   grpc_pollset_set *interested_parties) {
+  setup->vtable->initiate(setup, interested_parties);
 }
 
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
