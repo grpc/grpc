@@ -1927,8 +1927,10 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
       break;
     case GRPC_ENDPOINT_CB_OK:
       lock(t);
-      for (i = 0; i < nslices && process_read(t, slices[i]); i++)
-        ;
+      if (t->cb) {
+        for (i = 0; i < nslices && process_read(t, slices[i]); i++)
+          ;
+      }
       unlock(t);
       keep_reading = 1;
       break;

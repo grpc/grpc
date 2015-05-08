@@ -1799,6 +1799,24 @@
       ]
     },
     {
+      "name": "async_unary_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/async_unary_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",
@@ -2004,6 +2022,22 @@
       ]
     },
     {
+      "name": "mock_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/mock_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "pubsub_client",
       "build": "do_not_build",
       "run": false,
@@ -2057,8 +2091,7 @@
     },
     {
       "name": "qps_driver",
-      "build": "test",
-      "run": false,
+      "build": "tool",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_driver.cc"
@@ -2075,12 +2108,12 @@
       ]
     },
     {
-      "name": "qps_smoke_test",
+      "name": "qps_test",
       "build": "test",
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/smoke_test.cc"
+        "test/cpp/qps/qps_test.cc"
       ],
       "deps": [
         "qps",
@@ -2094,8 +2127,7 @@
     },
     {
       "name": "qps_worker",
-      "build": "test",
-      "run": false,
+      "build": "tool",
       "language": "c++",
       "headers": [
         "test/cpp/qps/client.h",
@@ -2123,6 +2155,42 @@
         "test/cpp/util/status_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "sync_streaming_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/sync_streaming_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "sync_unary_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/sync_unary_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
