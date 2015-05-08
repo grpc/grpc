@@ -213,6 +213,7 @@ NAN_METHOD(Server::RequestCall) {
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
       CompletionQueueAsyncWorker::GetQueue(),
+      CompletionQueueAsyncWorker::GetQueue(),
       new struct tag(new NanCallback(args[0].As<Function>()), ops.release(),
                      shared_ptr<Resources>(nullptr)));
   if (error != GRPC_CALL_OK) {
