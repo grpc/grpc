@@ -250,4 +250,9 @@ void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
   }
 }
 
+void grpc_platform_become_backup_poller(grpc_pollset *pollset, grpc_fd **fds,
+                                        size_t nfds) {
+  grpc_platform_become_multipoller(pollset, fds, nfds);
+}
+
 #endif

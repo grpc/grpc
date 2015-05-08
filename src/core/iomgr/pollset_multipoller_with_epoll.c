@@ -47,6 +47,7 @@
 typedef struct {
   int epoll_fd;
   grpc_wakeup_fd_info wakeup_fd;
+  int edge_triggered;
 } pollset_hdr;
 
 static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
@@ -55,7 +56,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
   struct epoll_event ev;
   int err;
 
-  ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+  ev.events = EPOLLIN | EPOLLOUT | (h->edge_triggered ? EPOLLET : 0);
   ev.data.ptr = fd;
   err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
   if (err < 0) {
@@ -164,8 +165,8 @@ static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
     multipoll_with_epoll_pollset_maybe_work, epoll_kick,
     multipoll_with_epoll_pollset_destroy};
 
-void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
-                                      size_t nfds) {
+void grpc_platform_become_epoller(grpc_pollset *pollset, grpc_fd **fds,
+                                  size_t nfds, int edge_triggered) {
   size_t i;
   pollset_hdr *h = gpr_malloc(sizeof(pollset_hdr));
   struct epoll_event ev;
@@ -173,6 +174,9 @@ void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
 
   pollset->vtable = &multipoll_with_epoll_pollset;
   pollset->data.ptr = h;
+
+  h->edge_triggered = edge_triggered;
+
   h->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
   if (h->epoll_fd < 0) {
     /* TODO(klempner): Fall back to poll here, especially on ENOSYS */
@@ -192,6 +196,16 @@ void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
     gpr_log(GPR_ERROR, "Wakeup fd epoll_ctl failed: %s", strerror(errno));
     abort();
   }
+}
+
+void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
+                                      size_t nfds) {
+  grpc_platform_become_epoller(pollset, fds, nfds, 1);
+}
+
+void grpc_platform_become_backup_poller(grpc_pollset *pollset, grpc_fd **fds,
+                                        size_t nfds) {
+  grpc_platform_become_epoller(pollset, fds, nfds, 0);
 }
 
 #endif  /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */

@@ -112,6 +112,8 @@ void grpc_pollset_global_init(void) {
   /* initialize the backup pollset */
   grpc_pollset_init(&g_backup_pollset);
 
+  grpc_platform_become_backup_poller(&g_backup_pollset, NULL, 0);
+
   /* start the backup poller thread */
   g_shutdown_backup_poller = 0;
   gpr_event_init(&g_backup_poller_done);
