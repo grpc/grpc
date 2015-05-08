@@ -116,6 +116,29 @@ inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *f
   return LowerUnderscoreToUpperCamel(StripProto(file->name()));
 }
 
+enum MethodType {
+  METHODTYPE_NO_STREAMING,
+  METHODTYPE_CLIENT_STREAMING,
+  METHODTYPE_SERVER_STREAMING,
+  METHODTYPE_BIDI_STREAMING
+};
+
+inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor *method) {
+  if (method->client_streaming()) {
+    if (method->server_streaming()) {
+      return METHODTYPE_BIDI_STREAMING;
+    } else {
+      return METHODTYPE_CLIENT_STREAMING;
+    }
+  } else {
+    if (method->server_streaming()) {
+      return METHODTYPE_SERVER_STREAMING;
+    } else {
+      return METHODTYPE_NO_STREAMING;
+    }
+  }
+}
+
 }  // namespace grpc_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
