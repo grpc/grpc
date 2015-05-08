@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{C61154BA-DD4A-4838-8420-0162A28925E0}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -72,7 +72,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestServiceGrpc.cs" />
     <Compile Include="Empty.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="InteropClientServerTest.cs" />
@@ -80,6 +79,7 @@
     <Compile Include="InteropServer.cs" />
     <Compile Include="InteropClient.cs" />
     <Compile Include="TestCredentials.cs" />
+    <Compile Include="TestGrpc.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

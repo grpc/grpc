@@ -43,7 +43,7 @@ namespace math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : MathGrpc.IMathService
+    public class MathServiceImpl : Math.IMath
     {
         public Task<DivReply> Div(ServerCallContext context, DivArgs request)
         {

@@ -91,7 +91,7 @@ namespace Grpc.IntegrationTesting
             GrpcEnvironment.Initialize();
 
             var server = new Server();
-            server.AddServiceDefinition(TestServiceGrpc.BindService(new TestServiceImpl()));
+            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
 
             string host = "0.0.0.0";
             int port = options.port.Value;
