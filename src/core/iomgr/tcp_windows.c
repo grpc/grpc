@@ -229,7 +229,7 @@ static void win_notify_on_read(grpc_endpoint *ep,
        Normal read errors would actually happen during the overlapped
        operation, which is the supported way to go for that. */
 	
-	/* This is not bad situation. It is possible in case of connection-lost 
+    /* This is not bad situation. It is possible in case of connection-lost 
        at issuing WSARecv time above, especially WSAECONNRESET (10054).
        At this situation, we should just do close the connection and free
        the resources. */
@@ -241,8 +241,8 @@ static void win_notify_on_read(grpc_endpoint *ep,
     /* Per the comment above, I'm going to treat that case as a hard failure
        for now, and leave the option to catch that and debug. */
 
-	/* __debugbreak(); */
-	/* If we remove below debugbreak(), this works well.
+    /* __debugbreak(); */
+    /* If we remove below debugbreak(), this works well.
        But we had better check a resource leak. (TODO) */
     return;
   }
