@@ -1250,6 +1250,20 @@ grpc_interop_gen_php_cmd() {
     echo $the_cmd
 }
 
+# constructs the full dockerized php gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized php service_account auth interop test cmd.
 #
 # call-seq:

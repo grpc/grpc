@@ -1,4 +1,4 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -32,26 +32,24 @@
 #endregion
 
 using System;
-using Grpc.Core.Internal;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
-    // TODO: perhaps add also serverSideStreaming and clientSideStreaming
-
-    public delegate void UnaryRequestServerMethod<TRequest, TResponse>(TRequest request, IObserver<TResponse> responseObserver);
-
-    public delegate IObserver<TRequest> StreamingRequestServerMethod<TRequest, TResponse>(IObserver<TResponse> responseObserver);
-
-    internal static class ServerCalls
+    /// <summary>
+    /// A writable stream of messages.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IAsyncStreamWriter<T>
+        where T : class
     {
-        public static IServerCallHandler UnaryRequestCall<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryRequestServerMethod<TRequest, TResponse> handler)
-        {
-            return new UnaryRequestServerCallHandler<TRequest, TResponse>(method, handler);
-        }
-
-        public static IServerCallHandler StreamingRequestCall<TRequest, TResponse>(Method<TRequest, TResponse> method, StreamingRequestServerMethod<TRequest, TResponse> handler)
-        {
-            return new StreamingRequestServerCallHandler<TRequest, TResponse>(method, handler);
-        }
+        /// <summary>
+        /// Writes a single message. Only one write can be pending at a time.
+        /// </summary>
+        /// <param name="message">the message to be written. Cannot be null.</param>
+        Task Write(T message);
     }
 }

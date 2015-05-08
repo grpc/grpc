@@ -32,26 +32,30 @@
 #endregion
 
 using System;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
+using System.Threading;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core.Internal
 {
-    public class ServerTest
+    internal class AtomicCounter
     {
-        [Test]
-        public void StartAndShutdownServer()
+        long counter = 0;
+
+        public void Increment()
         {
-            GrpcEnvironment.Initialize();
+            Interlocked.Increment(ref counter);
+        }
 
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
-            server.Start();
-            server.ShutdownAsync().Wait();
+        public void Decrement()
+        {
+            Interlocked.Decrement(ref counter);
+        }
 
-            GrpcEnvironment.Shutdown();
+        public long Count
+        {
+            get
+            {
+                return counter;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -32,26 +32,24 @@
 #endregion
 
 using System;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core
 {
-    public class ServerTest
+    /// <summary>
+    /// A stream of messages to be read.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IAsyncStreamReader<T>
+        where T : class
     {
-        [Test]
-        public void StartAndShutdownServer()
-        {
-            GrpcEnvironment.Initialize();
-
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
-            server.Start();
-            server.ShutdownAsync().Wait();
-
-            GrpcEnvironment.Shutdown();
-        }
+        /// <summary>
+        /// Reads a single message. Returns null if the last message was already read.
+        /// A following read can only be started when the previous one finishes.
+        /// </summary>
+        Task<T> ReadNext();
     }
 }

@@ -1,4 +1,4 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -33,33 +33,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
-namespace Grpc.Core.Utils
+namespace Grpc.Core
 {
-    public class RecordingObserver<T> : IObserver<T>
+    /// <summary>
+    /// A writable stream of messages that is used in server-side handlers.
+    /// </summary>
+    public interface IServerStreamWriter<T> : IAsyncStreamWriter<T>
+        where T : class
     {
-        TaskCompletionSource<List<T>> tcs = new TaskCompletionSource<List<T>>();
-        List<T> data = new List<T>();
-
-        public void OnCompleted()
-        {
-            tcs.SetResult(data);
-        }
-
-        public void OnError(Exception error)
-        {
-            tcs.SetException(error);
-        }
-
-        public void OnNext(T value)
-        {
-            data.Add(value);
-        }
-
-        public Task<List<T>> ToList()
-        {
-            return tcs.Task;
-        }
     }
 }

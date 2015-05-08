@@ -32,26 +32,42 @@
 #endregion
 
 using System;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core
 {
-    public class ServerTest
+    /// <summary>
+    /// Return type for server streaming calls.
+    /// </summary>
+    public sealed class AsyncServerStreamingCall<TResponse>
+        where TResponse : class
     {
-        [Test]
-        public void StartAndShutdownServer()
+        readonly IAsyncStreamReader<TResponse> responseStream;
+
+        public AsyncServerStreamingCall(IAsyncStreamReader<TResponse> responseStream)
         {
-            GrpcEnvironment.Initialize();
+            this.responseStream = responseStream;
+        }
 
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
-            server.Start();
-            server.ShutdownAsync().Wait();
+        /// <summary>
+        /// Reads the next response from ResponseStream
+        /// </summary>
+        /// <returns></returns>
+        public Task<TResponse> ReadNext()
+        {
+            return responseStream.ReadNext();
+        }
 
-            GrpcEnvironment.Shutdown();
+        /// <summary>
+        /// Async stream to read streaming responses.
+        /// </summary>
+        public IAsyncStreamReader<TResponse> ResponseStream
+        {
+            get
+            {
+                return responseStream;
+            }
         }
     }
 }
