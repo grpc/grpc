@@ -158,7 +158,6 @@
     "language": "c", 
     "name": "fd_posix_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -167,7 +166,6 @@
     "language": "c", 
     "name": "fling_stream_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -176,7 +174,6 @@
     "language": "c", 
     "name": "fling_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -482,7 +479,6 @@
     "language": "c", 
     "name": "poll_kick_posix_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -518,7 +514,6 @@
     "language": "c", 
     "name": "tcp_client_posix_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -527,7 +522,6 @@
     "language": "c", 
     "name": "tcp_posix_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -536,7 +530,6 @@
     "language": "c", 
     "name": "tcp_server_posix_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -1182,243 +1175,216 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_bad_hostname_test", 
+    "name": "chttp2_fullstack_uds_posix_bad_hostname_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": true, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_after_accept_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_after_accept_and_writes_closed_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_invoke_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_after_invoke_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_before_invoke_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_before_invoke_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_in_a_vacuum_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_in_a_vacuum_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_census_simple_request_test", 
+    "name": "chttp2_fullstack_uds_posix_census_simple_request_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_disappearing_server_test", 
+    "name": "chttp2_fullstack_uds_posix_disappearing_server_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test", 
+    "name": "chttp2_fullstack_uds_posix_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test", 
+    "name": "chttp2_fullstack_uds_posix_early_server_shutdown_finishes_tags_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_empty_batch_test", 
+    "name": "chttp2_fullstack_uds_posix_empty_batch_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_graceful_server_shutdown_test", 
+    "name": "chttp2_fullstack_uds_posix_graceful_server_shutdown_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": true, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_invoke_large_request_test", 
+    "name": "chttp2_fullstack_uds_posix_invoke_large_request_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_max_concurrent_streams_test", 
+    "name": "chttp2_fullstack_uds_posix_max_concurrent_streams_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_max_message_length_test", 
+    "name": "chttp2_fullstack_uds_posix_max_message_length_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_no_op_test", 
+    "name": "chttp2_fullstack_uds_posix_no_op_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_ping_pong_streaming_test", 
+    "name": "chttp2_fullstack_uds_posix_ping_pong_streaming_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_registered_call_test", 
+    "name": "chttp2_fullstack_uds_posix_registered_call_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_binary_metadata_and_payload_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_metadata_and_payload_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_metadata_and_payload_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_payload_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_payload_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_payload_and_call_creds_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_payload_and_call_creds_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_large_metadata_test", 
+    "name": "chttp2_fullstack_uds_posix_request_with_large_metadata_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_payload_test", 
+    "name": "chttp2_fullstack_uds_posix_request_with_payload_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_delayed_request_test", 
+    "name": "chttp2_fullstack_uds_posix_simple_delayed_request_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_request_test", 
+    "name": "chttp2_fullstack_uds_posix_simple_request_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_test", 
+    "name": "chttp2_fullstack_uds_posix_simple_request_with_high_initial_sequence_number_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -2631,234 +2597,208 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_bad_hostname_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_bad_hostname_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_after_accept_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_after_accept_and_writes_closed_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_invoke_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_after_invoke_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_before_invoke_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_before_invoke_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_in_a_vacuum_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_cancel_in_a_vacuum_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_census_simple_request_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_census_simple_request_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_disappearing_server_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_disappearing_server_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_tags_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_early_server_shutdown_finishes_tags_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_empty_batch_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_empty_batch_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_graceful_server_shutdown_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_graceful_server_shutdown_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": true, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_invoke_large_request_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_invoke_large_request_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_max_concurrent_streams_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_max_concurrent_streams_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_max_message_length_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_max_message_length_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_no_op_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_no_op_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_ping_pong_streaming_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_ping_pong_streaming_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_registered_call_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_registered_call_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_binary_metadata_and_payload_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_metadata_and_payload_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_metadata_and_payload_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_payload_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_payload_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_large_metadata_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_request_with_large_metadata_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_payload_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_request_with_payload_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_delayed_request_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_simple_delayed_request_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_request_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_simple_request_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_request_with_high_initial_sequence_number_unsecure_test", 
+    "name": "chttp2_fullstack_uds_posix_simple_request_with_high_initial_sequence_number_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 

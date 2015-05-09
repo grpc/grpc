@@ -9,7 +9,7 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="to_filter(path)">${calc_to_filter(path)}</%def>\
 <%def name="filter_to_guid(proj, filter)">${re.sub('(........)(....)(....)(....)', r'\1-\2-\3-\4-', hashlib.md5(''.join([filter, proj])).hexdigest())}</%def>\
-<%def name="gen_filters(name, libs, targets)">\
+<%def name="gen_filters(name, collection)">\
 % for project in vsprojects:
   % if project.name == name:
 <?xml version="1.0" encoding="utf-8"?>
