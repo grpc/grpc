@@ -123,7 +123,6 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
      closed by the system. */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    sp->socket->closed_early = 1;
     grpc_winsocket_orphan(sp->socket);
   }
   gpr_free(s->ports);
@@ -249,6 +248,7 @@ static void on_accept(void *arg, int from_iocp) {
   if (sp->shutting_down) {
     GPR_ASSERT(from_iocp);
     sp->shutting_down = 0;
+    sp->socket->read_info.outstanding = 0;
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
       gpr_cv_broadcast(&sp->server->cv);
@@ -420,6 +420,7 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
   s->cb = cb;
   s->cb_arg = cb_arg;
   for (i = 0; i < s->nports; i++) {
+    s->ports[i].socket->read_info.outstanding = 1;
     start_accept(s->ports + i);
     s->active_ports++;
   }

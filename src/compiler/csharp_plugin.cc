@@ -31,38 +31,42 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
-#define GRPC_TEST_CORE_END2END_END2END_TESTS_H
+// Generates C# gRPC service interface out of Protobuf IDL.
 
-#include <grpc/grpc.h>
+#include <memory>
 
-typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
-typedef struct grpc_end2end_test_config grpc_end2end_test_config;
+#include "src/compiler/config.h"
+#include "src/compiler/csharp_generator.h"
+#include "src/compiler/csharp_generator_helpers.h"
 
-#define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
+class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+ public:
+  CSharpGrpcGenerator() {}
+  ~CSharpGrpcGenerator() {}
 
-struct grpc_end2end_test_fixture {
-  grpc_completion_queue *server_cq;
-  grpc_completion_queue *client_cq;
-  grpc_server *server;
-  grpc_channel *client;
-  void *fixture_data;
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const grpc::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                grpc::string *error) const {
+    grpc::string code = grpc_csharp_generator::GetServices(file);
+    if (code.size() == 0) {
+      return true;  // don't generate a file if there are no services
+    }
+
+    // Get output file name.
+    grpc::string file_name;
+    if (!grpc_csharp_generator::ServicesFilename(file, &file_name)) {
+      return false;
+    }
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->Open(file_name));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+    return true;
+  }
 };
 
-struct grpc_end2end_test_config {
-  const char *name;
-  gpr_uint32 feature_mask;
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
-                                              grpc_channel_args *server_args);
-  void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
-  void (*init_server)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture *f);
-};
-
-void grpc_end2end_tests(grpc_end2end_test_config config);
-
-#endif  /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */
+int main(int argc, char *argv[]) {
+  CSharpGrpcGenerator generator;
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+}

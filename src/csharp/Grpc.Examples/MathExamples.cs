@@ -31,7 +31,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Grpc.Core.Utils;
 
@@ -39,34 +38,34 @@ namespace math
 {
     public static class MathExamples
     {
-        public static void DivExample(MathGrpc.IMathServiceClient stub)
+        public static void DivExample(Math.IMathClient stub)
         {
             DivReply result = stub.Div(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
             Console.WriteLine("Div Result: " + result);
         }
 
-        public static async Task DivAsyncExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DivAsyncExample(Math.IMathClient stub)
         {
             Task<DivReply> resultTask = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
             DivReply result = await resultTask;
             Console.WriteLine("DivAsync Result: " + result);
         }
 
-        public static async Task DivAsyncWithCancellationExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DivAsyncWithCancellationExample(Math.IMathClient stub)
         {
             Task<DivReply> resultTask = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
             DivReply result = await resultTask;
             Console.WriteLine(result);
         }
 
-        public static async Task FibExample(MathGrpc.IMathServiceClient stub)
+        public static async Task FibExample(Math.IMathClient stub)
         {
             var call = stub.Fib(new FibArgs.Builder { Limit = 5 }.Build());
             List<Num> result = await call.ResponseStream.ToList();
             Console.WriteLine("Fib Result: " + string.Join("|", result));
         }
 
-        public static async Task SumExample(MathGrpc.IMathServiceClient stub)
+        public static async Task SumExample(Math.IMathClient stub)
         {
             var numbers = new List<Num>
             {
@@ -80,7 +79,7 @@ namespace math
             Console.WriteLine("Sum Result: " + await call.Result);
         }
 
-        public static async Task DivManyExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DivManyExample(Math.IMathClient stub)
         {
             var divArgsList = new List<DivArgs>
             {
@@ -93,7 +92,7 @@ namespace math
             Console.WriteLine("DivMany Result: " + string.Join("|", await call.ResponseStream.ToList()));
         }
 
-        public static async Task DependendRequestsExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DependendRequestsExample(Math.IMathClient stub)
         {
             var numbers = new List<Num>
             {

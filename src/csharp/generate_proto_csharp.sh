@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,15 +28,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Regenerates gRPC service stubs from proto files.
+set +e
+cd $(dirname $0)
 
-CONFIG=${CONFIG:-opt}
+PLUGIN=protoc-gen-grpc=../../bins/opt/grpc_csharp_plugin
+EXAMPLES_DIR=Grpc.Examples
+INTEROP_DIR=Grpc.IntegrationTesting
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+protoc --plugin=$PLUGIN --grpc_out=$EXAMPLES_DIR \
+    -I $EXAMPLES_DIR/proto $EXAMPLES_DIR/proto/math.proto
 
-root=`pwd`
-
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-
-$root/src/node/node_modules/mocha/bin/mocha --timeout 4000 $root/src/node/test
+protoc --plugin=$PLUGIN --grpc_out=$INTEROP_DIR \
+    -I $INTEROP_DIR/proto $INTEROP_DIR/proto/test.proto

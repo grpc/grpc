@@ -31,38 +31,20 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
-#define GRPC_TEST_CORE_END2END_END2END_TESTS_H
+#ifndef GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_HELPERS_H
 
-#include <grpc/grpc.h>
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
-typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
-typedef struct grpc_end2end_test_config grpc_end2end_test_config;
+namespace grpc_csharp_generator {
 
-#define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
+inline bool ServicesFilename(const grpc::protobuf::FileDescriptor *file,
+                             grpc::string *file_name_or_error) {
+  *file_name_or_error = grpc_generator::FileNameInUpperCamel(file) + "Grpc.cs";
+  return true;
+}
 
-struct grpc_end2end_test_fixture {
-  grpc_completion_queue *server_cq;
-  grpc_completion_queue *client_cq;
-  grpc_server *server;
-  grpc_channel *client;
-  void *fixture_data;
-};
+}  // namespace grpc_csharp_generator
 
-struct grpc_end2end_test_config {
-  const char *name;
-  gpr_uint32 feature_mask;
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
-                                              grpc_channel_args *server_args);
-  void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
-  void (*init_server)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture *f);
-};
-
-void grpc_end2end_tests(grpc_end2end_test_config config);
-
-#endif  /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */
+#endif  // GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_HELPERS_H
