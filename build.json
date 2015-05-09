@@ -553,7 +553,8 @@
       "filegroups": [
         "grpc++_base"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}"
     },
     {
       "name": "grpc_plugin_support",

@@ -1,2 +1,2 @@
 <%namespace file="../vcxproj_defs.include" import="gen_project"/>\
-${gen_project('grpc_csharp_ext', libs, targets, configuration_type = 'DynamicLibrary', additional_props = ['winsock'], packages=['openssl','zlib'])}
+${gen_project('grpc_csharp_ext', libs, configuration_type = 'DynamicLibrary', props = ['winsock'], packages=['openssl','zlib'])}
