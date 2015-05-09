@@ -6,7 +6,7 @@ before_install:
   - echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
   - echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | sudo tee -a /etc/apt/sources.list.d/mono-xamarin.list
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5
+  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5 gcc-4.4 g++-4.4
   - sudo pip install cpp-coveralls mako simplejson
   - sudo apt-get install -qq mono-devel nunit
   - wget www.nuget.org/NuGet.exe -O nuget.exe
@@ -24,12 +24,12 @@ env:
     - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
     - CONFIG=opt TEST=csharp
-    - USE_GCC=4.4 CONFIG=opt TEST=build
+    - TARGET_CC=gcc-4.4 TARGET_CXX=g++-4.4 TARGET_LD=gcc-4.4 TARGET_LDXX=g++-4.4 CONFIG=opt TEST=build
+    - TARGET_CC=clang TARGET_CXX=clang++ TARGET_LD=clang TARGET_LDXX=clang++ CONFIG=opt TEST=build
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
   - ./tools/run_tests/prepare_travis.sh
-  - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 after_success:
   - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens -b. --gcov-options '\-p' ; fi
