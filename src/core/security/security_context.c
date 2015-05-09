@@ -31,38 +31,49 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
-#define GRPC_TEST_CORE_END2END_END2END_TESTS_H
+#include <string.h>
 
-#include <grpc/grpc.h>
+#include "src/core/security/security_context.h"
+#include "src/core/surface/call.h"
 
-typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
-typedef struct grpc_end2end_test_config grpc_end2end_test_config;
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
+grpc_call_error grpc_call_set_credentials(grpc_call *call,
+                                          grpc_credentials *creds) {
+  grpc_client_security_context *ctx = NULL;
+  if (!grpc_call_is_client(call)) {
+    gpr_log(GPR_ERROR, "Method is client-side only.");
+    return GRPC_CALL_ERROR_NOT_ON_SERVER;
+  }
+  if (creds != NULL && !grpc_credentials_has_request_metadata_only(creds)) {
+    gpr_log(GPR_ERROR, "Incompatible credentials to set on a call.");
+    return GRPC_CALL_ERROR;
+  }
+  ctx = (grpc_client_security_context *)grpc_call_context_get(
+      call, GRPC_CONTEXT_SECURITY);
+  if (ctx == NULL) {
+    ctx = grpc_client_security_context_create();
+    ctx->creds = grpc_credentials_ref(creds);
+    grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
+                          grpc_client_security_context_destroy);
+  } else {
+    grpc_credentials_unref(ctx->creds);
+    ctx->creds = grpc_credentials_ref(creds);
+  }
+  return GRPC_CALL_OK;
+}
 
-struct grpc_end2end_test_fixture {
-  grpc_completion_queue *server_cq;
-  grpc_completion_queue *client_cq;
-  grpc_server *server;
-  grpc_channel *client;
-  void *fixture_data;
-};
+grpc_client_security_context *grpc_client_security_context_create(void) {
+  grpc_client_security_context *ctx =
+      gpr_malloc(sizeof(grpc_client_security_context));
+  memset(ctx, 0, sizeof(grpc_client_security_context));
+  return ctx;
+}
 
-struct grpc_end2end_test_config {
-  const char *name;
-  gpr_uint32 feature_mask;
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
-                                              grpc_channel_args *server_args);
-  void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
-  void (*init_server)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture *f);
-};
-
-void grpc_end2end_tests(grpc_end2end_test_config config);
-
-#endif  /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */
+void grpc_client_security_context_destroy(void *ctx) {
+  grpc_client_security_context *c = (grpc_client_security_context *)ctx;
+  grpc_credentials_unref(c->creds);
+  gpr_free(ctx);
+}
