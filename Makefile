@@ -42,6 +42,9 @@ endif
 ifeq ($(SYSTEM),MSYS)
 SYSTEM = MINGW32
 endif
+ifeq ($(SYSTEM),MINGW64)
+SYSTEM = MINGW32
+endif
 
 
 ifndef BUILDDIR
