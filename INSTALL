@@ -140,6 +140,29 @@ you will need to install certain modules for python.
 
   $ sudo easy_install simplejson mako
 
+Mingw-specific notes:
+---------------------
+
+While gRPC compiles properly under mingw, some more preparation work is needed.
+The recommendation is to use msys2. The installation instructions are available
+at that address: http://msys2.github.io/
+
+Once this is installed, make sure you are using the following: MinGW-w64 Win64.
+You'll be required to install a few more packages:
+
+  $ pacman -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-zlib autoconf automake libtool
+
+Please also install OpenSSL from that website:
+
+  http://slproweb.com/products/Win32OpenSSL.html
+
+The package Win64 OpenSSL v1.0.2a should do. At that point you should be able
+to compile gRPC with the following:
+
+  $ export LDFLAGS="-L/mingw64/lib -L/c/OpenSSL-Win64"
+  $ export CPPFLAGS="-I/mingw64/include -I/c/OpenSSL-Win64/include"
+  $ make
+
 A word on OpenSSL
 -----------------
 
