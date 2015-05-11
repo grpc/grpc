@@ -47,7 +47,7 @@ static VALUE grpc_rb_cCompletionQueue = Qnil;
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
   grpc_completion_queue *cq;
-  grpc_event *event;
+  grpc_event event;
   gpr_timespec timeout;
   void *tag;
 } next_call_stack;
@@ -145,12 +145,9 @@ static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
   TypedData_Get_Struct(self, grpc_completion_queue,
                        &grpc_rb_completion_queue_data_type, next_call.cq);
   next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
-  next_call.event = NULL;
+  next_call.event.type = GRPC_QUEUE_TIMEOUT;
   rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                              (void *)&next_call, NULL, NULL);
-  if (next_call.event == NULL) {
-    return Qnil;
-  }
   return grpc_rb_new_event(next_call.event);
 }
 
@@ -158,17 +155,14 @@ static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
  * event. */
 VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
                                      VALUE timeout) {
-  grpc_event *ev = grpc_rb_completion_queue_pluck_event(self, tag, timeout);
-  if (ev == NULL) {
-    return Qnil;
-  }
+  grpc_event ev = grpc_rb_completion_queue_pluck_event(self, tag, timeout);
   return grpc_rb_new_event(ev);
 }
 
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
-grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
-                                                 VALUE timeout) {
+grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
+                                                VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   TypedData_Get_Struct(self, grpc_completion_queue,
@@ -178,9 +172,6 @@ grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   next_call.event = NULL;
   rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                              (void *)&next_call, NULL, NULL);
-  if (next_call.event == NULL) {
-    return NULL;
-  }
   return next_call.event;
 }
 
