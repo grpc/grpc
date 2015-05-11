@@ -114,6 +114,9 @@ struct grpc_tcp_server {
   /* shutdown callback */
   void (*shutdown_complete)(void *);
   void *shutdown_complete_arg;
+
+  grpc_pollset **pollsets;
+  size_t pollset_count;
 };
 
 grpc_tcp_server *grpc_tcp_server_create(void) {
@@ -272,6 +275,8 @@ error:
 /* event manager callback when reads are ready */
 static void on_read(void *arg, int success) {
   server_port *sp = arg;
+  grpc_fd *fdobj;
+  size_t i;
 
   if (!success) {
     goto error;
@@ -299,9 +304,16 @@ static void on_read(void *arg, int success) {
 
     grpc_set_socket_no_sigpipe_if_possible(fd);
 
+    fdobj = grpc_fd_create(fd);
+    /* TODO(ctiller): revise this when we have server-side sharding
+       of channels -- we certainly should not be automatically adding every
+       incoming channel to every pollset owned by the server */
+    for (i = 0; i < sp->server->pollset_count; i++) {
+      grpc_pollset_add_fd(sp->server->pollsets[i], fdobj);
+    }
     sp->server->cb(
         sp->server->cb_arg,
-        grpc_tcp_create(grpc_fd_create(fd), GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+        grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
   }
 
   abort();
@@ -436,6 +448,8 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollsets,
   GPR_ASSERT(s->active_ports == 0);
   s->cb = cb;
   s->cb_arg = cb_arg;
+  s->pollsets = pollsets;
+  s->pollset_count = pollset_count;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
       grpc_pollset_add_fd(pollsets[j], s->ports[i].emfd);
