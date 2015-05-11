@@ -36,15 +36,19 @@ import simplejson
 import collections
 
 
+FixtureOptions = collections.namedtuple('FixtureOptions', 'secure platforms')
+default_unsecure_fixture_options = FixtureOptions(False, ['windows', 'posix'])
+default_secure_fixture_options = FixtureOptions(True, ['windows', 'posix'])
+
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
-    'chttp2_fake_security': True,
-    'chttp2_fullstack': False,
-    'chttp2_fullstack_uds': False,
-    'chttp2_simple_ssl_fullstack': True,
-    'chttp2_simple_ssl_with_oauth2_fullstack': True,
-    'chttp2_socket_pair': False,
-    'chttp2_socket_pair_one_byte_at_a_time': False,
+    'chttp2_fake_security': default_secure_fixture_options,
+    'chttp2_fullstack': default_unsecure_fixture_options,
+    'chttp2_fullstack_uds_posix': FixtureOptions(False, ['posix']),
+    'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
+    'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
+    'chttp2_socket_pair': default_unsecure_fixture_options,
+    'chttp2_socket_pair_one_byte_at_a_time': default_unsecure_fixture_options,
 }
 
 TestOptions = collections.namedtuple('TestOptions', 'flaky secure')
@@ -90,8 +94,9 @@ def main():
               'name': 'end2end_fixture_%s' % f,
               'build': 'private',
               'language': 'c',
-              'secure': 'check' if END2END_FIXTURES[f] else 'no',
-              'src': ['test/core/end2end/fixtures/%s.c' % f]
+              'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {
@@ -121,6 +126,7 @@ def main():
               'language': 'c',
               'src': [],
               'flaky': END2END_TESTS[t].flaky,
+              'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -140,6 +146,7 @@ def main():
               'secure': 'no',
               'src': [],
               'flaky': 'invoke_large_request' in t,
+              'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -149,7 +156,7 @@ def main():
                   'gpr'
               ]
           }
-      for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f]
+      for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f].secure
       for t in sorted(END2END_TESTS.keys()) if not END2END_TESTS[t].secure]}
   print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
 

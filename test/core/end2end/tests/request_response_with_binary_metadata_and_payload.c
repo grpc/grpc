@@ -35,7 +35,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>

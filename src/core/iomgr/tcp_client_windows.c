@@ -98,10 +98,10 @@ static void on_connect(void *acp, int from_iocp) {
   if (from_iocp) {
     DWORD transfered_bytes = 0;
     DWORD flags;
-    info->outstanding = 0;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                               &transfered_bytes, FALSE,
                                               &flags);
+    info->outstanding = 0;
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
       char *utf8_message = gpr_format_message(WSAGetLastError());

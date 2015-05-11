@@ -1,2 +1,2 @@
 <%namespace file="../vcxproj_defs.include" import="gen_project"/>\
-${gen_project('grpc', libs, targets, packages=['openssl','zlib'])}
+${gen_project('grpc', libs, packages=['openssl','zlib'])}

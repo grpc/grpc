@@ -1,2 +1,2 @@
 <%namespace file="../vcxproj_defs.include" import="gen_project"/>\
-${gen_project('gpr_test_util', libs, targets)}
+${gen_project('gpr_test_util', libs)}
