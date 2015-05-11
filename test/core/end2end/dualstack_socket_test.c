@@ -67,12 +67,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   char *server_hostport;
   grpc_channel *client;
   grpc_server *server;
-  grpc_completion_queue *client_cq;
-  grpc_completion_queue *server_cq;
+  grpc_completion_queue *cq;
   grpc_call *c;
   grpc_call *s;
-  cq_verifier *v_client;
-  cq_verifier *v_server;
+  cq_verifier *cqv;
   gpr_timespec deadline;
   int got_port;
   grpc_op ops[6];
@@ -98,9 +96,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
-  server_cq = grpc_completion_queue_create();
+  cq = grpc_completion_queue_create();
   server = grpc_server_create(NULL);
-  grpc_server_register_completion_queue(server, server_cq);
+  grpc_server_register_completion_queue(server, cq);
   GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
              0);
   if (port == 0) {
@@ -109,13 +107,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(port == got_port);
   }
   grpc_server_start(server);
-  v_server = cq_verifier_create(server_cq);
+  cqv = cq_verifier_create(cq);
 
   /* Create client. */
   gpr_join_host_port(&client_hostport, client_host, port);
-  client_cq = grpc_completion_queue_create();
   client = grpc_channel_create(client_hostport, NULL);
-  v_client = cq_verifier_create(client_cq);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");
@@ -133,7 +129,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
-  c = grpc_channel_create_call(client, client_cq, "/foo", "foo.test.google.fr",
+  c = grpc_channel_create_call(client, cq, "/foo", "foo.test.google.fr",
                                deadline);
   GPR_ASSERT(c);
 
@@ -158,10 +154,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     /* Check for a successful request. */
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_call(server, &s, &call_details,
-                                        &request_metadata_recv, server_cq,
-                                        server_cq, tag(101)));
-    cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
-    cq_verify(v_server);
+                                        &request_metadata_recv, cq,
+                                        cq, tag(101)));
+    cq_expect_completion(cqv, tag(101), GRPC_OP_OK);
+    cq_verify(cqv);
 
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -178,11 +174,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-    cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
-    cq_verify(v_server);
-
-    cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
-    cq_verify(v_client);
+    cq_expect_completion(cqv, tag(102), GRPC_OP_OK);
+    cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+    cq_verify(cqv);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
     GPR_ASSERT(0 == strcmp(details, "xyz"));
@@ -193,29 +187,25 @@ void test_connect(const char *server_host, const char *client_host, int port,
     grpc_call_destroy(s);
   } else {
     /* Check for a failed connection. */
-    cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
-    cq_verify(v_client);
+    cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+    cq_verify(cqv);
 
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
   }
 
   grpc_call_destroy(c);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
 
   /* Destroy client. */
   grpc_channel_destroy(client);
-  grpc_completion_queue_shutdown(client_cq);
-  drain_cq(client_cq);
-  grpc_completion_queue_destroy(client_cq);
 
   /* Destroy server. */
   grpc_server_shutdown(server);
   grpc_server_destroy(server);
-  grpc_completion_queue_shutdown(server_cq);
-  drain_cq(server_cq);
-  grpc_completion_queue_destroy(server_cq);
+  grpc_completion_queue_shutdown(cq);
+  drain_cq(cq);
+  grpc_completion_queue_destroy(cq);
 }
 
 int main(int argc, char **argv) {
