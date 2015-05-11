@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>ssleay32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\lib\$(PlatformToolset)\$(Platform)\$(Configuration)\static;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\lib\$(PlatformToolset)\$(Platform)\$(Configuration)\static;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

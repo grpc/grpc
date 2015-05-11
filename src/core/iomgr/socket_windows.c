@@ -75,15 +75,14 @@ void grpc_winsocket_shutdown(grpc_winsocket *socket) {
 /* Abandons a socket. Either we're going to queue it up for garbage collecting
    from the IO Completion Port thread, or destroy it immediately. Note that this
    mechanisms assumes that we're either always waiting for an operation, or we
-   explicitely know that we don't. If there is a future case where we can have
+   explicitly know that we don't. If there is a future case where we can have
    an "idle" socket which is neither trying to read or write, we'd start leaking
    both memory and sockets. */
 void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
   SOCKET socket = winsocket->socket;
-  if (!winsocket->closed_early) {
+  if (winsocket->read_info.outstanding || winsocket->write_info.outstanding) {
     grpc_iocp_socket_orphan(winsocket);
-  }
-  if (winsocket->closed_early) {
+  } else {
     grpc_winsocket_destroy(winsocket);
   }
   closesocket(socket);

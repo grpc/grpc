@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory)\..\packages\grpc.dependencies.zlib.1.2.8.9\build\native\lib\$(PlatformToolset)\$(Platform)\$(Configuration)\static\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\..\packages\grpc.dependencies.zlib.1.2.8.9\build\native\lib\$(PlatformToolset)\$(Platform)\$(Configuration)\static\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

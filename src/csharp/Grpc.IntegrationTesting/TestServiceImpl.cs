@@ -44,7 +44,7 @@ namespace grpc.testing
     /// <summary>
     /// Implementation of TestService server
     /// </summary>
-    public class TestServiceImpl : TestServiceGrpc.ITestService
+    public class TestServiceImpl : TestService.ITestService
     {
         public Task<Empty> EmptyCall(ServerCallContext context, Empty request)
         {

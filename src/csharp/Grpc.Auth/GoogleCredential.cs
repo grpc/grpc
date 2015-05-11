@@ -37,7 +37,6 @@ using System.IO;
 using System.Security.Cryptography;
 
 using Google.Apis.Auth.OAuth2;
-using Mono.Security.Cryptography;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
@@ -113,8 +112,7 @@ namespace Grpc.Auth
         {
             // TODO(jtattermusch): temporary code to create RSACryptoServiceProvider.
             base64PrivateKey = base64PrivateKey.Replace("-----BEGIN PRIVATE KEY-----", "").Replace("\n", "").Replace("-----END PRIVATE KEY-----", "");
-            PKCS8.PrivateKeyInfo PKI = new PKCS8.PrivateKeyInfo(Convert.FromBase64String(base64PrivateKey));
-            RsaPrivateCrtKeyParameters key = (RsaPrivateCrtKeyParameters)PrivateKeyFactory.CreateKey(PKI.GetBytes());
+            RsaPrivateCrtKeyParameters key = (RsaPrivateCrtKeyParameters)PrivateKeyFactory.CreateKey(Convert.FromBase64String(base64PrivateKey));
             RSAParameters rsaParameters = DotNetUtilities.ToRSAParameters(key);
             RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
             rsa.ImportParameters(rsaParameters);

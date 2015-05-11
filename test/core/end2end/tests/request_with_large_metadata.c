@@ -35,7 +35,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
@@ -176,7 +175,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -193,7 +192,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));

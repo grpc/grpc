@@ -414,6 +414,7 @@
         "src/core/security/secure_endpoint.h",
         "src/core/security/secure_transport_setup.h",
         "src/core/security/security_connector.h",
+        "src/core/security/security_context.h",
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/transport_security.h",
@@ -434,6 +435,7 @@
         "src/core/security/secure_endpoint.c",
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_connector.c",
+        "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
         "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
@@ -557,7 +559,8 @@
       "filegroups": [
         "grpc++_base"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}"
     },
     {
       "name": "grpc_plugin_support",
@@ -567,6 +570,8 @@
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/csharp_generator.h",
+        "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
         "src/compiler/objective_c_generator.h",
         "src/compiler/objective_c_generator_helpers.h",
@@ -578,6 +583,7 @@
       ],
       "src": [
         "src/compiler/cpp_generator.cc",
+        "src/compiler/csharp_generator.cc",
         "src/compiler/objective_c_generator.cc",
         "src/compiler/python_generator.cc",
         "src/compiler/ruby_generator.cc"
@@ -999,6 +1005,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1043,6 +1052,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1057,6 +1069,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1612,6 +1627,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1668,6 +1686,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1682,6 +1703,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1696,6 +1720,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1929,6 +1956,18 @@
       "language": "c++",
       "src": [
         "src/compiler/cpp_plugin.cc"
+      ],
+      "deps": [
+        "grpc_plugin_support"
+      ],
+      "secure": "no"
+    },
+    {
+      "name": "grpc_csharp_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "src": [
+        "src/compiler/csharp_plugin.cc"
       ],
       "deps": [
         "grpc_plugin_support"

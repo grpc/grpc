@@ -33,10 +33,19 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
   disallowed_dependencies = set(['end2end_certs'])
-  buildable_targets = [ target for target in targets
-                        if not disallowed_dependencies.intersection(target.deps) and
+  build_from_project_file = set(['gpr',
+                                 'grpc',
+                                 'grpc_unsecure',
+                                 'gpr_test_util',
+                                 'grpc_test_util',
+                                 'grpc_test_util_unsecure',
+                                ])
+  buildable_targets = [ target for target in targets + libs
+                        if not disallowed_dependencies.intersection(target.get('deps', [])) and
+                        target.build in ['all', 'test', 'private', 'tool', 'benchmark'] and
+                        target.language in ['c', 'c++'] and
                         all([src.endswith('.c') for src in target.src]) and
-                        'windows' in target.platforms ]
+                        'windows' in target.get('platforms', ['windows']) ]
   c_test_targets = [ target for target in buildable_targets if target.build == 'test' and not target.language == 'c++' ]
   cxx_test_targets = [ target for target in buildable_targets if target.build == 'test' and target.language == 'c++' ]
 %>\
@@ -45,30 +54,39 @@
 
 OUT_DIR=test_bin
 
-CC=cl.exe
-LINK=link.exe
+CC=cl.exe /nologo
+LINK=link.exe /nologo
+LIBTOOL=lib.exe /nologo /nodefaultlib
 
 REPO_ROOT=..
-OPENSSL_INCLUDES = .\packages\${get_openssl()}\build\native\include\v120\Win32\Debug\static
+OPENSSL_INCLUDES = .\packages\${get_openssl()}\build\native\include
 ZLIB_INCLUDES = .\packages\${get_zlib()}\build\native\include
 INCLUDES=/I$(REPO_ROOT) /I$(REPO_ROOT)\include /I$(OPENSSL_INCLUDES) /I$(ZLIB_INCLUDES)
 DEFINES=/D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /D _CRT_SECURE_NO_WARNINGS
-CFLAGS=/c $(INCLUDES) /nologo /Z7 /W3 /WX- /sdl $(DEFINES) /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze-
-LFLAGS=/DEBUG /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86
+CFLAGS=/c $(INCLUDES) /Z7 /W3 /WX- /sdl $(DEFINES) /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze-
+LFLAGS=/DEBUG /INCREMENTAL /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86
 
 OPENSSL_LIBS=.\packages\${get_openssl()}\build\native\lib\v120\Win32\Debug\static\ssleay32.lib .\packages\${get_openssl()}\build\native\lib\v120\Win32\Debug\static\libeay32.lib
 WINSOCK_LIBS=ws2_32.lib
+GENERAL_LIBS=advapi32.lib comdlg32.lib gdi32.lib kernel32.lib odbc32.lib odbccp32.lib ole32.lib oleaut32.lib shell32.lib user32.lib uuid.lib winspool.lib
 ZLIB_LIBS=.\packages\${get_zlib()}\build\native\lib\v120\Win32\Debug\static\cdecl\zlib.lib
-LIBS=$(OPENSSL_LIBS) $(WINSOCK_LIBS) $(ZLIB_LIBS)
+LIBS=$(OPENSSL_LIBS) $(ZLIB_LIBS) $(GENERAL_LIBS) $(WINSOCK_LIBS)
 
-build_gpr_test_util:
-	msbuild grpc.sln /t:gpr_test_util /p:Configuration=Debug
-
-build_grpc_test_util:
-	msbuild grpc.sln /t:grpc_test_util /p:Configuration=Debug
+all: buildtests
 
 $(OUT_DIR):
 	mkdir $(OUT_DIR)
+
+build_libs: \
+% for target in buildable_targets:
+% if target.build == 'private' or target.build == 'all':
+% if target.name in build_from_project_file:
+build_${target.name} \
+% else:
+Debug\${target.name}.lib \
+% endif
+% endif
+% endfor
 
 buildtests: buildtests_c buildtests_cxx
 
@@ -87,24 +105,42 @@ ${target.name}.exe \
 	echo All tests built.
 
 % for target in buildable_targets:
-${target.name}.exe: build_grpc_test_util $(OUT_DIR)
+%if target.name in build_from_project_file:
+build_${target.name}:
+	msbuild grpc.sln /t:${target.name} /p:Configuration=Debug /p:Linkage-grpc_dependencies_zlib=static
+%else:
+%if target.build == 'private':
+Debug\${target.name}.lib: \
+%else:
+${target.name}.exe: build_libs \
+%endif
+$(OUT_DIR)
 	echo Building ${target.name}
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ \
 %for source in target.src:
 $(REPO_ROOT)\${to_windows_path(source)} \
 %endfor
+%if not target.src:
+$(REPO_ROOT)\${to_windows_path('vsprojects/dummy.c')} \
+%endif
 
+%if target.build == 'private':
+	$(LIBTOOL) /OUT:"Debug\${target.name}.lib" \
+%else:
 	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\${target.name}.exe" \
-%for dep in target.deps:
+%for dep in target.get('deps', []):
 Debug\${dep}.lib \
 %endfor
 $(LIBS) \
+%endif
 %for source in target.src:
 $(OUT_DIR)\${re.search('([^/]+)\.c$', source).group(1)}.obj \
 %endfor
 
+%if target.build != 'private':
 ${target.name}: ${target.name}.exe
 	echo Running ${target.name}
 	$(OUT_DIR)\${target.name}.exe
-
+%endif
+%endif
 % endfor
