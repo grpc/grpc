@@ -270,14 +270,15 @@ function cancelAfterFirstResponse(client, done) {
  * Run one of the authentication tests.
  * @param {string} expected_user The expected username in the response
  * @param {Client} client The client to test against
+ * @param {?string} scope The scope to apply to the credentials
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
  */
-function authTest(expected_user, client, done) {
+function authTest(expected_user, client, scope, done) {
   (new GoogleAuth()).getApplicationDefault(function(err, credential) {
     assert.ifError(err);
-    if (credential.createScopedRequired()) {
-      credential = credential.createScoped(AUTH_SCOPE);
+    if (credential.createScopedRequired() && scope) {
+      credential = credential.createScoped(scope);
     }
     client.updateMetadata = grpc.getGoogleAuthDelegate(credential);
     var arg = {
@@ -318,8 +319,9 @@ var test_cases = {
   empty_stream: emptyStream,
   cancel_after_begin: cancelAfterBegin,
   cancel_after_first_response: cancelAfterFirstResponse,
-  compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER),
-  service_account_creds: _.partial(authTest, AUTH_USER)
+  compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER, null),
+  service_account_creds: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
+  jwt_token_creds: _.partial(authTest, AUTH_USER, null)
 };
 
 /**
