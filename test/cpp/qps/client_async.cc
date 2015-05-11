@@ -75,19 +75,20 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
       TestService::Stub* stub, const RequestType& req,
       std::function<
           std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-              TestService::Stub*, grpc::ClientContext*, const RequestType&,
-              void*)> start_req,
+              TestService::Stub*, grpc::ClientContext*, const RequestType&)>
+          start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : context_(),
         stub_(stub),
         req_(req),
         response_(),
-        next_state_(&ClientRpcContextUnaryImpl::ReqSent),
+        next_state_(&ClientRpcContextUnaryImpl::RespDone),
         callback_(on_done),
         start_req_(start_req),
         start_(Timer::Now()),
-        response_reader_(
-            start_req(stub_, &context_, req_, ClientRpcContext::tag(this))) {}
+        response_reader_(start_req(stub_, &context_, req_)) {
+    response_reader_->Finish(&response_, &status_, ClientRpcContext::tag(this));
+  }
   ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
   bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
     bool ret = (this->*next_state_)(ok);
@@ -102,11 +103,6 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   }
 
  private:
-  bool ReqSent(bool) {
-    next_state_ = &ClientRpcContextUnaryImpl::RespDone;
-    response_reader_->Finish(&response_, &status_, ClientRpcContext::tag(this));
-    return true;
-  }
   bool RespDone(bool) {
     next_state_ = &ClientRpcContextUnaryImpl::DoCallBack;
     return false;
@@ -122,8 +118,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   bool (ClientRpcContextUnaryImpl::*next_state_)(bool);
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-      TestService::Stub*, grpc::ClientContext*, const RequestType&, void*)>
-      start_req_;
+      TestService::Stub*, grpc::ClientContext*, const RequestType&)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
@@ -198,8 +193,8 @@ private:
                        const SimpleRequest& req) {
     auto check_done = [](grpc::Status s, SimpleResponse* response) {};
     auto start_req = [cq](TestService::Stub* stub, grpc::ClientContext* ctx,
-                          const SimpleRequest& request, void* tag) {
-      return stub->AsyncUnaryCall(ctx, request, cq, tag);
+                          const SimpleRequest& request) {
+      return stub->AsyncUnaryCall(ctx, request, cq);
     };
     new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
         stub, req, start_req, check_done);
