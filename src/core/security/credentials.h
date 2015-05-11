@@ -105,7 +105,6 @@ typedef struct {
       grpc_credentials *c, const char *target, const grpc_channel_args *args,
       grpc_credentials *request_metadata_creds,
       grpc_channel_security_connector **sc, grpc_channel_args **new_args);
-
 } grpc_credentials_vtable;
 
 struct grpc_credentials {

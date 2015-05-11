@@ -40,7 +40,10 @@
 #include <grpc/support/sync.h>
 #include "test/core/util/test_config.h"
 
-static gpr_event g_done;
+static gpr_mu g_mu;
+static int g_done = 0;
+static grpc_pollset_set g_pollset_set;
+static grpc_pollset g_pollset;
 
 static gpr_timespec n_seconds_time(int seconds) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
@@ -50,22 +53,28 @@ static void on_finish(void *arg, const grpc_httpcli_response *response) {
   GPR_ASSERT(arg == (void *)42);
   GPR_ASSERT(response);
   GPR_ASSERT(response->status == 200);
-  gpr_event_set(&g_done, (void *)1);
+  gpr_mu_lock(&g_mu);
+  g_done = 1;
+  gpr_mu_unlock(&g_mu);
 }
 
 static void test_get(int use_ssl) {
   grpc_httpcli_request req;
 
+  g_done = 0;
   gpr_log(GPR_INFO, "running %s with use_ssl=%d.", __FUNCTION__, use_ssl);
 
-  gpr_event_init(&g_done);
   memset(&req, 0, sizeof(req));
   req.host = "www.google.com";
   req.path = "/";
   req.use_ssl = use_ssl;
 
-  grpc_httpcli_get(&req, n_seconds_time(15), on_finish, (void *)42);
-  GPR_ASSERT(gpr_event_wait(&g_done, n_seconds_time(20)));
+  grpc_httpcli_get(&req, n_seconds_time(15), &g_pollset_set, on_finish, (void *)42);
+  gpr_mu_lock(&g_mu);
+  while (!g_done) {
+    grpc_pollset_work(&g_pollset, n_seconds_time(20));
+  }
+  gpr_mu_unlock(&g_mu);
 }
 
 /*
@@ -89,6 +98,10 @@ static void test_post(int use_ssl) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
+  grpc_pollset_set_init(&g_pollset_set);
+  grpc_pollset_init(&g_pollset);
+  gpr_mu_init(&g_mu);
+  grpc_pollset_set_add_pollset(&g_pollset_set, &g_pollset);
 
   test_get(0);
   test_get(1);
@@ -96,7 +109,10 @@ int main(int argc, char **argv) {
   /* test_post(0); */
   /* test_post(1); */
 
+  grpc_pollset_set_destroy(&g_pollset_set);
+  grpc_pollset_destroy(&g_pollset);
   grpc_iomgr_shutdown();
+  gpr_mu_destroy(&g_mu);
 
   return 0;
 }

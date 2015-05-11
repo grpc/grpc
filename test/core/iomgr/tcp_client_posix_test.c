@@ -45,6 +45,9 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
+static grpc_pollset_set g_pollset_set;
+static grpc_pollset g_pollset;
+
 static gpr_timespec test_deadline(void) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
 }
@@ -81,7 +84,7 @@ void test_succeeds(void) {
 
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
-  grpc_tcp_client_connect(must_succeed, &ev, (struct sockaddr *)&addr, addr_len,
+  grpc_tcp_client_connect(must_succeed, &ev, &g_pollset_set, (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future);
 
   /* await the connection */
@@ -107,7 +110,7 @@ void test_fails(void) {
   addr.sin_family = AF_INET;
 
   /* connect to a broken address */
-  grpc_tcp_client_connect(must_fail, &ev, (struct sockaddr *)&addr, addr_len,
+  grpc_tcp_client_connect(must_fail, &ev, &g_pollset_set, (struct sockaddr *)&addr, addr_len,
                           gpr_inf_future);
 
   /* wait for the connection callback to finish */
@@ -153,7 +156,7 @@ void test_times_out(void) {
 
   connect_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
 
-  grpc_tcp_client_connect(must_fail, &ev, (struct sockaddr *)&addr, addr_len,
+  grpc_tcp_client_connect(must_fail, &ev, &g_pollset_set, (struct sockaddr *)&addr, addr_len,
                           connect_deadline);
   /* Make sure the event doesn't trigger early */
   GPR_ASSERT(!gpr_event_wait(&ev, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(500)));
@@ -171,10 +174,15 @@ void test_times_out(void) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
+  grpc_pollset_set_init(&g_pollset_set);
+  grpc_pollset_init(&g_pollset);
+  grpc_pollset_set_add_pollset(&g_pollset_set, &g_pollset);
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   test_times_out();
+  grpc_pollset_set_destroy(&g_pollset_set);
+  grpc_pollset_destroy(&g_pollset);
   grpc_iomgr_shutdown();
   return 0;
 }
