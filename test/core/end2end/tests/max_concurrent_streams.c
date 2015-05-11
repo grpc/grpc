@@ -210,6 +210,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_op ops[6];
   grpc_op *op;
   int was_cancelled;
+  int got_client_start;
+  int got_server_start;
 
   server_arg.key = GRPC_ARG_MAX_CONCURRENT_STREAMS;
   server_arg.type = GRPC_ARG_INTEGER;
@@ -236,7 +238,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
-  deadline = n_seconds_time(10);
+  deadline = n_seconds_time(1000);
   c1 = grpc_channel_create_call(f.client, f.cq, "/alpha",
                                 "foo.test.google.fr:1234", deadline);
   GPR_ASSERT(c1);
@@ -293,20 +295,28 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(c2, ops, op - ops, tag(402)));
 
-  cq_expect_completion(cqv, tag(101), GRPC_OP_OK);
-  cq_verify(cqv);
-
-  ev = grpc_completion_queue_next(f.cq,
-                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3));
-  GPR_ASSERT(ev);
-  GPR_ASSERT(ev->type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev->data.op_complete == GRPC_OP_OK);
-  GPR_ASSERT(ev->tag == tag(301) || ev->tag == tag(401));
-  /* The /alpha or /beta calls started above could be invoked (but NOT both);
-   * check this here */
-  /* We'll get tag 303 or 403, we want 300, 400 */
-  live_call = ((int)(gpr_intptr)ev->tag) - 1;
-  grpc_event_finish(ev);
+  got_client_start = 0;
+  got_server_start = 0;
+  while (!got_client_start || !got_server_start) {
+    ev = grpc_completion_queue_next(f.cq,
+                                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3));
+    GPR_ASSERT(ev);
+    GPR_ASSERT(ev->type == GRPC_OP_COMPLETE);
+    GPR_ASSERT(ev->data.op_complete == GRPC_OP_OK);
+    if (ev->tag == tag(101)) {
+      GPR_ASSERT(!got_server_start);
+      got_server_start = 1;
+    } else {
+      GPR_ASSERT(!got_client_start);
+      GPR_ASSERT(ev->tag == tag(301) || ev->tag == tag(401));
+      /* The /alpha or /beta calls started above could be invoked (but NOT both);
+       * check this here */
+      /* We'll get tag 303 or 403, we want 300, 400 */
+      live_call = ((int)(gpr_intptr)ev->tag) - 1;
+      got_client_start = 1;
+    }
+    grpc_event_finish(ev);
+  }
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
