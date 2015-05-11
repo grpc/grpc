@@ -1296,20 +1296,6 @@
       ]
     },
     {
-      "name": "grpc_completion_queue_benchmark",
-      "build": "benchmark",
-      "language": "c",
-      "src": [
-        "test/core/surface/completion_queue_benchmark.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "grpc_completion_queue_test",
       "build": "test",
       "language": "c",

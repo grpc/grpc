@@ -400,14 +400,6 @@ grpc_channel_stack_test: grpc_channel_stack_test.exe
 	echo Running grpc_channel_stack_test
 	$(OUT_DIR)\grpc_channel_stack_test.exe
 
-grpc_completion_queue_benchmark.exe: build_grpc_test_util $(OUT_DIR)
-	echo Building grpc_completion_queue_benchmark
-	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\surface\completion_queue_benchmark.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\grpc_completion_queue_benchmark.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\completion_queue_benchmark.obj 
-grpc_completion_queue_benchmark: grpc_completion_queue_benchmark.exe
-	echo Running grpc_completion_queue_benchmark
-	$(OUT_DIR)\grpc_completion_queue_benchmark.exe
-
 grpc_completion_queue_test.exe: build_grpc_test_util $(OUT_DIR)
 	echo Building grpc_completion_queue_test
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\surface\completion_queue_test.c 
