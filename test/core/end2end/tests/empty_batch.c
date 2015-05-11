@@ -95,31 +95,28 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->server_cq);
-  drain_cq(f->server_cq);
-  grpc_completion_queue_destroy(f->server_cq);
-  grpc_completion_queue_shutdown(f->client_cq);
-  drain_cq(f->client_cq);
-  grpc_completion_queue_destroy(f->client_cq);
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
+  grpc_completion_queue_destroy(f->cq);
 }
 
 static void empty_batch_body(grpc_end2end_test_fixture f) {
   grpc_call *c;
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op *op = NULL;
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
                                "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, op, 0, tag(1)));
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
-  cq_verify(v_client);
+  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_verify(cqv);
 
   grpc_call_destroy(c);
 
-  cq_verifier_destroy(v_client);
+  cq_verifier_destroy(cqv);
 }
 
 static void test_invoke_empty_body(grpc_end2end_test_config config) {

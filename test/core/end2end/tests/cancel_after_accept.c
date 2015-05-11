@@ -126,7 +126,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
       grpc_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
                                "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
@@ -160,8 +160,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
              grpc_server_request_call(f.server, &s, &call_details,
                                       &request_metadata_recv, f.cq,
                                       f.cq, tag(2)));
-  cq_expect_completion(v_server, tag(2), GRPC_OP_OK);
-  cq_verify(v_server);
+  cq_expect_completion(cqv, tag(2), GRPC_OP_OK);
+  cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -180,11 +180,9 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 
-  cq_expect_completion(v_server, tag(3), GRPC_OP_OK);
-  cq_verify(v_server);
-
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
-  cq_verify(v_client);
+  cq_expect_completion(cqv, tag(3), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_verify(cqv);
 
   GPR_ASSERT(status == mode.expect_status);
   GPR_ASSERT(0 == strcmp(details, mode.expect_details));
@@ -204,8 +202,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }

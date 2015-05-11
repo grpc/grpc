@@ -96,7 +96,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_client(f);
 
   grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->client_cq);
+  drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
 }
 
@@ -114,7 +114,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
                                "slartibartfast.local", deadline);
   GPR_ASSERT(c);
 
@@ -153,7 +153,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
 
   grpc_call_destroy(c);
 
-  cq_verifier_destroy(v_client);
+  cq_verifier_destroy(cqv);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config) {

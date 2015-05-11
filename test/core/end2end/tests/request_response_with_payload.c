@@ -93,12 +93,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->server_cq);
-  drain_cq(f->server_cq);
-  grpc_completion_queue_destroy(f->server_cq);
-  grpc_completion_queue_shutdown(f->client_cq);
-  drain_cq(f->client_cq);
-  grpc_completion_queue_destroy(f->client_cq);
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
+  grpc_completion_queue_destroy(f->cq);
 }
 
 static void request_response_with_payload(grpc_end2end_test_fixture f) {
@@ -111,8 +108,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   grpc_byte_buffer *response_payload =
       grpc_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -126,7 +122,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
                                "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
@@ -160,10 +156,10 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.server_cq,
-                                      f.server_cq, tag(101)));
-  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
-  cq_verify(v_server);
+                                      &request_metadata_recv, f.cq,
+                                      f.cq, tag(101)));
+  cq_expect_completion(cqv, tag(101), GRPC_OP_OK);
+  cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -185,11 +181,9 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
-  cq_verify(v_server);
-
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
-  cq_verify(v_client);
+  cq_expect_completion(cqv, tag(102), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
@@ -208,8 +202,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload);
