@@ -2,9 +2,24 @@
 <%def name="get_repo_root()">..\..</%def>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [], packages = [])">\
-% for project in vsprojects:
-  % if project.name == name:
+<%def name="gen_project(name, collection, configuration_type = None, project_guid = None, props = [], packages = [])">\
+<%
+  for p in vsprojects:
+    if p.name == name:
+      project = p
+  for t in collection:
+    if t.name == name:
+      target = t
+  if not configuration_type:
+    configuration_type = 'StaticLibrary'
+  if not project_guid:
+    project_guid = project.vs_project_guid
+  if configuration_type == 'Application':
+    props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
+    if target.language == 'c++':
+      props.extend(['protobuf'])
+  props.extend(['global'])
+%>\
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 ${gen_package_props(packages)}\
@@ -66,29 +81,25 @@ ${gen_package_props(packages)}\
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-    % for prop in additional_props:
+    % for prop in props:
     <Import Project="..\${prop}.props" />
     % endfor
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-    % for prop in additional_props:
+    % for prop in props:
     <Import Project="..\${prop}.props" />
     % endfor
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-    % for prop in additional_props:
+    % for prop in props:
     <Import Project="..\${prop}.props" />
     % endfor
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-    % for prop in additional_props:
+    % for prop in props:
     <Import Project="..\${prop}.props" />
     % endfor
   </ImportGroup>
@@ -186,6 +197,11 @@ ${gen_package_props(packages)}\
     </ClCompile>
     % endfor
   </ItemGroup>
+  % elif configuration_type != 'StaticLibrary':
+  <ItemGroup>
+    <ClCompile Include="${get_repo_root()}\${to_windows_path('vsprojects/dummy.c')}">
+    </ClCompile>
+  </ItemGroup>
   % endif
   % if project.get('deps',[]):
   <ItemGroup>
@@ -207,6 +223,4 @@ ${gen_package_targets(packages)}\
   </ImportGroup>
 ${gen_package_ensure(packages)}\
 </Project>
-  % endif
-% endfor
 </%def>\

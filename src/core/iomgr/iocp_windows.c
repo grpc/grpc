@@ -121,7 +121,6 @@ static void do_iocp_work() {
 }
 
 static void iocp_loop(void *p) {
-  void * eventshutdown = NULL;
   while (gpr_atm_acq_load(&g_orphans) ||
          gpr_atm_acq_load(&g_custom_events) ||
          !gpr_event_get(&g_shutdown_iocp)) {
