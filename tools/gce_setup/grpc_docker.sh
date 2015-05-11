@@ -384,11 +384,17 @@ grpc_interop_test_args() {
   [[ -n $1 ]] && {  # client_type
     case $1 in
       cxx|go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
         grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
           return 2
         }
+        shift
+        ;;
+      csharp_dotnet)
+        grpc_client_platform='Windows'
+        grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         shift
         ;;
       *)
@@ -456,11 +462,17 @@ grpc_cloud_prod_test_args() {
   [[ -n $1 ]] && {  # client_type
     case $1 in
       cxx|go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
         grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
           return 2
         }
+        shift
+        ;;
+       csharp_dotnet)
+        grpc_client_platform='Windows'
+        grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         shift
         ;;
       *)
@@ -851,12 +863,23 @@ grpc_launch_servers() {
 test_runner() {
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  if [ "$grpc_client_platform" != "Windows" ]
+  then
+    echo "will run:"
+    echo "  $cmd"
+    echo "on $host"
+    gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  else
+    # gcloud's auto-uploading of RSA keys doesn't work for Windows VMs.
+    # So we have a linux machine that is authorized to access the Windows
+    # machine through ssh and we use gcloud auth support to logon to the proxy.
+    echo "will run:"
+    echo "  $cmd"
+    echo "on jtattermusch-windows-interop2 (through grpc-windows-proxy)"
+    gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh jtattermusch-interop-windows2 '$cmd'" &
+  fi
+  #
   PID=$!
   echo "pid is $PID"
   for x in {0..5}
@@ -924,7 +947,7 @@ grpc_interop_test() {
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_interop_test_args
-  local test_case host grpc_gen_test_cmd grpc_server grpc_port
+  local test_case host grpc_gen_test_cmd grpc_server grpc_port grpc_client_platform
 
   # set the project zone and check that all necessary args are provided
   _grpc_set_project_and_zone -f grpc_interop_test_args "$@" || return 1
@@ -966,7 +989,7 @@ grpc_cloud_prod_test() {
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_cloud_prod_test_args
-  local test_case host grpc_gen_test_cmd
+  local test_case host grpc_gen_test_cmd grpc_client_platform
 
   # set the project zone and check that all necessary args are provided
   _grpc_set_project_and_zone -f grpc_cloud_prod_test_args "$@" || return 1
@@ -1431,6 +1454,18 @@ grpc_interop_gen_csharp_mono_cmd() {
   echo $the_cmd
 }
 
+# constructs the csharp-dotnet interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_csharp_dotnet_cmd() {
+  local set_workdir="cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug &&"
+  local test_script="./Grpc.IntegrationTesting.Client.exe --use_tls=true --use_test_ca=true";
+  local the_cmd="$set_workdir $test_script $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized csharp-mono gce=>prod interop test cmd.
 #
 # call-seq:
@@ -1443,6 +1478,20 @@ grpc_cloud_prod_gen_csharp_mono_cmd() {
   local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags);
   local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the csharp-dotnet gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_csharp_dotnet_cmd() {
+  local set_workdir="cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug &&"
+  local test_script="./Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local set_certfile="SSL_CERT_FILE=/cacerts/roots.pem "
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$set_workdir $set_certfile $test_script $gfe_flags $@";
   echo $the_cmd
 }
 
