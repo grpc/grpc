@@ -591,6 +591,7 @@ static void call_on_done_send(void *pc, int success) {
   lock(call);
   if (call->last_send_contains & (1 << GRPC_IOREQ_SEND_INITIAL_METADATA)) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, error);
+    call->write_state = WRITE_STATE_STARTED;
   }
   if (call->last_send_contains & (1 << GRPC_IOREQ_SEND_MESSAGE)) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_MESSAGE, error);
@@ -599,6 +600,10 @@ static void call_on_done_send(void *pc, int success) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, error);
     finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, error);
     finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, GRPC_OP_OK);
+    call->write_state = WRITE_STATE_WRITE_CLOSED;
+  }
+  if (!success) {
+    call->write_state = WRITE_STATE_WRITE_CLOSED;
   }
   call->last_send_contains = 0;
   call->sending = 0;
@@ -813,7 +818,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
       op->send_ops = &call->send_ops;
       op->bind_pollset = grpc_cq_pollset(call->cq);
       call->last_send_contains |= 1 << GRPC_IOREQ_SEND_INITIAL_METADATA;
-      call->write_state = WRITE_STATE_STARTED;
       call->send_initial_metadata_count = 0;
     /* fall through intended */
     case WRITE_STATE_STARTED:
@@ -829,7 +833,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
         op->is_last_send = 1;
         op->send_ops = &call->send_ops;
         call->last_send_contains |= 1 << GRPC_IOREQ_SEND_CLOSE;
-        call->write_state = WRITE_STATE_WRITE_CLOSED;
         if (!call->is_client) {
           /* send trailing metadata */
           data = call->request_data[GRPC_IOREQ_SEND_TRAILING_METADATA];
