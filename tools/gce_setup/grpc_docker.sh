@@ -876,8 +876,8 @@ test_runner() {
     # machine through ssh and we use gcloud auth support to logon to the proxy.
     echo "will run:"
     echo "  $cmd"
-    echo "on jtattermusch-windows-interop2 (through grpc-windows-proxy)"
-    gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh jtattermusch-interop-windows2 '$cmd'" &
+    echo "on $host (through grpc-windows-proxy)"
+    gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh $host '$cmd'" &
   fi
   #
   PID=$!
