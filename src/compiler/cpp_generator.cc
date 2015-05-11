@@ -66,50 +66,6 @@ bool BidiStreaming(const grpc::protobuf::MethodDescriptor *method) {
   return method->client_streaming() && method->server_streaming();
 }
 
-bool HasUnaryCalls(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (NoStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool HasClientOnlyStreaming(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (ClientOnlyStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool HasServerOnlyStreaming(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (ServerOnlyStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool HasBidiStreaming(const grpc::protobuf::FileDescriptor *file) {
-  for (int i = 0; i < file->service_count(); i++) {
-    for (int j = 0; j < file->service(i)->method_count(); j++) {
-      if (BidiStreaming(file->service(i)->method(j))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 grpc::string FilenameIdentifier(const grpc::string &filename) {
   grpc::string result;
   for (unsigned i = 0; i < filename.size(); i++) {
@@ -156,50 +112,16 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
       "#include <grpc++/impl/internal_stub.h>\n"
       "#include <grpc++/impl/rpc_method.h>\n"
       "#include <grpc++/impl/service_type.h>\n"
+      "#include <grpc++/async_unary_call.h>\n"
       "#include <grpc++/status.h>\n"
+      "#include <grpc++/stream.h>\n"
       "\n"
       "namespace grpc {\n"
       "class CompletionQueue;\n"
       "class ChannelInterface;\n"
       "class RpcService;\n"
-      "class ServerContext;\n";
-  if (HasUnaryCalls(file)) {
-    temp.append(
-        "template <class OutMessage> class ClientAsyncResponseReader;\n");
-    temp.append(
-        "template <class OutMessage> class ServerAsyncResponseWriter;\n");
-  }
-  if (HasClientOnlyStreaming(file)) {
-    temp.append("template <class OutMessage> class ClientWriter;\n");
-    temp.append("template <class InMessage> class ServerReader;\n");
-    temp.append("template <class OutMessage> class ClientAsyncWriter;\n");
-    temp.append(
-        "template <class OutMessage, class InMessage> class "
-        "ServerAsyncReader;\n");
-  }
-  if (HasServerOnlyStreaming(file)) {
-    temp.append("template <class InMessage> class ClientReader;\n");
-    temp.append("template <class OutMessage> class ServerWriter;\n");
-    temp.append("template <class OutMessage> class ClientAsyncReader;\n");
-    temp.append("template <class InMessage> class ServerAsyncWriter;\n");
-  }
-  if (HasBidiStreaming(file)) {
-    temp.append(
-        "template <class OutMessage, class InMessage>\n"
-        "class ClientReaderWriter;\n");
-    temp.append(
-        "template <class OutMessage, class InMessage>\n"
-        "class ServerReaderWriter;\n");
-    temp.append(
-        "template <class OutMessage, class InMessage>\n"
-        "class ClientAsyncReaderWriter;\n");
-    temp.append(
-        "template <class OutMessage, class InMessage>\n"
-        "class ServerAsyncReaderWriter;\n");
-  }
-  temp.append("}  // namespace grpc\n");
-
-  temp.append("\n");
+      "class ServerContext;\n"
+      "}  // namespace grpc\n\n";
 
   if (!file->package().empty()) {
     std::vector<grpc::string> parts =
@@ -216,54 +138,314 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
   return temp;
 }
 
-void PrintHeaderClientMethod(grpc::protobuf::io::Printer *printer,
+void PrintHeaderClientMethodInterfaces(grpc::protobuf::io::Printer *printer,
                              const grpc::protobuf::MethodDescriptor *method,
-                             std::map<grpc::string, grpc::string> *vars) {
+                             std::map<grpc::string, grpc::string> *vars,
+                             bool is_public) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] =
       grpc_cpp_generator::ClassName(method->input_type(), true);
   (*vars)["Response"] =
       grpc_cpp_generator::ClassName(method->output_type(), true);
-  if (NoStreaming(method)) {
-    printer->Print(*vars,
-                   "::grpc::Status $Method$(::grpc::ClientContext* context, "
-                   "const $Request$& request, $Response$* response);\n");
-    printer->Print(
-        *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
-        "Async$Method$(::grpc::ClientContext* context, "
-        "const $Request$& request, "
-        "::grpc::CompletionQueue* cq, void* tag);\n");
-  } else if (ClientOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "std::unique_ptr< ::grpc::ClientWriter< $Request$>> $Method$("
-        "::grpc::ClientContext* context, $Response$* response);\n");
-    printer->Print(
-        *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>> Async$Method$("
-        "::grpc::ClientContext* context, $Response$* response, "
-        "::grpc::CompletionQueue* cq, void* tag);\n");
-  } else if (ServerOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "std::unique_ptr< ::grpc::ClientReader< $Response$>> $Method$("
-        "::grpc::ClientContext* context, const $Request$& request);\n");
-    printer->Print(*vars,
-                   "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
-                   "Async$Method$("
-                   "::grpc::ClientContext* context, const $Request$& request, "
-                   "::grpc::CompletionQueue* cq, void* tag);\n");
-  } else if (BidiStreaming(method)) {
-    printer->Print(
-        *vars,
-        "std::unique_ptr< ::grpc::ClientReaderWriter< $Request$, $Response$>> "
-        "$Method$(::grpc::ClientContext* context);\n");
-    printer->Print(*vars,
-                   "std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< "
-                   "$Request$, $Response$>> "
-                   "Async$Method$(::grpc::ClientContext* context, "
-                   "::grpc::CompletionQueue* cq, void* tag);\n");
+
+  if (is_public) {
+    if (NoStreaming(method)) {
+      printer->Print(
+          *vars,
+          "virtual ::grpc::Status $Method$(::grpc::ClientContext* context, "
+          "const $Request$& request, $Response$* response) = 0;\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< "
+          "::grpc::ClientAsyncResponseReaderInterface< $Response$>> "
+          "Async$Method$(::grpc::ClientContext* context, "
+          "const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientAsyncResponseReaderInterface< $Response$>>("
+          "Async$Method$Raw(context, request, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    } else if (ClientOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientWriterInterface< $Request$>>"
+          " $Method$("
+          "::grpc::ClientContext* context, $Response$* response) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< ::grpc::ClientWriterInterface< $Request$>>"
+          "($Method$Raw(context, response));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientAsyncWriterInterface< $Request$>>"
+          " Async$Method$(::grpc::ClientContext* context, $Response$* response, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientAsyncWriterInterface< $Request$>>("
+          "Async$Method$Raw(context, response, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    } else if (ServerOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientReaderInterface< $Response$>>"
+          " $Method$(::grpc::ClientContext* context, const $Request$& request)"
+          " {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< ::grpc::ClientReaderInterface< $Response$>>"
+          "($Method$Raw(context, request));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientAsyncReaderInterface< $Response$>> "
+          "Async$Method$("
+          "::grpc::ClientContext* context, const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientAsyncReaderInterface< $Response$>>("
+          "Async$Method$Raw(context, request, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    } else if (BidiStreaming(method)) {
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientReaderWriterInterface< $Request$, $Response$>> "
+          "$Method$(::grpc::ClientContext* context) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientReaderWriterInterface< $Request$, $Response$>>("
+          "$Method$Raw(context));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< "
+          "::grpc::ClientAsyncReaderWriterInterface< $Request$, $Response$>> "
+          "Async$Method$(::grpc::ClientContext* context, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientAsyncReaderWriterInterface< $Request$, $Response$>>("
+          "Async$Method$Raw(context, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    }
+  } else {
+    if (NoStreaming(method)) {
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientAsyncResponseReaderInterface< $Response$>* "
+          "Async$Method$Raw(::grpc::ClientContext* context, "
+          "const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) = 0;\n");
+    } else if (ClientOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientWriterInterface< $Request$>*"
+          " $Method$Raw("
+          "::grpc::ClientContext* context, $Response$* response) = 0;\n");
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientAsyncWriterInterface< $Request$>*"
+          " Async$Method$Raw(::grpc::ClientContext* context, "
+          "$Response$* response, "
+          "::grpc::CompletionQueue* cq, void* tag) = 0;\n");
+    } else if (ServerOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientReaderInterface< $Response$>* $Method$Raw("
+          "::grpc::ClientContext* context, const $Request$& request) = 0;\n");
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientAsyncReaderInterface< $Response$>* "
+          "Async$Method$Raw("
+          "::grpc::ClientContext* context, const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) = 0;\n");
+    } else if (BidiStreaming(method)) {
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientReaderWriterInterface< $Request$, $Response$>* "
+          "$Method$Raw(::grpc::ClientContext* context) = 0;\n");
+      printer->Print(
+          *vars,
+          "virtual ::grpc::ClientAsyncReaderWriterInterface< "
+          "$Request$, $Response$>* "
+          "Async$Method$Raw(::grpc::ClientContext* context, "
+          "::grpc::CompletionQueue* cq, void* tag) = 0;\n");
+    }
+  }
+}
+
+void PrintHeaderClientMethod(grpc::protobuf::io::Printer *printer,
+                             const grpc::protobuf::MethodDescriptor *method,
+                             std::map<grpc::string, grpc::string> *vars,
+                             bool is_public) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] =
+      grpc_cpp_generator::ClassName(method->input_type(), true);
+  (*vars)["Response"] =
+      grpc_cpp_generator::ClassName(method->output_type(), true);
+
+  if (is_public) {
+    if (NoStreaming(method)) {
+      printer->Print(
+          *vars,
+          "::grpc::Status $Method$(::grpc::ClientContext* context, "
+          "const $Request$& request, $Response$* response) GRPC_OVERRIDE;\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
+          "Async$Method$(::grpc::ClientContext* context, "
+          "const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientAsyncResponseReader< $Response$>>("
+          "Async$Method$Raw(context, request, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    } else if (ClientOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientWriter< $Request$>>"
+          " $Method$("
+          "::grpc::ClientContext* context, $Response$* response) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< ::grpc::ClientWriter< $Request$>>"
+          "($Method$Raw(context, response));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>>"
+          " Async$Method$(::grpc::ClientContext* context, $Response$* response, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>>("
+          "Async$Method$Raw(context, response, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    } else if (ServerOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientReader< $Response$>>"
+          " $Method$(::grpc::ClientContext* context, const $Request$& request)"
+          " {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< ::grpc::ClientReader< $Response$>>"
+          "($Method$Raw(context, request));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
+          "Async$Method$("
+          "::grpc::ClientContext* context, const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>>("
+          "Async$Method$Raw(context, request, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    } else if (BidiStreaming(method)) {
+      printer->Print(
+          *vars,
+          "std::unique_ptr< ::grpc::ClientReaderWriter< $Request$, $Response$>>"
+          " $Method$(::grpc::ClientContext* context) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientReaderWriter< $Request$, $Response$>>("
+          "$Method$Raw(context));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(
+          *vars,
+          "std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< "
+          "$Request$, $Response$>> "
+          "Async$Method$(::grpc::ClientContext* context, "
+          "::grpc::CompletionQueue* cq, void* tag) {\n");
+      printer->Indent();
+      printer->Print(
+          *vars,
+          "return std::unique_ptr< "
+          "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>>("
+          "Async$Method$Raw(context, cq, tag));\n");
+      printer->Outdent();
+      printer->Print("}\n");
+    }
+  } else {
+    if (NoStreaming(method)) {
+      printer->Print(
+          *vars,
+          "::grpc::ClientAsyncResponseReader< $Response$>* "
+          "Async$Method$Raw(::grpc::ClientContext* context, "
+          "const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+    } else if (ClientOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "::grpc::ClientWriter< $Request$>* $Method$Raw("
+          "::grpc::ClientContext* context, $Response$* response) "
+          "GRPC_OVERRIDE;\n");
+      printer->Print(
+          *vars,
+          "::grpc::ClientAsyncWriter< $Request$>* Async$Method$Raw("
+          "::grpc::ClientContext* context, $Response$* response, "
+          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+    } else if (ServerOnlyStreaming(method)) {
+      printer->Print(
+          *vars,
+          "::grpc::ClientReader< $Response$>* $Method$Raw("
+          "::grpc::ClientContext* context, const $Request$& request)"
+          " GRPC_OVERRIDE;\n");
+      printer->Print(
+          *vars,
+          "::grpc::ClientAsyncReader< $Response$>* Async$Method$Raw("
+          "::grpc::ClientContext* context, const $Request$& request, "
+          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+    } else if (BidiStreaming(method)) {
+      printer->Print(
+          *vars,
+          "::grpc::ClientReaderWriter< $Request$, $Response$>* "
+          "$Method$Raw(::grpc::ClientContext* context) GRPC_OVERRIDE;\n");
+      printer->Print(
+          *vars,
+          "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
+          "Async$Method$Raw(::grpc::ClientContext* context, "
+          "::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;\n");
+    }
   }
 }
 
@@ -357,17 +539,36 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
 
   // Client side
   printer->Print(
-      "class Stub GRPC_FINAL : public ::grpc::InternalStub {\n"
+      "class StubInterface {\n"
       " public:\n");
+  printer->Indent();
+  printer->Print("virtual ~StubInterface() {}\n");
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintHeaderClientMethodInterfaces(printer, service->method(i), vars, true);
+  }
+  printer->Outdent();
+  printer->Print("private:\n");
+  printer->Indent();
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintHeaderClientMethodInterfaces(printer, service->method(i), vars, false);
+  }
+  printer->Outdent();
+  printer->Print("};\n");
+  printer->Print(
+      "class Stub GRPC_FINAL : public StubInterface,"
+      " public ::grpc::InternalStub {\n public:\n");
   printer->Indent();
   printer->Print(
       "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderClientMethod(printer, service->method(i), vars);
+    PrintHeaderClientMethod(printer, service->method(i), vars, true);
   }
   printer->Outdent();
-  printer->Print(" private:\n");
+  printer->Print("\n private:\n");
   printer->Indent();
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintHeaderClientMethod(printer, service->method(i), vars, false);
+  }
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethodData(printer, service->method(i), vars);
   }
@@ -535,93 +736,85 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "}\n\n");
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
-        "$ns$$Service$::Stub::Async$Method$(::grpc::ClientContext* context, "
+        "::grpc::ClientAsyncResponseReader< $Response$>* "
+        "$ns$$Service$::Stub::Async$Method$Raw(::grpc::ClientContext* context, "
         "const $Request$& request, "
         "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< "
-                   "::grpc::ClientAsyncResponseReader< $Response$>>(new "
+                   "  return new "
                    "::grpc::ClientAsyncResponseReader< $Response$>("
                    "channel(), cq, "
                    "rpcmethod_$Method$_, "
-                   "context, request, tag));\n"
+                   "context, request, tag);\n"
                    "}\n\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
-                   "std::unique_ptr< ::grpc::ClientWriter< $Request$>> "
-                   "$ns$$Service$::Stub::$Method$("
+                   "::grpc::ClientWriter< $Request$>* "
+                   "$ns$$Service$::Stub::$Method$Raw("
                    "::grpc::ClientContext* context, $Response$* response) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< ::grpc::ClientWriter< "
-                   "$Request$>>(new ::grpc::ClientWriter< $Request$>("
-                   "channel(),"
+                   "  return new ::grpc::ClientWriter< $Request$>("
+                   "channel(), "
                    "rpcmethod_$Method$_, "
-                   "context, response));\n"
+                   "context, response);\n"
                    "}\n\n");
     printer->Print(*vars,
-                   "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>> "
-                   "$ns$$Service$::Stub::Async$Method$("
+                   "::grpc::ClientAsyncWriter< $Request$>* "
+                   "$ns$$Service$::Stub::Async$Method$Raw("
                    "::grpc::ClientContext* context, $Response$* response, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< ::grpc::ClientAsyncWriter< "
-                   "$Request$>>(new ::grpc::ClientAsyncWriter< $Request$>("
+                   "  return new ::grpc::ClientAsyncWriter< $Request$>("
                    "channel(), cq, "
                    "rpcmethod_$Method$_, "
-                   "context, response, tag));\n"
+                   "context, response, tag);\n"
                    "}\n\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientReader< $Response$>> "
-        "$ns$$Service$::Stub::$Method$("
+        "::grpc::ClientReader< $Response$>* "
+        "$ns$$Service$::Stub::$Method$Raw("
         "::grpc::ClientContext* context, const $Request$& request) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< ::grpc::ClientReader< "
-                   "$Response$>>(new ::grpc::ClientReader< $Response$>("
-                   "channel(),"
+                   "  return new ::grpc::ClientReader< $Response$>("
+                   "channel(), "
                    "rpcmethod_$Method$_, "
-                   "context, request));\n"
+                   "context, request);\n"
                    "}\n\n");
     printer->Print(*vars,
-                   "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
-                   "$ns$$Service$::Stub::Async$Method$("
+                   "::grpc::ClientAsyncReader< $Response$>* "
+                   "$ns$$Service$::Stub::Async$Method$Raw("
                    "::grpc::ClientContext* context, const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< ::grpc::ClientAsyncReader< "
-                   "$Response$>>(new ::grpc::ClientAsyncReader< $Response$>("
+                   "  return new ::grpc::ClientAsyncReader< $Response$>("
                    "channel(), cq, "
                    "rpcmethod_$Method$_, "
-                   "context, request, tag));\n"
+                   "context, request, tag);\n"
                    "}\n\n");
   } else if (BidiStreaming(method)) {
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientReaderWriter< $Request$, $Response$>> "
-        "$ns$$Service$::Stub::$Method$(::grpc::ClientContext* context) {\n");
+        "::grpc::ClientReaderWriter< $Request$, $Response$>* "
+        "$ns$$Service$::Stub::$Method$Raw(::grpc::ClientContext* context) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< ::grpc::ClientReaderWriter< "
-                   "$Request$, $Response$>>(new ::grpc::ClientReaderWriter< "
+                   "  return new ::grpc::ClientReaderWriter< "
                    "$Request$, $Response$>("
-                   "channel(),"
+                   "channel(), "
                    "rpcmethod_$Method$_, "
-                   "context));\n"
+                   "context);\n"
                    "}\n\n");
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncReaderWriter< "
-        "$Request$, $Response$>> "
-        "$ns$$Service$::Stub::Async$Method$(::grpc::ClientContext* context, "
+        "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>* "
+        "$ns$$Service$::Stub::Async$Method$Raw(::grpc::ClientContext* context, "
         "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< "
-                   "$Request$, $Response$>>(new "
+                   "  return new "
                    "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>("
                    "channel(), cq, "
                    "rpcmethod_$Method$_, "
-                   "context, tag));\n"
+                   "context, tag);\n"
                    "}\n\n");
   }
 }

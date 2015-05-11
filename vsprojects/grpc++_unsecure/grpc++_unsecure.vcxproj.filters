@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\src\cpp\client\channel.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\channel_arguments.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\client_context.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\client_unary_call.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\credentials.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\generic_stub.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\insecure_credentials.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\internal_stub.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\common\call.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\common\completion_queue.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\common\rpc_method.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\proto\proto_utils.cc">
+      <Filter>src\cpp\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\async_generic_service.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\server.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\server_builder.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\server_context.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\server_credentials.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\util\byte_buffer.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\util\slice.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\util\status.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\util\time.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\grpc++\async_generic_service.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\async_unary_call.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\channel_arguments.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\channel_interface.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\client_context.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\completion_queue.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\config.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\create_channel.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\credentials.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\generic_stub.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\call.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\client_unary_call.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\grpc_library.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\service_type.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\sync.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\sync_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\sync_no_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\thd.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\thd_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\server.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\server_builder.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\server_context.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\server_credentials.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\slice.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\status.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\status_code_enum.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\stream.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\time.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\cpp\client\channel.h">
+      <Filter>src\cpp\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cpp\proto\proto_utils.h">
+      <Filter>src\cpp\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cpp\server\thread_pool.h">
+      <Filter>src\cpp\server</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{5c4eb19f-d511-e8fd-e1d6-c377cdc7d3b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{eceb50c0-bb49-3812-b6bd-b0af6df81da7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl">
+      <UniqueIdentifier>{dadc0002-f2ac-451b-a9b8-33b8de10b5fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{cce6a85d-1111-3834-6825-31e170d93cff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp">
+      <UniqueIdentifier>{1e5fd68c-bd87-e803-42b0-75a7fa19b91d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\client">
+      <UniqueIdentifier>{ff72923a-6499-8d2a-e0fb-6d574b85d77e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\common">
+      <UniqueIdentifier>{ed8e4daa-825f-fbe5-2a45-846ad9165d3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\proto">
+      <UniqueIdentifier>{10b51a99-2e57-249e-ce23-3ab8c6b99ffb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\server">
+      <UniqueIdentifier>{8a54a279-d14b-4237-0df3-1ffe1ef5a7af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\util">
+      <UniqueIdentifier>{fb5d9a64-20ca-5119-ed38-04a3cf94923d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

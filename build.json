@@ -410,6 +410,7 @@
         "src/core/security/secure_endpoint.h",
         "src/core/security/secure_transport_setup.h",
         "src/core/security/security_connector.h",
+        "src/core/security/security_context.h",
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/transport_security.h",
@@ -430,6 +431,7 @@
         "src/core/security/secure_endpoint.c",
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_connector.c",
+        "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
         "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
@@ -553,7 +555,8 @@
       "filegroups": [
         "grpc++_base"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}"
     },
     {
       "name": "grpc_plugin_support",
@@ -563,6 +566,8 @@
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/csharp_generator.h",
+        "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
         "src/compiler/objective_c_generator.h",
         "src/compiler/objective_c_generator_helpers.h",
@@ -574,6 +579,7 @@
       ],
       "src": [
         "src/compiler/cpp_generator.cc",
+        "src/compiler/csharp_generator.cc",
         "src/compiler/objective_c_generator.cc",
         "src/compiler/python_generator.cc",
         "src/compiler/ruby_generator.cc"
@@ -996,6 +1002,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1040,6 +1049,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1054,6 +1066,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1609,6 +1624,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1665,6 +1683,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1679,6 +1700,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1693,6 +1717,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1787,6 +1814,24 @@
         "test/cpp/end2end/async_end2end_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "async_unary_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/async_unary_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1915,6 +1960,18 @@
       "secure": "no"
     },
     {
+      "name": "grpc_csharp_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "src": [
+        "src/compiler/csharp_plugin.cc"
+      ],
+      "deps": [
+        "grpc_plugin_support"
+      ],
+      "secure": "no"
+    },
+    {
       "name": "grpc_objective_c_plugin",
       "build": "protoc",
       "language": "c++",
@@ -2001,6 +2058,22 @@
       ]
     },
     {
+      "name": "mock_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/mock_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "pubsub_client",
       "build": "do_not_build",
       "run": false,
@@ -2054,8 +2127,7 @@
     },
     {
       "name": "qps_driver",
-      "build": "test",
-      "run": false,
+      "build": "tool",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_driver.cc"
@@ -2090,12 +2162,12 @@
       ]
     },
     {
-      "name": "qps_smoke_test",
+      "name": "qps_test",
       "build": "test",
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/smoke_test.cc"
+        "test/cpp/qps/qps_test.cc"
       ],
       "deps": [
         "qps",
@@ -2109,8 +2181,7 @@
     },
     {
       "name": "qps_worker",
-      "build": "test",
-      "run": false,
+      "build": "tool",
       "language": "c++",
       "headers": [
         "test/cpp/qps/client.h",
@@ -2138,6 +2209,42 @@
         "test/cpp/util/status_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "sync_streaming_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/sync_streaming_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "sync_unary_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/sync_unary_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

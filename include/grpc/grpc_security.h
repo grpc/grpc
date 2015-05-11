@@ -184,6 +184,13 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
                                       grpc_server_credentials *creds);
 
+/* --- Call specific credentials. --- */
+
+/* Sets a credentials to a call. Can only be called on the client side before
+   grpc_call_start_batch. */
+grpc_call_error grpc_call_set_credentials(grpc_call *call,
+                                          grpc_credentials *creds);
+
 #ifdef __cplusplus
 }
 #endif

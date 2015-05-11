@@ -278,9 +278,8 @@ describe('Trailing metadata', function() {
   it('should be present when a server stream call fails', function(done) {
     var call = client.serverStream({error: true});
     call.on('data', function(){});
-    call.on('status', function(status) {
-      assert.notStrictEqual(status.code, grpc.status.OK);
-      assert.deepEqual(status.metadata.metadata, ['yes']);
+    call.on('error', function(error) {
+      assert.deepEqual(error.metadata.metadata, ['yes']);
       done();
     });
   });
@@ -302,9 +301,8 @@ describe('Trailing metadata', function() {
     call.write({error: true});
     call.end();
     call.on('data', function(){});
-    call.on('status', function(status) {
-      assert.notStrictEqual(status.code, grpc.status.OK);
-      assert.deepEqual(status.metadata.metadata, ['yes']);
+    call.on('error', function(error) {
+      assert.deepEqual(error.metadata.metadata, ['yes']);
       done();
     });
   });
@@ -345,16 +343,16 @@ describe('Cancelling surface client', function() {
   });
   it('Should correctly cancel a server stream call', function(done) {
     var call = client.fib({'limit': 5});
-    call.on('status', function(status) {
-      assert.strictEqual(status.code, surface_client.status.CANCELLED);
+    call.on('error', function(error) {
+      assert.strictEqual(error.code, surface_client.status.CANCELLED);
       done();
     });
     call.cancel();
   });
   it('Should correctly cancel a bidi stream call', function(done) {
     var call = client.divMany();
-    call.on('status', function(status) {
-      assert.strictEqual(status.code, surface_client.status.CANCELLED);
+    call.on('error', function(error) {
+      assert.strictEqual(error.code, surface_client.status.CANCELLED);
       done();
     });
     call.cancel();

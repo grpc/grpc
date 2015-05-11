@@ -53,6 +53,7 @@ static OVERLAPPED g_iocp_custom_overlap;
 static gpr_event g_shutdown_iocp;
 static gpr_event g_iocp_done;
 static gpr_atm g_orphans = 0;
+static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
 
@@ -62,20 +63,19 @@ static void do_iocp_work() {
   DWORD flags = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
-  gpr_timespec wait_time = gpr_inf_future;
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
   void(*f)(void *, int) = NULL;
   void *opaque = NULL;
   success = GetQueuedCompletionStatus(g_iocp, &bytes,
                                       &completion_key, &overlapped,
-                                      gpr_time_to_millis(wait_time));
-  if (!success && !overlapped) {
-    /* The deadline got attained. */
-    return;
-  }
+                                      INFINITE);
+  /* success = 0 and overlapped = NULL means the deadline got attained.
+     Which is impossible. since our wait time is +inf */
+  GPR_ASSERT(success || overlapped);
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
+    gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR) &g_iocp_kick_token) {
       /* We were awoken from a kick. */
       return;
@@ -93,13 +93,17 @@ static void do_iocp_work() {
     gpr_log(GPR_ERROR, "Unknown IOCP operation");
     abort();
   }
-  success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
-                                   FALSE, &flags);
+  GPR_ASSERT(info->outstanding);
   if (socket->orphan) {
-    grpc_winsocket_destroy(socket);
-    gpr_atm_full_fetch_add(&g_orphans, -1);
+    info->outstanding = 0;
+    if (!socket->read_info.outstanding && !socket->write_info.outstanding) {
+      grpc_winsocket_destroy(socket);
+      gpr_atm_full_fetch_add(&g_orphans, -1);
+    }
     return;
   }
+  success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
+                                   FALSE, &flags);
   info->bytes_transfered = bytes;
   info->wsa_error = success ? 0 : WSAGetLastError();
   GPR_ASSERT(overlapped == &info->overlapped);
@@ -117,10 +121,13 @@ static void do_iocp_work() {
 }
 
 static void iocp_loop(void *p) {
-  while (gpr_atm_acq_load(&g_orphans) || !gpr_event_get(&g_shutdown_iocp)) {
+  while (gpr_atm_acq_load(&g_orphans) ||
+         gpr_atm_acq_load(&g_custom_events) ||
+         !gpr_event_get(&g_shutdown_iocp)) {
     grpc_maybe_call_delayed_callbacks(NULL, 1);
     do_iocp_work();
   }
+  gpr_log(GPR_DEBUG, "iocp_loop is done");
 
   gpr_event_set(&g_iocp_done, (void *)1);
 }
@@ -128,8 +135,8 @@ static void iocp_loop(void *p) {
 void grpc_iocp_init(void) {
   gpr_thd_id id;
 
-  g_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
-    (ULONG_PTR)NULL, 0);
+  g_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
+                                  NULL, (ULONG_PTR)NULL, 0);
   GPR_ASSERT(g_iocp);
 
   gpr_event_init(&g_iocp_done);
@@ -140,6 +147,7 @@ void grpc_iocp_init(void) {
 void grpc_iocp_kick(void) {
   BOOL success;
 
+  gpr_atm_full_fetch_add(&g_custom_events, 1);
   success = PostQueuedCompletionStatus(g_iocp, 0,
                                        (ULONG_PTR) &g_iocp_kick_token,
                                        &g_iocp_custom_overlap);
