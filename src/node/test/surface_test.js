@@ -99,6 +99,36 @@ describe('Surface server constructor', function() {
     }, /math.Math/);
   });
 });
+describe('Echo service', function() {
+  var server;
+  var client;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
+    var echo_service = test_proto.lookup('EchoService');
+    var Server = grpc.buildServer([echo_service]);
+    server = new Server({
+      'EchoService': {
+        echo: function(call, callback) {
+          callback(null, call.request);
+        }
+      }
+    });
+    var port = server.bind('localhost:0');
+    var Client = surface_client.makeProtobufClientConstructor(echo_service);
+    client = new Client('localhost:' + port);
+    server.listen();
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('should echo the recieved message directly', function(done) {
+    client.echo({value: 'test value', value2: 3}, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: 'test value', value2: 3});
+      done();
+    });
+  });
+});
 describe('Generic client and server', function() {
   function toString(val) {
     return val.toString();
