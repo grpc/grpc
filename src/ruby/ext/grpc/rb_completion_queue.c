@@ -80,7 +80,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
 
   grpc_completion_queue_shutdown(cq);
   next_call.cq = cq;
-  next_call.event = NULL;
+  next_call.event.type = GRPC_QUEUE_TIMEOUT;
   /* TODO: the timeout should be a module level constant that defaults
    * to gpr_inf_future.
    *
@@ -95,16 +95,11 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
   do {
     rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                                (void *)&next_call, NULL, NULL);
-    if (next_call.event == NULL) {
-      break;
-    }
-    type = next_call.event->type;
+    type = next_call.event.type;
     if (type != GRPC_QUEUE_SHUTDOWN) {
       ++drained;
       rb_warning("completion queue shutdown: %d undrained events", drained);
     }
-    grpc_event_finish(next_call.event);
-    next_call.event = NULL;
   } while (type != GRPC_QUEUE_SHUTDOWN);
 }
 

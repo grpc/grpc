@@ -233,7 +233,6 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     }
     if (!ev.success) {
       grpc_request_call_stack_cleanup(&st);
-      grpc_event_finish(ev);
       rb_raise(grpc_rb_eCallError, "request_call completion failed");
       return Qnil;
     }
