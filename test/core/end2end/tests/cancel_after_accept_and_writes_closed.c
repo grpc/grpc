@@ -111,8 +111,7 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_call *s;
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -166,8 +165,8 @@ static void test_cancel_after_accept_and_writes_closed(
              grpc_server_request_call(f.server, &s, &call_details,
                                       &request_metadata_recv, f.server_cq,
                                       f.server_cq, tag(2)));
-  cq_expect_completion(v_server, tag(2), GRPC_OP_OK);
-  cq_verify(v_server);
+  cq_expect_completion(cqv, tag(2), GRPC_OP_OK);
+  cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -186,10 +185,8 @@ static void test_cancel_after_accept_and_writes_closed(
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 
-  cq_expect_completion(v_server, tag(3), GRPC_OP_OK);
-  cq_verify(v_server);
-
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(3), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
   GPR_ASSERT(status == mode.expect_status);
@@ -210,8 +207,7 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }
