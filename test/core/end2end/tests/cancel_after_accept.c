@@ -94,12 +94,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->server_cq);
-  drain_cq(f->server_cq);
-  grpc_completion_queue_destroy(f->server_cq);
-  grpc_completion_queue_shutdown(f->client_cq);
-  drain_cq(f->client_cq);
-  grpc_completion_queue_destroy(f->client_cq);
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
+  grpc_completion_queue_destroy(f->cq);
 }
 
 /* Cancel after accept, no payload */
@@ -111,8 +108,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call *s;
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
@@ -162,7 +158,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
-                                 &request_metadata_recv, f.server_cq, tag(2)));
+                                 &request_metadata_recv, f.cq, tag(2)));
   cq_expect_completion(v_server, tag(2), GRPC_OP_OK);
   cq_verify(v_server);
 
