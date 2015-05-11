@@ -119,12 +119,13 @@ PHP_METHOD(Server, __construct) {
   }
   server->queue = grpc_completion_queue_create();
   if (args_array == NULL) {
-    server->wrapped = grpc_server_create(server->queue, NULL);
+    server->wrapped = grpc_server_create(NULL);
   } else {
     php_grpc_read_args_array(args_array, &args);
-    server->wrapped = grpc_server_create(server->queue, &args);
+    server->wrapped = grpc_server_create(&args);
     efree(args.args);
   }
+  grpc_server_register_completion_queue(server->wrapped, server->queue);
 }
 
 /**
@@ -146,8 +147,9 @@ PHP_METHOD(Server, requestCall) {
   object_init(result);
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
-  error_code = grpc_server_request_call(server->wrapped, &call, &details,
-                                        &metadata, server->queue, NULL);
+  error_code =
+      grpc_server_request_call(server->wrapped, &call, &details, &metadata,
+                               server->queue, server->queue, NULL);
   if (error_code != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException, "request_call failed",
                          (long)error_code TSRMLS_CC);

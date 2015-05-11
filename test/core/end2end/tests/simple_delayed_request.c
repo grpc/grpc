@@ -140,10 +140,10 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
   config.init_server(f, server_args);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f->server, &s,
-                                                      &call_details,
-                                                      &request_metadata_recv,
-                                                      f->server_cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f->server, &s, &call_details,
+                                      &request_metadata_recv, f->server_cq,
+                                      f->server_cq, tag(101)));
   cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
