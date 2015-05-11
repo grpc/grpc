@@ -482,7 +482,7 @@ void grpc_server_start(grpc_server *server);
    Shutdown is idempotent. */
 void grpc_server_shutdown(grpc_server *server);
 
-/* As per grpc_server_shutdown, but send a GRPC_SERVER_SHUTDOWN event when
+/* As per grpc_server_shutdown, but send a GRPC_OP_COMPLETE event when
    there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
    grpc_server_shutdown_and_notify calls are made. */
