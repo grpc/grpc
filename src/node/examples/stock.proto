@@ -34,7 +34,7 @@ package examples;
 // Protocol type definitions
 message StockRequest {
   string symbol = 1;
-  int32 num_trades_to_watch = 2 [default=0];
+  int32 num_trades_to_watch = 2;
 }
 
 message StockReply {
