@@ -218,7 +218,7 @@ static void request_response_with_payload_and_call_creds(
   cq_verify(v_server);
 
   /* Cannot set creds on the server call object. */
-  GPR_ASSERT(!grpc_call_set_credentials(s, NULL));
+  GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
