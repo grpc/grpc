@@ -174,6 +174,8 @@ static void empty_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {}
 static int empty_pollset_maybe_work(grpc_pollset *pollset,
                                     gpr_timespec deadline, gpr_timespec now,
                                     int allow_synchronous_callback) {
+  gpr_mu_unlock(&pollset->mu);
+  gpr_mu_lock(&pollset->mu);
   return 0;
 }
 
@@ -327,6 +329,8 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   }
   if (pollset->in_flight_cbs) {
     /* Give do_promote priority so we don't starve it out */
+    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_lock(&pollset->mu);
     return 0;
   }
   fd = pollset->data.ptr;
