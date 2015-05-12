@@ -61,7 +61,7 @@ struct grpc_client_setup {
 struct grpc_client_setup_request {
   /* pointer back to the setup object */
   grpc_client_setup *setup;
-  grpc_pollset_set *interested_parties;
+  grpc_pollset_set interested_parties;
   gpr_timespec deadline;
 };
 
@@ -71,7 +71,7 @@ gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r) {
 
 grpc_pollset_set *grpc_client_setup_get_interested_parties(
     grpc_client_setup_request *r) {
-  return r->interested_parties;
+  return &r->interested_parties;
 }
 
 static void destroy_setup(grpc_client_setup *s) {
@@ -82,15 +82,19 @@ static void destroy_setup(grpc_client_setup *s) {
   gpr_free(s);
 }
 
+static void destroy_request(grpc_client_setup_request *r) {
+  grpc_pollset_set_destroy(&r->interested_parties);
+  gpr_free(r);
+}
+
 /* initiate handshaking */
-static void setup_initiate(grpc_transport_setup *sp,
-                           grpc_pollset_set *interested_parties) {
+static void setup_initiate(grpc_transport_setup *sp) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
   grpc_client_setup_request *r = gpr_malloc(sizeof(grpc_client_setup_request));
   int in_alarm = 0;
 
   r->setup = s;
-  r->interested_parties = interested_parties;
+  grpc_pollset_set_init(&r->interested_parties);
   /* TODO(klempner): Actually set a deadline */
   r->deadline = gpr_inf_future;
 
@@ -112,8 +116,22 @@ static void setup_initiate(grpc_transport_setup *sp,
   if (!in_alarm) {
     s->initiate(s->user_data, r);
   } else {
-    gpr_free(r);
+    destroy_request(r);
   }
+}
+
+static void setup_add_interested_party(grpc_transport_setup *sp, grpc_pollset *pollset) {
+  grpc_client_setup *s = (grpc_client_setup *)sp;
+
+  gpr_mu_lock(&s->mu);
+  if (!s->active_request) {
+    gpr_mu_unlock(&s->mu);
+    return;
+  }
+
+  grpc_pollset_set_add_pollset(&s->active_request->interested_parties, pollset);
+
+  gpr_mu_unlock(&s->mu);
 }
 
 /* cancel handshaking: cancel all requests, and shutdown (the caller promises
@@ -165,6 +183,7 @@ void grpc_client_setup_cb_end(grpc_client_setup_request *r) {
 
 /* vtable for transport setup */
 static const grpc_transport_setup_vtable setup_vtable = {setup_initiate,
+                                                         setup_add_interested_party,
                                                          setup_cancel};
 
 void grpc_client_setup_create_and_attach(
@@ -217,7 +236,7 @@ static void backoff_alarm_done(void *arg /* grpc_client_setup */, int success) {
     if (0 == --s->refs) {
       gpr_mu_unlock(&s->mu);
       destroy_setup(s);
-      gpr_free(r);
+      destroy_request(r);
       return;
     } else {
       gpr_mu_unlock(&s->mu);
@@ -242,11 +261,11 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
   if (!retry && 0 == --s->refs) {
     gpr_mu_unlock(&s->mu);
     destroy_setup(s);
-    gpr_free(r);
+    destroy_request(r);
     return;
   }
 
-  gpr_free(r);
+  destroy_request(r);
 
   if (retry) {
     /* TODO(klempner): Replace these values with further consideration. 2x is
