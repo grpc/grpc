@@ -223,16 +223,12 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r) {
 }
 
 static void backoff_alarm_done(void *arg /* grpc_client_setup */, int success) {
-  grpc_client_setup *s = arg;
-  grpc_client_setup_request *r = gpr_malloc(sizeof(grpc_client_setup_request));
-  r->setup = s;
-  /* TODO(klempner): Set this to something useful */
-  r->deadline = gpr_inf_future;
+  grpc_client_setup_request *r = arg;
+  grpc_client_setup *s = r->setup;
   /* Handle status cancelled? */
   gpr_mu_lock(&s->mu);
-  s->active_request = r;
   s->in_alarm = 0;
-  if (!success) {
+  if (s->active_request != NULL || !success) {
     if (0 == --s->refs) {
       gpr_mu_unlock(&s->mu);
       destroy_setup(s);
@@ -240,9 +236,11 @@ static void backoff_alarm_done(void *arg /* grpc_client_setup */, int success) {
       return;
     } else {
       gpr_mu_unlock(&s->mu);
+      destroy_request(r);
       return;
     }
   }
+  s->active_request = r;
   gpr_mu_unlock(&s->mu);
   s->initiate(s->user_data, r);
 }
@@ -265,8 +263,6 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
     return;
   }
 
-  destroy_request(r);
-
   if (retry) {
     /* TODO(klempner): Replace these values with further consideration. 2x is
        probably too aggressive of a backoff. */
@@ -275,7 +271,7 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
     gpr_timespec deadline = gpr_time_add(s->current_backoff_interval, now);
     GPR_ASSERT(!s->in_alarm);
     s->in_alarm = 1;
-    grpc_alarm_init(&s->backoff_alarm, deadline, backoff_alarm_done, s, now);
+    grpc_alarm_init(&s->backoff_alarm, deadline, backoff_alarm_done, r, now);
     s->current_backoff_interval =
         gpr_time_add(s->current_backoff_interval, s->current_backoff_interval);
     if (gpr_time_cmp(s->current_backoff_interval, max_backoff) > 0) {
