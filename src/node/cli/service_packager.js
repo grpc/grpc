@@ -78,7 +78,9 @@ function copyFile(src_path, dest_path) {
 function main(argv) {
   var args = parseArgs(argv, arg_format);
   var out_path = path.resolve(args.out);
-  var include_dirs = _.map(path.resolve, args.include);
+  var include_dirs = _.map(_.flatten([args.include]), function(p) {
+    return path.resolve(p);
+  });
   args.grpc_version = package_json.version;
   generatePackage(args, function(err, rendered) {
     if (err) throw err;
@@ -97,6 +99,7 @@ function main(argv) {
                                                       'service.json'));
   var pbjs_args = _.flatten(['node', 'pbjs',
                              args._[0],
+                             '-legacy',
                              _.map(include_dirs, function(dir) {
                                return "-path=" + dir;
                              })]);

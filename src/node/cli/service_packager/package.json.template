@@ -5,7 +5,8 @@
   "description": "Client library for {{{name}}} built on gRPC",
   "license": "Apache-2.0",
   "dependencies": {
-    "grpc": "{{{grpc_version}}}"
+    "grpc": "{{{grpc_version}}}",
+    "google-auth-library": "^0.9.2"
   },
   "main": "index.js",
   "files": [
