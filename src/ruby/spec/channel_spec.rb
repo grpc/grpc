@@ -58,7 +58,7 @@ describe GRPC::Core::Channel do
     it 'does not take a hash with bad values as channel args' do
       blk = construct_with_args(symbol: Object.new)
       expect(&blk).to raise_error TypeError
-      blk = construct_with_args('1' => Hash.new)
+      blk = construct_with_args('1' => {})
       expect(&blk).to raise_error TypeError
     end
 

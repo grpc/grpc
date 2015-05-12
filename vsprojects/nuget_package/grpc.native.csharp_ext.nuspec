@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>grpc.native.csharp_ext</id>
+    <version>0.6.0.0</version>
+    <authors>Google Inc.</authors>
+    <owners>Jan Tattermusch</owners>
+    <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
+    <projectUrl>http://github.com/grpc/grpc</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Native extension needed by gRPC C# library. This is not the package you are looking for, it is only meant to be used as a dependency.</description>
+    <releaseNotes>Release of gRPC C core 0.6.0 libraries.</releaseNotes>
+    <copyright>Copyright 2015</copyright>
+    <title>gRPC C# Native Extension</title>
+    <summary>Native library required by gRPC C#</summary>
+    <tags>gRPC native</tags>
+	<dependencies>
+      <dependency id="grpc.dependencies.zlib.redist" version="1.2.8.9" />
+	  <dependency id="grpc.dependencies.openssl.redist" version="1.0.2.2" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="grpc.native.csharp_ext.props" target="\build\portable-net45\grpc.native.csharp_ext.props" />
+    <file src="grpc.native.csharp_ext.targets" target="\build\portable-net45\grpc.native.csharp_ext.targets" />
+    <file src="output\v100\Win32\Release\grpc_csharp_ext.dll" target="/build/native/bin/v100\Win32\Release\grpc_csharp_ext.dll" />
+    <file src="output\v120\Win32\Release\grpc_csharp_ext.dll" target="/build/native/bin/v120\Win32\Release\grpc_csharp_ext.dll" />
+    <file src="output\v100\Win32\Debug\grpc_csharp_ext.dll" target="/build/native/bin/v100\Win32\Debug\grpc_csharp_ext.dll" />
+    <file src="output\v120\Win32\Debug\grpc_csharp_ext.dll" target="/build/native/bin/v120\Win32\Debug\grpc_csharp_ext.dll" />
+  </files>
+</package>

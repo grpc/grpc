@@ -2,28 +2,33 @@ language: cpp
 before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
   - sudo add-apt-repository ppa:h-rayflood/llvm -y
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+  - echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
+  - echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | sudo tee -a /etc/apt/sources.list.d/mono-xamarin.list
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5
-  - sudo pip install cpp-coveralls
+  - sudo pip install cpp-coveralls mako simplejson
+  - sudo apt-get install -qq mono-devel nunit
+  - wget www.nuget.org/NuGet.exe -O nuget.exe
 env:
   global:
     - RUBY_VERSION=2.1
     - COVERALLS_PARALLEL=true
+    - CPPFLAGS=-I/tmp/prebuilt/include
+    - NUGET="mono nuget.exe"
   matrix:
-    - CONFIG=dbg TEST=c
-    - CONFIG=dbg TEST=c++
-    - CONFIG=opt TEST=c
-    - CONFIG=opt TEST=c++
+    - CONFIG=opt TEST=sanity
+    - CONFIG=gcov TEST="c c++"
+    - CONFIG=opt TEST="c c++"
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
-    - CONFIG=gcov TEST=c
-    - CONFIG=gcov TEST=c++
+    - CONFIG=opt TEST=csharp
     - USE_GCC=4.4 CONFIG=opt TEST=build
-    - USE_GCC=4.5 CONFIG=opt TEST=build
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
+  - ./tools/run_tests/prepare_travis.sh
   - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 after_success:

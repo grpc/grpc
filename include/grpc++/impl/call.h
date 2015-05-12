@@ -80,6 +80,10 @@ class CallOpBuffer : public CompletionQueueTag {
   // Called by completion queue just prior to returning from Next() or Pluck()
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
+  void set_max_message_size(int max_message_size) {
+    max_message_size_ = max_message_size;
+  }
+
   bool got_message;
 
  private:
@@ -99,6 +103,7 @@ class CallOpBuffer : public CompletionQueueTag {
   grpc::protobuf::Message* recv_message_;
   ByteBuffer* recv_message_buffer_;
   grpc_byte_buffer* recv_buf_;
+  int max_message_size_;
   // Client send close
   bool client_send_close_;
   // Client recv status
@@ -118,6 +123,14 @@ class CallOpBuffer : public CompletionQueueTag {
   bool* recv_closed_;
 };
 
+// SneakyCallOpBuffer does not post completions to the completion queue
+class SneakyCallOpBuffer GRPC_FINAL : public CallOpBuffer {
+ public:
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    return CallOpBuffer::FinalizeResult(tag, status) && false;
+  }
+};
+
 // Channel and Server implement this to allow them to hook performing ops
 class CallHook {
  public:
@@ -130,16 +143,21 @@ class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq);
+  Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq,
+       int max_message_size);
 
   void PerformOps(CallOpBuffer* buffer);
 
   grpc_call* call() { return call_; }
   CompletionQueue* cq() { return cq_; }
 
+  int max_message_size() { return max_message_size_; }
+
  private:
   CallHook* call_hook_;
   CompletionQueue* cq_;
   grpc_call* call_;
+  int max_message_size_;
 };
 
 }  // namespace grpc

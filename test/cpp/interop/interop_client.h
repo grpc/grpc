@@ -38,7 +38,7 @@
 #include <grpc/grpc.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/status.h>
-#include "test/cpp/interop/messages.grpc.pb.h"
+#include "test/proto/messages.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -57,6 +57,8 @@ class InteropClient {
   void DoRequestStreaming();
   void DoResponseStreaming();
   void DoResponseStreamingWithSlowConsumer();
+  void DoCancelAfterBegin();
+  void DoCancelAfterFirstResponse();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);

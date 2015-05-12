@@ -38,6 +38,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/channel_interface.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/cpp/proto/proto_utils.h"
 
 namespace grpc {
@@ -54,6 +55,7 @@ CallOpBuffer::CallOpBuffer()
       recv_message_(nullptr),
       recv_message_buffer_(nullptr),
       recv_buf_(nullptr),
+      max_message_size_(-1),
       client_send_close_(false),
       recv_trailing_metadata_(nullptr),
       recv_status_(nullptr),
@@ -231,11 +233,13 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
   }
   if (send_message_ || send_message_buffer_) {
     if (send_message_) {
+      GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_SERIALIZE, 0);
       bool success = SerializeProto(*send_message_, &send_buf_);
       if (!success) {
         abort();
         // TODO handle parse failure
       }
+      GRPC_TIMER_END(GRPC_PTAG_PROTO_SERIALIZE, 0);
     } else {
       send_buf_ = send_message_buffer_->buffer();
     }
@@ -307,8 +311,11 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
     if (recv_buf_) {
       got_message = *status;
       if (recv_message_) {
-        *status = *status && DeserializeProto(recv_buf_, recv_message_);
+        GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, 0);
+        *status = *status &&
+                  DeserializeProto(recv_buf_, recv_message_, max_message_size_);
         grpc_byte_buffer_destroy(recv_buf_);
+        GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, 0);
       } else {
         recv_message_buffer_->set_buffer(recv_buf_);
       }
@@ -333,9 +340,19 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
 }
 
 Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
-    : call_hook_(call_hook), cq_(cq), call_(call) {}
+    : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
+
+Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+           int max_message_size)
+    : call_hook_(call_hook),
+      cq_(cq),
+      call_(call),
+      max_message_size_(max_message_size) {}
 
 void Call::PerformOps(CallOpBuffer* buffer) {
+  if (max_message_size_ > 0) {
+    buffer->set_max_message_size(max_message_size_);
+  }
   call_hook_->PerformOpsOnCall(buffer, this);
 }
 

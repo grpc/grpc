@@ -313,6 +313,19 @@ static void test_ssl_oauth2_composite_creds(void) {
                                         composite_creds);
 }
 
+void test_ssl_fake_transport_security_composite_creds_failure(void) {
+  grpc_credentials *ssl_creds =
+      grpc_ssl_credentials_create(NULL, NULL);
+  grpc_credentials *fake_transport_security_creds =
+      grpc_fake_transport_security_credentials_create();
+
+  /* 2 connector credentials: should not work. */
+  GPR_ASSERT(grpc_composite_credentials_create(
+                 ssl_creds, fake_transport_security_creds) == NULL);
+  grpc_credentials_unref(ssl_creds);
+  grpc_credentials_unref(fake_transport_security_creds);
+}
+
 static void check_ssl_oauth2_iam_composite_metadata(
     void *user_data, grpc_mdelem **md_elems, size_t num_md,
     grpc_credentials_status status) {

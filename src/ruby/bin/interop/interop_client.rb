@@ -110,6 +110,11 @@ def create_stub(opts)
       end
     end
 
+    if opts.test_case == 'jwt_token_creds'  # don't use a scope
+      auth_creds = Google::Auth.get_application_default
+      stub_opts[:update_metadata] = auth_creds.updater_proc
+    end
+
     logger.info("... connecting securely to #{address}")
     Grpc::Testing::TestService::Stub.new(address, **stub_opts)
   else
@@ -131,12 +136,14 @@ class PingPongPlayer
   include Grpc::Testing::PayloadType
   attr_accessor :assertions # required by Minitest::Assertions
   attr_accessor :queue
+  attr_accessor :canceller_op
 
   # reqs is the enumerator over the requests
   def initialize(msg_sizes)
     @queue = Queue.new
     @msg_sizes = msg_sizes
     @assertions = 0  # required by Minitest::Assertions
+    @canceller_op = nil  # used to cancel after the first response
   end
 
   def each_item
@@ -150,12 +157,15 @@ class PingPongPlayer
                         response_parameters: [p_cls.new(size: resp_size)])
       yield req
       resp = @queue.pop
-      assert_equal(:COMPRESSABLE, resp.payload.type,
-                   'payload type is wrong')
+      assert_equal(:COMPRESSABLE, resp.payload.type, 'payload type is wrong')
       assert_equal(resp_size, resp.payload.body.length,
-                   'payload body #{i} has the wrong length')
+                   "payload body #{count} has the wrong length")
       p "OK: ping_pong #{count}"
       count += 1
+      unless @canceller_op.nil?
+        canceller_op.cancel
+        break
+      end
     end
   end
 end
@@ -201,6 +211,15 @@ class NamedTests
     p 'OK: service_account_creds'
   end
 
+  def jwt_token_creds
+    json_key = File.read(ENV[AUTH_ENV])
+    wanted_email = MultiJson.load(json_key)['client_email']
+    resp = perform_large_unary(fill_username: true)
+    assert_equal(wanted_email, resp.username,
+                 'service_account_creds: incorrect username')
+    p 'OK: jwt_token_creds'
+  end
+
   def compute_engine_creds
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true)
@@ -244,6 +263,27 @@ class NamedTests
     resps = @stub.full_duplex_call(ppp.each_item)
     resps.each { |r| ppp.queue.push(r) }
     p 'OK: ping_pong'
+  end
+
+  def cancel_after_begin
+    msg_sizes = [27_182, 8, 1828, 45_904]
+    reqs = msg_sizes.map do |x|
+      req = Payload.new(body: nulls(x))
+      StreamingInputCallRequest.new(payload: req)
+    end
+    op = @stub.streaming_input_call(reqs, return_op: true)
+    op.cancel
+    assert_raises(GRPC::Cancelled) { op.execute }
+    p 'OK: cancel_after_begin'
+  end
+
+  def cancel_after_first_response
+    msg_sizes = [[27_182, 31_415], [8, 9], [1828, 2653], [45_904, 58_979]]
+    ppp = PingPongPlayer.new(msg_sizes)
+    op = @stub.full_duplex_call(ppp.each_item, return_op: true)
+    ppp.canceller_op = op  # causes ppp to cancel after the 1st message
+    assert_raises(GRPC::Cancelled) { op.execute.each { |r| ppp.queue.push(r) } }
+    p 'OK: cancel_after_first_response'
   end
 
   def all

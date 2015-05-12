@@ -68,6 +68,11 @@ class ServerBuilder {
   // Register a generic service.
   void RegisterAsyncGenericService(AsyncGenericService* service);
 
+  // Set max message size in bytes.
+  void SetMaxMessageSize(int max_message_size) {
+    max_message_size_ = max_message_size;
+  }
+
   // Add a listening port. Can be called multiple times.
   void AddListeningPort(const grpc::string& addr,
                         std::shared_ptr<ServerCredentials> creds,
@@ -87,6 +92,7 @@ class ServerBuilder {
     int* selected_port;
   };
 
+  int max_message_size_;
   std::vector<RpcService*> services_;
   std::vector<AsynchronousService*> async_services_;
   std::vector<Port> ports_;

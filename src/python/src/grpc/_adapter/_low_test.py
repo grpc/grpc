@@ -43,7 +43,6 @@ _BYTE_SEQUENCE_SEQUENCE = tuple(
     bytes(bytearray((row + column) % 256 for column in range(row)))
     for row in range(_STREAM_LENGTH))
 
-
 class LonelyClientTest(unittest.TestCase):
 
   def testLonelyClient(self):
@@ -57,7 +56,7 @@ class LonelyClientTest(unittest.TestCase):
 
     completion_queue = _low.CompletionQueue()
     channel = _low.Channel('%s:%d' % (host, port), None)
-    client_call = _low.Call(channel, method, host, deadline)
+    client_call = _low.Call(channel, completion_queue, method, host, deadline)
 
     client_call.invoke(completion_queue, metadata_tag, finish_tag)
     first_event = completion_queue.get(after_deadline)
@@ -139,7 +138,8 @@ class EchoTest(unittest.TestCase):
     server_data = []
     client_data = []
 
-    client_call = _low.Call(self.channel, method, self.host, deadline)
+    client_call = _low.Call(self.channel, self.client_completion_queue,
+                            method, self.host, deadline)
     client_call.add_metadata(client_metadata_key, client_metadata_value)
     client_call.add_metadata(client_binary_metadata_key,
                              client_binary_metadata_value)
@@ -296,7 +296,6 @@ class EchoTest(unittest.TestCase):
   def testManyManyByteEchoes(self):
     self._perform_echo_test(_BYTE_SEQUENCE_SEQUENCE)
 
-
 class CancellationTest(unittest.TestCase):
 
   def setUp(self):
@@ -337,7 +336,8 @@ class CancellationTest(unittest.TestCase):
     server_data = []
     client_data = []
 
-    client_call = _low.Call(self.channel, method, self.host, deadline)
+    client_call = _low.Call(self.channel, self.client_completion_queue,
+                            method, self.host, deadline)
 
     client_call.invoke(self.client_completion_queue, metadata_tag, finish_tag)
 
@@ -392,7 +392,8 @@ class CancellationTest(unittest.TestCase):
 
     finish_event = self.client_completion_queue.get(_FUTURE)
     self.assertEqual(_low.Event.Kind.FINISH, finish_event.kind)
-    self.assertEqual(_low.Status(_low.Code.CANCELLED, ''), finish_event.status)
+    self.assertEqual(_low.Status(_low.Code.CANCELLED, 'Cancelled'), 
+                                 finish_event.status)
 
     server_timeout_none_event = self.server_completion_queue.get(0)
     self.assertIsNone(server_timeout_none_event)

@@ -33,70 +33,57 @@
 
 
 import simplejson
-
-END2END_FIXTURES = [
-    'chttp2_fake_security',
-    'chttp2_fullstack',
-    'chttp2_fullstack_uds',
-    'chttp2_simple_ssl_fullstack',
-    'chttp2_simple_ssl_with_oauth2_fullstack',
-    'chttp2_socket_pair',
-    'chttp2_socket_pair_one_byte_at_a_time',
-]
+import collections
 
 
-END2END_TESTS = [
-    'bad_hostname',
-    'cancel_after_accept',
-    'cancel_after_accept_and_writes_closed',
-    'cancel_after_invoke',
-    'cancel_before_invoke',
-    'cancel_in_a_vacuum',
-    'census_simple_request',
-    'disappearing_server',
-    'early_server_shutdown_finishes_inflight_calls',
-    'early_server_shutdown_finishes_tags',
-    'empty_batch',
-    'graceful_server_shutdown',
-    'invoke_large_request',
-    'max_concurrent_streams',
-    'no_op',
-    'ping_pong_streaming',
-    'request_response_with_binary_metadata_and_payload',
-    'request_response_with_metadata_and_payload',
-    'request_response_with_payload',
-    'request_with_large_metadata',
-    'request_with_payload',
-    'simple_delayed_request',
-    'simple_request',
-    'thread_stress',
-    'writes_done_hangs_with_pending_read',
+FixtureOptions = collections.namedtuple('FixtureOptions', 'secure platforms')
+default_unsecure_fixture_options = FixtureOptions(False, ['windows', 'posix'])
+default_secure_fixture_options = FixtureOptions(True, ['windows', 'posix'])
 
-    'cancel_after_accept_legacy',
-    'cancel_after_accept_and_writes_closed_legacy',
-    'cancel_after_invoke_legacy',
-    'cancel_before_invoke_legacy',
-    'cancel_in_a_vacuum_legacy',
-    'census_simple_request_legacy',
-    'disappearing_server_legacy',
-    'early_server_shutdown_finishes_inflight_calls_legacy',
-    'early_server_shutdown_finishes_tags_legacy',
-    'graceful_server_shutdown_legacy',
-    'invoke_large_request_legacy',
-    'max_concurrent_streams_legacy',
-    'no_op_legacy',
-    'ping_pong_streaming_legacy',
-    'request_response_with_binary_metadata_and_payload_legacy',
-    'request_response_with_metadata_and_payload_legacy',
-    'request_response_with_payload_legacy',
-    'request_response_with_trailing_metadata_and_payload_legacy',
-    'request_with_large_metadata_legacy',
-    'request_with_payload_legacy',
-    'simple_delayed_request_legacy',
-    'simple_request_legacy',
-    'thread_stress_legacy',
-    'writes_done_hangs_with_pending_read_legacy',
-]
+# maps fixture name to whether it requires the security library
+END2END_FIXTURES = {
+    'chttp2_fake_security': default_secure_fixture_options,
+    'chttp2_fullstack': default_unsecure_fixture_options,
+    'chttp2_fullstack_uds_posix': FixtureOptions(False, ['posix']),
+    'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
+    'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
+    'chttp2_socket_pair': default_unsecure_fixture_options,
+    'chttp2_socket_pair_one_byte_at_a_time': default_unsecure_fixture_options,
+}
+
+TestOptions = collections.namedtuple('TestOptions', 'flaky secure')
+default_test_options = TestOptions(False, False)
+
+# maps test names to options
+END2END_TESTS = {
+    'bad_hostname': default_test_options,
+    'cancel_after_accept': TestOptions(flaky=True, secure=False),
+    'cancel_after_accept_and_writes_closed': default_test_options,
+    'cancel_after_invoke': default_test_options,
+    'cancel_before_invoke': default_test_options,
+    'cancel_in_a_vacuum': default_test_options,
+    'census_simple_request': default_test_options,
+    'disappearing_server': default_test_options,
+    'early_server_shutdown_finishes_inflight_calls': default_test_options,
+    'early_server_shutdown_finishes_tags': default_test_options,
+    'empty_batch': default_test_options,
+    'graceful_server_shutdown': default_test_options,
+    'invoke_large_request': TestOptions(flaky=True, secure=False),
+    'max_concurrent_streams': default_test_options,
+    'max_message_length': default_test_options,
+    'no_op': default_test_options,
+    'ping_pong_streaming': default_test_options,
+    'registered_call': default_test_options,
+    'request_response_with_binary_metadata_and_payload': default_test_options,
+    'request_response_with_metadata_and_payload': default_test_options,
+    'request_response_with_payload': default_test_options,
+    'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
+    'request_with_large_metadata': default_test_options,
+    'request_with_payload': default_test_options,
+    'simple_delayed_request': default_test_options,
+    'simple_request': default_test_options,
+    'simple_request_with_high_initial_sequence_number': default_test_options,
+}
 
 
 def main():
@@ -107,19 +94,20 @@ def main():
               'name': 'end2end_fixture_%s' % f,
               'build': 'private',
               'language': 'c',
-              'secure': 'check',
-              'src': ['test/core/end2end/fixtures/%s.c' % f]
+              'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
           }
-          for f in END2END_FIXTURES] + [
+          for f in sorted(END2END_FIXTURES.keys())] + [
           {
               'name': 'end2end_test_%s' % t,
               'build': 'private',
               'language': 'c',
-              'secure': 'no',
+              'secure': 'check' if END2END_TESTS[t].secure else 'no',
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
           }
-          for t in END2END_TESTS] + [
+          for t in sorted(END2END_TESTS.keys())] + [
           {
               'name': 'end2end_certs',
               'build': 'private',
@@ -137,6 +125,8 @@ def main():
               'build': 'test',
               'language': 'c',
               'src': [],
+              'flaky': END2END_TESTS[t].flaky,
+              'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -147,8 +137,27 @@ def main():
                   'gpr'
               ]
           }
-      for f in END2END_FIXTURES
-      for t in END2END_TESTS]}
+      for f in sorted(END2END_FIXTURES.keys())
+      for t in sorted(END2END_TESTS.keys())] + [
+          {
+              'name': '%s_%s_unsecure_test' % (f, t),
+              'build': 'test',
+              'language': 'c',
+              'secure': 'no',
+              'src': [],
+              'flaky': 'invoke_large_request' in t,
+              'platforms': END2END_FIXTURES[f].platforms,
+              'deps': [
+                  'end2end_fixture_%s' % f,
+                  'end2end_test_%s' % t,
+                  'grpc_test_util_unsecure',
+                  'grpc_unsecure',
+                  'gpr_test_util',
+                  'gpr'
+              ]
+          }
+      for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f].secure
+      for t in sorted(END2END_TESTS.keys()) if not END2END_TESTS[t].secure]}
   print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
 
 

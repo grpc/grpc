@@ -1,0 +1,2 @@
+<%namespace file="../packages.include" import="gen_packages_config"/>\
+${gen_packages_config(['openssl','zlib'])}

@@ -167,7 +167,7 @@ class RpcServiceMethod : public RpcMethod {
                    MethodHandler* handler,
                    grpc::protobuf::Message* request_prototype,
                    grpc::protobuf::Message* response_prototype)
-      : RpcMethod(name, type),
+      : RpcMethod(name, type, nullptr),
         handler_(handler),
         request_prototype_(request_prototype),
         response_prototype_(response_prototype) {}

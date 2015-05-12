@@ -40,6 +40,10 @@
 
 #include "rb_grpc.h"
 
+/* grpc_rb_cServerCredentials is the ruby class that proxies
+   grpc_server_credentials. */
+static VALUE grpc_rb_cServerCredentials = Qnil;
+
 /* grpc_rb_server_credentials wraps a grpc_server_credentials.  It provides a
    peer ruby object, 'mark' to minimize copying when a server credential is
    created from ruby. */
@@ -82,6 +86,14 @@ static void grpc_rb_server_credentials_mark(void *p) {
   }
 }
 
+static const rb_data_type_t grpc_rb_server_credentials_data_type = {
+    "grpc_server_credentials",
+    {grpc_rb_server_credentials_mark, grpc_rb_server_credentials_free,
+     GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL, NULL,
+    RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 /* Allocates ServerCredential instances.
 
    Provides safe initial defaults for the instance fields. */
@@ -89,8 +101,8 @@ static VALUE grpc_rb_server_credentials_alloc(VALUE cls) {
   grpc_rb_server_credentials *wrapper = ALLOC(grpc_rb_server_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(cls, grpc_rb_server_credentials_mark,
-                          grpc_rb_server_credentials_free, wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_server_credentials_data_type,
+                               wrapper);
 }
 
 /* Clones ServerCredentials instances.
@@ -112,8 +124,10 @@ static VALUE grpc_rb_server_credentials_init_copy(VALUE copy, VALUE orig) {
              rb_obj_classname(grpc_rb_cServerCredentials));
   }
 
-  Data_Get_Struct(orig, grpc_rb_server_credentials, orig_ch);
-  Data_Get_Struct(copy, grpc_rb_server_credentials, copy_ch);
+  TypedData_Get_Struct(orig, grpc_rb_server_credentials,
+                       &grpc_rb_server_credentials_data_type, orig_ch);
+  TypedData_Get_Struct(copy, grpc_rb_server_credentials,
+                       &grpc_rb_server_credentials_data_type, copy_ch);
 
   /* use ruby's MEMCPY to make a byte-for-byte copy of the server_credentials
      wrapper object. */
@@ -149,7 +163,8 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   grpc_rb_server_credentials *wrapper = NULL;
   grpc_server_credentials *creds = NULL;
   grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
-  Data_Get_Struct(self, grpc_rb_server_credentials, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_server_credentials,
+                       &grpc_rb_server_credentials_data_type, wrapper);
   if (pem_cert_chain == Qnil) {
     rb_raise(rb_eRuntimeError,
              "could not create a server credential: nil pem_cert_chain");
@@ -180,10 +195,6 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   return self;
 }
 
-/* grpc_rb_cServerCredentials is the ruby class that proxies
-   grpc_server_credentials. */
-VALUE grpc_rb_cServerCredentials = Qnil;
-
 void Init_grpc_server_credentials() {
   grpc_rb_cServerCredentials =
       rb_define_class_under(grpc_rb_mGrpcCore, "ServerCredentials", rb_cObject);
@@ -206,6 +217,7 @@ void Init_grpc_server_credentials() {
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
 grpc_server_credentials *grpc_rb_get_wrapped_server_credentials(VALUE v) {
   grpc_rb_server_credentials *wrapper = NULL;
-  Data_Get_Struct(v, grpc_rb_server_credentials, wrapper);
+  TypedData_Get_Struct(v, grpc_rb_server_credentials,
+                       &grpc_rb_server_credentials_data_type, wrapper);
   return wrapper->wrapped;
 }

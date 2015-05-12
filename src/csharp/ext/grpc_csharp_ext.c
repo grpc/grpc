@@ -277,6 +277,12 @@ grpcsharp_batch_context_server_rpc_new_method(
   return ctx->server_rpc_new.call_details.method;
 }
 
+GPR_EXPORT gpr_int32 GPR_CALLTYPE
+grpcsharp_batch_context_recv_close_on_server_cancelled(
+    const grpcsharp_batch_context *ctx) {
+  return (gpr_int32) ctx->recv_close_on_server_cancelled;
+}
+
 /* Init & shutdown */
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_init(void) { grpc_init(); }
@@ -413,16 +419,6 @@ grpcsharp_call_cancel_with_status(grpc_call *call, grpc_status_code status,
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
   grpc_call_destroy(call);
-}
-
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_call_start_write_from_copied_buffer(grpc_call *call,
-                                              const char *buffer, size_t len,
-                                              void *tag, gpr_uint32 flags) {
-  grpc_byte_buffer *byte_buffer = string_to_byte_buffer(buffer, len);
-  GPR_ASSERT(grpc_call_start_write_old(call, byte_buffer, tag, flags) ==
-             GRPC_CALL_OK);
-  grpc_byte_buffer_destroy(byte_buffer);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE

@@ -30,6 +30,7 @@
 require 'grpc/errors'
 require 'grpc/grpc'
 require 'grpc/logconfig'
+require 'grpc/notifier'
 require 'grpc/version'
 require 'grpc/core/time_consts'
 require 'grpc/generic/active_call'

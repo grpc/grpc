@@ -34,7 +34,7 @@
 #ifndef GRPC_SUPPORT_TLS_H
 #define GRPC_SUPPORT_TLS_H
 
-#include "port_platform.h"
+#include <grpc/support/port_platform.h>
 
 /* Thread local storage.
 
@@ -44,7 +44,7 @@
    Thread locals have type gpr_intptr.
 
    Declaring a thread local variable 'foo':
-     GPR_TLS_DECL(foo, initial_value);
+     GPR_TLS_DECL(foo);
    Thread locals always have static scope.
 
    Initializing a thread local (must be done at library initialization 
@@ -63,15 +63,15 @@
    ALL functions here may be implemented as macros. */
 
 #ifdef GPR_GCC_TLS
-#include "tls_gcc.h"
+#include <grpc/support/tls_gcc.h>
 #endif
 
 #ifdef GPR_MSVC_TLS
-#include "tls_msvc.h"
+#include <grpc/support/tls_msvc.h>
 #endif
 
 #ifdef GPR_PTHREAD_TLS
-#include "tls_pthread.h"
+#include <grpc/support/tls_pthread.h>
 #endif
 
 #endif

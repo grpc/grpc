@@ -44,11 +44,10 @@
 #include "src/core/channel/client_setup.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_client_filter.h"
-#include "src/core/channel/http_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth.h"
-#include "src/core/security/security_context.h"
+#include "src/core/security/credentials.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/channel.h"
@@ -74,7 +73,7 @@ typedef struct {
 } request;
 
 struct setup {
-  grpc_channel_security_context *security_context;
+  grpc_channel_security_connector *security_connector;
   const char *target;
   grpc_transport_setup_callback setup_callback;
   void *setup_user_data;
@@ -130,7 +129,7 @@ static void on_connect(void *rp, grpc_endpoint *tcp) {
       return;
     }
   } else {
-    grpc_setup_secure_transport(&r->setup->security_context->base, tcp,
+    grpc_setup_secure_transport(&r->setup->security_connector->base, tcp,
                                 on_secure_transport_setup_done, r);
   }
 }
@@ -185,7 +184,7 @@ static void initiate_setup(void *sp, grpc_client_setup_request *cs_request) {
 static void done_setup(void *sp) {
   setup *s = sp;
   gpr_free((void *)s->target);
-  grpc_security_context_unref(&s->security_context->base);
+  grpc_security_connector_unref(&s->security_connector->base);
   gpr_free(s);
 }
 
@@ -193,7 +192,7 @@ static grpc_transport_setup_result complete_setup(void *channel_stack,
                                                   grpc_transport *transport,
                                                   grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
-      &grpc_client_auth_filter, &grpc_http_client_filter, &grpc_http_filter};
+      &grpc_client_auth_filter, &grpc_http_client_filter};
   return grpc_client_channel_transport_setup_complete(
       channel_stack, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters),
       mdctx);
@@ -203,24 +202,37 @@ static grpc_transport_setup_result complete_setup(void *channel_stack,
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel *grpc_secure_channel_create_internal(
-    const char *target, const grpc_channel_args *args,
-    grpc_channel_security_context *context) {
+grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
+                                         const char *target,
+                                         const grpc_channel_args *args) {
   setup *s;
   grpc_channel *channel;
-  grpc_arg context_arg;
+  grpc_arg connector_arg;
   grpc_channel_args *args_copy;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_channel_args *new_args_from_connector;
+  grpc_channel_security_connector *connector;
+  grpc_mdctx *mdctx;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
   int n = 0;
-  if (grpc_find_security_context_in_args(args) != NULL) {
+
+  if (grpc_find_security_connector_in_args(args) != NULL) {
     gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
+    return grpc_lame_client_channel_create();
   }
 
+  if (grpc_credentials_create_security_connector(
+          creds, target, args, NULL, &connector, &new_args_from_connector) !=
+      GRPC_SECURITY_OK) {
+    return grpc_lame_client_channel_create();
+  }
+  mdctx = grpc_credentials_get_or_create_metadata_context(creds);
+
   s = gpr_malloc(sizeof(setup));
-  context_arg = grpc_security_context_to_arg(&context->base);
-  args_copy = grpc_channel_args_copy_and_add(args, &context_arg);
+  connector_arg = grpc_security_connector_to_arg(&connector->base);
+  args_copy = grpc_channel_args_copy_and_add(
+      new_args_from_connector != NULL ? new_args_from_connector : args,
+      &connector_arg);
   filters[n++] = &grpc_client_surface_filter;
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
@@ -229,13 +241,14 @@ grpc_channel *grpc_secure_channel_create_internal(
   GPR_ASSERT(n <= MAX_FILTERS);
   channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);
   grpc_channel_args_destroy(args_copy);
+  if (new_args_from_connector != NULL) {
+    grpc_channel_args_destroy(new_args_from_connector);
+  }
 
   s->target = gpr_strdup(target);
   s->setup_callback = complete_setup;
   s->setup_user_data = grpc_channel_get_channel_stack(channel);
-  s->security_context =
-      (grpc_channel_security_context *)grpc_security_context_ref(
-          &context->base);
+  s->security_connector = connector;
   grpc_client_setup_create_and_attach(grpc_channel_get_channel_stack(channel),
                                       args, mdctx, initiate_setup, done_setup,
                                       s);

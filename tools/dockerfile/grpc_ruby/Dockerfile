@@ -42,7 +42,7 @@ RUN make clean -C /var/local/git/grpc
 RUN make install_c -j12 -C /var/local/git/grpc
 
 # Build ruby gRPC and run its tests
-RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && bundle && rake'
+RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && gem update bundler && bundle && rake'
 
 # Add a cacerts directory containing the Google root pem file, allowing the
 # ruby client to access the production test instance

@@ -48,10 +48,11 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/interop/test.grpc.pb.h"
-#include "test/cpp/interop/empty.grpc.pb.h"
-#include "test/cpp/interop/messages.grpc.pb.h"
+#include "test/proto/test.grpc.pb.h"
+#include "test/proto/empty.grpc.pb.h"
+#include "test/proto/messages.grpc.pb.h"
 #include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
@@ -74,13 +75,6 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
 
 static bool got_sigint = false;
 
@@ -224,13 +218,11 @@ void RunServer() {
 static void sigint_handler(int x) { got_sigint = true; }
 
 int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
   GPR_ASSERT(FLAGS_port != 0);
   RunServer();
 
-  grpc_shutdown();
   return 0;
 }

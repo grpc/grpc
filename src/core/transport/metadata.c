@@ -34,10 +34,12 @@
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/transport/metadata.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include "src/core/support/murmur_hash.h"
 #include "src/core/transport/chttp2/bin_encoder.h"
@@ -68,11 +70,12 @@ typedef struct internal_metadata {
   internal_string *key;
   internal_string *value;
 
+  gpr_atm refcnt;
+
   /* private only data */
   void *user_data;
   void (*destroy_user_data)(void *user_data);
 
-  gpr_uint32 refs;
   grpc_mdctx *context;
   struct internal_metadata *bucket_next;
 } internal_metadata;
@@ -117,7 +120,7 @@ static void unlock(grpc_mdctx *ctx) {
   if (ctx->refs == 0) {
     /* uncomment if you're having trouble diagnosing an mdelem leak to make
        things clearer (slows down destruction a lot, however) */
-    /* gc_mdtab(ctx); */
+    gc_mdtab(ctx);
     if (ctx->mdtab_count && ctx->mdtab_count == ctx->mdtab_free) {
       discard_metadata(ctx);
     }
@@ -129,8 +132,8 @@ static void unlock(grpc_mdctx *ctx) {
   gpr_mu_unlock(&ctx->mu);
 }
 
-static void ref_md(internal_metadata *md) {
-  if (0 == md->refs++) {
+static void ref_md_locked(internal_metadata *md) {
+  if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
     md->context->mdtab_free--;
   }
 }
@@ -168,7 +171,7 @@ static void discard_metadata(grpc_mdctx *ctx) {
   for (i = 0; i < ctx->mdtab_capacity; i++) {
     cur = ctx->mdtab[i];
     while (cur) {
-      GPR_ASSERT(cur->refs == 0);
+      GPR_ASSERT(gpr_atm_acq_load(&cur->refcnt) == 0);
       next = cur->bucket_next;
       internal_string_unref(cur->key);
       internal_string_unref(cur->value);
@@ -349,7 +352,7 @@ static void gc_mdtab(grpc_mdctx *ctx) {
     prev_next = &ctx->mdtab[i];
     for (md = ctx->mdtab[i]; md; md = next) {
       next = md->bucket_next;
-      if (md->refs == 0) {
+      if (gpr_atm_acq_load(&md->refcnt) == 0) {
         internal_string_unref(md->key);
         internal_string_unref(md->value);
         if (md->user_data) {
@@ -415,7 +418,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   /* search for an existing pair */
   for (md = ctx->mdtab[hash % ctx->mdtab_capacity]; md; md = md->bucket_next) {
     if (md->key == key && md->value == value) {
-      ref_md(md);
+      ref_md_locked(md);
       internal_string_unref(key);
       internal_string_unref(value);
       unlock(ctx);
@@ -425,7 +428,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
 
   /* not found: create a new pair */
   md = gpr_malloc(sizeof(internal_metadata));
-  md->refs = 1;
+  gpr_atm_rel_store(&md->refcnt, 1);
   md->context = ctx;
   md->key = key;
   md->value = value;
@@ -468,10 +471,12 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
 
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd) {
   internal_metadata *md = (internal_metadata *)gmd;
-  grpc_mdctx *ctx = md->context;
-  lock(ctx);
-  ref_md(md);
-  unlock(ctx);
+  /* we can assume the ref count is >= 1 as the application is calling
+     this function - meaning that no adjustment to mdtab_free is necessary,
+     simplifying the logic here to be just an atomic increment */
+  /* use C assert to have this removed in opt builds */
+  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
+  gpr_atm_no_barrier_fetch_add(&md->refcnt, 1);
   return gmd;
 }
 
@@ -479,8 +484,8 @@ void grpc_mdelem_unref(grpc_mdelem *gmd) {
   internal_metadata *md = (internal_metadata *)gmd;
   grpc_mdctx *ctx = md->context;
   lock(ctx);
-  GPR_ASSERT(md->refs);
-  if (0 == --md->refs) {
+  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
+  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
     ctx->mdtab_free++;
   }
   unlock(ctx);
@@ -549,4 +554,34 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   slice = s->base64_and_huffman;
   unlock(ctx);
   return slice;
+}
+
+void grpc_mdctx_lock(grpc_mdctx *ctx) { lock(ctx); }
+
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *gmd) {
+  internal_metadata *md = (internal_metadata *)gmd;
+  grpc_mdctx *elem_ctx = md->context;
+  GPR_ASSERT(ctx == elem_ctx);
+  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
+  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
+    ctx->mdtab_free++;
+  }
+}
+
+void grpc_mdctx_unlock(grpc_mdctx *ctx) { unlock(ctx); }
+
+int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
+  /* TODO(ctiller): consider caching this, or computing it on construction */
+  const gpr_uint8 *p = GPR_SLICE_START_PTR(s->slice);
+  const gpr_uint8 *e = GPR_SLICE_END_PTR(s->slice);
+  for (; p != e; p++) {
+    if (*p < 32 || *p > 126) return 0;
+  }
+  return 1;
+}
+
+int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s) {
+  /* TODO(ctiller): consider caching this */
+  return grpc_is_binary_header((const char *)GPR_SLICE_START_PTR(s->slice),
+                               GPR_SLICE_LENGTH(s->slice));
 }

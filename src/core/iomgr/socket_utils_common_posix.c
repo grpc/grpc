@@ -76,6 +76,19 @@ int grpc_set_socket_nonblocking(int fd, int non_blocking) {
   return 1;
 }
 
+int grpc_set_socket_no_sigpipe_if_possible(int fd) {
+#ifdef GPR_HAVE_SO_NOSIGPIPE
+  int val = 1;
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val)) &&
+         0 == getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen) &&
+         (newval != 0) == val;
+#else
+  return 1;
+#endif
+}
+
 /* set a socket to close on exec */
 int grpc_set_socket_cloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);

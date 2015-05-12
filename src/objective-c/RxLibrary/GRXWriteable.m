@@ -38,6 +38,30 @@
   GRXCompletionHandler _completionHandler;
 }
 
++ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler {
+  if (!handler) {
+    return [[self alloc] init];
+  }
+  return [[self alloc] initWithValueHandler:^(id value) {
+    handler(value, nil);
+  } completionHandler:^(NSError *errorOrNil) {
+    if (errorOrNil) {
+      handler(nil, errorOrNil);
+    }
+  }];
+}
+
++ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler {
+  if (!handler) {
+    return [[self alloc] init];
+  }
+  return [[self alloc] initWithValueHandler:^(id value) {
+    handler(NO, value, nil);
+  } completionHandler:^(NSError *errorOrNil) {
+    handler(YES, nil, errorOrNil);
+  }];
+}
+
 - (instancetype)init {
   return [self initWithValueHandler:nil completionHandler:nil];
 }

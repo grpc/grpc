@@ -32,21 +32,26 @@ thisfile=$(readlink -ne "${BASH_SOURCE[0]}")
 current_time=$(date "+%Y-%m-%d-%H-%M-%S")
 result_file_name=cloud_prod_result.$current_time.html
 echo $result_file_name
+pass_log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/log/cloud_prod_pass_log_history
+fail_log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/log/cloud_prod_fail_log_history
 
 main() {
   source grpc_docker.sh
   test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response)
   auth_test_cases=(service_account_creds compute_engine_creds jwt_token_creds)
-  clients=(cxx java go ruby node csharp_mono)
+  clients=(cxx java go ruby node csharp_mono python php)
   for test_case in "${test_cases[@]}"
   do
     for client in "${clients[@]}"
     do
-      if grpc_cloud_prod_test $test_case grpc-docker-testclients $client
+      log_file_name=cloud_{$test_case}_{$client}.txt 
+      if grpc_cloud_prod_test $test_case grpc-docker-testclients $client > /tmp/$log_file_name 2>&1
       then
-        echo "          ['$test_case', '$client', 'prod', true]," >> /tmp/cloud_prod_result.txt
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_pass_log_history/$log_file_name
+        echo "          ['$test_case', '$client', 'prod', true, '<a href="$pass_log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       else
-        echo "          ['$test_case', '$client', 'prod', false]," >> /tmp/cloud_prod_result.txt
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_fail_log_history/$log_file_name
+        echo "          ['$test_case', '$client', 'prod', false, '<a href="$fail_log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       fi
     done
   done
@@ -54,21 +59,27 @@ main() {
   do
     for client in "${clients[@]}"
     do
-      if grpc_cloud_prod_auth_test $test_case grpc-docker-testclients $client
+      log_file_name=cloud_{$test_case}_{$client}.txt 
+      if grpc_cloud_prod_auth_test $test_case grpc-docker-testclients $client > /tmp/$log_file_name 2>&1
       then
-        echo "          ['$test_case', '$client', 'prod', true]," >> /tmp/cloud_prod_result.txt
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_pass_log_history/$log_file_name
+        echo "          ['$test_case', '$client', 'prod', true, '<a href="$pass_log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       else
-        echo "          ['$test_case', '$client', 'prod', false]," >> /tmp/cloud_prod_result.txt
+        gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/cloud_prod_fail_log_history/$log_file_name    
+        echo "          ['$test_case', '$client', 'prod', false, '<a href="$fail_log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       fi
     done
   done
   if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     cat pre.html /tmp/cloud_prod_result.txt post.html > /tmp/cloud_prod_result.html
     gsutil cp /tmp/cloud_prod_result.txt gs://stoked-keyword-656-output/cloud_prod_result.txt
+    gsutil cp -R gs://stoked-keyword-656-output/cloud_prod_pass_log_history gs://stoked-keyword-656-output/log
+    gsutil cp -R gs://stoked-keyword-656-output/cloud_prod_fail_log_history gs://stoked-keyword-656-output/log
     gsutil cp /tmp/cloud_prod_result.html gs://stoked-keyword-656-output/cloud_prod_result.html
     gsutil cp /tmp/cloud_prod_result.html gs://stoked-keyword-656-output/result_history/$result_file_name
     rm /tmp/cloud_prod_result.txt
     rm /tmp/cloud_prod_result.html
+    rm /tmp/cloud*.txt
   fi
 }
 

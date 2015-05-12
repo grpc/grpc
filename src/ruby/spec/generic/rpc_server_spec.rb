@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'xray/thread_dump_signal_handler'
 
 def load_test_certs
   test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
@@ -58,24 +57,45 @@ class NoRpcImplementation
   rpc :an_rpc, EchoMsg, EchoMsg
 end
 
-# A test service with an implementation.
+# A test service with an echo implementation.
 class EchoService
   include GRPC::GenericService
   rpc :an_rpc, EchoMsg, EchoMsg
   attr_reader :received_md
 
-  def initialize(_default_var = 'ignored')
+  def initialize(**kw)
+    @trailing_metadata = kw
     @received_md = []
   end
 
   def an_rpc(req, call)
     logger.info('echo service received a request')
+    call.output_metadata.update(@trailing_metadata)
     @received_md << call.metadata unless call.metadata.nil?
     req
   end
 end
 
 EchoStub = EchoService.rpc_stub_class
+
+# A test service with an implementation that fails with BadStatus
+class FailingService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, EchoMsg
+  attr_reader :details, :code, :md
+
+  def initialize(_default_var = 'ignored')
+    @details = 'app error'
+    @code = 101
+    @md = { failed_method: 'an_rpc' }
+  end
+
+  def an_rpc(_req, _call)
+    fail GRPC::BadStatus.new(@code, @details, **@md)
+  end
+end
+
+FailingStub = FailingService.rpc_stub_class
 
 # A slow test service.
 class SlowService
@@ -301,21 +321,20 @@ describe GRPC::RpcServer do
   end
 
   describe '#run' do
-    before(:each) do
-      @client_opts = {
-        channel_override: @ch
-      }
-      @marshal = EchoService.rpc_descs[:an_rpc].marshal_proc
-      @unmarshal = EchoService.rpc_descs[:an_rpc].unmarshal_proc(:output)
-      server_opts = {
-        server_override: @server,
-        completion_queue_override: @server_queue,
-        poll_period: 1
-      }
-      @srv = RpcServer.new(**server_opts)
-    end
+    let(:client_opts) { { channel_override: @ch } }
+    let(:marshal) { EchoService.rpc_descs[:an_rpc].marshal_proc }
+    let(:unmarshal) { EchoService.rpc_descs[:an_rpc].unmarshal_proc(:output) }
 
-    describe 'when running' do
+    context 'with no connect_metadata' do
+      before(:each) do
+        server_opts = {
+          server_override: @server,
+          completion_queue_override: @server_queue,
+          poll_period: 1
+        }
+        @srv = RpcServer.new(**server_opts)
+      end
+
       it 'should return NOT_FOUND status on unknown methods', server: true do
         @srv.handle(EchoService)
         t = Thread.new { @srv.run }
@@ -323,8 +342,8 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         blk = proc do
           cq = GRPC::Core::CompletionQueue.new
-          stub = GRPC::ClientStub.new(@host, cq, **@client_opts)
-          stub.request_response('/unknown', req, @marshal, @unmarshal)
+          stub = GRPC::ClientStub.new(@host, cq, **client_opts)
+          stub.request_response('/unknown', req, marshal, unmarshal)
         end
         expect(&blk).to raise_error GRPC::BadStatus
         @srv.stop
@@ -337,7 +356,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         n = 5  # arbitrary
-        stub = EchoStub.new(@host, **@client_opts)
+        stub = EchoStub.new(@host, **client_opts)
         n.times { expect(stub.an_rpc(req)).to be_a(EchoMsg) }
         @srv.stop
         t.join
@@ -349,7 +368,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = EchoStub.new(@host, **@client_opts)
+        stub = EchoStub.new(@host, **client_opts)
         expect(stub.an_rpc(req, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
         expect(service.received_md).to eq(wanted_md)
@@ -363,7 +382,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = SlowStub.new(@host, **@client_opts)
+        stub = SlowStub.new(@host, **client_opts)
         deadline = service.delay + 1.0 # wait for long enough
         expect(stub.an_rpc(req, deadline, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
@@ -378,12 +397,29 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = SlowStub.new(@host, **@client_opts)
+        stub = SlowStub.new(@host, **client_opts)
         deadline = 0.1  # too short for SlowService to respond
         blk = proc { stub.an_rpc(req, deadline, k1: 'v1', k2: 'v2') }
         expect(&blk).to raise_error GRPC::BadStatus
         wanted_md = []
         expect(service.received_md).to eq(wanted_md)
+        @srv.stop
+        t.join
+      end
+
+      it 'should handle cancellation correctly', server: true do
+        service = SlowService.new
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = SlowStub.new(@host, **client_opts)
+        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        Thread.new do  # cancel the call
+          sleep 0.1
+          op.cancel
+        end
+        expect { op.execute }.to raise_error GRPC::Cancelled
         @srv.stop
         t.join
       end
@@ -394,13 +430,14 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        @client_opts[:update_metadata] = proc do |md|
+        client_opts[:update_metadata] = proc do |md|
           md[:k1] = 'updated-v1'
           md
         end
-        stub = EchoStub.new(@host, **@client_opts)
+        stub = EchoStub.new(@host, **client_opts)
         expect(stub.an_rpc(req, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
-        wanted_md = [{ 'k1' => 'updated-v1', 'k2' => 'v2' }]
+        wanted_md = [{ 'k1' => 'updated-v1', 'k2' => 'v2',
+                       'jwt_aud_uri' => "https://#{@host}/EchoService" }]
         expect(service.received_md).to eq(wanted_md)
         @srv.stop
         t.join
@@ -415,7 +452,7 @@ describe GRPC::RpcServer do
         threads = []
         n.times do
           threads << Thread.new do
-            stub = EchoStub.new(@host, **@client_opts)
+            stub = EchoStub.new(@host, **client_opts)
             q << stub.an_rpc(req)
           end
         end
@@ -443,7 +480,7 @@ describe GRPC::RpcServer do
         one_failed_as_unavailable = false
         n.times do
           threads << Thread.new do
-            stub = SlowStub.new(@host, **@client_opts)
+            stub = SlowStub.new(@host, **client_opts)
             begin
               stub.an_rpc(req)
             rescue GRPC::BadStatus => e
@@ -454,6 +491,98 @@ describe GRPC::RpcServer do
         threads.each(&:join)
         alt_srv.stop
         expect(one_failed_as_unavailable).to be(true)
+      end
+    end
+
+    context 'with connect metadata' do
+      let(:test_md_proc) do
+        proc do |mth, md|
+          res = md.clone
+          res['method'] = mth
+          res['connect_k1'] = 'connect_v1'
+          res
+        end
+      end
+      before(:each) do
+        server_opts = {
+          server_override: @server,
+          completion_queue_override: @server_queue,
+          poll_period: 1,
+          connect_md_proc: test_md_proc
+        }
+        @srv = RpcServer.new(**server_opts)
+      end
+
+      it 'should send connect metadata to the client', server: true do
+        service = EchoService.new
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = EchoStub.new(@host, **client_opts)
+        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        expect(op.metadata).to be nil
+        expect(op.execute).to be_a(EchoMsg)
+        wanted_md = {
+          'k1' => 'v1',
+          'k2' => 'v2',
+          'method' => '/EchoService/an_rpc',
+          'connect_k1' => 'connect_v1'
+        }
+        expect(op.metadata).to eq(wanted_md)
+        @srv.stop
+        t.join
+      end
+    end
+
+    context 'with trailing metadata' do
+      before(:each) do
+        server_opts = {
+          server_override: @server,
+          completion_queue_override: @server_queue,
+          poll_period: 1
+        }
+        @srv = RpcServer.new(**server_opts)
+      end
+
+      it 'should be added to BadStatus when requests fail', server: true do
+        service = FailingService.new
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = FailingStub.new(@host, **client_opts)
+        blk = proc { stub.an_rpc(req) }
+
+        # confirm it raise the expected error
+        expect(&blk).to raise_error GRPC::BadStatus
+
+        # call again and confirm exception contained the trailing metadata.
+        begin
+          blk.call
+        rescue GRPC::BadStatus => e
+          expect(e.code).to eq(service.code)
+          expect(e.details).to eq(service.details)
+          expect(e.metadata).to eq(service.md)
+        end
+        @srv.stop
+        t.join
+      end
+
+      it 'should be received by the client', server: true do
+        wanted_trailers = { 'k1' => 'out_v1', 'k2' => 'out_v2' }
+        service = EchoService.new(k1: 'out_v1', k2: 'out_v2')
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = EchoStub.new(@host, **client_opts)
+        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        expect(op.metadata).to be nil
+        expect(op.execute).to be_a(EchoMsg)
+        expect(op.metadata).to eq(wanted_trailers)
+        @srv.stop
+        t.join
       end
     end
   end

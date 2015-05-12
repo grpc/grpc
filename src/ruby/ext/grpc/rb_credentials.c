@@ -40,6 +40,9 @@
 
 #include "rb_grpc.h"
 
+/* grpc_rb_cCredentials is the ruby class that proxies grpc_credentials. */
+static VALUE grpc_rb_cCredentials = Qnil;
+
 /* grpc_rb_credentials wraps a grpc_credentials.  It provides a
  * peer ruby object, 'mark' to minimize copying when a credential is
  * created from ruby. */
@@ -83,14 +86,21 @@ static void grpc_rb_credentials_mark(void *p) {
   }
 }
 
+static rb_data_type_t grpc_rb_credentials_data_type = {
+    "grpc_credentials",
+    {grpc_rb_credentials_mark, grpc_rb_credentials_free,
+     GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL,
+    NULL,
+    RUBY_TYPED_FREE_IMMEDIATELY};
+
 /* Allocates Credential instances.
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_credentials_alloc(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(cls, grpc_rb_credentials_mark,
-                          grpc_rb_credentials_free, wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_credentials_data_type, wrapper);
 }
 
 /* Clones Credentials instances.
@@ -110,8 +120,10 @@ static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
     rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_rb_cCredentials));
   }
 
-  Data_Get_Struct(orig, grpc_rb_credentials, orig_cred);
-  Data_Get_Struct(copy, grpc_rb_credentials, copy_cred);
+  TypedData_Get_Struct(orig, grpc_rb_credentials,
+                       &grpc_rb_credentials_data_type, orig_cred);
+  TypedData_Get_Struct(copy, grpc_rb_credentials,
+                       &grpc_rb_credentials_data_type, copy_cred);
 
   /* use ruby's MEMCPY to make a byte-for-byte copy of the credentials
    * wrapper object. */
@@ -133,8 +145,7 @@ static VALUE grpc_rb_default_credentials_create(VALUE cls) {
   }
 
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(cls, grpc_rb_credentials_mark,
-                          grpc_rb_credentials_free, wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_credentials_data_type, wrapper);
 }
 
 /*
@@ -151,8 +162,7 @@ static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
   }
 
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(cls, grpc_rb_credentials_mark,
-                          grpc_rb_credentials_free, wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_credentials_data_type, wrapper);
 }
 
 /*
@@ -166,8 +176,10 @@ static VALUE grpc_rb_composite_credentials_create(VALUE self, VALUE other) {
   grpc_rb_credentials *other_wrapper = NULL;
   grpc_rb_credentials *wrapper = NULL;
 
-  Data_Get_Struct(self, grpc_rb_credentials, self_wrapper);
-  Data_Get_Struct(other, grpc_rb_credentials, other_wrapper);
+  TypedData_Get_Struct(self, grpc_rb_credentials,
+                       &grpc_rb_credentials_data_type, self_wrapper);
+  TypedData_Get_Struct(other, grpc_rb_credentials,
+                       &grpc_rb_credentials_data_type, other_wrapper);
   wrapper = ALLOC(grpc_rb_credentials);
   wrapper->wrapped = grpc_composite_credentials_create(self_wrapper->wrapped,
                                                        other_wrapper->wrapped);
@@ -178,8 +190,8 @@ static VALUE grpc_rb_composite_credentials_create(VALUE self, VALUE other) {
   }
 
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(grpc_rb_cCredentials, grpc_rb_credentials_mark,
-                          grpc_rb_credentials_free, wrapper);
+  return TypedData_Wrap_Struct(grpc_rb_cCredentials,
+                               &grpc_rb_credentials_data_type, wrapper);
 }
 
 /* The attribute used on the mark object to hold the pem_root_certs. */
@@ -214,7 +226,8 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   rb_scan_args(argc, argv, "12", &pem_root_certs, &pem_private_key,
                &pem_cert_chain);
 
-  Data_Get_Struct(self, grpc_rb_credentials, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_credentials,
+                       &grpc_rb_credentials_data_type, wrapper);
   if (pem_root_certs == Qnil) {
     rb_raise(rb_eRuntimeError,
              "could not create a credential: nil pem_root_certs");
@@ -225,8 +238,8 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   } else {
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-    creds = grpc_ssl_credentials_create(
-        RSTRING_PTR(pem_root_certs), &key_cert_pair);
+    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs),
+                                        &key_cert_pair);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
@@ -242,9 +255,6 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   return self;
 }
 
-/* grpc_rb_cCredentials is the ruby class that proxies grpc_credentials. */
-VALUE grpc_rb_cCredentials = Qnil;
-
 void Init_grpc_credentials() {
   grpc_rb_cCredentials =
       rb_define_class_under(grpc_rb_mGrpcCore, "Credentials", rb_cObject);
@@ -253,8 +263,8 @@ void Init_grpc_credentials() {
   rb_define_alloc_func(grpc_rb_cCredentials, grpc_rb_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(grpc_rb_cCredentials, "initialize",
-                   grpc_rb_credentials_init, -1);
+  rb_define_method(grpc_rb_cCredentials, "initialize", grpc_rb_credentials_init,
+                   -1);
   rb_define_method(grpc_rb_cCredentials, "initialize_copy",
                    grpc_rb_credentials_init_copy, 1);
 
@@ -277,6 +287,7 @@ void Init_grpc_credentials() {
 /* Gets the wrapped grpc_credentials from the ruby wrapper */
 grpc_credentials *grpc_rb_get_wrapped_credentials(VALUE v) {
   grpc_rb_credentials *wrapper = NULL;
-  Data_Get_Struct(v, grpc_rb_credentials, wrapper);
+  TypedData_Get_Struct(v, grpc_rb_credentials, &grpc_rb_credentials_data_type,
+                       wrapper);
   return wrapper->wrapped;
 }

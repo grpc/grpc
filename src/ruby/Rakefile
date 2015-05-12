@@ -26,6 +26,7 @@ namespace :suite do
   SPEC_SUITES.each do |suite|
     desc "Run all specs in the #{suite[:title]} spec suite"
     RSpec::Core::RakeTask.new(suite[:id]) do |t|
+      ENV['COVERAGE_NAME'] = suite[:id].to_s
       spec_files = []
       suite[:files].each { |f| spec_files += Dir[f] } if suite[:files]
 

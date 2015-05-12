@@ -38,26 +38,33 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Server is implemented only to be able to do
-    /// in-process testing.
+    /// A gRPC server.
     /// </summary>
     public class Server
     {
-        // TODO: make sure the delegate doesn't get garbage collected while
+        /// <summary>
+        /// Pass this value as port to have the server choose an unused listening port for you.
+        /// </summary>
+        public const int PickUnusedPort = 0;
+
+        // TODO(jtattermusch) : make sure the delegate doesn't get garbage collected while
         // native callbacks are in the completion queue.
         readonly ServerShutdownCallbackDelegate serverShutdownHandler;
         readonly CompletionCallbackDelegate newServerRpcHandler;
 
-        readonly BlockingCollection<NewRpcInfo> newRpcQueue = new BlockingCollection<NewRpcInfo>();
         readonly ServerSafeHandle handle;
+        readonly object myLock = new object();
 
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
-
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
+
+        bool startRequested;
+        bool shutdownRequested;
 
         public Server()
         {
@@ -66,71 +73,77 @@ namespace Grpc.Core
             this.serverShutdownHandler = HandleServerShutdown;
         }
 
-        // only call this before Start()
+        /// <summary>
+        /// Adds a service definition to the server. This is how you register
+        /// handlers for a service with the server.
+        /// Only call this before Start().
+        /// </summary>
         public void AddServiceDefinition(ServerServiceDefinition serviceDefinition)
         {
-            foreach (var entry in serviceDefinition.CallHandlers)
+            lock (myLock)
             {
-                callHandlers.Add(entry.Key, entry.Value);
+                Preconditions.CheckState(!startRequested);
+                foreach (var entry in serviceDefinition.CallHandlers)
+                {
+                    callHandlers.Add(entry.Key, entry.Value);
+                }
             }
-        }
-
-        // only call before Start()
-        public int AddListeningPort(string addr)
-        {
-            return handle.AddListeningPort(addr);
-        }
-
-        // only call before Start()
-        public int AddListeningPort(string addr, ServerCredentials credentials)
-        {
-            using (var nativeCredentials = credentials.ToNativeCredentials())
-            {
-                return handle.AddListeningPort(addr, nativeCredentials);
-            }
-        }
-
-        public void Start()
-        {
-            handle.Start();
-
-            // TODO: this basically means the server is single threaded....
-            StartHandlingRpcs();
         }
 
         /// <summary>
-        /// Requests and handles single RPC call.
+        /// Add a non-secure port on which server should listen.
+        /// Only call this before Start().
         /// </summary>
-        internal void RunRpc()
+        /// <returns>The port on which server will be listening.</returns>
+        /// <param name="host">the host</param>
+        /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
+        public int AddListeningPort(string host, int port)
         {
-            AllowOneRpc();
+            return AddListeningPortInternal(host, port, null);
+        }
 
-            try
+        /// <summary>
+        /// Add a non-secure port on which server should listen.
+        /// Only call this before Start().
+        /// </summary>
+        /// <returns>The port on which server will be listening.</returns>
+        /// <param name="host">the host</param>
+        /// <param name="port">the port. If zero, , an unused port is chosen automatically.</param>
+        public int AddListeningPort(string host, int port, ServerCredentials credentials)
+        {
+            Preconditions.CheckNotNull(credentials);
+            return AddListeningPortInternal(host, port, credentials);
+        }
+
+        /// <summary>
+        /// Starts the server.
+        /// </summary>
+        public void Start()
+        {
+            lock (myLock)
             {
-                var rpcInfo = newRpcQueue.Take();
-
-                // Console.WriteLine("Server received RPC " + rpcInfo.Method);
-
-                IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(rpcInfo.Method, out callHandler))
-                {
-                    callHandler = new NoSuchMethodCallHandler();
-                }
-                callHandler.StartCall(rpcInfo.Method, rpcInfo.Call, GetCompletionQueue());
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception while handling RPC: " + e);
+                Preconditions.CheckState(!startRequested);
+                startRequested = true;
+                
+                handle.Start();
+                AllowOneRpc();
             }
         }
 
         /// <summary>
         /// Requests server shutdown and when there are no more calls being serviced,
-        /// cleans up used resources.
+        /// cleans up used resources. The returned task finishes when shutdown procedure
+        /// is complete.
         /// </summary>
-        /// <returns>The async.</returns>
         public async Task ShutdownAsync()
         {
+            lock (myLock)
+            {
+                Preconditions.CheckState(startRequested);
+                Preconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+
             handle.ShutdownAndNotify(serverShutdownHandler);
             await shutdownTcs.Task;
             handle.Dispose();
@@ -152,19 +165,63 @@ namespace Grpc.Core
             handle.Dispose();
         }
 
-        private async Task StartHandlingRpcs()
+        private int AddListeningPortInternal(string host, int port, ServerCredentials credentials)
         {
-            while (true)
+            lock (myLock)
             {
-                await Task.Factory.StartNew(RunRpc);
+                Preconditions.CheckState(!startRequested);    
+                var address = string.Format("{0}:{1}", host, port);
+                if (credentials != null)
+                {
+                    using (var nativeCredentials = credentials.ToNativeCredentials())
+                    {
+                        return handle.AddListeningPort(address, nativeCredentials);
+                    }
+                }
+                else
+                {
+                    return handle.AddListeningPort(address);    
+                }
             }
         }
 
+        /// <summary>
+        /// Allows one new RPC call to be received by server.
+        /// </summary>
         private void AllowOneRpc()
         {
-            AssertCallOk(handle.RequestCall(GetCompletionQueue(), newServerRpcHandler));
+            lock (myLock)
+            {
+                if (!shutdownRequested)
+                {
+                    handle.RequestCall(GetCompletionQueue(), newServerRpcHandler);
+                }
+            }
         }
 
+        /// <summary>
+        /// Selects corresponding handler for given call and handles the call.
+        /// </summary>
+        private async Task InvokeCallHandler(CallSafeHandle call, string method)
+        {
+            try
+            {
+                IServerCallHandler callHandler;
+                if (!callHandlers.TryGetValue(method, out callHandler))
+                {
+                    callHandler = new NoSuchMethodCallHandler();
+                }
+                await callHandler.HandleCall(method, call, GetCompletionQueue());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception while handling RPC: " + e);
+            }
+        }
+
+        /// <summary>
+        /// Handles the native callback.
+        /// </summary>
         private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr)
         {
             try
@@ -176,13 +233,16 @@ namespace Grpc.Core
                     // TODO: handle error
                 }
 
-                var rpcInfo = new NewRpcInfo(ctx.GetServerRpcNewCall(), ctx.GetServerRpcNewMethod());
+                CallSafeHandle call = ctx.GetServerRpcNewCall();
+                string method = ctx.GetServerRpcNewMethod();
 
                 // after server shutdown, the callback returns with null call
-                if (!rpcInfo.Call.IsInvalid)
+                if (!call.IsInvalid)
                 {
-                    newRpcQueue.Add(rpcInfo);
+                    Task.Run(async () => await InvokeCallHandler(call, method));
                 }
+
+                AllowOneRpc();
             }
             catch (Exception e)
             {
@@ -190,6 +250,10 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Handles native callback.
+        /// </summary>
+        /// <param name="eventPtr"></param>
         private void HandleServerShutdown(IntPtr eventPtr)
         {
             try
@@ -202,42 +266,9 @@ namespace Grpc.Core
             }
         }
 
-        private static void AssertCallOk(GRPCCallError callError)
-        {
-            Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
-        }
-
         private static CompletionQueueSafeHandle GetCompletionQueue()
         {
             return GrpcEnvironment.ThreadPool.CompletionQueue;
-        }
-
-        private struct NewRpcInfo
-        {
-            private CallSafeHandle call;
-            private string method;
-
-            public NewRpcInfo(CallSafeHandle call, string method)
-            {
-                this.call = call;
-                this.method = method;
-            }
-
-            public CallSafeHandle Call
-            {
-                get
-                {
-                    return this.call;
-                }
-            }
-
-            public string Method
-            {
-                get
-                {
-                    return this.method;
-                }
-            }
         }
     }
 }

@@ -33,7 +33,7 @@
 
 #import "NSData+GRPC.h"
 
-#include <byte_buffer.h>
+#include <grpc/byte_buffer.h>
 #include <string.h>
 
 // TODO(jcanizales): Move these two incantations to the C library.
@@ -59,6 +59,9 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array, size_t 
 
 @implementation NSData (GRPC)
 + (instancetype)grpc_dataWithByteBuffer:(grpc_byte_buffer *)buffer {
+  if (buffer == NULL) {
+    return nil;
+  }
   NSUInteger length = grpc_byte_buffer_length(buffer);
   char *array = malloc(length * sizeof(*array));
   if (!array) {

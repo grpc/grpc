@@ -384,11 +384,17 @@ grpc_interop_test_args() {
   [[ -n $1 ]] && {  # client_type
     case $1 in
       cxx|go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
         grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
           return 2
         }
+        shift
+        ;;
+      csharp_dotnet)
+        grpc_client_platform='Windows'
+        grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         shift
         ;;
       *)
@@ -456,11 +462,17 @@ grpc_cloud_prod_test_args() {
   [[ -n $1 ]] && {  # client_type
     case $1 in
       cxx|go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
         grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
           return 2
         }
+        shift
+        ;;
+       csharp_dotnet)
+        grpc_client_platform='Windows'
+        grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         shift
         ;;
       *)
@@ -504,7 +516,7 @@ grpc_cloud_prod_auth_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -851,12 +863,23 @@ grpc_launch_servers() {
 test_runner() {
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  if [ "$grpc_client_platform" != "Windows" ]
+  then
+    echo "will run:"
+    echo "  $cmd"
+    echo "on $host"
+    gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  else
+    # gcloud's auto-uploading of RSA keys doesn't work for Windows VMs.
+    # So we have a linux machine that is authorized to access the Windows
+    # machine through ssh and we use gcloud auth support to logon to the proxy.
+    echo "will run:"
+    echo "  $cmd"
+    echo "on $host (through grpc-windows-proxy)"
+    gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh $host '$cmd'" &
+  fi
+  #
   PID=$!
   echo "pid is $PID"
   for x in {0..5}
@@ -924,7 +947,7 @@ grpc_interop_test() {
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_interop_test_args
-  local test_case host grpc_gen_test_cmd grpc_server grpc_port
+  local test_case host grpc_gen_test_cmd grpc_server grpc_port grpc_client_platform
 
   # set the project zone and check that all necessary args are provided
   _grpc_set_project_and_zone -f grpc_interop_test_args "$@" || return 1
@@ -966,7 +989,7 @@ grpc_cloud_prod_test() {
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_cloud_prod_test_args
-  local test_case host grpc_gen_test_cmd
+  local test_case host grpc_gen_test_cmd grpc_client_platform
 
   # set the project zone and check that all necessary args are provided
   _grpc_set_project_and_zone -f grpc_cloud_prod_test_args "$@" || return 1
@@ -1041,6 +1064,19 @@ grpc_interop_gen_python_cmd() {
   echo $the_cmd
 }
 
+# constructs the full dockerized python interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c"
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  local the_cmd="$cmd_prefix '$env_prefix python -B -m interop.client --use_tls $gfe_flags $@'"
+  echo $the_cmd
+}
+
 # constructs the full dockerized python service_account auth interop test cmd.
 #
 # call-seq:
@@ -1070,7 +1106,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_python_cmd() {
   echo $the_cmd
 }
 
-# constructs the full dockerized java interop test cmd.
+# constructs the full dockerized ruby interop test cmd.
 #
 # call-seq:
 #   flags= .... # generic flags to include the command
@@ -1150,6 +1186,22 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_ruby_cmd() {
   echo $the_cmd
 }
 
+# constructs the full dockerized ruby jwt_tokens auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_jwt_token_creds_gen_ruby_cmd() {
+  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c";
+  local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
+  local test_script+=" --use_tls"
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
+  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
+  echo $the_cmd
+}
+
 # constructs the full dockerized Go interop test cmd.
 #
 # call-seq:
@@ -1219,6 +1271,51 @@ grpc_interop_gen_php_cmd() {
     local test_script+=" -d extension=grpc.so interop_client.php";
     local the_cmd="$cmd_prefix '$test_script $@ 1>&2'";
     echo $the_cmd
+}
+
+# constructs the full dockerized php gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized php service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local added_gfe_flags=$(_grpc_default_creds_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized php compute_engine auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_php_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/php";
+  local test_script="/var/local/git/grpc/src/php/bin/interop_client.sh";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local added_gfe_flags=$(_grpc_gce_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
 }
 
 # constructs the full dockerized node interop test cmd.
@@ -1357,6 +1454,18 @@ grpc_interop_gen_csharp_mono_cmd() {
   echo $the_cmd
 }
 
+# constructs the csharp-dotnet interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_csharp_dotnet_cmd() {
+  local set_workdir="cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug &&"
+  local test_script="./Grpc.IntegrationTesting.Client.exe --use_tls=true --use_test_ca=true";
+  local the_cmd="$set_workdir $test_script $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized csharp-mono gce=>prod interop test cmd.
 #
 # call-seq:
@@ -1368,6 +1477,51 @@ grpc_cloud_prod_gen_csharp_mono_cmd() {
   local cmd_prefix="sudo docker run $env_flag $workdir_flag grpc/csharp_mono";
   local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the csharp-dotnet gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_csharp_dotnet_cmd() {
+  local set_workdir="cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug &&"
+  local test_script="./Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local set_certfile="SSL_CERT_FILE=/cacerts/roots.pem "
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$set_workdir $set_certfile $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $workdir_flag $env_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
   local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }

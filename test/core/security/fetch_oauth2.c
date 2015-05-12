@@ -77,7 +77,7 @@ static void on_oauth2_response(void *user_data, grpc_mdelem **md_elems,
 static grpc_credentials *create_service_account_creds(
     const char *json_key_file_path, const char *scope) {
   int success;
-  gpr_slice json_key = gpr_load_file(json_key_file_path, &success);
+  gpr_slice json_key = gpr_load_file(json_key_file_path, 1, &success);
   if (!success) {
     gpr_log(GPR_ERROR, "Could not read file %s.", json_key_file_path);
     exit(1);
@@ -91,7 +91,7 @@ static grpc_credentials *create_refresh_token_creds(
     const char *json_refresh_token_file_path) {
   int success;
   gpr_slice refresh_token =
-      gpr_load_file(json_refresh_token_file_path, &success);
+      gpr_load_file(json_refresh_token_file_path, 1, &success);
   if (!success) {
     gpr_log(GPR_ERROR, "Could not read file %s.", json_refresh_token_file_path);
     exit(1);

@@ -61,11 +61,11 @@ describe Credentials do
   end
 
   describe '#compose' do
-    it 'can be completed OK' do
+    it 'cannot be completed OK with 2 SSL creds' do
       certs = load_test_certs
       cred1 = Credentials.new(*certs)
       cred2 = Credentials.new(*certs)
-      expect { cred1.compose(cred2) }.to_not raise_error
+      expect { cred1.compose(cred2) }.to raise_error
     end
   end
 end

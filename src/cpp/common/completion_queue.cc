@@ -36,7 +36,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/cpp/util/time.h"
+#include <grpc++/time.h>
 
 namespace grpc {
 
@@ -77,13 +77,6 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
   }
 }
 
-CompletionQueue::NextStatus CompletionQueue::AsyncNext(
-    void** tag, bool* ok, std::chrono::system_clock::time_point deadline) {
-  gpr_timespec gpr_deadline;
-  Timepoint2Timespec(deadline, &gpr_deadline);
-  return AsyncNextInternal(tag, ok, gpr_deadline);
-}
-
 bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
@@ -92,13 +85,14 @@ bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
   void* ignored = tag;
   GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
   GPR_ASSERT(ignored == tag);
-  return ok;
+  // Ignore mutations by FinalizeResult: Pluck returns the C API status
+  return ev->data.op_complete == GRPC_OP_OK;
 }
 
 void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
-  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_past));
+  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_time_0));
   if (!ev) return;
   bool ok = ev->data.op_complete == GRPC_OP_OK;
   void* ignored = tag;

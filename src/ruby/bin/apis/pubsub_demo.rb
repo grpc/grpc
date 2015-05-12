@@ -71,7 +71,7 @@ end
 
 # Builds the metadata authentication update proc.
 def auth_proc(opts)
-  auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
+  auth_creds = Google::Auth.get_application_default
   return auth_creds.updater_proc
 end
 
@@ -213,17 +213,14 @@ class NamedActions
 end
 
 # Args is used to hold the command line info.
-Args = Struct.new(:host, :oauth_scope, :port, :action, :project_id, :topic_name,
+Args = Struct.new(:host, :port, :action, :project_id, :topic_name,
                   :sub_name)
 
 # validates the the command line options, returning them as an Arg.
 def parse_args
   args = Args.new('pubsub-staging.googleapis.com',
-                  'https://www.googleapis.com/auth/pubsub',
                    443, 'list_some_topics', 'stoked-keyword-656')
   OptionParser.new do |opts|
-    opts.on('--oauth_scope scope',
-            'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
     opts.on('--server_host SERVER_HOST', 'server hostname') do |v|
       args.host = v
     end
@@ -250,7 +247,7 @@ def parse_args
 end
 
 def _check_args(args)
-  %w(host port action oauth_scope).each do |a|
+  %w(host port action).each do |a|
     if args[a].nil?
       raise OptionParser::MissingArgument.new("please specify --#{a}")
     end

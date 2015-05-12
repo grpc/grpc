@@ -1,0 +1,55 @@
+{
+    "package": null,
+    "messages": [
+        {
+            "name": "Request",
+            "fields": [
+                {
+                    "rule": "optional",
+                    "type": "bool",
+                    "name": "error",
+                    "id": 1
+                }
+            ]
+        },
+        {
+            "name": "Response",
+            "fields": [
+                {
+                    "rule": "optional",
+                    "type": "int32",
+                    "name": "count",
+                    "id": 1
+                }
+            ]
+        }
+    ],
+    "services": [
+        {
+            "name": "TestService",
+            "options": {},
+            "rpc": {
+                "Unary": {
+                    "request": "Request",
+                    "response": "Response",
+                    "options": {}
+                },
+                "ClientStream": {
+                    "request": "Request",
+                    "response": "Response",
+                    "options": {}
+                },
+                "ServerStream": {
+                    "request": "Request",
+                    "response": "Response",
+                    "options": {}
+                },
+                "BidiStream": {
+                    "request": "Request",
+                    "response": "Response",
+                    "options": {}
+                }
+            }
+        }
+    ]
+}

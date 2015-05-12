@@ -45,8 +45,10 @@
 #define GPR_WINSOCK_SOCKET 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
 #else
 #define GPR_WIN32_ATOMIC 1
+#define GPR_MSVC_TLS 1
 #endif
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
@@ -78,6 +80,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_HAVE_MSG_NOSIGNAL 1
 #elif defined(__linux__)
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
@@ -122,6 +125,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_HAVE_MSG_NOSIGNAL 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -134,11 +138,12 @@
 #endif
 #if TARGET_OS_IPHONE
 #define GPR_CPU_IPHONE 1
+#define GPR_PTHREAD_TLS 1
 #else /* TARGET_OS_IPHONE */
 #define GPR_CPU_POSIX 1
+#define GPR_GCC_TLS 1
 #endif
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
 #define GPR_POSIX_WAKEUP_FD 1
@@ -152,6 +157,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_HAVE_SO_NOSIGPIPE 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -177,6 +183,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_HAVE_SO_NOSIGPIPE 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -233,7 +240,7 @@
 #endif
 
 #if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + defined(GPR_CUSTOM_TLS) != 1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, defined(GPR_CUSTOM_TLS)
+#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
 #endif
 
 typedef int16_t gpr_int16;

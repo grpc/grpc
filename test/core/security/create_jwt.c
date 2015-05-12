@@ -48,7 +48,7 @@ void create_jwt(const char *json_key_file_path, const char *service_url,
   grpc_auth_json_key key;
   int ok = 0;
   char *jwt;
-  gpr_slice json_key_data = gpr_load_file(json_key_file_path, &ok);
+  gpr_slice json_key_data = gpr_load_file(json_key_file_path, 1, &ok);
   if (!ok) {
     fprintf(stderr, "Could not read %s.\n", json_key_file_path);
     exit(1);

@@ -1,0 +1,9 @@
+Debug
+Release
+*.suo
+*.user
+test_bin
+grpc.opensdf
+grpc.sdf
+third_party/*.user
+/packages

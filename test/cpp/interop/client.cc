@@ -44,6 +44,7 @@
 #include <grpc++/stream.h>
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
@@ -61,6 +62,8 @@ DEFINE_string(test_case, "large_unary",
               " streaming with slow client consumer; "
               "half_duplex : half-duplex streaming; "
               "ping_pong : full-duplex streaming; "
+              "cancel_after_begin : cancel stream after starting it; "
+              "cancel_after_first_response: cancel on first response; "
               "service_account_creds : large_unary with service_account auth; "
               "compute_engine_creds: large_unary with compute engine auth; "
               "jwt_token_creds: large_unary with JWT token auth; "
@@ -74,18 +77,10 @@ DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
 int main(int argc, char** argv) {
-  grpc_init();
+  grpc::testing::InitTest(&argc, &argv, true);
 
-  ParseCommandLineFlags(&argc, &argv, true);
-
+  int ret = 0;
   grpc::testing::InteropClient client(
       CreateChannelForTestCase(FLAGS_test_case));
   if (FLAGS_test_case == "empty_unary") {
@@ -102,6 +97,10 @@ int main(int argc, char** argv) {
     client.DoHalfDuplex();
   } else if (FLAGS_test_case == "ping_pong") {
     client.DoPingPong();
+  } else if (FLAGS_test_case == "cancel_after_begin") {
+    client.DoCancelAfterBegin();
+  } else if (FLAGS_test_case == "cancel_after_first_response") {
+    client.DoCancelAfterFirstResponse();
   } else if (FLAGS_test_case == "service_account_creds") {
     grpc::string json_key = GetServiceAccountJsonKey();
     client.DoServiceAccountCreds(json_key, FLAGS_oauth_scope);
@@ -118,6 +117,8 @@ int main(int argc, char** argv) {
     client.DoResponseStreaming();
     client.DoHalfDuplex();
     client.DoPingPong();
+    client.DoCancelAfterBegin();
+    client.DoCancelAfterFirstResponse();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_enable_ssl) {
       grpc::string json_key = GetServiceAccountJsonKey();
@@ -130,11 +131,11 @@ int main(int argc, char** argv) {
         GPR_ERROR,
         "Unsupported test case %s. Valid options are all|empty_unary|"
         "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
+        "cancel_after_begin|cancel_after_first_response|"
         "service_account_creds|compute_engine_creds|jwt_token_creds",
         FLAGS_test_case.c_str());
+    ret = 1;
   }
-  client.Reset(nullptr);
 
-  grpc_shutdown();
-  return 0;
+  return ret;
 }

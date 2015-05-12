@@ -38,7 +38,6 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -113,7 +112,9 @@ static void chttp2_init_server_fake_secure_fullstack(
 /* All test configurations */
 
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fake_secure_fullstack", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+    {"chttp2/fake_secure_fullstack",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_fake_secure_fullstack,
      chttp2_init_server_fake_secure_fullstack,

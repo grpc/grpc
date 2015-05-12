@@ -67,10 +67,25 @@ function loadObject(value) {
 /**
  * Load a gRPC object from a .proto file.
  * @param {string} filename The file to load
+ * @param {string=} format The file format to expect. Must be either 'proto' or
+ *     'json'. Defaults to 'proto'
  * @return {Object<string, *>} The resulting gRPC object
  */
-function load(filename) {
-  var builder = ProtoBuf.loadProtoFile(filename);
+function load(filename, format) {
+  if (!format) {
+    format = 'proto';
+  }
+  var builder;
+  switch(format) {
+    case 'proto':
+    builder = ProtoBuf.loadProtoFile(filename);
+    break;
+    case 'json':
+    builder = ProtoBuf.loadJsonFile(filename);
+    break;
+    default:
+    throw new Error('Unrecognized format "' + format + '"');
+  }
 
   return loadObject(builder.ns);
 }
@@ -85,22 +100,23 @@ function load(filename) {
 function getGoogleAuthDelegate(credential) {
   /**
    * Update a metadata object with authentication information.
+   * @param {string} authURI The uri to authenticate to
    * @param {Object} metadata Metadata object
    * @param {function(Error, Object)} callback
    */
-  return function updateMetadata(metadata, callback) {
+  return function updateMetadata(authURI, metadata, callback) {
     metadata = _.clone(metadata);
     if (metadata.Authorization) {
       metadata.Authorization = _.clone(metadata.Authorization);
     } else {
       metadata.Authorization = [];
     }
-    credential.getAccessToken(function(err, token) {
+    credential.getRequestMetadata(authURI, function(err, header) {
       if (err) {
         callback(err);
         return;
       }
-      metadata.Authorization.push('Bearer ' + token);
+      metadata.Authorization.push(header.Authorization);
       callback(null, metadata);
     });
   };

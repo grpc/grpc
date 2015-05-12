@@ -33,7 +33,10 @@
 
 #import "GRPCChannel.h"
 
-#import <grpc.h>
+#include <grpc/grpc.h>
+
+#import "GRPCSecureChannel.h"
+#import "GRPCUnsecuredChannel.h"
 
 @implementation GRPCChannel
 
@@ -46,20 +49,42 @@
   return [self initWithHost:nil];
 }
 
-// Designated initializer
 - (instancetype)initWithHost:(NSString *)host {
-  if (!host) {
-    [NSException raise:NSInvalidArgumentException format:@"Host can't be nil."];
+  if (![host containsString:@"://"]) {
+    // No scheme provided; assume https.
+    host = [@"https://" stringByAppendingString:host];
   }
+  NSURL *hostURL = [NSURL URLWithString:host];
+  if (!hostURL) {
+    [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", host];
+  }
+  if ([hostURL.scheme isEqualToString:@"https"]) {
+    host = [@[hostURL.host, hostURL.port ?: @443] componentsJoinedByString:@":"];
+    return [[GRPCSecureChannel alloc] initWithHost:host];
+  }
+  if ([hostURL.scheme isEqualToString:@"http"]) {
+    host = [@[hostURL.host, hostURL.port ?: @80] componentsJoinedByString:@":"];
+    return [[GRPCUnsecuredChannel alloc] initWithHost:host];
+  }
+  [NSException raise:NSInvalidArgumentException
+              format:@"URL scheme %@ isn't supported.", hostURL.scheme];
+  return nil; // silence warning.
+}
+
+- (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel {
   if ((self = [super init])) {
-    _unmanagedChannel = grpc_channel_create(host.UTF8String, NULL);
+    _unmanagedChannel = unmanagedChannel;
   }
   return self;
 }
 
 - (void)dealloc {
-  // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
-  // as in the past that made this call to crash.
-  grpc_channel_destroy(_unmanagedChannel);
+  // _unmanagedChannel is NULL when deallocating an object of the base class (because the
+  // initializer returns a different object).
+  if (_unmanagedChannel) {
+    // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
+    // as in the past that made this call to crash.
+    grpc_channel_destroy(_unmanagedChannel);
+  }
 }
 @end

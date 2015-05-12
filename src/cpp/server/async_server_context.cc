@@ -68,9 +68,11 @@ bool AsyncServerContext::StartRead(grpc::protobuf::Message* request) {
 bool AsyncServerContext::StartWrite(const grpc::protobuf::Message& response,
                                     int flags) {
   grpc_byte_buffer* buffer = nullptr;
+  GRPC_TIMER_MARK(SER_PROTO_BEGIN, call_->call());
   if (!SerializeProto(response, &buffer)) {
     return false;
   }
+  GRPC_TIMER_MARK(SER_PROTO_END, call_->call());
   grpc_call_error err = grpc_call_start_write_old(call_, buffer, this, flags);
   grpc_byte_buffer_destroy(buffer);
   return err == GRPC_CALL_OK;
@@ -87,7 +89,9 @@ bool AsyncServerContext::StartWriteStatus(const Status& status) {
 
 bool AsyncServerContext::ParseRead(grpc_byte_buffer* read_buffer) {
   GPR_ASSERT(request_);
+  GRPC_TIMER_MARK(DESER_PROTO_BEGIN, call_->call());
   bool success = DeserializeProto(read_buffer, request_);
+  GRPC_TIMER_MARK(DESER_PROTO_END, call_->call());
   request_ = nullptr;
   return success;
 }

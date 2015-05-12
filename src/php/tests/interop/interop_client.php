@@ -38,6 +38,7 @@ require 'empty.php';
 require 'message_set.php';
 require 'messages.php';
 require 'test.php';
+
 /**
  * Assertion function that always exits with an error code if the assertion is
  * falsy
@@ -45,7 +46,7 @@ require 'test.php';
  * @param $error_message Message to display if the assertion is false
  */
 function hardAssert($value, $error_message) {
-  if(!$value) {
+  if (!$value) {
     echo $error_message . "\n";
     exit(1);
   }
@@ -53,7 +54,7 @@ function hardAssert($value, $error_message) {
 
 /**
  * Run the empty_unary test.
- * Currently not tested against any server as of 2014-12-04
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function emptyUnary($stub) {
@@ -64,11 +65,20 @@ function emptyUnary($stub) {
 
 /**
  * Run the large_unary test.
- * Passes when run against the C++ server as of 2014-12-04
- * Not tested against any other server as of 2014-12-04
+ * Passes when run against the C++/Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function largeUnary($stub) {
+  performLargeUnary($stub);
+}
+
+/**
+ * Shared code between large unary test and auth test
+ * @param $stub Stub object that has service methods
+ * @param $fillUsername boolean whether to fill result with username
+ * @param $fillOauthScope boolean whether to fill result with oauth scope
+ */
+function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false) {
   $request_len = 271828;
   $response_len = 314159;
 
@@ -79,6 +89,8 @@ function largeUnary($stub) {
   $payload->setType(grpc\testing\PayloadType::COMPRESSABLE);
   $payload->setBody(str_repeat("\0", $request_len));
   $request->setPayload($payload);
+  $request->setFillUsername($fillUsername);
+  $request->setFillOauthScope($fillOauthScope);
 
   list($result, $status) = $stub->UnaryCall($request)->wait();
   hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
@@ -90,11 +102,50 @@ function largeUnary($stub) {
          'Payload had the wrong length');
   hardAssert($payload->getBody() === str_repeat("\0", $response_len),
          'Payload had the wrong content');
+  return $result;
+}
+
+/**
+ * Run the service account credentials auth test.
+ * Passes when run against the cloud server as of 2015-04-30
+ * @param $stub Stub object that has service methods
+ * @param $args array command line args
+ */
+function serviceAccountCreds($stub, $args) {
+  if (!array_key_exists('oauth_scope', $args)) {
+    throw new Exception('Missing oauth scope');
+  }
+  $jsonKey = json_decode(
+      file_get_contents(getenv(Google\Auth\CredentialsLoader::ENV_VAR)),
+      true);
+  $result = performLargeUnary($stub, $fillUsername=true, $fillOauthScope=true);
+  hardAssert($result->getUsername() == $jsonKey['client_email'],
+             'invalid email returned');
+  hardAssert(strpos($args['oauth_scope'], $result->getOauthScope()) !== false,
+             'invalid oauth scope returned');
+}
+
+/**
+ * Run the compute engine credentials auth test.
+ * Has not been run from gcloud as of 2015-05-05
+ * @param $stub Stub object that has service methods
+ * @param $args array command line args
+ */
+function computeEngineCreds($stub, $args) {
+  if (!array_key_exists('oauth_scope', $args)) {
+    throw new Exception('Missing oauth scope');
+  }
+  if (!array_key_exists('default_service_account', $args)) {
+    throw new Exception('Missing default_service_account');
+  }
+  $result = performLargeUnary($stub, $fillUsername=true, $fillOauthScope=true);
+  hardAssert($args['default_service_account'] == $result->getUsername(),
+             'invalid email returned');
 }
 
 /**
  * Run the client_streaming test.
- * Not tested against any server as of 2014-12-04.
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function clientStreaming($stub) {
@@ -117,7 +168,7 @@ function clientStreaming($stub) {
 
 /**
  * Run the server_streaming test.
- * Not tested against any server as of 2014-12-04.
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function serverStreaming($stub) {
@@ -148,7 +199,7 @@ function serverStreaming($stub) {
 
 /**
  * Run the ping_pong test.
- * Not tested against any server as of 2014-12-04.
+ * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function pingPong($stub) {
@@ -182,6 +233,11 @@ function pingPong($stub) {
               'Call did not complete successfully');
 }
 
+/**
+ * Run the cancel_after_first_response test.
+ * Passes when run against the Node server as of 2015-04-30
+ * @param $stub Stub object that has service methods.
+ */
 function cancelAfterFirstResponse($stub) {
   $call = $stub->FullDuplexCall();
   $request = new grpc\testing\StreamingOutputCallRequest();
@@ -201,7 +257,9 @@ function cancelAfterFirstResponse($stub) {
              'Call status was not CANCELLED');
 }
 
-$args = getopt('', array('server_host:', 'server_port:', 'test_case:'));
+$args = getopt('', array('server_host:', 'server_port:', 'test_case:',
+                         'server_host_override:', 'oauth_scope:',
+                         'default_service_account:'));
 if (!array_key_exists('server_host', $args) ||
     !array_key_exists('server_port', $args) ||
     !array_key_exists('test_case', $args)) {
@@ -210,20 +268,37 @@ if (!array_key_exists('server_host', $args) ||
 
 $server_address = $args['server_host'] . ':' . $args['server_port'];
 
-$credentials = Grpc\Credentials::createSsl(
-    file_get_contents(dirname(__FILE__) . '/../data/ca.pem'));
+if (!array_key_exists('server_host_override', $args)) {
+  $args['server_host_override'] = 'foo.test.google.fr';
+}
+
+$ssl_cert_file = getenv('SSL_CERT_FILE');
+if (!$ssl_cert_file) {
+  $ssl_cert_file = dirname(__FILE__) . '/../data/ca.pem';
+}
+
+$credentials = Grpc\Credentials::createSsl(file_get_contents($ssl_cert_file));
+
+$opts = [
+    'grpc.ssl_target_name_override' => $args['server_host_override'],
+    'credentials' => $credentials,
+         ];
+
+if (array_key_exists('oauth_scope', $args)) {
+  $auth = Google\Auth\ApplicationDefaultCredentials::getCredentials(
+      $args['oauth_scope']);
+  $opts['update_metadata'] = $auth->getUpdateMetadataFunc();
+}
+
 $stub = new grpc\testing\TestServiceClient(
     new Grpc\BaseStub(
         $server_address,
-        [
-            'grpc.ssl_target_name_override' => 'foo.test.google.fr',
-            'credentials' => $credentials
-         ]));
+        $opts));
 
 echo "Connecting to $server_address\n";
 echo "Running test case $args[test_case]\n";
 
-switch($args['test_case']) {
+switch ($args['test_case']) {
   case 'empty_unary':
     emptyUnary($stub);
     break;
@@ -241,6 +316,12 @@ switch($args['test_case']) {
     break;
   case 'cancel_after_first_response':
     cancelAfterFirstResponse($stub);
+    break;
+  case 'service_account_creds':
+    serviceAccountCreds($stub, $args);
+    break;
+  case 'compute_engine_creds':
+    computeEngineCreds($stub, $args);
     break;
   default:
     exit(1);

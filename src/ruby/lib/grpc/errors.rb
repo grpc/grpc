@@ -36,14 +36,15 @@ module GRPC
   # error should be returned to the other end of a GRPC connection; when
   # caught it means that this end received a status error.
   class BadStatus < StandardError
-    attr_reader :code, :details
+    attr_reader :code, :details, :metadata
 
     # @param code [Numeric] the status code
     # @param details [String] the details of the exception
-    def initialize(code, details = 'unknown cause')
+    def initialize(code, details = 'unknown cause', **kw)
       super("#{code}:#{details}")
       @code = code
       @details = details
+      @metadata = kw
     end
 
     # Converts the exception to a GRPC::Status for use in the networking
@@ -51,7 +52,11 @@ module GRPC
     #
     # @return [Status] with the same code and details
     def to_status
-      Status.new(code, details)
+      Struct::Status.new(code, details, @metadata)
     end
+  end
+
+  # Cancelled is an exception class that indicates that an rpc was cancelled.
+  class Cancelled < StandardError
   end
 end

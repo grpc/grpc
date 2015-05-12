@@ -46,11 +46,18 @@
 
 #include "src/core/support/string.h"
 #include "src/core/debug/trace.h"
+#include "src/core/profiling/timers.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#ifdef GPR_HAVE_MSG_NOSIGNAL
+#define SENDMSG_FLAGS MSG_NOSIGNAL
+#else
+#define SENDMSG_FLAGS 0
+#endif
 
 /* Holds a slice array and associated state. */
 typedef struct grpc_tcp_slice_state {
@@ -257,6 +264,8 @@ typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
+  int iov_size;            /* Number of slices to allocate per read attempt */
+  int finished_edge;
   size_t slice_size;
   gpr_refcount refcount;
 
@@ -314,9 +323,7 @@ static void call_read_cb(grpc_tcp *tcp, gpr_slice *slices, size_t nslices,
 
 #define INLINE_SLICE_BUFFER_SIZE 8
 #define MAX_READ_IOVEC 4
-static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
-  grpc_tcp *tcp = (grpc_tcp *)arg;
-  int iov_size = 1;
+static void grpc_tcp_continue_read(grpc_tcp *tcp) {
   gpr_slice static_read_slices[INLINE_SLICE_BUFFER_SIZE];
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
@@ -326,81 +333,100 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
   gpr_slice *final_slices;
   size_t final_nslices;
 
+  GPR_ASSERT(!tcp->finished_edge);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HANDLE_READ, 0);
   slice_state_init(&read_state, static_read_slices, INLINE_SLICE_BUFFER_SIZE,
                    0);
+
+  allocated_bytes = slice_state_append_blocks_into_iovec(
+      &read_state, iov, tcp->iov_size, tcp->slice_size);
+
+  msg.msg_name = NULL;
+  msg.msg_namelen = 0;
+  msg.msg_iov = iov;
+  msg.msg_iovlen = tcp->iov_size;
+  msg.msg_control = NULL;
+  msg.msg_controllen = 0;
+  msg.msg_flags = 0;
+
+  GRPC_TIMER_BEGIN(GRPC_PTAG_RECVMSG, 0);
+  do {
+    read_bytes = recvmsg(tcp->fd, &msg, 0);
+  } while (read_bytes < 0 && errno == EINTR);
+  GRPC_TIMER_END(GRPC_PTAG_RECVMSG, 0);
+
+  if (read_bytes < allocated_bytes) {
+    /* TODO(klempner): Consider a second read first, in hopes of getting a
+     * quick EAGAIN and saving a bunch of allocations. */
+    slice_state_remove_last(&read_state, read_bytes < 0
+                                             ? allocated_bytes
+                                             : allocated_bytes - read_bytes);
+  }
+
+  if (read_bytes < 0) {
+    /* NB: After calling the user_cb a parallel call of the read handler may
+     * be running. */
+    if (errno == EAGAIN) {
+      if (tcp->iov_size > 1) {
+        tcp->iov_size /= 2;
+      }
+      if (slice_state_has_available(&read_state)) {
+        /* TODO(klempner): We should probably do the call into the application
+           without all this junk on the stack */
+        /* FIXME(klempner): Refcount properly */
+        slice_state_transfer_ownership(&read_state, &final_slices,
+                                       &final_nslices);
+        tcp->finished_edge = 1;
+        call_read_cb(tcp, final_slices, final_nslices, GRPC_ENDPOINT_CB_OK);
+        slice_state_destroy(&read_state);
+        grpc_tcp_unref(tcp);
+      } else {
+        /* We've consumed the edge, request a new one */
+        slice_state_destroy(&read_state);
+        grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
+      }
+    } else {
+      /* TODO(klempner): Log interesting errors */
+      call_read_cb(tcp, NULL, 0, GRPC_ENDPOINT_CB_ERROR);
+      slice_state_destroy(&read_state);
+      grpc_tcp_unref(tcp);
+    }
+  } else if (read_bytes == 0) {
+    /* 0 read size ==> end of stream */
+    if (slice_state_has_available(&read_state)) {
+      /* there were bytes already read: pass them up to the application */
+      slice_state_transfer_ownership(&read_state, &final_slices,
+                                     &final_nslices);
+      call_read_cb(tcp, final_slices, final_nslices, GRPC_ENDPOINT_CB_EOF);
+    } else {
+      call_read_cb(tcp, NULL, 0, GRPC_ENDPOINT_CB_EOF);
+    }
+    slice_state_destroy(&read_state);
+    grpc_tcp_unref(tcp);
+  } else {
+    if (tcp->iov_size < MAX_READ_IOVEC) {
+      ++tcp->iov_size;
+    }
+    GPR_ASSERT(slice_state_has_available(&read_state));
+    slice_state_transfer_ownership(&read_state, &final_slices,
+                                   &final_nslices);
+    call_read_cb(tcp, final_slices, final_nslices, GRPC_ENDPOINT_CB_OK);
+    slice_state_destroy(&read_state);
+    grpc_tcp_unref(tcp);
+  }
+
+  GRPC_TIMER_END(GRPC_PTAG_HANDLE_READ, 0);
+}
+
+static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
+  grpc_tcp *tcp = (grpc_tcp *)arg;
+  GPR_ASSERT(!tcp->finished_edge);
 
   if (!success) {
     call_read_cb(tcp, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
     grpc_tcp_unref(tcp);
-    return;
-  }
-
-  /* TODO(klempner): Limit the amount we read at once. */
-  for (;;) {
-    allocated_bytes = slice_state_append_blocks_into_iovec(
-        &read_state, iov, iov_size, tcp->slice_size);
-
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = iov;
-    msg.msg_iovlen = iov_size;
-    msg.msg_control = NULL;
-    msg.msg_controllen = 0;
-    msg.msg_flags = 0;
-
-    do {
-      read_bytes = recvmsg(tcp->fd, &msg, 0);
-    } while (read_bytes < 0 && errno == EINTR);
-
-    if (read_bytes < allocated_bytes) {
-      /* TODO(klempner): Consider a second read first, in hopes of getting a
-       * quick EAGAIN and saving a bunch of allocations. */
-      slice_state_remove_last(&read_state, read_bytes < 0
-                                               ? allocated_bytes
-                                               : allocated_bytes - read_bytes);
-    }
-
-    if (read_bytes < 0) {
-      /* NB: After calling the user_cb a parallel call of the read handler may
-       * be running. */
-      if (errno == EAGAIN) {
-        if (slice_state_has_available(&read_state)) {
-          /* TODO(klempner): We should probably do the call into the application
-             without all this junk on the stack */
-          /* FIXME(klempner): Refcount properly */
-          slice_state_transfer_ownership(&read_state, &final_slices,
-                                         &final_nslices);
-          call_read_cb(tcp, final_slices, final_nslices, GRPC_ENDPOINT_CB_OK);
-          slice_state_destroy(&read_state);
-          grpc_tcp_unref(tcp);
-        } else {
-          /* Spurious read event, consume it here */
-          slice_state_destroy(&read_state);
-          grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
-        }
-      } else {
-        /* TODO(klempner): Log interesting errors */
-        call_read_cb(tcp, NULL, 0, GRPC_ENDPOINT_CB_ERROR);
-        slice_state_destroy(&read_state);
-        grpc_tcp_unref(tcp);
-      }
-      return;
-    } else if (read_bytes == 0) {
-      /* 0 read size ==> end of stream */
-      if (slice_state_has_available(&read_state)) {
-        /* there were bytes already read: pass them up to the application */
-        slice_state_transfer_ownership(&read_state, &final_slices,
-                                       &final_nslices);
-        call_read_cb(tcp, final_slices, final_nslices, GRPC_ENDPOINT_CB_EOF);
-      } else {
-        call_read_cb(tcp, NULL, 0, GRPC_ENDPOINT_CB_EOF);
-      }
-      slice_state_destroy(&read_state);
-      grpc_tcp_unref(tcp);
-      return;
-    } else if (iov_size < MAX_READ_IOVEC) {
-      ++iov_size;
-    }
+  } else {
+    grpc_tcp_continue_read(tcp);
   }
 }
 
@@ -411,7 +437,12 @@ static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
   tcp->read_cb = cb;
   tcp->read_user_data = user_data;
   gpr_ref(&tcp->refcount);
-  grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
+  if (tcp->finished_edge) {
+    tcp->finished_edge = 0;
+    grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
+  } else {
+    grpc_iomgr_add_callback(grpc_tcp_handle_read, tcp);
+  }
 }
 
 #define MAX_WRITE_IOVEC 16
@@ -433,10 +464,12 @@ static grpc_endpoint_write_status grpc_tcp_flush(grpc_tcp *tcp) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
+    GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 0);
     do {
       /* TODO(klempner): Cork if this is a partial write */
-      sent_length = sendmsg(tcp->fd, &msg, 0);
+      sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
+    GRPC_TIMER_END(GRPC_PTAG_SENDMSG, 0);
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {
@@ -472,6 +505,7 @@ static void grpc_tcp_handle_write(void *arg /* grpc_tcp */, int success) {
     return;
   }
 
+  GRPC_TIMER_BEGIN(GRPC_PTAG_TCP_CB_WRITE, 0);
   write_status = grpc_tcp_flush(tcp);
   if (write_status == GRPC_ENDPOINT_WRITE_PENDING) {
     grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_closure);
@@ -487,6 +521,7 @@ static void grpc_tcp_handle_write(void *arg /* grpc_tcp */, int success) {
     cb(tcp->write_user_data, cb_status);
     grpc_tcp_unref(tcp);
   }
+  GRPC_TIMER_END(GRPC_PTAG_TCP_CB_WRITE, 0);
 }
 
 static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
@@ -509,6 +544,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
     }
   }
 
+  GRPC_TIMER_BEGIN(GRPC_PTAG_TCP_WRITE, 0);
   GPR_ASSERT(tcp->write_cb == NULL);
   slice_state_init(&tcp->write_state, slices, nslices, nslices);
 
@@ -522,6 +558,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
     grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_closure);
   }
 
+  GRPC_TIMER_END(GRPC_PTAG_TCP_WRITE, 0);
   return status;
 }
 
@@ -543,6 +580,8 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   tcp->read_user_data = NULL;
   tcp->write_user_data = NULL;
   tcp->slice_size = slice_size;
+  tcp->iov_size = 1;
+  tcp->finished_edge = 1;
   slice_state_init(&tcp->write_state, NULL, 0, 0);
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);

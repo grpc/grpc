@@ -63,19 +63,13 @@
 
 #include <gflags/gflags.h>
 #include "test/cpp/util/cli_call.h"
+#include "test/cpp/util/test_config.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 
 #include <grpc/grpc.h>
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
 
 DEFINE_bool(enable_ssl, true, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
@@ -85,9 +79,7 @@ DEFINE_string(output_binary_file, "output.bin",
               "Path to output file to write serialized response.");
 
 int main(int argc, char** argv) {
-  grpc_init();
-
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   if (argc < 4 || grpc::string(argv[1]) != "call") {
     std::cout << "Usage: grpc_cli call server_host:port full_method_string\n"
@@ -133,7 +125,5 @@ int main(int argc, char** argv) {
     output_file << response;
   }
 
-  channel.reset();
-  grpc_shutdown();
   return 0;
 }

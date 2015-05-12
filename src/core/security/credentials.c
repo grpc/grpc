@@ -36,11 +36,14 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/http_client_filter.h"
 #include "src/core/json/json.h"
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/security/json_token.h"
 #include "src/core/support/string.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -111,9 +114,47 @@ void grpc_credentials_get_request_metadata(grpc_credentials *creds,
   creds->vtable->get_request_metadata(creds, service_url, cb, user_data);
 }
 
+grpc_mdctx *grpc_credentials_get_or_create_metadata_context(
+    grpc_credentials *creds) {
+  grpc_mdctx *mdctx = NULL;
+  if (creds != NULL && creds->vtable->get_metadata_context != NULL) {
+    mdctx = creds->vtable->get_metadata_context(creds);
+  }
+  if (mdctx == NULL) {
+    return grpc_mdctx_create();
+  } else {
+    grpc_mdctx_ref(mdctx);
+    return mdctx;
+  }
+}
+
+grpc_security_status grpc_credentials_create_security_connector(
+    grpc_credentials *creds, const char *target, const grpc_channel_args *args,
+    grpc_credentials *request_metadata_creds,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+  *new_args = NULL;
+  if (creds == NULL || creds->vtable->create_security_connector == NULL ||
+      grpc_credentials_has_request_metadata_only(creds)) {
+    gpr_log(GPR_ERROR,
+            "Invalid credentials for creating a security connector.");
+    return GRPC_SECURITY_ERROR;
+  }
+  return creds->vtable->create_security_connector(
+      creds, target, args, request_metadata_creds, sc, new_args);
+}
+
 void grpc_server_credentials_release(grpc_server_credentials *creds) {
   if (creds == NULL) return;
   creds->vtable->destroy(creds);
+}
+
+grpc_security_status grpc_server_credentials_create_security_connector(
+    grpc_server_credentials *creds, grpc_security_connector **sc) {
+  if (creds == NULL || creds->vtable->create_security_connector == NULL) {
+    gpr_log(GPR_ERROR, "Server credentials cannot create security context.");
+    return GRPC_SECURITY_ERROR;
+  }
+  return creds->vtable->create_security_connector(creds, sc);
 }
 
 /* -- Ssl credentials. -- */
@@ -167,30 +208,52 @@ static int ssl_has_request_metadata_only(const grpc_credentials *creds) {
   return 0;
 }
 
+static grpc_mdctx *ssl_get_metadata_context(grpc_credentials *creds) {
+  return NULL;
+}
+
+static grpc_security_status ssl_create_security_connector(
+    grpc_credentials *creds, const char *target, const grpc_channel_args *args,
+    grpc_credentials *request_metadata_creds,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+  grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
+  grpc_security_status status = GRPC_SECURITY_OK;
+  size_t i = 0;
+  const char *overridden_target_name = NULL;
+  grpc_arg arg;
+
+  for (i = 0; args && i < args->num_args; i++) {
+    grpc_arg *arg = &args->args[i];
+    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
+        arg->type == GRPC_ARG_STRING) {
+      overridden_target_name = arg->value.string;
+      break;
+    }
+  }
+  status = grpc_ssl_channel_security_connector_create(
+      request_metadata_creds, &c->config, target, overridden_target_name, sc);
+  if (status != GRPC_SECURITY_OK) {
+    return status;
+  }
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_HTTP2_SCHEME;
+  arg.value.string = "https";
+  *new_args = grpc_channel_args_copy_and_add(args, &arg);
+  return status;
+}
+
+static grpc_security_status ssl_server_create_security_connector(
+    grpc_server_credentials *creds, grpc_security_connector **sc) {
+  grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
+  return grpc_ssl_server_security_connector_create(&c->config, sc);
+}
+
 static grpc_credentials_vtable ssl_vtable = {
-    ssl_destroy, ssl_has_request_metadata, ssl_has_request_metadata_only, NULL};
+    ssl_destroy, ssl_has_request_metadata, ssl_has_request_metadata_only,
+    ssl_get_metadata_context, NULL, ssl_create_security_connector};
 
-static grpc_server_credentials_vtable ssl_server_vtable = {ssl_server_destroy};
-
-const grpc_ssl_config *grpc_ssl_credentials_get_config(
-    const grpc_credentials *creds) {
-  if (creds == NULL || strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
-    return NULL;
-  } else {
-    grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
-    return &c->config;
-  }
-}
-
-const grpc_ssl_server_config *grpc_ssl_server_credentials_get_config(
-    const grpc_server_credentials *creds) {
-  if (creds == NULL || strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
-    return NULL;
-  } else {
-    grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
-    return &c->config;
-  }
-}
+static grpc_server_credentials_vtable ssl_server_vtable = {
+    ssl_server_destroy, ssl_server_create_security_connector};
 
 static void ssl_copy_key_material(const char *input, unsigned char **output,
                                   size_t *output_size) {
@@ -371,9 +434,14 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
   }
 }
 
+static grpc_mdctx *jwt_get_metadata_context(grpc_credentials *creds) {
+  grpc_jwt_credentials *c = (grpc_jwt_credentials *)creds;
+  return c->md_ctx;
+}
+
 static grpc_credentials_vtable jwt_vtable = {
     jwt_destroy, jwt_has_request_metadata, jwt_has_request_metadata_only,
-    jwt_get_request_metadata};
+    jwt_get_metadata_context, jwt_get_request_metadata, NULL};
 
 grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
                                               gpr_timespec token_lifetime) {
@@ -585,12 +653,20 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
   c->fetch_func = fetch_func;
 }
 
+static grpc_mdctx *oauth2_token_fetcher_get_metadata_context(
+    grpc_credentials *creds) {
+  grpc_oauth2_token_fetcher_credentials *c =
+      (grpc_oauth2_token_fetcher_credentials *)creds;
+  return c->md_ctx;
+}
+
 /* -- ComputeEngine credentials. -- */
 
 static grpc_credentials_vtable compute_engine_vtable = {
     oauth2_token_fetcher_destroy, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
-    oauth2_token_fetcher_get_request_metadata};
+    oauth2_token_fetcher_get_metadata_context,
+    oauth2_token_fetcher_get_request_metadata, NULL};
 
 static void compute_engine_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
@@ -633,7 +709,8 @@ static void service_account_destroy(grpc_credentials *creds) {
 static grpc_credentials_vtable service_account_vtable = {
     service_account_destroy, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
-    oauth2_token_fetcher_get_request_metadata};
+    oauth2_token_fetcher_get_metadata_context,
+    oauth2_token_fetcher_get_request_metadata, NULL};
 
 static void service_account_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
@@ -706,7 +783,8 @@ static void refresh_token_destroy(grpc_credentials *creds) {
 static grpc_credentials_vtable refresh_token_vtable = {
     refresh_token_destroy, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
-    oauth2_token_fetcher_get_request_metadata};
+    oauth2_token_fetcher_get_metadata_context,
+    oauth2_token_fetcher_get_request_metadata, NULL};
 
 static void refresh_token_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
@@ -801,9 +879,15 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
   }
 }
 
+static grpc_mdctx *fake_oauth2_get_metadata_context(grpc_credentials *creds) {
+  grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
+  return c->md_ctx;
+}
+
 static grpc_credentials_vtable fake_oauth2_vtable = {
     fake_oauth2_destroy, fake_oauth2_has_request_metadata,
-    fake_oauth2_has_request_metadata_only, fake_oauth2_get_request_metadata};
+    fake_oauth2_has_request_metadata_only, fake_oauth2_get_metadata_context,
+    fake_oauth2_get_request_metadata, NULL};
 
 grpc_credentials *grpc_fake_oauth2_credentials_create(
     const char *token_md_value, int is_async) {
@@ -842,14 +926,38 @@ static int fake_transport_security_has_request_metadata_only(
   return 0;
 }
 
+static grpc_mdctx *fake_transport_security_get_metadata_context(
+    grpc_credentials *c) {
+  return NULL;
+}
+
+static grpc_security_status
+fake_transport_security_create_security_connector(
+    grpc_credentials *c, const char *target, const grpc_channel_args *args,
+    grpc_credentials *request_metadata_creds,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+  *sc = grpc_fake_channel_security_connector_create(request_metadata_creds, 1);
+  return GRPC_SECURITY_OK;
+}
+
+static grpc_security_status
+fake_transport_security_server_create_security_connector(
+    grpc_server_credentials *c, grpc_security_connector **sc) {
+  *sc = grpc_fake_server_security_connector_create();
+  return GRPC_SECURITY_OK;
+}
+
 static grpc_credentials_vtable fake_transport_security_credentials_vtable = {
     fake_transport_security_credentials_destroy,
     fake_transport_security_has_request_metadata,
-    fake_transport_security_has_request_metadata_only, NULL};
+    fake_transport_security_has_request_metadata_only,
+    fake_transport_security_get_metadata_context, NULL,
+    fake_transport_security_create_security_connector};
 
 static grpc_server_credentials_vtable
     fake_transport_security_server_credentials_vtable = {
-        fake_transport_security_server_credentials_destroy};
+        fake_transport_security_server_credentials_destroy,
+        fake_transport_security_server_create_security_connector};
 
 grpc_credentials *grpc_fake_transport_security_credentials_create(void) {
   grpc_credentials *c = gpr_malloc(sizeof(grpc_credentials));
@@ -874,6 +982,7 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 typedef struct {
   grpc_credentials base;
   grpc_credentials_array inner;
+  grpc_credentials *connector_creds;
 } grpc_composite_credentials;
 
 typedef struct {
@@ -995,9 +1104,43 @@ static void composite_get_request_metadata(grpc_credentials *creds,
   GPR_ASSERT(0); /* Should have exited before. */
 }
 
+static grpc_mdctx *composite_get_metadata_context(grpc_credentials *creds) {
+  grpc_composite_credentials *c = (grpc_composite_credentials *)creds;
+  grpc_mdctx *ctx = NULL;
+  size_t i;
+  for (i = 0; i < c->inner.num_creds; i++) {
+    grpc_credentials *inner_creds = c->inner.creds_array[i];
+    grpc_mdctx *inner_ctx = NULL;
+    if (inner_creds->vtable->get_metadata_context != NULL) {
+      inner_ctx = inner_creds->vtable->get_metadata_context(inner_creds);
+    }
+    if (inner_ctx) {
+      GPR_ASSERT(ctx == NULL &&
+                 "can only have one metadata context per composite credential");
+      ctx = inner_ctx;
+    }
+  }
+  return ctx;
+}
+
+static grpc_security_status composite_create_security_connector(
+    grpc_credentials *creds, const char *target, const grpc_channel_args *args,
+    grpc_credentials *request_metadata_creds,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+  grpc_composite_credentials *c = (grpc_composite_credentials *)creds;
+  if (c->connector_creds == NULL) {
+    gpr_log(GPR_ERROR,
+            "Cannot create security connector, missing connector credentials.");
+    return GRPC_SECURITY_ERROR;
+  }
+  return grpc_credentials_create_security_connector(c->connector_creds, target,
+                                                    args, creds, sc, new_args);
+}
+
 static grpc_credentials_vtable composite_credentials_vtable = {
     composite_destroy, composite_has_request_metadata,
-    composite_has_request_metadata_only, composite_get_request_metadata};
+    composite_has_request_metadata_only, composite_get_metadata_context,
+    composite_get_request_metadata, composite_create_security_connector};
 
 static grpc_credentials_array get_creds_array(grpc_credentials **creds_addr) {
   grpc_credentials_array result;
@@ -1013,6 +1156,7 @@ static grpc_credentials_array get_creds_array(grpc_credentials **creds_addr) {
 grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
                                                     grpc_credentials *creds2) {
   size_t i;
+  size_t creds_array_byte_size;
   grpc_credentials_array creds1_array;
   grpc_credentials_array creds2_array;
   grpc_composite_credentials *c;
@@ -1026,16 +1170,39 @@ grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
   creds1_array = get_creds_array(&creds1);
   creds2_array = get_creds_array(&creds2);
   c->inner.num_creds = creds1_array.num_creds + creds2_array.num_creds;
-  c->inner.creds_array =
-      gpr_malloc(c->inner.num_creds * sizeof(grpc_credentials *));
+  creds_array_byte_size = c->inner.num_creds * sizeof(grpc_credentials *);
+  c->inner.creds_array = gpr_malloc(creds_array_byte_size);
+  memset(c->inner.creds_array, 0, creds_array_byte_size);
   for (i = 0; i < creds1_array.num_creds; i++) {
-    c->inner.creds_array[i] = grpc_credentials_ref(creds1_array.creds_array[i]);
+    grpc_credentials *cur_creds = creds1_array.creds_array[i];
+    if (!grpc_credentials_has_request_metadata_only(cur_creds)) {
+      if (c->connector_creds == NULL) {
+        c->connector_creds = cur_creds;
+      } else {
+        gpr_log(GPR_ERROR, "Cannot compose multiple connector credentials.");
+        goto fail;
+      }
+    }
+    c->inner.creds_array[i] = grpc_credentials_ref(cur_creds);
   }
   for (i = 0; i < creds2_array.num_creds; i++) {
+    grpc_credentials *cur_creds = creds2_array.creds_array[i];
+    if (!grpc_credentials_has_request_metadata_only(cur_creds)) {
+      if (c->connector_creds == NULL) {
+        c->connector_creds = cur_creds;
+      } else {
+        gpr_log(GPR_ERROR, "Cannot compose multiple connector credentials.");
+        goto fail;
+      }
+    }
     c->inner.creds_array[i + creds1_array.num_creds] =
-        grpc_credentials_ref(creds2_array.creds_array[i]);
+        grpc_credentials_ref(cur_creds);
   }
   return &c->base;
+
+fail:
+  grpc_credentials_unref(&c->base);
+  return NULL;
 }
 
 const grpc_credentials_array *grpc_composite_credentials_get_credentials(
@@ -1102,9 +1269,14 @@ static void iam_get_request_metadata(grpc_credentials *creds,
   cb(user_data, md_array, 2, GRPC_CREDENTIALS_OK);
 }
 
+static grpc_mdctx *iam_get_metadata_context(grpc_credentials *creds) {
+  grpc_iam_credentials *c = (grpc_iam_credentials *)creds;
+  return c->md_ctx;
+}
+
 static grpc_credentials_vtable iam_vtable = {
     iam_destroy, iam_has_request_metadata, iam_has_request_metadata_only,
-    iam_get_request_metadata};
+    iam_get_metadata_context, iam_get_request_metadata, NULL};
 
 grpc_credentials *grpc_iam_credentials_create(const char *token,
                                               const char *authority_selector) {

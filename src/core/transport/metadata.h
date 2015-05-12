@@ -135,6 +135,21 @@ void grpc_mdelem_unref(grpc_mdelem *md);
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
+int grpc_mdstr_is_legal_header(grpc_mdstr *s);
+int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
+
+/* Batch mode metadata functions.
+   These API's have equivalents above, but allow taking the mdctx just once,
+   performing a bunch of work, and then leaving the mdctx. */
+
+/* Lock the metadata context: it's only safe to call _locked_ functions against
+   this context from the calling thread until grpc_mdctx_unlock is called */
+void grpc_mdctx_lock(grpc_mdctx *ctx);
+/* Unref a metadata element */
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem);
+/* Unlock the metadata context */
+void grpc_mdctx_unlock(grpc_mdctx *ctx);
+
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
 #endif  /* GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H */

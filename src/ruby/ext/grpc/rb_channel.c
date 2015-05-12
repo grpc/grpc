@@ -58,6 +58,8 @@ static ID id_target;
  * GCed before the channel */
 static ID id_cqueue;
 
+/* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
+static VALUE grpc_rb_cChannel = Qnil;
 
 /* Used during the conversion of a hash to channel args during channel setup */
 static VALUE grpc_rb_cChannelArgs;
@@ -103,13 +105,19 @@ static void grpc_rb_channel_mark(void *p) {
   }
 }
 
+static rb_data_type_t grpc_channel_data_type = {
+    "grpc_channel",
+    {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL, NULL,
+    RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 /* Allocates grpc_rb_channel instances. */
 static VALUE grpc_rb_channel_alloc(VALUE cls) {
   grpc_rb_channel *wrapper = ALLOC(grpc_rb_channel);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(cls, grpc_rb_channel_mark, grpc_rb_channel_free,
-                          wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_channel_data_type, wrapper);
 }
 
 /*
@@ -133,7 +141,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   /* "21" == 2 mandatory args, 1 (credentials) is optional */
   rb_scan_args(argc, argv, "21", &target, &channel_args, &credentials);
 
-  Data_Get_Struct(self, grpc_rb_channel, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   if (credentials == Qnil) {
@@ -174,8 +182,8 @@ static VALUE grpc_rb_channel_init_copy(VALUE copy, VALUE orig) {
     return Qnil;
   }
 
-  Data_Get_Struct(orig, grpc_rb_channel, orig_ch);
-  Data_Get_Struct(copy, grpc_rb_channel, copy_ch);
+  TypedData_Get_Struct(orig, grpc_rb_channel, &grpc_channel_data_type, orig_ch);
+  TypedData_Get_Struct(copy, grpc_rb_channel, &grpc_channel_data_type, copy_ch);
 
   /* use ruby's MEMCPY to make a byte-for-byte copy of the channel wrapper
    * object. */
@@ -196,7 +204,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
   char *host_chars = StringValueCStr(host);
 
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
-  Data_Get_Struct(self, grpc_rb_channel, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
   if (ch == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
@@ -229,7 +237,7 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   grpc_rb_channel *wrapper = NULL;
   grpc_channel *ch = NULL;
 
-  Data_Get_Struct(self, grpc_rb_channel, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
   if (ch != NULL) {
     grpc_channel_destroy(ch);
@@ -239,9 +247,6 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
 
   return Qnil;
 }
-
-/* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
-VALUE grpc_rb_cChannel = Qnil;
 
 void Init_grpc_channel() {
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
@@ -278,6 +283,6 @@ void Init_grpc_channel() {
 /* Gets the wrapped channel from the ruby wrapper */
 grpc_channel *grpc_rb_get_wrapped_channel(VALUE v) {
   grpc_rb_channel *wrapper = NULL;
-  Data_Get_Struct(v, grpc_rb_channel, wrapper);
+  TypedData_Get_Struct(v, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   return wrapper->wrapped;
 }

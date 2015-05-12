@@ -50,7 +50,7 @@ namespace Grpc.IntegrationTesting
         string host = "localhost";
         Server server;
         Channel channel;
-        TestServiceGrpc.ITestServiceClient client;
+        TestService.ITestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -58,15 +58,15 @@ namespace Grpc.IntegrationTesting
             GrpcEnvironment.Initialize();
 
             server = new Server();
-            server.AddServiceDefinition(TestServiceGrpc.BindService(new TestServiceImpl()));
-            int port = server.AddListeningPort(host + ":0", TestCredentials.CreateTestServerCredentials());
+            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
+            int port = server.AddListeningPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
             server.Start();
 
             var channelArgs = ChannelArgs.CreateBuilder()
                 .AddString(ChannelArgs.SslTargetNameOverrideKey, TestCredentials.DefaultHostOverride).Build();
 
             channel = new Channel(host + ":" + port, TestCredentials.CreateTestClientCredentials(true), channelArgs);
-            client = TestServiceGrpc.NewStub(channel);
+            client = TestService.NewStub(channel);
         }
 
         [TestFixtureTearDown]
@@ -87,7 +87,7 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void LargeUnary()
         {
-            InteropClient.RunEmptyUnary(client);
+            InteropClient.RunLargeUnary(client);
         }
 
         [Test]
@@ -114,8 +114,16 @@ namespace Grpc.IntegrationTesting
             InteropClient.RunEmptyStream(client);
         }
 
-        // TODO: add cancel_after_begin
+        [Test]
+        public void CancelAfterBegin()
+        {
+            InteropClient.RunCancelAfterBegin(client);
+        }
 
-        // TODO: add cancel_after_first_response
+        [Test]
+        public void CancelAfterFirstResponse()
+        {
+            InteropClient.RunCancelAfterFirstResponse(client);
+        }
     }
 }

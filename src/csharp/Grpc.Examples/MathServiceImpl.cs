@@ -33,9 +33,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
 namespace math
@@ -43,20 +43,18 @@ namespace math
     /// <summary>
     /// Implementation of MathService server
     /// </summary>
-    public class MathServiceImpl : MathGrpc.IMathService
+    public class MathServiceImpl : Math.IMath
     {
-        public void Div(DivArgs request, IObserver<DivReply> responseObserver)
+        public Task<DivReply> Div(ServerCallContext context, DivArgs request)
         {
-            var response = DivInternal(request);
-            responseObserver.OnNext(response);
-            responseObserver.OnCompleted();
+            return Task.FromResult(DivInternal(request));
         }
 
-        public void Fib(FibArgs request, IObserver<Num> responseObserver)
+        public async Task Fib(ServerCallContext context, FibArgs request, IServerStreamWriter<Num> responseStream)
         {
             if (request.Limit <= 0)
             {
-                // TODO: support cancellation....
+                // TODO(jtattermusch): support cancellation
                 throw new NotImplementedException("Not implemented yet");
             }
 
@@ -64,34 +62,27 @@ namespace math
             {
                 foreach (var num in FibInternal(request.Limit))
                 {
-                    responseObserver.OnNext(num);
+                    await responseStream.Write(num);
                 }
-                responseObserver.OnCompleted();
             }
         }
 
-        public IObserver<Num> Sum(IObserver<Num> responseObserver)
+        public async Task<Num> Sum(ServerCallContext context, IAsyncStreamReader<Num> requestStream)
         {
-            var recorder = new RecordingObserver<Num>();
-            Task.Factory.StartNew(() =>
+            long sum = 0;
+            await requestStream.ForEach(async num =>
             {
-                List<Num> inputs = recorder.ToList().Result;
-
-                long sum = 0;
-                foreach (Num num in inputs)
-                {
-                    sum += num.Num_;
-                }
-
-                responseObserver.OnNext(Num.CreateBuilder().SetNum_(sum).Build());
-                responseObserver.OnCompleted();
+                sum += num.Num_;
             });
-            return recorder;
+            return Num.CreateBuilder().SetNum_(sum).Build();
         }
 
-        public IObserver<DivArgs> DivMany(IObserver<DivReply> responseObserver)
+        public async Task DivMany(ServerCallContext context, IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream)
         {
-            return new DivObserver(responseObserver);
+            await requestStream.ForEach(async divArgs =>
+            {
+                await responseStream.Write(DivInternal(divArgs));
+            });
         }
 
         static DivReply DivInternal(DivArgs args)
@@ -114,31 +105,6 @@ namespace math
                 b = temp + b;
                 yield return new Num.Builder { Num_ = a }.Build();
             }
-        }
-
-        private class DivObserver : IObserver<DivArgs>
-        {
-            readonly IObserver<DivReply> responseObserver;
-
-            public DivObserver(IObserver<DivReply> responseObserver)
-            {
-                this.responseObserver = responseObserver;
-            }
-
-            public void OnCompleted()
-            {
-                responseObserver.OnCompleted();
-            }
-
-            public void OnError(Exception error)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void OnNext(DivArgs value)
-            {
-                responseObserver.OnNext(DivInternal(value));
-            }
-        }
+        }        
     }
 }

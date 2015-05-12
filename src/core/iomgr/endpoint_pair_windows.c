@@ -50,7 +50,7 @@ static void create_sockets(SOCKET sv[2]) {
   SOCKET lst_sock = INVALID_SOCKET;
   SOCKET cli_sock = INVALID_SOCKET;
   SOCKADDR_IN addr;
-  int addr_len;
+  int addr_len = sizeof(addr);
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
   GPR_ASSERT(lst_sock != INVALID_SOCKET);
@@ -68,6 +68,8 @@ static void create_sockets(SOCKET sv[2]) {
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
+  grpc_tcp_prepare_socket(cli_sock);
+  grpc_tcp_prepare_socket(svr_sock);
 
   sv[1] = cli_sock;
   sv[0] = svr_sock;

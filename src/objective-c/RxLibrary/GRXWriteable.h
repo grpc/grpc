@@ -50,10 +50,16 @@
 
 typedef void (^GRXValueHandler)(id value);
 typedef void (^GRXCompletionHandler)(NSError *errorOrNil);
+typedef void (^GRXSingleValueHandler)(id value, NSError *errorOrNil);
+typedef void (^GRXStreamHandler)(BOOL done, id value, NSError *error);
 
 // Utility to create objects that conform to the GRXWriteable protocol, from
 // blocks that handle each of the two methods of the protocol.
 @interface GRXWriteable : NSObject<GRXWriteable>
+
++ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler;
++ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler;
+
 - (instancetype)initWithValueHandler:(GRXValueHandler)valueHandler
                    completionHandler:(GRXCompletionHandler)completionHandler
     NS_DESIGNATED_INITIALIZER;

@@ -32,7 +32,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <RxLibrary/GRXWriter.h>
+#import <gRPC/GRXWriter.h>
 
 @class GRPCMethodName;
 

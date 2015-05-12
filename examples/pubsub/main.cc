@@ -31,7 +31,6 @@
  *
  */
 
-#include <chrono>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -46,6 +45,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/status.h>
+#include "test/cpp/util/test_config.h"
 
 #include "examples/pubsub/publisher.h"
 #include "examples/pubsub/subscriber.h"
@@ -54,13 +54,6 @@ DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host, "pubsub-staging.googleapis.com",
               "Server host to connect to");
 DEFINE_string(project_id, "", "GCE project id such as stoked-keyword-656");
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
 
 namespace {
 
@@ -71,8 +64,7 @@ const char kMessageData[] = "Test Data";
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Start PUBSUB client");
 
   std::ostringstream ss;
@@ -152,7 +144,5 @@ int main(int argc, char** argv) {
 
   subscriber.Shutdown();
   publisher.Shutdown();
-  channel.reset();
-  grpc_shutdown();
   return 0;
 }

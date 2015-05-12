@@ -35,7 +35,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
@@ -115,14 +114,23 @@ static void test_request_response_with_metadata_and_payload(
       grpc_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta_c[2] = {
-      {"key1-bin", "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13},
-      {"key2-bin", "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-       14}};
+      {"key1-bin",
+       "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
+       13,
+       {{NULL, NULL, NULL}}},
+      {"key2-bin",
+       "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
+       14,
+       {{NULL, NULL, NULL}}}};
   grpc_metadata meta_s[2] = {
       {"key3-bin",
-       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15},
+       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
+       15,
+       {{NULL, NULL, NULL}}},
       {"key4-bin",
-       "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff", 16}};
+       "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff",
+       16,
+       {{NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
@@ -189,7 +197,7 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -206,7 +214,7 @@ static void test_request_response_with_metadata_and_payload(
   cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));

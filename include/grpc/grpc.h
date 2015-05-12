@@ -111,6 +111,9 @@ typedef struct {
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
 /* Maximum message length that the channel can receive */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH "grpc.max_message_length"
+/* Initial sequence number for http2 transports */
+#define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
+  "grpc.http2.initial_sequence_number"
 
 /* Result of a grpc call. If the caller satisfies the prerequisites of a
    particular operation, the grpc_call_error returned will be GRPC_CALL_OK.
@@ -137,7 +140,9 @@ typedef enum grpc_call_error {
   /* there is already an outstanding read/write operation on the call */
   GRPC_CALL_ERROR_TOO_MANY_OPERATIONS,
   /* the flags value was illegal for this call */
-  GRPC_CALL_ERROR_INVALID_FLAGS
+  GRPC_CALL_ERROR_INVALID_FLAGS,
+  /* invalid metadata was passed to this call */
+  GRPC_CALL_ERROR_INVALID_METADATA
 } grpc_call_error;
 
 /* Result of a grpc operation */
@@ -186,20 +191,18 @@ typedef struct grpc_metadata {
   const char *key;
   const char *value;
   size_t value_length;
+
+  /* The following fields are reserved for grpc internal use.
+     There is no need to initialize them, and they will be set to garbage during
+     calls to grpc. */
+  struct {
+    void *obfuscated[3];
+  } internal_data;
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
   GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
   GRPC_OP_COMPLETE,          /* operation completion */
-  GRPC_READ,                 /* A read has completed */
-  GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
-                                flow control */
-  GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
-  GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
-                                client */
-  GRPC_FINISHED,             /* An RPC has finished. The event contains status.
-                                On the server this will be OK or Cancelled. */
-  GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
   GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
                                 a default: case */
@@ -212,30 +215,7 @@ typedef struct grpc_event {
   /* Data associated with the completion type. Field names match the type of
      completion as listed in grpc_completion_type. */
   union {
-    /* Contains a pointer to the buffer that was read, or NULL at the end of a
-       stream. */
-    grpc_byte_buffer *read;
-    grpc_op_error write_accepted;
-    grpc_op_error finish_accepted;
-    grpc_op_error invoke_accepted;
     grpc_op_error op_complete;
-    struct {
-      size_t count;
-      grpc_metadata *elements;
-    } client_metadata_read;
-    struct {
-      grpc_status_code status;
-      const char *details;
-      size_t metadata_count;
-      grpc_metadata *metadata_elements;
-    } finished;
-    struct {
-      const char *method;
-      const char *host;
-      gpr_timespec deadline;
-      size_t metadata_count;
-      grpc_metadata *metadata_elements;
-    } server_rpc_new;
   } data;
 } grpc_event;
 
@@ -295,7 +275,7 @@ typedef struct grpc_op {
   union {
     struct {
       size_t count;
-      const grpc_metadata *metadata;
+      grpc_metadata *metadata;
     } send_initial_metadata;
     grpc_byte_buffer *send_message;
     struct {
@@ -361,7 +341,7 @@ typedef struct grpc_op {
    library). */
 void grpc_init(void);
 
-/* Shut down the grpc library. 
+/* Shut down the grpc library.
    No memory is used by grpc after this call returns, nor are any instructions
    executing within the grpc library.
    Prior to calling, all application owned grpc objects must have been
@@ -395,9 +375,9 @@ void grpc_event_finish(grpc_event *event);
 
 /* Begin destruction of a completion queue. Once all possible events are
    drained then grpc_completion_queue_next will start to produce
-   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call 
-   grpc_completion_queue_destroy. 
-   
+   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call
+   grpc_completion_queue_destroy.
+
    After calling this function applications should ensure that no
    NEW work is added to be published on this completion queue. */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
@@ -409,17 +389,19 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 /* Create a call given a grpc_channel, in order to call 'method'. The request
    is not sent until grpc_call_invoke is called. All completions are sent to
    'completion_queue'. */
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
-                                        const char *method, const char *host,
-                                        gpr_timespec deadline);
-
-/* Create a call given a grpc_channel, in order to call 'method'. The request
-   is not sent until grpc_call_invoke is called. All completions are sent to
-   'completion_queue'. */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline);
+
+/* Pre-register a method/host pair on a channel. */
+void *grpc_channel_register_call(grpc_channel *channel, const char *method,
+                                 const char *host);
+
+/* Create a call given a handle returned from grpc_channel_register_call */
+grpc_call *grpc_channel_create_registered_call(
+    grpc_channel *channel, grpc_completion_queue *completion_queue,
+    void *registered_call_handle, gpr_timespec deadline);
 
 /* Start a batch of operations defined in the array ops; when complete, post a
    completion of type 'tag' to the completion queue bound to the call.
@@ -459,48 +441,6 @@ void grpc_channel_destroy(grpc_channel *channel);
    If a grpc_call fails, it's guaranteed that no change to the call state
    has been made. */
 
-/* Add a single metadata element to the call, to be sent upon invocation.
-   flags is a bit-field combination of the write flags defined above.
-   REQUIRES: grpc_call_start_invoke/grpc_call_server_end_initial_metadata have
-             not been called on this call.
-   Produces no events. */
-grpc_call_error grpc_call_add_metadata_old(grpc_call *call,
-                                           grpc_metadata *metadata,
-                                           gpr_uint32 flags);
-
-/* Invoke the RPC. Starts sending metadata and request headers on the wire.
-   flags is a bit-field combination of the write flags defined above.
-   REQUIRES: Can be called at most once per call.
-             Can only be called on the client.
-   Produces a GRPC_CLIENT_METADATA_READ event with metadata_read_tag when
-       the servers initial metadata has been read.
-   Produces a GRPC_FINISHED event with finished_tag when the call has been
-       completed (there may be other events for the call pending at this
-       time) */
-grpc_call_error grpc_call_invoke_old(grpc_call *call, grpc_completion_queue *cq,
-                                     void *metadata_read_tag,
-                                     void *finished_tag, gpr_uint32 flags);
-
-/* Accept an incoming RPC, binding a completion queue to it.
-   To be called before sending or receiving messages.
-   REQUIRES: Can be called at most once per call.
-             Can only be called on the server.
-   Produces a GRPC_FINISHED event with finished_tag when the call has been
-       completed (there may be other events for the call pending at this
-       time) */
-grpc_call_error grpc_call_server_accept_old(grpc_call *call,
-                                            grpc_completion_queue *cq,
-                                            void *finished_tag);
-
-/* Start sending metadata.
-   To be called before sending messages.
-   flags is a bit-field combination of the write flags defined above.
-   REQUIRES: Can be called at most once per call.
-             Can only be called on the server.
-             Must be called after grpc_call_server_accept */
-grpc_call_error grpc_call_server_end_initial_metadata_old(grpc_call *call,
-                                                          gpr_uint32 flags);
-
 /* Called by clients to cancel an RPC on the server.
    Can be called multiple times, from any thread. */
 grpc_call_error grpc_call_cancel(grpc_call *call);
@@ -515,72 +455,14 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                              grpc_status_code status,
                                              const char *description);
 
-/* Queue a byte buffer for writing.
-   flags is a bit-field combination of the write flags defined above.
-   A write with byte_buffer null is allowed, and will not send any bytes on the
-   wire. If this is performed without GRPC_WRITE_BUFFER_HINT flag it provides
-   a mechanism to flush any previously buffered writes to outgoing flow control.
-   REQUIRES: No other writes are pending on the call. It is only safe to
-             start the next write after the corresponding write_accepted event
-             is received.
-             GRPC_INVOKE_ACCEPTED must have been received by the application
-             prior to calling this on the client. On the server,
-             grpc_call_server_end_of_initial_metadata must have been called
-             successfully.
-   Produces a GRPC_WRITE_ACCEPTED event. */
-grpc_call_error grpc_call_start_write_old(grpc_call *call,
-                                          grpc_byte_buffer *byte_buffer,
-                                          void *tag, gpr_uint32 flags);
-
-/* Queue a status for writing.
-   REQUIRES: No other writes are pending on the call.
-             grpc_call_server_end_initial_metadata must have been called on the
-             call prior to calling this.
-             Only callable on the server.
-   Produces a GRPC_FINISH_ACCEPTED event when the status is sent. */
-grpc_call_error grpc_call_start_write_status_old(grpc_call *call,
-                                                 grpc_status_code status_code,
-                                                 const char *status_message,
-                                                 void *tag);
-
-/* No more messages to send.
-   REQUIRES: No other writes are pending on the call.
-             Only callable on the client.
-   Produces a GRPC_FINISH_ACCEPTED event when all bytes for the call have passed
-       outgoing flow control. */
-grpc_call_error grpc_call_writes_done_old(grpc_call *call, void *tag);
-
-/* Initiate a read on a call. Output event contains a byte buffer with the
-   result of the read.
-   REQUIRES: No other reads are pending on the call. It is only safe to start
-             the next read after the corresponding read event is received.
-             On the client:
-               GRPC_INVOKE_ACCEPTED must have been received by the application
-               prior to calling this.
-             On the server:
-               grpc_call_server_accept must be called before calling this.
-   Produces a single GRPC_READ event. */
-grpc_call_error grpc_call_start_read_old(grpc_call *call, void *tag);
-
 /* Destroy a call. */
 void grpc_call_destroy(grpc_call *call);
-
-/* Request a call on a server.
-   Allows the server to create a single GRPC_SERVER_RPC_NEW event, with tag
-   tag_new.
-   If the call is subsequently cancelled, the cancellation will occur with tag
-   tag_cancel.
-   REQUIRES: Server must not have been shutdown.
-   NOTE: calling this is the only way to obtain GRPC_SERVER_RPC_NEW events. */
-grpc_call_error grpc_server_request_call_old(grpc_server *server,
-                                             void *tag_new);
 
 /* Request notification of a new call */
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call,
-    void *tag_new);
+    grpc_completion_queue *cq_bound_to_call, void *tag_new);
 
 /* Registers a method in the server.
    Methods to this (host, method) pair will not be reported by
@@ -635,4 +517,4 @@ void grpc_server_destroy(grpc_server *server);
 }
 #endif
 
-#endif  /* GRPC_GRPC_H */
+#endif /* GRPC_GRPC_H */

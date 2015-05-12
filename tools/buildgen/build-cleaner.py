@@ -52,11 +52,15 @@ _ELEM_KEYS = [
 
 def rebuild_as_ordered_dict(indict, special_keys):
   outdict = collections.OrderedDict()
+  for key in sorted(indict.keys()):
+    if '#' in key:
+      outdict[key] = indict[key]
   for key in special_keys:
     if key in indict:
       outdict[key] = indict[key]
   for key in sorted(indict.keys()):
     if key in special_keys: continue
+    if '#' in key: continue
     outdict[key] = indict[key]
   return outdict
 

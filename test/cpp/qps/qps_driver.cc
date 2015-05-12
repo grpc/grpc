@@ -36,6 +36,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(num_clients, 1, "Number of client binaries");
 DEFINE_int32(num_servers, 1, "Number of server binaries");
@@ -67,16 +68,8 @@ using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
 int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
@@ -101,6 +94,15 @@ int main(int argc, char** argv) {
   server_config.set_threads(FLAGS_server_threads);
   server_config.set_enable_ssl(FLAGS_enable_ssl);
 
+  // If we're running a sync-server streaming test, make sure
+  // that we have at least as many threads as the active streams
+  // or else threads will be blocked from forward progress and the
+  // client will deadlock on a timer.
+  GPR_ASSERT(!(server_type == grpc::testing::SYNCHRONOUS_SERVER &&
+               rpc_type == grpc::testing::STREAMING &&
+               FLAGS_server_threads <  FLAGS_client_channels *
+               FLAGS_outstanding_rpcs_per_channel));
+
   auto result = RunScenario(client_config, FLAGS_num_clients,
                             server_config, FLAGS_num_servers,
                             FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
@@ -110,6 +112,5 @@ int main(int argc, char** argv) {
   ReportLatency(result);
   ReportTimes(result);
 
-  grpc_shutdown();
   return 0;
 }

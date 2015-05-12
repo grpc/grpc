@@ -35,6 +35,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -105,15 +106,20 @@ namespace Grpc.Core.Internal
             grpcsharp_server_shutdown_and_notify_CALLBACK(this, callback);
         }
 
-        public GRPCCallError RequestCall(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
+        public void RequestCall(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
         {
-            return grpcsharp_server_request_call(this, cq, callback);
+            AssertCallOk(grpcsharp_server_request_call(this, cq, callback));
         }
 
         protected override bool ReleaseHandle()
         {
             grpcsharp_server_destroy(handle);
             return true;
+        }
+
+        private static void AssertCallOk(GRPCCallError callError)
+        {
+            Preconditions.CheckState(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
         }
     }
 }

@@ -33,7 +33,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -50,7 +49,7 @@ namespace math.Tests
         string host = "localhost";
         Server server;
         Channel channel;
-        MathGrpc.IMathServiceClient client;
+        Math.IMathClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -58,18 +57,18 @@ namespace math.Tests
             GrpcEnvironment.Initialize();
 
             server = new Server();
-            server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
-            int port = server.AddListeningPort(host + ":0");
+            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
+            int port = server.AddListeningPort(host, Server.PickUnusedPort);
             server.Start();
             channel = new Channel(host + ":" + port);
 
-            // TODO: get rid of the custom header here once we have dedicated tests
+            // TODO(jtattermusch): get rid of the custom header here once we have dedicated tests
             // for header support.
             var stubConfig = new StubConfiguration((headerBuilder) =>
             {
                 headerBuilder.Add(new Metadata.MetadataEntry("customHeader", "abcdef"));
             });
-            client = MathGrpc.NewStub(channel, stubConfig);
+            client = Math.NewStub(channel, stubConfig);
         }
 
         [TestFixtureTearDown]
@@ -97,55 +96,67 @@ namespace math.Tests
             Assert.AreEqual(0, response.Remainder);
         }
 
-        // TODO: test division by zero
+        // TODO(jtattermusch): test division by zero
 
         [Test]
         public void DivAsync()
         {
-            DivReply response = client.DivAsync(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build()).Result;
-            Assert.AreEqual(3, response.Quotient);
-            Assert.AreEqual(1, response.Remainder);
+            Task.Run(async () =>
+            {
+                DivReply response = await client.DivAsync(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
+                Assert.AreEqual(3, response.Quotient);
+                Assert.AreEqual(1, response.Remainder);
+            }).Wait();
         }
 
         [Test]
         public void Fib()
         {
-            var recorder = new RecordingObserver<Num>();
-            client.Fib(new FibArgs.Builder { Limit = 6 }.Build(), recorder);
+            Task.Run(async () =>
+            {
+                var call = client.Fib(new FibArgs.Builder { Limit = 6 }.Build());
 
-            CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
-                recorder.ToList().Result.ConvertAll((n) => n.Num_));
+                var responses = await call.ResponseStream.ToList();
+                CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
+                    responses.ConvertAll((n) => n.Num_));
+            }).Wait();
         }
 
         // TODO: test Fib with limit=0 and cancellation
         [Test]
         public void Sum()
         {
-            var clientStreamingResult = client.Sum();
-            var numList = new List<long> { 10, 20, 30 }.ConvertAll(
-                     n => Num.CreateBuilder().SetNum_(n).Build());
-            numList.Subscribe(clientStreamingResult.Inputs);
+            Task.Run(async () =>
+            {
+                var call = client.Sum();
+                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(
+                         n => Num.CreateBuilder().SetNum_(n).Build());
 
-            Assert.AreEqual(60, clientStreamingResult.Task.Result.Num_);
+                await call.RequestStream.WriteAll(numbers);
+                var result = await call.Result;
+                Assert.AreEqual(60, result.Num_);
+            }).Wait();
         }
 
         [Test]
         public void DivMany()
         {
-            List<DivArgs> divArgsList = new List<DivArgs>
+            Task.Run(async () =>
             {
-                new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build(),
-                new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
-                new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
-            };
+                var divArgsList = new List<DivArgs>
+                {
+                    new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build(),
+                    new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
+                    new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
+                };
 
-            var recorder = new RecordingObserver<DivReply>();
-            var requestObserver = client.DivMany(recorder);
-            divArgsList.Subscribe(requestObserver);
-            var result = recorder.ToList().Result;
+                var call = client.DivMany();
+                await call.RequestStream.WriteAll(divArgsList);
+                var result = await call.ResponseStream.ToList();
 
-            CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.ConvertAll((divReply) => divReply.Quotient));
-            CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.ConvertAll((divReply) => divReply.Remainder));
+                CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.ConvertAll((divReply) => divReply.Quotient));
+                CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.ConvertAll((divReply) => divReply.Remainder));
+            }).Wait();
         }
     }
 }

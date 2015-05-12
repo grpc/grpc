@@ -36,90 +36,166 @@
 #include <math.h>
 #include <Python.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
 #include "grpc/_adapter/_channel.h"
 #include "grpc/_adapter/_completion_queue.h"
 #include "grpc/_adapter/_error.h"
+#include "grpc/_adapter/_tag.h"
 
-static int pygrpc_call_init(Call *self, PyObject *args, PyObject *kwds) {
-  const PyObject *channel;
+static PyObject *pygrpc_call_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+  Call *self = (Call *)type->tp_alloc(type, 0);
+  Channel *channel;
+  CompletionQueue *completion_queue;
   const char *method;
   const char *host;
   double deadline;
-  static char *kwlist[] = {"channel", "method", "host", "deadline", NULL};
+  static char *kwlist[] = {"channel", "completion_queue",
+    "method", "host", "deadline", NULL};
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!ssd:Call", kwlist,
-                                   &pygrpc_ChannelType, &channel, &method,
-                                   &host, &deadline)) {
-    return -1;
+  if (!PyArg_ParseTupleAndKeywords(
+      args, kwds, "O!O!ssd:Call", kwlist,
+      &pygrpc_ChannelType, &channel,
+      &pygrpc_CompletionQueueType, &completion_queue,
+      &method, &host, &deadline)) {
+    return NULL;
   }
 
   /* TODO(nathaniel): Hoist the gpr_timespec <-> PyFloat arithmetic into its own
    * function with its own test coverage.
    */
-  self->c_call = grpc_channel_create_call_old(
-      ((Channel *)channel)->c_channel, method, host,
+  self->c_call = grpc_channel_create_call(
+      channel->c_channel, completion_queue->c_completion_queue, method, host,
       gpr_time_from_nanos(deadline * GPR_NS_PER_SEC));
+  self->completion_queue = completion_queue;
+  Py_INCREF(self->completion_queue);
+  self->channel = channel;
+  Py_INCREF(self->channel);
+  grpc_call_details_init(&self->call_details);
+  grpc_metadata_array_init(&self->recv_metadata);
+  grpc_metadata_array_init(&self->recv_trailing_metadata);
+  self->send_metadata = NULL;
+  self->send_metadata_count = 0;
+  self->send_trailing_metadata = NULL;
+  self->send_trailing_metadata_count = 0;
+  self->send_message = NULL;
+  self->recv_message = NULL;
+  self->adding_to_trailing = 0;
 
-  return 0;
+  return (PyObject *)self;
 }
 
 static void pygrpc_call_dealloc(Call *self) {
   if (self->c_call != NULL) {
     grpc_call_destroy(self->c_call);
   }
+  Py_XDECREF(self->completion_queue);
+  Py_XDECREF(self->channel);
+  Py_XDECREF(self->server);
+  grpc_call_details_destroy(&self->call_details);
+  grpc_metadata_array_destroy(&self->recv_metadata);
+  grpc_metadata_array_destroy(&self->recv_trailing_metadata);
+  if (self->send_message) {
+    grpc_byte_buffer_destroy(self->send_message);
+  }
+  if (self->recv_message) {
+    grpc_byte_buffer_destroy(self->recv_message);
+  }
+  gpr_free(self->status_details);
+  gpr_free(self->send_metadata);
+  gpr_free(self->send_trailing_metadata);
   self->ob_type->tp_free((PyObject *)self);
 }
 
 static const PyObject *pygrpc_call_invoke(Call *self, PyObject *args) {
-  const PyObject *completion_queue;
-  const PyObject *metadata_tag;
-  const PyObject *finish_tag;
+  PyObject *completion_queue;
+  PyObject *metadata_tag;
+  PyObject *finish_tag;
   grpc_call_error call_error;
   const PyObject *result;
+  pygrpc_tag *c_init_metadata_tag;
+  pygrpc_tag *c_metadata_tag;
+  pygrpc_tag *c_finish_tag;
+  grpc_op send_initial_metadata;
+  grpc_op recv_initial_metadata;
+  grpc_op recv_status_on_client;
 
   if (!(PyArg_ParseTuple(args, "O!OO:invoke", &pygrpc_CompletionQueueType,
                          &completion_queue, &metadata_tag, &finish_tag))) {
     return NULL;
   }
+  send_initial_metadata.op = GRPC_OP_SEND_INITIAL_METADATA;
+  send_initial_metadata.data.send_initial_metadata.metadata = self->send_metadata;
+  send_initial_metadata.data.send_initial_metadata.count = self->send_metadata_count;
+  recv_initial_metadata.op = GRPC_OP_RECV_INITIAL_METADATA;
+  recv_initial_metadata.data.recv_initial_metadata = &self->recv_metadata;
+  recv_status_on_client.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  recv_status_on_client.data.recv_status_on_client.trailing_metadata = &self->recv_trailing_metadata;
+  recv_status_on_client.data.recv_status_on_client.status = &self->status;
+  recv_status_on_client.data.recv_status_on_client.status_details = &self->status_details;
+  recv_status_on_client.data.recv_status_on_client.status_details_capacity = &self->status_details_capacity;
+  c_init_metadata_tag = pygrpc_tag_new(PYGRPC_INITIAL_METADATA, NULL, self);
+  c_metadata_tag = pygrpc_tag_new(PYGRPC_CLIENT_METADATA_READ, metadata_tag, self);
+  c_finish_tag = pygrpc_tag_new(PYGRPC_FINISHED_CLIENT, finish_tag, self);
 
-  call_error = grpc_call_invoke_old(
-      self->c_call, ((CompletionQueue *)completion_queue)->c_completion_queue,
-      (void *)metadata_tag, (void *)finish_tag, 0);
-
+  call_error = grpc_call_start_batch(self->c_call, &send_initial_metadata, 1, c_init_metadata_tag);
   result = pygrpc_translate_call_error(call_error);
-  if (result != NULL) {
-    Py_INCREF(metadata_tag);
-    Py_INCREF(finish_tag);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_init_metadata_tag);
+    pygrpc_tag_destroy(c_metadata_tag);
+    pygrpc_tag_destroy(c_finish_tag);
+    return result;
   }
+  call_error = grpc_call_start_batch(self->c_call, &recv_initial_metadata, 1, c_metadata_tag);
+  result = pygrpc_translate_call_error(call_error);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_metadata_tag);
+    pygrpc_tag_destroy(c_finish_tag);
+    return result;
+  }
+  call_error = grpc_call_start_batch(self->c_call, &recv_status_on_client, 1, c_finish_tag);
+  result = pygrpc_translate_call_error(call_error);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_finish_tag);
+    return result;
+  }
+
   return result;
 }
 
 static const PyObject *pygrpc_call_write(Call *self, PyObject *args) {
   const char *bytes;
   int length;
-  const PyObject *tag;
+  PyObject *tag;
   gpr_slice slice;
   grpc_byte_buffer *byte_buffer;
   grpc_call_error call_error;
   const PyObject *result;
+  pygrpc_tag *c_tag;
+  grpc_op op;
 
   if (!(PyArg_ParseTuple(args, "s#O:write", &bytes, &length, &tag))) {
     return NULL;
   }
+  c_tag = pygrpc_tag_new(PYGRPC_WRITE_ACCEPTED, tag, self);
 
   slice = gpr_slice_from_copied_buffer(bytes, length);
   byte_buffer = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
 
-  call_error =
-      grpc_call_start_write_old(self->c_call, byte_buffer, (void *)tag, 0);
+  if (self->send_message) {
+    grpc_byte_buffer_destroy(self->send_message);
+  }
+  self->send_message = byte_buffer;
 
-  grpc_byte_buffer_destroy(byte_buffer);
+  op.op = GRPC_OP_SEND_MESSAGE;
+  op.data.send_message = self->send_message;
+
+  call_error = grpc_call_start_batch(self->c_call, &op, 1, c_tag);
 
   result = pygrpc_translate_call_error(call_error);
-  if (result != NULL) {
-    Py_INCREF(tag);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_tag);
   }
   return result;
 }
@@ -127,36 +203,42 @@ static const PyObject *pygrpc_call_write(Call *self, PyObject *args) {
 static const PyObject *pygrpc_call_complete(Call *self, PyObject *tag) {
   grpc_call_error call_error;
   const PyObject *result;
+  pygrpc_tag *c_tag = pygrpc_tag_new(PYGRPC_FINISH_ACCEPTED, tag, self);
+  grpc_op op;
 
-  call_error = grpc_call_writes_done_old(self->c_call, (void *)tag);
+  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+
+  call_error = grpc_call_start_batch(self->c_call, &op, 1, c_tag);
 
   result = pygrpc_translate_call_error(call_error);
-  if (result != NULL) {
-    Py_INCREF(tag);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_tag);
   }
   return result;
 }
 
 static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
-  const PyObject *completion_queue;
-  const PyObject *tag;
+  PyObject *completion_queue;
+  PyObject *tag;
   grpc_call_error call_error;
   const PyObject *result;
+  pygrpc_tag *c_tag;
+  grpc_op op;
 
   if (!(PyArg_ParseTuple(args, "O!O:accept", &pygrpc_CompletionQueueType,
                          &completion_queue, &tag))) {
     return NULL;
   }
 
-  call_error = grpc_call_server_accept_old(
-      self->c_call, ((CompletionQueue *)completion_queue)->c_completion_queue,
-      (void *)tag);
+  op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op.data.recv_close_on_server.cancelled = &self->cancelled;
+  c_tag = pygrpc_tag_new(PYGRPC_FINISHED_SERVER, tag, self);
+
+  call_error = grpc_call_start_batch(self->c_call, &op, 1, c_tag);
   result = pygrpc_translate_call_error(call_error);
-
-  if (result != NULL) {
-    Py_INCREF(tag);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_tag);
   }
-
   return result;
 }
 
@@ -171,24 +253,52 @@ static const PyObject *pygrpc_call_add_metadata(Call *self, PyObject *args) {
   metadata.key = key;
   metadata.value = value;
   metadata.value_length = value_length;
-  return pygrpc_translate_call_error(
-      grpc_call_add_metadata_old(self->c_call, &metadata, 0));
+  if (self->adding_to_trailing) {
+    self->send_trailing_metadata = gpr_realloc(self->send_trailing_metadata, (self->send_trailing_metadata_count + 1) * sizeof(grpc_metadata));
+    self->send_trailing_metadata[self->send_trailing_metadata_count] = metadata;
+    self->send_trailing_metadata_count = self->send_trailing_metadata_count + 1;
+  } else {
+    self->send_metadata = gpr_realloc(self->send_metadata, (self->send_metadata_count + 1) * sizeof(grpc_metadata));
+    self->send_metadata[self->send_metadata_count] = metadata;
+    self->send_metadata_count = self->send_metadata_count + 1;
+  }
+  return pygrpc_translate_call_error(GRPC_CALL_OK);
 }
 
 static const PyObject *pygrpc_call_premetadata(Call *self) {
-  return pygrpc_translate_call_error(
-      grpc_call_server_end_initial_metadata_old(self->c_call, 0));
+  grpc_op op;
+  grpc_call_error call_error;
+  const PyObject *result;
+  pygrpc_tag *c_tag = pygrpc_tag_new(PYGRPC_INITIAL_METADATA, NULL, self);
+  op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  op.data.send_initial_metadata.metadata = self->send_metadata;
+  op.data.send_initial_metadata.count = self->send_metadata_count;
+  self->adding_to_trailing = 1;
+
+  call_error = grpc_call_start_batch(self->c_call, &op, 1, c_tag);
+  result = pygrpc_translate_call_error(call_error);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_tag);
+  }
+  return result;
 }
 
 static const PyObject *pygrpc_call_read(Call *self, PyObject *tag) {
+  grpc_op op;
   grpc_call_error call_error;
   const PyObject *result;
+  pygrpc_tag *c_tag = pygrpc_tag_new(PYGRPC_READ, tag, self);
 
-  call_error = grpc_call_start_read_old(self->c_call, (void *)tag);
-
+  op.op = GRPC_OP_RECV_MESSAGE;
+  if (self->recv_message) {
+    grpc_byte_buffer_destroy(self->recv_message);
+    self->recv_message = NULL;
+  }
+  op.data.recv_message = &self->recv_message;
+  call_error = grpc_call_start_batch(self->c_call, &op, 1, c_tag);
   result = pygrpc_translate_call_error(call_error);
-  if (result != NULL) {
-    Py_INCREF(tag);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_tag);
   }
   return result;
 }
@@ -197,15 +307,18 @@ static const PyObject *pygrpc_call_status(Call *self, PyObject *args) {
   PyObject *status;
   PyObject *code;
   PyObject *details;
-  const PyObject *tag;
+  PyObject *tag;
   grpc_status_code c_code;
   char *c_message;
   grpc_call_error call_error;
   const PyObject *result;
+  pygrpc_tag *c_tag;
+  grpc_op op;
 
   if (!(PyArg_ParseTuple(args, "OO:status", &status, &tag))) {
     return NULL;
   }
+  c_tag = pygrpc_tag_new(PYGRPC_FINISH_ACCEPTED, tag, self);
 
   code = PyObject_GetAttrString(status, "code");
   if (code == NULL) {
@@ -227,13 +340,21 @@ static const PyObject *pygrpc_call_status(Call *self, PyObject *args) {
   if (c_message == NULL) {
     return NULL;
   }
+  if (self->status_details) {
+    gpr_free(self->status_details);
+  }
+  self->status_details = gpr_malloc(strlen(c_message)+1);
+  strcpy(self->status_details, c_message);
+  op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op.data.send_status_from_server.trailing_metadata_count = self->send_trailing_metadata_count;
+  op.data.send_status_from_server.trailing_metadata = self->send_trailing_metadata;
+  op.data.send_status_from_server.status = c_code;
+  op.data.send_status_from_server.status_details = self->status_details;
 
-  call_error = grpc_call_start_write_status_old(self->c_call, c_code, c_message,
-                                                (void *)tag);
-
+  call_error = grpc_call_start_batch(self->c_call, &op, 1, c_tag);
   result = pygrpc_translate_call_error(call_error);
-  if (result != NULL) {
-    Py_INCREF(tag);
+  if (result == NULL) {
+    pygrpc_tag_destroy(c_tag);
   }
   return result;
 }
@@ -301,9 +422,9 @@ PyTypeObject pygrpc_CallType = {
     0,                               /* tp_descr_get */
     0,                               /* tp_descr_set */
     0,                               /* tp_dictoffset */
-    (initproc)pygrpc_call_init,      /* tp_init */
+    0,                               /* tp_init */
     0,                               /* tp_alloc */
-    PyType_GenericNew,               /* tp_new */
+    pygrpc_call_new,                 /* tp_new */
 };
 
 int pygrpc_add_call(PyObject *module) {

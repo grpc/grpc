@@ -33,7 +33,6 @@
 
 #include "src/cpp/client/channel.h"
 
-#include <chrono>
 #include <memory>
 
 #include <grpc/grpc.h>
@@ -41,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/cpp/proto/proto_utils.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
@@ -60,12 +60,18 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
-  auto c_call = grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
-                                         context->authority().empty()
-                                             ? target_.c_str()
-                                             : context->authority().c_str(),
-                                         context->RawDeadline());
-  context->set_call(c_call);
+  auto c_call =
+      method.channel_tag()
+          ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
+                                                method.channel_tag(),
+                                                context->raw_deadline())
+          : grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
+                                     context->authority().empty()
+                                         ? target_.c_str()
+                                         : context->authority().c_str(),
+                                     context->raw_deadline());
+  GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
+  context->set_call(c_call, shared_from_this());
   return Call(c_call, this, cq);
 }
 
@@ -73,9 +79,15 @@ void Channel::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = MAX_OPS;
   grpc_op ops[MAX_OPS];
+  GRPC_TIMER_BEGIN(GRPC_PTAG_CPP_PERFORM_OPS, call->call());
   buf->FillOps(ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call->call(), ops, nops, buf));
+  GRPC_TIMER_END(GRPC_PTAG_CPP_PERFORM_OPS, call->call());
+}
+
+void* Channel::RegisterMethod(const char* method) {
+  return grpc_channel_register_call(c_channel_, method, target_.c_str());
 }
 
 }  // namespace grpc
