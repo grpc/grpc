@@ -212,7 +212,9 @@ class Job(object):
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > 300:
-      message('TIMEOUT', self._spec.shortname, do_newline=True)
+      self._tempfile.seek(0)
+      stdout = self._tempfile.read()
+      message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
       self.kill()
     return self._state
 
