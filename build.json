@@ -1808,6 +1808,24 @@
       ]
     },
     {
+      "name": "async_streaming_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/async_streaming_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "async_unary_ping_pong_test",
       "build": "test",
       "run": false,

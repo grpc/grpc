@@ -72,10 +72,9 @@ function handleUnary(call, callback) {
   var req = call.request;
   var zeros = zeroBuffer(req.response_size);
   var payload_type = req.response_type;
-  if (payload_type === testProto.PayloadType.RANDOM) {
-    payload_type = [
-      testProto.PayloadType.COMPRESSABLE,
-      testProto.PayloadType.UNCOMPRESSABLE][Math.random() < 0.5 ? 0 : 1];
+  if (payload_type === 'RANDOM') {
+    payload_type = ['COMPRESSABLE',
+                    'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
   }
   callback(null, {payload: {type: payload_type, body: zeros}});
 }
@@ -89,7 +88,7 @@ function handleUnary(call, callback) {
 function handleStreamingInput(call, callback) {
   var aggregate_size = 0;
   call.on('data', function(value) {
-    aggregate_size += value.payload.body.limit - value.payload.body.offset;
+    aggregate_size += value.payload.body.length;
   });
   call.on('end', function() {
     callback(null, {aggregated_payload_size: aggregate_size});
@@ -103,10 +102,9 @@ function handleStreamingInput(call, callback) {
 function handleStreamingOutput(call) {
   var req = call.request;
   var payload_type = req.response_type;
-  if (payload_type === testProto.PayloadType.RANDOM) {
-    payload_type = [
-      testProto.PayloadType.COMPRESSABLE,
-      testProto.PayloadType.UNCOMPRESSABLE][Math.random() < 0.5 ? 0 : 1];
+  if (payload_type === 'RANDOM') {
+    payload_type = ['COMPRESSABLE',
+                    'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
   }
   _.each(req.response_parameters, function(resp_param) {
     call.write({
@@ -127,10 +125,9 @@ function handleStreamingOutput(call) {
 function handleFullDuplex(call) {
   call.on('data', function(value) {
     var payload_type = value.response_type;
-    if (payload_type === testProto.PayloadType.RANDOM) {
-      payload_type = [
-        testProto.PayloadType.COMPRESSABLE,
-        testProto.PayloadType.UNCOMPRESSABLE][Math.random() < 0.5 ? 0 : 1];
+    if (payload_type === 'RANDOM') {
+      payload_type = ['COMPRESSABLE',
+                      'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
     }
     _.each(value.response_parameters, function(resp_param) {
       call.write({

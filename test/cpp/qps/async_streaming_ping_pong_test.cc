@@ -31,18 +31,49 @@
  *
  */
 
-#include <grpc++/async_generic_service.h>
+#include <grpc/support/log.h>
 
-#include <grpc++/server.h>
+#include <signal.h>
+
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
 
 namespace grpc {
+namespace testing {
 
-void AsyncGenericService::RequestCall(
-    GenericServerContext* ctx, GenericServerAsyncReaderWriter* reader_writer,
-    CompletionQueue* call_cq, ServerCompletionQueue* notification_cq,
-    void* tag) {
-  server_->RequestAsyncGenericCall(ctx, reader_writer, call_cq, notification_cq,
-                                   tag);
+static const int WARMUP = 5;
+static const int BENCHMARK = 10;
+
+static void RunAsyncStreamingPingPong() {
+  gpr_log(GPR_INFO, "Running Async Streaming Ping Pong");
+
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_enable_ssl(false);
+  client_config.set_outstanding_rpcs_per_channel(1);
+  client_config.set_client_channels(1);
+  client_config.set_payload_size(1);
+  client_config.set_async_client_threads(1);
+  client_config.set_rpc_type(STREAMING);
+
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_enable_ssl(false);
+  server_config.set_threads(1);
+
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+
+  ReportQPS(result);
+  ReportLatency(result);
 }
 
+}  // namespace testing
 }  // namespace grpc
+
+int main(int argc, char** argv) {
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::RunAsyncStreamingPingPong();
+
+  return 0;
+}

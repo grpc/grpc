@@ -212,12 +212,13 @@ static void request_response_with_payload_and_call_creds(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq, tag(101)));
+                                                      f.server_cq, f.server_cq, 
+                                                      tag(101)));
   cq_expect_completion(v_server, tag(101), 1);
   cq_verify(v_server);
 
   /* Cannot set creds on the server call object. */
-  GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
+  GPR_ASSERT(!grpc_call_set_credentials(s, NULL));
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

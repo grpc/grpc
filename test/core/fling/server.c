@@ -92,7 +92,7 @@ typedef struct {
 static void request_call(void) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
-                           cq, tag(FLING_SERVER_NEW_REQUEST));
+                           cq, cq, tag(FLING_SERVER_NEW_REQUEST));
 }
 
 static void handle_unary_method(void) {
@@ -211,13 +211,14 @@ int main(int argc, char **argv) {
                                                     test_server1_cert};
     grpc_server_credentials *ssl_creds =
         grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
-    server = grpc_server_create(cq, NULL);
+    server = grpc_server_create(NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(cq, NULL);
+    server = grpc_server_create(NULL);
     GPR_ASSERT(grpc_server_add_http2_port(server, addr));
   }
+  grpc_server_register_completion_queue(server, cq);
   grpc_server_start(server);
 
   gpr_free(addr_buf);

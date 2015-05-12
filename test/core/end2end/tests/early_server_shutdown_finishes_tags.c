@@ -110,10 +110,10 @@ static void test_early_server_shutdown_finishes_tags(
 
   /* upon shutdown, the server should finish all requested calls indicating
      no new call */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
-                                                      &call_details,
-                                                      &request_metadata_recv,
-                                                      f.server_cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s, &call_details,
+                                      &request_metadata_recv, f.server_cq,
+                                      f.server_cq, tag(101)));
   grpc_server_shutdown(f.server);
   cq_expect_completion(v_server, tag(101), 0);
   cq_verify(v_server);

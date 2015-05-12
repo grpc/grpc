@@ -94,7 +94,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Create server. */
   server_cq = grpc_completion_queue_create();
-  server = grpc_server_create(server_cq, NULL);
+  server = grpc_server_create(NULL);
+  grpc_server_register_completion_queue(server, server_cq);
   GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
              0);
   if (port == 0) {
@@ -150,10 +151,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   if (expect_ok) {
     /* Check for a successful request. */
-    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server, &s,
-                                                        &call_details,
-                                                        &request_metadata_recv,
-                                                        server_cq, tag(101)));
+    GPR_ASSERT(GRPC_CALL_OK ==
+               grpc_server_request_call(server, &s, &call_details,
+                                        &request_metadata_recv, server_cq,
+                                        server_cq, tag(101)));
     cq_expect_completion(v_server, tag(101), 1);
     cq_verify(v_server);
 
