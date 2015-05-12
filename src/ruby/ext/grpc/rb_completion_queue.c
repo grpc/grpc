@@ -164,7 +164,7 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
                        &grpc_rb_completion_queue_data_type, next_call.cq);
   next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   next_call.tag = ROBJECT(tag);
-  next_call.event = NULL;
+  next_call.event.type = GRPC_QUEUE_TIMEOUT;
   rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                              (void *)&next_call, NULL, NULL);
   return next_call.event;
