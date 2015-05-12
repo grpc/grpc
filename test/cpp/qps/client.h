@@ -83,6 +83,7 @@ class Client {
 
  protected:
   SimpleRequest request_;
+  bool closed_loop_;
 
   class ClientChannelInfo {
    public:
@@ -222,7 +223,6 @@ class Client {
   std::vector<std::unique_ptr<Thread>> threads_;
   std::unique_ptr<Timer> timer_;
 
-  bool closed_loop_;
   InterarrivalTimer interarrival_timer_;
   std::vector<std::chrono::time_point
              <std::chrono::high_resolution_clock>> next_time_;
