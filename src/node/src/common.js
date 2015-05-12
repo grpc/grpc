@@ -50,7 +50,7 @@ function deserializeCls(cls) {
    * @return {cls} The resulting object
    */
   return function deserialize(arg_buf) {
-    return cls.decode(arg_buf);
+    return cls.decode(arg_buf).toRaw();
   };
 }
 
