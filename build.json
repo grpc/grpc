@@ -1826,6 +1826,24 @@
       ]
     },
     {
+      "name": "async_streaming_ping_pong_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/async_streaming_ping_pong_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "async_unary_ping_pong_test",
       "build": "test",
       "run": false,
@@ -2245,6 +2263,22 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "thread_stress_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/thread_stress_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

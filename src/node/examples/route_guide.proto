@@ -66,18 +66,18 @@ service RouteGuide {
 // Latitudes should be in the range +/- 90 degrees and longitude should be in
 // the range +/- 180 degrees (inclusive).
 message Point {
-  optional int32 latitude = 1;
-  optional int32 longitude = 2;
+  int32 latitude = 1;
+  int32 longitude = 2;
 }
 
 // A latitude-longitude rectangle, represented as two diagonally opposite
 // points "lo" and "hi".
 message Rectangle {
   // One corner of the rectangle.
-  optional Point lo = 1;
+  Point lo = 1;
 
   // The other corner of the rectangle.
-  optional Point hi = 2;
+  Point hi = 2;
 }
 
 // A feature names something at a given point.
@@ -85,19 +85,19 @@ message Rectangle {
 // If a feature could not be named, the name is empty.
 message Feature {
   // The name of the feature.
-  optional string name = 1;
+  string name = 1;
 
   // The point where the feature is detected.
-  optional Point location = 2;
+  Point location = 2;
 }
 
 // A RouteNote is a message sent while at a given point.
 message RouteNote {
   // The location from which the message is sent.
-  optional Point location = 1;
+  Point location = 1;
 
   // The message to be sent.
-  optional string message = 2;
+  string message = 2;
 }
 
 // A RouteSummary is received in response to a RecordRoute rpc.
@@ -107,14 +107,14 @@ message RouteNote {
 // the distance between each point.
 message RouteSummary {
   // The number of points received.
-  optional int32 point_count = 1;
+  int32 point_count = 1;
 
   // The number of known features passed while traversing the route.
-  optional int32 feature_count = 2;
+  int32 feature_count = 2;
 
   // The distance covered in metres.
-  optional int32 distance = 3;
+  int32 distance = 3;
 
   // The duration of the traversal in seconds.
-  optional int32 elapsed_time = 4;
+  int32 elapsed_time = 4;
 }

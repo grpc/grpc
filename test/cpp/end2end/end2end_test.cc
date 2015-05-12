@@ -577,18 +577,6 @@ TEST_F(End2endTest, ClientCancelsBidi) {
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
 }
 
-TEST_F(End2endTest, ThreadStress) {
-  ResetStub();
-  std::vector<std::thread*> threads;
-  for (int i = 0; i < 100; ++i) {
-    threads.push_back(new std::thread(SendRpc, stub_.get(), 1000));
-  }
-  for (int i = 0; i < 100; ++i) {
-    threads[i]->join();
-    delete threads[i];
-  }
-}
-
 TEST_F(End2endTest, RpcMaxMessageSize) {
   ResetStub();
   EchoRequest request;
