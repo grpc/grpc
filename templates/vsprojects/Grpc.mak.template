@@ -32,7 +32,6 @@
 <%namespace file="packages.include" import="get_openssl,get_zlib"/>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
-  disallowed_dependencies = set(['end2end_certs'])
   build_from_project_file = set(['gpr',
                                  'grpc',
                                  'grpc_unsecure',
@@ -41,8 +40,7 @@
                                  'grpc_test_util_unsecure',
                                 ])
   buildable_targets = [ target for target in targets + libs
-                        if not disallowed_dependencies.intersection(target.get('deps', [])) and
-                        target.build in ['all', 'test', 'private', 'tool', 'benchmark'] and
+                        if target.build in ['all', 'test', 'private', 'tool', 'benchmark'] and
                         target.language in ['c', 'c++'] and
                         all([src.endswith('.c') for src in target.src]) and
                         'windows' in target.get('platforms', ['windows']) ]
@@ -136,6 +134,9 @@ $(LIBS) \
 %for source in target.src:
 $(OUT_DIR)\${re.search('([^/]+)\.c$', source).group(1)}.obj \
 %endfor
+%if not target.src:
+$(OUT_DIR)\dummy.obj \
+%endif
 
 %if target.build != 'private':
 ${target.name}: ${target.name}.exe

@@ -56,6 +56,8 @@ static void create_sockets(SOCKET sv[2]) {
   GPR_ASSERT(lst_sock != INVALID_SOCKET);
 
   memset(&addr, 0, sizeof(addr));
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_family = AF_INET;
   GPR_ASSERT(bind(lst_sock, (struct sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
   GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
   GPR_ASSERT(getsockname(lst_sock, (struct sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
