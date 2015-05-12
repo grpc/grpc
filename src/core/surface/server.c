@@ -699,7 +699,7 @@ void grpc_server_start(grpc_server *server) {
 grpc_transport_setup_result grpc_server_setup_transport(
     grpc_server *s, grpc_transport *transport,
     grpc_channel_filter const **extra_filters, size_t num_extra_filters,
-    grpc_mdctx *mdctx) {
+    grpc_mdctx *mdctx, const grpc_channel_args *args) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters =
       gpr_malloc(sizeof(grpc_channel_filter *) * num_filters);
@@ -730,8 +730,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
     grpc_transport_add_to_pollset(transport, grpc_cq_pollset(s->cqs[i]));
   }
 
-  channel = grpc_channel_create_from_filters(filters, num_filters,
-                                             s->channel_args, mdctx, 0);
+  channel =
+      grpc_channel_create_from_filters(filters, num_filters, args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;

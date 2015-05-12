@@ -58,7 +58,7 @@ void grpc_server_listener_destroy_done(void *server);
 grpc_transport_setup_result grpc_server_setup_transport(
     grpc_server *server, grpc_transport *transport,
     grpc_channel_filter const **extra_filters, size_t num_extra_filters,
-    grpc_mdctx *mdctx);
+    grpc_mdctx *mdctx, const grpc_channel_args *args);
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 

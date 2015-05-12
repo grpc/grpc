@@ -278,6 +278,7 @@ grpc_channel_security_connector *grpc_fake_channel_security_connector_create(
 grpc_security_connector *grpc_fake_server_security_connector_create(void) {
   grpc_security_connector *c = gpr_malloc(sizeof(grpc_security_connector));
   gpr_ref_init(&c->refcount, 1);
+  c->is_client_side = 0;
   c->vtable = &fake_server_vtable;
   c->url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   return c;
