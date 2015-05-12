@@ -159,7 +159,7 @@
     <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
     <ClInclude Include="..\..\src\core\httpcli\httpcli_security_connector.h" />
     <ClInclude Include="..\..\src\core\httpcli\parser.h" />
-    <ClInclude Include="..\..\src\core\security\auth.h" />
+    <ClInclude Include="..\..\src\core\security\auth_filters.h" />
     <ClInclude Include="..\..\src\core\security\base64.h" />
     <ClInclude Include="..\..\src\core\security\credentials.h" />
     <ClInclude Include="..\..\src\core\security\json_token.h" />
@@ -268,9 +268,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\auth.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\security\base64.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\client_auth_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials.c">
     </ClCompile>
@@ -289,6 +289,8 @@
     <ClCompile Include="..\..\src\core\security\security_connector.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\security_context.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\server_auth_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
     </ClCompile>
