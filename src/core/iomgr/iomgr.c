@@ -84,7 +84,12 @@ static void background_callback_executor(void *ignored) {
   gpr_event_set(&g_background_callback_executor_done, (void *)1);
 }
 
-void grpc_kick_poller(void) { }
+void grpc_kick_poller(void) {
+  /* Empty. The background callback executor polls periodically. The activity
+   * the kicker is trying to draw the executor's attention to will be picked up
+   * either by one of the periodic wakeups or by one of the polling application
+   * threads. */
+}
 
 void grpc_iomgr_init(void) {
   gpr_thd_id id;
