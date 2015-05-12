@@ -65,7 +65,6 @@ typedef struct {
   call_data **waiting_children;
   size_t waiting_child_count;
   size_t waiting_child_capacity;
-  grpc_pollset_set waiting_pollsets;
 
   /* transport setup for this channel */
   grpc_transport_setup *transport_setup;
@@ -212,7 +211,6 @@ static void cc_start_transport_op(grpc_call_element *elem,
           if (!chand->transport_setup_initiated) {
             chand->transport_setup_initiated = 1;
             initiate_transport_setup = 1;
-            grpc_pollset_set_init(&chand->waiting_pollsets);
           }
           /* add this call to the waiting set to be resumed once we have a child
              channel stack, growing the waiting set if needed */
@@ -223,16 +221,15 @@ static void cc_start_transport_op(grpc_call_element *elem,
                 chand->waiting_children,
                 chand->waiting_child_capacity * sizeof(call_data *));
           }
-          grpc_pollset_set_add_pollset(&chand->waiting_pollsets, op->bind_pollset);
           calld->s.waiting_op = *op;
           chand->waiting_children[chand->waiting_child_count++] = calld;
           gpr_mu_unlock(&chand->mu);
 
           /* finally initiate transport setup if needed */
           if (initiate_transport_setup) {
-            grpc_transport_setup_initiate(chand->transport_setup,
-                                          &chand->waiting_pollsets);
+            grpc_transport_setup_initiate(chand->transport_setup);
           }
+          grpc_transport_setup_add_interested_party(chand->transport_setup, op->bind_pollset);
         }
       }
       break;
@@ -475,8 +472,6 @@ grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
   chand->waiting_children = NULL;
   chand->waiting_child_count = 0;
   chand->waiting_child_capacity = 0;
-
-  grpc_pollset_set_destroy(&chand->waiting_pollsets);
 
   call_ops = gpr_malloc(sizeof(*call_ops) * waiting_child_count);
 
