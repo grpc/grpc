@@ -140,14 +140,13 @@ class AsyncEnd2endTest : public ::testing::Test {
 
       send_request.set_message("Hello");
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-          stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+          stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_));
 
       service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                            tag(2));
 
       server_ok(2);
       EXPECT_EQ(send_request.message(), recv_request.message());
-      client_ok(1);
 
       send_response.set_message(recv_request.message());
       response_writer.Finish(send_response, Status::OK, tag(3));
@@ -195,7 +194,7 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_));
 
   std::chrono::system_clock::time_point time_now(
       std::chrono::system_clock::now());
@@ -209,7 +208,6 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
 
   verify_timed_ok(&srv_cq_, 2, true, time_limit);
   EXPECT_EQ(send_request.message(), recv_request.message());
-  verify_timed_ok(&cli_cq_, 1, true, time_limit);
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
@@ -399,7 +397,7 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -409,7 +407,6 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
   EXPECT_EQ(static_cast<size_t>(2), client_initial_metadata.size());
-  client_ok(1);
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
@@ -441,7 +438,7 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -449,7 +446,6 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   EXPECT_EQ(send_request.message(), recv_request.message());
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
-  client_ok(1);
   response_writer.SendInitialMetadata(tag(3));
   server_ok(3);
 
@@ -489,7 +485,7 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -497,7 +493,6 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   EXPECT_EQ(send_request.message(), recv_request.message());
   response_writer.SendInitialMetadata(tag(3));
   server_ok(3);
-  client_ok(1);
 
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta1.first, meta1.second);
@@ -550,7 +545,7 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -560,7 +555,6 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
   EXPECT_EQ(static_cast<size_t>(2), client_initial_metadata.size());
-  client_ok(1);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);

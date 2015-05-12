@@ -6,7 +6,7 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 7,
+      "minor": 8,
       "micro": 0,
       "build": 0
     }
@@ -2260,6 +2260,22 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "thread_stress_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/thread_stress_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
