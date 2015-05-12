@@ -70,7 +70,7 @@ class CompletionQueueAsyncWorker : public NanAsyncWorker {
   void HandleErrorCallback();
 
  private:
-  grpc_event *result;
+  grpc_event result;
 
   static grpc_completion_queue *queue;
 

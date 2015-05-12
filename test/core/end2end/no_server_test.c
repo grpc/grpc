@@ -45,8 +45,6 @@ int main(int argc, char **argv) {
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   grpc_completion_queue *cq;
   cq_verifier *cqv;
-  grpc_event *ev;
-  int done;
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
@@ -79,17 +77,15 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, ops, op - ops, tag(1)));
   /* verify that all tags get completed */
-  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
   grpc_completion_queue_shutdown(cq);
-  for (done = 0; !done;) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_future);
-    done = ev->type == GRPC_QUEUE_SHUTDOWN;
-    grpc_event_finish(ev);
-  }
+  while (grpc_completion_queue_next(cq, gpr_inf_future).type !=
+         GRPC_QUEUE_SHUTDOWN)
+    ;
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);
   grpc_channel_destroy(chan);

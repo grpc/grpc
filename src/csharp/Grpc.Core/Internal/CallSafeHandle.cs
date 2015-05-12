@@ -37,7 +37,7 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void CompletionCallbackDelegate(GRPCOpError error, IntPtr batchContextPtr);
+    internal delegate void CompletionCallbackDelegate(bool success, IntPtr batchContextPtr);
     
     /// <summary>
     /// grpc_call from <grpc/grpc.h>

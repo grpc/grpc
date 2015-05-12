@@ -80,14 +80,10 @@ static gpr_timespec n_seconds_time(int n) {
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 static void drain_cq(grpc_completion_queue *cq) {
-  grpc_event *ev;
-  grpc_completion_type type;
+  grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_time());
-    GPR_ASSERT(ev);
-    type = ev->type;
-    grpc_event_finish(ev);
-  } while (type != GRPC_QUEUE_SHUTDOWN);
+  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
@@ -214,11 +210,11 @@ static void request_response_with_payload_and_call_creds(
                                                       &request_metadata_recv,
                                                       f.cq, f.cq, 
                                                       tag(101)));
-  cq_expect_completion(cqv, tag(101), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
   /* Cannot set creds on the server call object. */
-  GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
+  GPR_ASSERT(!grpc_call_set_credentials(s, NULL));
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -240,8 +236,8 @@ static void request_response_with_payload_and_call_creds(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(cqv, tag(102), GRPC_OP_OK);
-  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(102), 1);
+  cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);

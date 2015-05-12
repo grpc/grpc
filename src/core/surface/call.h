@@ -81,8 +81,7 @@ typedef struct {
   grpc_ioreq_data data;
 } grpc_ioreq;
 
-typedef void (*grpc_ioreq_completion_func)(grpc_call *call,
-                                           grpc_op_error status,
+typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
                                            void *user_data);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,

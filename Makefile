@@ -633,7 +633,6 @@ gpr_useful_test: $(BINDIR)/$(CONFIG)/gpr_useful_test
 grpc_base64_test: $(BINDIR)/$(CONFIG)/grpc_base64_test
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
-grpc_completion_queue_benchmark: $(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_create_jwt: $(BINDIR)/$(CONFIG)/grpc_create_jwt
 grpc_credentials_test: $(BINDIR)/$(CONFIG)/grpc_credentials_test
@@ -1844,7 +1843,7 @@ test_python: static_c
 
 tools: privatelibs $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/qps_driver $(BINDIR)/$(CONFIG)/qps_worker
 
-buildbenchmarks: privatelibs $(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
+buildbenchmarks: privatelibs $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 
 benchmarks: buildbenchmarks
 
@@ -5710,35 +5709,6 @@ deps_grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_CHANNEL_STACK_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GRPC_COMPLETION_QUEUE_BENCHMARK_SRC = \
-    test/core/surface/completion_queue_benchmark.c \
-
-GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_BENCHMARK_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-$(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/surface/completion_queue_benchmark.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-deps_grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS:.o=.dep)
 endif
 endif
 

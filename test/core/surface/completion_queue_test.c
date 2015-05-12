@@ -43,10 +43,6 @@
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
-static void increment_int_on_finish(void *user_data, grpc_op_error error) {
-  ++*(int *)user_data;
-}
-
 static void *create_test_tag(void) {
   static gpr_intptr i = 0;
   return (void *)(++i);
@@ -54,12 +50,10 @@ static void *create_test_tag(void) {
 
 /* helper for tests to shutdown correctly and tersely */
 static void shutdown_and_destroy(grpc_completion_queue *cc) {
-  grpc_event *ev;
+  grpc_event ev;
   grpc_completion_queue_shutdown(cc);
   ev = grpc_completion_queue_next(cc, gpr_inf_past);
-  GPR_ASSERT(ev != NULL);
-  GPR_ASSERT(ev->type == GRPC_QUEUE_SHUTDOWN);
-  grpc_event_finish(ev);
+  GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
 
@@ -75,42 +69,36 @@ static void test_wait_empty(void) {
   LOG_TEST();
 
   cc = grpc_completion_queue_create();
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_now()) == NULL);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_now()).type ==
+             GRPC_QUEUE_TIMEOUT);
   shutdown_and_destroy(cc);
 }
 
 static void test_cq_end_op(void) {
-  grpc_event *ev;
+  grpc_event ev;
   grpc_completion_queue *cc;
-  int on_finish_called = 0;
   void *tag = create_test_tag();
 
   LOG_TEST();
 
   cc = grpc_completion_queue_create();
 
-  grpc_cq_begin_op(cc, NULL, GRPC_OP_COMPLETE);
-  grpc_cq_end_op(cc, tag, NULL, increment_int_on_finish, &on_finish_called,
-                 GRPC_OP_OK);
+  grpc_cq_begin_op(cc, NULL);
+  grpc_cq_end_op(cc, tag, NULL, 1);
 
   ev = grpc_completion_queue_next(cc, gpr_inf_past);
-  GPR_ASSERT(ev != NULL);
-  GPR_ASSERT(ev->type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev->tag == tag);
-  GPR_ASSERT(ev->data.op_complete == GRPC_OP_OK);
-  GPR_ASSERT(on_finish_called == 0);
-  grpc_event_finish(ev);
-  GPR_ASSERT(on_finish_called == 1);
+  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(ev.tag == tag);
+  GPR_ASSERT(ev.success);
 
   shutdown_and_destroy(cc);
 }
 
 static void test_pluck(void) {
-  grpc_event *ev;
+  grpc_event ev;
   grpc_completion_queue *cc;
   void *tags[128];
   unsigned i, j;
-  int on_finish_called = 0;
 
   LOG_TEST();
 
@@ -124,33 +112,25 @@ static void test_pluck(void) {
   cc = grpc_completion_queue_create();
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    grpc_cq_begin_op(cc, NULL, GRPC_OP_COMPLETE);
-    grpc_cq_end_op(cc, tags[i], NULL, increment_int_on_finish,
-                   &on_finish_called, GRPC_OP_OK);
+    grpc_cq_begin_op(cc, NULL);
+    grpc_cq_end_op(cc, tags[i], NULL, 1);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     ev = grpc_completion_queue_pluck(cc, tags[i], gpr_inf_past);
-    GPR_ASSERT(ev->tag == tags[i]);
-    grpc_event_finish(ev);
+    GPR_ASSERT(ev.tag == tags[i]);
   }
 
-  GPR_ASSERT(on_finish_called == GPR_ARRAY_SIZE(tags));
-
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    grpc_cq_begin_op(cc, NULL, GRPC_OP_COMPLETE);
-    grpc_cq_end_op(cc, tags[i], NULL, increment_int_on_finish,
-                   &on_finish_called, GRPC_OP_OK);
+    grpc_cq_begin_op(cc, NULL);
+    grpc_cq_end_op(cc, tags[i], NULL, 1);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     ev = grpc_completion_queue_pluck(cc, tags[GPR_ARRAY_SIZE(tags) - i - 1],
                                      gpr_inf_past);
-    GPR_ASSERT(ev->tag == tags[GPR_ARRAY_SIZE(tags) - i - 1]);
-    grpc_event_finish(ev);
+    GPR_ASSERT(ev.tag == tags[GPR_ARRAY_SIZE(tags) - i - 1]);
   }
-
-  GPR_ASSERT(on_finish_called == 2 * GPR_ARRAY_SIZE(tags));
 
   shutdown_and_destroy(cc);
 }
@@ -182,7 +162,7 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 1", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_begin_op(opt->cc, NULL, GRPC_OP_COMPLETE);
+    grpc_cq_begin_op(opt->cc, NULL);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 1 done", opt->id);
@@ -191,8 +171,7 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_end_op(opt->cc, (void *)(gpr_intptr)1, NULL, NULL, NULL,
-                   GRPC_OP_OK);
+    grpc_cq_end_op(opt->cc, (void *)(gpr_intptr)1, NULL, 1);
     opt->events_triggered++;
   }
 
@@ -202,7 +181,7 @@ static void producer_thread(void *arg) {
 
 static void consumer_thread(void *arg) {
   test_thread_options *opt = arg;
-  grpc_event *ev;
+  grpc_event ev;
 
   gpr_log(GPR_INFO, "consumer %d started", opt->id);
   gpr_event_set(&opt->on_started, (void *)(gpr_intptr) 1);
@@ -217,20 +196,17 @@ static void consumer_thread(void *arg) {
   gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
   for (;;) {
     ev = grpc_completion_queue_next(opt->cc, ten_seconds_time());
-    GPR_ASSERT(ev);
-    switch (ev->type) {
+    switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        GPR_ASSERT(ev->data.op_complete == GRPC_OP_OK);
+        GPR_ASSERT(ev.success);
         opt->events_triggered++;
-        grpc_event_finish(ev);
         break;
       case GRPC_QUEUE_SHUTDOWN:
         gpr_log(GPR_INFO, "consumer %d phase 2 done", opt->id);
         gpr_event_set(&opt->on_finished, (void *)(gpr_intptr) 1);
-        grpc_event_finish(ev);
         return;
-      default:
-        gpr_log(GPR_ERROR, "Invalid event received: %d", ev->type);
+      case GRPC_QUEUE_TIMEOUT:
+        gpr_log(GPR_ERROR, "Invalid timeout received");
         abort();
     }
   }

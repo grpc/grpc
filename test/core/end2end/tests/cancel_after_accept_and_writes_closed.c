@@ -67,14 +67,10 @@ static gpr_timespec n_seconds_time(int n) {
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 static void drain_cq(grpc_completion_queue *cq) {
-  grpc_event *ev;
-  grpc_completion_type type;
+  grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_time());
-    GPR_ASSERT(ev);
-    type = ev->type;
-    grpc_event_finish(ev);
-  } while (type != GRPC_QUEUE_SHUTDOWN);
+  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
@@ -162,7 +158,7 @@ static void test_cancel_after_accept_and_writes_closed(
              grpc_server_request_call(f.server, &s, &call_details,
                                       &request_metadata_recv, f.cq,
                                       f.cq, tag(2)));
-  cq_expect_completion(cqv, tag(2), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(2), 1);
   cq_verify(cqv);
 
   op = ops;
@@ -182,8 +178,8 @@ static void test_cancel_after_accept_and_writes_closed(
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 
-  cq_expect_completion(cqv, tag(3), GRPC_OP_OK);
-  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(3), 1);
+  cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == mode.expect_status);

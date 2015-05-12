@@ -45,6 +45,8 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#define ROOT_EXPECTATION 1000
+
 /* a set of metadata we expect to find on an event */
 typedef struct metadata {
   size_t count;
@@ -60,9 +62,7 @@ typedef struct expectation {
   struct expectation *prev;
   grpc_completion_type type;
   void *tag;
-  union {
-    grpc_op_error op_complete;
-  } data;
+  int success;
 } expectation;
 
 /* the verifier itself */
@@ -75,7 +75,7 @@ struct cq_verifier {
 
 cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
   cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
-  v->expect.type = GRPC_COMPLETION_DO_NOT_USE;
+  v->expect.type = ROOT_EXPECTATION;
   v->expect.tag = NULL;
   v->expect.next = &v->expect;
   v->expect.prev = &v->expect;
@@ -149,11 +149,9 @@ static void verify_matches(expectation *e, grpc_event *ev) {
       abort();
       break;
     case GRPC_OP_COMPLETE:
-      GPR_ASSERT(e->data.op_complete == ev->data.op_complete);
+      GPR_ASSERT(e->success == ev->success);
       break;
-    case GRPC_SERVER_SHUTDOWN:
-      break;
-    case GRPC_COMPLETION_DO_NOT_USE:
+    case GRPC_QUEUE_TIMEOUT:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
       break;
@@ -165,13 +163,10 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 
   switch (e->type) {
     case GRPC_OP_COMPLETE:
-      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->data.op_complete);
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->success);
       gpr_strvec_add(buf, tmp);
       break;
-    case GRPC_SERVER_SHUTDOWN:
-      gpr_strvec_add(buf, gpr_strdup("GRPC_SERVER_SHUTDOWN"));
-      break;
-    case GRPC_COMPLETION_DO_NOT_USE:
+    case GRPC_QUEUE_TIMEOUT:
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
@@ -203,7 +198,7 @@ static void fail_no_event_received(cq_verifier *v) {
 
 void cq_verify(cq_verifier *v) {
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-  grpc_event *ev;
+  grpc_event ev;
   expectation *e;
   char *s;
   gpr_strvec have_tags;
@@ -212,15 +207,16 @@ void cq_verify(cq_verifier *v) {
 
   while (v->expect.next != &v->expect) {
     ev = grpc_completion_queue_next(v->cq, deadline);
-    if (!ev) {
+    if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
+      break;
     }
 
     for (e = v->expect.next; e != &v->expect; e = e->next) {
       gpr_asprintf(&s, " %p", e->tag);
       gpr_strvec_add(&have_tags, s);
-      if (e->tag == ev->tag) {
-        verify_matches(e, ev);
+      if (e->tag == ev.tag) {
+        verify_matches(e, &ev);
         e->next->prev = e->prev;
         e->prev->next = e->next;
         gpr_free(e);
@@ -228,7 +224,7 @@ void cq_verify(cq_verifier *v) {
       }
     }
     if (e == &v->expect) {
-      s = grpc_event_string(ev);
+      s = grpc_event_string(&ev);
       gpr_log(GPR_ERROR, "event not found: %s", s);
       gpr_free(s);
       s = gpr_strvec_flatten(&have_tags, NULL);
@@ -237,8 +233,6 @@ void cq_verify(cq_verifier *v) {
       gpr_strvec_destroy(&have_tags);
       abort();
     }
-
-    grpc_event_finish(ev);
   }
 
   gpr_strvec_destroy(&have_tags);
@@ -246,13 +240,13 @@ void cq_verify(cq_verifier *v) {
 
 void cq_verify_empty(cq_verifier *v) {
   gpr_timespec deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(1));
-  grpc_event *ev;
+  grpc_event ev;
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
 
   ev = grpc_completion_queue_next(v->cq, deadline);
-  if (ev != NULL) {
-    char *s = grpc_event_string(ev);
+  if (ev.type != GRPC_QUEUE_TIMEOUT) {
+    char *s = grpc_event_string(&ev);
     gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);
     gpr_free(s);
     abort();
@@ -269,10 +263,6 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result) {
-  add(v, GRPC_OP_COMPLETE, tag)->data.op_complete = result;
-}
-
-void cq_expect_server_shutdown(cq_verifier *v, void *tag) {
-  add(v, GRPC_SERVER_SHUTDOWN, tag);
+void cq_expect_completion(cq_verifier *v, void *tag, int success) {
+  add(v, GRPC_OP_COMPLETE, tag)->success = success;
 }

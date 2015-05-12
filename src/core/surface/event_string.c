@@ -40,23 +40,15 @@
 
 static void addhdr(gpr_strvec *buf, grpc_event *ev) {
   char *tmp;
-  gpr_asprintf(&tmp, "tag:%p call:%p", ev->tag, (void *)ev->call);
+  gpr_asprintf(&tmp, "tag:%p", ev->tag);
   gpr_strvec_add(buf, tmp);
 }
 
-static const char *errstr(grpc_op_error err) {
-  switch (err) {
-    case GRPC_OP_OK:
-      return "OK";
-    case GRPC_OP_ERROR:
-      return "ERROR";
-  }
-  return "UNKNOWN_UNKNOWN";
-}
+static const char *errstr(int success) { return success ? "OK" : "ERROR"; }
 
-static void adderr(gpr_strvec *buf, grpc_op_error err) {
+static void adderr(gpr_strvec *buf, int success) {
   char *tmp;
-  gpr_asprintf(&tmp, " err=%s", errstr(err));
+  gpr_asprintf(&tmp, " %s", errstr(success));
   gpr_strvec_add(buf, tmp);
 }
 
@@ -69,8 +61,8 @@ char *grpc_event_string(grpc_event *ev) {
   gpr_strvec_init(&buf);
 
   switch (ev->type) {
-    case GRPC_SERVER_SHUTDOWN:
-      gpr_strvec_add(&buf, gpr_strdup("SERVER_SHUTDOWN"));
+    case GRPC_QUEUE_TIMEOUT:
+      gpr_strvec_add(&buf, gpr_strdup("QUEUE_TIMEOUT"));
       break;
     case GRPC_QUEUE_SHUTDOWN:
       gpr_strvec_add(&buf, gpr_strdup("QUEUE_SHUTDOWN"));
@@ -78,11 +70,7 @@ char *grpc_event_string(grpc_event *ev) {
     case GRPC_OP_COMPLETE:
       gpr_strvec_add(&buf, gpr_strdup("OP_COMPLETE: "));
       addhdr(&buf, ev);
-      adderr(&buf, ev->data.op_complete);
-      break;
-    case GRPC_COMPLETION_DO_NOT_USE:
-      gpr_strvec_add(&buf, gpr_strdup("DO_NOT_USE (this is a bug)"));
-      addhdr(&buf, ev);
+      adderr(&buf, ev->success);
       break;
   }
 

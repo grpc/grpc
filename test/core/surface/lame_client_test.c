@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
              grpc_call_start_batch(call, ops, op - ops, tag(1)));
 
   /* the call should immediately fail */
-  cq_expect_completion(cqv, tag(1), GRPC_OP_OK);
+  cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
   grpc_call_destroy(call);

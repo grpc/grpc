@@ -57,8 +57,7 @@ void cq_verify_empty(cq_verifier *v);
    Any functions taking ... expect a NULL terminated list of key/value pairs
    (each pair using two parameter slots) of metadata that MUST be present in
    the event. */
-void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result);
-void cq_expect_server_shutdown(cq_verifier *v, void *tag);
+void cq_expect_completion(cq_verifier *v, void *tag, int success);
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
 int contains_metadata(grpc_metadata_array *array, const char *key, const char *value);
