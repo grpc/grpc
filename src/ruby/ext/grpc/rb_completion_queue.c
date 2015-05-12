@@ -158,14 +158,6 @@ void Init_grpc_completion_queue() {
      this func, so no separate initialization step is necessary. */
   rb_define_alloc_func(grpc_rb_cCompletionQueue,
                        grpc_rb_completion_queue_alloc);
-
-  /* Add the next method that waits for the next event. */
-  rb_define_method(grpc_rb_cCompletionQueue, "next",
-                   grpc_rb_completion_queue_next, 1);
-
-  /* Add the pluck method that waits for the next event of given tag */
-  rb_define_method(grpc_rb_cCompletionQueue, "pluck",
-                   grpc_rb_completion_queue_pluck, 2);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */
