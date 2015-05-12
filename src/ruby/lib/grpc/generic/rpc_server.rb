@@ -146,7 +146,7 @@ module GRPC
     def remove_current_thread
       @stop_mutex.synchronize do
         @workers.delete(Thread.current)
-        @stop_cond.signal if @workers.size == 0
+        @stop_cond.signal if @workers.size.zero?
       end
     end
 
@@ -364,7 +364,7 @@ module GRPC
     # - #running? returns true after this is called, until #stop cause the
     #   the server to stop.
     def run
-      if rpc_descs.size == 0
+      if rpc_descs.size.zero?
         logger.warn('did not run as no services were present')
         return
       end
@@ -455,7 +455,7 @@ module GRPC
       unless cls.include?(GenericService)
         fail "#{cls} must 'include GenericService'"
       end
-      if cls.rpc_descs.size == 0
+      if cls.rpc_descs.size.zero?
         fail "#{cls} should specify some rpc descriptions"
       end
       cls.assert_rpc_descs_have_methods
