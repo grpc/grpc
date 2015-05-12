@@ -33,48 +33,56 @@
 
 
 import simplejson
+import collections
 
+
+FixtureOptions = collections.namedtuple('FixtureOptions', 'secure platforms')
+default_unsecure_fixture_options = FixtureOptions(False, ['windows', 'posix'])
+default_secure_fixture_options = FixtureOptions(True, ['windows', 'posix'])
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
-    'chttp2_fake_security': True,
-    'chttp2_fullstack': False,
-    'chttp2_fullstack_uds': False,
-    'chttp2_simple_ssl_fullstack': True,
-    'chttp2_simple_ssl_with_oauth2_fullstack': True,
-    'chttp2_socket_pair': False,
-    'chttp2_socket_pair_one_byte_at_a_time': False,
+    'chttp2_fake_security': default_secure_fixture_options,
+    'chttp2_fullstack': default_unsecure_fixture_options,
+    'chttp2_fullstack_uds_posix': FixtureOptions(False, ['posix']),
+    'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
+    'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
+    'chttp2_socket_pair': default_unsecure_fixture_options,
+    'chttp2_socket_pair_one_byte_at_a_time': default_unsecure_fixture_options,
 }
 
-# maps tests names to whether they run fine or not (aka, not flaky)
+TestOptions = collections.namedtuple('TestOptions', 'flaky secure')
+default_test_options = TestOptions(False, False)
+
+# maps test names to options
 END2END_TESTS = {
-    'bad_hostname': True,
-    'cancel_after_accept': False,
-    'cancel_after_accept_and_writes_closed': True,
-    'cancel_after_invoke': True,
-    'cancel_before_invoke': True,
-    'cancel_in_a_vacuum': True,
-    'census_simple_request': True,
-    'disappearing_server': True,
-    'early_server_shutdown_finishes_inflight_calls': True,
-    'early_server_shutdown_finishes_tags': True,
-    'empty_batch': True,
-    'graceful_server_shutdown': True,
-    'invoke_large_request': False,
-    'max_concurrent_streams': True,
-    'max_message_length': True,
-    'no_op': True,
-    'ping_pong_streaming': True,
-    'registered_call': True,
-    'request_response_with_binary_metadata_and_payload': True,
-    'request_response_with_metadata_and_payload': True,
-    'request_response_with_payload': True,
-    'request_response_with_trailing_metadata_and_payload': True,
-    'request_with_large_metadata': True,
-    'request_with_payload': True,
-    'simple_delayed_request': True,
-    'simple_request': True,
-    'simple_request_with_high_initial_sequence_number': True,
+    'bad_hostname': default_test_options,
+    'cancel_after_accept': TestOptions(flaky=True, secure=False),
+    'cancel_after_accept_and_writes_closed': default_test_options,
+    'cancel_after_invoke': default_test_options,
+    'cancel_before_invoke': default_test_options,
+    'cancel_in_a_vacuum': default_test_options,
+    'census_simple_request': default_test_options,
+    'disappearing_server': default_test_options,
+    'early_server_shutdown_finishes_inflight_calls': default_test_options,
+    'early_server_shutdown_finishes_tags': default_test_options,
+    'empty_batch': default_test_options,
+    'graceful_server_shutdown': default_test_options,
+    'invoke_large_request': TestOptions(flaky=True, secure=False),
+    'max_concurrent_streams': default_test_options,
+    'max_message_length': default_test_options,
+    'no_op': default_test_options,
+    'ping_pong_streaming': default_test_options,
+    'registered_call': default_test_options,
+    'request_response_with_binary_metadata_and_payload': default_test_options,
+    'request_response_with_metadata_and_payload': default_test_options,
+    'request_response_with_payload': default_test_options,
+    'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
+    'request_with_large_metadata': default_test_options,
+    'request_with_payload': default_test_options,
+    'simple_delayed_request': default_test_options,
+    'simple_request': default_test_options,
+    'simple_request_with_high_initial_sequence_number': default_test_options,
 }
 
 
@@ -86,15 +94,16 @@ def main():
               'name': 'end2end_fixture_%s' % f,
               'build': 'private',
               'language': 'c',
-              'secure': 'check' if END2END_FIXTURES[f] else 'no',
-              'src': ['test/core/end2end/fixtures/%s.c' % f]
+              'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
+              'src': ['test/core/end2end/fixtures/%s.c' % f],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {
               'name': 'end2end_test_%s' % t,
               'build': 'private',
               'language': 'c',
-              'secure': 'no',
+              'secure': 'check' if END2END_TESTS[t].secure else 'no',
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
           }
@@ -116,7 +125,8 @@ def main():
               'build': 'test',
               'language': 'c',
               'src': [],
-              'flaky': not END2END_TESTS[t],
+              'flaky': END2END_TESTS[t].flaky,
+              'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -136,6 +146,7 @@ def main():
               'secure': 'no',
               'src': [],
               'flaky': 'invoke_large_request' in t,
+              'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -145,8 +156,8 @@ def main():
                   'gpr'
               ]
           }
-      for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f]
-      for t in sorted(END2END_TESTS.keys())]}
+      for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f].secure
+      for t in sorted(END2END_TESTS.keys()) if not END2END_TESTS[t].secure]}
   print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
 
 

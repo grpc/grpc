@@ -35,6 +35,10 @@ and "vsproject_dict", to be used by the visual studio generators.
 """
 
 
+import hashlib
+import re
+
+
 def mako_plugin(dictionary):
   """The exported plugin code for generate_vsprojeccts
 
@@ -53,6 +57,14 @@ def mako_plugin(dictionary):
   projects = []
   projects.extend(libs)
   projects.extend(targets)
+  if dictionary.get('debug', False):
+    for target in projects:
+      if not target.get('vs_project_guid', None) and 'windows' in target.get('platforms', ['windows']):
+        name = target['name']
+        guid = re.sub('(........)(....)(....)(....)(.*)',
+               r'{\1-\2-\3-\4-\5}',
+               hashlib.md5(name).hexdigest())
+        target['vs_project_guid'] = guid.upper()
   # Exclude projects without a visual project guid, such as the tests.
   projects = [project for project in projects
                 if project.get('vs_project_guid', None)]

@@ -119,8 +119,8 @@ class MockStub : public TestService::StubInterface {
 
  private:
   ClientAsyncResponseReaderInterface<EchoResponse>* AsyncEchoRaw(
-      ClientContext* context, const EchoRequest& request, CompletionQueue* cq,
-      void* tag) GRPC_OVERRIDE {
+      ClientContext* context, const EchoRequest& request,
+      CompletionQueue* cq) GRPC_OVERRIDE {
     return nullptr;
   }
   ClientWriterInterface<EchoRequest>* RequestStreamRaw(
@@ -151,8 +151,8 @@ class MockStub : public TestService::StubInterface {
     return nullptr;
   }
   ClientAsyncResponseReaderInterface<EchoResponse>* AsyncUnimplementedRaw(
-      ClientContext* context, const EchoRequest& request, CompletionQueue* cq,
-      void* tag) GRPC_OVERRIDE {
+      ClientContext* context, const EchoRequest& request,
+      CompletionQueue* cq) GRPC_OVERRIDE {
     return nullptr;
   }
 };

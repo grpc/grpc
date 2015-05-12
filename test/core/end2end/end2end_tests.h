@@ -41,6 +41,7 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 #define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
 #define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
+#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
 
 struct grpc_end2end_test_fixture {
   grpc_completion_queue *server_cq;

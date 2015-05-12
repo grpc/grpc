@@ -56,15 +56,6 @@ end
 GenericService = GRPC::GenericService
 Dsl = GenericService::Dsl
 
-describe 'String#underscore' do
-  it 'should convert CamelCase to underscore separated' do
-    expect('AnRPC'.underscore).to eq('an_rpc')
-    expect('AMethod'.underscore).to eq('a_method')
-    expect('PrintHTML'.underscore).to eq('print_html')
-    expect('PrintHTMLBooks'.underscore).to eq('print_html_books')
-  end
-end
-
 describe Dsl do
   it 'can be included in new classes' do
     blk = proc { Class.new { include Dsl } }
@@ -73,6 +64,15 @@ describe Dsl do
 end
 
 describe GenericService do
+  context '#underscore' do
+    it 'should convert CamelCase to underscore separated' do
+      expect(GenericService.underscore('AnRPC')).to eq('an_rpc')
+      expect(GenericService.underscore('AMethod')).to eq('a_method')
+      expect(GenericService.underscore('PrintHTML')).to eq('print_html')
+      expect(GenericService.underscore('SeeHTMLBooks')).to eq('see_html_books')
+    end
+  end
+
   describe 'including it' do
     it 'adds a class method, rpc' do
       c = Class.new do

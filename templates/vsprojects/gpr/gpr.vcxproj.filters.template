@@ -1,2 +1,2 @@
 <%namespace file="../vcxproj.filters_defs.include" import="gen_filters"/>\
-${gen_filters('gpr', libs, targets)}
+${gen_filters('gpr', libs)}

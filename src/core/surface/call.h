@@ -98,12 +98,14 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
 void grpc_call_internal_unref(grpc_call *call, const char *reason, int allow_immediate_deletion);
 #define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call, reason)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) grpc_call_internal_unref(call, reason, allow_immediate_deletion)
+#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) \
+  grpc_call_internal_unref(call, reason, allow_immediate_deletion)
 #else
 void grpc_call_internal_ref(grpc_call *call);
 void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
 #define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) grpc_call_internal_unref(call, allow_immediate_deletion)
+#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) \
+  grpc_call_internal_unref(call, allow_immediate_deletion)
 #endif
 
 grpc_call_error grpc_call_start_ioreq_and_call_back(
@@ -130,5 +132,7 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
+
+gpr_uint8 grpc_call_is_client(grpc_call *call);
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */
