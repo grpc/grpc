@@ -51,8 +51,9 @@ static int pygrpc_server_init(Server *self, PyObject *args, PyObject *kwds) {
                                    &completion_queue)) {
     return -1;
   }
-  self->c_server = grpc_server_create(
-      completion_queue->c_completion_queue, NULL);
+  self->c_server = grpc_server_create(NULL);
+  grpc_server_register_completion_queue(self->c_server,
+                                        completion_queue->c_completion_queue);
   self->completion_queue = completion_queue;
   Py_INCREF(completion_queue);
   return 0;
@@ -122,7 +123,7 @@ static const PyObject *pygrpc_server_service(Server *self, PyObject *tag) {
   call_error = grpc_server_request_call(
       self->c_server, &c_tag->call->c_call, &c_tag->call->call_details,
       &c_tag->call->recv_metadata, self->completion_queue->c_completion_queue,
-      c_tag);
+      self->completion_queue->c_completion_queue, c_tag);
 
   result = pygrpc_translate_call_error(call_error);
   if (result != NULL) {

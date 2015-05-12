@@ -88,7 +88,8 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(f->server_cq, server_args);
+  f->server = grpc_server_create(server_args);
+  grpc_server_register_completion_queue(f->server, f->server_cq);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }

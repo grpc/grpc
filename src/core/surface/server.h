@@ -39,8 +39,7 @@
 #include "src/core/transport/transport.h"
 
 /* Create a server */
-grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
-                                             grpc_channel_filter **filters,
+grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
                                              size_t filter_count,
                                              const grpc_channel_args *args);
 
