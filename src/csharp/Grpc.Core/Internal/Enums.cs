@@ -70,45 +70,12 @@ namespace Grpc.Core.Internal
     internal enum GRPCCompletionType
     {
         /* Shutting down */
-        GRPC_QUEUE_SHUTDOWN,
+        GRPC_QUEUE_SHUTDOWN, 
+
+        /* No event before timeout */
+        GRPC_QUEUE_TIMEOUT,  
 
         /* operation completion */
-        GRPC_OP_COMPLETE,
-
-        /* A read has completed */
-        GRPC_READ,
-
-        /* A write has been accepted by flow control */
-        GRPC_WRITE_ACCEPTED,
-
-        /* writes_done or write_status has been accepted */
-        GRPC_FINISH_ACCEPTED,
-
-        /* The metadata array sent by server received at client */
-        GRPC_CLIENT_METADATA_READ,
-
-        /* An RPC has finished. The event contains status.
-         * On the server this will be OK or Cancelled. */
-        GRPC_FINISHED,
-
-        /* A new RPC has arrived at the server */
-        GRPC_SERVER_RPC_NEW,
-
-        /* The server has finished shutting down */
-        GRPC_SERVER_SHUTDOWN,
-
-        /* must be last, forces users to include a default: case */
-        GRPC_COMPLETION_DO_NOT_USE
-    }
-
-    /// <summary>
-    /// grpc_op_error from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCOpError
-    {
-        /* everything went ok */
-        GRPC_OP_OK = 0,
-        /* something failed, we don't know what */
-        GRPC_OP_ERROR
+        GRPC_OP_COMPLETE
     }
 }

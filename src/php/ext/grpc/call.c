@@ -61,17 +61,12 @@ zend_class_entry *grpc_ce_call;
 /* Frees and destroys an instance of wrapped_grpc_call */
 void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   wrapped_grpc_call *call = (wrapped_grpc_call *)object;
-  grpc_event *event;
   if (call->owned && call->wrapped != NULL) {
     if (call->queue != NULL) {
       grpc_completion_queue_shutdown(call->queue);
-      event = grpc_completion_queue_next(call->queue, gpr_inf_future);
-      while (event != NULL) {
-        if (event->type == GRPC_QUEUE_SHUTDOWN) {
-          break;
-        }
-        event = grpc_completion_queue_next(call->queue, gpr_inf_future);
-      }
+      while (grpc_completion_queue_next(call->queue, gpr_inf_future).type !=
+             GRPC_QUEUE_SHUTDOWN)
+        ;
       grpc_completion_queue_destroy(call->queue);
     }
     grpc_call_destroy(call->wrapped);
@@ -287,7 +282,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
-  grpc_event *event;
+  grpc_event event;
   zval *result;
   char *message_str;
   size_t message_len;
@@ -422,7 +417,7 @@ PHP_METHOD(Call, startBatch) {
   }
   event = grpc_completion_queue_pluck(call->queue, call->wrapped,
                                       gpr_inf_future);
-  if (event->data.op_complete != GRPC_OP_OK) {
+  if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "The batch failed for some reason",
                          1 TSRMLS_CC);

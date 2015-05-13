@@ -47,7 +47,7 @@ static VALUE grpc_rb_cCompletionQueue = Qnil;
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
   grpc_completion_queue *cq;
-  grpc_event *event;
+  grpc_event event;
   gpr_timespec timeout;
   void *tag;
 } next_call_stack;
@@ -80,7 +80,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
 
   grpc_completion_queue_shutdown(cq);
   next_call.cq = cq;
-  next_call.event = NULL;
+  next_call.event.type = GRPC_QUEUE_TIMEOUT;
   /* TODO: the timeout should be a module level constant that defaults
    * to gpr_inf_future.
    *
@@ -95,16 +95,12 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
   do {
     rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                                (void *)&next_call, NULL, NULL);
-    if (next_call.event == NULL) {
-      break;
-    }
-    type = next_call.event->type;
+    type = next_call.event.type;
+    if (type == GRPC_QUEUE_TIMEOUT) break;
     if (type != GRPC_QUEUE_SHUTDOWN) {
       ++drained;
       rb_warning("completion queue shutdown: %d undrained events", drained);
     }
-    grpc_event_finish(next_call.event);
-    next_call.event = NULL;
   } while (type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -138,49 +134,19 @@ static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
   return TypedData_Wrap_Struct(cls, &grpc_rb_completion_queue_data_type, cq);
 }
 
-/* Blocks until the next event is available, and returns the event. */
-static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
-  next_call_stack next_call;
-  MEMZERO(&next_call, next_call_stack, 1);
-  TypedData_Get_Struct(self, grpc_completion_queue,
-                       &grpc_rb_completion_queue_data_type, next_call.cq);
-  next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
-  next_call.event = NULL;
-  rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
-                             (void *)&next_call, NULL, NULL);
-  if (next_call.event == NULL) {
-    return Qnil;
-  }
-  return grpc_rb_new_event(next_call.event);
-}
-
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
-VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
-                                     VALUE timeout) {
-  grpc_event *ev = grpc_rb_completion_queue_pluck_event(self, tag, timeout);
-  if (ev == NULL) {
-    return Qnil;
-  }
-  return grpc_rb_new_event(ev);
-}
-
-/* Blocks until the next event for given tag is available, and returns the
- * event. */
-grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
-                                                 VALUE timeout) {
+grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
+                                                VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   TypedData_Get_Struct(self, grpc_completion_queue,
                        &grpc_rb_completion_queue_data_type, next_call.cq);
   next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   next_call.tag = ROBJECT(tag);
-  next_call.event = NULL;
+  next_call.event.type = GRPC_QUEUE_TIMEOUT;
   rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                              (void *)&next_call, NULL, NULL);
-  if (next_call.event == NULL) {
-    return NULL;
-  }
   return next_call.event;
 }
 
@@ -193,14 +159,6 @@ void Init_grpc_completion_queue() {
      this func, so no separate initialization step is necessary. */
   rb_define_alloc_func(grpc_rb_cCompletionQueue,
                        grpc_rb_completion_queue_alloc);
-
-  /* Add the next method that waits for the next event. */
-  rb_define_method(grpc_rb_cCompletionQueue, "next",
-                   grpc_rb_completion_queue_next, 1);
-
-  /* Add the pluck method that waits for the next event of given tag */
-  rb_define_method(grpc_rb_cCompletionQueue, "pluck",
-                   grpc_rb_completion_queue_pluck, 2);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */
