@@ -28,30 +28,30 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto3";
+syntax = "proto2";
 
 package math;
 
 message DivArgs {
-  optional int64 dividend = 1;
-  optional int64 divisor = 2;
+  optional int64 dividend = 1 [default = 0];
+  optional int64 divisor = 2 [default = 0];
 }
 
 message DivReply {
-  optional int64 quotient = 1;
-  optional int64 remainder = 2;
+  optional int64 quotient = 1 [default = 0];
+  optional int64 remainder = 2 [default = 0];
 }
 
 message FibArgs {
-  optional int64 limit = 1;
+  optional int64 limit = 1 [default = 0];
 }
 
 message Num {
-  optional int64 num = 1;
+  optional int64 num = 1 [default = 0];
 }
 
 message FibReply {
-  optional int64 count = 1;
+  optional int64 count = 1 [default = 0];
 }
 
 service Math {
