@@ -119,4 +119,4 @@ typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */
+#endif /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */

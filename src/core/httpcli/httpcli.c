@@ -207,8 +207,9 @@ static void next_address(internal_request *req) {
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];
-  grpc_tcp_client_connect(on_connected, req, req->interested_parties, (struct sockaddr *)&addr->addr,
-                          addr->len, req->deadline);
+  grpc_tcp_client_connect(on_connected, req, req->interested_parties,
+                          (struct sockaddr *)&addr->addr, addr->len,
+                          req->deadline);
 }
 
 static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {

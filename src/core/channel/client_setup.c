@@ -120,7 +120,8 @@ static void setup_initiate(grpc_transport_setup *sp) {
   }
 }
 
-static void setup_add_interested_party(grpc_transport_setup *sp, grpc_pollset *pollset) {
+static void setup_add_interested_party(grpc_transport_setup *sp,
+                                       grpc_pollset *pollset) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
@@ -134,7 +135,8 @@ static void setup_add_interested_party(grpc_transport_setup *sp, grpc_pollset *p
   gpr_mu_unlock(&s->mu);
 }
 
-static void setup_del_interested_party(grpc_transport_setup *sp, grpc_pollset *pollset) {
+static void setup_del_interested_party(grpc_transport_setup *sp,
+                                       grpc_pollset *pollset) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
@@ -196,10 +198,9 @@ void grpc_client_setup_cb_end(grpc_client_setup_request *r) {
 }
 
 /* vtable for transport setup */
-static const grpc_transport_setup_vtable setup_vtable = {setup_initiate,
-                                                         setup_add_interested_party,
-                                                         setup_del_interested_party,
-                                                         setup_cancel};
+static const grpc_transport_setup_vtable setup_vtable = {
+    setup_initiate, setup_add_interested_party, setup_del_interested_party,
+    setup_cancel};
 
 void grpc_client_setup_create_and_attach(
     grpc_channel_stack *newly_minted_channel, const grpc_channel_args *args,

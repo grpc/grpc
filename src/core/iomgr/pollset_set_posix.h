@@ -38,18 +38,18 @@
 #include "src/core/iomgr/pollset_posix.h"
 
 typedef struct grpc_pollset_set {
-	gpr_mu mu;
-	
-	size_t pollset_count;
-	size_t pollset_capacity;
-	grpc_pollset **pollsets;
+  gpr_mu mu;
 
-	size_t fd_count;
-	size_t fd_capacity;
-	grpc_fd **fds;
+  size_t pollset_count;
+  size_t pollset_capacity;
+  grpc_pollset **pollsets;
+
+  size_t fd_count;
+  size_t fd_capacity;
+  grpc_fd **fds;
 } grpc_pollset_set;
 
 void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
 void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

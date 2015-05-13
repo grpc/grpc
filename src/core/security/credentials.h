@@ -97,8 +97,7 @@ typedef struct {
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
   grpc_mdctx *(*get_metadata_context)(grpc_credentials *c);
-  void (*get_request_metadata)(grpc_credentials *c,
-                               const char *service_url,
+  void (*get_request_metadata)(grpc_credentials *c, const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
   grpc_security_status (*create_security_connector)(
@@ -154,9 +153,9 @@ grpc_credentials *grpc_credentials_contains_type(
 
 /* Exposed for testing only. */
 grpc_credentials_status
-    grpc_oauth2_token_fetcher_credentials_parse_server_response(
-        const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
-        grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
+grpc_oauth2_token_fetcher_credentials_parse_server_response(
+    const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
+    grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(
@@ -178,4 +177,4 @@ struct grpc_server_credentials {
 grpc_security_status grpc_server_credentials_create_security_connector(
     grpc_server_credentials *creds, grpc_security_connector **sc);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */

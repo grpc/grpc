@@ -72,4 +72,4 @@ grpc_pollset_set *grpc_client_setup_get_interested_parties(
 
 grpc_mdctx *grpc_client_setup_get_mdctx(grpc_client_setup_request *r);
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H */

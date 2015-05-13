@@ -86,11 +86,13 @@ void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
   setup->vtable->initiate(setup);
 }
 
-void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup, grpc_pollset *pollset) {
+void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset) {
   setup->vtable->add_interested_party(setup, pollset);
 }
 
-void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup, grpc_pollset *pollset) {
+void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset) {
   setup->vtable->del_interested_party(setup, pollset);
 }
 

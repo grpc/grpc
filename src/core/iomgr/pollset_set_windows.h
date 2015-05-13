@@ -37,4 +37,4 @@
 typedef struct grpc_pollset_set {
 } grpc_pollset_set;
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

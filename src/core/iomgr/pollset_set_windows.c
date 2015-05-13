@@ -37,13 +37,11 @@
 
 #include "src/core/iomgr/pollset_set.h"
 
-void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {
-}
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {}
 
-void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
-}
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {}
 
-void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set, grpc_pollset *pollset) {
-}
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {}
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */
