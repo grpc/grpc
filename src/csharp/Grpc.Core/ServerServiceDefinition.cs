@@ -79,7 +79,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(GetFullMethodName(serviceName, method.Name), ServerCalls.UnaryCall(method, handler));
+                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.UnaryCall(method, handler));
                 return this;
             }
 
@@ -89,7 +89,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(GetFullMethodName(serviceName, method.Name), ServerCalls.ClientStreamingCall(method, handler));
+                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.ClientStreamingCall(method, handler));
                 return this;
             }
 
@@ -99,7 +99,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(GetFullMethodName(serviceName, method.Name), ServerCalls.ServerStreamingCall(method, handler));
+                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.ServerStreamingCall(method, handler));
                 return this;
             }
 
@@ -109,18 +109,13 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(GetFullMethodName(serviceName, method.Name), ServerCalls.DuplexStreamingCall(method, handler));
+                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.DuplexStreamingCall(method, handler));
                 return this;
             }
 
             public ServerServiceDefinition Build()
             {
                 return new ServerServiceDefinition(callHandlers.ToImmutableDictionary());
-            }
-
-            private string GetFullMethodName(string serviceName, string methodName)
-            {
-                return serviceName + "/" + methodName;
             }
         }
     }

@@ -50,7 +50,6 @@ typedef struct delayed_callback {
 } delayed_callback;
 
 static gpr_mu g_mu;
-static gpr_cv g_cv;
 static gpr_cv g_rcv;
 static delayed_callback *g_cbs_head = NULL;
 static delayed_callback *g_cbs_tail = NULL;
@@ -64,6 +63,8 @@ static void background_callback_executor(void *ignored) {
   gpr_mu_lock(&g_mu);
   while (!g_shutdown) {
     gpr_timespec deadline = gpr_inf_future;
+    gpr_timespec short_deadline =
+        gpr_time_add(gpr_now(), gpr_time_from_millis(100));
     if (g_cbs_head) {
       delayed_callback *cb = g_cbs_head;
       g_cbs_head = cb->next;
@@ -74,19 +75,25 @@ static void background_callback_executor(void *ignored) {
       gpr_mu_lock(&g_mu);
     } else if (grpc_alarm_check(&g_mu, gpr_now(), &deadline)) {
     } else {
-      gpr_cv_wait(&g_cv, &g_mu, deadline);
+      gpr_mu_unlock(&g_mu);
+      gpr_sleep_until(gpr_time_min(short_deadline, deadline));
+      gpr_mu_lock(&g_mu);
     }
   }
   gpr_mu_unlock(&g_mu);
   gpr_event_set(&g_background_callback_executor_done, (void *)1);
 }
 
-void grpc_kick_poller(void) { gpr_cv_broadcast(&g_cv); }
+void grpc_kick_poller(void) {
+  /* Empty. The background callback executor polls periodically. The activity
+   * the kicker is trying to draw the executor's attention to will be picked up
+   * either by one of the periodic wakeups or by one of the polling application
+   * threads. */
+}
 
 void grpc_iomgr_init(void) {
   gpr_thd_id id;
   gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_cv);
   gpr_cv_init(&g_rcv);
   grpc_alarm_list_init(gpr_now());
   g_refs = 0;
@@ -143,7 +150,6 @@ void grpc_iomgr_shutdown(void) {
   grpc_iomgr_platform_shutdown();
   grpc_alarm_list_shutdown();
   gpr_mu_destroy(&g_mu);
-  gpr_cv_destroy(&g_cv);
   gpr_cv_destroy(&g_rcv);
 }
 
@@ -175,7 +181,6 @@ void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
     g_cbs_tail->next = dcb;
     g_cbs_tail = dcb;
   }
-  gpr_cv_signal(&g_cv);
   gpr_mu_unlock(&g_mu);
 }
 

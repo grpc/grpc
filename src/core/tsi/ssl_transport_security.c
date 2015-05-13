@@ -43,6 +43,7 @@
 #include "src/core/tsi/transport_security.h"
 
 #include <openssl/bio.h>
+#include <openssl/crypto.h>  /* For OPENSSL_free */
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>

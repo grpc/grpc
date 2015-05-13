@@ -100,8 +100,8 @@ typedef struct grpc_winsocket {
 grpc_winsocket *grpc_winsocket_create(SOCKET socket);
 
 /* Initiate an asynchronous shutdown of the socket. Will call off any pending
-   operation to cancel them. */
-void grpc_winsocket_shutdown(grpc_winsocket *socket);
+   operation to cancel them. Returns the number of callbacks that got setup. */
+int grpc_winsocket_shutdown(grpc_winsocket *socket);
 
 /* Abandon a socket. */
 void grpc_winsocket_orphan(grpc_winsocket *socket);

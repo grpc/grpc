@@ -107,6 +107,7 @@ class CLanguage(object):
       plat = 'windows'
     else:
       plat = 'posix'
+    self.platform = plat
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
       self.binaries = [tgt
@@ -119,9 +120,12 @@ class CLanguage(object):
     for target in self.binaries:
       if travis and target['flaky']:
         continue
-      binary = 'bins/%s/%s' % (config.build_config, target['name'])
+      if self.platform == 'windows':
+        binary = 'vsprojects\\test_bin\\%s.exe' % (target['name'])
+      else:
+        binary = 'bins/%s/%s' % (config.build_config, target['name'])
       out.append(config.job_spec([binary], [binary]))
-    return out
+    return sorted(out)
 
   def make_targets(self):
     return ['buildtests_%s' % self.make_target]
