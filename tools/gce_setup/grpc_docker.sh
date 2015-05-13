@@ -395,6 +395,10 @@ grpc_interop_test_args() {
       csharp_dotnet)
         grpc_client_platform='Windows'
         grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
+        declare -F $grpc_gen_test_cmd >> /dev/null || {
+          echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
+          return 2
+        }
         shift
         ;;
       *)
@@ -470,9 +474,13 @@ grpc_cloud_prod_test_args() {
         }
         shift
         ;;
-       csharp_dotnet)
+      csharp_dotnet)
         grpc_client_platform='Windows'
         grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
+        declare -F $grpc_gen_test_cmd >> /dev/null || {
+          echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
+          return 2
+        }
         shift
         ;;
       *)
@@ -517,6 +525,16 @@ grpc_cloud_prod_auth_test_args() {
   [[ -n $1 ]] && {  # client_type
     case $1 in
       cxx|go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
+        grpc_gen_test_cmd+="_gen_$1_cmd"
+        declare -F $grpc_gen_test_cmd >> /dev/null || {
+          echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
+          return 2
+        }
+        shift
+        ;;
+      csharp_dotnet)
+        grpc_client_platform='Windows'
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -1511,6 +1529,21 @@ grpc_cloud_prod_auth_service_account_creds_gen_csharp_mono_cmd() {
   echo $the_cmd
 }
 
+# constructs the csharp-dotnet service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_csharp_dotnet_cmd() {
+  local set_workdir="cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug &&"
+  local test_script="./Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local set_certfile="SSL_CERT_FILE=/cacerts/roots.pem "
+  local set_creds="GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$set_workdir $set_certfile $set_creds $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized csharp-mono gce auth interop test cmd.
 #
 # call-seq:
@@ -1523,6 +1556,20 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_csharp_mono_cmd() {
   local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags)
   local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the csharp-dotnet gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_csharp_dotnet_cmd() {
+  local set_workdir="cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug &&"
+  local test_script="./Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local set_certfile="SSL_CERT_FILE=/cacerts/roots.pem "
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$set_workdir $set_certfile $test_script $gfe_flags $@";
   echo $the_cmd
 }
 
