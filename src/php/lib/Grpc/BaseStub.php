@@ -71,6 +71,9 @@ class BaseStub {
     $channel->close();
   }
 
+  /**
+   * constructs the auth uri for the jwt
+   */
   private function _get_jwt_aud_uri($method) {
     $last_slash_idx = strrpos($method, '/');
     if ($last_slash_idx === false) {
