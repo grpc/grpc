@@ -4,12 +4,16 @@
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
 <%def name="gen_project(name, collection, configuration_type = None, project_guid = None, props = [], packages = [])">\
 <%
+  target = None
   for p in vsprojects:
     if p.name == name:
       project = p
   for t in collection:
     if t.name == name:
       target = t
+  if not configuration_type and target:
+    if target.build == 'test' or target.build == 'tool':
+      configuration_type = 'Application'
   if not configuration_type:
     configuration_type = 'StaticLibrary'
   if not project_guid:
