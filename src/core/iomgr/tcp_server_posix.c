@@ -99,12 +99,13 @@ struct grpc_tcp_server {
   void *cb_arg;
 
   gpr_mu mu;
-  gpr_cv cv;
 
   /* active port count: how many ports are actually still listening */
   size_t active_ports;
   /* destroyed port count: how many ports are completely destroyed */
   size_t destroyed_ports;
+
+  int shutdown;
 
   /* all listening ports */
   server_port *ports;
@@ -122,9 +123,9 @@ struct grpc_tcp_server {
 grpc_tcp_server *grpc_tcp_server_create(void) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
-  gpr_cv_init(&s->cv);
   s->active_ports = 0;
   s->destroyed_ports = 0;
+  s->shutdown = 0;
   s->cb = NULL;
   s->cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
@@ -137,7 +138,6 @@ static void finish_shutdown(grpc_tcp_server *s) {
   s->shutdown_complete(s->shutdown_complete_arg);
 
   gpr_mu_destroy(&s->mu);
-  gpr_cv_destroy(&s->cv);
 
   gpr_free(s->ports);
   gpr_free(s);
@@ -157,28 +157,17 @@ static void destroyed_port(void *server, int success) {
 
 static void dont_care_about_shutdown_completion(void *ignored) {}
 
-void grpc_tcp_server_destroy(
-    grpc_tcp_server *s, void (*shutdown_complete)(void *shutdown_complete_arg),
-    void *shutdown_complete_arg) {
+static void deactivated_all_ports(grpc_tcp_server *s) {
   size_t i;
-  gpr_mu_lock(&s->mu);
-
-  s->shutdown_complete = shutdown_complete
-                             ? shutdown_complete
-                             : dont_care_about_shutdown_completion;
-  s->shutdown_complete_arg = shutdown_complete_arg;
-
-  /* shutdown all fd's */
-  for (i = 0; i < s->nports; i++) {
-    grpc_fd_shutdown(s->ports[i].emfd);
-  }
-  /* wait while that happens */
-  /* TODO(ctiller): make this asynchronous also */
-  while (s->active_ports) {
-    gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future);
-  }
 
   /* delete ALL the things */
+  gpr_mu_lock(&s->mu);
+
+  if (!s->shutdown) {
+    gpr_mu_unlock(&s->mu);
+    return;
+  }
+
   if (s->nports) {
     for (i = 0; i < s->nports; i++) {
       server_port *sp = &s->ports[i];
@@ -191,6 +180,32 @@ void grpc_tcp_server_destroy(
   } else {
     gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
+  }
+}
+
+void grpc_tcp_server_destroy(
+    grpc_tcp_server *s, void (*shutdown_complete)(void *shutdown_complete_arg),
+    void *shutdown_complete_arg) {
+  size_t i;
+  gpr_mu_lock(&s->mu);
+
+  GPR_ASSERT(!s->shutdown);
+  s->shutdown = 1;
+
+  s->shutdown_complete = shutdown_complete
+                             ? shutdown_complete
+                             : dont_care_about_shutdown_completion;
+  s->shutdown_complete_arg = shutdown_complete_arg;
+
+  /* shutdown all fd's */
+  if (s->active_ports) {
+    for (i = 0; i < s->nports; i++) {
+      grpc_fd_shutdown(s->ports[i].emfd);
+    }
+    gpr_mu_unlock(&s->mu);
+  } else {
+    gpr_mu_unlock(&s->mu);
+    deactivated_all_ports(s);
   }
 }
 
@@ -321,9 +336,11 @@ static void on_read(void *arg, int success) {
 error:
   gpr_mu_lock(&sp->server->mu);
   if (0 == --sp->server->active_ports) {
-    gpr_cv_broadcast(&sp->server->cv);
+    gpr_mu_unlock(&sp->server->mu);
+    deactivated_all_ports(sp->server);
+  } else {
+    gpr_mu_unlock(&sp->server->mu);
   }
-  gpr_mu_unlock(&sp->server->mu);
 }
 
 static int add_socket_to_server(grpc_tcp_server *s, int fd,
