@@ -96,6 +96,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
     rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                                (void *)&next_call, NULL, NULL);
     type = next_call.event.type;
+    if (type == GRPC_QUEUE_TIMEOUT) break;
     if (type != GRPC_QUEUE_SHUTDOWN) {
       ++drained;
       rb_warning("completion queue shutdown: %d undrained events", drained);
