@@ -144,6 +144,21 @@ function computeEngineCreds($stub, $args) {
 }
 
 /**
+ * Run the jwt token credentials auth test.
+ * Passes when run against the cloud server as of 2015-05-12
+ * @param $stub Stub object that has service methods
+ * @param $args array command line args
+ */
+function jwtTokenCreds($stub, $args) {
+  $jsonKey = json_decode(
+      file_get_contents(getenv(Google\Auth\CredentialsLoader::ENV_VAR)),
+      true);
+  $result = performLargeUnary($stub, $fillUsername=true, $fillOauthScope=true);
+  hardAssert($result->getUsername() == $jsonKey['client_email'],
+             'invalid email returned');
+}
+
+/**
  * Run the client_streaming test.
  * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
@@ -266,7 +281,11 @@ if (!array_key_exists('server_host', $args) ||
   throw new Exception('Missing argument');
 }
 
-$server_address = $args['server_host'] . ':' . $args['server_port'];
+if ($args['server_port'] == 443) {
+  $server_address = $args['server_host'];
+} else {
+  $server_address = $args['server_host'] . ':' . $args['server_port'];
+}
 
 if (!array_key_exists('server_host_override', $args)) {
   $args['server_host_override'] = 'foo.test.google.fr';
@@ -284,9 +303,16 @@ $opts = [
     'credentials' => $credentials,
          ];
 
-if (array_key_exists('oauth_scope', $args)) {
-  $auth = Google\Auth\ApplicationDefaultCredentials::getCredentials(
+if (in_array($args['test_case'], array(
+      'service_account_creds',
+      'compute_engine_creds',
+      'jwt_token_creds'))) {
+  if ($args['test_case'] == 'jwt_token_creds') {
+    $auth = Google\Auth\ApplicationDefaultCredentials::getCredentials();
+  } else {
+    $auth = Google\Auth\ApplicationDefaultCredentials::getCredentials(
       $args['oauth_scope']);
+  }
   $opts['update_metadata'] = $auth->getUpdateMetadataFunc();
 }
 
@@ -322,6 +348,9 @@ switch ($args['test_case']) {
     break;
   case 'compute_engine_creds':
     computeEngineCreds($stub, $args);
+    break;
+  case 'jwt_token_creds':
+    jwtTokenCreds($stub, $args);
     break;
   default:
     exit(1);
