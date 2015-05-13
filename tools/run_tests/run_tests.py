@@ -184,10 +184,14 @@ class PythonLanguage(object):
 
   def test_specs(self, config, travis):
     modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']], None)
+                                test['module']], 
+                               None, 
+                               shortname=test['module'])
                for test in self._tests if 'module' in test]
     files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']], None)
+                              test['file']], 
+                             None, 
+                             shortname=test['file'])
              for test in self._tests if 'file' in test]
     return files + modules
 
