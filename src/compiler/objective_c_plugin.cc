@@ -39,44 +39,59 @@
 #include "src/compiler/objective_c_generator.h"
 #include "src/compiler/objective_c_generator_helpers.h"
 
+using ::grpc::string;
+
 class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
   virtual ~ObjectiveCGrpcGenerator() {}
 
   virtual bool Generate(const grpc::protobuf::FileDescriptor *file,
-                        const grpc::string &parameter,
+                        const string &parameter,
                         grpc::protobuf::compiler::GeneratorContext *context,
-                        grpc::string *error) const {
+                        string *error) const {
 
     if (file->service_count() == 0) {
       // No services.  Do nothing.
       return true;
     }
 
-    grpc::string file_name = grpc_generator::FileNameInUpperCamel(file);
-    grpc::string prefix = "RMT"; // TODO
+    string file_name = grpc_generator::FileNameInUpperCamel(file);
+    string prefix = "RMT"; // TODO
 
     for (int i = 0; i < file->service_count(); i++) {
       const grpc::protobuf::ServiceDescriptor *service = file->service(i);
 
-      // Generate .pb.h
+      {
+        // Generate .pbrpc.h
 
-      Insert(context, file_name + ".pbobjc.h", "imports",
-          "#import <gRPC/ProtoService.h>\n");
+        string imports = string("#import \"") + file_name + ".pbobjc.h\"\n"
+          "#import <gRPC/ProtoService.h>\n";
+        //Append(context, file_name + ".pbobjc.h",/* "imports",*/ imports);
 
-      Insert(context, file_name + ".pbobjc.h", "global_scope",
-          grpc_objective_c_generator::GetHeader(service, prefix));
+        string declarations =
+            grpc_objective_c_generator::GetHeader(service, prefix);
+        //Append(context, file_name + ".pbobjc.h",/* "global_scope",*/
+        //    declarations);
 
-      // Generate .pb.m
+        Write(context, file_name + ".pbrpc.h", imports + declarations);
+      }
 
-      Insert(context, file_name + ".pbobjc.m", "imports",
+      {
+        // Generate .pbrpc.m
+
+        string imports = string("#import \"") + file_name + ".pbrpc.h\"\n"
           "#import <gRPC/GRXWriteable.h>\n"
           "#import <gRPC/GRXWriter+Immediate.h>\n"
-          "#import <gRPC/ProtoRPC.h>\n");
+          "#import <gRPC/ProtoRPC.h>\n";
+        //Append(context, file_name + ".pbobjc.m",/* "imports",*/ imports);
 
-      Insert(context, file_name + ".pbobjc.m", "global_scope",
-          grpc_objective_c_generator::GetSource(service, prefix));
+        string definitions =
+            grpc_objective_c_generator::GetSource(service, prefix);
+        //Append(context, file_name + ".pbobjc.m",/* "global_scope",*/
+        //    definitions);        
+        Write(context, file_name + ".pbrpc.m", imports + definitions);
+      }
     }
 
     return true;
@@ -85,10 +100,28 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  private:
   // Insert the given code into the given file at the given insertion point.
   void Insert(grpc::protobuf::compiler::GeneratorContext *context,
-              const grpc::string &filename, const grpc::string &insertion_point,
-              const grpc::string &code) const {
+              const string &filename, const string &insertion_point,
+              const string &code) const {
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->OpenForInsert(filename, insertion_point));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+  }
+
+  // Append the given code into the given file.
+  void Append(grpc::protobuf::compiler::GeneratorContext *context,
+              const string &filename, const string &code) const {
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->OpenForAppend(filename));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+  }
+
+  // Write the given code into the given file.
+  void Write(grpc::protobuf::compiler::GeneratorContext *context,
+              const string &filename, const string &code) const {
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->Open(filename));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
   }
