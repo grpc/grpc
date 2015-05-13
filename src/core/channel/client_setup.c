@@ -134,6 +134,20 @@ static void setup_add_interested_party(grpc_transport_setup *sp, grpc_pollset *p
   gpr_mu_unlock(&s->mu);
 }
 
+static void setup_del_interested_party(grpc_transport_setup *sp, grpc_pollset *pollset) {
+  grpc_client_setup *s = (grpc_client_setup *)sp;
+
+  gpr_mu_lock(&s->mu);
+  if (!s->active_request) {
+    gpr_mu_unlock(&s->mu);
+    return;
+  }
+
+  grpc_pollset_set_del_pollset(&s->active_request->interested_parties, pollset);
+
+  gpr_mu_unlock(&s->mu);
+}
+
 /* cancel handshaking: cancel all requests, and shutdown (the caller promises
    not to initiate again) */
 static void setup_cancel(grpc_transport_setup *sp) {
@@ -184,6 +198,7 @@ void grpc_client_setup_cb_end(grpc_client_setup_request *r) {
 /* vtable for transport setup */
 static const grpc_transport_setup_vtable setup_vtable = {setup_initiate,
                                                          setup_add_interested_party,
+                                                         setup_del_interested_party,
                                                          setup_cancel};
 
 void grpc_client_setup_create_and_attach(

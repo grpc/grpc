@@ -132,9 +132,11 @@ static void remove_waiting_child(channel_data *chand, call_data *calld) {
   size_t new_count;
   size_t i;
   for (i = 0, new_count = 0; i < chand->waiting_child_count; i++) {
-    if (chand->waiting_children[i] == calld) continue;
+    if (chand->waiting_children[i] == calld) {
+      grpc_transport_setup_del_interested_party(chand->transport_setup, calld->s.waiting_op.bind_pollset);
+      continue;
+    }
     chand->waiting_children[new_count++] = chand->waiting_children[i];
-    abort(); /* what to do about waiting_pollsets */
   }
   GPR_ASSERT(new_count == chand->waiting_child_count - 1 ||
              new_count == chand->waiting_child_count);
