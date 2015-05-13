@@ -92,12 +92,6 @@ struct tsi_handshaker {
 tsi_result tsi_construct_peer(size_t property_count, tsi_peer* peer);
 tsi_peer_property tsi_init_peer_property(void);
 void tsi_peer_property_destruct(tsi_peer_property* property);
-tsi_result tsi_construct_signed_integer_peer_property(
-    const char* name, int64_t value, tsi_peer_property* property);
-tsi_result tsi_construct_unsigned_integer_peer_property(
-    const char* name, uint64_t value, tsi_peer_property* property);
-tsi_result tsi_construct_real_peer_property(const char* name, double value,
-                                            tsi_peer_property* property);
 tsi_result tsi_construct_string_peer_property(const char* name,
                                               const char* value,
                                               size_t value_length,
@@ -106,9 +100,6 @@ tsi_result tsi_construct_allocated_string_peer_property(
     const char* name, size_t value_length, tsi_peer_property* property);
 tsi_result tsi_construct_string_peer_property_from_cstring(
     const char* name, const char* value, tsi_peer_property* property);
-tsi_result tsi_construct_list_peer_property(const char* name,
-                                            size_t child_count,
-                                            tsi_peer_property* property);
 
 /* Utils. */
 char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */

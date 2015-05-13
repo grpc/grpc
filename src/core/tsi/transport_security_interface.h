@@ -179,33 +179,13 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self);
 /* This property is of type TSI_PEER_PROPERTY_STRING.  */
 #define TSI_CERTIFICATE_TYPE_PEER_PROPERTY "certificate_type"
 
-/* Properties of type TSI_PEER_PROPERTY_TYPE_STRING may contain NULL characters
-   just like C++ strings. The length field gives the length of the string.  */
-typedef enum {
-  TSI_PEER_PROPERTY_TYPE_SIGNED_INTEGER,
-  TSI_PEER_PROPERTY_TYPE_UNSIGNED_INTEGER,
-  TSI_PEER_PROPERTY_TYPE_REAL,
-  TSI_PEER_PROPERTY_TYPE_STRING,
-  TSI_PEER_PROPERTY_TYPE_LIST
-} tsi_peer_property_type;
-
-/* The relevant field in the union value is dictated by the type field.
-   name may be NULL in case of an unnamed property. */
+/* Property values may contain NULL characters just like C++ strings.
+   The length field gives the length of the string. */
 typedef struct tsi_peer_property {
   char* name;
-  tsi_peer_property_type type;
-  union {
-    int64_t signed_int;
-    uint64_t unsigned_int;
-    double real;
-    struct {
-      char* data;
-      size_t length;
-    } string;
-    struct {
-      struct tsi_peer_property* children;
-      size_t child_count;
-    } list;
+  struct {
+    char* data;
+    size_t length;
   } value;
 } tsi_peer_property;
 
@@ -213,13 +193,6 @@ typedef struct {
   tsi_peer_property* properties;
   size_t property_count;
 } tsi_peer;
-
-/* Gets the first property with the specified name. Iteration over the
-   properties of the peer should be used if the client of the API is expecting
-   several properties with the same name.
-   Returns NULL if there is no corresponding property.  */
-const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* self,
-                                                       const char* name);
 
 /* Destructs the tsi_peer object. */
 void tsi_peer_destruct(tsi_peer* self);
