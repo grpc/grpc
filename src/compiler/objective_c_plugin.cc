@@ -62,20 +62,20 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       // Generate .pb.h
 
-      Insert(context, file_name + ".pb.h", "imports",
+      Insert(context, file_name + ".pbobjc.h", "imports",
           "#import <gRPC/ProtoService.h>\n");
 
-      Insert(context, file_name + ".pb.h", "global_scope",
+      Insert(context, file_name + ".pbobjc.h", "global_scope",
           grpc_objective_c_generator::GetHeader(service, prefix));
 
       // Generate .pb.m
 
-      Insert(context, file_name + ".pb.m", "imports",
+      Insert(context, file_name + ".pbobjc.m", "imports",
           "#import <gRPC/GRXWriteable.h>\n"
           "#import <gRPC/GRXWriter+Immediate.h>\n"
           "#import <gRPC/ProtoRPC.h>\n");
 
-      Insert(context, file_name + ".pb.m", "global_scope",
+      Insert(context, file_name + ".pbobjc.m", "global_scope",
           grpc_objective_c_generator::GetSource(service, prefix));
     }
 
