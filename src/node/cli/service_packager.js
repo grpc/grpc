@@ -78,9 +78,12 @@ function copyFile(src_path, dest_path) {
 function main(argv) {
   var args = parseArgs(argv, arg_format);
   var out_path = path.resolve(args.out);
-  var include_dirs = _.map(_.flatten([args.include]), function(p) {
-    return path.resolve(p);
-  });
+  var include_dirs = [];
+  if (args.include) {
+    include_dirs = _.map(_.flatten([args.include]), function(p) {
+      return path.resolve(p);
+    });
+  }
   args.grpc_version = package_json.version;
   generatePackage(args, function(err, rendered) {
     if (err) throw err;
@@ -92,8 +95,6 @@ function main(argv) {
            path.join(out_path, 'index.js'));
   copyFile(path.join(__dirname, '..', 'LICENSE'),
            path.join(out_path, 'LICENSE'));
-
-
 
   var service_stream = fs.createWriteStream(path.join(out_path,
                                                       'service.json'));
