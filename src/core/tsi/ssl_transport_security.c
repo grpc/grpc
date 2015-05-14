@@ -269,31 +269,16 @@ static tsi_result peer_property_from_x509_common_name(
 }
 
 /* Gets the subject SANs from an X509 cert as a tsi_peer_property. */
-static tsi_result peer_property_from_x509_subject_alt_names(
-    X509* cert, tsi_peer_property* property) {
-  int i = 0;
-  int subject_alt_name_count = 0;
+static tsi_result add_subject_alt_names_properties_to_peer(
+    tsi_peer* peer, GENERAL_NAMES* subject_alt_names,
+    int subject_alt_name_count) {
+  int i;
   tsi_result result = TSI_OK;
-  GENERAL_NAMES* subject_alt_names =
-      X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
-  if (subject_alt_names == NULL) {
-    /* Empty list. */
-    return tsi_construct_list_peer_property(
-        TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY, 0, property);
-  }
-
-  subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
-  result = tsi_construct_list_peer_property(
-      TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY, subject_alt_name_count,
-      property);
-  if (result != TSI_OK) return result;
 
   /* Reset for DNS entries filtering. */
-  subject_alt_name_count = property->value.list.child_count;
-  property->value.list.child_count = 0;
+  peer->property_count -= subject_alt_name_count;
 
   for (i = 0; i < subject_alt_name_count; i++) {
-    tsi_peer_property* child_property = NULL;
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, i);
     /* Filter out the non-dns entries names. */
@@ -306,40 +291,50 @@ static tsi_result peer_property_from_x509_subject_alt_names(
         result = TSI_INTERNAL_ERROR;
         break;
       }
-      child_property =
-          &property->value.list.children[property->value.list.child_count++];
       result = tsi_construct_string_peer_property(
-          NULL, (const char*)dns_name, dns_name_size, child_property);
+          TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+          (const char*)dns_name, dns_name_size,
+          &peer->properties[peer->property_count++]);
       OPENSSL_free(dns_name);
       if (result != TSI_OK) break;
     }
   }
-  if (result != TSI_OK) tsi_peer_property_destruct(property);
-  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
-  return TSI_OK;
+  return result;
 }
 
 /* Gets information about the peer's X509 cert as a tsi_peer object. */
 static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
                                  tsi_peer* peer) {
   /* TODO(jboeuf): Maybe add more properties. */
-  size_t property_count = include_certificate_type ? 3 : 2;
+  GENERAL_NAMES* subject_alt_names =
+      X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
+  int subject_alt_name_count =
+      (subject_alt_names != NULL) ? sk_GENERAL_NAME_num(subject_alt_names) : 0;
+  size_t property_count = (include_certificate_type ? 1 : 0) +
+                          1 /* common name */ + subject_alt_name_count;
   tsi_result result = tsi_construct_peer(property_count, peer);
   if (result != TSI_OK) return result;
   do {
-    result = peer_property_from_x509_common_name(cert, &peer->properties[0]);
-    if (result != TSI_OK) break;
-    result =
-        peer_property_from_x509_subject_alt_names(cert, &peer->properties[1]);
-    if (result != TSI_OK) break;
     if (include_certificate_type) {
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
-          &peer->properties[2]);
+          &peer->properties[0]);
+      if (result != TSI_OK) break;
+    }
+    result = peer_property_from_x509_common_name(
+        cert, &peer->properties[include_certificate_type ? 1 : 0]);
+    if (result != TSI_OK) break;
+
+    if (subject_alt_name_count != 0) {
+      result = add_subject_alt_names_properties_to_peer(peer, subject_alt_names,
+                                                        subject_alt_name_count);
       if (result != TSI_OK) break;
     }
   } while (0);
 
+  if (subject_alt_names != NULL) {
+    sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+  }
   if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
 }
@@ -1345,43 +1340,32 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name) {
   size_t i = 0;
   size_t san_count = 0;
-  const tsi_peer_property* property = NULL;
+  const tsi_peer_property* cn_property = NULL;
 
   /* For now reject what looks like an IP address. */
   if (looks_like_ip_address(name)) return 0;
 
   /* Check the SAN first. */
-  property = tsi_peer_get_property_by_name(
-      peer, TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY);
-  if (property == NULL || property->type != TSI_PEER_PROPERTY_TYPE_LIST) {
-    gpr_log(GPR_ERROR, "Invalid x509 subject alternative names property.");
-    return 0;
-  }
-
-  san_count = property->value.list.child_count;
-  for (i = 0; i < san_count; i++) {
-    const tsi_peer_property* alt_name_property =
-        &property->value.list.children[i];
-    if (alt_name_property->type != TSI_PEER_PROPERTY_TYPE_STRING) {
-      gpr_log(GPR_ERROR, "Invalid x509 subject alternative name property.");
-      return 0;
-    }
-    if (does_entry_match_name(alt_name_property->value.string.data,
-                              alt_name_property->value.string.length, name)) {
-      return 1;
+  for (i = 0; i < peer->property_count; i++) {
+    const tsi_peer_property* property = &peer->properties[i];
+    if (property->name == NULL) continue;
+    if (strcmp(property->name,
+               TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      san_count++;
+      if (does_entry_match_name(property->value.data, property->value.length,
+                                name)) {
+        return 1;
+      }
+    } else if (strcmp(property->name,
+                      TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      cn_property = property;
     }
   }
 
   /* If there's no SAN, try the CN. */
-  if (san_count == 0) {
-    property = tsi_peer_get_property_by_name(
-        peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
-    if (property == NULL || property->type != TSI_PEER_PROPERTY_TYPE_STRING) {
-      gpr_log(GPR_ERROR, "Invalid x509 subject common name property.");
-      return 0;
-    }
-    if (does_entry_match_name(property->value.string.data,
-                              property->value.string.length, name)) {
+  if (san_count == 0 && cn_property != NULL) {
+    if (does_entry_match_name(cn_property->value.data,
+                              cn_property->value.length, name)) {
       return 1;
     }
   }
