@@ -54,7 +54,7 @@
    Destroying a thread local:
      gpr_tls_destroy(&foo);
 
-   Setting a thread local:
+   Setting a thread local (returns new_value):
      gpr_tls_set(&foo, new_value);
 
    Accessing a thread local:
