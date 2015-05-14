@@ -111,7 +111,8 @@ class RouteGuideImpl final : public RouteGuide::Service {
     return Status::OK;
   }
 
-  Status ListFeatures(ServerContext* context, const examples::Rectangle* rectangle,
+  Status ListFeatures(ServerContext* context,
+                      const examples::Rectangle* rectangle,
                       ServerWriter<Feature>* writer) override {
     auto lo = rectangle->lo();
     auto hi = rectangle->hi();
@@ -195,12 +196,9 @@ void RunServer(const std::string& db_path) {
 }
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = examples::GetDbFileContent(argc, argv);
   RunServer(db);
 
-  grpc_shutdown();
   return 0;
 }

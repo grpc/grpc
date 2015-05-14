@@ -131,11 +131,8 @@ class ServerImpl final {
 };
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   ServerImpl server;
   server.Run();
 
-  grpc_shutdown();
   return 0;
 }
