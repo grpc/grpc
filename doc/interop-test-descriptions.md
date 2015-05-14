@@ -524,8 +524,6 @@ timeout value will end with the DeadlineExceeded status.
 
 Server features:
 * [FullDuplexCall][]
-* [Compressable Payload][]
-* [Observe ResponseParameters.interval_us][]
 
 Procedure:
  1. Client calls FullDuplexCall with the following request and sets its timeout to 1ms.
