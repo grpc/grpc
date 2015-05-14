@@ -532,7 +532,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       payload:{
         body: 27182 bytes of zeros
       }
