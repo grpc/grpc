@@ -58,13 +58,13 @@ namespace grpc {
 std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
-    const std::unique_ptr<Credentials>& creds) {
+    const std::shared_ptr<Credentials>& creds) {
   ChannelArguments channel_args;
   if (enable_ssl) {
     const char* roots_certs = use_prod_roots ? "" : test_root_cert;
     SslCredentialsOptions ssl_opts = {roots_certs, "", ""};
 
-    std::unique_ptr<Credentials> channel_creds = SslCredentials(ssl_opts);
+    std::shared_ptr<Credentials> channel_creds = SslCredentials(ssl_opts);
 
     if (!server.empty() && !override_hostname.empty()) {
       channel_args.SetSslTargetNameOverride(override_hostname);
@@ -84,7 +84,7 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots) {
   return CreateTestChannel(server, override_hostname, enable_ssl,
-                           use_prod_roots, std::unique_ptr<Credentials>());
+                           use_prod_roots, std::shared_ptr<Credentials>());
 }
 
 // Shortcut for end2end and interop tests.

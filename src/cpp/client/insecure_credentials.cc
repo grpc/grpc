@@ -52,12 +52,14 @@ class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
         target, grpc_channel_create(target.c_str(), &channel_args)));
   }
 
+  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE { return true; }
+
   SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
 };
 }  // namespace
 
-std::unique_ptr<Credentials> InsecureCredentials() {
-  return std::unique_ptr<Credentials>(new InsecureCredentialsImpl());
+std::shared_ptr<Credentials> InsecureCredentials() {
+  return std::shared_ptr<Credentials>(new InsecureCredentialsImpl());
 }
 
 }  // namespace grpc

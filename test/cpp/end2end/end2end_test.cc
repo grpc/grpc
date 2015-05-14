@@ -429,7 +429,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
-  std::unique_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
+  std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(nullptr, bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
@@ -586,6 +586,54 @@ TEST_F(End2endTest, RpcMaxMessageSize) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.IsOk());
+}
+
+TEST_F(End2endTest, SetPerCallCredentials) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  std::shared_ptr<Credentials> creds =
+      IAMCredentials("fake_token", "fake_selector");
+  context.set_credentials(creds);
+  grpc::string msg("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  // TODO(yangg) verify creds at the server side.
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.IsOk());
+}
+
+TEST_F(End2endTest, InsecurePerCallCredentials) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  std::shared_ptr<Credentials> creds = InsecureCredentials();
+  context.set_credentials(creds);
+  grpc::string msg("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.IsOk());
+}
+
+TEST_F(End2endTest, OverridePerCallCredentials) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  std::shared_ptr<Credentials> creds1 = InsecureCredentials();
+  context.set_credentials(creds1);
+  std::shared_ptr<Credentials> creds2 =
+      IAMCredentials("fake_token", "fake_selector");
+  context.set_credentials(creds2);
+  grpc::string msg("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  // TODO(yangg) verify creds at the server side.
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.IsOk());
 }
 
 }  // namespace testing

@@ -34,6 +34,7 @@
 #include <grpc++/client_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc++/credentials.h>
 #include <grpc++/time.h>
 
 namespace grpc {
@@ -61,6 +62,17 @@ ClientContext::~ClientContext() {
 void ClientContext::AddMetadata(const grpc::string& meta_key,
                                 const grpc::string& meta_value) {
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
+}
+
+void ClientContext::set_call(grpc_call* call,
+                             const std::shared_ptr<ChannelInterface>& channel) {
+  GPR_ASSERT(call_ == nullptr);
+  call_ = call;
+  channel_ = channel;
+  if (creds_ && !creds_->ApplyToCall(call_)) {
+    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
+                                 "Failed to set credentials to rpc.");
+  }
 }
 
 void ClientContext::TryCancel() {
