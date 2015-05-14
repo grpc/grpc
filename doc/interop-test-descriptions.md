@@ -519,7 +519,8 @@ Asserts:
 
 ### timeout_on_sleeping_server
 
-This test verifies that an RPC request whose lifetime exceeds its configured timeout value will end with the DeadlineExceeded status.
+This test verifies that an RPC request whose lifetime exceeds its configured
+timeout value will end with the DeadlineExceeded status.
 
 Server features:
 * [FullDuplexCall][]
@@ -532,18 +533,14 @@ Procedure:
     ```
     {
       response_type: COMPRESSABLE
-      response_parameters:{
-        interval_us: 3000
-      }
       payload:{
         body: 27182 bytes of zeros
       }
     }
     ```
-2. Server will sleep for the configured interval_us and client waits for the status.
 
 Asserts:
-* Call completed with status DeadlineExceeded.
+* Call completed with status DEADLINE_EXCEEDED.
 
 ### concurrent_large_unary
 
