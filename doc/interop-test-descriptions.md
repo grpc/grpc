@@ -517,6 +517,34 @@ Procedure:
 Asserts:
 * Call completed with status CANCELLED
 
+### timeout_on_sleeping_server
+
+This test verifies that an RPC request whose lifetime exceeds its configured timeout value will end with the DeadlineExceeded status.
+
+Server features:
+* [FullDuplexCall][]
+* [Compressable Payload][]
+* [Observe ResponseParameters.interval_us][]
+
+Procedure:
+ 1. Client calls FullDuplexCall with the following request and sets its timeout to 1ms.
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_parameters:{
+        interval_us: 3000
+      }
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+2. Server will sleep for the configured interval_us and client waits for the status.
+
+Asserts:
+* Call completed with status DeadlineExceeded.
+
 ### concurrent_large_unary
 
 Status: TODO
@@ -539,8 +567,6 @@ Propagation of status code and message (yangg)
 Cancel after sent headers (ctiller - done)
 
 Cancel after received first message (ctiller - done)
-
-Timeout after expire (zhaoq)
 
 Zero-message streams (ejona)
 
