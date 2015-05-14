@@ -40,15 +40,15 @@
 
 @implementation GRPCChannel
 
-// TODO(mlumish): Investigate whether a cache with strong links is a good idea
-static NSMutableDictionary *channelCache;
-
 + (instancetype)channelToHost:(NSString *)host {
-  if (channelCache == nil) {
+  // TODO(mlumish): Investigate whether a cache with strong links is a good idea
+  static NSMutableDictionary *channelCache;
+  static dispatch_once_t cacheInitialization;
+  dispatch_once(&cacheInitialization, ^{
     channelCache = [NSMutableDictionary dictionary];
-  }
+  });
   GRPCChannel *channel = channelCache[host];
-  if (channel == nil) {
+  if (!channel) {
     channel = [[self alloc] initWithHost:host];
     channelCache[host] = channel;
   }
