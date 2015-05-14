@@ -271,7 +271,7 @@ function cancelAfterFirstResponse(client, done) {
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
  */
-function authTest(expected_user, client, scope, done) {
+function authTest(expected_user, scope, client, done) {
   (new GoogleAuth()).getApplicationDefault(function(err, credential) {
     assert.ifError(err);
     if (credential.createScopedRequired() && scope) {
