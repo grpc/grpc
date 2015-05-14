@@ -268,7 +268,6 @@ function timeoutOnSleepingServer(client, done) {
   deadline.setMilliseconds(deadline.getMilliseconds() + 1);
   var call = client.fullDuplexCall(null, deadline);
   call.write({
-    response_type: 'COMPRESSABLE',
     payload: {body: zeroBuffer(27182)}
   });
   call.on('error', function(error) {
