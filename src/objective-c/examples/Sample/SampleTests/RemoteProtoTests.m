@@ -31,9 +31,12 @@
  *
  */
 
+#include <grpc/status.h>
+
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
+#import <gRPC/ProtoRPC.h>
 #import <gRPC/GRXWriter+Immediate.h>
 #import <RemoteTest/Messages.pb.h>
 #import <RemoteTest/Test.pb.h>
@@ -69,7 +72,7 @@
 }
 
 - (void)testLargeUnaryRPC {
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
   RMTSimpleRequest *request = [[[[[[RMTSimpleRequestBuilder alloc] init]
                                   setResponseType:RMTPayloadTypeCompressable]
@@ -95,7 +98,7 @@
 }
 
 - (void)testClientStreamingRPC {
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ClientStreaming"];
 
   id request1 = [[[[RMTStreamingInputCallRequestBuilder alloc] init]
                   setPayloadBuilder:[[[RMTPayloadBuilder alloc] init]
@@ -128,6 +131,62 @@
   }];
 
   [self waitForExpectationsWithTimeout:4. handler:nil];
+}
+
+- (void)testServerStreamingRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
+  NSArray *expectedSizes = @[@31415, @9, @2653, @58979];
+  __block int index = 0;
+  id request = [[[[[[[RMTStreamingOutputCallRequestBuilder alloc] init]
+                    addResponseParameters:[[[[RMTResponseParametersBuilder alloc] init]
+                                            setSize:31415] build]]
+                   addResponseParameters:[[[[RMTResponseParametersBuilder alloc] init]
+                                           setSize:9] build]]
+                  addResponseParameters:[[[[RMTResponseParametersBuilder alloc] init]
+                                          setSize:2653] build]]
+                 addResponseParameters:[[[[RMTResponseParametersBuilder alloc] init]
+                                         setSize:58979] build]]
+                build];
+  [_service streamingOutputCallWithRequest:request handler:^(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error){
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    id expectedResponseBuilder = [[RMTStreamingOutputCallResponseBuilder alloc] init];
+    id expectedPayload = [[[[[RMTPayloadBuilder alloc] init]
+                            setType:RMTPayloadTypeCompressable]
+                           setBody:[NSMutableData dataWithLength:[expectedSizes[index] unsignedIntegerValue]]]
+                          build];
+    expectedResponseBuilder = [expectedResponseBuilder setPayload:expectedPayload];
+    id expectedResponse = [expectedResponseBuilder build];
+    XCTAssertEqualObjects(response, expectedResponse);
+    
+    [expectation fulfill];
+    index += 1;
+  }];
+  
+  [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
+- (void)testEmptyStreamRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
+  [_service fullDuplexCallWithRequestsWriter:[GRXWriter emptyWriter]
+                                     handler:^(bool done, RMTStreamingOutputCallResponse *response, NSError *error) {
+                                       XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+                                       XCTAssert(done, @"Unexpected response: %@", response);
+                                       [expectation fulfill];
+                                     }];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
+- (void)testCancelAfterBeginRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
+  // TODO(mlumish): change to writing that blocks instead of writing
+  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:[GRXWriter emptyWriter]
+                                                               handler:^(RMTStreamingInputCallResponse *response, NSError *error) {
+                                                                 XCTAssertEqual([error code], GRPC_STATUS_CANCELLED);
+                                                                 [expectation fulfill];
+                                                               }];
+  [call start];
+  [call cancel];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 @end
