@@ -71,17 +71,13 @@ class GreeterClient {
     Status status;
 
     std::unique_ptr<ClientAsyncResponseReader<HelloReply> > rpc(
-        stub_->AsyncSayHello(&context, request, &cq, (void*)1));
+        stub_->AsyncSayHello(&context, request, &cq));
+    rpc->Finish(&reply, &status, (void*)1);
     void* got_tag;
-    bool ok;
+    bool ok = false;
     cq.Next(&got_tag, &ok);
     GPR_ASSERT(ok);
     GPR_ASSERT(got_tag == (void*)1);
-
-    rpc->Finish(&reply, &status, (void*)2);
-    cq.Next(&got_tag, &ok);
-    GPR_ASSERT(ok);
-    GPR_ASSERT(got_tag == (void*)2);
 
     if (status.IsOk()) {
       return reply.message();
