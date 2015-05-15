@@ -76,10 +76,12 @@ class CrashTest : public ::testing::Test {
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub>
   CreateServerAndStub() {
     auto port = grpc_pick_unused_port_or_die();
-    auto addr = (std::ostringstream() << "localhost:" << port).str();
+    std::ostringstream addr_stream;
+    addr_stream << "localhost:" << port;
+    auto addr = addr_stream.str();
     server_.reset(new SubProcess({
-        (std::ostringstream() << g_root << "/crash_test_server").str(),
-        (std::ostringstream() << "--address=" << addr).str(),
+      g_root + "/crash_test_server",
+      "--address=" + addr,
     }));
     GPR_ASSERT(server_);
     return grpc::cpp::test::util::TestService::NewStub(
