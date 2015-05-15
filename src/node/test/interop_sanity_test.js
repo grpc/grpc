@@ -86,4 +86,8 @@ describe('Interop tests', function() {
     interop_client.runTest(port, name_override, 'cancel_after_first_response',
                            true, true, done);
   });
+  it('should pass timeout_on_sleeping_server', function(done) {
+    interop_client.runTest(port, name_override, 'timeout_on_sleeping_server',
+                           true, true, done);
+  });
 });
