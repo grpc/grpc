@@ -31,12 +31,16 @@
  *
  */
 
+#include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
 #include <signal.h>
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/util/test_config.h"
+
+DEFINE_int32(local_workers, -2, "Number of local workers to start");
 
 namespace grpc {
 namespace testing {
@@ -61,8 +65,8 @@ static void RunQPS() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(4);
 
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+  const auto result = RunScenario(client_config, 1, server_config, 1, WARMUP,
+                                  BENCHMARK, FLAGS_local_workers);
 
   ReportQPSPerCore(result, server_config);
   ReportLatency(result);
@@ -72,6 +76,8 @@ static void RunQPS() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+
   signal(SIGPIPE, SIG_IGN);
   grpc::testing::RunQPS();
 
