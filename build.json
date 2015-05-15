@@ -2130,7 +2130,7 @@
     },
     {
       "name": "qps_driver",
-      "build": "tool",
+      "build": "benchmark",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_driver.cc"
@@ -2148,8 +2148,7 @@
     },
     {
       "name": "qps_test",
-      "build": "test",
-      "run": false,
+      "build": "benchmark",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
@@ -2161,12 +2160,13 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
       "name": "qps_worker",
-      "build": "tool",
+      "build": "benchmark",
       "language": "c++",
       "headers": [
         "test/cpp/qps/client.h",
