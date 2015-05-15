@@ -167,10 +167,10 @@
 
 - (void)testEmptyStreamRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
-  [_service fullDuplexCallWithRequestsWriter:[GRXWriter writerWithContainer:@[]]
+  [_service fullDuplexCallWithRequestsWriter:[GRXWriter emptyWriter]
                                      handler:^(bool done, RMTStreamingOutputCallResponse *response, NSError *error) {
                                        XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                                       XCTAssert(done, @"Unexpected response");
+                                       XCTAssert(done, @"Unexpected response: %@", response);
                                        [expectation fulfill];
                                      }];
   [self waitForExpectationsWithTimeout:4 handler:nil];
@@ -178,14 +178,15 @@
 
 - (void)testCancelAfterBeginRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
-  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:[GRXWriter writerWithContainer:@[]]
+  // TODO(mlumish): change to writing that blocks instead of writing
+  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:[GRXWriter emptyWriter]
                                                                handler:^(RMTStreamingInputCallResponse *response, NSError *error) {
                                                                  XCTAssertEqual([error code], GRPC_STATUS_CANCELLED);
                                                                  [expectation fulfill];
                                                                }];
   [call start];
   [call cancel];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 @end
