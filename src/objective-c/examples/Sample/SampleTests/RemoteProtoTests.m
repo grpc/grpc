@@ -31,9 +31,12 @@
  *
  */
 
+#include <grpc/status.h>
+
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
+#import <gRPC/ProtoRPC.h>
 #import <gRPC/GRXWriter+Immediate.h>
 #import <RemoteTest/Messages.pb.h>
 #import <RemoteTest/Test.pb.h>
@@ -177,11 +180,12 @@
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
   ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:[GRXWriter writerWithContainer:@[]]
                                                                handler:^(RMTStreamingInputCallResponse *response, NSError *error) {
-                                                                 // TODO(mlumish): check for actual CANCELLED error code
-                                                                 XCTAssertEqualObjects(error, nil);
+                                                                 XCTAssertEqual([error code], GRPC_STATUS_CANCELLED);
+                                                                 [expectation fulfill];
                                                                }];
   [call start];
   [call cancel];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end
