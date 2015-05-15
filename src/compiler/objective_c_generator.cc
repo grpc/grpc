@@ -118,9 +118,9 @@ void PrintSimpleImplementation(Printer *printer,
                                const MethodDescriptor *method,
                                map<string, string> vars) {
   printer->Print("{\n");
-  printer->Print(vars, "[[self RPCTo$method_name$With");
+  printer->Print(vars, "  [[self RPCTo$method_name$With");
   if (method->client_streaming()) {
-    printer->Print("RequestsWriter:requestsWriter"); //TODO(jcanizales):request?
+    printer->Print("RequestsWriter:request");
   } else {
     printer->Print("Request:request");
   }
@@ -136,12 +136,13 @@ void PrintAdvancedImplementation(Printer *printer,
 
   printer->Print("            requestsWriter:");
   if (method->client_streaming()) {
-    printer->Print("requestsWriter\n");
+    printer->Print("request\n");
   } else {
     printer->Print("[GRXWriter writerWithValue:request]\n");
   }
 
-  printer->Print(vars, "             responseClass:[$response_type$ class]\n");
+  printer->Print(vars,
+      "             responseClass:[$prefix$$response_type$ class]\n");
 
   printer->Print("        responsesWriteable:[GRXWriteable ");
   if (method->server_streaming()) {
