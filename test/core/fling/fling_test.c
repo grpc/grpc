@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  gpr_asprintf(&args[0], "%s/fling_server", root);
+  gpr_asprintf(&args[0], "%s/fling_server%s", root, gpr_subprocess_binary_extension());
   args[1] = "--bind";
   gpr_join_host_port(&args[2], "::", port);
   args[3] = "--no-secure";
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
   gpr_free(args[2]);
 
   /* start the client */
-  gpr_asprintf(&args[0], "%s/fling_client", root);
+  gpr_asprintf(&args[0], "%s/fling_client%s", root, gpr_subprocess_binary_extension());
   args[1] = "--target";
   gpr_join_host_port(&args[2], "127.0.0.1", port);
   args[3] = "--scenario=ping-pong-request";
