@@ -51,6 +51,7 @@
 #include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
 
+#include "completion_queue.h"
 #include "server.h"
 #include "channel.h"
 #include "server_credentials.h"
@@ -61,13 +62,6 @@ zend_class_entry *grpc_ce_server;
 /* Frees and destroys an instance of wrapped_grpc_server */
 void free_wrapped_grpc_server(void *object TSRMLS_DC) {
   wrapped_grpc_server *server = (wrapped_grpc_server *)object;
-  if (server->queue != NULL) {
-    grpc_completion_queue_shutdown(server->queue);
-    while (grpc_completion_queue_next(server->queue, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
-      ;
-    grpc_completion_queue_destroy(server->queue);
-  }
   if (server->wrapped != NULL) {
     grpc_server_shutdown(server->wrapped);
     grpc_server_destroy(server->wrapped);
@@ -96,7 +90,6 @@ zend_object_value create_wrapped_grpc_server(zend_class_entry *class_type
 
 /**
  * Constructs a new instance of the Server class
- * @param CompletionQueue $queue The completion queue to use with the server
  * @param array $args The arguments to pass to the server (optional)
  */
 PHP_METHOD(Server, __construct) {
@@ -112,7 +105,6 @@ PHP_METHOD(Server, __construct) {
                          1 TSRMLS_CC);
     return;
   }
-  server->queue = grpc_completion_queue_create();
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(NULL);
   } else {
@@ -120,7 +112,7 @@ PHP_METHOD(Server, __construct) {
     server->wrapped = grpc_server_create(&args);
     efree(args.args);
   }
-  grpc_server_register_completion_queue(server->wrapped, server->queue);
+  grpc_server_register_completion_queue(server->wrapped, completion_queue);
 }
 
 /**
@@ -144,21 +136,20 @@ PHP_METHOD(Server, requestCall) {
   grpc_metadata_array_init(&metadata);
   error_code =
       grpc_server_request_call(server->wrapped, &call, &details, &metadata,
-                               server->queue, server->queue, NULL);
+                               completion_queue, completion_queue, NULL);
   if (error_code != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException, "request_call failed",
                          (long)error_code TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(server->queue, NULL, gpr_inf_future);
+  event = grpc_completion_queue_pluck(completion_queue, NULL, gpr_inf_future);
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "Failed to request a call for some reason",
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  add_property_zval(result, "call", grpc_php_wrap_call(call, server->queue,
-                                                       true));
+  add_property_zval(result, "call", grpc_php_wrap_call(call, true));
   add_property_string(result, "method", details.method, true);
   add_property_string(result, "host", details.host, true);
   add_property_zval(result, "absolute_deadline",
