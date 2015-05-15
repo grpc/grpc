@@ -133,7 +133,7 @@
 - (void)testServerStreamingRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
   NSArray *expectedSizes = @[@31415, @9, @2653, @58979];
-  int index = 0;
+  __block int index = 0;
   id request = [[[[[[[RMTStreamingOutputCallRequestBuilder alloc] init]
                     addResponseParameters:[[[[RMTResponseParametersBuilder alloc] init]
                                             setSize:31415] build]]
@@ -146,18 +146,42 @@
                 build];
   [_service streamingOutputCallWithRequest:request handler:^(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error){
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-    
     id expectedResponseBuilder = [[RMTStreamingOutputCallResponseBuilder alloc] init];
-    id expectedPayload = [[[RMTPayloadBuilder alloc] init]
-                          setBody:[NSMutableData dataWithLength:expectedSizes[index]]];
+    id expectedPayload = [[[[[RMTPayloadBuilder alloc] init]
+                            setType:RMTPayloadTypeCompressable]
+                           setBody:[NSMutableData dataWithLength:[expectedSizes[index] unsignedIntegerValue]]]
+                          build];
     expectedResponseBuilder = [expectedResponseBuilder setPayload:expectedPayload];
     id expectedResponse = [expectedResponseBuilder build];
     XCTAssertEqualObjects(response, expectedResponse);
     
     [expectation fulfill];
+    index += 1;
   }];
   
   [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
+- (void)testEmptyStreamRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
+  [_service fullDuplexCallWithRequestsWriter:[GRXWriter writerWithContainer:@[]]
+                                     handler:^(bool done, RMTStreamingOutputCallResponse *response, NSError *error) {
+                                       XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+                                       XCTAssert(done, @"Unexpected response");
+                                       [expectation fulfill];
+                                     }];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
+- (void)testCancelAfterBeginRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
+  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:[GRXWriter writerWithContainer:@[]]
+                                                               handler:^(RMTStreamingInputCallResponse *response, NSError *error) {
+                                                                 // TODO(mlumish): check for actual CANCELLED error code
+                                                                 XCTAssertEqualObjects(error, nil);
+                                                               }];
+  [call start];
+  [call cancel];
 }
 
 @end
