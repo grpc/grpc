@@ -73,15 +73,17 @@ class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> CreateServerAndStub() {
+  std::unique_ptr<grpc::cpp::test::util::TestService::Stub>
+  CreateServerAndStub() {
     auto port = grpc_pick_unused_port_or_die();
     auto addr = (std::ostringstream() << "localhost:" << port).str();
     server_.reset(new SubProcess({
-      (std::ostringstream() << g_root << "/crash_test_server").str(),
-      (std::ostringstream() << "--address=" << addr).str(),
+        (std::ostringstream() << g_root << "/crash_test_server").str(),
+        (std::ostringstream() << "--address=" << addr).str(),
     }));
     GPR_ASSERT(server_);
-    return grpc::cpp::test::util::TestService::NewStub(CreateChannel(addr, InsecureCredentials(), ChannelArguments()));
+    return grpc::cpp::test::util::TestService::NewStub(
+        CreateChannel(addr, InsecureCredentials(), ChannelArguments()));
   }
 
   void KillServer() {
