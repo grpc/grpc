@@ -60,6 +60,12 @@ var arg_format = {
 
 // TODO(mlumish): autogenerate README.md from proto file
 
+/**
+ * Render package.json file from template using provided parameters.
+ * @param {Object} params Map of parameter names to values
+ * @param {function(Error, string)} callback Callback to pass rendered template
+ *     text to
+ */
 function generatePackage(params, callback) {
   fs.readFile(package_tpl_path, {encoding: 'utf-8'}, function(err, template) {
     if (err) {
@@ -71,10 +77,26 @@ function generatePackage(params, callback) {
   });
 }
 
+/**
+ * Copy a file
+ * @param {string} src_path The filepath to copy from
+ * @param {string} dest_path The filepath to copy to
+ */
 function copyFile(src_path, dest_path) {
   fs.createReadStream(src_path).pipe(fs.createWriteStream(dest_path));
 }
 
+/**
+ * Run the script. Copies the index.js and LICENSE files to the output path,
+ * renders the package.json template to the output path, and generates a
+ * service.json file from the input proto files using pbjs. The arguments are
+ * taken directly from the command line, and handled as follows:
+ * -i (--include) : An include path for pbjs (can be dpulicated)
+ * -o (--output): The output path
+ * -n (--name): The name of the package
+ * -v (--version): The package version
+ * @param {Array} argv The argument vector
+ */
 function main(argv) {
   var args = parseArgs(argv, arg_format);
   var out_path = path.resolve(args.out);
