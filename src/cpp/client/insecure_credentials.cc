@@ -52,7 +52,8 @@ class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
         target, grpc_channel_create(target.c_str(), &channel_args)));
   }
 
-  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE { return true; }
+  // InsecureCredentials should not be applied to a call.
+  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE { return false; }
 
   SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
 };

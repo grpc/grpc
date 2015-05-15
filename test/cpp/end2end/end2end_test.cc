@@ -614,8 +614,8 @@ TEST_F(End2endTest, InsecurePerCallCredentials) {
   grpc::string msg("Hello");
 
   Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(request.message(), response.message());
-  EXPECT_TRUE(s.IsOk());
+  EXPECT_EQ(StatusCode::CANCELLED, s.code());
+  EXPECT_EQ("Failed to set credentials to rpc.", s.details());
 }
 
 TEST_F(End2endTest, OverridePerCallCredentials) {
@@ -623,7 +623,7 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  std::shared_ptr<Credentials> creds1 = InsecureCredentials();
+  std::shared_ptr<Credentials> creds1 = SslCredentials(SslCredentialsOptions());
   context.set_credentials(creds1);
   std::shared_ptr<Credentials> creds2 =
       IAMCredentials("fake_token", "fake_selector");
