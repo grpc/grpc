@@ -31,27 +31,31 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_SUBPROCESS_H
-#define GRPC_SUPPORT_SUBPROCESS_H
+#ifndef GRPC_TEST_CPP_UTIL_SUBPROCESS_H
+#define GRPC_TEST_CPP_UTIL_SUBPROCESS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif	
+#include <initializer_list>
+#include <string>
 
-typedef struct gpr_subprocess gpr_subprocess;
+struct gpr_subprocess;
 
-/* .exe on windows, empty on unices */
-char *gpr_subprocess_binary_extension();
+namespace grpc {
 
-gpr_subprocess *gpr_subprocess_create(int argc, const char **argv);
-/* if subprocess has not been joined, kill it */
-void gpr_subprocess_destroy(gpr_subprocess *p);
-/* returns exit status; can be called at most once */
-int gpr_subprocess_join(gpr_subprocess *p);
-void gpr_subprocess_interrupt(gpr_subprocess *p);
+class SubProcess {
+ public:
+ 	SubProcess(std::initializer_list<std::string> args);
+ 	~SubProcess();
 
-#ifdef __cplusplus
-}  // extern "C"
-#endif
+ 	int Join();
+ 	void Interrupt();
 
-#endif
+ private:
+ 	SubProcess(const SubProcess& other);
+ 	SubProcess& operator=(const SubProcess& other);
+
+ 	gpr_subprocess *const subprocess_;
+};
+
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_SUBPROCESS_H

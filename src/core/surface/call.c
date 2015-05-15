@@ -1175,6 +1175,10 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
 }
 
 static void finish_batch(grpc_call *call, int success, void *tag) {
+  grpc_cq_end_op(call->cq, tag, call, success);
+}
+
+static void finish_batch_with_close(grpc_call *call, int success, void *tag) {
   grpc_cq_end_op(call->cq, tag, call, 1);
 }
 
@@ -1185,6 +1189,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   size_t out;
   const grpc_op *op;
   grpc_ioreq *req;
+  void (*finish_func)(grpc_call *, int, void *) = finish_batch;
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
@@ -1268,6 +1273,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
             op->data.recv_status_on_client.trailing_metadata;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_RECV_CLOSE;
+        finish_func = finish_batch_with_close;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         req = &reqs[out++];
@@ -1277,13 +1283,14 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
             op->data.recv_close_on_server.cancelled;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_RECV_CLOSE;
+        finish_func = finish_batch_with_close;
         break;
     }
   }
 
   grpc_cq_begin_op(call->cq, call);
 
-  return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_batch,
+  return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_func,
                                              tag);
 }
 
