@@ -58,9 +58,8 @@ void grpc_init(void) {
   if (++g_initializations == 1) {
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
-    grpc_register_tracer("http", &grpc_http_trace);
-    grpc_register_tracer("flowctl", &grpc_flowctl_trace);
     grpc_register_tracer("batch", &grpc_trace_batch);
+    grpc_chttp2_module_init();
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_tracer_init("GRPC_TRACE");
@@ -74,6 +73,7 @@ void grpc_shutdown(void) {
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
+    grpc_chttp2_module_destroy();
     census_shutdown();
     grpc_timers_global_destroy();
   }
