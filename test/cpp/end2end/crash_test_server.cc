@@ -58,7 +58,7 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl final : public grpc::cpp::test::util::TestService::Service {
+class ServiceImpl GRPC_FINAL : public ::grpc::cpp::test::util::TestService::Service {
   Status BidiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
