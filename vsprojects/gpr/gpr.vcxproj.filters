@@ -79,6 +79,9 @@
     <ClCompile Include="..\..\src\core\support\string_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\subprocess_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync.c">
       <Filter>src\core\support</Filter>
     </ClCompile>

@@ -31,61 +31,78 @@
  *
  */
 
-#include <string.h>
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SUBPROCESS
+
+#include <grpc/support/subprocess.h>
+
+#include <unistd.h>
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/subprocess.h>
-#include <grpc/support/host_port.h>
-#include "src/core/support/string.h"
-#include "test/core/util/port.h"
+#include <grpc/support/log.h>
 
-int main(int argc, char **argv) {
-  char *me = argv[0];
-  char *lslash = strrchr(me, '/');
-  char root[1024];
-  int port = grpc_pick_unused_port_or_die();
-  char *args[10];
-  int status;
-  gpr_subprocess *svr, *cli;
-  /* figure out where we are */
-  if (lslash) {
-    memcpy(root, me, lslash - me);
-    root[lslash - me] = 0;
+struct gpr_subprocess {
+  int pid;
+  int joined;
+};
+
+char *gpr_subprocess_binary_extension() { return ""; }
+
+gpr_subprocess *gpr_subprocess_create(int argc, char **argv) {
+  gpr_subprocess *r;
+  int pid;
+  char **exec_args;
+
+  pid = fork();
+  if (pid == -1) {
+    return NULL;
+  } else if (pid == 0) {
+    exec_args = gpr_malloc((argc + 1) * sizeof(char *));
+    memcpy(exec_args, argv, argc * sizeof(char *));
+    exec_args[argc] = NULL;
+    execv(exec_args[0], exec_args);
+    /* if we reach here, an error has occurred */
+    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
+    _exit(1);
+    return NULL;
   } else {
-    strcpy(root, ".");
+    r = gpr_malloc(sizeof(gpr_subprocess));
+    memset(r, 0, sizeof(*r));
+    r->pid = pid;
+    return r;
   }
-  /* start the server */
-  gpr_asprintf(&args[0], "%s/fling_server", root);
-  args[1] = "--bind";
-  gpr_join_host_port(&args[2], "::", port);
-  args[3] = "--no-secure";
-  svr = gpr_subprocess_create(4, args);
-  gpr_free(args[0]);
-  gpr_free(args[2]);
+}
 
-  /* start the client */
-  gpr_asprintf(&args[0], "%s/fling_client", root);
-  args[1] = "--target";
-  gpr_join_host_port(&args[2], "127.0.0.1", port);
-  args[3] = "--scenario=ping-pong-request";
-  args[4] = "--no-secure";
-  args[5] = 0;
-  cli = gpr_subprocess_create(6, args);
-  gpr_free(args[0]);
-  gpr_free(args[2]);
-
-  /* wait for completion */
-  printf("waiting for client\n");
-  if ((status = gpr_subprocess_join(cli))) {
-    gpr_subprocess_destroy(cli);
-    gpr_subprocess_destroy(svr);
-    return status;
+void gpr_subprocess_destroy(gpr_subprocess *p) {
+  if (!p->joined) {
+    kill(p->pid, SIGKILL);
+    gpr_subprocess_join(p);
   }
-  gpr_subprocess_destroy(cli);
+  gpr_free(p);
+}
 
-  gpr_subprocess_interrupt(svr);
-  status = gpr_subprocess_join(svr);
-  gpr_subprocess_destroy(svr);
+int gpr_subprocess_join(gpr_subprocess *p) {
+  int status;
+  if (waitpid(p->pid, &status, 0) == -1) {
+    gpr_log(GPR_ERROR, "waitpid failed: %s", strerror(errno));
+    return -1;
+  }
   return status;
 }
+
+void gpr_subprocess_interrupt(gpr_subprocess *p) {
+  if (!p->joined) {
+    kill(p->pid, SIGINT);
+  }
+}
+
+#endif /* GPR_POSIX_SUBPROCESS */

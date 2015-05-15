@@ -234,6 +234,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\string_win32.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\subprocess_posix.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync_posix.c">

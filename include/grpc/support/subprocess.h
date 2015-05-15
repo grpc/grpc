@@ -31,61 +31,19 @@
  *
  */
 
-#include <string.h>
-#include <stdio.h>
+#ifndef GRPC_SUPPORT_SUBPROCESS_H
+#define GRPC_SUPPORT_SUBPROCESS_H
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/subprocess.h>
-#include <grpc/support/host_port.h>
-#include "src/core/support/string.h"
-#include "test/core/util/port.h"
+typedef struct gpr_subprocess gpr_subprocess;
 
-int main(int argc, char **argv) {
-  char *me = argv[0];
-  char *lslash = strrchr(me, '/');
-  char root[1024];
-  int port = grpc_pick_unused_port_or_die();
-  char *args[10];
-  int status;
-  gpr_subprocess *svr, *cli;
-  /* figure out where we are */
-  if (lslash) {
-    memcpy(root, me, lslash - me);
-    root[lslash - me] = 0;
-  } else {
-    strcpy(root, ".");
-  }
-  /* start the server */
-  gpr_asprintf(&args[0], "%s/fling_server", root);
-  args[1] = "--bind";
-  gpr_join_host_port(&args[2], "::", port);
-  args[3] = "--no-secure";
-  svr = gpr_subprocess_create(4, args);
-  gpr_free(args[0]);
-  gpr_free(args[2]);
+/* .exe on windows, empty on unices */
+char *gpr_subprocess_binary_extension();
 
-  /* start the client */
-  gpr_asprintf(&args[0], "%s/fling_client", root);
-  args[1] = "--target";
-  gpr_join_host_port(&args[2], "127.0.0.1", port);
-  args[3] = "--scenario=ping-pong-request";
-  args[4] = "--no-secure";
-  args[5] = 0;
-  cli = gpr_subprocess_create(6, args);
-  gpr_free(args[0]);
-  gpr_free(args[2]);
+gpr_subprocess *gpr_subprocess_create(int argc, char **argv);
+/* if subprocess has not been joined, kill it */
+void gpr_subprocess_destroy(gpr_subprocess *p);
+/* returns exit status; can be called at most once */
+int gpr_subprocess_join(gpr_subprocess *p);
+void gpr_subprocess_interrupt(gpr_subprocess *p);
 
-  /* wait for completion */
-  printf("waiting for client\n");
-  if ((status = gpr_subprocess_join(cli))) {
-    gpr_subprocess_destroy(cli);
-    gpr_subprocess_destroy(svr);
-    return status;
-  }
-  gpr_subprocess_destroy(cli);
-
-  gpr_subprocess_interrupt(svr);
-  status = gpr_subprocess_join(svr);
-  gpr_subprocess_destroy(svr);
-  return status;
-}
+#endif
