@@ -47,4 +47,7 @@ void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   size_t nslices, grpc_mdctx *metadata_context,
                                   int is_client);
 
+void grpc_chttp2_module_init(void);
+void grpc_chttp2_module_destroy(void);
+
 #endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */
