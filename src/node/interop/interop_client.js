@@ -263,6 +263,19 @@ function cancelAfterFirstResponse(client, done) {
   });
 }
 
+function timeoutOnSleepingServer(client, done) {
+  var deadline = new Date();
+  deadline.setMilliseconds(deadline.getMilliseconds() + 1);
+  var call = client.fullDuplexCall(null, deadline);
+  call.write({
+    payload: {body: zeroBuffer(27182)}
+  });
+  call.on('error', function(error) {
+    assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+    done();
+  });
+}
+
 /**
  * Run one of the authentication tests.
  * @param {string} expected_user The expected username in the response
@@ -315,6 +328,7 @@ var test_cases = {
   empty_stream: emptyStream,
   cancel_after_begin: cancelAfterBegin,
   cancel_after_first_response: cancelAfterFirstResponse,
+  timeout_on_sleeping_server: timeoutOnSleepingServer,
   compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER, null),
   service_account_creds: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
   jwt_token_creds: _.partial(authTest, AUTH_USER, null)

@@ -83,6 +83,7 @@ cc_library(
     "src/core/support/time.c",
     "src/core/support/time_posix.c",
     "src/core/support/time_win32.c",
+    "src/core/support/tls_pthread.c",
   ],
   hdrs = [
     "include/grpc/support/alloc.h",
