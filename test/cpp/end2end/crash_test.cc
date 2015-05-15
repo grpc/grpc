@@ -86,6 +86,8 @@ class CrashTest : public ::testing::Test {
 
   void KillServer() {
     server_.reset();
+    // give some time for the TCP connection to drop
+    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
   }
 
  private:
