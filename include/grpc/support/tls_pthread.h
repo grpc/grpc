@@ -47,7 +47,7 @@ struct gpr_pthread_thread_local {
 #define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
 #define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)
 #define gpr_tls_set(tls, new_value) \
-    GPR_ASSERT(pthread_setspecific((tls)->key, (void*)(new_value)) == 0)
+    (GPR_ASSERT(pthread_setspecific((tls)->key, (void*)(new_value)) == 0), (new_value))
 #define gpr_tls_get(tls) ((gpr_intptr)pthread_getspecific((tls)->key))
 
 #endif
