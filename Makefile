@@ -2327,6 +2327,7 @@ LIBGPR_SRC = \
     src/core/support/time.c \
     src/core/support/time_posix.c \
     src/core/support/time_win32.c \
+    src/core/support/tls_pthread.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/support/alloc.h \
