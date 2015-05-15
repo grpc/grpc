@@ -106,6 +106,9 @@
     <ClCompile Include="..\..\src\core\support\time_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\tls_pthread.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\support\alloc.h">

@@ -31,25 +31,15 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_TLS_PTHREAD_H
-#define GRPC_SUPPORT_TLS_PTHREAD_H
+#include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>  /* for GPR_ASSERT */
-#include <pthread.h>
+#ifdef GPR_PTHREAD_TLS
 
-/* Thread local storage based on pthread library calls.
-   #include tls.h to use this - and see that file for documentation */
+#include <grpc/support/tls.h>
 
-struct gpr_pthread_thread_local {
-  pthread_key_t key;
-};
+gpr_intptr gpr_tls_set(struct gpr_pthread_thread_local *tls, gpr_intptr value) {
+  GPR_ASSERT(0 == pthread_set_specific(tls->key, (void*)value));
+  return value;
+}
 
-#define GPR_TLS_DECL(name) \
-    static struct gpr_pthread_thread_local name = {0}
-
-#define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
-#define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)
-gpr_intptr gpr_tls_set(struct gpr_pthread_thread_local *tls, gpr_intptr value);
-#define gpr_tls_get(tls) ((gpr_intptr)pthread_getspecific((tls)->key))
-
-#endif
+#endif /* GPR_PTHREAD_TLS */

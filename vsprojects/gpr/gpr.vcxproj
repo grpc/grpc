@@ -252,6 +252,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\time_win32.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\tls_pthread.c">
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
