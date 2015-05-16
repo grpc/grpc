@@ -540,7 +540,8 @@
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/cli_call.cc",
-        "test/cpp/util/create_test_channel.cc"
+        "test/cpp/util/create_test_channel.cc",
+        "test/cpp/util/fake_credentials.cc"
       ]
     },
     {
