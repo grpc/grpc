@@ -39,6 +39,7 @@
 #import <gRPC/GRXWriter+Immediate.h>
 #import <gRPC/GRXWriteable.h>
 #import <Route_guide/RouteGuide.pbobjc.h>
+#import <Route_guide/RouteGuide.pbrpc.h>
 
 @interface SampleTests : XCTestCase
 @end
@@ -132,6 +133,24 @@
   }];
 
   [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
+}
+
+- (void)testSimpleProtoRPCUsingGeneratedService {
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
+
+  RGDPoint *point = [RGDPoint message];
+  point.latitude = 28E7;
+  point.longitude = -15E7;
+
+  RGDRouteGuide *service = [[RGDRouteGuide alloc] initWithHost:@"http://127.0.0.1:8980"];
+  [service getFeatureWithRequest:point handler:^(RGDFeature *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertEqualObjects(point, response.location);
+    XCTAssertNotNil(response.name, @"Response's name is nil.");
+    [completion fulfill];
+  }];
 
   [self waitForExpectationsWithTimeout:2.0 handler:nil];
 }
