@@ -34,6 +34,9 @@
 #ifndef GRPC_SUPPORT_TLS_PTHREAD_H
 #define GRPC_SUPPORT_TLS_PTHREAD_H
 
+#include <grpc/support/log.h>  /* for GPR_ASSERT */
+#include <pthread.h>
+
 /* Thread local storage based on pthread library calls.
    #include tls.h to use this - and see that file for documentation */
 
@@ -46,8 +49,7 @@ struct gpr_pthread_thread_local {
 
 #define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
 #define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)
-#define gpr_tls_set(tls, new_value) \
-    GPR_ASSERT(pthread_setspecific((tls)->key, (void*)(new_value)) == 0)
+gpr_intptr gpr_tls_set(struct gpr_pthread_thread_local *tls, gpr_intptr value);
 #define gpr_tls_get(tls) ((gpr_intptr)pthread_getspecific((tls)->key))
 
 #endif

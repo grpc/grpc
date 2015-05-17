@@ -256,19 +256,16 @@ static tsi_peer peer_from_cert_name_test_entry(
   name_list *nl;
   parsed_dns_names dns_entries = parse_dns_names(entry->dns_names);
   nl = dns_entries.names;
-  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_peer(1 + dns_entries.name_count, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, entry->common_name,
                  &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_list_peer_property(
-                 TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY,
-                 dns_entries.name_count, &peer.properties[1]) == TSI_OK);
-  i = 0;
+  i = 1;
   while (nl != NULL) {
     char *processed = processed_dns_name(nl->name);
     GPR_ASSERT(tsi_construct_string_peer_property(
-                   NULL, processed, strlen(nl->name),
-                   &peer.properties[1].value.list.children[i++]) == TSI_OK);
+                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
+                   strlen(nl->name), &peer.properties[i++]) == TSI_OK);
     nl = nl->next;
     gpr_free(processed);
   }

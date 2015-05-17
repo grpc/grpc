@@ -34,7 +34,7 @@ client_vm=$2
 server_vm=$3
 result=interop_result.$1
 cur=$(date "+%Y-%m-%d-%H-%M-%S") 
-log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/interop_result/$test_case/$cur
+log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/interop_result/$test_case/$cur/logs
 
 main() {
   source grpc_docker.sh
@@ -51,7 +51,7 @@ main() {
       else
         echo "          ['$test_case', '$client', '$server', false, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/$result.txt
       fi
-      gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/interop_result/$test_case/$cur/$log_file_name
+      gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/interop_result/$test_case/$cur/logs/$log_file_name
       rm /tmp/$log_file_name
     done
   done

@@ -81,6 +81,24 @@ static const char *ssl_cipher_suites(void) {
 
 /* -- Common methods. -- */
 
+/* Returns the first property with that name. */
+static const tsi_peer_property *tsi_peer_get_property_by_name(
+    const tsi_peer *peer, const char *name) {
+  size_t i;
+  if (peer == NULL) return NULL;
+  for (i = 0; i < peer->property_count; i++) {
+    const tsi_peer_property* property = &peer->properties[i];
+    if (name == NULL && property->name == NULL) {
+      return property;
+    }
+    if (name != NULL && property->name != NULL &&
+        strcmp(property->name, name) == 0) {
+      return property;
+    }
+  }
+  return NULL;
+}
+
 grpc_security_status grpc_security_connector_create_handshaker(
     grpc_security_connector *sc, tsi_handshaker **handshaker) {
   if (sc == NULL || handshaker == NULL) return GRPC_SECURITY_ERROR;
@@ -212,13 +230,8 @@ static grpc_security_status fake_check_peer(grpc_security_connector *sc,
     status = GRPC_SECURITY_ERROR;
     goto end;
   }
-  if (peer.properties[0].type != TSI_PEER_PROPERTY_TYPE_STRING) {
-    gpr_log(GPR_ERROR, "Invalid type of cert type property.");
-    status = GRPC_SECURITY_ERROR;
-    goto end;
-  }
-  if (strncmp(peer.properties[0].value.string.data, TSI_FAKE_CERTIFICATE_TYPE,
-              peer.properties[0].value.string.length)) {
+  if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
+              peer.properties[0].value.length)) {
     gpr_log(GPR_ERROR, "Invalid value for cert type property.");
     status = GRPC_SECURITY_ERROR;
     goto end;
@@ -365,12 +378,7 @@ static grpc_security_status ssl_check_peer(const char *peer_name,
     gpr_log(GPR_ERROR, "Missing selected ALPN property.");
     return GRPC_SECURITY_ERROR;
   }
-  if (p->type != TSI_PEER_PROPERTY_TYPE_STRING) {
-    gpr_log(GPR_ERROR, "Invalid selected ALPN property.");
-    return GRPC_SECURITY_ERROR;
-  }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.string.data,
-                                             p->value.string.length)) {
+  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
     gpr_log(GPR_ERROR, "Invalid ALPN value.");
     return GRPC_SECURITY_ERROR;
   }

@@ -31,31 +31,20 @@
  *
  */
 
-#ifndef NET_GRPC_PHP_GRPC_SERVER_H_
-#define NET_GRPC_PHP_GRPC_SERVER_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#ifndef GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
+#define GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
 
 #include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include "php_grpc.h"
 
 #include <grpc/grpc.h>
 
-/* Class entry for the Server PHP class */
-extern zend_class_entry *grpc_ce_server;
+/* The global completion queue for all operations */
+extern grpc_completion_queue *completion_queue;
 
-/* Wrapper struct for grpc_server that can be associated with a PHP object */
-typedef struct wrapped_grpc_server {
-  zend_object std;
+/* Initializes the completion queue */
+void grpc_php_init_completion_queue(TSRMLS_D);
 
-  grpc_server *wrapped;
-} wrapped_grpc_server;
+/* Shut down the completion queue */
+void grpc_php_shutdown_completion_queue(TSRMLS_D);
 
-/* Initializes the Server class */
-void grpc_init_server(TSRMLS_D);
-
-#endif /* NET_GRPC_PHP_GRPC_SERVER_H_ */
+#endif /* GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */

@@ -896,6 +896,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fake_security_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -1139,6 +1148,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -1353,6 +1371,14 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_request_response_with_payload_and_call_creds_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_trailing_metadata_and_payload_test", 
     "platforms": [
       "posix"
     ]
@@ -1590,6 +1616,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_and_call_creds_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1841,6 +1876,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -2076,6 +2120,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_request_response_with_payload_and_call_creds_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2327,6 +2380,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -2561,6 +2623,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_request_response_with_trailing_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -2767,6 +2838,14 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_request_response_with_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_request_response_with_trailing_metadata_and_payload_unsecure_test", 
     "platforms": [
       "posix"
     ]
@@ -3003,6 +3082,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3229,6 +3317,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"

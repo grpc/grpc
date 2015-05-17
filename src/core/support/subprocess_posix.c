@@ -31,47 +31,78 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_TLS_H
-#define GRPC_SUPPORT_TLS_H
-
 #include <grpc/support/port_platform.h>
 
-/* Thread local storage.
+#ifdef GPR_POSIX_SUBPROCESS
 
-   A minimal wrapper that should be implementable across many compilers,
-   and implementable efficiently across most modern compilers.
+#include <grpc/support/subprocess.h>
 
-   Thread locals have type gpr_intptr.
+#include <unistd.h>
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-   Declaring a thread local variable 'foo':
-     GPR_TLS_DECL(foo);
-   Thread locals always have static scope.
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-   Initializing a thread local (must be done at library initialization 
-   time):
-     gpr_tls_init(&foo);
+struct gpr_subprocess {
+  int pid;
+  int joined;
+};
 
-   Destroying a thread local:
-     gpr_tls_destroy(&foo);
+char *gpr_subprocess_binary_extension() { return ""; }
 
-   Setting a thread local (returns new_value):
-     gpr_tls_set(&foo, new_value);
+gpr_subprocess *gpr_subprocess_create(int argc, char **argv) {
+  gpr_subprocess *r;
+  int pid;
+  char **exec_args;
 
-   Accessing a thread local:
-     current_value = gpr_tls_get(&foo, value); 
+  pid = fork();
+  if (pid == -1) {
+    return NULL;
+  } else if (pid == 0) {
+    exec_args = gpr_malloc((argc + 1) * sizeof(char *));
+    memcpy(exec_args, argv, argc * sizeof(char *));
+    exec_args[argc] = NULL;
+    execv(exec_args[0], exec_args);
+    /* if we reach here, an error has occurred */
+    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
+    _exit(1);
+    return NULL;
+  } else {
+    r = gpr_malloc(sizeof(gpr_subprocess));
+    memset(r, 0, sizeof(*r));
+    r->pid = pid;
+    return r;
+  }
+}
 
-   ALL functions here may be implemented as macros. */
+void gpr_subprocess_destroy(gpr_subprocess *p) {
+  if (!p->joined) {
+    kill(p->pid, SIGKILL);
+    gpr_subprocess_join(p);
+  }
+  gpr_free(p);
+}
 
-#ifdef GPR_GCC_TLS
-#include <grpc/support/tls_gcc.h>
-#endif
+int gpr_subprocess_join(gpr_subprocess *p) {
+  int status;
+  if (waitpid(p->pid, &status, 0) == -1) {
+    gpr_log(GPR_ERROR, "waitpid failed: %s", strerror(errno));
+    return -1;
+  }
+  return status;
+}
 
-#ifdef GPR_MSVC_TLS
-#include <grpc/support/tls_msvc.h>
-#endif
+void gpr_subprocess_interrupt(gpr_subprocess *p) {
+  if (!p->joined) {
+    kill(p->pid, SIGINT);
+  }
+}
 
-#ifdef GPR_PTHREAD_TLS
-#include <grpc/support/tls_pthread.h>
-#endif
-
-#endif
+#endif /* GPR_POSIX_SUBPROCESS */
