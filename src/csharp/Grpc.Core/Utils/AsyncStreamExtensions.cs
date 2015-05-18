@@ -78,11 +78,11 @@ namespace Grpc.Core.Utils
         {
             foreach (var element in elements)
             {
-                await streamWriter.Write(element);
+                await streamWriter.WriteAsync(element);
             }
             if (complete)
             {
-                await streamWriter.Complete();
+                await streamWriter.CompleteAsync();
             }
         }
 
@@ -94,7 +94,7 @@ namespace Grpc.Core.Utils
         {
             foreach (var element in elements)
             {
-                await streamWriter.Write(element);
+                await streamWriter.WriteAsync(element);
             }
         }
     }

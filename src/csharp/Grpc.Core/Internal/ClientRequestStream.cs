@@ -46,14 +46,14 @@ namespace Grpc.Core.Internal
             this.call = call;
         }
 
-        public Task Write(TRequest message)
+        public Task WriteAsync(TRequest message)
         {
             var taskSource = new AsyncCompletionTaskSource<object>();
             call.StartSendMessage(message, taskSource.CompletionDelegate);
             return taskSource.Task;
         }
 
-        public Task Complete()
+        public Task CompleteAsync()
         {
             var taskSource = new AsyncCompletionTaskSource<object>();
             call.StartSendCloseFromClient(taskSource.CompletionDelegate);

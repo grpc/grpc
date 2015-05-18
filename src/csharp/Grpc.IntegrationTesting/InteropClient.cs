@@ -256,7 +256,7 @@ namespace Grpc.IntegrationTesting
 
                 var call = client.FullDuplexCall();
 
-                await call.RequestStream.Write(StreamingOutputCallRequest.CreateBuilder()
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                 .SetResponseType(PayloadType.COMPRESSABLE)
                 .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
                 .SetPayload(CreateZerosPayload(27182)).Build());
@@ -265,7 +265,7 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.Write(StreamingOutputCallRequest.CreateBuilder()
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                           .SetResponseType(PayloadType.COMPRESSABLE)
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(9))
                           .SetPayload(CreateZerosPayload(8)).Build());
@@ -274,7 +274,7 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.Write(StreamingOutputCallRequest.CreateBuilder()
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                           .SetResponseType(PayloadType.COMPRESSABLE)
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(2653))
                           .SetPayload(CreateZerosPayload(1828)).Build());
@@ -283,7 +283,7 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.Write(StreamingOutputCallRequest.CreateBuilder()
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                           .SetResponseType(PayloadType.COMPRESSABLE)
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
                           .SetPayload(CreateZerosPayload(45904)).Build());
@@ -292,7 +292,7 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(58979, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.Complete();
+                await call.RequestStream.CompleteAsync();
 
                 Assert.IsFalse(await call.ResponseStream.MoveNext());
 
@@ -306,7 +306,7 @@ namespace Grpc.IntegrationTesting
             {
                 Console.WriteLine("running empty_stream");
                 var call = client.FullDuplexCall();
-                await call.RequestStream.Complete();
+                await call.RequestStream.CompleteAsync();
 
                 var responseList = await call.ResponseStream.ToList();
                 Assert.AreEqual(0, responseList.Count);
@@ -389,7 +389,7 @@ namespace Grpc.IntegrationTesting
                 var cts = new CancellationTokenSource();
                 var call = client.FullDuplexCall(cts.Token);
 
-                await call.RequestStream.Write(StreamingOutputCallRequest.CreateBuilder()
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                     .SetResponseType(PayloadType.COMPRESSABLE)
                     .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
                     .SetPayload(CreateZerosPayload(27182)).Build());
