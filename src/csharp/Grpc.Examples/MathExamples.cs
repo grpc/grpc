@@ -51,13 +51,6 @@ namespace math
             Console.WriteLine("DivAsync Result: " + result);
         }
 
-        public static async Task DivAsyncWithCancellationExample(Math.IMathClient stub)
-        {
-            Task<DivReply> resultTask = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-            DivReply result = await resultTask;
-            Console.WriteLine(result);
-        }
-
         public static async Task FibExample(Math.IMathClient stub)
         {
             var call = stub.Fib(new FibArgs.Builder { Limit = 5 }.Build());
