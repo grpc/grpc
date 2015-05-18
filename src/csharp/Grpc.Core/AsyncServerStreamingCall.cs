@@ -43,10 +43,12 @@ namespace Grpc.Core
     public sealed class AsyncServerStreamingCall<TResponse> : IDisposable
     {
         readonly IAsyncStreamReader<TResponse> responseStream;
+        readonly Action disposeAction;
 
-        public AsyncServerStreamingCall(IAsyncStreamReader<TResponse> responseStream)
+        public AsyncServerStreamingCall(IAsyncStreamReader<TResponse> responseStream, Action disposeAction)
         {
             this.responseStream = responseStream;
+            this.disposeAction = disposeAction;
         }
 
         /// <summary>
@@ -68,8 +70,7 @@ namespace Grpc.Core
         /// </summary>
         public void Dispose()
         {
-            // TODO(jtattermusch): implement
-            throw new NotImplementedException();
+            disposeAction.Invoke();
         }
     }
 }

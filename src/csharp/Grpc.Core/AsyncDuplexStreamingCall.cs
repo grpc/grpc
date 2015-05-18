@@ -44,11 +44,13 @@ namespace Grpc.Core
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly IAsyncStreamReader<TResponse> responseStream;
+        readonly Action disposeAction;
 
-        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream)
+        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream, Action disposeAction)
         {
             this.requestStream = requestStream;
             this.responseStream = responseStream;
+            this.disposeAction = disposeAction;
         }
 
         /// <summary>
@@ -81,8 +83,7 @@ namespace Grpc.Core
         /// </summary>
         public void Dispose()
         {
-            // TODO(jtattermusch): implement
-            throw new NotImplementedException();
+            disposeAction.Invoke();
         }
     }
 }

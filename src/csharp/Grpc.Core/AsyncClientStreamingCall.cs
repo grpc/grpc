@@ -44,11 +44,13 @@ namespace Grpc.Core
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly Task<TResponse> result;
+        readonly Action disposeAction;
 
-        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> result)
+        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> result, Action disposeAction)
         {
             this.requestStream = requestStream;
             this.result = result;
+            this.disposeAction = disposeAction;
         }
 
         /// <summary>
@@ -90,8 +92,7 @@ namespace Grpc.Core
         /// </summary>
         public void Dispose()
         {
-            // TODO(jtattermusch): implement
-            throw new NotImplementedException();
+            disposeAction.Invoke();
         }
     }
 }

@@ -73,7 +73,7 @@ namespace Grpc.Core
             asyncCall.StartServerStreamingCall(req, call.Headers);
             RegisterCancellationCallback(asyncCall, token);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncServerStreamingCall<TResponse>(responseStream);
+            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.Cancel);
         }
 
         public static AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, CancellationToken token)
@@ -85,7 +85,7 @@ namespace Grpc.Core
             var resultTask = asyncCall.ClientStreamingCallAsync(call.Headers);
             RegisterCancellationCallback(asyncCall, token);
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask);
+            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.Cancel);
         }
 
         public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, CancellationToken token)
@@ -98,7 +98,7 @@ namespace Grpc.Core
             RegisterCancellationCallback(asyncCall, token);
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream);
+            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.Cancel);
         }
 
         private static void RegisterCancellationCallback<TRequest, TResponse>(AsyncCall<TRequest, TResponse> asyncCall, CancellationToken token)

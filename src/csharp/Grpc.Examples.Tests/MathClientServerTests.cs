@@ -96,7 +96,19 @@ namespace math.Tests
             Assert.AreEqual(0, response.Remainder);
         }
 
-        // TODO(jtattermusch): test division by zero
+        [Test]
+        public void DivByZero()
+        {
+            try
+            {
+                DivReply response = client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 0 }.Build());
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+            }   
+        }
 
         [Test]
         public void DivAsync()
@@ -119,7 +131,6 @@ namespace math.Tests
                     var responses = await call.ResponseStream.ToList();
                     CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
                         responses.ConvertAll((n) => n.Num_));
-
                 }
             }).Wait();
         }
@@ -153,7 +164,6 @@ namespace math.Tests
                     new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
                     new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
                 };
-
 
                 using (var call = client.DivMany())
                 {
