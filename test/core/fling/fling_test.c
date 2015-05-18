@@ -31,20 +31,11 @@
  *
  */
 
-#ifndef _POSIX_SOURCE
-#define _POSIX_SOURCE
-#endif
-
-#include <unistd.h>
-#include <assert.h>
-#include <stdio.h>
 #include <string.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <stdio.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/subprocess.h>
 #include <grpc/support/host_port.h>
 #include "src/core/support/string.h"
 #include "test/core/util/port.h"
@@ -56,10 +47,7 @@ int main(int argc, char **argv) {
   int port = grpc_pick_unused_port_or_die();
   char *args[10];
   int status;
-  pid_t svr, cli;
-  /* seed rng with pid, so we don't end up with the same random numbers as a
-     concurrently running test binary */
-  srand(getpid());
+  gpr_subprocess *svr, *cli;
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, lslash - me);
@@ -68,45 +56,36 @@ int main(int argc, char **argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  svr = fork();
-  if (svr == 0) {
-    gpr_asprintf(&args[0], "%s/fling_server", root);
-    args[1] = "--bind";
-    gpr_join_host_port(&args[2], "::", port);
-    args[3] = "--no-secure";
-    args[4] = 0;
-    execv(args[0], args);
+  gpr_asprintf(&args[0], "%s/fling_server%s", root, gpr_subprocess_binary_extension());
+  args[1] = "--bind";
+  gpr_join_host_port(&args[2], "::", port);
+  args[3] = "--no-secure";
+  svr = gpr_subprocess_create(4, args);
+  gpr_free(args[0]);
+  gpr_free(args[2]);
 
-    gpr_free(args[0]);
-    gpr_free(args[2]);
-    return 1;
-  }
-  /* wait a little */
-  sleep(2);
   /* start the client */
-  cli = fork();
-  if (cli == 0) {
-    gpr_asprintf(&args[0], "%s/fling_client", root);
-    args[1] = "--target";
-    gpr_join_host_port(&args[2], "127.0.0.1", port);
-    args[3] = "--scenario=ping-pong-request";
-    args[4] = "--no-secure";
-    args[5] = 0;
-    execv(args[0], args);
+  gpr_asprintf(&args[0], "%s/fling_client%s", root, gpr_subprocess_binary_extension());
+  args[1] = "--target";
+  gpr_join_host_port(&args[2], "127.0.0.1", port);
+  args[3] = "--scenario=ping-pong-request";
+  args[4] = "--no-secure";
+  args[5] = 0;
+  cli = gpr_subprocess_create(6, args);
+  gpr_free(args[0]);
+  gpr_free(args[2]);
 
-    gpr_free(args[0]);
-    gpr_free(args[2]);
-    return 1;
-  }
   /* wait for completion */
   printf("waiting for client\n");
-  if (waitpid(cli, &status, 0) == -1) return 2;
-  if (!WIFEXITED(status)) return 4;
-  if (WEXITSTATUS(status)) return WEXITSTATUS(status);
-  printf("waiting for server\n");
-  kill(svr, SIGINT);
-  if (waitpid(svr, &status, 0) == -1) return 2;
-  if (!WIFEXITED(status)) return 4;
-  if (WEXITSTATUS(status)) return WEXITSTATUS(status);
-  return 0;
+  if ((status = gpr_subprocess_join(cli))) {
+    gpr_subprocess_destroy(cli);
+    gpr_subprocess_destroy(svr);
+    return status;
+  }
+  gpr_subprocess_destroy(cli);
+
+  gpr_subprocess_interrupt(svr);
+  status = gpr_subprocess_join(svr);
+  gpr_subprocess_destroy(svr);
+  return status;
 }

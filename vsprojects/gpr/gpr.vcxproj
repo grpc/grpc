@@ -161,6 +161,7 @@
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
+    <ClInclude Include="..\..\include\grpc\support\subprocess.h" />
     <ClInclude Include="..\..\include\grpc\support\sync.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_generic.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_posix.h" />
@@ -234,6 +235,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\string_win32.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\subprocess_posix.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync_posix.c">
@@ -251,6 +254,8 @@
     <ClCompile Include="..\..\src\core\support\time_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\time_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\tls_pthread.c">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

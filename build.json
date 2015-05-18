@@ -315,6 +315,7 @@
         "include/grpc/support/port_platform.h",
         "include/grpc/support/slice.h",
         "include/grpc/support/slice_buffer.h",
+        "include/grpc/support/subprocess.h",
         "include/grpc/support/sync.h",
         "include/grpc/support/sync_generic.h",
         "include/grpc/support/sync_posix.h",
@@ -362,6 +363,7 @@
         "src/core/support/string.c",
         "src/core/support/string_posix.c",
         "src/core/support/string_win32.c",
+        "src/core/support/subprocess_posix.c",
         "src/core/support/sync.c",
         "src/core/support/sync_posix.c",
         "src/core/support/sync_win32.c",
@@ -370,7 +372,8 @@
         "src/core/support/thd_win32.c",
         "src/core/support/time.c",
         "src/core/support/time_posix.c",
-        "src/core/support/time_win32.c"
+        "src/core/support/time_win32.c",
+        "src/core/support/tls_pthread.c"
       ],
       "secure": "no",
       "vs_project_guid": "{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}"
@@ -2130,7 +2133,7 @@
     },
     {
       "name": "qps_driver",
-      "build": "tool",
+      "build": "benchmark",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_driver.cc"
@@ -2148,8 +2151,7 @@
     },
     {
       "name": "qps_test",
-      "build": "test",
-      "run": false,
+      "build": "benchmark",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
@@ -2161,12 +2163,13 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
       "name": "qps_worker",
-      "build": "tool",
+      "build": "benchmark",
       "language": "c++",
       "headers": [
         "test/cpp/qps/client.h",
