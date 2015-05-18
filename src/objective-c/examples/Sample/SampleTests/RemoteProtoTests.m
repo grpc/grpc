@@ -129,6 +129,7 @@
 
 - (void)testServerStreamingRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
+
   NSArray *expectedSizes = @[@31415, @9, @2653, @58979];
 
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
@@ -144,15 +145,22 @@
                                              RMTStreamingOutputCallResponse *response,
                                              NSError *error){
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertTrue(done || response, @"Event handler called without an event.");
 
-    RMTStreamingOutputCallResponse *expectedResponse = [RMTStreamingOutputCallResponse message];
-    expectedResponse.payload.type = RMTPayloadType_Compressable;
-    int expectedSize = [expectedSizes[index] unsignedIntegerValue];
-    expectedResponse.payload.body = [NSMutableData dataWithLength:expectedSize];
-    XCTAssertEqualObjects(response, expectedResponse);
+    if (response) {
+      XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+      RMTStreamingOutputCallResponse * expected = [RMTStreamingOutputCallResponse message];
+      expected.payload.type = RMTPayloadType_Compressable;
+      int expectedSize = [expectedSizes[index] unsignedIntegerValue];
+      expected.payload.body = [NSMutableData dataWithLength:expectedSize];
+      XCTAssertEqualObjects(response, expected);
+      index += 1;
+    }
 
-    [expectation fulfill];
-    index += 1;
+    if (done) {
+      XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
+      [expectation fulfill];
+    }
   }];
   
   [self waitForExpectationsWithTimeout:4 handler:nil];
