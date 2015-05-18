@@ -114,11 +114,13 @@ namespace math.Tests
         {
             Task.Run(async () =>
             {
-                var call = client.Fib(new FibArgs.Builder { Limit = 6 }.Build());
+                using (var call = client.Fib(new FibArgs.Builder { Limit = 6 }.Build()))
+                {
+                    var responses = await call.ResponseStream.ToList();
+                    CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
+                        responses.ConvertAll((n) => n.Num_));
 
-                var responses = await call.ResponseStream.ToList();
-                CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
-                    responses.ConvertAll((n) => n.Num_));
+                }
             }).Wait();
         }
 
@@ -128,13 +130,15 @@ namespace math.Tests
         {
             Task.Run(async () =>
             {
-                var call = client.Sum();
-                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(
-                         n => Num.CreateBuilder().SetNum_(n).Build());
+                using (var call = client.Sum())
+                {
+                    var numbers = new List<long> { 10, 20, 30 }.ConvertAll(
+                             n => Num.CreateBuilder().SetNum_(n).Build());
 
-                await call.RequestStream.WriteAll(numbers);
-                var result = await call.Result;
-                Assert.AreEqual(60, result.Num_);
+                    await call.RequestStream.WriteAll(numbers);
+                    var result = await call.Result;
+                    Assert.AreEqual(60, result.Num_);
+                }
             }).Wait();
         }
 
@@ -150,12 +154,15 @@ namespace math.Tests
                     new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
                 };
 
-                var call = client.DivMany();
-                await call.RequestStream.WriteAll(divArgsList);
-                var result = await call.ResponseStream.ToList();
 
-                CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.ConvertAll((divReply) => divReply.Quotient));
-                CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.ConvertAll((divReply) => divReply.Remainder));
+                using (var call = client.DivMany())
+                {
+                    await call.RequestStream.WriteAll(divArgsList);
+                    var result = await call.ResponseStream.ToList();
+
+                    CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.ConvertAll((divReply) => divReply.Quotient));
+                    CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.ConvertAll((divReply) => divReply.Remainder));
+                }
             }).Wait();
         }
     }
