@@ -191,7 +191,8 @@ class End2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(), FakeServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             FakeTransportSecurityServerCredentials());
     builder.RegisterService(&service_);
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
@@ -203,8 +204,9 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
-        server_address_.str(), FakeCredentials(), ChannelArguments());
+    std::shared_ptr<ChannelInterface> channel =
+        CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
+                      ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -415,8 +417,9 @@ TEST_F(End2endTest, BidiStream) {
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_F(End2endTest, DiffPackageServices) {
-  std::shared_ptr<ChannelInterface> channel = CreateChannel(
-      server_address_.str(), FakeCredentials(), ChannelArguments());
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
+                    ChannelArguments());
 
   EchoRequest request;
   EchoResponse response;
@@ -671,6 +674,12 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
   EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
                                GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
                                "fake_selector2"));
+  EXPECT_FALSE(MetadataContains(context.GetServerTrailingMetadata(),
+                                GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+                                "fake_token1"));
+  EXPECT_FALSE(MetadataContains(context.GetServerTrailingMetadata(),
+                                GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+                                "fake_selector1"));
   EXPECT_EQ(request.message(), response.message());
   EXPECT_TRUE(s.IsOk());
 }

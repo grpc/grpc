@@ -42,8 +42,8 @@ class ServerCredentials;
 
 namespace testing {
 
-std::shared_ptr<Credentials> FakeCredentials();
-std::shared_ptr<ServerCredentials> FakeServerCredentials();
+std::shared_ptr<Credentials> FakeTransportSecurityCredentials();
+std::shared_ptr<ServerCredentials> FakeTransportSecurityServerCredentials();
 
 }  // namespace testing
 }  // namespace grpc

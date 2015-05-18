@@ -36,39 +36,18 @@
 #include <grpc++/credentials.h>
 #include <grpc++/server_credentials.h>
 #include "src/cpp/client/channel.h"
+#include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
 namespace grpc {
 namespace testing {
 
-namespace {
-class FakeCredentialsImpl GRPC_FINAL : public Credentials {
- public:
-  FakeCredentialsImpl()
-      : c_creds_(grpc_fake_transport_security_credentials_create()) {}
-  ~FakeCredentialsImpl() { grpc_credentials_release(c_creds_); }
-  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
-  std::shared_ptr<ChannelInterface> CreateChannel(
-      const grpc::string& target, const ChannelArguments& args) GRPC_OVERRIDE {
-    grpc_channel_args channel_args;
-    args.SetChannelArgs(&channel_args);
-    return std::shared_ptr<ChannelInterface>(new Channel(
-        target,
-        grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
-  }
-  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE { return false; }
-
- private:
-  grpc_credentials* const c_creds_;
-};
-
-}  // namespace
-
-std::shared_ptr<Credentials> FakeCredentials() {
-  return std::shared_ptr<Credentials>(new FakeCredentialsImpl());
+std::shared_ptr<Credentials> FakeTransportSecurityCredentials() {
+  grpc_credentials* c_creds = grpc_fake_transport_security_credentials_create();
+  return std::shared_ptr<Credentials>(new SecureCredentials(c_creds));
 }
 
-std::shared_ptr<ServerCredentials> FakeServerCredentials() {
+std::shared_ptr<ServerCredentials> FakeTransportSecurityServerCredentials() {
   grpc_server_credentials* c_creds =
       grpc_fake_transport_security_server_credentials_create();
   return std::shared_ptr<ServerCredentials>(
