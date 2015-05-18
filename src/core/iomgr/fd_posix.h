@@ -66,8 +66,30 @@ struct grpc_fd {
   gpr_mu set_state_mu;
   gpr_atm shutdown;
 
+  /* The watcher list.
+     
+     The following watcher related fields are protected by watcher_mu.
+     
+     An fd_watcher is an ephemeral object created when an fd wants to
+     begin polling, and destroyed after the poll.
+     
+     It denotes the fd's interest in whether to read poll or write poll
+     or both or neither on this fd.
+
+     If a watcher is asked to poll for reads or writes, the read_watcher
+     or write_watcher fields are set respectively. A watcher may be asked
+     to poll for both, in which case both fields will be set.
+
+     read_watcher and write_watcher may be NULL if no watcher has been
+     asked to poll for reads or writes.
+
+     If an fd_watcher is not asked to poll for reads or writes, it's added
+     to a linked list of inactive watchers, rooted at inactive_watcher_root.
+     If at a later time there becomes need of a poller to poll, one of
+     the inactive pollers may be kicked out of their poll loops to take
+     that responsibility. */
   gpr_mu watcher_mu;
-  grpc_fd_watcher watcher_root;
+  grpc_fd_watcher inactive_watcher_root;
   grpc_fd_watcher *read_watcher;
   grpc_fd_watcher *write_watcher;
 
