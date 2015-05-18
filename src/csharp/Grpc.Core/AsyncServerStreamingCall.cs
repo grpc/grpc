@@ -41,22 +41,12 @@ namespace Grpc.Core
     /// Return type for server streaming calls.
     /// </summary>
     public sealed class AsyncServerStreamingCall<TResponse>
-        where TResponse : class
     {
         readonly IAsyncStreamReader<TResponse> responseStream;
 
         public AsyncServerStreamingCall(IAsyncStreamReader<TResponse> responseStream)
         {
             this.responseStream = responseStream;
-        }
-
-        /// <summary>
-        /// Reads the next response from ResponseStream
-        /// </summary>
-        /// <returns></returns>
-        public Task<TResponse> ReadNext()
-        {
-            return responseStream.ReadNext();
         }
 
         /// <summary>
