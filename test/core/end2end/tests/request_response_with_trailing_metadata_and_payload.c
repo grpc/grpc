@@ -164,14 +164,9 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-<<<<<<< HEAD
-                                                      f.server_cq, tag(101)));
-  cq_expect_completion(v_server, tag(101), 1);
-=======
                                                       f.server_cq, f.server_cq,
                                                       tag(101)));
-  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
->>>>>>> a468c36601dd5997580129bbd66b5ebed02521f8
+  cq_expect_completion(v_server, tag(101), 1);
   cq_verify(v_server);
 
   op = ops;

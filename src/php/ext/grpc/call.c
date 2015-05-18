@@ -52,6 +52,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 
+#include "completion_queue.h"
 #include "timeval.h"
 #include "channel.h"
 #include "byte_buffer.h"
@@ -62,13 +63,6 @@ zend_class_entry *grpc_ce_call;
 void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   wrapped_grpc_call *call = (wrapped_grpc_call *)object;
   if (call->owned && call->wrapped != NULL) {
-    if (call->queue != NULL) {
-      grpc_completion_queue_shutdown(call->queue);
-      while (grpc_completion_queue_next(call->queue, gpr_inf_future).type !=
-             GRPC_QUEUE_SHUTDOWN)
-        ;
-      grpc_completion_queue_destroy(call->queue);
-    }
     grpc_call_destroy(call->wrapped);
   }
   efree(call);
@@ -95,15 +89,13 @@ zend_object_value create_wrapped_grpc_call(zend_class_entry *class_type
 
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
    should be destroyed at the end of the object's lifecycle */
-zval *grpc_php_wrap_call(grpc_call *wrapped, grpc_completion_queue *queue,
-                         bool owned) {
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
   zval *call_object;
   MAKE_STD_ZVAL(call_object);
   object_init_ex(call_object, grpc_ce_call);
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
-  call->queue = queue;
   return call_object;
 }
 
@@ -247,9 +239,8 @@ PHP_METHOD(Call, __construct) {
   wrapped_grpc_timeval *deadline =
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
-  call->queue = grpc_completion_queue_create();
   call->wrapped = grpc_channel_create_call(
-      channel->wrapped, call->queue, method, channel->target,
+      channel->wrapped, completion_queue, method, channel->target,
       deadline->wrapped);
 }
 
@@ -415,7 +406,7 @@ PHP_METHOD(Call, startBatch) {
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(call->queue, call->wrapped,
+  event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
                                       gpr_inf_future);
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,

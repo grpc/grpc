@@ -74,6 +74,7 @@ cc_library(
     "src/core/support/string.c",
     "src/core/support/string_posix.c",
     "src/core/support/string_win32.c",
+    "src/core/support/subprocess_posix.c",
     "src/core/support/sync.c",
     "src/core/support/sync_posix.c",
     "src/core/support/sync_win32.c",
@@ -83,6 +84,7 @@ cc_library(
     "src/core/support/time.c",
     "src/core/support/time_posix.c",
     "src/core/support/time_win32.c",
+    "src/core/support/tls_pthread.c",
   ],
   hdrs = [
     "include/grpc/support/alloc.h",
@@ -100,6 +102,7 @@ cc_library(
     "include/grpc/support/port_platform.h",
     "include/grpc/support/slice.h",
     "include/grpc/support/slice_buffer.h",
+    "include/grpc/support/subprocess.h",
     "include/grpc/support/sync.h",
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
