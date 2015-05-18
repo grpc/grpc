@@ -40,7 +40,7 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for client streaming calls.
     /// </summary>
-    public sealed class AsyncClientStreamingCall<TRequest, TResponse>
+    public sealed class AsyncClientStreamingCall<TRequest, TResponse> : IDisposable
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly Task<TResponse> result;
@@ -80,6 +80,18 @@ namespace Grpc.Core
         public TaskAwaiter<TResponse> GetAwaiter()
         {
             return result.GetAwaiter();
+        }
+
+        /// <summary>
+        /// Provides means to provide after the call.
+        /// If the call has already finished normally (request stream has been completed and call result has been received), doesn't do anything.
+        /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
+        /// As a result, all resources being used by the call should be released eventually.
+        /// </summary>
+        public void Dispose()
+        {
+            // TODO(jtattermusch): implement
+            throw new NotImplementedException();
         }
     }
 }

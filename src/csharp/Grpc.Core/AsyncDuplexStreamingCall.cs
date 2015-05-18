@@ -40,7 +40,7 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for bidirectional streaming calls.
     /// </summary>
-    public sealed class AsyncDuplexStreamingCall<TRequest, TResponse>
+    public sealed class AsyncDuplexStreamingCall<TRequest, TResponse> : IDisposable
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly IAsyncStreamReader<TResponse> responseStream;
@@ -71,6 +71,18 @@ namespace Grpc.Core
             {
                 return requestStream;
             }
+        }
+
+        /// <summary>
+        /// Provides means to cleanup after the call.
+        /// If the call has already finished normally (request stream has been completed and response stream has been fully read), doesn't do anything.
+        /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
+        /// As a result, all resources being used by the call should be released eventually.
+        /// </summary>
+        public void Dispose()
+        {
+            // TODO(jtattermusch): implement
+            throw new NotImplementedException();
         }
     }
 }

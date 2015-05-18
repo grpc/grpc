@@ -40,7 +40,7 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for server streaming calls.
     /// </summary>
-    public sealed class AsyncServerStreamingCall<TResponse>
+    public sealed class AsyncServerStreamingCall<TResponse> : IDisposable
     {
         readonly IAsyncStreamReader<TResponse> responseStream;
 
@@ -58,6 +58,18 @@ namespace Grpc.Core
             {
                 return responseStream;
             }
+        }
+
+        /// <summary>
+        /// Provides means to cleanup after the call.
+        /// If the call has already finished normally (response stream has been fully read), doesn't do anything.
+        /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
+        /// As a result, all resources being used by the call should be released eventually.
+        /// </summary>
+        public void Dispose()
+        {
+            // TODO(jtattermusch): implement
+            throw new NotImplementedException();
         }
     }
 }
