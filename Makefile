@@ -1845,6 +1845,10 @@ test_c: buildtests_c
 test_cxx: buildtests_cxx
 	$(E) "[RUN]     Testing async_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing async_streaming_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test || ( echo test async_streaming_ping_pong_test failed ; exit 1 )
+	$(E) "[RUN]     Testing async_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test || ( echo test async_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
@@ -1863,6 +1867,10 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
+	$(E) "[RUN]     Testing sync_streaming_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test || ( echo test sync_streaming_ping_pong_test failed ; exit 1 )
+	$(E) "[RUN]     Testing sync_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test || ( echo test sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_pool_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_pool_test || ( echo test thread_pool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
