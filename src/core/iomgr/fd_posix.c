@@ -349,13 +349,13 @@ void grpc_fd_end_poll(grpc_fd_watcher *watcher, int got_read, int got_write) {
   if (watcher == fd->read_watcher) {
     /* remove read watcher, kick if we still need a read */
     was_polling = 1;
-    kick |= !got_read;
+    kick = kick || !got_read;
     fd->read_watcher = NULL;
   }
   if (watcher == fd->write_watcher) {
     /* remove write watcher, kick if we still need a write */
     was_polling = 1;
-    kick |= !got_write;
+    kick = kick || !got_write;
     fd->write_watcher = NULL;
   }
   if (!was_polling) {
