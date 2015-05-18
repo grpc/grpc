@@ -31,23 +31,28 @@
  *
  */
 
-#ifndef GRPCXX_CREATE_CHANNEL_H
-#define GRPCXX_CREATE_CHANNEL_H
-
-#include <memory>
-
-#include <grpc++/config.h>
+#include <grpc/grpc_security.h>
+#include <grpc++/channel_arguments.h>
 #include <grpc++/credentials.h>
+#include <grpc++/server_credentials.h>
+#include "src/cpp/client/channel.h"
+#include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/server/secure_server_credentials.h"
 
 namespace grpc {
-class ChannelArguments;
-class ChannelInterface;
+namespace testing {
 
-// If creds does not hold an object or is invalid, a lame channel is returned.
-std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target, const std::shared_ptr<Credentials>& creds,
-    const ChannelArguments& args);
+std::shared_ptr<Credentials> FakeTransportSecurityCredentials() {
+  grpc_credentials* c_creds = grpc_fake_transport_security_credentials_create();
+  return std::shared_ptr<Credentials>(new SecureCredentials(c_creds));
+}
 
+std::shared_ptr<ServerCredentials> FakeTransportSecurityServerCredentials() {
+  grpc_server_credentials* c_creds =
+      grpc_fake_transport_security_server_credentials_create();
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(c_creds));
+}
+
+}  // namespace testing
 }  // namespace grpc
-
-#endif  // GRPCXX_CREATE_CHANNEL_H
