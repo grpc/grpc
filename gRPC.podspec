@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.homepage = 'https://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com',
-                 'Michael Lumish' => 'mlumish@google.com' }
+                 'Michael Lumish'  => 'mlumish@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',  :tag => 'release-0_5_0' }
 
@@ -67,7 +67,8 @@ Pod::Spec.new do |s|
 
   s.subspec 'GRPCClient' do |gs|
     gs.summary = 'Objective-C wrapper around the core gRPC library.'
-    gs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
+    gs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com',
+                    'Michael Lumish'  => 'mlumish@google.com' }
 
     gs.source_files = 'src/objective-c/GRPCClient/*.{h,m}',
                       'src/objective-c/GRPCClient/private/*.{h,m}'
@@ -90,5 +91,6 @@ Pod::Spec.new do |s|
 
     ps.dependency 'gRPC/GRPCClient'
     ps.dependency 'gRPC/RxLibrary'
+    ps.dependency 'Protobuf', '~> 3.0'
   end
 end
