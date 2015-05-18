@@ -34,7 +34,6 @@
 #include "src/core/channel/http_server_filter.h"
 
 #include <string.h>
-#include <grpc/grpc_http.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
