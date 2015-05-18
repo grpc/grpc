@@ -39,4 +39,4 @@ root=`pwd`
 
 export LD_LIBRARY_PATH=$root/libs/$CONFIG
 
-$root/src/node/node_modules/mocha/bin/mocha --timeout 4000 $root/src/node/test
+$root/src/node/node_modules/mocha/bin/mocha --timeout 8000 $root/src/node/test

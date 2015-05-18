@@ -53,7 +53,6 @@ typedef struct wrapped_grpc_server {
   zend_object std;
 
   grpc_server *wrapped;
-  grpc_completion_queue *queue;
 } wrapped_grpc_server;
 
 /* Initializes the Server class */

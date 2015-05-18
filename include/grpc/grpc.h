@@ -145,14 +145,6 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_METADATA
 } grpc_call_error;
 
-/* Result of a grpc operation */
-typedef enum grpc_op_error {
-  /* everything went ok */
-  GRPC_OP_OK = 0,
-  /* something failed, we don't know what */
-  GRPC_OP_ERROR
-} grpc_op_error;
-
 /* Write Flags: */
 /* Hint that the write may be buffered and need not go out on the wire
    immediately. GRPC is free to buffer the message until the next non-buffered
@@ -201,22 +193,15 @@ typedef struct grpc_metadata {
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
-  GRPC_OP_COMPLETE,          /* operation completion */
-  GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
-  GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
-                                a default: case */
+  GRPC_QUEUE_SHUTDOWN, /* Shutting down */
+  GRPC_QUEUE_TIMEOUT,  /* No event before timeout */
+  GRPC_OP_COMPLETE     /* operation completion */
 } grpc_completion_type;
 
 typedef struct grpc_event {
   grpc_completion_type type;
+  int success;
   void *tag;
-  grpc_call *call;
-  /* Data associated with the completion type. Field names match the type of
-     completion as listed in grpc_completion_type. */
-  union {
-    grpc_op_error op_complete;
-  } data;
 } grpc_event;
 
 typedef struct {
@@ -352,26 +337,21 @@ grpc_completion_queue *grpc_completion_queue_create(void);
 
 /* Blocks until an event is available, the completion queue is being shut down,
    or deadline is reached. Returns NULL on timeout, otherwise the event that
-   occurred. Callers should call grpc_event_finish once they have processed
-   the event.
+   occurred.
 
    Callers must not call grpc_completion_queue_next and
    grpc_completion_queue_pluck simultaneously on the same completion queue. */
-grpc_event *grpc_completion_queue_next(grpc_completion_queue *cq,
-                                       gpr_timespec deadline);
+grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
+                                      gpr_timespec deadline);
 
 /* Blocks until an event with tag 'tag' is available, the completion queue is
    being shutdown or deadline is reached. Returns NULL on timeout, or a pointer
-   to the event that occurred. Callers should call grpc_event_finish once they
-   have processed the event.
+   to the event that occurred.
 
    Callers must not call grpc_completion_queue_next and
    grpc_completion_queue_pluck simultaneously on the same completion queue. */
-grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
-                                        gpr_timespec deadline);
-
-/* Clean up any data owned by the event */
-void grpc_event_finish(grpc_event *event);
+grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
+                                       gpr_timespec deadline);
 
 /* Begin destruction of a completion queue. Once all possible events are
    drained then grpc_completion_queue_next will start to produce
@@ -462,7 +442,8 @@ void grpc_call_destroy(grpc_call *call);
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call, void *tag_new);
+    grpc_completion_queue *cq_bound_to_call,
+    grpc_completion_queue *cq_for_notification, void *tag_new);
 
 /* Registers a method in the server.
    Methods to this (host, method) pair will not be reported by
@@ -472,21 +453,26 @@ grpc_call_error grpc_server_request_call(
    Must be called before grpc_server_start.
    Returns NULL on failure. */
 void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host,
-                                  grpc_completion_queue *new_call_cq);
+                                  const char *host);
 
 /* Request notification of a new pre-registered call */
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *request_metadata,
     grpc_byte_buffer **optional_payload,
-    grpc_completion_queue *cq_bound_to_call, void *tag_new);
+    grpc_completion_queue *cq_bound_to_call,
+    grpc_completion_queue *cq_for_notification, void *tag_new);
 
 /* Create a server. Additional configuration for each incoming channel can
    be specified with args. If no additional configuration is needed, args can
    be NULL. See grpc_channel_args for more. */
-grpc_server *grpc_server_create(grpc_completion_queue *cq,
-                                const grpc_channel_args *args);
+grpc_server *grpc_server_create(const grpc_channel_args *args);
+
+/* Register a completion queue with the server. Must be done for any completion
+   queue that is passed to grpc_server_request_* call. Must be performed prior
+   to grpc_server_start. */
+void grpc_server_register_completion_queue(grpc_server *server,
+                                           grpc_completion_queue *cq);
 
 /* Add a HTTP2 over plaintext over tcp listener.
    Returns bound port number on success, 0 on failure.
@@ -502,7 +488,7 @@ void grpc_server_start(grpc_server *server);
    Shutdown is idempotent. */
 void grpc_server_shutdown(grpc_server *server);
 
-/* As per grpc_server_shutdown, but send a GRPC_SERVER_SHUTDOWN event when
+/* As per grpc_server_shutdown, but send a GRPC_OP_COMPLETE event when
    there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
    grpc_server_shutdown_and_notify calls are made. */

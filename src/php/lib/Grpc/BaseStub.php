@@ -39,6 +39,7 @@ namespace Grpc;
  */
 class BaseStub {
 
+  private $hostname;
   private $channel;
 
   // a callback function
@@ -51,6 +52,7 @@ class BaseStub {
    * metadata array, and returns an updated metadata array
    */
   public function __construct($hostname, $opts) {
+    $this->hostname = $hostname;
     $this->update_metadata = null;
     if (isset($opts['update_metadata'])) {
       if (is_callable($opts['update_metadata'])) {
@@ -67,6 +69,18 @@ class BaseStub {
    */
   public function close() {
     $channel->close();
+  }
+
+  /**
+   * constructs the auth uri for the jwt
+   */
+  private function _get_jwt_aud_uri($method) {
+    $last_slash_idx = strrpos($method, '/');
+    if ($last_slash_idx === false) {
+      return false;
+    }
+    $service_name = substr($method, 0, $last_slash_idx);
+    return "https://" . $this->hostname . $service_name;
   }
 
   /* This class is intended to be subclassed by generated code, so all functions
@@ -87,9 +101,11 @@ class BaseStub {
                                  $metadata = array()) {
     $call = new UnaryCall($this->channel, $method, $deserialize);
     $actual_metadata = $metadata;
+    $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
-                                        $actual_metadata);
+                                        $actual_metadata,
+                                        $jwt_aud_uri);
     }
     $call->start($argument, $actual_metadata);
     return $call;
@@ -112,9 +128,11 @@ class BaseStub {
                                        $metadata = array()) {
     $call = new ClientStreamingCall($this->channel, $method, $deserialize);
     $actual_metadata = $metadata;
+    $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
-                                        $actual_metadata);
+                                        $actual_metadata,
+                                        $jwt_aud_uri);
     }
     $call->start($arguments, $actual_metadata);
     return $call;
@@ -136,9 +154,11 @@ class BaseStub {
                                        $metadata = array()) {
     $call = new ServerStreamingCall($this->channel, $method, $deserialize);
     $actual_metadata = $metadata;
+    $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
-                                        $actual_metadata);
+                                        $actual_metadata,
+                                        $jwt_aud_uri);
     }
     $call->start($argument, $actual_metadata);
     return $call;
@@ -157,9 +177,11 @@ class BaseStub {
                                $metadata = array()) {
     $call = new BidiStreamingCall($this->channel, $method, $deserialize);
     $actual_metadata = $metadata;
+    $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
-                                        $actual_metadata);
+                                        $actual_metadata,
+                                        $jwt_aud_uri);
     }
     $call->start($actual_metadata);
     return $call;

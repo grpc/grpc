@@ -63,9 +63,7 @@ namespace testing {
 
 class AsyncQpsServerTest : public Server {
  public:
-  AsyncQpsServerTest(const ServerConfig& config, int port)
-      : srv_cq_(), async_service_(&srv_cq_), server_(nullptr),
-        shutdown_(false) {
+  AsyncQpsServerTest(const ServerConfig &config, int port) : shutdown_(false) {
     char* server_address = NULL;
     gpr_join_host_port(&server_address, "::", port);
 
@@ -74,15 +72,17 @@ class AsyncQpsServerTest : public Server {
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);
+    srv_cq_ = builder.AddCompletionQueue();
 
     server_ = builder.BuildAndStart();
 
     using namespace std::placeholders;
-    request_unary_ = std::bind(&TestService::AsyncService::RequestUnaryCall,
-                               &async_service_, _1, _2, _3, &srv_cq_, _4);
+    request_unary_ =
+        std::bind(&TestService::AsyncService::RequestUnaryCall, &async_service_,
+                  _1, _2, _3, srv_cq_.get(), srv_cq_.get(), _4);
     request_streaming_ =
-      std::bind(&TestService::AsyncService::RequestStreamingCall,
-		&async_service_, _1, _2, &srv_cq_, _3);
+        std::bind(&TestService::AsyncService::RequestStreamingCall,
+                  &async_service_, _1, _2, srv_cq_.get(), srv_cq_.get(), _3);
     for (int i = 0; i < 100; i++) {
       contexts_.push_front(
           new ServerRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
@@ -96,7 +96,7 @@ class AsyncQpsServerTest : public Server {
         // Wait until work is available or we are shutting down
         bool ok;
         void* got_tag;
-        while (srv_cq_.Next(&got_tag, &ok)) {
+        while (srv_cq_->Next(&got_tag, &ok)) {
           ServerRpcContext* ctx = detag(got_tag);
           // The tag is a pointer to an RPC context to invoke
           if (ctx->RunNextState(ok) == false) {
@@ -116,7 +116,7 @@ class AsyncQpsServerTest : public Server {
     {
       std::lock_guard<std::mutex> g(shutdown_mutex_);
       shutdown_ = true;
-      srv_cq_.Shutdown();
+      srv_cq_->Shutdown();
     }
     for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
@@ -290,10 +290,10 @@ class AsyncQpsServerTest : public Server {
     }
     return Status::OK;
   }
-  CompletionQueue srv_cq_;
-  TestService::AsyncService async_service_;
   std::vector<std::thread> threads_;
   std::unique_ptr<grpc::Server> server_;
+  std::unique_ptr<grpc::ServerCompletionQueue> srv_cq_;
+  TestService::AsyncService async_service_;
   std::function<void(ServerContext*, SimpleRequest*,
                      grpc::ServerAsyncResponseWriter<SimpleResponse>*, void*)>
       request_unary_;

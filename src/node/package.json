@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
@@ -26,7 +26,7 @@
   "dependencies": {
     "bindings": "^1.2.0",
     "nan": "^1.5.0",
-    "protobufjs": "^4.0.0-b2",
+    "protobufjs": "dcodeIO/ProtoBuf.js",
     "underscore": "^1.6.0",
     "underscore.string": "^3.0.0"
   },

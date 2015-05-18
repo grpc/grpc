@@ -92,7 +92,7 @@ typedef struct {
 static void request_call(void) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
-                           cq, tag(FLING_SERVER_NEW_REQUEST));
+                           cq, cq, tag(FLING_SERVER_NEW_REQUEST));
 }
 
 static void handle_unary_method(void) {
@@ -174,7 +174,7 @@ static void start_send_status(void) {
 static void sigint_handler(int x) { _exit(0); }
 
 int main(int argc, char **argv) {
-  grpc_event *ev;
+  grpc_event ev;
   call_state *s;
   char *addr_buf = NULL;
   gpr_cmdline *cl;
@@ -211,13 +211,14 @@ int main(int argc, char **argv) {
                                                     test_server1_cert};
     grpc_server_credentials *ssl_creds =
         grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
-    server = grpc_server_create(cq, NULL);
+    server = grpc_server_create(NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(cq, NULL);
+    server = grpc_server_create(NULL);
     GPR_ASSERT(grpc_server_add_http2_port(server, addr));
   }
+  grpc_server_register_completion_queue(server, cq);
   grpc_server_start(server);
 
   gpr_free(addr_buf);
@@ -238,9 +239,8 @@ int main(int argc, char **argv) {
     }
     ev = grpc_completion_queue_next(
         cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
-    if (!ev) continue;
-    s = ev->tag;
-    switch (ev->type) {
+    s = ev.tag;
+    switch (ev.type) {
       case GRPC_OP_COMPLETE:
         switch ((gpr_intptr)s) {
           case FLING_SERVER_NEW_REQUEST:
@@ -302,10 +302,9 @@ int main(int argc, char **argv) {
         GPR_ASSERT(shutdown_started);
         shutdown_finished = 1;
         break;
-      default:
-        GPR_ASSERT(0);
+      case GRPC_QUEUE_TIMEOUT:
+        break;
     }
-    grpc_event_finish(ev);
   }
   grpc_profiler_stop();
   grpc_call_details_destroy(&call_details);

@@ -65,20 +65,17 @@
     dispatch_async(gDefaultConcurrentQueue, ^{
       while (YES) {
         // The following call blocks until an event is available.
-        grpc_event *event = grpc_completion_queue_next(unmanagedQueue, gpr_inf_future);
+        grpc_event event = grpc_completion_queue_next(unmanagedQueue, gpr_inf_future);
         GRPCQueueCompletionHandler handler;
-        switch (event->type) {
+        switch (event.type) {
           case GRPC_OP_COMPLETE:
-            handler = (__bridge_transfer GRPCQueueCompletionHandler)event->tag;
-            handler(event->data.op_complete);
-            grpc_event_finish(event);
+            handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
+            handler(event.success);
             break;
           case GRPC_QUEUE_SHUTDOWN:
-            grpc_event_finish(event);
             grpc_completion_queue_destroy(unmanagedQueue);
             return;
           default:
-            grpc_event_finish(event);
             [NSException raise:@"Unrecognized completion type" format:@""];
         }
       };

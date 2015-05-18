@@ -1369,6 +1369,8 @@ $(${tgt.name.upper()}_OBJS)\
 % endif
 % if tgt.language == 'c++' and tgt.build == 'test':
  $(GTEST_LIB)\
+% elif tgt.language == 'c++' and tgt.build == 'benchmark':
+ $(GTEST_LIB)\
 % endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
 % if tgt.build == 'protoc' or tgt.language == 'c++':

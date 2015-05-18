@@ -223,7 +223,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     emitter.cancel = function cancel() {
       call.cancel();
     };
-    this.updateMetadata(metadata, function(error, metadata) {
+    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -289,7 +289,7 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
       metadata = {};
     }
     var stream = new ClientWritableStream(call, serialize);
-    this.updateMetadata(metadata, function(error, metadata) {
+    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -360,7 +360,7 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       metadata = {};
     }
     var stream = new ClientReadableStream(call, deserialize);
-    this.updateMetadata(metadata, function(error, metadata) {
+    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -427,7 +427,7 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
       metadata = {};
     }
     var stream = new ClientDuplexStream(call, serialize, deserialize);
-    this.updateMetadata(metadata, function(error, metadata) {
+    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -503,10 +503,11 @@ function makeClientConstructor(methods, serviceName) {
         callback(null, metadata);
       };
     }
+
     this.server_address = address.replace(/\/$/, '');
     this.channel = new grpc.Channel(address, options);
-    this.updateMetadata = _.partial(updateMetadata,
-                                    this.server_address + '/' + serviceName);
+    this.auth_uri = this.server_address + '/' + serviceName;
+    this.updateMetadata = updateMetadata;
   }
 
   _.each(methods, function(attrs, name) {

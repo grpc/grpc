@@ -109,6 +109,7 @@ class GenericEnd2endTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
+    srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
 
@@ -117,10 +118,10 @@ class GenericEnd2endTest : public ::testing::Test {
     void* ignored_tag;
     bool ignored_ok;
     cli_cq_.Shutdown();
-    srv_cq_.Shutdown();
+    srv_cq_->Shutdown();
     while (cli_cq_.Next(&ignored_tag, &ignored_ok))
       ;
-    while (srv_cq_.Next(&ignored_tag, &ignored_ok))
+    while (srv_cq_->Next(&ignored_tag, &ignored_ok))
       ;
   }
 
@@ -130,9 +131,9 @@ class GenericEnd2endTest : public ::testing::Test {
     generic_stub_.reset(new GenericStub(channel));
   }
 
-  void server_ok(int i) { verify_ok(&srv_cq_, i, true); }
+  void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }
   void client_ok(int i) { verify_ok(&cli_cq_, i, true); }
-  void server_fail(int i) { verify_ok(&srv_cq_, i, false); }
+  void server_fail(int i) { verify_ok(srv_cq_.get(), i, false); }
   void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
@@ -160,9 +161,10 @@ class GenericEnd2endTest : public ::testing::Test {
       call->WritesDone(tag(3));
       client_ok(3);
 
-      generic_service_.RequestCall(&srv_ctx, &stream, &srv_cq_, tag(4));
+      generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
+                                   srv_cq_.get(), tag(4));
 
-      verify_ok(generic_service_.completion_queue(), 4, true);
+      verify_ok(srv_cq_.get(), 4, true);
       EXPECT_EQ(server_address_.str(), srv_ctx.host());
       EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
@@ -193,7 +195,7 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   CompletionQueue cli_cq_;
-  CompletionQueue srv_cq_;
+  std::unique_ptr<ServerCompletionQueue> srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
@@ -230,9 +232,10 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
       generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
   client_ok(1);
 
-  generic_service_.RequestCall(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
+  generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),
+                               srv_cq_.get(), tag(2));
 
-  verify_ok(generic_service_.completion_queue(), 2, true);
+  verify_ok(srv_cq_.get(), 2, true);
   EXPECT_EQ(server_address_.str(), srv_ctx.host());
   EXPECT_EQ(kMethodName, srv_ctx.method());
 

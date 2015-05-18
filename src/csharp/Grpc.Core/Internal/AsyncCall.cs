@@ -274,7 +274,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleUnaryResponse(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             lock (myLock)
             {
@@ -284,7 +284,7 @@ namespace Grpc.Core.Internal
                 ReleaseResourcesIfPossible();
             }
 
-            if (wasError)
+            if (!success)
             {
                 unaryResponseTcs.SetException(new RpcException(new Status(StatusCode.Internal, "Internal error occured.")));
                 return;
@@ -307,7 +307,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles receive status completion for calls with streaming response.
         /// </summary>
-        private void HandleFinished(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleFinished(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             var status = ctx.GetReceivedStatus();
 

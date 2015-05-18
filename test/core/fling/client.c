@@ -93,7 +93,7 @@ static void step_ping_pong_request(void) {
                                   "localhost", gpr_inf_future);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, ops, op - ops, (void *)1));
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  grpc_completion_queue_next(cq, gpr_inf_future);
   grpc_call_destroy(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
@@ -106,7 +106,7 @@ static void init_ping_pong_stream(void) {
   stream_init_op.data.send_initial_metadata.count = 0;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, &stream_init_op, 1, (void *)1));
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  grpc_completion_queue_next(cq, gpr_inf_future);
 
   grpc_metadata_array_init(&initial_metadata_recv);
 
@@ -119,7 +119,7 @@ static void init_ping_pong_stream(void) {
 static void step_ping_pong_stream(void) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, stream_step_ops, 2, (void *)1));
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  grpc_completion_queue_next(cq, gpr_inf_future);
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
@@ -147,7 +147,6 @@ int main(int argc, char **argv) {
   char *fake_argv[1];
 
   int payload_size = 1;
-  int done;
   int secure = 0;
   char *target = "localhost:443";
   gpr_cmdline *cl;
@@ -209,12 +208,9 @@ int main(int argc, char **argv) {
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
-  done = 0;
-  while (!done) {
-    grpc_event *ev = grpc_completion_queue_next(cq, gpr_inf_future);
-    done = (ev->type == GRPC_QUEUE_SHUTDOWN);
-    grpc_event_finish(ev);
-  }
+  while (grpc_completion_queue_next(cq, gpr_inf_future).type !=
+         GRPC_QUEUE_SHUTDOWN)
+    ;
   grpc_completion_queue_destroy(cq);
   grpc_byte_buffer_destroy(the_buffer);
   gpr_slice_unref(slice);

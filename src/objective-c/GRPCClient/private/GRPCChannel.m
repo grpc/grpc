@@ -41,8 +41,18 @@
 @implementation GRPCChannel
 
 + (instancetype)channelToHost:(NSString *)host {
-  // TODO(jcanizales): Reuse channels.
-  return [[self alloc] initWithHost:host];
+  // TODO(mlumish): Investigate whether a cache with strong links is a good idea
+  static NSMutableDictionary *channelCache;
+  static dispatch_once_t cacheInitialization;
+  dispatch_once(&cacheInitialization, ^{
+    channelCache = [NSMutableDictionary dictionary];
+  });
+  GRPCChannel *channel = channelCache[host];
+  if (!channel) {
+    channel = [[self alloc] initWithHost:host];
+    channelCache[host] = channel;
+  }
+  return channel;
 }
 
 - (instancetype)init {

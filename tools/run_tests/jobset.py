@@ -62,7 +62,7 @@ else:
 def shuffle_iteratable(it):
   """Return an iterable that randomly walks it"""
   # take a random sampling from the passed in iterable
-  # we take an element with probablity 1/p and rapidly increase
+  # we take an element with probability 1/p and rapidly increase
   # p as we take elements - this gives us a somewhat random set of values before
   # we've seen all the values, but starts producing values without having to
   # compute ALL of them at once, allowing tests to start a little earlier
@@ -111,11 +111,15 @@ _TAG_COLOR = {
     }
 
 
-def message(tag, message, explanatory_text=None, do_newline=False):
+def message(tag, msg, explanatory_text=None, do_newline=False):
+  if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
+    return
+  message.old_tag = tag
+  message.old_msg = msg
   if platform.system() == 'Windows':
     if explanatory_text:
       print explanatory_text
-    print '%s: %s' % (tag, message)
+    print '%s: %s' % (tag, msg)
     return
   try:
     sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
@@ -125,12 +129,14 @@ def message(tag, message, explanatory_text=None, do_newline=False):
         _COLORS[_TAG_COLOR[tag]][1],
         _COLORS[_TAG_COLOR[tag]][0],
         tag,
-        message,
+        msg,
         '\n' if do_newline or explanatory_text is not None else ''))
     sys.stdout.flush()
   except:
     pass
 
+message.old_tag = ""
+message.old_msg = ""
 
 def which(filename):
   if '/' in filename:
@@ -212,7 +218,9 @@ class Job(object):
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > 300:
-      message('TIMEOUT', self._spec.shortname, do_newline=True)
+      self._tempfile.seek(0)
+      stdout = self._tempfile.read()
+      message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
       self.kill()
     return self._state
 

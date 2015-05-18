@@ -121,7 +121,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles the server side close completion.
         /// </summary>
-        private void HandleFinishedServerside(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleFinishedServerside(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             bool cancelled = ctx.GetReceivedCloseOnServerCancelled();
 
