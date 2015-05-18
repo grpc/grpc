@@ -44,6 +44,7 @@
 #include <thread>
 #include <deque>
 #include <vector>
+#include <unistd.h>
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/core/util/port.h"
@@ -88,6 +89,8 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
     contexts.emplace_back();
     return &contexts.back();
   };
+
+  srand(time(NULL) ^ getpid());
 
   // Get client, server lists
   auto workers = get_hosts("QPS_WORKERS");
