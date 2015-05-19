@@ -55,7 +55,7 @@ struct gpr_subprocess {
   int joined;
 };
 
-char *gpr_subprocess_binary_extension() { return ""; }
+const char *gpr_subprocess_binary_extension() { return ""; }
 
 gpr_subprocess *gpr_subprocess_create(int argc, char **argv) {
   gpr_subprocess *r;
