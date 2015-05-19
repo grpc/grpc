@@ -31,6 +31,8 @@
  *
  */
 
+#include <set>
+
 #include <grpc/support/log.h>
 
 #include <signal.h>
@@ -46,6 +48,9 @@ static const int BENCHMARK = 10;
 
 static void RunSynchronousUnaryPingPong() {
   gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
+
+  ReportersRegistry reporters_registry;
+  reporters_registry.Register(new GprLogReporter("LogReporter"));
 
   ClientConfig client_config;
   client_config.set_client_type(SYNCHRONOUS_CLIENT);
@@ -63,8 +68,10 @@ static void RunSynchronousUnaryPingPong() {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  ReportQPS(result);
-  ReportLatency(result);
+  std::set<ReportType> types;
+  types.insert(grpc::testing::ReportType::REPORT_QPS);
+  types.insert(grpc::testing::ReportType::REPORT_LATENCY);
+  reporters_registry.Report({client_config, server_config, result}, types);
 }
 
 }  // namespace testing

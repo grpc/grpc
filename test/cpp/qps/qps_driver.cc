@@ -31,6 +31,8 @@
  *
  */
 
+#include <set>
+
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
@@ -67,9 +69,16 @@ using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
+using grpc::testing::ReportersRegistry;
+using grpc::testing::GprLogReporter;
+using grpc::testing::ReportData;
+using grpc::testing::ReportType;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
+
+  ReportersRegistry reporters_registry;
+  reporters_registry.Register(new GprLogReporter("LogReporter"));
 
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
@@ -103,14 +112,13 @@ int main(int argc, char** argv) {
                FLAGS_server_threads <  FLAGS_client_channels *
                FLAGS_outstanding_rpcs_per_channel));
 
-  auto result = RunScenario(client_config, FLAGS_num_clients,
-                            server_config, FLAGS_num_servers,
-                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
-                            FLAGS_local_workers);
+  const auto result = RunScenario(
+      client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
+      FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
-  ReportQPSPerCore(result, server_config);
-  ReportLatency(result);
-  ReportTimes(result);
+  std::set<ReportType> types;
+  types.insert(grpc::testing::ReportType::REPORT_ALL);
+  reporters_registry.Report({client_config, server_config, result}, types);
 
   return 0;
 }
