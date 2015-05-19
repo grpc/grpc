@@ -231,7 +231,7 @@
                                             handler:resumingHandler]] errorHandler:errorHandler];
 }
 
-- (void)didReceiveValue:(id)value {
+- (void)writeValue:(id)value {
   // TODO(jcanizales): Throw/assert if value isn't NSData.
 
   // Pause the input and only resume it when the C layer notifies us that writes

@@ -57,9 +57,8 @@
 - (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(id<GRXWriter>)writer
     NS_DESIGNATED_INITIALIZER;
 
-// Enqueues didReceiveValue: to be sent to the writeable in the main thread.
-// The passed handler is invoked from the main thread after didReceiveValue:
-// returns.
+// Enqueues writeValue: to be sent to the writeable in the main thread.
+// The passed handler is invoked from the main thread after writeValue: returns.
 - (void)enqueueMessage:(NSData *)message completionHandler:(void (^)())handler;
 
 // Enqueues didFinishWithError:nil to be sent to the writeable in the main

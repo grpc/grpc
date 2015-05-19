@@ -69,7 +69,7 @@
     // the race.
     id<GRXWriteable> writeable = self.writeable;
     if (writeable) {
-      [writeable didReceiveValue:message];
+      [writeable writeValue:message];
       handler();
     }
   });

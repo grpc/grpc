@@ -76,7 +76,7 @@
   return self;
 }
 
-- (void)didReceiveValue:(id)value {
+- (void)writeValue:(id)value {
   if (_valueHandler) {
     _valueHandler(value);
   }

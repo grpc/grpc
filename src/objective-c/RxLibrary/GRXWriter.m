@@ -75,8 +75,8 @@
 
 #pragma mark GRXWriteable implementation
 
-- (void)didReceiveValue:(id)value {
-  [_writeable didReceiveValue:value];
+- (void)writeValue:(id)value {
+  [_writeable writeValue:value];
 }
 
 - (void)didFinishWithError:(NSError *)errorOrNil {

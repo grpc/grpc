@@ -38,8 +38,8 @@
 
 // A buffered pipe is a Writeable that also acts as a Writer (to whichever other writeable is passed
 // to -startWithWriteable:).
-// Once it is started, whatever values are written into it (via -didReceiveValue:) will be
-// propagated immediately, unless flow control prevents it.
+// Once it is started, whatever values are written into it (via -writeValue:) will be propagated
+// immediately, unless flow control prevents it.
 // If it is throttled and keeps receiving values, as well as if it receives values before being
 // started, it will buffer them and propagate them in order as soon as its state becomes
 // GRXWriterStateStarted.
