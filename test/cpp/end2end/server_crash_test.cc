@@ -79,6 +79,20 @@ class ServiceImpl GRPC_FINAL : public ::grpc::cpp::test::util::TestService::Serv
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       response.set_message(request.message());
       stream->Write(response);
+      gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
+    }
+    return Status::OK;
+  }
+
+  Status ResponseStream(ServerContext* context, const EchoRequest* request,
+                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
+    EchoResponse response;
+    for (int i = 0;; i++) {
+      std::ostringstream msg;
+      msg << "Hello " << i;
+      response.set_message(msg.str());
+      if (!writer->Write(response)) break;
+      gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
     }
     return Status::OK;
   }
@@ -89,7 +103,7 @@ class CrashTest : public ::testing::Test {
   CrashTest() {}
 
   std::unique_ptr<Server>
-  CreateServerAndClient() {
+  CreateServerAndClient(const std::string& mode) {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -97,6 +111,7 @@ class CrashTest : public ::testing::Test {
     client_.reset(new SubProcess({
       g_root + "/server_crash_test_client",
       "--address=" + addr,
+      "--mode=" + mode
     }));
     GPR_ASSERT(client_);
 
@@ -115,8 +130,16 @@ class CrashTest : public ::testing::Test {
   ServiceImpl service_;
 };
 
-TEST_F(CrashTest, Kill) {
-  auto server = CreateServerAndClient();
+TEST_F(CrashTest, ResponseStream) {
+  auto server = CreateServerAndClient("response");
+
+  gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
+  KillClient();
+  server->Shutdown();
+}
+
+TEST_F(CrashTest, BidiStream) {
+  auto server = CreateServerAndClient("bidi");
 
   gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
   KillClient();

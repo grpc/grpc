@@ -46,6 +46,7 @@
 #include "test/cpp/util/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to connect to");
+DEFINE_string(mode, "", "Test mode to use");
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -66,14 +67,26 @@ int main(int argc, char** argv) {
   EchoResponse response;
   grpc::ClientContext context;
 
-  auto stream = stub->BidiStream(&context);
-  for (int i = 0;; i++) {
-    std::ostringstream msg;
-    msg << "Hello " << i;
-    request.set_message(msg.str());
-    GPR_ASSERT(stream->Write(request));
-    GPR_ASSERT(stream->Read(&response));
-    GPR_ASSERT(response.message() == request.message());
+  if (FLAGS_mode == "bidi") {
+    auto stream = stub->BidiStream(&context);
+    for (int i = 0;; i++) {
+      std::ostringstream msg;
+      msg << "Hello " << i;
+      request.set_message(msg.str());
+      GPR_ASSERT(stream->Write(request));
+      GPR_ASSERT(stream->Read(&response));
+      GPR_ASSERT(response.message() == request.message());
+    }
+  } else if (FLAGS_mode == "response") {
+    EchoRequest request;
+    request.set_message("Hello");
+    auto stream = stub->ResponseStream(&context, request);
+    for (;;) {
+      GPR_ASSERT(stream->Read(&response));
+    }
+  } else {
+    gpr_log(GPR_ERROR, "invalid test mode '%s'", FLAGS_mode.c_str());
+    return 1;
   }
 
   return 0;

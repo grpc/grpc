@@ -536,9 +536,8 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
       switch ((grpc_ioreq_op)i) {
         case GRPC_IOREQ_RECV_MESSAGE:
         case GRPC_IOREQ_SEND_MESSAGE:
-          if (master->success) {
-            call->request_set[i] = REQSET_EMPTY;
-          } else {
+          call->request_set[i] = REQSET_EMPTY;
+          if (!master->success) {
             call->write_state = WRITE_STATE_WRITE_CLOSED;
           }
           break;
