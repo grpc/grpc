@@ -93,6 +93,6 @@ setuptools.setup(
     install_requires=[
         'enum34==1.0.4',
         'futures==2.2.0',
-        'protobuf==3.0.0-alpha-1'
+        'protobuf==3.0.0a2'
     ]
 )
