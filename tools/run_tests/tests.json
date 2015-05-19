@@ -617,7 +617,7 @@
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "crash_test", 
+    "name": "client_crash_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -672,6 +672,15 @@
     "flaky": false, 
     "language": "c++", 
     "name": "mock_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "server_crash_test", 
     "platforms": [
       "windows", 
       "posix"

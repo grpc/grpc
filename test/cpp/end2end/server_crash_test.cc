@@ -69,80 +69,58 @@ namespace testing {
 
 namespace {
 
+class ServiceImpl GRPC_FINAL : public ::grpc::cpp::test::util::TestService::Service {
+  Status BidiStream(ServerContext* context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
+      GRPC_OVERRIDE {
+    EchoRequest request;
+    EchoResponse response;
+    while (stream->Read(&request)) {
+      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      response.set_message(request.message());
+      stream->Write(response);
+    }
+    return Status::OK;
+  }
+};
+
 class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub>
-  CreateServerAndStub() {
+  std::unique_ptr<Server>
+  CreateServerAndClient() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
-    server_.reset(new SubProcess({
-      g_root + "/crash_test_server",
+    client_.reset(new SubProcess({
+      g_root + "/server_crash_test_client",
       "--address=" + addr,
     }));
-    GPR_ASSERT(server_);
-    return grpc::cpp::test::util::TestService::NewStub(
-        CreateChannel(addr, InsecureCredentials(), ChannelArguments()));
+    GPR_ASSERT(client_);
+
+    ServerBuilder builder;
+    builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    return builder.BuildAndStart();
   }
 
-  void KillServer() {
-    server_.reset();
-    // give some time for the TCP connection to drop
-    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
+  void KillClient() {
+    client_.reset();
   }
 
  private:
-  std::unique_ptr<SubProcess> server_;
+  std::unique_ptr<SubProcess> client_;
+  ServiceImpl service_;
 };
 
-TEST_F(CrashTest, KillAfterWrite) {
-  auto stub = CreateServerAndStub();
+TEST_F(CrashTest, Kill) {
+  auto server = CreateServerAndClient();
 
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-
-  auto stream = stub->BidiStream(&context);
-
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
-
-  request.set_message("I'm going to kill you");
-  EXPECT_TRUE(stream->Write(request));
-
-  KillServer();
-
-  EXPECT_FALSE(stream->Read(&response));
-
-  EXPECT_FALSE(stream->Finish().IsOk());
-}
-
-TEST_F(CrashTest, KillBeforeWrite) {
-  auto stub = CreateServerAndStub();
-
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-
-  auto stream = stub->BidiStream(&context);
-
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
-
-  KillServer();
-
-  request.set_message("You should be dead");
-  EXPECT_FALSE(stream->Write(request));
-  EXPECT_FALSE(stream->Read(&response));
-
-  EXPECT_FALSE(stream->Finish().IsOk());
+  gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
+  KillClient();
+  server->Shutdown();
 }
 
 }  // namespace
