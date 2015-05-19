@@ -31,6 +31,8 @@
  *
  */
 
+/** \file grpc.h */
+
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
@@ -193,8 +195,7 @@ typedef struct grpc_metadata {
   } internal_data;
 } grpc_metadata;
 
-/** \enum grpc_completion_type
-    \brief The type of completion (for grpc_event) */
+/** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
   /** Shutting down */
   GRPC_QUEUE_SHUTDOWN, 
