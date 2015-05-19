@@ -198,23 +198,6 @@ void tsi_handshaker_destroy(tsi_handshaker* self) {
 
 /* --- tsi_peer implementation. --- */
 
-const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* self,
-                                                       const char* name) {
-  size_t i;
-  if (self == NULL) return NULL;
-  for (i = 0; i < self->property_count; i++) {
-    const tsi_peer_property* property = &self->properties[i];
-    if (name == NULL && property->name == NULL) {
-      return property;
-    }
-    if (name != NULL && property->name != NULL &&
-        strcmp(property->name, name) == 0) {
-      return property;
-    }
-  }
-  return NULL;
-}
-
 tsi_peer_property tsi_init_peer_property(void) {
   tsi_peer_property property;
   memset(&property, 0, sizeof(tsi_peer_property));
@@ -234,18 +217,8 @@ void tsi_peer_property_destruct(tsi_peer_property* property) {
   if (property->name != NULL) {
     free(property->name);
   }
-  switch (property->type) {
-    case TSI_PEER_PROPERTY_TYPE_STRING:
-      if (property->value.string.data != NULL) {
-        free(property->value.string.data);
-      }
-      break;
-    case TSI_PEER_PROPERTY_TYPE_LIST:
-      tsi_peer_destroy_list_property(property->value.list.children,
-                                     property->value.list.child_count);
-    default:
-      /* Nothing to free. */
-      break;
+  if (property->value.data != NULL) {
+    free(property->value.data);
   }
   *property = tsi_init_peer_property(); /* Reset everything to 0. */
 }
@@ -259,57 +232,20 @@ void tsi_peer_destruct(tsi_peer* self) {
   self->property_count = 0;
 }
 
-tsi_result tsi_construct_signed_integer_peer_property(
-    const char* name, int64_t value, tsi_peer_property* property) {
-  *property = tsi_init_peer_property();
-  property->type = TSI_PEER_PROPERTY_TYPE_SIGNED_INTEGER;
-  if (name != NULL) {
-    property->name = tsi_strdup(name);
-    if (property->name == NULL) return TSI_OUT_OF_RESOURCES;
-  }
-  property->value.signed_int = value;
-  return TSI_OK;
-}
-
-tsi_result tsi_construct_unsigned_integer_peer_property(
-    const char* name, uint64_t value, tsi_peer_property* property) {
-  *property = tsi_init_peer_property();
-  property->type = TSI_PEER_PROPERTY_TYPE_UNSIGNED_INTEGER;
-  if (name != NULL) {
-    property->name = tsi_strdup(name);
-    if (property->name == NULL) return TSI_OUT_OF_RESOURCES;
-  }
-  property->value.unsigned_int = value;
-  return TSI_OK;
-}
-
-tsi_result tsi_construct_real_peer_property(const char* name, double value,
-                                            tsi_peer_property* property) {
-  *property = tsi_init_peer_property();
-  property->type = TSI_PEER_PROPERTY_TYPE_REAL;
-  if (name != NULL) {
-    property->name = tsi_strdup(name);
-    if (property->name == NULL) return TSI_OUT_OF_RESOURCES;
-  }
-  property->value.real = value;
-  return TSI_OK;
-}
-
 tsi_result tsi_construct_allocated_string_peer_property(
     const char* name, size_t value_length, tsi_peer_property* property) {
   *property = tsi_init_peer_property();
-  property->type = TSI_PEER_PROPERTY_TYPE_STRING;
   if (name != NULL) {
     property->name = tsi_strdup(name);
     if (property->name == NULL) return TSI_OUT_OF_RESOURCES;
   }
   if (value_length > 0) {
-    property->value.string.data = calloc(1, value_length);
-    if (property->value.string.data == NULL) {
+    property->value.data = calloc(1, value_length);
+    if (property->value.data == NULL) {
       tsi_peer_property_destruct(property);
       return TSI_OUT_OF_RESOURCES;
     }
-    property->value.string.length = value_length;
+    property->value.length = value_length;
   }
   return TSI_OK;
 }
@@ -328,28 +264,7 @@ tsi_result tsi_construct_string_peer_property(const char* name,
       name, value_length, property);
   if (result != TSI_OK) return result;
   if (value_length > 0) {
-    memcpy(property->value.string.data, value, value_length);
-  }
-  return TSI_OK;
-}
-
-tsi_result tsi_construct_list_peer_property(const char* name,
-                                            size_t child_count,
-                                            tsi_peer_property* property) {
-  *property = tsi_init_peer_property();
-  property->type = TSI_PEER_PROPERTY_TYPE_LIST;
-  if (name != NULL) {
-    property->name = tsi_strdup(name);
-    if (property->name == NULL) return TSI_OUT_OF_RESOURCES;
-  }
-  if (child_count > 0) {
-    property->value.list.children =
-        calloc(child_count, sizeof(tsi_peer_property));
-    if (property->value.list.children == NULL) {
-      tsi_peer_property_destruct(property);
-      return TSI_OUT_OF_RESOURCES;
-    }
-    property->value.list.child_count = child_count;
+    memcpy(property->value.data, value, value_length);
   }
   return TSI_OK;
 }

@@ -134,7 +134,7 @@ namespace Grpc.Core.Tests
                 });
         }
 
-        private void Handler(GRPCOpError op, IntPtr ptr)
+        private void Handler(bool success, IntPtr ptr)
         {
             counter++;
         }

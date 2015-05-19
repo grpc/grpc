@@ -349,7 +349,7 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   PyObject *deadline;
   double double_deadline;
   gpr_timespec deadline_timespec;
-  grpc_event *c_event;
+  grpc_event c_event;
 
   PyObject *event_args;
   PyObject *event;
@@ -378,15 +378,14 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
       grpc_completion_queue_next(self->c_completion_queue, deadline_timespec);
   Py_END_ALLOW_THREADS;
 
-  if (c_event == NULL) {
-    Py_RETURN_NONE;
-  }
+  tag = (pygrpc_tag *)c_event.tag;
 
-  tag = (pygrpc_tag *)c_event->tag;
-
-  switch (c_event->type) {
+  switch (c_event.type) {
+    case GRPC_QUEUE_TIMEOUT:
+      Py_RETURN_NONE;
+      break;
     case GRPC_QUEUE_SHUTDOWN:
-      event_args = pygrpc_stop_event_args(c_event);
+      event_args = pygrpc_stop_event_args(&c_event);
       break;
     case GRPC_OP_COMPLETE: {
       if (!tag) {
@@ -398,28 +397,27 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
           if (tag) {
             pygrpc_tag_destroy(tag);
           }
-          grpc_event_finish(c_event);
           return pygrpc_completion_queue_get(self, args);
         case PYGRPC_WRITE_ACCEPTED:
-          event_args = pygrpc_write_event_args(c_event);
+          event_args = pygrpc_write_event_args(&c_event);
           break;
         case PYGRPC_FINISH_ACCEPTED:
-          event_args = pygrpc_complete_event_args(c_event);
+          event_args = pygrpc_complete_event_args(&c_event);
           break;
         case PYGRPC_SERVER_RPC_NEW:
-          event_args = pygrpc_service_event_args(c_event);
+          event_args = pygrpc_service_event_args(&c_event);
           break;
         case PYGRPC_READ:
-          event_args = pygrpc_read_event_args(c_event);
+          event_args = pygrpc_read_event_args(&c_event);
           break;
         case PYGRPC_CLIENT_METADATA_READ:
-          event_args = pygrpc_metadata_event_args(c_event);
+          event_args = pygrpc_metadata_event_args(&c_event);
           break;
         case PYGRPC_FINISHED_CLIENT:
-          event_args = pygrpc_finished_client_event_args(c_event);
+          event_args = pygrpc_finished_client_event_args(&c_event);
           break;
         case PYGRPC_FINISHED_SERVER:
-          event_args = pygrpc_finished_server_event_args(c_event);
+          event_args = pygrpc_finished_server_event_args(&c_event);
           break;
         default:
           PyErr_SetString(PyExc_Exception, "Unrecognized op event type!");
@@ -442,7 +440,6 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   if (tag) {
     pygrpc_tag_destroy(tag);
   }
-  grpc_event_finish(c_event);
 
   return event;
 }

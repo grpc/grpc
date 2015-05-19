@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -94,6 +95,14 @@ namespace Grpc.Core
             {
                 return this.responseMarshaller;
             }
+        }
+
+        /// <summary>
+        /// Gets full name of the method including the service name.
+        /// </summary>
+        internal string GetFullName(string serviceName)
+        {
+            return "/" + Preconditions.CheckNotNull(serviceName) + "/" + this.Name;
         }
     }
 }

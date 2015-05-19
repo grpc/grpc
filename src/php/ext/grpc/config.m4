@@ -66,5 +66,5 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(grpc, byte_buffer.c call.c channel.c credentials.c timeval.c server.c server_credentials.c php_grpc.c, $ext_shared, , -Wall -Werror -std=c11)
+  PHP_NEW_EXTENSION(grpc, byte_buffer.c call.c channel.c completion_queue.c credentials.c timeval.c server.c server_credentials.c php_grpc.c, $ext_shared, , -Wall -Werror -std=c11)
 fi

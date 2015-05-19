@@ -33,13 +33,13 @@ package examples;
 
 // Protocol type definitions
 message StockRequest {
-  optional string symbol = 1;
-  optional int32 num_trades_to_watch = 2 [default=0];
+  string symbol = 1;
+  int32 num_trades_to_watch = 2;
 }
 
 message StockReply {
-  optional float price = 1;
-  optional string symbol = 2;
+  float price = 1;
+  string symbol = 2;
 }
 
 

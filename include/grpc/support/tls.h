@@ -34,7 +34,7 @@
 #ifndef GRPC_SUPPORT_TLS_H
 #define GRPC_SUPPORT_TLS_H
 
-#include "port_platform.h"
+#include <grpc/support/port_platform.h>
 
 /* Thread local storage.
 
@@ -54,7 +54,7 @@
    Destroying a thread local:
      gpr_tls_destroy(&foo);
 
-   Setting a thread local:
+   Setting a thread local (returns new_value):
      gpr_tls_set(&foo, new_value);
 
    Accessing a thread local:
@@ -63,15 +63,15 @@
    ALL functions here may be implemented as macros. */
 
 #ifdef GPR_GCC_TLS
-#include "tls_gcc.h"
+#include <grpc/support/tls_gcc.h>
 #endif
 
 #ifdef GPR_MSVC_TLS
-#include "tls_msvc.h"
+#include <grpc/support/tls_msvc.h>
 #endif
 
 #ifdef GPR_PTHREAD_TLS
-#include "tls_pthread.h"
+#include <grpc/support/tls_pthread.h>
 #endif
 
 #endif

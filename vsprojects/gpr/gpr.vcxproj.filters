@@ -79,6 +79,9 @@
     <ClCompile Include="..\..\src\core\support\string_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\subprocess_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -104,6 +107,9 @@
       <Filter>src\core\support</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\time_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\tls_pthread.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
   </ItemGroup>
@@ -151,6 +157,9 @@
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\subprocess.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\sync.h">

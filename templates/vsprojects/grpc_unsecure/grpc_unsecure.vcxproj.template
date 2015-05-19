@@ -1,2 +1,2 @@
 <%namespace file="../vcxproj_defs.include" import="gen_project"/>\
-${gen_project('grpc_unsecure', libs, targets, packages=['zlib'])}
+${gen_project('grpc_unsecure', libs, packages=['zlib'])}

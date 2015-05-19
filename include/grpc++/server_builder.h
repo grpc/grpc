@@ -46,6 +46,7 @@ class AsynchronousService;
 class CompletionQueue;
 class RpcService;
 class Server;
+class ServerCompletionQueue;
 class ServerCredentials;
 class SynchronousService;
 class ThreadPoolInterface;
@@ -82,6 +83,11 @@ class ServerBuilder {
   // Does not take ownership.
   void SetThreadPool(ThreadPoolInterface* thread_pool);
 
+  // Add a completion queue for handling asynchronous services
+  // Caller is required to keep this completion queue live until calling
+  // BuildAndStart()
+  std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
+
   // Return a running server which is ready for processing rpcs.
   std::unique_ptr<Server> BuildAndStart();
 
@@ -96,6 +102,7 @@ class ServerBuilder {
   std::vector<RpcService*> services_;
   std::vector<AsynchronousService*> async_services_;
   std::vector<Port> ports_;
+  std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
   AsyncGenericService* generic_service_;
   ThreadPoolInterface* thread_pool_;

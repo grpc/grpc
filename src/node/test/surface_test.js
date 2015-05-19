@@ -99,6 +99,36 @@ describe('Surface server constructor', function() {
     }, /math.Math/);
   });
 });
+describe('Echo service', function() {
+  var server;
+  var client;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
+    var echo_service = test_proto.lookup('EchoService');
+    var Server = grpc.buildServer([echo_service]);
+    server = new Server({
+      'EchoService': {
+        echo: function(call, callback) {
+          callback(null, call.request);
+        }
+      }
+    });
+    var port = server.bind('localhost:0');
+    var Client = surface_client.makeProtobufClientConstructor(echo_service);
+    client = new Client('localhost:' + port);
+    server.listen();
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('should echo the recieved message directly', function(done) {
+    client.echo({value: 'test value', value2: 3}, function(error, response) {
+      assert.ifError(error);
+      assert.deepEqual(response, {value: 'test value', value2: 3});
+      done();
+    });
+  });
+});
 describe('Generic client and server', function() {
   function toString(val) {
     return val.toString();
@@ -278,9 +308,8 @@ describe('Trailing metadata', function() {
   it('should be present when a server stream call fails', function(done) {
     var call = client.serverStream({error: true});
     call.on('data', function(){});
-    call.on('status', function(status) {
-      assert.notStrictEqual(status.code, grpc.status.OK);
-      assert.deepEqual(status.metadata.metadata, ['yes']);
+    call.on('error', function(error) {
+      assert.deepEqual(error.metadata.metadata, ['yes']);
       done();
     });
   });
@@ -302,9 +331,8 @@ describe('Trailing metadata', function() {
     call.write({error: true});
     call.end();
     call.on('data', function(){});
-    call.on('status', function(status) {
-      assert.notStrictEqual(status.code, grpc.status.OK);
-      assert.deepEqual(status.metadata.metadata, ['yes']);
+    call.on('error', function(error) {
+      assert.deepEqual(error.metadata.metadata, ['yes']);
       done();
     });
   });
@@ -345,16 +373,16 @@ describe('Cancelling surface client', function() {
   });
   it('Should correctly cancel a server stream call', function(done) {
     var call = client.fib({'limit': 5});
-    call.on('status', function(status) {
-      assert.strictEqual(status.code, surface_client.status.CANCELLED);
+    call.on('error', function(error) {
+      assert.strictEqual(error.code, surface_client.status.CANCELLED);
       done();
     });
     call.cancel();
   });
   it('Should correctly cancel a bidi stream call', function(done) {
     var call = client.divMany();
-    call.on('status', function(status) {
-      assert.strictEqual(status.code, surface_client.status.CANCELLED);
+    call.on('error', function(error) {
+      assert.strictEqual(error.code, surface_client.status.CANCELLED);
       done();
     });
     call.cancel();

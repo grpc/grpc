@@ -45,8 +45,8 @@ namespace math
             GrpcEnvironment.Initialize();
 
             Server server = new Server();
-            server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
-            int port = server.AddListeningPort(host + ":23456");
+            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
+            int port = server.AddListeningPort(host, 23456);
             server.Start();
 
             Console.WriteLine("MathServer listening on port " + port);

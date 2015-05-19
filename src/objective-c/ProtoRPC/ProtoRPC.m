@@ -36,7 +36,7 @@
 #import <gRPC/GRXWriteable.h>
 #import <gRPC/GRXWriter.h>
 #import <gRPC/GRXWriter+Transformations.h>
-#import <ProtocolBuffers/ProtocolBuffers.h>
+#import <Protobuf/GPBProtocolBuffers.h>
 
 @implementation ProtoRPC {
   id<GRXWriteable> _responseWriteable;
@@ -65,7 +65,7 @@
   }
   // A writer that serializes the proto messages to send.
   id<GRXWriter> bytesWriter =
-      [[[GRXWriter alloc] initWithWriter:requestsWriter] map:^id(PBGeneratedMessage *proto) {
+      [[[GRXWriter alloc] initWithWriter:requestsWriter] map:^id(GPBMessage *proto) {
         return [proto data];
       }];
   if ((self = [super initWithHost:host method:method requestsWriter:bytesWriter])) {

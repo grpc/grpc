@@ -63,8 +63,7 @@ grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
   return bb;
 }
 
-typedef void(GPR_CALLTYPE *callback_funcptr)(grpc_op_error op_error,
-                                             void *batch_context);
+typedef void(GPR_CALLTYPE *callback_funcptr)(gpr_int32 success, void *batch_context);
 
 /*
  * Helper to maintain lifetime of batch op inputs and store batch op outputs.
@@ -308,27 +307,18 @@ grpcsharp_completion_queue_destroy(grpc_completion_queue *cq) {
 
 GPR_EXPORT grpc_completion_type GPR_CALLTYPE
 grpcsharp_completion_queue_next_with_callback(grpc_completion_queue *cq) {
-  grpc_event *ev;
+  grpc_event ev;
   grpcsharp_batch_context *batch_context;
   grpc_completion_type t;
-  void(GPR_CALLTYPE * callback)(grpc_event *);
 
   ev = grpc_completion_queue_next(cq, gpr_inf_future);
-  t = ev->type;
-  if (t == GRPC_OP_COMPLETE && ev->tag) {
+  t = ev.type;
+  if (t == GRPC_OP_COMPLETE && ev.tag) {
     /* NEW API handler */
-    batch_context = (grpcsharp_batch_context *)ev->tag;
-    batch_context->callback(ev->data.op_complete, batch_context);
+    batch_context = (grpcsharp_batch_context *)ev.tag;
+    batch_context->callback((gpr_int32) ev.success, batch_context);
     grpcsharp_batch_context_destroy(batch_context);
-  } else if (ev->tag) {
-    /* call the callback in ev->tag */
-    /* C forbids to cast object pointers to function pointers, so
-     * we cast to intptr first.
-     */
-    callback = (void(GPR_CALLTYPE *)(grpc_event *))(gpr_intptr)ev->tag;
-    (*callback)(ev);
   }
-  grpc_event_finish(ev);
 
   /* return completion type to allow some handling for events that have no
    * tag - such as GRPC_QUEUE_SHUTDOWN
@@ -673,7 +663,9 @@ grpcsharp_call_start_serverside(grpc_call *call, callback_funcptr callback) {
 GPR_EXPORT grpc_server *GPR_CALLTYPE
 grpcsharp_server_create(grpc_completion_queue *cq,
                         const grpc_channel_args *args) {
-  return grpc_server_create(cq, args);
+  grpc_server *server = grpc_server_create(args);
+  grpc_server_register_completion_queue(server, cq);
+  return server;
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
@@ -690,8 +682,11 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_shutdown(grpc_server *server) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_server_shutdown_and_notify(grpc_server *server, void *tag) {
-  grpc_server_shutdown_and_notify(server, tag);
+grpcsharp_server_shutdown_and_notify_callback(grpc_server *server,
+                                              callback_funcptr callback) {
+  grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
+  ctx->callback = callback;
+  grpc_server_shutdown_and_notify(server, ctx);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_destroy(grpc_server *server) {
@@ -706,7 +701,7 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
 
   return grpc_server_request_call(
       server, &(ctx->server_rpc_new.call), &(ctx->server_rpc_new.call_details),
-      &(ctx->server_rpc_new.request_metadata), cq, ctx);
+      &(ctx->server_rpc_new.request_metadata), cq, cq, ctx);
 }
 
 /* Security */
@@ -795,7 +790,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
 /* For testing */
 GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_test_callback(callback_funcptr callback) {
-  callback(GRPC_OP_OK, NULL);
+  callback(1, NULL);
 }
 
 /* For testing */

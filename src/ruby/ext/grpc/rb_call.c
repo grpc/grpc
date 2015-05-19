@@ -581,7 +581,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
                                     VALUE timeout, VALUE ops_hash) {
   run_batch_stack st;
   grpc_call *call = NULL;
-  grpc_event *ev = NULL;
+  grpc_event ev;
   grpc_call_error err;
   VALUE result = Qnil;
   TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
@@ -605,15 +605,14 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
     return Qnil;
   }
   ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
-  if (ev == NULL) {
+  if (ev.type == GRPC_QUEUE_TIMEOUT) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
     return Qnil;
   }
-  if (ev->data.op_complete != GRPC_OP_OK) {
+  if (!ev.success) {
     grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_rb_eCallError, "start_batch completion failed, (code=%d)",
-             ev->data.op_complete);
+    rb_raise(grpc_rb_eCallError, "start_batch completion failed");
     return Qnil;
   }
 

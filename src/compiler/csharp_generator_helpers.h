@@ -31,37 +31,20 @@
  *
  */
 
-#ifndef GRPC_GRPC_HTTP_H
-#define GRPC_GRPC_HTTP_H
+#ifndef GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_HELPERS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
-/* HTTP GET support.
+namespace grpc_csharp_generator {
 
-   HTTP2 servers can publish statically generated text content served
-   via HTTP2 GET queries by publishing one or more grpc_http_server_page
-   elements via repeated GRPC_ARG_SERVE_OVER_HTTP elements in the servers
-   channel_args.
-
-   This is not:
-    - a general purpose web server
-    - particularly fast
-
-   It's useful for being able to serve up some static content (maybe some
-   javascript to be able to interact with your GRPC server?) */
-
-typedef struct {
-  const char *path;
-  const char *content_type;
-  const char *content;
-} grpc_http_server_page;
-
-#define GRPC_ARG_SERVE_OVER_HTTP "grpc.serve_over_http"
-
-#ifdef __cplusplus
+inline bool ServicesFilename(const grpc::protobuf::FileDescriptor *file,
+                             grpc::string *file_name_or_error) {
+  *file_name_or_error = grpc_generator::FileNameInUpperCamel(file) + "Grpc.cs";
+  return true;
 }
-#endif
 
-#endif  /* GRPC_GRPC_HTTP_H */
+}  // namespace grpc_csharp_generator
+
+#endif  // GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_HELPERS_H

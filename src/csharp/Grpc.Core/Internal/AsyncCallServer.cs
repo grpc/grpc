@@ -121,7 +121,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles the server side close completion.
         /// </summary>
-        private void HandleFinishedServerside(bool wasError, BatchContextSafeHandleNotOwned ctx)
+        private void HandleFinishedServerside(bool success, BatchContextSafeHandleNotOwned ctx)
         {
             bool cancelled = ctx.GetReceivedCloseOnServerCancelled();
 
@@ -138,9 +138,7 @@ namespace Grpc.Core.Internal
 
                 ReleaseResourcesIfPossible();
             }
-            // TODO(jtattermusch): check if call was cancelled.
-
-            // TODO: handle error ...
+            // TODO(jtattermusch): handle error
 
             finishedServersideTcs.SetResult(null);
         }

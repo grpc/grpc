@@ -41,6 +41,8 @@ namespace Grpc.Core
     /// Abstraction of a call to be invoked on a client.
     /// </summary>
     public class Call<TRequest, TResponse>
+        where TRequest : class
+        where TResponse : class
     {
         readonly string name;
         readonly Marshaller<TRequest> requestMarshaller;
@@ -50,7 +52,7 @@ namespace Grpc.Core
 
         public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
         {
-            this.name = Preconditions.CheckNotNull(serviceName) + "/" + method.Name;
+            this.name = method.GetFullName(serviceName);
             this.requestMarshaller = method.RequestMarshaller;
             this.responseMarshaller = method.ResponseMarshaller;
             this.channel = Preconditions.CheckNotNull(channel);

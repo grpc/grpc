@@ -37,7 +37,7 @@ Libraries in different languages are in different state of development. We are s
    * C++ Library: [src/cpp] (src/cpp) : Early adopter ready - Alpha.
    * Ruby Library: [src/ruby] (src/ruby) : Early adopter ready - Alpha.
    * NodeJS Library: [src/node] (src/node) : Early adopter ready - Alpha.
-   * Python Library: [src/python] (src/python) : Usable with limitations - Pre-Alpha.
+   * Python Library: [src/python] (src/python) : Usable with limitations - Alpha.
    * PHP Library: [src/php] (src/php) : Pre-Alpha.
    * C# Library: [src/csharp] (src/csharp) : Pre-Alpha.
    * Objective-C Library: [src/objective-c] (src/objective-c): Pre-Alpha.

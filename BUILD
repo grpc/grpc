@@ -74,6 +74,7 @@ cc_library(
     "src/core/support/string.c",
     "src/core/support/string_posix.c",
     "src/core/support/string_win32.c",
+    "src/core/support/subprocess_posix.c",
     "src/core/support/sync.c",
     "src/core/support/sync_posix.c",
     "src/core/support/sync_win32.c",
@@ -83,6 +84,7 @@ cc_library(
     "src/core/support/time.c",
     "src/core/support/time_posix.c",
     "src/core/support/time_win32.c",
+    "src/core/support/tls_pthread.c",
   ],
   hdrs = [
     "include/grpc/support/alloc.h",
@@ -100,6 +102,7 @@ cc_library(
     "include/grpc/support/port_platform.h",
     "include/grpc/support/slice.h",
     "include/grpc/support/slice_buffer.h",
+    "include/grpc/support/subprocess.h",
     "include/grpc/support/sync.h",
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
@@ -135,6 +138,7 @@ cc_library(
     "src/core/security/secure_endpoint.h",
     "src/core/security/secure_transport_setup.h",
     "src/core/security/security_connector.h",
+    "src/core/security/security_context.h",
     "src/core/tsi/fake_transport_security.h",
     "src/core/tsi/ssl_transport_security.h",
     "src/core/tsi/transport_security.h",
@@ -240,6 +244,7 @@ cc_library(
     "src/core/security/secure_endpoint.c",
     "src/core/security/secure_transport_setup.c",
     "src/core/security/security_connector.c",
+    "src/core/security/security_context.c",
     "src/core/security/server_secure_chttp2.c",
     "src/core/surface/init_secure.c",
     "src/core/surface/secure_channel_create.c",
@@ -349,7 +354,6 @@ cc_library(
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/grpc.h",
-    "include/grpc/grpc_http.h",
     "include/grpc/status.h",
   ],
   includes = [
@@ -556,7 +560,6 @@ cc_library(
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/grpc.h",
-    "include/grpc/grpc_http.h",
     "include/grpc/status.h",
   ],
   includes = [
@@ -737,6 +740,8 @@ cc_library(
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
     "src/compiler/cpp_generator_helpers.h",
+    "src/compiler/csharp_generator.h",
+    "src/compiler/csharp_generator_helpers.h",
     "src/compiler/generator_helpers.h",
     "src/compiler/objective_c_generator.h",
     "src/compiler/objective_c_generator_helpers.h",
@@ -746,6 +751,7 @@ cc_library(
     "src/compiler/ruby_generator_map-inl.h",
     "src/compiler/ruby_generator_string-inl.h",
     "src/compiler/cpp_generator.cc",
+    "src/compiler/csharp_generator.cc",
     "src/compiler/objective_c_generator.cc",
     "src/compiler/python_generator.cc",
     "src/compiler/ruby_generator.cc",
@@ -785,6 +791,18 @@ cc_binary(
   name = "grpc_cpp_plugin",
   srcs = [
     "src/compiler/cpp_plugin.cc",
+  ],
+  deps = [
+    "//external:protobuf_compiler",
+    ":grpc_plugin_support",
+  ],
+)
+
+
+cc_binary(
+  name = "grpc_csharp_plugin",
+  srcs = [
+    "src/compiler/csharp_plugin.cc",
   ],
   deps = [
     "//external:protobuf_compiler",

@@ -35,7 +35,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
@@ -67,14 +66,10 @@ static gpr_timespec n_seconds_time(int n) {
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 static void drain_cq(grpc_completion_queue *cq) {
-  grpc_event *ev;
-  grpc_completion_type type;
+  grpc_event ev;
   do {
     ev = grpc_completion_queue_next(cq, five_seconds_time());
-    GPR_ASSERT(ev);
-    type = ev->type;
-    grpc_event_finish(ev);
-  } while (type != GRPC_QUEUE_SHUTDOWN);
+  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
@@ -114,9 +109,9 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {{"key1", "val1", 4}, {"key2", "val2", 4}};
-  grpc_metadata meta_s[2] = {{"key3", "val3", 4}, {"key4", "val4", 4}};
-  grpc_metadata meta_t[2] = {{"key5", "val5", 4}, {"key6", "val6", 4}};
+  grpc_metadata meta_c[2] = {{"key1", "val1", 4, {{NULL, NULL, NULL}}}, {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
+  grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}}, {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
+  grpc_metadata meta_t[2] = {{"key5", "val5", 4, {{NULL, NULL, NULL}}}, {"key6", "val6", 4, {{NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
@@ -169,8 +164,9 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq, tag(101)));
-  cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
+                                                      f.server_cq, f.server_cq,
+                                                      tag(101)));
+  cq_expect_completion(v_server, tag(101), 1);
   cq_verify(v_server);
 
   op = ops;
@@ -184,7 +180,7 @@ static void test_request_response_with_metadata_and_payload(
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 2;
   op->data.send_status_from_server.trailing_metadata = meta_t;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -195,17 +191,16 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_server, tag(102), GRPC_OP_OK);
+  cq_expect_completion(v_server, tag(102), 1);
   cq_verify(v_server);
 
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
+  cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 1);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key1", "val1"));

@@ -74,7 +74,7 @@ static void async_connect_cleanup(async_connect *ac) {
 static void on_alarm(void *acp, int occured) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  /* If the alarm didn't occor, it got cancelled. */
+  /* If the alarm didn't occur, it got cancelled. */
   if (ac->socket != NULL && occured) {
     grpc_winsocket_shutdown(ac->socket);
   }
@@ -101,15 +101,14 @@ static void on_connect(void *acp, int from_iocp) {
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                               &transfered_bytes, FALSE,
                                               &flags);
+    info->outstanding = 0;
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
       char *utf8_message = gpr_format_message(WSAGetLastError());
       gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
       gpr_free(utf8_message);
-      goto finish;
-    } else {
+    } else if (!aborted) {
       ep = grpc_tcp_create(ac->socket);
-      goto finish;
     }
   } else {
     gpr_log(GPR_ERROR, "on_connect is shutting down");
@@ -125,20 +124,12 @@ static void on_connect(void *acp, int from_iocp) {
     return;
   }
 
-  abort();
+  ac->socket->write_info.outstanding = 0;
 
-finish:
   /* If we don't have an endpoint, it means the connection failed,
      so it doesn't matter if it aborted or failed. We need to orphan
      that socket. */
-  if (!ep || aborted) {
-    /* If the connection failed, it means we won't get an IOCP notification,
-       so let's flag it as already closed. But if the connection was aborted,
-       while we still got an endpoint, we have to wait for the IOCP to collect
-       that socket. So let's properly flag that. */
-    ac->socket->closed_early = !ep;
-    grpc_winsocket_orphan(ac->socket);
-  }
+  if (!ep || aborted) grpc_winsocket_orphan(ac->socket);
   async_connect_cleanup(ac);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
@@ -189,7 +180,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
                     &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
-    message = "Unable to retreive ConnectEx pointer: %s";
+    message = "Unable to retrieve ConnectEx pointer: %s";
     goto failure;
   }
 
@@ -204,6 +195,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
 
   socket = grpc_winsocket_create(sock);
   info = &socket->write_info;
+  info->outstanding = 1;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
@@ -225,6 +217,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
   ac->aborted = 0;
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
+  socket->write_info.outstanding = 1;
   grpc_socket_notify_on_write(socket, on_connect, ac);
   return;
 
@@ -233,7 +226,6 @@ failure:
   gpr_log(GPR_ERROR, message, utf8_message);
   gpr_free(utf8_message);
   if (socket) {
-    socket->closed_early = 1;
     grpc_winsocket_orphan(socket);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);

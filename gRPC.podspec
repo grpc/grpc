@@ -1,16 +1,16 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
   s.version  = '0.0.1'
-  s.summary  = 'Generic gRPC client library for iOS'
+  s.summary  = 'Generic gRPC client library for iOS/OSX'
   s.homepage = 'https://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com',
-                 'Michael Lumish' => 'mlumish@google.com' }
+                 'Michael Lumish'  => 'mlumish@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',  :tag => 'release-0_5_0' }
 
-  s.platform = :ios
   s.ios.deployment_target = '6.0'
+  s.osx.deployment_target = '10.8'
   s.requires_arc = true
 
   s.subspec 'RxLibrary' do |rs|
@@ -67,7 +67,8 @@ Pod::Spec.new do |s|
 
   s.subspec 'GRPCClient' do |gs|
     gs.summary = 'Objective-C wrapper around the core gRPC library.'
-    gs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
+    gs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com',
+                    'Michael Lumish'  => 'mlumish@google.com' }
 
     gs.source_files = 'src/objective-c/GRPCClient/*.{h,m}',
                       'src/objective-c/GRPCClient/private/*.{h,m}'
@@ -90,5 +91,6 @@ Pod::Spec.new do |s|
 
     ps.dependency 'gRPC/GRPCClient'
     ps.dependency 'gRPC/RxLibrary'
+    ps.dependency 'Protobuf', '~> 3.0'
   end
 end

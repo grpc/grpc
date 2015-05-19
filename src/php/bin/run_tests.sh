@@ -34,7 +34,7 @@ set -e
 cd $(dirname $0)
 default_extension_dir=`php -i | grep extension_dir | sed 's/.*=> //g'`
 
-module_dir=`php --version | grep -q 'PHP 5.6' && echo '../ext/grpc' || echo '../ext/grpc/modules'`
+module_dir=../ext/grpc/modules
 
 # sym-link in system supplied extensions
 for f in $default_extension_dir/*.so

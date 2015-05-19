@@ -94,6 +94,15 @@ int main(int argc, char** argv) {
   server_config.set_threads(FLAGS_server_threads);
   server_config.set_enable_ssl(FLAGS_enable_ssl);
 
+  // If we're running a sync-server streaming test, make sure
+  // that we have at least as many threads as the active streams
+  // or else threads will be blocked from forward progress and the
+  // client will deadlock on a timer.
+  GPR_ASSERT(!(server_type == grpc::testing::SYNCHRONOUS_SERVER &&
+               rpc_type == grpc::testing::STREAMING &&
+               FLAGS_server_threads <  FLAGS_client_channels *
+               FLAGS_outstanding_rpcs_per_channel));
+
   auto result = RunScenario(client_config, FLAGS_num_clients,
                             server_config, FLAGS_num_servers,
                             FLAGS_warmup_seconds, FLAGS_benchmark_seconds,

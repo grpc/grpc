@@ -86,12 +86,10 @@ typedef struct grpc_tcp {
   grpc_endpoint_read_cb read_cb;
   void *read_user_data;
   gpr_slice read_slice;
-  int outstanding_read;
 
   grpc_endpoint_write_cb write_cb;
   void *write_user_data;
   gpr_slice_buffer write_slices;
-  int outstanding_write;
 
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
@@ -120,12 +118,14 @@ static void on_read(void *tcpp, int from_iocp) {
   gpr_slice *slice = NULL;
   size_t nslices = 0;
   grpc_endpoint_cb_status status;
-  grpc_endpoint_read_cb cb = tcp->read_cb;
+  grpc_endpoint_read_cb cb;
   grpc_winsocket_callback_info *info = &socket->read_info;
   void *opaque = tcp->read_user_data;
   int do_abort = 0;
 
   gpr_mu_lock(&tcp->mu);
+  cb = tcp->read_cb;
+  tcp->read_cb = NULL;
   if (!from_iocp || tcp->shutting_down) {
     /* If we are here with from_iocp set to true, it means we got raced to
     shutting down the endpoint. No actual abort callback will happen
@@ -135,20 +135,22 @@ static void on_read(void *tcpp, int from_iocp) {
   gpr_mu_unlock(&tcp->mu);
 
   if (do_abort) {
-    if (from_iocp) gpr_slice_unref(tcp->read_slice);
+    if (from_iocp) {
+      tcp->socket->read_info.outstanding = 0;
+      gpr_slice_unref(tcp->read_slice);
+    }
     tcp_unref(tcp);
-    cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
+    if (cb) cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
     return;
   }
 
-  GPR_ASSERT(tcp->outstanding_read);
+  GPR_ASSERT(tcp->socket->read_info.outstanding);
 
   if (socket->read_info.wsa_error != 0) {
     char *utf8_message = gpr_format_message(info->wsa_error);
     gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
     gpr_free(utf8_message);
     status = GRPC_ENDPOINT_CB_ERROR;
-    socket->closed_early = 1;
   } else {
     if (info->bytes_transfered != 0) {
       sub = gpr_slice_sub(tcp->read_slice, 0, info->bytes_transfered);
@@ -161,7 +163,7 @@ static void on_read(void *tcpp, int from_iocp) {
     }
   }
 
-  tcp->outstanding_read = 0;
+  tcp->socket->read_info.outstanding = 0;
 
   tcp_unref(tcp);
   cb(opaque, slice, nslices, status);
@@ -175,13 +177,15 @@ static void win_notify_on_read(grpc_endpoint *ep,
   int status;
   DWORD bytes_read = 0;
   DWORD flags = 0;
-  int error;
   WSABUF buffer;
 
-  GPR_ASSERT(!tcp->outstanding_read);
-  GPR_ASSERT(!tcp->shutting_down);
+  GPR_ASSERT(!tcp->socket->read_info.outstanding);
+  if (tcp->shutting_down) {
+    cb(arg, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
+    return;
+  }
   tcp_ref(tcp);
-  tcp->outstanding_read = 1;
+  tcp->socket->read_info.outstanding = 1;
   tcp->read_cb = cb;
   tcp->read_user_data = arg;
 
@@ -208,34 +212,13 @@ static void win_notify_on_read(grpc_endpoint *ep,
   status = WSARecv(tcp->socket->socket, &buffer, 1, &bytes_read, &flags,
                    &info->overlapped, NULL);
 
-  if (status == 0) {
-    grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
-    return;
-  }
-
-  error = WSAGetLastError();
-
-  if (error != WSA_IO_PENDING) {
-    char *utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "WSARecv error: %s - this means we're going to leak.",
-            utf8_message);
-    gpr_free(utf8_message);
-    /* I'm pretty sure this is a very bad situation there. Hence the log.
-       What will happen now is that the socket will neither wait for read
-       or write, unless the caller retry, which is unlikely, but I am not
-       sure if that's guaranteed. And there might also be a write pending.
-       This means that the future orphanage of that socket will be in limbo,
-       and we're going to leak it. I have no idea what could cause this
-       specific case however, aside from a parameter error from our call.
-       Normal read errors would actually happen during the overlapped
-       operation, which is the supported way to go for that. */
-    tcp->outstanding_read = 0;
-    tcp_unref(tcp);
-    cb(arg, NULL, 0, GRPC_ENDPOINT_CB_ERROR);
-    /* Per the comment above, I'm going to treat that case as a hard failure
-       for now, and leave the option to catch that and debug. */
-    __debugbreak();
-    return;
+  if (status != 0) {
+    int wsa_error = WSAGetLastError();
+    if (wsa_error != WSA_IO_PENDING) {
+      info->wsa_error = wsa_error;
+      on_read(tcp, 1);
+      return;
+    }
   }
 
   grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
@@ -247,11 +230,13 @@ static void on_write(void *tcpp, int from_iocp) {
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->write_info;
   grpc_endpoint_cb_status status = GRPC_ENDPOINT_CB_OK;
-  grpc_endpoint_write_cb cb = tcp->write_cb;
+  grpc_endpoint_write_cb cb;
   void *opaque = tcp->write_user_data;
   int do_abort = 0;
 
   gpr_mu_lock(&tcp->mu);
+  cb = tcp->write_cb;
+  tcp->write_cb = NULL;
   if (!from_iocp || tcp->shutting_down) {
     /* If we are here with from_iocp set to true, it means we got raced to
         shutting down the endpoint. No actual abort callback will happen
@@ -260,27 +245,29 @@ static void on_write(void *tcpp, int from_iocp) {
   }
   gpr_mu_unlock(&tcp->mu);
 
-  GPR_ASSERT(tcp->outstanding_write);
-
   if (do_abort) {
-    if (from_iocp) gpr_slice_buffer_reset_and_unref(&tcp->write_slices);
+    if (from_iocp) {
+      tcp->socket->write_info.outstanding = 0;
+      gpr_slice_buffer_reset_and_unref(&tcp->write_slices);
+    }
     tcp_unref(tcp);
-    cb(opaque, GRPC_ENDPOINT_CB_SHUTDOWN);
+    if (cb) cb(opaque, GRPC_ENDPOINT_CB_SHUTDOWN);
     return;
   }
+
+  GPR_ASSERT(tcp->socket->write_info.outstanding);
 
   if (info->wsa_error != 0) {
     char *utf8_message = gpr_format_message(info->wsa_error);
     gpr_log(GPR_ERROR, "WSASend overlapped error: %s", utf8_message);
     gpr_free(utf8_message);
     status = GRPC_ENDPOINT_CB_ERROR;
-    tcp->socket->closed_early = 1;
   } else {
     GPR_ASSERT(info->bytes_transfered == tcp->write_slices.length);
   }
 
   gpr_slice_buffer_reset_and_unref(&tcp->write_slices);
-  tcp->outstanding_write = 0;
+  tcp->socket->write_info.outstanding = 0;
 
   tcp_unref(tcp);
   cb(opaque, status);
@@ -301,11 +288,13 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
   WSABUF *allocated = NULL;
   WSABUF *buffers = local_buffers;
 
-  GPR_ASSERT(!tcp->outstanding_write);
-  GPR_ASSERT(!tcp->shutting_down);
+  GPR_ASSERT(!tcp->socket->write_info.outstanding);
+  if (tcp->shutting_down) {
+    return GRPC_ENDPOINT_WRITE_ERROR;
+  }
   tcp_ref(tcp);
 
-  tcp->outstanding_write = 1;
+  tcp->socket->write_info.outstanding = 1;
   tcp->write_cb = cb;
   tcp->write_user_data = arg;
 
@@ -341,7 +330,7 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
     }
     if (allocated) gpr_free(allocated);
     gpr_slice_buffer_reset_and_unref(&tcp->write_slices);
-    tcp->outstanding_write = 0;
+    tcp->socket->write_info.outstanding = 0;
     tcp_unref(tcp);
     return ret;
   }
@@ -353,29 +342,12 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
                    &bytes_sent, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
 
-  /* It is possible the operation completed then. But we'd still get an IOCP
-     notification. So let's ignore it and wait for the IOCP. */
   if (status != 0) {
-    int error = WSAGetLastError();
-    if (error != WSA_IO_PENDING) {
-      char *utf8_message = gpr_format_message(WSAGetLastError());
-      gpr_log(GPR_ERROR, "WSASend error: %s - this means we're going to leak.",
-              utf8_message);
-      gpr_free(utf8_message);
-    /* I'm pretty sure this is a very bad situation there. Hence the log.
-       What will happen now is that the socket will neither wait for read
-       or write, unless the caller retry, which is unlikely, but I am not
-       sure if that's guaranteed. And there might also be a read pending.
-       This means that the future orphanage of that socket will be in limbo,
-       and we're going to leak it. I have no idea what could cause this
-       specific case however, aside from a parameter error from our call.
-       Normal read errors would actually happen during the overlapped
-       operation, which is the supported way to go for that. */
-      tcp->outstanding_write = 0;
+    int wsa_error = WSAGetLastError();
+    if (wsa_error != WSA_IO_PENDING) {
+      gpr_slice_buffer_reset_and_unref(&tcp->write_slices);
+      tcp->socket->write_info.outstanding = 0;
       tcp_unref(tcp);
-      /* Per the comment above, I'm going to treat that case as a hard failure
-         for now, and leave the option to catch that and debug. */
-      __debugbreak();
       return GRPC_ENDPOINT_WRITE_ERROR;
     }
   }
@@ -399,11 +371,13 @@ static void win_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
    concurrent access of the data structure in that regard. */
 static void win_shutdown(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *) ep;
+  int extra_refs = 0;
   gpr_mu_lock(&tcp->mu);
   /* At that point, what may happen is that we're already inside the IOCP
      callback. See the comments in on_read and on_write. */
   tcp->shutting_down = 1;
-  grpc_winsocket_shutdown(tcp->socket);
+  extra_refs = grpc_winsocket_shutdown(tcp->socket);
+  while (extra_refs--) tcp_ref(tcp);
   gpr_mu_unlock(&tcp->mu);
 }
 

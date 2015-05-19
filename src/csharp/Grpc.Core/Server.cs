@@ -47,9 +47,14 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
+        /// <summary>
+        /// Pass this value as port to have the server choose an unused listening port for you.
+        /// </summary>
+        public const int PickUnusedPort = 0;
+
         // TODO(jtattermusch) : make sure the delegate doesn't get garbage collected while
         // native callbacks are in the completion queue.
-        readonly ServerShutdownCallbackDelegate serverShutdownHandler;
+        readonly CompletionCallbackDelegate serverShutdownHandler;
         readonly CompletionCallbackDelegate newServerRpcHandler;
 
         readonly ServerSafeHandle handle;
@@ -89,29 +94,25 @@ namespace Grpc.Core
         /// Add a non-secure port on which server should listen.
         /// Only call this before Start().
         /// </summary>
-        public int AddListeningPort(string addr)
+        /// <returns>The port on which server will be listening.</returns>
+        /// <param name="host">the host</param>
+        /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
+        public int AddListeningPort(string host, int port)
         {
-            lock (myLock)
-            {
-                Preconditions.CheckState(!startRequested);
-                return handle.AddListeningPort(addr);
-            }
+            return AddListeningPortInternal(host, port, null);
         }
 
         /// <summary>
-        /// Add a secure port on which server should listen.
+        /// Add a non-secure port on which server should listen.
         /// Only call this before Start().
         /// </summary>
-        public int AddListeningPort(string addr, ServerCredentials credentials)
+        /// <returns>The port on which server will be listening.</returns>
+        /// <param name="host">the host</param>
+        /// <param name="port">the port. If zero, , an unused port is chosen automatically.</param>
+        public int AddListeningPort(string host, int port, ServerCredentials credentials)
         {
-            lock (myLock)
-            {
-                Preconditions.CheckState(!startRequested);
-                using (var nativeCredentials = credentials.ToNativeCredentials())
-                {
-                    return handle.AddListeningPort(addr, nativeCredentials);
-                }
-            }
+            Preconditions.CheckNotNull(credentials);
+            return AddListeningPortInternal(host, port, credentials);
         }
 
         /// <summary>
@@ -164,6 +165,26 @@ namespace Grpc.Core
             handle.Dispose();
         }
 
+        private int AddListeningPortInternal(string host, int port, ServerCredentials credentials)
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckState(!startRequested);    
+                var address = string.Format("{0}:{1}", host, port);
+                if (credentials != null)
+                {
+                    using (var nativeCredentials = credentials.ToNativeCredentials())
+                    {
+                        return handle.AddListeningPort(address, nativeCredentials);
+                    }
+                }
+                else
+                {
+                    return handle.AddListeningPort(address);    
+                }
+            }
+        }
+
         /// <summary>
         /// Allows one new RPC call to be received by server.
         /// </summary>
@@ -201,16 +222,13 @@ namespace Grpc.Core
         /// <summary>
         /// Handles the native callback.
         /// </summary>
-        private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr)
+        private void HandleNewServerRpc(bool success, IntPtr batchContextPtr)
         {
             try
             {
                 var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
 
-                if (error != GRPCOpError.GRPC_OP_OK)
-                {
-                    // TODO: handle error
-                }
+                // TODO: handle error
 
                 CallSafeHandle call = ctx.GetServerRpcNewCall();
                 string method = ctx.GetServerRpcNewMethod();
@@ -232,8 +250,7 @@ namespace Grpc.Core
         /// <summary>
         /// Handles native callback.
         /// </summary>
-        /// <param name="eventPtr"></param>
-        private void HandleServerShutdown(IntPtr eventPtr)
+        private void HandleServerShutdown(bool success, IntPtr batchContextPtr)
         {
             try
             {

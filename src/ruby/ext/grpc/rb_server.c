@@ -123,7 +123,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
-  srv = grpc_server_create(cq, &args);
+  srv = grpc_server_create(&args);
 
   if (args.args != NULL) {
     xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
@@ -131,6 +131,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   if (srv == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a gRPC server, not sure why");
   }
+  grpc_server_register_completion_queue(srv, cq);
   wrapper->wrapped = srv;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
@@ -203,7 +204,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
                                          VALUE tag_new, VALUE timeout) {
   grpc_rb_server *s = NULL;
   grpc_call *call = NULL;
-  grpc_event *ev = NULL;
+  grpc_event ev;
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
@@ -218,6 +219,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     err = grpc_server_request_call(
         s->wrapped, &call, &st.details, &st.md_ary,
         grpc_rb_get_wrapped_completion_queue(cqueue),
+        grpc_rb_get_wrapped_completion_queue(cqueue),
         ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
       grpc_request_call_stack_cleanup(&st);
@@ -227,15 +229,13 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
       return Qnil;
     }
     ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
-    if (ev == NULL) {
+    if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_request_call_stack_cleanup(&st);
       return Qnil;
     }
-    if (ev->data.op_complete != GRPC_OP_OK) {
+    if (!ev.success) {
       grpc_request_call_stack_cleanup(&st);
-      grpc_event_finish(ev);
-      rb_raise(grpc_rb_eCallError, "request_call completion failed: (code=%d)",
-               ev->data.op_complete);
+      rb_raise(grpc_rb_eCallError, "request_call completion failed");
       return Qnil;
     }
 
@@ -249,7 +249,6 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
         grpc_rb_md_ary_to_h(&st.md_ary),
         grpc_rb_wrap_call(call),
         NULL);
-    grpc_event_finish(ev);
     grpc_request_call_stack_cleanup(&st);
     return result;
   }
