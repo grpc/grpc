@@ -45,32 +45,6 @@
 namespace grpc {
 namespace testing {
 
-/** General set of data required for report generation. */
-struct ReportData {
-  const ClientConfig& client_config;
-  const ServerConfig& server_config;
-  const ScenarioResult& scenario_result;
-};
-
-/** Specifies the type of performance report we are interested in.
- *
- *  \note The special type \c REPORT_ALL is equivalent to specifying all the
- *  other fields. */
-enum ReportType {
-  /** Equivalent to the combination of all other fields. */
-  REPORT_ALL,
-  /** Report only QPS information. */
-  REPORT_QPS,
-  /** Report only QPS per core information. */
-  REPORT_QPS_PER_CORE,
-  /** Report latency info for the 50, 90, 95, 99 and 99.9th percentiles. */
-  REPORT_LATENCY,
-  /** Report user and system time. */
-  REPORT_TIMES
-};
-
-class Reporter;
-
 /** Interface for all reporters. */
 class Reporter {
  public:
@@ -82,10 +56,6 @@ class Reporter {
    * Names are constants, set at construction time. */
   string name() const { return name_; }
 
-  /** Template method responsible for the generation of the requested types. */
-  void Report(const ReportData& data, const std::set<ReportType>& types) const;
-
- protected:
   /** Reports QPS for the given \a result. */
   virtual void ReportQPS(const ScenarioResult& result) const = 0;
 
@@ -102,9 +72,6 @@ class Reporter {
  private:
   const string name_;
 };
-
-
-// Reporters.
 
 /** Reporter to gpr_log(GPR_INFO). */
 class GprLogReporter : public Reporter {

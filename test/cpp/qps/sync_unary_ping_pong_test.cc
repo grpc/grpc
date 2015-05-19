@@ -51,9 +51,6 @@ static void RunSynchronousUnaryPingPong(
     const std::vector<std::unique_ptr<Reporter> >& reporters) {
   gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
 
-  ReportersRegistry reporters_registry;
-  reporters_registry.Register(new GprLogReporter("LogReporter"));
-
   ClientConfig client_config;
   client_config.set_client_type(SYNCHRONOUS_CLIENT);
   client_config.set_enable_ssl(false);
@@ -70,11 +67,9 @@ static void RunSynchronousUnaryPingPong(
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  std::set<ReportType> types;
-  types.insert(grpc::testing::ReportType::REPORT_QPS);
-  types.insert(grpc::testing::ReportType::REPORT_LATENCY);
   for (const auto& reporter : reporters) {
-    reporter->Report({client_config, server_config, result}, types);
+    reporter->ReportQPS(result);
+    reporter->ReportLatency(result);
   }
 }
 

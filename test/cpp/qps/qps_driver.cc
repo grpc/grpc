@@ -70,7 +70,6 @@ using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
-using grpc::testing::ReportType;
 
 namespace grpc {
 namespace testing {
@@ -113,10 +112,11 @@ static void QpsDriver(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
       FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
-  std::set<ReportType> types;
-  types.insert(grpc::testing::ReportType::REPORT_ALL);
   for (const auto& reporter : reporters) {
-    reporter->Report({client_config, server_config, result}, types);
+    reporter->ReportQPS(result);
+    reporter->ReportQPSPerCore(result, server_config);
+    reporter->ReportLatency(result);
+    reporter->ReportTimes(result);
   }
 }
 

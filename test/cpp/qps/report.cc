@@ -39,32 +39,6 @@
 namespace grpc {
 namespace testing {
 
-// Reporter implementation.
-void Reporter::Report(const ReportData& data,
-                      const std::set<ReportType>& types) const {
-  for (ReportType rtype : types) {
-    bool all = false;
-    switch (rtype) {
-      case REPORT_ALL:
-        all = true;
-      case REPORT_QPS:
-        ReportQPS(data.scenario_result);
-        if (!all) break;
-      case REPORT_QPS_PER_CORE:
-        ReportQPSPerCore(data.scenario_result, data.server_config);
-        if (!all) break;
-      case REPORT_LATENCY:
-        ReportLatency(data.scenario_result);
-        if (!all) break;
-      case REPORT_TIMES:
-        ReportTimes(data.scenario_result);
-        if (!all) break;
-    }
-    if (all) break;
-  }
-}
-
-// GprLogReporter implementation.
 void GprLogReporter::ReportQPS(const ScenarioResult& result) const {
   gpr_log(GPR_INFO, "QPS: %.1f",
           result.latencies.Count() /

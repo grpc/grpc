@@ -34,7 +34,7 @@
 #include <gflags/gflags.h>
 #include "test/cpp/util/benchmark_config.h"
 
-DEFINE_bool(enable_log_reporter, false,
+DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
 
 // In some distros, gflags is in the namespace google, and in some others,

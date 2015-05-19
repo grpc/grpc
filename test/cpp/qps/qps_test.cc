@@ -67,11 +67,9 @@ static void RunQPS(const std::vector<std::unique_ptr<Reporter> >& reporters) {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  std::set<ReportType> types;
-  types.insert(grpc::testing::ReportType::REPORT_QPS_PER_CORE);
-  types.insert(grpc::testing::ReportType::REPORT_LATENCY);
   for (const auto& reporter : reporters) {
-    reporter->Report({client_config, server_config, result}, types);
+    reporter->ReportQPSPerCore(result, server_config);
+    reporter->ReportLatency(result);
   }
 }
 
