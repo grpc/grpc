@@ -90,8 +90,6 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
     return &contexts.back();
   };
 
-  srand(time(NULL) ^ getpid());
-
   // Get client, server lists
   auto workers = get_hosts("QPS_WORKERS");
   ClientConfig client_config = initial_client_config;
@@ -99,6 +97,14 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   // Spawn some local workers if desired
   vector<unique_ptr<QpsWorker>> local_workers;
   for (int i = 0; i < abs(spawn_local_worker_count); i++) {
+    // act as if we're a new test -- gets a good rng seed
+    static bool called_init = false;
+    if (!called_init) {
+      char *args[] = {"some-benchmark"};
+      grpc_test_init(1, args);
+      called_init = true;
+    }
+
     int driver_port = grpc_pick_unused_port_or_die();
     int benchmark_port = grpc_pick_unused_port_or_die();
     local_workers.emplace_back(new QpsWorker(driver_port, benchmark_port));
