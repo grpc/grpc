@@ -192,7 +192,6 @@ describe('Other conditions', function() {
       TestService: {
         unary: function(call, cb) {
           var req = call.request;
-          debugger;
           if (req.error) {
             cb(new Error('Requested error'), null, {metadata: ['yes']});
           } else {
@@ -297,7 +296,7 @@ describe('Other conditions', function() {
       misbehavingClient = new Client('localhost:' + port);
     });
     it('should respond correctly to a unary call', function(done) {
-      var call = misbehavingClient.unary(badArg, function(err, data) {
+      misbehavingClient.unary(badArg, function(err, data) {
         assert(err);
         assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
         done();
@@ -310,11 +309,13 @@ describe('Other conditions', function() {
         done();
       });
       call.write(badArg);
+      // TODO(mlumish): Remove call.end()
+      call.end();
     });
     it('should respond correctly to a server stream', function(done) {
       var call = misbehavingClient.serverStream(badArg);
       call.on('data', function(data) {
-        assert.fail(data, null, 'Unexpected data', '!=');
+        assert.fail(data, null, 'Unexpected data', '===');
       });
       call.on('error', function(err) {
         assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
@@ -324,13 +325,15 @@ describe('Other conditions', function() {
     it('should respond correctly to a bidi stream', function(done) {
       var call = misbehavingClient.bidiStream();
       call.on('data', function(data) {
-        assert.fail(data, null, 'Unexpected data', '!=');
+        assert.fail(data, null, 'Unexpected data', '===');
       });
       call.on('error', function(err) {
         assert.strictEqual(err.code, grpc.status.INVALID_ARGUMENT);
         done();
       });
       call.write(badArg);
+      // TODO(mlumish): Remove call.end()
+      call.end();
     });
   });
   describe('Trailing metadata', function() {
