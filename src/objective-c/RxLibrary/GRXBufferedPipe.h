@@ -43,7 +43,7 @@
 // If it is throttled and keeps receiving values, as well as if it receives values before being
 // started, it will buffer them and propagate them in order as soon as its state becomes
 // GRXWriterStateStarted.
-// If it receives an error (via -didFinishWithError:), it will drop any buffered values and
+// If it receives an error (via -writesFinishedWithError:), it will drop any buffered values and
 // propagate the error immediately.
 @interface GRXBufferedPipe : NSObject<GRXWriteable, GRXWriter>
 

@@ -227,7 +227,7 @@
                                                      requestedResponseSize:responses[index]];
         [requestsBuffer writeValue:request];
       } else {
-        [requestsBuffer didFinishWithError:nil];
+        [requestsBuffer writesFinishedWithError:nil];
       }
     }
                                        

@@ -130,7 +130,7 @@
   _errorOrNil = nil;
   id<GRXWriteable> writeable = _writeable;
   _writeable = nil;
-  [writeable didFinishWithError:errorOrNil];
+  [writeable writesFinishedWithError:errorOrNil];
 }
 
 - (void)setState:(GRXWriterState)newState {

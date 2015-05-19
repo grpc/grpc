@@ -43,8 +43,7 @@
 // Signal that the sequence is completed, or that an error ocurred. After this
 // message is sent to the instance, neither it nor writeValue: may be
 // called again.
-// TODO(jcanizales): enumerator:(id<GRXEnumerator>) didFinishWithError:(NSError*)?
-- (void)didFinishWithError:(NSError *)errorOrNil;
+- (void)writesFinishedWithError:(NSError *)errorOrNil;
 @end
 
 typedef void (^GRXValueHandler)(id value);

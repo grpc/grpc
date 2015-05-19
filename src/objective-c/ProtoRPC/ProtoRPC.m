@@ -73,7 +73,7 @@
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
       [responsesWriteable writeValue:[responseClass parseFromData:value]];
     } completionHandler:^(NSError *errorOrNil) {
-      [responsesWriteable didFinishWithError:errorOrNil];
+      [responsesWriteable writesFinishedWithError:errorOrNil];
     }];
   }
   return self;

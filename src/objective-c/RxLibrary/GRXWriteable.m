@@ -82,7 +82,7 @@
   }
 }
 
-- (void)didFinishWithError:(NSError *)errorOrNil {
+- (void)writesFinishedWithError:(NSError *)errorOrNil {
   if (_completionHandler) {
     _completionHandler(errorOrNil);
   }

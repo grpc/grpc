@@ -88,7 +88,7 @@
   }
 }
 
-- (void)didFinishWithError:(NSError *)errorOrNil {
+- (void)writesFinishedWithError:(NSError *)errorOrNil {
   _inputIsFinished = YES;
   _errorOrNil = errorOrNil;
   if (errorOrNil || self.shouldFastForward) {
@@ -136,7 +136,7 @@
 - (void)finishWithError:(NSError *)errorOrNil {
   id<GRXWriteable> writeable = _writeable;
   self.state = GRXWriterStateFinished;
-  [writeable didFinishWithError:errorOrNil];
+  [writeable writesFinishedWithError:errorOrNil];
 }
 
 @end
