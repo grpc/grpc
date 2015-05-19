@@ -46,6 +46,7 @@ class SecureCredentials GRPC_FINAL : public Credentials {
   explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
   ~SecureCredentials() GRPC_OVERRIDE { grpc_credentials_release(c_creds_); }
   grpc_credentials* GetRawCreds() { return c_creds_; }
+  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;
 
   std::shared_ptr<grpc::ChannelInterface> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;

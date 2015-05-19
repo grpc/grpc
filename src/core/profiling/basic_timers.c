@@ -55,6 +55,7 @@ typedef enum {
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
   int tag;
+  const char* tagstr;
   marker_type type;
   void* id;
   const char* file;
@@ -70,18 +71,19 @@ static void log_report() {
   int i;
   for (i = 0; i < count; i++) {
     grpc_timer_entry* entry = &(log[i]);
-    printf("GRPC_LAT_PROF " GRPC_PRECISE_CLOCK_FORMAT " %p %c %d %p %s %d\n",
+    printf("GRPC_LAT_PROF " GRPC_PRECISE_CLOCK_FORMAT
+           " %p %c %d(%s) %p %s %d\n",
            GRPC_PRECISE_CLOCK_PRINTF_ARGS(&entry->tm),
            (void*)(gpr_intptr)gpr_thd_currentid(), entry->type, entry->tag,
-           entry->id, entry->file, entry->line);
+           entry->tagstr, entry->id, entry->file, entry->line);
   }
 
   /* Now clear out the log */
   count = 0;
 }
 
-static void grpc_timers_log_add(int tag, marker_type type, void* id,
-                                const char* file, int line) {
+static void grpc_timers_log_add(int tag, const char* tagstr, marker_type type,
+                                void* id, const char* file, int line) {
   grpc_timer_entry* entry;
 
   /* TODO (vpai) : Improve concurrency */
@@ -93,6 +95,7 @@ static void grpc_timers_log_add(int tag, marker_type type, void* id,
 
   grpc_precise_clock_now(&entry->tm);
   entry->tag = tag;
+  entry->tagstr = tagstr;
   entry->type = type;
   entry->id = id;
   entry->file = file;
@@ -100,28 +103,31 @@ static void grpc_timers_log_add(int tag, marker_type type, void* id,
 }
 
 /* Latency profiler API implementation. */
-void grpc_timer_add_mark(int tag, void* id, const char* file, int line) {
+void grpc_timer_add_mark(int tag, const char* tagstr, void* id,
+                         const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, MARK, id, file, line);
+    grpc_timers_log_add(tag, tagstr, MARK, id, file, line);
   }
 }
 
-void grpc_timer_add_important_mark(int tag, void* id, const char* file,
-                                   int line) {
+void grpc_timer_add_important_mark(int tag, const char* tagstr, void* id,
+                                   const char* file, int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, IMPORTANT, id, file, line);
+    grpc_timers_log_add(tag, tagstr, IMPORTANT, id, file, line);
   }
 }
 
-void grpc_timer_begin(int tag, void* id, const char* file, int line) {
+void grpc_timer_begin(int tag, const char* tagstr, void* id, const char* file,
+                      int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, BEGIN, id, file, line);
+    grpc_timers_log_add(tag, tagstr, BEGIN, id, file, line);
   }
 }
 
-void grpc_timer_end(int tag, void* id, const char* file, int line) {
+void grpc_timer_end(int tag, const char* tagstr, void* id, const char* file,
+                    int line) {
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, END, id, file, line);
+    grpc_timers_log_add(tag, tagstr, END, id, file, line);
   }
 }
 

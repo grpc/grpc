@@ -6,7 +6,7 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 8,
+      "minor": 9,
       "micro": 0,
       "build": 0
     }
@@ -88,7 +88,6 @@
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
         "include/grpc/grpc.h",
-        "include/grpc/grpc_http.h",
         "include/grpc/status.h"
       ],
       "headers": [
@@ -544,6 +543,7 @@
         "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/cli_call.cc",
         "test/cpp/util/create_test_channel.cc",
+        "test/cpp/util/fake_credentials.cc",
         "test/cpp/util/subprocess.cc"
       ]
     },

@@ -49,6 +49,7 @@ END2END_FIXTURES = {
     'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
     'chttp2_socket_pair': default_unsecure_fixture_options,
     'chttp2_socket_pair_one_byte_at_a_time': default_unsecure_fixture_options,
+    'chttp2_socket_pair_with_grpc_trace': default_unsecure_fixture_options,
 }
 
 TestOptions = collections.namedtuple('TestOptions', 'flaky secure')
