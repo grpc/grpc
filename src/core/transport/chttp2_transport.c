@@ -124,6 +124,9 @@ typedef enum {
   /* streams that have finished reading: we wait until unlock to coalesce
      all changes into one callback */
   FINISHED_READ_OP,
+  /* all queued sends are complete - callback signalling upper layers for more
+     work */
+  REPLENISH_SENDS,
   STREAM_LIST_COUNT /* must be last */
 } stream_list_id;
 
@@ -970,8 +973,7 @@ static int prepare_write(transport *t) {
 
     /* we should either exhaust window or have no ops left, but not both */
     if (s->outgoing_sopb->nops == 0) {
-      s->outgoing_sopb = NULL;
-      schedule_cb(t, s->send_done_closure, 1);
+      stream_list_join(t, s, REPLENISH_SENDS);
     } else if (s->outgoing_window) {
       stream_list_add_tail(t, s, WRITABLE);
     }
@@ -1021,6 +1023,13 @@ static void finish_write_common(transport *t, int success) {
   start_transaction(t);
   if (!success) {
     drop_connection(t);
+  }
+  /* TODO(ctiller): this could probably be pulled before we do the TCP
+     write itself, but that would require taking an extra lock. Measure,
+     and then decide optimal placement */
+  while ((s = stream_list_remove_head(t, REPLENISH_SENDS))) {
+    s->outgoing_sopb = NULL;
+    schedule_cb(t, s->send_done_closure, 1);
   }
   while ((s = stream_list_remove_head(t, WRITTEN_CLOSED))) {
     s->write_state = WRITE_STATE_SENT_CLOSE;
