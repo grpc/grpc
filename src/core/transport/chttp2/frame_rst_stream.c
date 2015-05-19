@@ -32,6 +32,9 @@
  */
 
 #include "src/core/transport/chttp2/frame_rst_stream.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/transport/chttp2/frame.h"
 
 gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 id, gpr_uint32 code) {
@@ -53,4 +56,41 @@ gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 id, gpr_uint32 code) {
   *p++ = code;
 
   return slice;
+}
+
+grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
+    grpc_chttp2_rst_stream_parser *parser, gpr_uint32 length, gpr_uint8 flags) {
+  if (length != 4) {
+    gpr_log(GPR_ERROR, "invalid rst_stream: length=%d, flags=%02x", length, flags);
+    return GRPC_CHTTP2_CONNECTION_ERROR;
+  }
+  parser->byte = 0;
+  return GRPC_CHTTP2_PARSE_OK;
+}
+
+grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
+    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice,
+    int is_last) {
+  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
+  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
+  gpr_uint8 *cur = beg;
+  grpc_chttp2_rst_stream_parser *p = parser;
+
+  while (p->byte != 4 && cur != end) {
+    p->reason_bytes[p->byte] = *cur;
+    cur++;
+    p->byte++;
+  }
+
+  if (p->byte == 4) {
+    GPR_ASSERT(is_last);
+    state->rst_stream = 1;
+    state->rst_stream_reason = 
+      (((gpr_uint32)p->reason_bytes[0]) << 24) |
+      (((gpr_uint32)p->reason_bytes[1]) << 16) |
+      (((gpr_uint32)p->reason_bytes[2]) << 8) |
+      (((gpr_uint32)p->reason_bytes[3]));
+  }
+
+  return GRPC_CHTTP2_PARSE_OK;
 }
