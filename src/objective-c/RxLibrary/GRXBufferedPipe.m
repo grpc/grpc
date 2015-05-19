@@ -84,6 +84,10 @@
   } else {
     // Even if we're paused and with enqueued values, we can't excert back-pressure to our writer.
     // So just buffer the new value.
+    // We need a copy, so that it doesn't mutate before it's written at the other end of the pipe.
+    if ([value respondsToSelector:@selector(copy)]) {
+      value = [value copy];
+    }
     [_queue addObject:value];
   }
 }
