@@ -39,6 +39,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
 
 namespace grpc {
 namespace testing {
@@ -46,11 +47,8 @@ namespace testing {
 static const int WARMUP = 5;
 static const int BENCHMARK = 10;
 
-static void RunQPS() {
+static void RunQPS(const std::vector<std::unique_ptr<Reporter> >& reporters) {
   gpr_log(GPR_INFO, "Running QPS test");
-
-  ReportersRegistry reporters_registry;
-  reporters_registry.Register(new GprLogReporter("LogReporter"));
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);
@@ -72,16 +70,20 @@ static void RunQPS() {
   std::set<ReportType> types;
   types.insert(grpc::testing::ReportType::REPORT_QPS_PER_CORE);
   types.insert(grpc::testing::ReportType::REPORT_LATENCY);
-  reporters_registry.Report({client_config, server_config, result}, types);
-
+  for (const auto& reporter : reporters) {
+    reporter->Report({client_config, server_config, result}, types);
+  }
 }
 
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+  const auto& reporters = grpc::testing::InitBenchmarkReporters();
+
   signal(SIGPIPE, SIG_IGN);
-  grpc::testing::RunQPS();
+  grpc::testing::RunQPS(reporters);
 
   return 0;
 }

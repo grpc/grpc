@@ -71,30 +71,6 @@ enum ReportType {
 
 class Reporter;
 
-/** A registry of Reporter instances.
- *
- * Instances registered will be taken into account by the Report() method.
- */
-class ReportersRegistry {
- public:
-  /** Adds the \c reporter to the registry.
-   * \attention Takes ownership of \c reporter. */
-  void Register(const Reporter* reporter);
-
-  /** Returns the names of the registered \c Reporter instances. */
-  std::vector<string> GetNamesRegistered() const;
-
-  /** Triggers the reporting for all registered \c Reporter instances.
-   *
-   * \param data Configuration and results for the scenario being reported.
-   * \param types A collection of report types to include in the report. */
-  void Report(const ReportData& data,
-              const std::set<ReportType>& types) const;
-
- private:
-  std::vector<std::unique_ptr<const Reporter> > reporters_;
-};
-
 /** Interface for all reporters. */
 class Reporter {
  public:

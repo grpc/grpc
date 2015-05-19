@@ -39,26 +39,6 @@
 namespace grpc {
 namespace testing {
 
-// ReporterRegistry implementation.
-void ReportersRegistry::Register(const Reporter* reporter) {
-  reporters_.emplace_back(reporter);
-}
-
-std::vector<string> ReportersRegistry::GetNamesRegistered() const {
-  std::vector<string> names;
-  for (const auto& reporter : reporters_) {
-    names.push_back(reporter->name());
-  }
-  return names;
-}
-
-void ReportersRegistry::Report(const ReportData& data,
-                               const std::set<ReportType>& types) const {
-  for (const auto& reporter : reporters_) {
-    reporter->Report(data, types);
-  }
-}
-
 // Reporter implementation.
 void Reporter::Report(const ReportData& data,
                       const std::set<ReportType>& types) const {

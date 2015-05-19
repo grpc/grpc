@@ -31,6 +31,7 @@
  *
  */
 
+#include <memory>
 #include <set>
 
 #include <gflags/gflags.h>
@@ -38,7 +39,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
-#include "test/cpp/util/test_config.h"
+#include "test/cpp/util/benchmark_config.h"
 
 DEFINE_int32(num_clients, 1, "Number of client binaries");
 DEFINE_int32(num_servers, 1, "Number of server binaries");
@@ -69,17 +70,13 @@ using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
-using grpc::testing::ReportersRegistry;
-using grpc::testing::GprLogReporter;
-using grpc::testing::ReportData;
 using grpc::testing::ReportType;
 
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
+namespace grpc {
+namespace testing {
 
-  ReportersRegistry reporters_registry;
-  reporters_registry.Register(new GprLogReporter("LogReporter"));
-
+static void QpsDriver(
+    const std::vector<std::unique_ptr<Reporter> >& reporters) {
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
@@ -118,7 +115,20 @@ int main(int argc, char** argv) {
 
   std::set<ReportType> types;
   types.insert(grpc::testing::ReportType::REPORT_ALL);
-  reporters_registry.Report({client_config, server_config, result}, types);
+  for (const auto& reporter : reporters) {
+    reporter->Report({client_config, server_config, result}, types);
+  }
+}
+
+}  // namespace testing
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+  const auto& reporters = grpc::testing::InitBenchmarkReporters();
+
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::QpsDriver(reporters);
 
   return 0;
 }

@@ -526,6 +526,14 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
+      "name": "grpc++_benchmark_config",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/benchmark_config.cc"
+      ]
+    },
+    {
       "name": "grpc++_test_config",
       "build": "private",
       "language": "c++",
@@ -1820,6 +1828,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1837,6 +1846,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2144,7 +2154,8 @@
         "grpc",
         "gpr_test_util",
         "gpr",
-        "grpc++_test_config"
+        "grpc++_test_config",
+        "grpc++_benchmark_config"
       ]
     },
     {
@@ -2157,6 +2168,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2212,6 +2224,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2229,6 +2242,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
