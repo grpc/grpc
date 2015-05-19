@@ -48,6 +48,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 using std::list;
 using std::thread;
@@ -100,7 +101,9 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
     // act as if we're a new test -- gets a good rng seed
     static bool called_init = false;
     if (!called_init) {
-      char *args[] = {"some-benchmark"};
+      char args_buf[100];
+      strcpy(args_buf, "some-benchmark");
+      char *args[] = {args_buf};
       grpc_test_init(1, args);
       called_init = true;
     }
