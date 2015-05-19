@@ -33,7 +33,7 @@
 
 #include "rb_call.h"
 
-#include <ruby.h>
+#include <ruby/ruby.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
