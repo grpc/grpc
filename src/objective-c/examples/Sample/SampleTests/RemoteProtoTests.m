@@ -275,7 +275,7 @@
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
   
-  __block bool receivedResponse = false;
+  __block BOOL receivedResponse = NO;
   
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
                                                requestedResponseSize:@31415];
@@ -294,7 +294,7 @@
       XCTAssertNil(error, @"Finished with unexpected error: %@", error);
       XCTAssertFalse(done, @"Finished without response");
       XCTAssertNotNil(response);
-      receivedResponse = true;
+      receivedResponse = YES;
       [call cancel];
     }
   }];
