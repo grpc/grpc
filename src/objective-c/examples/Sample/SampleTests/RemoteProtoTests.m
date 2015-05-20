@@ -269,4 +269,37 @@
   [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
+- (void)testCancelAfterFirstResponseRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterFirstResponse"];
+  
+  // A buffered pipe to which we never write any value acts as a writer that just hangs.
+  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+  
+  __block bool receivedResponse = false;
+  
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
+                                               requestedResponseSize:@31415];
+  
+  [requestsBuffer writeValue:request];
+  
+  __block ProtoRPC *call = [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
+                                                           handler:^(BOOL done,
+                                                                     RMTStreamingOutputCallResponse *response,
+                                                                     NSError *error) {
+    if (receivedResponse) {
+      XCTAssert(done, @"Unexpected extra response %@", response);
+      XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+      [expectation fulfill];
+    } else {
+      XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+      XCTAssertFalse(done, @"Finished without response");
+      XCTAssertNotNil(response);
+      receivedResponse = true;
+      [call cancel];
+    }
+  }];
+  [call start];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
 @end
