@@ -103,6 +103,14 @@ inline grpc::string CapitalizeFirstLetter(grpc::string s) {
   return s;
 }
 
+inline grpc::string LowercaseFirstLetter(grpc::string s) {
+  if (s.empty()) {
+    return s;
+  }
+  s[0] = ::tolower(s[0]);
+  return s;
+}
+
 inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
   std::vector<grpc::string> tokens = tokenize(str, "_");
   grpc::string result = "";
