@@ -272,7 +272,7 @@
 - (void)testCancelAfterFirstResponseRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterFirstResponse"];
   
-  // A buffered pipe to which we never write any value acts as a writer that just hangs.
+  // A buffered pipe to which we write a single value but never close
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
   
   __block BOOL receivedResponse = NO;
