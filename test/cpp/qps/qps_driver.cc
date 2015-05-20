@@ -31,6 +31,12 @@
  *
  */
 
+#include <cstring>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
@@ -47,19 +53,27 @@ DEFINE_int32(local_workers, 0, "Number of local workers to start");
 
 // Common config
 DEFINE_bool(enable_ssl, false, "Use SSL");
-DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
+DEFINE_string(rpc_types, "UNARY",
+              "Comma-separated list of types of RPC: UNARY or STREAMING");
 
 // Server config
-DEFINE_int32(server_threads, 1, "Number of server threads");
-DEFINE_string(server_type, "SYNCHRONOUS_SERVER", "Server type");
+DEFINE_string(server_threads, "1",
+             "Comma-separated list of number of server threads");
+DEFINE_string(
+    server_types, "SYNCHRONOUS_SERVER",
+    "Comma-separated list of server types: ASYNC_SERVER or SYNCHRONOUS_SERVER");
 
 // Client config
-DEFINE_int32(outstanding_rpcs_per_channel, 1,
-             "Number of outstanding rpcs per channel");
-DEFINE_int32(client_channels, 1, "Number of client channels");
-DEFINE_int32(payload_size, 1, "Payload size");
-DEFINE_string(client_type, "SYNCHRONOUS_CLIENT", "Client type");
-DEFINE_int32(async_client_threads, 1, "Async client threads");
+DEFINE_string(outstanding_rpcs_per_channel, "1",
+             "Comma-separated list of number of outstanding rpcs per channel");
+DEFINE_string(client_channels, "1",
+             "Comma-separated list of number of client channels");
+DEFINE_string(payload_sizes, "1", "Comma-separated list of payload sizes");
+DEFINE_string(
+    client_types, "SYNCHRONOUS_CLIENT",
+    "Comma-separated list of client types: ASYNC_CLIENT or SYNCHRONOUS_CLIENT");
+DEFINE_string(async_client_threads, "1",
+             "Comma-separated list of async client threads");
 
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
@@ -68,49 +82,124 @@ using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
 
+using std::vector;
+using std::string;
+
+vector<string> ParseCommaSeparatedIntList(string list) {
+  // Pass by value because strtok consumes its input.
+  vector<string> result;
+  char *p = strtok((char*)list.c_str(), ",");
+  while (p) {
+    result.push_back(p);
+    p = strtok(NULL, ",");
+  }
+  return result;
+}
+
+vector<ClientConfig> GetClientConfigsFromFlags() {
+  vector<ClientConfig> configs;
+  const auto rpc_types = ParseCommaSeparatedIntList(FLAGS_rpc_types);
+  const auto outstanding_rpcs_per_channel =
+      ParseCommaSeparatedIntList(FLAGS_outstanding_rpcs_per_channel);
+  const auto client_channels =
+      ParseCommaSeparatedIntList(FLAGS_client_channels);
+  const auto payload_sizes = ParseCommaSeparatedIntList(FLAGS_payload_sizes);
+  const auto client_types = ParseCommaSeparatedIntList(FLAGS_client_types);
+  const auto async_client_threads =
+      ParseCommaSeparatedIntList(FLAGS_async_client_threads);
+
+  ClientConfig cc;
+  cc.set_enable_ssl(FLAGS_enable_ssl);
+
+  for (const auto& rpc_type_str : rpc_types) {
+    RpcType rpc_type;
+    GPR_ASSERT(RpcType_Parse(rpc_type_str, &rpc_type));
+    cc.set_rpc_type(rpc_type);
+    for (const auto& out_rpcs_per_channel_str : outstanding_rpcs_per_channel) {
+      const int out_rpcs_per_channel = atoi(out_rpcs_per_channel_str.c_str());
+      cc.set_outstanding_rpcs_per_channel(out_rpcs_per_channel);
+      for (const auto& client_channel_str : client_channels) {
+        const int client_channel = atoi(client_channel_str.c_str());
+        cc.set_client_channels(client_channel);
+        for (const auto& payload_size_str : payload_sizes) {
+          const int payload_size = atoi(payload_size_str.c_str());
+          cc.set_payload_size(payload_size);
+          for (const auto& client_type_str : client_types) {
+            ClientType client_type;
+            GPR_ASSERT(ClientType_Parse(client_type_str, &client_type));
+            cc.set_client_type(client_type);
+            for (const auto& async_client_thread_str : async_client_threads) {
+              const int async_client_thread =
+                  atoi(async_client_thread_str.c_str());
+              cc.set_async_client_threads(async_client_thread);
+
+              configs.push_back(cc);
+            }
+          }
+        }
+      }
+    }
+  }
+  return configs;
+}
+
+vector<ServerConfig> GetServerConfigsFromFlags() {
+  vector<ServerConfig> configs;
+  const auto server_threads = ParseCommaSeparatedIntList(FLAGS_server_threads);
+  const auto server_types = ParseCommaSeparatedIntList(FLAGS_server_types);
+
+  ServerConfig sc;
+  sc.set_enable_ssl(FLAGS_enable_ssl);
+
+  for (const auto& server_type_str : server_types) {
+    ServerType server_type;
+    GPR_ASSERT(ServerType_Parse(server_type_str, &server_type));
+    sc.set_server_type(server_type);
+    for (const auto& server_thread_str : server_threads) {
+      const int server_thread = atoi(server_thread_str.c_str());
+      sc.set_threads(server_thread);
+
+      configs.push_back(sc);
+    }
+  }
+  return configs;
+}
+
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  RpcType rpc_type;
-  GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
+  const auto client_configs = GetClientConfigsFromFlags();
+  const auto server_configs = GetServerConfigsFromFlags();
 
-  ClientType client_type;
-  ServerType server_type;
-  GPR_ASSERT(ClientType_Parse(FLAGS_client_type, &client_type));
-  GPR_ASSERT(ServerType_Parse(FLAGS_server_type, &server_type));
+  for (const ServerConfig& server_config : server_configs) {
+    for (const ClientConfig& client_config : client_configs) {
 
-  ClientConfig client_config;
-  client_config.set_client_type(client_type);
-  client_config.set_enable_ssl(FLAGS_enable_ssl);
-  client_config.set_outstanding_rpcs_per_channel(
-      FLAGS_outstanding_rpcs_per_channel);
-  client_config.set_client_channels(FLAGS_client_channels);
-  client_config.set_payload_size(FLAGS_payload_size);
-  client_config.set_async_client_threads(FLAGS_async_client_threads);
-  client_config.set_rpc_type(rpc_type);
+      // If we're running a sync-server streaming test, make sure
+      // that we have at least as many threads as the active streams
+      // or else threads will be blocked from forward progress and the
+      // client will deadlock on a timer.
+      GPR_ASSERT(
+          !(server_config.server_type() == grpc::testing::SYNCHRONOUS_SERVER &&
+            client_config.rpc_type() == grpc::testing::STREAMING &&
+            server_config.threads() <
+                client_config.client_channels() *
+                    client_config.outstanding_rpcs_per_channel()));
 
-  ServerConfig server_config;
-  server_config.set_server_type(server_type);
-  server_config.set_threads(FLAGS_server_threads);
-  server_config.set_enable_ssl(FLAGS_enable_ssl);
+      gpr_log(GPR_INFO, "------------------");
+      gpr_log(GPR_INFO, "ClientConfig: %s",
+              client_config.ShortDebugString().c_str());
+      gpr_log(GPR_INFO, "ServerConfig: %s",
+              server_config.ShortDebugString().c_str());
+      auto result = RunScenario(client_config, FLAGS_num_clients,
+                                server_config, FLAGS_num_servers,
+                                FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
+                                FLAGS_local_workers);
 
-  // If we're running a sync-server streaming test, make sure
-  // that we have at least as many threads as the active streams
-  // or else threads will be blocked from forward progress and the
-  // client will deadlock on a timer.
-  GPR_ASSERT(!(server_type == grpc::testing::SYNCHRONOUS_SERVER &&
-               rpc_type == grpc::testing::STREAMING &&
-               FLAGS_server_threads <  FLAGS_client_channels *
-               FLAGS_outstanding_rpcs_per_channel));
-
-  auto result = RunScenario(client_config, FLAGS_num_clients,
-                            server_config, FLAGS_num_servers,
-                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
-                            FLAGS_local_workers);
-
-  ReportQPSPerCore(result, server_config);
-  ReportLatency(result);
-  ReportTimes(result);
+      ReportQPSPerCore(result, server_config);
+      ReportLatency(result);
+      ReportTimes(result);
+    }
+  }
 
   return 0;
 }
