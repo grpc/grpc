@@ -80,12 +80,12 @@ class EchoTest(unittest.TestCase):
   def setUp(self):
     self.host = 'localhost'
 
-    self.server_completion_queue = _low.CompletionQueue()
-    self.server = _low.Server(self.server_completion_queue)
+    self.completion_queue = _low.CompletionQueue()
+
+    self.server = _low.Server(self.completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 
-    self.client_completion_queue = _low.CompletionQueue()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
 
   def tearDown(self):
@@ -98,18 +98,12 @@ class EchoTest(unittest.TestCase):
     # TODO(nathaniel): Deallocation of a Python object shouldn't have this kind
     # of observable side effect let alone such an important one.
     del self.server
-    self.server_completion_queue.stop()
-    self.client_completion_queue.stop()
+    self.completion_queue.stop()
     while True:
-      event = self.server_completion_queue.get(_FUTURE)
+      event = self.completion_queue.get(_FUTURE)
       if event is not None and event.kind is _low.Event.Kind.STOP:
         break
-    while True:
-      event = self.client_completion_queue.get(_FUTURE)
-      if event is not None and event.kind is _low.Event.Kind.STOP:
-        break
-    self.server_completion_queue = None
-    self.client_completion_queue = None
+    self.completion_queue = None
 
   def _perform_echo_test(self, test_data):
     method = 'test method'
@@ -138,16 +132,16 @@ class EchoTest(unittest.TestCase):
     server_data = []
     client_data = []
 
-    client_call = _low.Call(self.channel, self.client_completion_queue,
+    client_call = _low.Call(self.channel, self.completion_queue,
                             method, self.host, deadline)
     client_call.add_metadata(client_metadata_key, client_metadata_value)
     client_call.add_metadata(client_binary_metadata_key,
                              client_binary_metadata_value)
 
-    client_call.invoke(self.client_completion_queue, metadata_tag, finish_tag)
+    client_call.invoke(self.completion_queue, metadata_tag, finish_tag)
 
     self.server.service(service_tag)
-    service_accepted = self.server_completion_queue.get(_FUTURE)
+    service_accepted = self.completion_queue.get(_FUTURE)
     self.assertIsNotNone(service_accepted)
     self.assertIs(service_accepted.kind, _low.Event.Kind.SERVICE_ACCEPTED)
     self.assertIs(service_accepted.tag, service_tag)
@@ -161,14 +155,14 @@ class EchoTest(unittest.TestCase):
     self.assertEqual(client_binary_metadata_value,
                      metadata[client_binary_metadata_key])
     server_call = service_accepted.service_acceptance.call
-    server_call.accept(self.server_completion_queue, finish_tag)
+    server_call.accept(self.completion_queue, finish_tag)
     server_call.add_metadata(server_leading_metadata_key,
                              server_leading_metadata_value)
     server_call.add_metadata(server_leading_binary_metadata_key,
                              server_leading_binary_metadata_value)
     server_call.premetadata()
 
-    metadata_accepted = self.client_completion_queue.get(_FUTURE)
+    metadata_accepted = self.completion_queue.get(_FUTURE)
     self.assertIsNotNone(metadata_accepted)
     self.assertEqual(_low.Event.Kind.METADATA_ACCEPTED, metadata_accepted.kind)
     self.assertEqual(metadata_tag, metadata_accepted.tag)
@@ -182,14 +176,14 @@ class EchoTest(unittest.TestCase):
 
     for datum in test_data:
       client_call.write(datum, write_tag)
-      write_accepted = self.client_completion_queue.get(_FUTURE)
+      write_accepted = self.completion_queue.get(_FUTURE)
       self.assertIsNotNone(write_accepted)
       self.assertIs(write_accepted.kind, _low.Event.Kind.WRITE_ACCEPTED)
       self.assertIs(write_accepted.tag, write_tag)
       self.assertIs(write_accepted.write_accepted, True)
 
       server_call.read(read_tag)
-      read_accepted = self.server_completion_queue.get(_FUTURE)
+      read_accepted = self.completion_queue.get(_FUTURE)
       self.assertIsNotNone(read_accepted)
       self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
       self.assertEqual(read_tag, read_accepted.tag)
@@ -197,14 +191,14 @@ class EchoTest(unittest.TestCase):
       server_data.append(read_accepted.bytes)
 
       server_call.write(read_accepted.bytes, write_tag)
-      write_accepted = self.server_completion_queue.get(_FUTURE)
+      write_accepted = self.completion_queue.get(_FUTURE)
       self.assertIsNotNone(write_accepted)
       self.assertEqual(_low.Event.Kind.WRITE_ACCEPTED, write_accepted.kind)
       self.assertEqual(write_tag, write_accepted.tag)
       self.assertTrue(write_accepted.write_accepted)
 
       client_call.read(read_tag)
-      read_accepted = self.client_completion_queue.get(_FUTURE)
+      read_accepted = self.completion_queue.get(_FUTURE)
       self.assertIsNotNone(read_accepted)
       self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
       self.assertEqual(read_tag, read_accepted.tag)
@@ -212,14 +206,14 @@ class EchoTest(unittest.TestCase):
       client_data.append(read_accepted.bytes)
 
     client_call.complete(complete_tag)
-    complete_accepted = self.client_completion_queue.get(_FUTURE)
+    complete_accepted = self.completion_queue.get(_FUTURE)
     self.assertIsNotNone(complete_accepted)
     self.assertIs(complete_accepted.kind, _low.Event.Kind.COMPLETE_ACCEPTED)
     self.assertIs(complete_accepted.tag, complete_tag)
     self.assertIs(complete_accepted.complete_accepted, True)
 
     server_call.read(read_tag)
-    read_accepted = self.server_completion_queue.get(_FUTURE)
+    read_accepted = self.completion_queue.get(_FUTURE)
     self.assertIsNotNone(read_accepted)
     self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
     self.assertEqual(read_tag, read_accepted.tag)
@@ -231,8 +225,8 @@ class EchoTest(unittest.TestCase):
                              server_trailing_binary_metadata_value)
 
     server_call.status(_low.Status(_low.Code.OK, details), status_tag)
-    server_terminal_event_one = self.server_completion_queue.get(_FUTURE)
-    server_terminal_event_two = self.server_completion_queue.get(_FUTURE)
+    server_terminal_event_one = self.completion_queue.get(_FUTURE)
+    server_terminal_event_two = self.completion_queue.get(_FUTURE)
     if server_terminal_event_one.kind == _low.Event.Kind.COMPLETE_ACCEPTED:
       status_accepted = server_terminal_event_one
       rpc_accepted = server_terminal_event_two
@@ -249,8 +243,8 @@ class EchoTest(unittest.TestCase):
     self.assertEqual(_low.Status(_low.Code.OK, ''), rpc_accepted.status)
 
     client_call.read(read_tag)
-    client_terminal_event_one = self.client_completion_queue.get(_FUTURE)
-    client_terminal_event_two = self.client_completion_queue.get(_FUTURE)
+    client_terminal_event_one = self.completion_queue.get(_FUTURE)
+    client_terminal_event_two = self.completion_queue.get(_FUTURE)
     if client_terminal_event_one.kind == _low.Event.Kind.READ_ACCEPTED:
       read_accepted = client_terminal_event_one
       finish_accepted = client_terminal_event_two
@@ -273,9 +267,9 @@ class EchoTest(unittest.TestCase):
     self.assertEqual(server_trailing_binary_metadata_value,
                      metadata[server_trailing_binary_metadata_key])
 
-    server_timeout_none_event = self.server_completion_queue.get(0)
+    server_timeout_none_event = self.completion_queue.get(0)
     self.assertIsNone(server_timeout_none_event)
-    client_timeout_none_event = self.client_completion_queue.get(0)
+    client_timeout_none_event = self.completion_queue.get(0)
     self.assertIsNone(client_timeout_none_event)
 
     self.assertSequenceEqual(test_data, server_data)
@@ -301,25 +295,19 @@ class CancellationTest(unittest.TestCase):
   def setUp(self):
     self.host = 'localhost'
 
-    self.server_completion_queue = _low.CompletionQueue()
-    self.server = _low.Server(self.server_completion_queue)
+    self.completion_queue = _low.CompletionQueue()
+    self.server = _low.Server(self.completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 
-    self.client_completion_queue = _low.CompletionQueue()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
 
   def tearDown(self):
     self.server.stop()
     del self.server
-    self.server_completion_queue.stop()
-    self.client_completion_queue.stop()
+    self.completion_queue.stop()
     while True:
-      event = self.server_completion_queue.get(0)
-      if event is not None and event.kind is _low.Event.Kind.STOP:
-        break
-    while True:
-      event = self.client_completion_queue.get(0)
+      event = self.completion_queue.get(0)
       if event is not None and event.kind is _low.Event.Kind.STOP:
         break
 
@@ -327,7 +315,8 @@ class CancellationTest(unittest.TestCase):
     method = 'test method'
     deadline = _FUTURE
     metadata_tag = object()
-    finish_tag = object()
+    client_finish_tag = object()
+    server_finish_tag = object()
     write_tag = object()
     service_tag = object()
     read_tag = object()
@@ -336,35 +325,35 @@ class CancellationTest(unittest.TestCase):
     server_data = []
     client_data = []
 
-    client_call = _low.Call(self.channel, self.client_completion_queue,
+    client_call = _low.Call(self.channel, self.completion_queue,
                             method, self.host, deadline)
 
-    client_call.invoke(self.client_completion_queue, metadata_tag, finish_tag)
+    client_call.invoke(self.completion_queue, metadata_tag, client_finish_tag)
 
     self.server.service(service_tag)
-    service_accepted = self.server_completion_queue.get(_FUTURE)
+    service_accepted = self.completion_queue.get(_FUTURE)
     server_call = service_accepted.service_acceptance.call
 
-    server_call.accept(self.server_completion_queue, finish_tag)
+    server_call.accept(self.completion_queue, server_finish_tag)
     server_call.premetadata()
 
-    metadata_accepted = self.client_completion_queue.get(_FUTURE)
+    metadata_accepted = self.completion_queue.get(_FUTURE)
     self.assertIsNotNone(metadata_accepted)
 
     for datum in test_data:
       client_call.write(datum, write_tag)
-      write_accepted = self.client_completion_queue.get(_FUTURE)
+      write_accepted = self.completion_queue.get(_FUTURE)
 
       server_call.read(read_tag)
-      read_accepted = self.server_completion_queue.get(_FUTURE)
+      read_accepted = self.completion_queue.get(_FUTURE)
       server_data.append(read_accepted.bytes)
 
       server_call.write(read_accepted.bytes, write_tag)
-      write_accepted = self.server_completion_queue.get(_FUTURE)
+      write_accepted = self.completion_queue.get(_FUTURE)
       self.assertIsNotNone(write_accepted)
 
       client_call.read(read_tag)
-      read_accepted = self.client_completion_queue.get(_FUTURE)
+      read_accepted = self.completion_queue.get(_FUTURE)
       client_data.append(read_accepted.bytes)
 
     client_call.cancel()
@@ -375,14 +364,13 @@ class CancellationTest(unittest.TestCase):
 
     server_call.read(read_tag)
 
-    server_terminal_event_one = self.server_completion_queue.get(_FUTURE)
-    server_terminal_event_two = self.server_completion_queue.get(_FUTURE)
-    if server_terminal_event_one.kind == _low.Event.Kind.READ_ACCEPTED:
-      read_accepted = server_terminal_event_one
-      rpc_accepted = server_terminal_event_two
-    else:
-      read_accepted = server_terminal_event_two
-      rpc_accepted = server_terminal_event_one
+    events = dict((ev.tag, ev) for ev in [
+        self.completion_queue.get(_FUTURE),
+        self.completion_queue.get(_FUTURE),
+        self.completion_queue.get(_FUTURE)])
+    read_accepted = events[read_tag]
+    rpc_accepted = events[server_finish_tag]
+    finish_event = events[client_finish_tag]
     self.assertIsNotNone(read_accepted)
     self.assertIsNotNone(rpc_accepted)
     self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
@@ -390,14 +378,13 @@ class CancellationTest(unittest.TestCase):
     self.assertEqual(_low.Event.Kind.FINISH, rpc_accepted.kind)
     self.assertEqual(_low.Status(_low.Code.CANCELLED, ''), rpc_accepted.status)
 
-    finish_event = self.client_completion_queue.get(_FUTURE)
     self.assertEqual(_low.Event.Kind.FINISH, finish_event.kind)
     self.assertEqual(_low.Status(_low.Code.CANCELLED, 'Cancelled'), 
                                  finish_event.status)
 
-    server_timeout_none_event = self.server_completion_queue.get(0)
+    server_timeout_none_event = self.completion_queue.get(0)
     self.assertIsNone(server_timeout_none_event)
-    client_timeout_none_event = self.client_completion_queue.get(0)
+    client_timeout_none_event = self.completion_queue.get(0)
     self.assertIsNone(client_timeout_none_event)
 
     self.assertSequenceEqual(test_data, server_data)
