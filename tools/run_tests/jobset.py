@@ -209,8 +209,9 @@ class Job(object):
         self._state = _FAILURE
         self._tempfile.seek(0)
         stdout = self._tempfile.read()
-        message('FAILED', '%s [ret=%d]' % (
-            self._spec.shortname, self._process.returncode), stdout, do_newline=True)
+        message('FAILED', '%s [ret=%d, pid=%d]' % (
+            self._spec.shortname, self._process.returncode, self._process.pid),
+            stdout, do_newline=True)
       else:
         self._state = _SUCCESS
         message('PASSED', '%s [time=%.1fsec]' % (self._spec.shortname, elapsed),
