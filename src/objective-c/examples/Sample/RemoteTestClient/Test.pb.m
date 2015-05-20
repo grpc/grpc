@@ -44,7 +44,6 @@ static NSString *const kServiceName = @"TestService";
   return [self initWithHost:host];
 }
 
-
 #pragma mark EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty)
 
 // One empty request followed by one empty response.
