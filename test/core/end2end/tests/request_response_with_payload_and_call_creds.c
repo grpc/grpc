@@ -125,6 +125,8 @@ static void test_call_creds_failure(grpc_end2end_test_config config) {
   GPR_ASSERT(grpc_call_set_credentials(c, creds) != GRPC_CALL_OK);
   grpc_credentials_release(creds);
 
+  grpc_call_destroy(c);
+
   end_test(&f);
   config.tear_down_data(&f);
 }
