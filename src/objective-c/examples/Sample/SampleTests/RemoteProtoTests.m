@@ -208,7 +208,7 @@
 
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
-  [requestsBuffer didReceiveValue:request];
+  [requestsBuffer writeValue:request];
 
   [_service fullDuplexCallWithRequestsWriter:requestsBuffer
                                      handler:^(BOOL done,
@@ -225,9 +225,9 @@
       if (index < 4) {
         id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-        [requestsBuffer didReceiveValue:request];
+        [requestsBuffer writeValue:request];
       } else {
-        [requestsBuffer didFinishWithError:nil];
+        [requestsBuffer writesFinishedWithError:nil];
       }
     }
                                        

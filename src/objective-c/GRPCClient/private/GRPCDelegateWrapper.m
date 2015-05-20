@@ -43,7 +43,7 @@
 
 @implementation GRPCDelegateWrapper {
   dispatch_queue_t _writeableQueue;
-  // This ensures that didFinishWithError: is only sent once to the writeable.
+  // This ensures that writesFinishedWithError: is only sent once to the writeable.
   dispatch_once_t _alreadyFinished;
 }
 
@@ -69,7 +69,7 @@
     // the race.
     id<GRXWriteable> writeable = self.writeable;
     if (writeable) {
-      [writeable didReceiveValue:message];
+      [writeable writeValue:message];
       handler();
     }
   });
@@ -80,7 +80,7 @@
     dispatch_once(&_alreadyFinished, ^{
       // Cancellation is now impossible. None of the other three blocks can run
       // concurrently with this one.
-      [self.writeable didFinishWithError:nil];
+      [self.writeable writesFinishedWithError:nil];
       // Break the retain cycle with writer, and skip any possible message to the
       // wrapped writeable enqueued after this one.
       self.writeable = nil;
@@ -100,7 +100,7 @@
     self.writeable = nil;
 
     dispatch_async(_writeableQueue, ^{
-      [writeable didFinishWithError:error];
+      [writeable writesFinishedWithError:error];
       // Break the retain cycle with writer.
       self.writer = nil;
     });
