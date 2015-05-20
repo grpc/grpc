@@ -45,6 +45,6 @@ git submodule > $submodules
 diff -u $submodules - << EOF
  05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
  3df69d3aefde7671053d4e3c242b228e5d79c83f third_party/openssl (OpenSSL_1_0_2a)
- 644a6a1da71385e9d7a7a26b3476c93fdd71788c third_party/protobuf (v3.0.0-alpha-1-35-g644a6a1)
+ a8b38c598d7f65b281a72809b28117afdb760931 third_party/protobuf (v3.0.0-alpha-1-978-ga8b38c5)
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
 EOF

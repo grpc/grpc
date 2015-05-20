@@ -37,7 +37,7 @@
 typedef struct gpr_subprocess gpr_subprocess;
 
 /* .exe on windows, empty on unices */
-char *gpr_subprocess_binary_extension();
+const char *gpr_subprocess_binary_extension();
 
 gpr_subprocess *gpr_subprocess_create(int argc, char **argv);
 /* if subprocess has not been joined, kill it */

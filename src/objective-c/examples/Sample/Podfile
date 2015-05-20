@@ -2,6 +2,7 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
 pod 'gRPC', :path => "../../../.."
+pod 'Protobuf', :git => 'https://github.com/jcanizales/protobuf.git', :branch => 'add-podspec'
 pod 'Route_guide', :path => "RouteGuideClient"
 pod 'RemoteTest', :path => "RemoteTestClient"
 

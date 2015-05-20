@@ -6,13 +6,19 @@ Pod::Spec.new do |s|
   s.license  = 'New BSD'
   s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
 
-  s.source_files = '*.pb.{h,m}'
-  s.public_header_files = '*.pb.h'
-
-  s.platform = :ios
   s.ios.deployment_target = '6.0'
-  s.requires_arc = true
+  s.osx.deployment_target = '10.8'
 
-  s.dependency 'ProtocolBuffers', '~> 1.9'
-  s.dependency 'gRPC', '~> 0.0'
+  s.subspec 'Messages' do |ms|
+    ms.source_files = '*.pbobjc.{h,m}'
+    ms.requires_arc = false
+    ms.dependency 'Protobuf', '~> 3.0'
+  end
+
+  s.subspec 'Services' do |ss|
+    ss.source_files = '*.pbrpc.{h,m}'
+    ss.requires_arc = true
+    ss.dependency 'gRPC', '~> 0.0'
+    ss.dependency 'RemoteTest/Messages'
+  end
 end
