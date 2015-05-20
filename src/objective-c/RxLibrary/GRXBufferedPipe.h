@@ -31,22 +31,29 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H
+#import <Foundation/Foundation.h>
 
-#include <grpc/support/slice.h>
-#include "src/core/transport/chttp2/frame.h"
+#import "GRXWriteable.h"
+#import "GRXWriter.h"
 
-typedef struct {
-  gpr_uint8 byte;
-  gpr_uint8 reason_bytes[4];
-} grpc_chttp2_rst_stream_parser;
+// A buffered pipe is a Writeable that also acts as a Writer (to whichever other writeable is passed
+// to -startWithWriteable:).
+// Once it is started, whatever values are written into it (via -writeValue:) will be propagated
+// immediately, unless flow control prevents it.
+// If it is throttled and keeps receiving values, as well as if it receives values before being
+// started, it will buffer them and propagate them in order as soon as its state becomes
+// GRXWriterStateStarted.
+// If it receives an error (via -writesFinishedWithError:), it will drop any buffered values and
+// propagate the error immediately.
+//
+// Beware that a pipe of this type can't prevent receiving more values when it is paused (for
+// example if used to write data to a congested network connection). Because in such situations the
+// pipe will keep buffering all data written to it, your application could run out of memory and
+// crash. If you want to react to flow control signals to prevent that, instead of using this class
+// you can implement an object that conforms to GRXWriter.
+@interface GRXBufferedPipe : NSObject<GRXWriteable, GRXWriter>
 
-gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 stream_id, gpr_uint32 code);
+// Convenience constructor.
++ (instancetype)pipe;
 
-grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
-    grpc_chttp2_rst_stream_parser *parser, gpr_uint32 length, gpr_uint8 flags);
-grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
-
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H */
+@end

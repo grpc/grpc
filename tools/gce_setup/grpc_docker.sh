@@ -428,6 +428,7 @@ grpc_interop_test_args() {
       python)       grpc_port=8050 ;;
       ruby)         grpc_port=8060 ;;
       csharp_mono)  grpc_port=8070 ;;
+      csharp_dotnet) grpc_port=8070 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
     shift
@@ -870,6 +871,23 @@ grpc_launch_servers() {
   done
 }
 
+# Launch servers on windows.
+grpc_launch_windows_servers() {
+   local host='grpc-windows-interop1'
+   local killcmd="ps -e | grep Grpc.IntegrationTesting | awk '{print \\\$1}' | xargs kill -9"
+   echo "killing all servers and clients on $host with command $killcmd"
+   gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh $host \"$killcmd\""
+
+   local cmd='cd /cygdrive/c/github/grpc/src/csharp/Grpc.IntegrationTesting.Server/bin/Debug && ./Grpc.IntegrationTesting.Server.exe --use_tls=true --port=8070'
+   # gcloud's auto-uploading of RSA keys doesn't work for Windows VMs.
+   # So we have a linux machine that is authorized to access the Windows
+   # machine through ssh and we use gcloud auth support to logon to the proxy.
+   echo "will run:"
+   echo "  $cmd"
+   echo "on $host (through grpc-windows-proxy)"
+   gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh $host '$cmd'"
+}
+
 # Runs a test command on a docker instance
 #
 # The test command is issued via gcloud compute
@@ -949,6 +967,7 @@ test_runner() {
 #   node:   8040
 #   python: 8050
 #   ruby:   8060
+#   csharp: 8070
 #
 # each client_type should have an associated bash func:
 #   grpc_interop_gen_<client_type>_cmd

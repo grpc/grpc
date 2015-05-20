@@ -178,8 +178,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
-  GPR_ASSERT(0 == strcmp(details, "Cancelled"));
+  GPR_ASSERT(status != GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
   GPR_ASSERT(was_cancelled == 1);
