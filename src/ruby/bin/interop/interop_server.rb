@@ -129,13 +129,13 @@ class TestTarget < Grpc::Testing::TestService::Service
     Thread.new do
       begin
         reqs.each do |req|
-          logger.info("read #{req.inspect}")
+          GRPC.logger.info("read #{req.inspect}")
           resp_size = req.response_parameters[0].size
           resp = cls.new(payload: Payload.new(type: req.response_type,
                                               body: nulls(resp_size)))
           q.push(resp)
         end
-        logger.info('finished reads')
+        GRPC.logger.info('finished reads')
         q.push(self)
       rescue StandardError => e
         q.push(e)  # share the exception with the enumerator
@@ -179,10 +179,10 @@ def main
   s = GRPC::RpcServer.new
   if opts['secure']
     s.add_http2_port(host, test_server_creds)
-    logger.info("... running securely on #{host}")
+    GRPC.logger.info("... running securely on #{host}")
   else
     s.add_http2_port(host)
-    logger.info("... running insecurely on #{host}")
+    GRPC.logger.info("... running insecurely on #{host}")
   end
   s.handle(TestTarget)
   s.run_till_terminated
