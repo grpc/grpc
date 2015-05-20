@@ -89,6 +89,11 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
     return &contexts.back();
   };
 
+  // To be added to the result, containing the final configuration used for
+  // client and config (incluiding host, etc.)
+  ClientConfig result_client_config;
+  ServerConfig result_server_config;
+
   // Get client, server lists
   auto workers = get_hosts("QPS_WORKERS");
   ClientConfig client_config = initial_client_config;
@@ -127,6 +132,8 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
     sd.stub = std::move(Worker::NewStub(
         CreateChannel(workers[i], InsecureCredentials(), ChannelArguments())));
     ServerArgs args;
+    result_server_config = server_config;
+    result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
     sd.stream = std::move(sd.stub->RunServer(alloc_context()));
     GPR_ASSERT(sd.stream->Write(args));
@@ -156,6 +163,8 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
     cd.stub = std::move(Worker::NewStub(CreateChannel(
         workers[i + num_servers], InsecureCredentials(), ChannelArguments())));
     ClientArgs args;
+    result_client_config = client_config;
+    result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
     cd.stream = std::move(cd.stub->RunTest(alloc_context()));
     GPR_ASSERT(cd.stream->Write(args));
@@ -197,6 +206,8 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
 
   // Finish a run
   ScenarioResult result;
+  result.client_config = result_client_config;
+  result.server_config = result_server_config;
   gpr_log(GPR_INFO, "Finishing");
   for (auto server = servers.begin(); server != servers.end(); server++) {
     GPR_ASSERT(server->stream->Write(server_mark));

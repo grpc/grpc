@@ -49,6 +49,8 @@ struct ScenarioResult {
   Histogram latencies;
   std::vector<ResourceUsage> client_resources;
   std::vector<ResourceUsage> server_resources;
+  ClientConfig client_config;
+  ServerConfig server_config;
 };
 
 ScenarioResult RunScenario(const grpc::testing::ClientConfig& client_config,
