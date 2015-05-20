@@ -31,17 +31,10 @@
 
 set -ex
 
-CONFIG=${CONFIG:-opt}
+export CONFIG=${CONFIG:-opt}
 
-# change to grpc repo root
-cd $(dirname $0)/../..
-
-# tells npm install to look for files in that directory
-export GRPC_ROOT=`pwd`
-# tells npm install the subdirectory with library files
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-
-cd src/ruby
+# change to grpc's ruby directory
+cd $(dirname $0)/../../src/ruby
 
 bundle install
 rake compile:grpc

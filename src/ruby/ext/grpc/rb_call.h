@@ -34,8 +34,9 @@
 #ifndef GRPC_RB_CALL_H_
 #define GRPC_RB_CALL_H_
 
+#include <ruby/ruby.h>
+
 #include <grpc/grpc.h>
-#include <ruby.h>
 
 /* Gets the wrapped call from a VALUE. */
 grpc_call* grpc_rb_get_wrapped_call(VALUE v);
