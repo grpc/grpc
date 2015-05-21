@@ -1517,7 +1517,11 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
   t->hpack_parser.is_eof = is_eoh ? t->header_eof : 0;
   if (!is_continuation &&
       (t->incoming_frame_flags & GRPC_CHTTP2_FLAG_HAS_PRIORITY)) {
-    grpc_chttp2_hpack_parser_set_has_priority(&t->hpack_parser);
+    if (!grpc_chttp2_hpack_parser_set_has_priority(&t->hpack_parser)) {
+      gpr_log(GPR_ERROR, "invalid priority bit in %s frame",
+              is_continuation ? "continuation" : "header");
+      return 0;
+    }
   }
   return 1;
 }

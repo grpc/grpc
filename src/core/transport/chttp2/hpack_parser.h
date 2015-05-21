@@ -96,7 +96,7 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p,
                                    grpc_mdctx *mdctx);
 void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser *p);
 
-void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
+int grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
 
 /* returns 1 on success, 0 on error */
 int grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser *p,
