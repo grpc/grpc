@@ -45,5 +45,6 @@ namespace Grpc.Core
     /// <typeparam name="T"></typeparam>
     public interface IAsyncStreamReader<TResponse> : IAsyncEnumerator<TResponse>
     {
+        // TODO(jtattermusch): consider just using IAsyncEnumerator instead of this interface.
     }
 }
