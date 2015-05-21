@@ -582,6 +582,23 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op, int success) {
   }
 }
 
+static void early_out_write_ops(grpc_call *call) {
+  switch (call->write_state) {
+    case WRITE_STATE_WRITE_CLOSED:
+      finish_ioreq_op(call, GRPC_IOREQ_SEND_MESSAGE, 0);
+      finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, 0);
+      finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, 0);
+      finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, 1);
+    /* fallthrough */
+    case WRITE_STATE_STARTED:
+      finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, 0);
+    /* fallthrough */
+    case WRITE_STATE_INITIAL:
+      /* do nothing */
+      break;
+  }
+}
+
 static void call_on_done_send(void *pc, int success) {
   grpc_call *call = pc;
   lock(call);
@@ -600,6 +617,7 @@ static void call_on_done_send(void *pc, int success) {
   }
   if (!success) {
     call->write_state = WRITE_STATE_WRITE_CLOSED;
+    early_out_write_ops(call);
   }
   call->send_ops.nops = 0;
   call->last_send_contains = 0;
@@ -916,23 +934,6 @@ static void finish_read_ops(grpc_call *call) {
       finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, 1);
     /* fallthrough */
     case READ_STATE_INITIAL:
-      /* do nothing */
-      break;
-  }
-}
-
-static void early_out_write_ops(grpc_call *call) {
-  switch (call->write_state) {
-    case WRITE_STATE_WRITE_CLOSED:
-      finish_ioreq_op(call, GRPC_IOREQ_SEND_MESSAGE, 0);
-      finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, 0);
-      finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, 0);
-      finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, 1);
-    /* fallthrough */
-    case WRITE_STATE_STARTED:
-      finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, 0);
-    /* fallthrough */
-    case WRITE_STATE_INITIAL:
       /* do nothing */
       break;
   }
