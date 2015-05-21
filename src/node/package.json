@@ -36,6 +36,7 @@
     "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
+    "mustache": "^2.0.0",
     "strftime": "^0.8.2"
   },
   "engines": {
@@ -46,6 +47,8 @@
     "README.md",
     "index.js",
     "binding.gyp",
+    "bin",
+    "cli",
     "examples",
     "ext",
     "interop",

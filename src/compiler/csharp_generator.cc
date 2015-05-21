@@ -51,20 +51,49 @@ using grpc_generator::METHODTYPE_NO_STREAMING;
 using grpc_generator::METHODTYPE_CLIENT_STREAMING;
 using grpc_generator::METHODTYPE_SERVER_STREAMING;
 using grpc_generator::METHODTYPE_BIDI_STREAMING;
+using grpc_generator::StringReplace;
 using std::map;
 using std::vector;
 
 namespace grpc_csharp_generator {
 namespace {
 
-std::string GetCSharpNamespace(const FileDescriptor* file) {
-  // TODO(jtattermusch): this should be based on csharp_namespace option
+// TODO(jtattermusch): make GetFileNamespace part of libprotoc public API.
+// NOTE: Implementation needs to match exactly to GetFileNamespace
+// defined in csharp_helpers.h in protoc csharp plugin.
+// We cannot reference it directly because google3 protobufs
+// don't have a csharp protoc plugin.
+std::string GetFileNamespace(const FileDescriptor* file) {
+  if (file->options().has_csharp_namespace()) {
+    return file->options().csharp_namespace();
+  }
   return file->package();
 }
 
-std::string GetMessageType(const Descriptor* message) {
-  // TODO(jtattermusch): this has to match with C# protobuf generator
-  return message->name();
+std::string ToCSharpName(const std::string& name, const FileDescriptor* file) {
+  std::string result = GetFileNamespace(file);
+  if (result != "") {
+    result += '.';
+  }
+  std::string classname;
+  if (file->package().empty()) {
+    classname = name;
+  } else {
+    // Strip the proto package from full_name since we've replaced it with
+    // the C# namespace.
+    classname = name.substr(file->package().size() + 1);
+  }
+  result += StringReplace(classname, ".", ".Types.", false);
+  return "global::" + result;
+}
+
+// TODO(jtattermusch): make GetClassName part of libprotoc public API.
+// NOTE: Implementation needs to match exactly to GetClassName
+// defined in csharp_helpers.h in protoc csharp plugin.
+// We cannot reference it directly because google3 protobufs
+// don't have a csharp protoc plugin.
+std::string GetClassName(const Descriptor* message) {
+  return ToCSharpName(message->full_name(), message->file());
 }
 
 std::string GetServiceClassName(const ServiceDescriptor* service) {
@@ -114,22 +143,22 @@ std::string GetMethodRequestParamMaybe(const MethodDescriptor *method) {
   if (method->client_streaming()) {
     return "";
   }
-  return GetMessageType(method->input_type()) + " request, ";
+  return GetClassName(method->input_type()) + " request, ";
 }
 
 std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
-      return "Task<" + GetMessageType(method->output_type()) + ">";
+      return "Task<" + GetClassName(method->output_type()) + ">";
     case METHODTYPE_CLIENT_STREAMING:
-      return "AsyncClientStreamingCall<" + GetMessageType(method->input_type())
-          + ", " + GetMessageType(method->output_type()) + ">";
+      return "AsyncClientStreamingCall<" + GetClassName(method->input_type())
+          + ", " + GetClassName(method->output_type()) + ">";
     case METHODTYPE_SERVER_STREAMING:
-      return "AsyncServerStreamingCall<" + GetMessageType(method->output_type())
+      return "AsyncServerStreamingCall<" + GetClassName(method->output_type())
           + ">";
     case METHODTYPE_BIDI_STREAMING:
-      return "AsyncDuplexStreamingCall<" + GetMessageType(method->input_type())
-          + ", " + GetMessageType(method->output_type()) + ">";
+      return "AsyncDuplexStreamingCall<" + GetClassName(method->input_type())
+          + ", " + GetClassName(method->output_type()) + ">";
   }
   GOOGLE_LOG(FATAL)<< "Can't get here.";
   return "";
@@ -139,10 +168,10 @@ std::string GetMethodRequestParamServer(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
     case METHODTYPE_SERVER_STREAMING:
-      return GetMessageType(method->input_type()) + " request";
+      return GetClassName(method->input_type()) + " request";
     case METHODTYPE_CLIENT_STREAMING:
     case METHODTYPE_BIDI_STREAMING:
-      return "IAsyncStreamReader<" + GetMessageType(method->input_type())
+      return "IAsyncStreamReader<" + GetClassName(method->input_type())
           + "> requestStream";
   }
   GOOGLE_LOG(FATAL)<< "Can't get here.";
@@ -153,7 +182,7 @@ std::string GetMethodReturnTypeServer(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
     case METHODTYPE_CLIENT_STREAMING:
-      return "Task<" + GetMessageType(method->output_type()) + ">";
+      return "Task<" + GetClassName(method->output_type()) + ">";
     case METHODTYPE_SERVER_STREAMING:
     case METHODTYPE_BIDI_STREAMING:
       return "Task";
@@ -169,7 +198,7 @@ std::string GetMethodResponseStreamMaybe(const MethodDescriptor *method) {
       return "";
     case METHODTYPE_SERVER_STREAMING:
     case METHODTYPE_BIDI_STREAMING:
-      return ", IServerStreamWriter<" + GetMessageType(method->output_type())
+      return ", IServerStreamWriter<" + GetClassName(method->output_type())
           + "> responseStream";
   }
   GOOGLE_LOG(FATAL)<< "Can't get here.";
@@ -202,7 +231,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor *service) {
     out->Print(
         "static readonly Marshaller<$type$> $fieldname$ = Marshallers.Create((arg) => arg.ToByteArray(), $type$.ParseFrom);\n",
         "fieldname", GetMarshallerFieldName(message), "type",
-        GetMessageType(message));
+        GetClassName(message));
   }
   out->Print("\n");
 }
@@ -211,8 +240,8 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor *method) {
   out->Print(
       "static readonly Method<$request$, $response$> $fieldname$ = new Method<$request$, $response$>(\n",
       "fieldname", GetMethodFieldName(method), "request",
-      GetMessageType(method->input_type()), "response",
-      GetMessageType(method->output_type()));
+      GetClassName(method->input_type()), "response",
+      GetClassName(method->output_type()));
   out->Indent();
   out->Indent();
   out->Print("$methodtype$,\n", "methodtype",
@@ -242,8 +271,8 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
       out->Print(
           "$response$ $methodname$($request$ request, CancellationToken token = default(CancellationToken));\n",
           "methodname", method->name(), "request",
-          GetMessageType(method->input_type()), "response",
-          GetMessageType(method->output_type()));
+          GetClassName(method->input_type()), "response",
+          GetClassName(method->output_type()));
     }
 
     std::string method_name = method->name();
@@ -310,8 +339,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
       out->Print(
           "public $response$ $methodname$($request$ request, CancellationToken token = default(CancellationToken))\n",
           "methodname", method->name(), "request",
-          GetMessageType(method->input_type()), "response",
-          GetMessageType(method->output_type()));
+          GetClassName(method->input_type()), "response",
+          GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
       out->Print("var call = CreateCall($servicenamefield$, $methodfield$);\n",
@@ -466,7 +495,7 @@ grpc::string GetServices(const FileDescriptor *file) {
   // TODO(jtattermusch): add using for protobuf message classes
   out.Print("\n");
 
-  out.Print("namespace $namespace$ {\n", "namespace", GetCSharpNamespace(file));
+  out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
   out.Indent();
   for (int i = 0; i < file->service_count(); i++) {
     GenerateService(&out, file->service(i));

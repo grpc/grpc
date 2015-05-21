@@ -138,8 +138,10 @@ static void slice_state_remove_prefix(grpc_tcp_slice_state *state,
          native "trim the first N bytes" operation to splice */
       /* TODO(klempner): This really shouldn't be modifying the current slice
          unless we own the slices array. */
-      *current_slice = gpr_slice_split_tail(current_slice, prefix_bytes);
+      gpr_slice tail;
+      tail = gpr_slice_split_tail(current_slice, prefix_bytes);
       gpr_slice_unref(*current_slice);
+      *current_slice = tail;
       return;
     } else {
       gpr_slice_unref(*current_slice);

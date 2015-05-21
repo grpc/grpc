@@ -125,6 +125,8 @@ static void test_call_creds_failure(grpc_end2end_test_config config) {
   GPR_ASSERT(grpc_call_set_credentials(c, creds) != GRPC_CALL_OK);
   grpc_credentials_release(creds);
 
+  grpc_call_destroy(c);
+
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -224,6 +226,18 @@ static void request_response_with_payload_and_call_creds(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+
+  cq_expect_completion(v_server, tag(102), 1);
+  cq_verify(v_server);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
   op++;
@@ -232,15 +246,9 @@ static void request_response_with_payload_and_call_creds(
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
-  cq_expect_completion(v_server, tag(102), 1);
+  cq_expect_completion(v_server, tag(103), 1);
   cq_verify(v_server);
 
   cq_expect_completion(v_client, tag(1), 1);

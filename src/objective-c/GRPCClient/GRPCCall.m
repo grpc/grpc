@@ -231,7 +231,7 @@
                                             handler:resumingHandler]] errorHandler:errorHandler];
 }
 
-- (void)didReceiveValue:(id)value {
+- (void)writeValue:(id)value {
   // TODO(jcanizales): Throw/assert if value isn't NSData.
 
   // Pause the input and only resume it when the C layer notifies us that writes
@@ -255,7 +255,7 @@
                             errorHandler:errorHandler];
 }
 
-- (void)didFinishWithError:(NSError *)errorOrNil {
+- (void)writesFinishedWithError:(NSError *)errorOrNil {
   if (errorOrNil) {
     [self cancel];
   } else {
@@ -306,7 +306,7 @@
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   // The following produces a retain cycle self:_responseWriteable:self, which is only
-  // broken when didFinishWithError: is sent to the wrapped writeable.
+  // broken when writesFinishedWithError: is sent to the wrapped writeable.
   // Care is taken not to retain self strongly in any of the blocks used in
   // the implementation of GRPCCall, so that the life of the instance is
   // determined by this retain cycle.

@@ -82,7 +82,7 @@ static const char *ssl_cipher_suites(void) {
 /* -- Common methods. -- */
 
 /* Returns the first property with that name. */
-static const tsi_peer_property *tsi_peer_get_property_by_name(
+const tsi_peer_property *tsi_peer_get_property_by_name(
     const tsi_peer *peer, const char *name) {
   size_t i;
   if (peer == NULL) return NULL;

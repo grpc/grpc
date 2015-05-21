@@ -29,15 +29,14 @@
 
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
-syntax = "proto2";
+syntax = "proto3";
 
 import "empty.proto";
 import "messages.proto";
-import "google/protobuf/objectivec-descriptor.proto";
 
 package grpc.testing;
 
-option (google.protobuf.objectivec_file_options).class_prefix = "RMT";
+option objc_class_prefix = "RMT";
 
 // A simple service to test the various types of RPCs and experiment with
 // performance with various types of payload.
@@ -51,24 +50,24 @@ service TestService {
 
   // One request followed by a sequence of responses (streamed download).
   // The server returns the payload with client desired type and sizes.
-//  rpc StreamingOutputCall(StreamingOutputCallRequest)
-//      returns (stream StreamingOutputCallResponse);
+  rpc StreamingOutputCall(StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
 
   // A sequence of requests followed by one response (streamed upload).
   // The server returns the aggregated size of client payload as the result.
-//  rpc StreamingInputCall(stream StreamingInputCallRequest)
-//      returns (StreamingInputCallResponse);
+  rpc StreamingInputCall(stream StreamingInputCallRequest)
+      returns (StreamingInputCallResponse);
 
   // A sequence of requests with each request served by the server immediately.
   // As one request could lead to multiple responses, this interface
   // demonstrates the idea of full duplexing.
-//  rpc FullDuplexCall(stream StreamingOutputCallRequest)
-//      returns (stream StreamingOutputCallResponse);
+  rpc FullDuplexCall(stream StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
 
   // A sequence of requests followed by a sequence of responses.
   // The server buffers all the client requests and then serves them in order. A
   // stream of responses are returned to the client when the server starts with
   // first request.
-//  rpc HalfDuplexCall(stream StreamingOutputCallRequest)
-//      returns (stream StreamingOutputCallResponse);
+  rpc HalfDuplexCall(stream StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
 }

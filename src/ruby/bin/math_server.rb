@@ -128,13 +128,13 @@ class Calculator < Math::Math::Service
     t = Thread.new do
       begin
         requests.each do |req|
-          logger.info("read #{req.inspect}")
+          GRPC.logger.info("read #{req.inspect}")
           resp = Math::DivReply.new(quotient: req.dividend / req.divisor,
                                     remainder: req.dividend % req.divisor)
           q.push(resp)
           Thread.pass  # let the internal Bidi threads run
         end
-        logger.info('finished reads')
+        GRPC.logger.info('finished reads')
         q.push(self)
       rescue StandardError => e
         q.push(e)  # share the exception with the enumerator
@@ -176,10 +176,10 @@ def main
   s = GRPC::RpcServer.new
   if options['secure']
     s.add_http2_port(options['host'], test_server_creds)
-    logger.info("... running securely on #{options['host']}")
+    GRPC.logger.info("... running securely on #{options['host']}")
   else
     s.add_http2_port(options['host'])
-    logger.info("... running insecurely on #{options['host']}")
+    GRPC.logger.info("... running insecurely on #{options['host']}")
   end
 
   s.handle(Calculator)

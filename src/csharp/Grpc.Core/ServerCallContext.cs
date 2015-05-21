@@ -42,7 +42,6 @@ namespace Grpc.Core
     /// </summary>
     public sealed class ServerCallContext
     {
-        
         // TODO(jtattermusch): add cancellationToken
 
         // TODO(jtattermusch): add deadline info
