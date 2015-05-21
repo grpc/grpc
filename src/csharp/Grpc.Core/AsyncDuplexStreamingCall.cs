@@ -40,42 +40,17 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for bidirectional streaming calls.
     /// </summary>
-    public sealed class AsyncDuplexStreamingCall<TRequest, TResponse>
-        where TRequest : class
-        where TResponse : class
+    public sealed class AsyncDuplexStreamingCall<TRequest, TResponse> : IDisposable
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly IAsyncStreamReader<TResponse> responseStream;
+        readonly Action disposeAction;
 
-        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream)
+        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream, Action disposeAction)
         {
             this.requestStream = requestStream;
             this.responseStream = responseStream;
-        }
-
-        /// <summary>
-        /// Writes a request to RequestStream.
-        /// </summary>
-        public Task Write(TRequest message)
-        {
-            return requestStream.Write(message);
-        }
-
-        /// <summary>
-        /// Closes the RequestStream.
-        /// </summary>
-        public Task Close()
-        {
-            return requestStream.Close();
-        }
-
-        /// <summary>
-        /// Reads a response from ResponseStream.
-        /// </summary>
-        /// <returns></returns>
-        public Task<TResponse> ReadNext()
-        {
-            return responseStream.ReadNext();
+            this.disposeAction = disposeAction;
         }
 
         /// <summary>
@@ -98,6 +73,17 @@ namespace Grpc.Core
             {
                 return requestStream;
             }
+        }
+
+        /// <summary>
+        /// Provides means to cleanup after the call.
+        /// If the call has already finished normally (request stream has been completed and response stream has been fully read), doesn't do anything.
+        /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
+        /// As a result, all resources being used by the call should be released eventually.
+        /// </summary>
+        public void Dispose()
+        {
+            disposeAction.Invoke();
         }
     }
 }

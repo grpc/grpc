@@ -103,14 +103,13 @@ int main(int argc, char** argv) {
                FLAGS_server_threads <  FLAGS_client_channels *
                FLAGS_outstanding_rpcs_per_channel));
 
-  auto result = RunScenario(client_config, FLAGS_num_clients,
-                            server_config, FLAGS_num_servers,
-                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
-                            FLAGS_local_workers);
+  const auto result = RunScenario(
+      client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
+      FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
-  ReportQPSPerCore(result, server_config);
-  ReportLatency(result);
-  ReportTimes(result);
+  ReportQPSPerCore(*result, server_config);
+  ReportLatency(*result);
+  ReportTimes(*result);
 
   return 0;
 }

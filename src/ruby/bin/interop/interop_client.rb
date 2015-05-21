@@ -70,7 +70,7 @@ end
 # loads the certificates used to access the test server securely.
 def load_prod_cert
   fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
-  logger.info("loading prod certs from #{ENV['SSL_CERT_FILE']}")
+  GRPC.logger.info("loading prod certs from #{ENV['SSL_CERT_FILE']}")
   File.open(ENV['SSL_CERT_FILE']).read
 end
 
@@ -115,10 +115,10 @@ def create_stub(opts)
       stub_opts[:update_metadata] = auth_creds.updater_proc
     end
 
-    logger.info("... connecting securely to #{address}")
+    GRPC.logger.info("... connecting securely to #{address}")
     Grpc::Testing::TestService::Stub.new(address, **stub_opts)
   else
-    logger.info("... connecting insecurely to #{address}")
+    GRPC.logger.info("... connecting insecurely to #{address}")
     Grpc::Testing::TestService::Stub.new(address)
   end
 end

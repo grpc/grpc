@@ -64,7 +64,7 @@ namespace grpc.testing
             {
                 var response = StreamingOutputCallResponse.CreateBuilder()
                     .SetPayload(CreateZerosPayload(responseParam.Size)).Build();
-                await responseStream.Write(response);
+                await responseStream.WriteAsync(response);
             }
         }
 
@@ -86,7 +86,7 @@ namespace grpc.testing
                 {
                     var response = StreamingOutputCallResponse.CreateBuilder()
                         .SetPayload(CreateZerosPayload(responseParam.Size)).Build();
-                    await responseStream.Write(response);
+                    await responseStream.WriteAsync(response);
                 }
             });
         }

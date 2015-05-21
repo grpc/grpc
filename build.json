@@ -1814,7 +1814,6 @@
     {
       "name": "async_streaming_ping_pong_test",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/async_streaming_ping_pong_test.cc"
@@ -1832,7 +1831,6 @@
     {
       "name": "async_unary_ping_pong_test",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/async_unary_ping_pong_test.cc"
@@ -2274,7 +2272,6 @@
     {
       "name": "sync_streaming_ping_pong_test",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/sync_streaming_ping_pong_test.cc"
@@ -2292,7 +2289,6 @@
     {
       "name": "sync_unary_ping_pong_test",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/sync_unary_ping_pong_test.cc"

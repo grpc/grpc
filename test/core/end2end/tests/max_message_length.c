@@ -188,6 +188,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
+  grpc_byte_buffer_destroy(request_payload);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);

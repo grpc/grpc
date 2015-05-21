@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
@@ -42,17 +43,41 @@ namespace Grpc.Core.Internal
         where TResponse : class
     {
         readonly AsyncCallServer<TRequest, TResponse> call;
+        TRequest current;
 
         public ServerRequestStream(AsyncCallServer<TRequest, TResponse> call)
         {
             this.call = call;
         }
 
-        public Task<TRequest> ReadNext()
+        public TRequest Current
         {
+            get
+            {
+                if (current == null)
+                {
+                    throw new InvalidOperationException("No current element is available.");
+                }
+                return current;
+            }
+        }
+
+        public async Task<bool> MoveNext(CancellationToken token)
+        {
+            if (token != CancellationToken.None)
+            {
+                throw new InvalidOperationException("Cancellation of individual reads is not supported.");
+            }
             var taskSource = new AsyncCompletionTaskSource<TRequest>();
             call.StartReadMessage(taskSource.CompletionDelegate);
-            return taskSource.Task;
+            var result = await taskSource.Task;
+            this.current = result;
+            return result != null;
+        }
+
+        public void Dispose()
+        {
+            // TODO(jtattermusch): implement the semantics of stream disposal.
         }
     }
 }

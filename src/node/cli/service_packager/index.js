@@ -31,48 +31,6 @@
  *
  */
 
-#include <grpc/support/log.h>
-
-#include <signal.h>
-
-#include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/report.h"
-
-namespace grpc {
-namespace testing {
-
-static const int WARMUP = 5;
-static const int BENCHMARK = 10;
-
-static void RunSynchronousUnaryPingPong() {
-  gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
-
-  ClientConfig client_config;
-  client_config.set_client_type(SYNCHRONOUS_CLIENT);
-  client_config.set_enable_ssl(false);
-  client_config.set_outstanding_rpcs_per_channel(1);
-  client_config.set_client_channels(1);
-  client_config.set_payload_size(1);
-  client_config.set_rpc_type(UNARY);
-
-  ServerConfig server_config;
-  server_config.set_server_type(SYNCHRONOUS_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(1);
-
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  ReportQPS(*result);
-  ReportLatency(*result);
-}
-
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  signal(SIGPIPE, SIG_IGN);
-  grpc::testing::RunSynchronousUnaryPingPong();
-
-  return 0;
-}
+var grpc = require('grpc');
+exports.client = grpc.load(__dirname + '/service.json', 'json');
+exports.auth = require('google-auth-library');

@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
@@ -71,12 +72,13 @@ namespace Grpc.Core.Internal
             Status status = Status.DefaultSuccess;
             try
             {
-                var request = await requestStream.ReadNext();
+                Preconditions.CheckArgument(await requestStream.MoveNext());
+                var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                Preconditions.CheckArgument(await requestStream.ReadNext() == null);
+                Preconditions.CheckArgument(!await requestStream.MoveNext());
                 var context = new ServerCallContext();  // TODO(jtattermusch): initialize the context
                 var result = await handler(context, request);
-                await responseStream.Write(result);
+                await responseStream.WriteAsync(result);
             } 
             catch (Exception e)
             {
@@ -85,7 +87,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatus(status);
+                await responseStream.WriteStatusAsync(status);
             }
             catch (OperationCanceledException)
             {
@@ -122,9 +124,10 @@ namespace Grpc.Core.Internal
             Status status = Status.DefaultSuccess;
             try
             {
-                var request = await requestStream.ReadNext();
+                Preconditions.CheckArgument(await requestStream.MoveNext());
+                var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                Preconditions.CheckArgument(await requestStream.ReadNext() == null);
+                Preconditions.CheckArgument(!await requestStream.MoveNext());
 
                 var context = new ServerCallContext();  // TODO(jtattermusch): initialize the context
                 await handler(context, request, responseStream);
@@ -137,7 +140,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatus(status);
+                await responseStream.WriteStatusAsync(status);
             }
             catch (OperationCanceledException)
             {
@@ -178,7 +181,7 @@ namespace Grpc.Core.Internal
                 var result = await handler(context, requestStream);
                 try
                 {
-                    await responseStream.Write(result);
+                    await responseStream.WriteAsync(result);
                 }
                 catch (OperationCanceledException)
                 {
@@ -193,7 +196,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatus(status);
+                await responseStream.WriteStatusAsync(status);
             }
             catch (OperationCanceledException)
             {
@@ -240,7 +243,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatus(status);
+                await responseStream.WriteStatusAsync(status);
             }
             catch (OperationCanceledException)
             {
@@ -263,7 +266,7 @@ namespace Grpc.Core.Internal
             var requestStream = new ServerRequestStream<byte[], byte[]>(asyncCall);
             var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
 
-            await responseStream.WriteStatus(new Status(StatusCode.Unimplemented, "No such method."));
+            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, "No such method."));
             // TODO(jtattermusch): if we don't read what client has sent, the server call never gets disposed.
             await requestStream.ToList();
             await finishedTask;
