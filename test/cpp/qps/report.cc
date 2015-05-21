@@ -39,6 +39,36 @@
 namespace grpc {
 namespace testing {
 
+void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
+  reporters_.emplace_back(std::move(reporter));
+}
+
+void CompositeReporter::ReportQPS(const ScenarioResult& result) const {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportQPS(result);
+  }
+}
+
+void CompositeReporter::ReportQPSPerCore(const ScenarioResult& result,
+                                         const ServerConfig& config) const {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportQPSPerCore(result, config);
+  }
+}
+
+void CompositeReporter::ReportLatency(const ScenarioResult& result) const {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportLatency(result);
+  }
+}
+
+void CompositeReporter::ReportTimes(const ScenarioResult& result) const {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportTimes(result);
+  }
+}
+
+
 void GprLogReporter::ReportQPS(const ScenarioResult& result) const {
   gpr_log(GPR_INFO, "QPS: %.1f",
           result.latencies.Count() /

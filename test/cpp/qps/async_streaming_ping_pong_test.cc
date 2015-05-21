@@ -47,8 +47,7 @@ namespace testing {
 static const int WARMUP = 5;
 static const int BENCHMARK = 10;
 
-static void RunAsyncStreamingPingPong(
-    const std::vector<std::unique_ptr<Reporter> >& reporters) {
+static void RunAsyncStreamingPingPong() {
   gpr_log(GPR_INFO, "Running Async Streaming Ping Pong");
 
   ClientConfig client_config;
@@ -68,10 +67,8 @@ static void RunAsyncStreamingPingPong(
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  for (const auto& reporter : reporters) {
-    reporter->ReportQPS(result);
-    reporter->ReportLatency(result);
-  }
+  GetReporter()->ReportQPS(result);
+  GetReporter()->ReportLatency(result);
 }
 
 }  // namespace testing
@@ -79,9 +76,8 @@ static void RunAsyncStreamingPingPong(
 
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
-  const auto& reporters = grpc::testing::InitBenchmarkReporters();
 
   signal(SIGPIPE, SIG_IGN);
-  grpc::testing::RunAsyncStreamingPingPong(reporters);
+  grpc::testing::RunAsyncStreamingPingPong();
   return 0;
 }

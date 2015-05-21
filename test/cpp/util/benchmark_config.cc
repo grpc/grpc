@@ -51,12 +51,18 @@ void InitBenchmark(int* argc, char*** argv, bool remove_flags) {
   ParseCommandLineFlags(argc, argv, remove_flags);
 }
 
-std::vector<std::unique_ptr<Reporter> > InitBenchmarkReporters() {
-  std::vector<std::unique_ptr<Reporter> > reporters;
+static std::shared_ptr<Reporter> InitBenchmarkReporters() {
+  auto* composite_reporter = new CompositeReporter;
   if (FLAGS_enable_log_reporter) {
-    reporters.emplace_back(new GprLogReporter("LogReporter"));
+    composite_reporter->add(
+        std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
   }
-  return reporters;
+  return std::shared_ptr<Reporter>(composite_reporter);
+}
+
+const std::shared_ptr<Reporter>& GetReporter() {
+  static std::shared_ptr<Reporter> reporter(InitBenchmarkReporters());
+  return reporter;
 }
 
 }  // namespace testing

@@ -51,6 +51,8 @@ class Reporter {
   /** Construct a reporter with the given \a name. */
   Reporter(const string& name) : name_(name) {}
 
+  virtual ~Reporter() {}
+
   /** Returns this reporter's name.
    *
    * Names are constants, set at construction time. */
@@ -71,6 +73,24 @@ class Reporter {
 
  private:
   const string name_;
+};
+
+/** A composite for all reporters to be considered. */
+class CompositeReporter : public Reporter {
+ public:
+  CompositeReporter() : Reporter("CompositeReporter") {}
+
+  /** Adds a \a reporter to the composite. */
+  void add(std::unique_ptr<Reporter> reporter);
+
+  void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result,
+                        const ServerConfig& config) const GRPC_OVERRIDE;
+  void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
+
+ private:
+  std::vector<std::unique_ptr<Reporter> > reporters_;
 };
 
 /** Reporter to gpr_log(GPR_INFO). */

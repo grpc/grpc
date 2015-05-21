@@ -43,7 +43,13 @@ namespace grpc {
 namespace testing {
 
 void InitBenchmark(int* argc, char*** argv, bool remove_flags);
-std::vector<std::unique_ptr<Reporter> > InitBenchmarkReporters();
+
+/** Returns the benchmark Reporter instance.
+ *
+ * The returned instane will take care of generating reports for all the actual
+ * reporters configured via the "enable_*_reporter" command line flags (see
+ * benchmark_config.cc). */
+const std::shared_ptr<Reporter>& GetReporter();
 
 }  // namespace testing
 }  // namespace grpc

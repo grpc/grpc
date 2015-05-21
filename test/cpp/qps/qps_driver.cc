@@ -74,8 +74,7 @@ using grpc::testing::ResourceUsage;
 namespace grpc {
 namespace testing {
 
-static void QpsDriver(
-    const std::vector<std::unique_ptr<Reporter> >& reporters) {
+static void QpsDriver() {
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
@@ -112,12 +111,10 @@ static void QpsDriver(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
       FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
-  for (const auto& reporter : reporters) {
-    reporter->ReportQPS(result);
-    reporter->ReportQPSPerCore(result, server_config);
-    reporter->ReportLatency(result);
-    reporter->ReportTimes(result);
-  }
+  GetReporter()->ReportQPS(result);
+  GetReporter()->ReportQPSPerCore(result, server_config);
+  GetReporter()->ReportLatency(result);
+  GetReporter()->ReportTimes(result);
 }
 
 }  // namespace testing
@@ -125,10 +122,9 @@ static void QpsDriver(
 
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
-  const auto& reporters = grpc::testing::InitBenchmarkReporters();
 
   signal(SIGPIPE, SIG_IGN);
-  grpc::testing::QpsDriver(reporters);
+  grpc::testing::QpsDriver();
 
   return 0;
 }

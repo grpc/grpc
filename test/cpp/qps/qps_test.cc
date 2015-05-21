@@ -47,7 +47,7 @@ namespace testing {
 static const int WARMUP = 5;
 static const int BENCHMARK = 10;
 
-static void RunQPS(const std::vector<std::unique_ptr<Reporter> >& reporters) {
+static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test");
 
   ClientConfig client_config;
@@ -67,10 +67,8 @@ static void RunQPS(const std::vector<std::unique_ptr<Reporter> >& reporters) {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  for (const auto& reporter : reporters) {
-    reporter->ReportQPSPerCore(result, server_config);
-    reporter->ReportLatency(result);
-  }
+  GetReporter()->ReportQPSPerCore(result, server_config);
+  GetReporter()->ReportLatency(result);
 }
 
 }  // namespace testing
@@ -78,10 +76,9 @@ static void RunQPS(const std::vector<std::unique_ptr<Reporter> >& reporters) {
 
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
-  const auto& reporters = grpc::testing::InitBenchmarkReporters();
 
   signal(SIGPIPE, SIG_IGN);
-  grpc::testing::RunQPS(reporters);
+  grpc::testing::RunQPS();
 
   return 0;
 }
