@@ -1348,9 +1348,13 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p,
   grpc_chttp2_hptbl_init(&p->table, mdctx);
 }
 
-void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p) {
-  GPR_ASSERT(p->state == parse_begin);
+int grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p) {
+  if (p->state != parse_begin) {
+    gpr_log(GPR_ERROR, "Priority set in an unexpected place");
+    return 0;
+  }
   p->state = parse_stream_dep0;
+  return 1;
 }
 
 void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser *p) {
