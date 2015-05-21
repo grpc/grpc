@@ -18,7 +18,8 @@ env:
     - NUGET="mono nuget.exe"
   matrix:
     - CONFIG=opt TEST=sanity
-    - CONFIG=gcov TEST="c c++"
+    - CONFIG=gcov TEST=c
+    - CONFIG=gcov TEST=c++
     - CONFIG=opt TEST="c c++"
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
