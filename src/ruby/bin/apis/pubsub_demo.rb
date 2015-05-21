@@ -79,7 +79,7 @@ end
 def publisher_stub(opts)
   address = "#{opts.host}:#{opts.port}"
   stub_clz = Tech::Pubsub::PublisherService::Stub # shorter
-  logger.info("... access PublisherService at #{address}")
+  GRPC.logger.info("... access PublisherService at #{address}")
   stub_clz.new(address,
                creds: ssl_creds, update_metadata: auth_proc(opts),
                GRPC::Core::Channel::SSL_TARGET => opts.host)
@@ -89,7 +89,7 @@ end
 def subscriber_stub(opts)
   address = "#{opts.host}:#{opts.port}"
   stub_clz = Tech::Pubsub::SubscriberService::Stub # shorter
-  logger.info("... access SubscriberService at #{address}")
+  GRPC.logger.info("... access SubscriberService at #{address}")
   stub_clz.new(address,
                creds: ssl_creds, update_metadata: auth_proc(opts),
                GRPC::Core::Channel::SSL_TARGET => opts.host)

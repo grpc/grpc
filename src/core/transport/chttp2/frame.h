@@ -53,12 +53,14 @@ typedef struct {
   gpr_uint8 send_ping_ack;
   gpr_uint8 process_ping_reply;
   gpr_uint8 goaway;
+  gpr_uint8 rst_stream;
 
   gpr_int64 initial_window_update;
   gpr_uint32 window_update;
   gpr_uint32 goaway_last_stream_index;
   gpr_uint32 goaway_error;
   gpr_slice goaway_text;
+  gpr_uint32 rst_stream_reason;
 } grpc_chttp2_parse_state;
 
 #define GRPC_CHTTP2_FRAME_DATA 0
