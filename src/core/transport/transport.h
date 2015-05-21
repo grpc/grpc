@@ -79,7 +79,7 @@ typedef struct grpc_transport_op {
   grpc_mdstr *cancel_message;
 
   /* Indexes correspond to grpc_context_index enum values */
-  grpc_call_context *contexts;
+  grpc_call_context_element *context;
 } grpc_transport_op;
 
 /* Callbacks made from the transport to the upper layers of grpc. */

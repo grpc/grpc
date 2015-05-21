@@ -44,6 +44,6 @@ typedef enum {
 typedef struct {
   void *value;
   void (*destroy)(void *);
-} grpc_call_context;
+} grpc_call_context_element;
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H */

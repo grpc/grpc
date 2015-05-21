@@ -113,23 +113,19 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void print_auth_context(int is_client, const grpc_auth_context *ctx) {
   const grpc_auth_property *p;
-  grpc_auth_property_iterator *it;
+  grpc_auth_property_iterator it;
   gpr_log(GPR_INFO, "%s peer:", is_client ? "client" : "server");
+  gpr_log(GPR_INFO, "\tauthenticated: %s",
+          grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
   it = grpc_auth_context_peer_identity(ctx);
-  gpr_log(GPR_INFO, "\tauthenticated: %s", it != NULL ? "YES" : "NO");
-  if (it != NULL) {
-    while ((p = grpc_auth_property_iterator_next(it)) != NULL) {
-      gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
-    }
-    grpc_auth_property_iterator_destroy(it);
+  while ((p = grpc_auth_property_iterator_next(&it)) != NULL) {
+    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
   }
   gpr_log(GPR_INFO, "\tall properties:");
   it = grpc_auth_context_property_iterator(ctx);
-  GPR_ASSERT(it != NULL);
-  while ((p = grpc_auth_property_iterator_next(it)) != NULL) {
+  while ((p = grpc_auth_property_iterator_next(&it)) != NULL) {
     gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
   }
-  grpc_auth_property_iterator_destroy(it);
 }
 
 static void test_call_creds_failure(grpc_end2end_test_config config) {

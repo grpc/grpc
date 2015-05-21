@@ -77,17 +77,17 @@ static void init_call_elem(grpc_call_element *elem,
   /* initialize members */
   calld->unused = 0;
 
-  GPR_ASSERT(initial_op && initial_op->contexts != NULL &&
+  GPR_ASSERT(initial_op && initial_op->context != NULL &&
              chand->security_connector->auth_context != NULL &&
-             initial_op->contexts[GRPC_CONTEXT_SECURITY].value == NULL);
+             initial_op->context[GRPC_CONTEXT_SECURITY].value == NULL);
 
   /* Create a security context for the call and reference the auth context from
      the channel. */
   server_ctx = grpc_server_security_context_create();
   server_ctx->auth_context =
       grpc_auth_context_ref(chand->security_connector->auth_context);
-  initial_op->contexts[GRPC_CONTEXT_SECURITY].value = server_ctx;
-  initial_op->contexts[GRPC_CONTEXT_SECURITY].destroy =
+  initial_op->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
+  initial_op->context[GRPC_CONTEXT_SECURITY].destroy =
       grpc_server_security_context_destroy;
 }
 

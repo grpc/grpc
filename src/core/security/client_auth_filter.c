@@ -125,7 +125,7 @@ static void send_security_metadata(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
-      (grpc_client_security_context *)op->contexts[GRPC_CONTEXT_SECURITY].value;
+      (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
   char *service_url = NULL;
   grpc_credentials *channel_creds =
       chand->security_connector->request_metadata_creds;

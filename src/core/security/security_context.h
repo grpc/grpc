@@ -42,12 +42,6 @@
 
 /* Property names are always NULL terminated. */
 
-struct grpc_auth_property_iterator {
-  const grpc_auth_context *ctx;
-  size_t index;
-  char *name;
-};
-
 struct grpc_auth_context {
   struct grpc_auth_context *chained;
   grpc_auth_property *properties;

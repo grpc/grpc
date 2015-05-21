@@ -109,6 +109,8 @@ void grpc_server_security_context_destroy(void *ctx) {
 
 /* --- grpc_auth_context --- */
 
+static grpc_auth_property_iterator empty_iterator = {NULL, 0, NULL};
+
 grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained,
                                             size_t property_count) {
   grpc_auth_context *ctx = gpr_malloc(sizeof(grpc_auth_context));
@@ -138,6 +140,7 @@ void grpc_auth_context_unref(grpc_auth_context *ctx) {
       }
       gpr_free(ctx->properties);
     }
+    gpr_free(ctx);
   }
 }
 
@@ -146,19 +149,22 @@ const char *grpc_auth_context_peer_identity_property_name(
   return ctx->peer_identity_property_name;
 }
 
-grpc_auth_property_iterator *grpc_auth_context_property_iterator(
+int grpc_auth_context_peer_is_authenticated(
     const grpc_auth_context *ctx) {
-  grpc_auth_property_iterator *it;
-  if (ctx == NULL) return NULL;
-  it = gpr_malloc(sizeof(grpc_auth_property_iterator));
-  memset(it, 0, sizeof(grpc_auth_property_iterator));
-  it->ctx = ctx;
+  return ctx->peer_identity_property_name == NULL ? 0 : 1;
+}
+
+grpc_auth_property_iterator grpc_auth_context_property_iterator(
+    const grpc_auth_context *ctx) {
+  grpc_auth_property_iterator it = empty_iterator;
+  if (ctx == NULL) return it;
+  it.ctx = ctx;
   return it;
 }
 
 const grpc_auth_property *grpc_auth_property_iterator_next(
     grpc_auth_property_iterator *it) {
-  if (it == NULL) return NULL;
+  if (it == NULL || it->ctx == NULL) return NULL;
   while (it->index == it->ctx->property_count) {
     if (it->ctx->chained == NULL) return NULL;
     it->ctx = it->ctx->chained;
@@ -179,26 +185,20 @@ const grpc_auth_property *grpc_auth_property_iterator_next(
   }
 }
 
-grpc_auth_property_iterator *grpc_auth_context_find_properties_by_name(
+grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
     const grpc_auth_context *ctx, const char *name) {
-  grpc_auth_property_iterator *it;
-  if (ctx == NULL || name == NULL) return NULL;
-  it = grpc_auth_context_property_iterator(ctx);
-  it->name = gpr_strdup(name);
+  grpc_auth_property_iterator it = empty_iterator;
+  if (ctx == NULL || name == NULL) return empty_iterator;
+  it.ctx = ctx;
+  it.name = name;
   return it;
 }
 
-grpc_auth_property_iterator *grpc_auth_context_peer_identity(
+grpc_auth_property_iterator grpc_auth_context_peer_identity(
     const grpc_auth_context *ctx) {
-  if (ctx == NULL || ctx->peer_identity_property_name == NULL) return NULL;
+  if (ctx == NULL) return empty_iterator;
   return grpc_auth_context_find_properties_by_name(
       ctx, ctx->peer_identity_property_name);
-}
-
-void grpc_auth_property_iterator_destroy(grpc_auth_property_iterator *it) {
-  if (it == NULL) return;
-  if (it->name != NULL) gpr_free(it->name);
-  gpr_free(it);
 }
 
 grpc_auth_property grpc_auth_property_init_from_cstring(const char *name,
