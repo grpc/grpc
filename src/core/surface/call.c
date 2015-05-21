@@ -597,6 +597,7 @@ static void call_on_done_send(void *pc, int success) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, success);
     finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, 1);
   }
+  call->send_ops.nops = 0;
   call->last_send_contains = 0;
   call->sending = 0;
   unlock(call);
