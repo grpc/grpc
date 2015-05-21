@@ -60,7 +60,7 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   return std::shared_ptr<Reporter>(composite_reporter);
 }
 
-const std::shared_ptr<Reporter>& GetReporter() {
+std::shared_ptr<Reporter> GetReporter() {
   static std::shared_ptr<Reporter> reporter(InitBenchmarkReporters());
   return reporter;
 }

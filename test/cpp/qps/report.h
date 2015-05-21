@@ -63,7 +63,7 @@ class Reporter {
 
   /** Reports QPS per core as (YYY/server core). */
   virtual void ReportQPSPerCore(const ScenarioResult& result,
-                        const ServerConfig& config) const = 0;
+                                const ServerConfig& config) const = 0;
 
   /** Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in ms. */
   virtual void ReportLatency(const ScenarioResult& result) const = 0;

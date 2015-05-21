@@ -3199,6 +3199,7 @@ endif
 
 
 LIBGRPC++_BENCHMARK_CONFIG_SRC = \
+    $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc \
     test/cpp/qps/report.cc \
     test/cpp/util/benchmark_config.cc \
 
@@ -3244,6 +3245,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_BENCHMARK_CONFIG_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
 
 
 LIBGRPC++_TEST_CONFIG_SRC = \

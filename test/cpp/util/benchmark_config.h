@@ -49,7 +49,7 @@ void InitBenchmark(int* argc, char*** argv, bool remove_flags);
  * The returned instane will take care of generating reports for all the actual
  * reporters configured via the "enable_*_reporter" command line flags (see
  * benchmark_config.cc). */
-const std::shared_ptr<Reporter>& GetReporter();
+std::shared_ptr<Reporter> GetReporter();
 
 }  // namespace testing
 }  // namespace grpc

@@ -530,6 +530,7 @@
       "build": "private",
       "language": "c++",
       "src": [
+        "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/report.cc",
         "test/cpp/util/benchmark_config.cc"
       ]
