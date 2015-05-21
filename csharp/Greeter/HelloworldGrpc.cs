@@ -12,10 +12,10 @@ namespace helloworld {
   {
     static readonly string __ServiceName = "helloworld.Greeter";
 
-    static readonly Marshaller<HelloRequest> __Marshaller_HelloRequest = Marshallers.Create((arg) => arg.ToByteArray(), HelloRequest.ParseFrom);
-    static readonly Marshaller<HelloReply> __Marshaller_HelloReply = Marshallers.Create((arg) => arg.ToByteArray(), HelloReply.ParseFrom);
+    static readonly Marshaller<global::helloworld.HelloRequest> __Marshaller_HelloRequest = Marshallers.Create((arg) => arg.ToByteArray(), global::helloworld.HelloRequest.ParseFrom);
+    static readonly Marshaller<global::helloworld.HelloReply> __Marshaller_HelloReply = Marshallers.Create((arg) => arg.ToByteArray(), global::helloworld.HelloReply.ParseFrom);
 
-    static readonly Method<HelloRequest, HelloReply> __Method_SayHello = new Method<HelloRequest, HelloReply>(
+    static readonly Method<global::helloworld.HelloRequest, global::helloworld.HelloReply> __Method_SayHello = new Method<global::helloworld.HelloRequest, global::helloworld.HelloReply>(
         MethodType.Unary,
         "SayHello",
         __Marshaller_HelloRequest,
@@ -24,14 +24,14 @@ namespace helloworld {
     // client-side stub interface
     public interface IGreeterClient
     {
-      HelloReply SayHello(HelloRequest request, CancellationToken token = default(CancellationToken));
-      Task<HelloReply> SayHelloAsync(HelloRequest request, CancellationToken token = default(CancellationToken));
+      global::helloworld.HelloReply SayHello(global::helloworld.HelloRequest request, CancellationToken token = default(CancellationToken));
+      Task<global::helloworld.HelloReply> SayHelloAsync(global::helloworld.HelloRequest request, CancellationToken token = default(CancellationToken));
     }
 
     // server-side interface
     public interface IGreeter
     {
-      Task<HelloReply> SayHello(ServerCallContext context, HelloRequest request);
+      Task<global::helloworld.HelloReply> SayHello(ServerCallContext context, global::helloworld.HelloRequest request);
     }
 
     // client stub
@@ -43,12 +43,12 @@ namespace helloworld {
       public GreeterClient(Channel channel, StubConfiguration config) : base(channel, config)
       {
       }
-      public HelloReply SayHello(HelloRequest request, CancellationToken token = default(CancellationToken))
+      public global::helloworld.HelloReply SayHello(global::helloworld.HelloRequest request, CancellationToken token = default(CancellationToken))
       {
         var call = CreateCall(__ServiceName, __Method_SayHello);
         return Calls.BlockingUnaryCall(call, request, token);
       }
-      public Task<HelloReply> SayHelloAsync(HelloRequest request, CancellationToken token = default(CancellationToken))
+      public Task<global::helloworld.HelloReply> SayHelloAsync(global::helloworld.HelloRequest request, CancellationToken token = default(CancellationToken))
       {
         var call = CreateCall(__ServiceName, __Method_SayHello);
         return Calls.AsyncUnaryCall(call, request, token);
