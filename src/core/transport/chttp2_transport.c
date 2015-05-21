@@ -1142,6 +1142,7 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
 
   if (op->recv_ops) {
     GPR_ASSERT(s->incoming_sopb == NULL);
+    GPR_ASSERT(s->published_state != GRPC_STREAM_CLOSED);
     s->recv_done_closure.cb = op->on_done_recv;
     s->recv_done_closure.user_data = op->recv_user_data;
     s->incoming_sopb = op->recv_ops;

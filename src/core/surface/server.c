@@ -427,6 +427,8 @@ static void server_on_recv(void *ptr, int success) {
         grpc_iomgr_add_callback(kill_zombie, elem);
       } else if (calld->state == PENDING) {
         call_list_remove(calld, PENDING_START);
+        calld->state = ZOMBIED;
+        grpc_iomgr_add_callback(kill_zombie, elem);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
