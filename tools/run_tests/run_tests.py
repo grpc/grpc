@@ -61,7 +61,7 @@ class SimpleConfig(object):
     self.environ = environ
     self.environ['CONFIG'] = config
 
-  def job_spec(self, cmdline, hash_targets, shortname=None):
+  def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -73,9 +73,12 @@ class SimpleConfig(object):
                        -- if used, all artifacts needed to run the test must
                           be listed
     """
+    actual_environ = self.environ.copy()
+    for k, v in environ.iteritems():
+      actual_environ[k] = v
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
-                          environ=self.environ,
+                          environ=actual_environ,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
 
@@ -143,7 +146,8 @@ class CLanguage(object):
 class NodeLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['tools/run_tests/run_node.sh'], None)]
+    return [config.job_spec(['tools/run_tests/run_node.sh'], None,
+                            environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
     return ['static_c']
@@ -161,7 +165,8 @@ class NodeLanguage(object):
 class PhpLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['src/php/bin/run_tests.sh'], None)]
+    return [config.job_spec(['src/php/bin/run_tests.sh'], None,
+                            environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
     return ['static_c']
@@ -184,15 +189,17 @@ class PythonLanguage(object):
 
   def test_specs(self, config, travis):
     modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']], 
-                               None, 
+                                test['module']],
+                               None,
+                               environ={'GRPC_TRACE': 'surface,batch'},
                                shortname=test['module'])
                for test in self._tests if 'module' in test]
     files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']], 
-                             None, 
+                              test['file']],
+                             None,
+                             environ={'GRPC_TRACE': 'surface,batch'},
                              shortname=test['file'])
-             for test in self._tests if 'file' in test]
+            for test in self._tests if 'file' in test]
     return files + modules
 
   def make_targets(self):
@@ -211,7 +218,8 @@ class PythonLanguage(object):
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None)]
+    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+                            environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
     return ['run_dep_checks']
@@ -232,7 +240,8 @@ class CSharpLanguage(object):
                   'Grpc.Examples.Tests',
                   'Grpc.IntegrationTesting']
     return [config.job_spec(['tools/run_tests/run_csharp.sh', assembly],
-            None, shortname=assembly)
+            None, shortname=assembly,
+            environ={'GRPC_TRACE': 'surface,batch'})
             for assembly in assemblies ]
 
   def make_targets(self):
