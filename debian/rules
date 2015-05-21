@@ -8,7 +8,7 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
 # see FEATURE AREAS in dpkg-buildflags(1)
-#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 # see ENVIRONMENT in dpkg-buildflags(1)
 # package maintainers to append CFLAGS
@@ -27,21 +27,9 @@ override_dh_auto_build:
 	make shared_c
 
 override_dh_auto_test:
-	#make test_c
-	# The tests take too damn long for every build, so temporarily disable
-	/bin/true
+	make test_c
 
 # at the present time, only the C libraries are installable because protobuf3
 # isn't available yet
 override_dh_auto_install:
 	make install_c prefix=$(CURDIR)/debian/tmp/usr
-
-# debmake generated override targets
-# This is example for Cmake (See http://bugs.debian.org/641051 )
-#override_dh_auto_configure:
-#	dh_auto_configure -- \
-#	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
-
-
-
-
