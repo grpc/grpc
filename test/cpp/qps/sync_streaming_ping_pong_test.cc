@@ -66,8 +66,8 @@ static void RunSynchronousStreamingPingPong() {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  GetReporter()->ReportQPS(result);
-  GetReporter()->ReportLatency(result);
+  GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportLatency(*result);
 }
 }  // namespace testing
 }  // namespace grpc

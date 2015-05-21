@@ -111,10 +111,10 @@ static void QpsDriver() {
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
       FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
-  GetReporter()->ReportQPS(result);
-  GetReporter()->ReportQPSPerCore(result, server_config);
-  GetReporter()->ReportLatency(result);
-  GetReporter()->ReportTimes(result);
+  GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportQPSPerCore(*result, server_config);
+  GetReporter()->ReportLatency(*result);
+  GetReporter()->ReportTimes(*result);
 }
 
 }  // namespace testing

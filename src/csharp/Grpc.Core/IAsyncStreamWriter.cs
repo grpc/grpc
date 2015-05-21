@@ -49,6 +49,6 @@ namespace Grpc.Core
         /// Writes a single asynchronously. Only one write can be pending at a time.
         /// </summary>
         /// <param name="message">the message to be written. Cannot be null.</param>
-        Task Write(T message);
+        Task WriteAsync(T message);
     }
 }

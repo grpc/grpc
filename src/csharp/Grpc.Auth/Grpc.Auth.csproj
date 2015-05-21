@@ -10,6 +10,7 @@
     <RootNamespace>Grpc.Auth</RootNamespace>
     <AssemblyName>Grpc.Auth</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <DocumentationFile>bin\$(Configuration)\Grpc.Auth.Xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

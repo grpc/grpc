@@ -48,6 +48,6 @@ namespace Grpc.Core
         /// <summary>
         /// Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
         /// </summary>
-        Task Complete();
+        Task CompleteAsync();
     }
 }
