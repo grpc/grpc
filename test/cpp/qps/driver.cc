@@ -75,13 +75,10 @@ static deque<string> get_hosts(const string& name) {
   }
 }
 
-ScenarioResult RunScenario(const ClientConfig& initial_client_config,
-                           size_t num_clients,
-                           const ServerConfig& server_config,
-                           size_t num_servers,
-                           int warmup_seconds,
-                           int benchmark_seconds,
-                           int spawn_local_worker_count) {
+std::unique_ptr<ScenarioResult> RunScenario(
+    const ClientConfig& initial_client_config, size_t num_clients,
+    const ServerConfig& server_config, size_t num_servers, int warmup_seconds,
+    int benchmark_seconds, int spawn_local_worker_count) {
   // ClientContext allocator (all are destroyed at scope exit)
   list<ClientContext> contexts;
   auto alloc_context = [&contexts]() {
@@ -205,9 +202,9 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   gpr_sleep_until(gpr_time_add(start, gpr_time_from_seconds(benchmark_seconds)));
 
   // Finish a run
-  ScenarioResult result;
-  result.client_config = result_client_config;
-  result.server_config = result_server_config;
+  std::unique_ptr<ScenarioResult> result(new ScenarioResult);
+  result->client_config = result_client_config;
+  result->server_config = result_server_config;
   gpr_log(GPR_INFO, "Finishing");
   for (auto server = servers.begin(); server != servers.end(); server++) {
     GPR_ASSERT(server->stream->Write(server_mark));
@@ -218,14 +215,14 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   for (auto server = servers.begin(); server != servers.end(); server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
-    result.server_resources.push_back(ResourceUsage{
+    result->server_resources.push_back(ResourceUsage{
         stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
   for (auto client = clients.begin(); client != clients.end(); client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
-    result.latencies.MergeProto(stats.latencies());
-    result.client_resources.push_back(ResourceUsage{
+    result->latencies.MergeProto(stats.latencies());
+    result->client_resources.push_back(ResourceUsage{
         stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
 

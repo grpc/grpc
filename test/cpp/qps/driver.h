@@ -34,6 +34,8 @@
 #ifndef TEST_QPS_DRIVER_H
 #define TEST_QPS_DRIVER_H
 
+#include <memory>
+
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 
@@ -53,13 +55,10 @@ struct ScenarioResult {
   ServerConfig server_config;
 };
 
-ScenarioResult RunScenario(const grpc::testing::ClientConfig& client_config,
-                           size_t num_clients,
-                           const grpc::testing::ServerConfig& server_config,
-                           size_t num_servers,
-                           int warmup_seconds,
-                           int benchmark_seconds,
-                           int spawn_local_worker_count);
+std::unique_ptr<ScenarioResult> RunScenario(
+    const grpc::testing::ClientConfig& client_config, size_t num_clients,
+    const grpc::testing::ServerConfig& server_config, size_t num_servers,
+    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count);
 
 }  // namespace testing
 }  // namespace grpc
