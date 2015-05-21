@@ -47,7 +47,7 @@ DEFINE_int32(server_port, 0, "Spawned server port.");
 
 static bool got_sigint = false;
 
-static void sigint_handler(int x) {got_sigint = true;}
+static void sigint_handler(int x) { got_sigint = true; }
 
 namespace grpc {
 namespace testing {
@@ -69,6 +69,6 @@ int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
 
   grpc::testing::RunServer();
-  
+
   return 0;
 }

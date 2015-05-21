@@ -100,8 +100,8 @@ int main(int argc, char** argv) {
   // client will deadlock on a timer.
   GPR_ASSERT(!(server_type == grpc::testing::SYNCHRONOUS_SERVER &&
                rpc_type == grpc::testing::STREAMING &&
-               FLAGS_server_threads <  FLAGS_client_channels *
-               FLAGS_outstanding_rpcs_per_channel));
+               FLAGS_server_threads <
+                   FLAGS_client_channels * FLAGS_outstanding_rpcs_per_channel));
 
   const auto result = RunScenario(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
