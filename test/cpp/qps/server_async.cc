@@ -99,12 +99,15 @@ class AsyncQpsServerTest : public Server {
         while (srv_cq_->Next(&got_tag, &ok)) {
           ServerRpcContext *ctx = detag(got_tag);
           // The tag is a pointer to an RPC context to invoke
-          if (ctx->RunNextState(ok) == false) {
+          bool still_going = ctx->RunNextState(ok);
+          std::lock_guard<std::mutex> g(shutdown_mutex_);
+          if (!shutdown_) {
             // this RPC context is done, so refresh it
-            std::lock_guard<std::mutex> g(shutdown_mutex_);
-            if (!shutdown_) {
+            if (!still_going) {
               ctx->Reset();
             }
+          } else {
+            return;
           }
         }
         return;
@@ -116,11 +119,14 @@ class AsyncQpsServerTest : public Server {
     {
       std::lock_guard<std::mutex> g(shutdown_mutex_);
       shutdown_ = true;
-      srv_cq_->Shutdown();
     }
     for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
     }
+    srv_cq_->Shutdown();
+    bool ok;
+    void *got_tag;
+    while (srv_cq_->Next(&got_tag, &ok));
     while (!contexts_.empty()) {
       delete contexts_.front();
       contexts_.pop_front();
