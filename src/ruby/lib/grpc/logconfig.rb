@@ -29,7 +29,10 @@
 
 require 'logging'
 
-include Logging.globally  # logger is accessible everywhere
+# GRPC contains the General RPC module.
+module GRPC
+  extend Logging.globally
+end
 
 Logging.logger.root.appenders = Logging.appenders.stdout
 Logging.logger.root.level = :info
