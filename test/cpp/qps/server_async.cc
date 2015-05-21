@@ -126,7 +126,8 @@ class AsyncQpsServerTest : public Server {
     srv_cq_->Shutdown();
     bool ok;
     void *got_tag;
-    while (srv_cq_->Next(&got_tag, &ok));
+    while (srv_cq_->Next(&got_tag, &ok))
+      ;
     while (!contexts_.empty()) {
       delete contexts_.front();
       contexts_.pop_front();
