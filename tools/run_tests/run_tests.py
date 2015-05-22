@@ -282,7 +282,7 @@ class Build(object):
     return []
 
   def make_targets(self):
-    return ['static', 'shared']
+    return ['static']
 
   def build_steps(self):
     return []
