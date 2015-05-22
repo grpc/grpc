@@ -44,10 +44,13 @@ ENV PATH $PATH:$ANDROID_HOME/platform-tools
 ENV HOME /root
 
 # Update sdk for android 5.1 (API level 22)
-RUN echo y | android update sdk --all --filter platform-tools,build-tools-22.0.1,sys-img-armeabi-v7a-android-22,android-22,extra-android-m2repository,extra-google-m2repository --no-ui --force
+RUN echo y | android update sdk --all --filter platform-tools,build-tools-22.0.1,sys-img-armeabi-v7a-addon-google_apis-google-22,sys-img-armeabi-v7a-addon-google_apis-google-21,sys-img-armeabi-v7a-android-19,addon-google_apis-google-22,addon-google_apis-google-21,addon-google_apis-google-19,extra-android-m2repository,extra-google-m2repository --no-ui --force
+
 
 # Create an AVD with API level 22
-RUN echo no | android create avd --force -n avd-api-22 -t android-22
+RUN echo no | android create avd --force -n avd-google-api-22 -t "Google Inc.:Google APIs:22" --abi google_apis/armeabi-v7a
+RUN echo no | android create avd --force -n avd-google-api-21 -t "Google Inc.:Google APIs:21" --abi google_apis/armeabi-v7a
+RUN echo no | android create avd --force -n avd-google-api-19 -t "Google Inc.:Google APIs:19" --abi default/armeabi-v7a
 
 # Pull gRPC Java and trigger download of needed Maven and Gradle artifacts.
 RUN git clone --depth 1 https://github.com/grpc/grpc-java.git /var/local/git/grpc-java && \
