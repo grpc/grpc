@@ -57,7 +57,7 @@ class SimpleConfig(object):
     if environ is None:
       environ = {}
     self.build_config = config
-    self.maxjobs = 100 * multiprocessing.cpu_count()
+    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
