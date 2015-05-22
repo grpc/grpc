@@ -211,10 +211,26 @@ prefix ?= /usr/local
 PROTOC = protoc
 DTRACE = dtrace
 CONFIG ?= opt
+ifeq ($(TARGET_CC),)
 CC = $(CC_$(CONFIG))
+else
+CC = $(TARGET_CC)
+endif
+ifeq ($(TARGET_CXX),)
 CXX = $(CXX_$(CONFIG))
+else
+CXX = $(TARGET_CXX)
+endif
+ifeq ($(TARGET_LD),)
 LD = $(LD_$(CONFIG))
+else
+LD = $(TARGET_LD)
+endif
+ifeq ($(TARGET_LDXX),)
 LDXX = $(LDXX_$(CONFIG))
+else
+LDXX = $(TARGET_LDXX)
+endif
 AR = ar
 ifeq ($(SYSTEM),Linux)
 STRIP = strip --strip-unneeded
