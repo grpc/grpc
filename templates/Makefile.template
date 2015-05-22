@@ -767,9 +767,20 @@ buildtests_cxx: privatelibs_cxx\
 
 test: test_c test_cxx
 
+flaky_test: flaky_test_c flaky_test_cxx
+
 test_c: buildtests_c
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++':
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+flaky_test_c: buildtests_c
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -778,7 +789,16 @@ test_c: buildtests_c
 
 test_cxx: buildtests_cxx
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++':
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+flaky_test_cxx: buildtests_cxx
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
