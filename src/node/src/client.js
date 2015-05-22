@@ -126,8 +126,6 @@ function _read(size) {
       return;
     }
     var data = event.read;
-    var deserialized = self.deserialize(data);
-    console.log(deserialized);
     if (self.push(self.deserialize(data)) && data !== null) {
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
