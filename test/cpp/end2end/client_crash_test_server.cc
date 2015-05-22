@@ -31,44 +31,63 @@
  *
  */
 
-#include <sys/signal.h>
-
-#include <chrono>
-#include <thread>
-
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
+#include <iostream>
+#include <memory>
+#include <string>
 #include <gflags/gflags.h>
 
-#include "qps_worker.h"
-#include "test/cpp/util/test_config.h"
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
+#include <grpc++/status.h>
+#include "test/cpp/util/echo.grpc.pb.h"
 
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
+DEFINE_string(address, "", "Address to bind to");
 
-static bool got_sigint = false;
+using grpc::cpp::test::util::EchoRequest;
+using grpc::cpp::test::util::EchoResponse;
 
-static void sigint_handler(int x) { got_sigint = true; }
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 namespace grpc {
 namespace testing {
 
-static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
-
-  while (!got_sigint) {
-    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
+class ServiceImpl GRPC_FINAL : public ::grpc::cpp::test::util::TestService::Service {
+  Status BidiStream(ServerContext* context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
+      GRPC_OVERRIDE {
+    EchoRequest request;
+    EchoResponse response;
+    while (stream->Read(&request)) {
+      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      response.set_message(request.message());
+      stream->Write(response);
+    }
+    return Status::OK;
   }
+};
+
+void RunServer() {
+  ServiceImpl service;
+
+  ServerBuilder builder;
+  builder.AddListeningPort(FLAGS_address, grpc::InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::cout << "Server listening on " << FLAGS_address << std::endl;
+  server->Wait();
+}
+}
 }
 
-}  // namespace testing
-}  // namespace grpc
-
 int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
-
+  ParseCommandLineFlags(&argc, &argv, true);
   grpc::testing::RunServer();
 
   return 0;

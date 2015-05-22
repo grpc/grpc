@@ -105,7 +105,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!called_init) {
       char args_buf[100];
       strcpy(args_buf, "some-benchmark");
-      char *args[] = {args_buf};
+      char* args[] = {args_buf};
       grpc_test_init(1, args);
       called_init = true;
     }
@@ -211,7 +211,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Wait some time
   gpr_log(GPR_INFO, "Running");
-  gpr_sleep_until(gpr_time_add(start, gpr_time_from_seconds(benchmark_seconds)));
+  gpr_sleep_until(
+      gpr_time_add(start, gpr_time_from_seconds(benchmark_seconds)));
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
