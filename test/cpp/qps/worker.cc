@@ -37,6 +37,7 @@
 #include <thread>
 
 #include <grpc/grpc.h>
+#include <grpc/support/time.h>
 #include <gflags/gflags.h>
 
 #include "qps_worker.h"
@@ -56,7 +57,7 @@ static void RunServer() {
   QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
 
   while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
   }
 }
 
