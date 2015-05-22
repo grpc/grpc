@@ -80,7 +80,11 @@ function _write(chunk, encoding, callback) {
   var batch = {};
   batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
   this.call.startBatch(batch, function(err, event) {
-    callback(err);
+    if (err) {
+      // Something has gone wrong. Stop writing by failing to call callback
+      return;
+    }
+    callback();
   });
 }
 
