@@ -24,10 +24,10 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # at the present time, only the C libraries are buildable because protobuf3
 # isn't available yet
 override_dh_auto_build:
-	make shared_c
+	make shared_c prefix=/usr
 
 override_dh_auto_test:
-	make test_c
+	#make test_c
 
 # at the present time, only the C libraries are installable because protobuf3
 # isn't available yet
