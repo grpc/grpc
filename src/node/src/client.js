@@ -81,7 +81,7 @@ function _write(chunk, encoding, callback) {
   batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
   this.call.startBatch(batch, function(err, event) {
     if (err) {
-      // Something has gone wrong. Stop writing by failing to call callback
+      callback(err);
       return;
     }
     callback();
@@ -125,11 +125,9 @@ function _read(size) {
       self.finished = true;
       return;
     }
-    if (self.finished) {
-      self.push(null);
-      return;
-    }
     var data = event.read;
+    var deserialized = self.deserialize(data);
+    console.log(deserialized);
     if (self.push(self.deserialize(data)) && data !== null) {
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
