@@ -41,7 +41,7 @@ from grpc.framework.base import null
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import logging_pool
 
-_THREAD_POOL_SIZE = 100
+_THREAD_POOL_SIZE = 10
 
 _INVOCATION_EVENT_KINDS = (
     _low.Event.Kind.METADATA_ACCEPTED,
