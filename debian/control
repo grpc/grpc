@@ -1,0 +1,27 @@
+Source: grpc
+Priority: optional
+Maintainer: Andrew Pollock <apollock@debian.org>
+Uploaders: "László Böszörményi (GCS)" <gcs@debian.org>
+Build-Depends: debhelper (>= 9), zlib1g-dev, libssl-dev, libprotobuf-dev, protobuf-compiler, libgflags-dev, libgtest-dev, libgoogle-perftools-dev
+Standards-Version: 3.9.6
+Section: libs
+Homepage: http://www.grpc.io/
+Vcs-Git: https://github.com/grpc/grpc.git
+Vcs-Browser: https://github.com/grpc/grpc
+
+Package: libgrpc-dev
+Section: libdevel
+Architecture: any
+Depends: libgrpc0 (= ${binary:Version}), ${misc:Depends}
+Description: high performance general RPC framework
+ A modern, open source remote procedure call (RPC) framework that can
+ run anywhere. It enables client and server applications to communicate
+ transparently, and makes it easier to build connected systems.
+
+Package: libgrpc0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: high performance general RPC framework
+ A modern, open source remote procedure call (RPC) framework that can
+ run anywhere. It enables client and server applications to communicate
+ transparently, and makes it easier to build connected systems.

@@ -1,0 +1,5 @@
+grpc (0.6-1) unstable; urgency=low
+
+  * Initial release (Closes: #786375)
+
+ -- Andrew Pollock <apollock@debian.org>  Thu, 07 May 2015 13:28:11 +1000

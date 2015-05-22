@@ -1,0 +1,2 @@
+usr/lib
+usr/include
