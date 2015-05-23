@@ -35,7 +35,7 @@ from grpc.framework.face.testing import test_case
 from grpc.framework.foundation import logging_pool
 
 _TIMEOUT = 3
-_MAXIMUM_POOL_SIZE = 100
+_MAXIMUM_POOL_SIZE = 10
 
 
 class FaceTestCase(test_case.FaceTestCase):
