@@ -40,6 +40,7 @@ import re
 import sys
 import time
 import platform
+import subprocess
 
 import jobset
 import watch_dirs
@@ -350,6 +351,7 @@ argp.add_argument('-l', '--language',
                   choices=sorted(_LANGUAGES.keys()),
                   nargs='+',
                   default=sorted(_LANGUAGES.keys()))
+argp.add_argument('-a', '--antagonists', default=0, type=int)
 args = argp.parse_args()
 
 # grab config
@@ -444,14 +446,21 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
                     newline_on_success=newline_on_success, travis=travis):
     return 1
 
-  # run all the tests
-  all_runs = itertools.chain.from_iterable(
-      itertools.repeat(one_run, runs_per_test))
-  if not jobset.run(all_runs, check_cancelled,
-                    newline_on_success=newline_on_success, travis=travis,
-                    maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
-                    cache=cache):
-    return 2
+  # start antagonists
+  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py']) 
+                 for _ in range(0, args.antagonists)]
+  try:
+    # run all the tests
+    all_runs = itertools.chain.from_iterable(
+        itertools.repeat(one_run, runs_per_test))
+    if not jobset.run(all_runs, check_cancelled,
+                      newline_on_success=newline_on_success, travis=travis,
+                      maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
+                      cache=cache):
+      return 2
+  finally:
+    for antagonist in antagonists:
+      antagonist.kill()
 
   return 0
 
