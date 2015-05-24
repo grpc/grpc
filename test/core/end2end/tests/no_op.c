@@ -96,7 +96,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 }
 
 static void test_no_op(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "no-op", NULL, NULL);
   end_test(&f);
   config.tear_down_data(&f);
 }

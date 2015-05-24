@@ -100,7 +100,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 /* Client pings and server pongs. Repeat messages rounds before finishing. */
 static void test_pingpong_streaming(grpc_end2end_test_config config,
                                     int messages) {
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_pingpong_streaming", NULL, NULL);
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();

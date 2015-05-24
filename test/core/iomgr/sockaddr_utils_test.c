@@ -75,7 +75,7 @@ static void test_sockaddr_is_v4mapped(void) {
   struct sockaddr_in output4;
   struct sockaddr_in expect4;
 
-  gpr_log(GPR_INFO, "%s", __FUNCTION__);
+  gpr_log(GPR_INFO, "%s", "test_sockaddr_is_v4mapped");
 
   /* v4mapped input should succeed. */
   input6 = make_addr6(kMapped, sizeof(kMapped));
@@ -106,7 +106,7 @@ static void test_sockaddr_to_v4mapped(void) {
   struct sockaddr_in6 output6;
   struct sockaddr_in6 expect6;
 
-  gpr_log(GPR_INFO, "%s", __FUNCTION__);
+  gpr_log(GPR_INFO, "%s", "test_sockaddr_to_v4mapped");
 
   /* IPv4 input should succeed. */
   input4 = make_addr4(kIPv4, sizeof(kIPv4));
@@ -135,7 +135,7 @@ static void test_sockaddr_is_wildcard(void) {
   struct sockaddr dummy;
   int port;
 
-  gpr_log(GPR_INFO, "%s", __FUNCTION__);
+  gpr_log(GPR_INFO, "%s", "test_sockaddr_is_wildcard");
 
   /* Generate wildcards. */
   grpc_sockaddr_make_wildcards(555, &wild4, &wild6);
@@ -192,7 +192,7 @@ static void test_sockaddr_to_string(void) {
   struct sockaddr_in6 input6;
   struct sockaddr dummy;
 
-  gpr_log(GPR_INFO, "%s", __FUNCTION__);
+  gpr_log(GPR_INFO, "%s", "test_sockaddr_to_string");
 
   errno = 0x7EADBEEF;
 

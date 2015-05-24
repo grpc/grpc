@@ -201,7 +201,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config, int 
   client_args.num_args = 1;
   client_args.args = &client_arg;
 
-  f = begin_test(config, __FUNCTION__, &client_args, NULL);
+  f = begin_test(config, "test_invoke_10_simple_requests", &client_args, NULL);
   for (i = 0; i < 10; i++) {
     simple_request_body(f);
     gpr_log(GPR_INFO, "Passed simple request %d", i);

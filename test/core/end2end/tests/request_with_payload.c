@@ -105,7 +105,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   grpc_byte_buffer *request_payload =
       grpc_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_invoke_request_with_payload", NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
   grpc_op ops[6];

@@ -42,7 +42,7 @@
 #include "src/core/support/string.h"
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static const char prefix[] = "file_test";
 
@@ -53,7 +53,7 @@ static void test_load_empty_file(void) {
   int success;
   char *tmp_name;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_load_empty_file");
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
   GPR_ASSERT(tmp_name != NULL);
@@ -81,7 +81,7 @@ static void test_load_failure(void) {
   int success;
   char *tmp_name;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_load_failure");
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
   GPR_ASSERT(tmp_name != NULL);
@@ -104,7 +104,7 @@ static void test_load_small_file(void) {
   char *tmp_name;
   const char *blah = "blah";
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_load_small_file");
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
   GPR_ASSERT(tmp_name != NULL);
@@ -138,7 +138,7 @@ static void test_load_big_file(void) {
   unsigned char *current;
   size_t i;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_load_big_file");
 
   for (i = 0; i < sizeof(buffer); i++) {
     buffer[i] = 42;
