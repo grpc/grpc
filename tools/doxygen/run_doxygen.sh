@@ -34,7 +34,8 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-for i in tools/doxygen/Doxyfile.*
+for i in core c++
 do
-	doxygen $i
+	mkdir -p doc/ref/$i
+	doxygen tools/doxygen/Doxyfile.$i
 done
