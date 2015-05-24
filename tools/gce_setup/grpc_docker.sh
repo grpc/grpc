@@ -873,7 +873,7 @@ grpc_launch_servers() {
 
 # Launch servers on windows.
 grpc_launch_windows_servers() {
-   local host='jtattermusch-interop-windows2'
+   local host='grpc-windows-interop1'
    local killcmd="ps -e | grep Grpc.IntegrationTesting | awk '{print \\\$1}' | xargs kill -9"
    echo "killing all servers and clients on $host with command $killcmd"
    gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh $host \"$killcmd\""

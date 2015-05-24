@@ -40,6 +40,7 @@ import re
 import sys
 import time
 import platform
+import subprocess
 
 import jobset
 import watch_dirs
@@ -61,7 +62,7 @@ class SimpleConfig(object):
     self.environ = environ
     self.environ['CONFIG'] = config
 
-  def job_spec(self, cmdline, hash_targets, shortname=None):
+  def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -73,9 +74,12 @@ class SimpleConfig(object):
                        -- if used, all artifacts needed to run the test must
                           be listed
     """
+    actual_environ = self.environ.copy()
+    for k, v in environ.iteritems():
+      actual_environ[k] = v
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
-                          environ=self.environ,
+                          environ=actual_environ,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
 
@@ -143,7 +147,8 @@ class CLanguage(object):
 class NodeLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['tools/run_tests/run_node.sh'], None)]
+    return [config.job_spec(['tools/run_tests/run_node.sh'], None,
+                            environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
     return ['static_c']
@@ -161,7 +166,8 @@ class NodeLanguage(object):
 class PhpLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['src/php/bin/run_tests.sh'], None)]
+    return [config.job_spec(['src/php/bin/run_tests.sh'], None,
+                            environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
     return ['static_c']
@@ -184,15 +190,17 @@ class PythonLanguage(object):
 
   def test_specs(self, config, travis):
     modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']], 
-                               None, 
+                                test['module']],
+                               None,
+                               environ={'GRPC_TRACE': 'surface,batch'},
                                shortname=test['module'])
                for test in self._tests if 'module' in test]
     files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']], 
-                             None, 
+                              test['file']],
+                             None,
+                             environ={'GRPC_TRACE': 'surface,batch'},
                              shortname=test['file'])
-             for test in self._tests if 'file' in test]
+            for test in self._tests if 'file' in test]
     return files + modules
 
   def make_targets(self):
@@ -211,7 +219,8 @@ class PythonLanguage(object):
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None)]
+    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+                            environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
     return ['run_dep_checks']
@@ -232,7 +241,8 @@ class CSharpLanguage(object):
                   'Grpc.Examples.Tests',
                   'Grpc.IntegrationTesting']
     return [config.job_spec(['tools/run_tests/run_csharp.sh', assembly],
-            None, shortname=assembly)
+            None, shortname=assembly,
+            environ={'GRPC_TRACE': 'surface,batch'})
             for assembly in assemblies ]
 
   def make_targets(self):
@@ -341,6 +351,7 @@ argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(_LANGUAGES.keys()),
                   nargs='+',
                   default=['all'])
+argp.add_argument('-a', '--antagonists', default=0, type=int)
 args = argp.parse_args()
 
 # grab config
@@ -438,14 +449,21 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
                     newline_on_success=newline_on_success, travis=travis):
     return 1
 
-  # run all the tests
-  all_runs = itertools.chain.from_iterable(
-      itertools.repeat(one_run, runs_per_test))
-  if not jobset.run(all_runs, check_cancelled,
-                    newline_on_success=newline_on_success, travis=travis,
-                    maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
-                    cache=cache):
-    return 2
+  # start antagonists
+  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py']) 
+                 for _ in range(0, args.antagonists)]
+  try:
+    # run all the tests
+    all_runs = itertools.chain.from_iterable(
+        itertools.repeat(one_run, runs_per_test))
+    if not jobset.run(all_runs, check_cancelled,
+                      newline_on_success=newline_on_success, travis=travis,
+                      maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
+                      cache=cache):
+      return 2
+  finally:
+    for antagonist in antagonists:
+      antagonist.kill()
 
   return 0
 

@@ -654,7 +654,7 @@ static int parse_stream_weight(grpc_chttp2_hpack_parser *p,
     return 1;
   }
 
-  return parse_begin(p, cur + 1, end);
+  return p->after_prioritization(p, cur + 1, end);
 }
 
 static int parse_stream_dep3(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
@@ -1349,7 +1349,7 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p,
 }
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p) {
-  GPR_ASSERT(p->state == parse_begin);
+  p->after_prioritization = p->state;
   p->state = parse_stream_dep0;
 }
 

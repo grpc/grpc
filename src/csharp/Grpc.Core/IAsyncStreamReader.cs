@@ -43,13 +43,8 @@ namespace Grpc.Core
     /// A stream of messages to be read.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IAsyncStreamReader<T>
-        where T : class
+    public interface IAsyncStreamReader<TResponse> : IAsyncEnumerator<TResponse>
     {
-        /// <summary>
-        /// Reads a single message. Returns null if the last message was already read.
-        /// A following read can only be started when the previous one finishes.
-        /// </summary>
-        Task<T> ReadNext();
+        // TODO(jtattermusch): consider just using IAsyncEnumerator instead of this interface.
     }
 }

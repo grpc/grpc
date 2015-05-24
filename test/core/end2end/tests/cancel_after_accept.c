@@ -102,7 +102,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_op *op;
   grpc_call *c;
   grpc_call *s;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "cancel_after_accept", NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_metadata_array initial_metadata_recv;

@@ -201,6 +201,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
+
+  grpc_call_details_destroy(&call_details);
+  gpr_free(details);
 }
 
 int main(int argc, char **argv) {

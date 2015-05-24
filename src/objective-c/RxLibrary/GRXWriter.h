@@ -50,7 +50,7 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
   // The writer is temporarily paused, and won't send any more values to the
   // writeable unless its state is set back to Started. The writer might still
   // transition to the Finished state at any moment, and is allowed to send
-  // didFinishWithError: to its writeable.
+  // writesFinishedWithError: to its writeable.
   //
   // Not all implementations of writer have to support pausing, and thus
   // trying to set an writer's state to this value might have no effect.
@@ -59,7 +59,7 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
   // The writer has released its writeable and won't interact with it anymore.
   //
   // One seldomly wants to set an writer's state to this value, as its
-  // writeable isn't notified with a didFinishWithError: message. Instead, sending
+  // writeable isn't notified with a writesFinishedWithError: message. Instead, sending
   // finishWithError: to the writer will make it notify the writeable and then
   // transition to this state.
   GRXWriterStateFinished
@@ -105,7 +105,7 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
 // This method might only be called on writers in the NotStarted state.
 - (void)startWithWriteable:(id<GRXWriteable>)writeable;
 
-// Send didFinishWithError:errorOrNil immediately to the writeable, and don't send
+// Send writesFinishedWithError:errorOrNil immediately to the writeable, and don't send
 // any more messages to it.
 //
 // This method might only be called on writers in the Started or Paused

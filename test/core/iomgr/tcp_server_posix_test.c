@@ -43,7 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
 static grpc_pollset g_pollset;
 static int g_nconnects = 0;
@@ -65,7 +65,7 @@ static void test_no_op(void) {
 
 static void test_no_op_with_start(void) {
   grpc_tcp_server *s = grpc_tcp_server_create();
-  LOG_TEST();
+  LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_destroy(s, NULL, NULL);
 }
@@ -73,7 +73,7 @@ static void test_no_op_with_start(void) {
 static void test_no_op_with_port(void) {
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create();
-  LOG_TEST();
+  LOG_TEST("test_no_op_with_port");
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -86,7 +86,7 @@ static void test_no_op_with_port(void) {
 static void test_no_op_with_port_and_start(void) {
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create();
-  LOG_TEST();
+  LOG_TEST("test_no_op_with_port_and_start");
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -107,7 +107,7 @@ static void test_connect(int n) {
   gpr_timespec deadline;
   grpc_pollset *pollsets[1];
   int i;
-  LOG_TEST();
+  LOG_TEST("test_connect");
   gpr_log(GPR_INFO, "clients=%d", n);
 
   memset(&addr, 0, sizeof(addr));

@@ -161,6 +161,18 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+
+  cq_expect_completion(v_server, tag(102), 1);
+  cq_verify(v_server);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
   op++;
@@ -169,13 +181,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
   cq_expect_completion(cqv, tag(102), 1);
   cq_expect_completion(cqv, tag(1), 1);
@@ -210,7 +216,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
    payload and status. */
 static void test_invoke_request_response_with_payload(
     grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_invoke_request_response_with_payload", NULL, NULL);
   request_response_with_payload(f);
   end_test(&f);
   config.tear_down_data(&f);
@@ -219,7 +225,7 @@ static void test_invoke_request_response_with_payload(
 static void test_invoke_10_request_response_with_payload(
     grpc_end2end_test_config config) {
   int i;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_invoke_10_request_response_with_payload", NULL, NULL);
   for (i = 0; i < 10; i++) {
     request_response_with_payload(f);
   }

@@ -57,7 +57,7 @@ struct gpr_subprocess {
 
 const char *gpr_subprocess_binary_extension() { return ""; }
 
-gpr_subprocess *gpr_subprocess_create(int argc, char **argv) {
+gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
   gpr_subprocess *r;
   int pid;
   char **exec_args;
@@ -92,7 +92,11 @@ void gpr_subprocess_destroy(gpr_subprocess *p) {
 
 int gpr_subprocess_join(gpr_subprocess *p) {
   int status;
+retry:
   if (waitpid(p->pid, &status, 0) == -1) {
+    if (errno == EINTR) {
+      goto retry;
+    }
     gpr_log(GPR_ERROR, "waitpid failed: %s", strerror(errno));
     return -1;
   }

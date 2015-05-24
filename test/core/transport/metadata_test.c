@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 /* a large number */
 #define MANY 10000
@@ -49,7 +49,7 @@
 static void test_no_op(void) {
   grpc_mdctx *ctx;
 
-  LOG_TEST();
+  LOG_TEST("test_no_op");
 
   ctx = grpc_mdctx_create();
   grpc_mdctx_unref(ctx);
@@ -59,7 +59,7 @@ static void test_create_string(void) {
   grpc_mdctx *ctx;
   grpc_mdstr *s1, *s2, *s3;
 
-  LOG_TEST();
+  LOG_TEST("test_create_string");
 
   ctx = grpc_mdctx_create();
   s1 = grpc_mdstr_from_string(ctx, "hello");
@@ -79,7 +79,7 @@ static void test_create_metadata(void) {
   grpc_mdctx *ctx;
   grpc_mdelem *m1, *m2, *m3;
 
-  LOG_TEST();
+  LOG_TEST("test_create_metadata");
 
   ctx = grpc_mdctx_create();
   m1 = grpc_mdelem_from_strings(ctx, "a", "b");
@@ -104,7 +104,7 @@ static void test_create_many_ephemeral_metadata(void) {
   long i;
   size_t mdtab_capacity_before;
 
-  LOG_TEST();
+  LOG_TEST("test_create_many_ephemeral_metadata");
 
   ctx = grpc_mdctx_create();
   mdtab_capacity_before = grpc_mdctx_get_mdtab_capacity_test_only(ctx);
@@ -126,7 +126,7 @@ static void test_create_many_persistant_metadata(void) {
   grpc_mdelem **created = gpr_malloc(sizeof(grpc_mdelem *) * MANY);
   grpc_mdelem *md;
 
-  LOG_TEST();
+  LOG_TEST("test_create_many_persistant_metadata");
 
   ctx = grpc_mdctx_create();
   /* add phase */
@@ -153,7 +153,7 @@ static void test_create_many_persistant_metadata(void) {
 static void test_spin_creating_the_same_thing(void) {
   grpc_mdctx *ctx;
 
-  LOG_TEST();
+  LOG_TEST("test_spin_creating_the_same_thing");
 
   ctx = grpc_mdctx_create();
   GPR_ASSERT(grpc_mdctx_get_mdtab_count_test_only(ctx) == 0);
@@ -183,7 +183,7 @@ static void test_things_stick_around(void) {
   int *shuf = gpr_malloc(sizeof(int) * nstrs);
   grpc_mdstr *test;
 
-  LOG_TEST();
+  LOG_TEST("test_things_stick_around");
 
   ctx = grpc_mdctx_create();
 
@@ -229,7 +229,7 @@ static void test_slices_work(void) {
   grpc_mdstr *str;
   gpr_slice slice;
 
-  LOG_TEST();
+  LOG_TEST("test_slices_work");
 
   ctx = grpc_mdctx_create();
 
@@ -254,7 +254,7 @@ static void test_base64_and_huffman_works(void) {
   gpr_slice slice1;
   gpr_slice slice2;
 
-  LOG_TEST();
+  LOG_TEST("test_base64_and_huffman_works");
 
   ctx = grpc_mdctx_create();
   str = grpc_mdstr_from_string(ctx, "abcdefg");

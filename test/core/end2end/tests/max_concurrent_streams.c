@@ -216,7 +216,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  f = begin_test(config, __FUNCTION__, NULL, &server_args);
+  f = begin_test(config, "test_max_concurrent_streams", NULL, &server_args);
   cqv = cq_verifier_create(f.cq);
 
   grpc_metadata_array_init(&request_metadata_recv);
