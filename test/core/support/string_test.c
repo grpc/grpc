@@ -42,13 +42,13 @@
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 static void test_strdup(void) {
   static const char *src1 = "hello world";
   char *dst1;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_strdup");
 
   dst1 = gpr_strdup(src1);
   GPR_ASSERT(0 == strcmp(src1, dst1));
@@ -65,7 +65,7 @@ static void expect_hexdump(const char *buf, size_t len, gpr_uint32 flags,
 }
 
 static void test_hexdump(void) {
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_hexdump");
   expect_hexdump("\x01", 1, 0, "01");
   expect_hexdump("\x01", 1, GPR_HEXDUMP_PLAINTEXT, "01 '.'");
   expect_hexdump("\x01\x02", 2, 0, "01 02");
@@ -86,7 +86,7 @@ static void test_pu32_succeed(const char *s, gpr_uint32 want) {
 }
 
 static void test_parse_uint32(void) {
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_parse_uint32");
 
   test_pu32_fail("-1");
   test_pu32_fail("a");
@@ -123,7 +123,7 @@ static void test_asprintf(void) {
   char *buf;
   int i, j;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_asprintf");
 
   /* Print an empty string. */
   GPR_ASSERT(gpr_asprintf(&buf, "") == 0);

@@ -427,6 +427,8 @@ static void server_on_recv(void *ptr, int success) {
         grpc_iomgr_add_callback(kill_zombie, elem);
       } else if (calld->state == PENDING) {
         call_list_remove(calld, PENDING_START);
+        calld->state = ZOMBIED;
+        grpc_iomgr_add_callback(kill_zombie, elem);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -663,7 +665,7 @@ void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host) {
   registered_method *m;
   if (!method) {
-    gpr_log(GPR_ERROR, "%s method string cannot be NULL", __FUNCTION__);
+    gpr_log(GPR_ERROR, "grpc_server_register_method method string cannot be NULL");
     return NULL;
   }
   for (m = server->registered_methods; m; m = m->next) {

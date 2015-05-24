@@ -64,8 +64,8 @@ static void RunQPS() {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  ReportQPSPerCore(result, server_config);
-  ReportLatency(result);
+  ReportQPSPerCore(*result, server_config);
+  ReportLatency(*result);
 }
 
 }  // namespace testing

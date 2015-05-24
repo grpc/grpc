@@ -286,20 +286,24 @@ describe('end-to-end', function() {
         assert.ifError(err);
         assert(response['send metadata']);
         assert.strictEqual(response.read.toString(), requests[0]);
-        var end_batch = {};
-        end_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
-        end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
-          'metadata': {},
-          'code': grpc.status.OK,
-          'details': status_text
-        };
-        end_batch[grpc.opType.RECV_MESSAGE] = true;
-        server_call.startBatch(end_batch, function(err, response) {
+        var snd_batch = {};
+        snd_batch[grpc.opType.RECV_MESSAGE] = true;
+        server_call.startBatch(snd_batch, function(err, response) {
           assert.ifError(err);
-          assert(response['send status']);
-          assert(!response.cancelled);
           assert.strictEqual(response.read.toString(), requests[1]);
-          done();
+          var end_batch = {};
+          end_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
+          end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+            'metadata': {},
+            'code': grpc.status.OK,
+            'details': status_text
+          };
+          server_call.startBatch(end_batch, function(err, response) {
+            assert.ifError(err);
+            assert(response['send status']);
+            assert(!response.cancelled);
+            done();
+          });
         });
       });
     });

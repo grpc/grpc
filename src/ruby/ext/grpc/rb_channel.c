@@ -33,7 +33,7 @@
 
 #include "rb_channel.h"
 
-#include <ruby.h>
+#include <ruby/ruby.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

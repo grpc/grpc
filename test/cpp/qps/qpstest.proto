@@ -102,6 +102,7 @@ message ClientConfig {
   // only for async client:
   optional int32 async_client_threads = 7;
   optional RpcType rpc_type = 8 [default=UNARY];
+  optional string host = 9;
 }
 
 // Request current stats
@@ -129,6 +130,7 @@ message ServerConfig {
   required ServerType server_type = 1;
   optional int32 threads = 2 [default=1];
   optional bool enable_ssl = 3 [default=false];
+  optional string host = 4;
 }
 
 message ServerArgs {

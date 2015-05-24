@@ -34,13 +34,25 @@ INCLUDEDIR = RbConfig::CONFIG['includedir']
 
 if ENV.key? 'GRPC_ROOT'
   GRPC_ROOT = ENV['GRPC_ROOT']
-  if ENV.key? 'GRPC_LIB_DIR'
-    GRPC_LIB_DIR = ENV['GRPC_LIB_DIR']
-  else
-    GRPC_LIB_DIR = 'libs/opt'
-  end
 else
-  GRPC_ROOT = nil
+  grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
+  if File.exist?(File.join(grpc_root, 'include/grpc/grpc.h'))
+    GRPC_ROOT = grpc_root
+  else
+    GRPC_ROOT = nil
+  end
+end
+
+if ENV.key? 'CONFIG'
+  GRPC_CONFIG = ENV['CONFIG']
+else
+  GRPC_CONFIG = 'opt'
+end
+
+if (ENV.key? 'GRPC_LIB_DIR') && (!GRPC_ROOT.nil?)
+  GRPC_LIB_DIR = File.join(GRPC_ROOT, ENV['GRPC_LIB_DIR'])
+else
+  GRPC_LIB_DIR = File.join(File.join(GRPC_ROOT, 'libs'), GRPC_CONFIG)
 end
 
 HEADER_DIRS = [
@@ -67,7 +79,10 @@ LIB_DIRS = [
 
 unless GRPC_ROOT.nil?
   HEADER_DIRS.unshift File.join(GRPC_ROOT, 'include')
-  LIB_DIRS.unshift File.join(GRPC_ROOT, GRPC_LIB_DIR)
+  LIB_DIRS.unshift GRPC_LIB_DIR
+  unless File.exist?(File.join(GRPC_LIB_DIR, 'libgrpc.a'))
+    system("make -C #{GRPC_ROOT} static_c CONFIG=#{GRPC_CONFIG}")
+  end
 end
 
 def crash(msg)

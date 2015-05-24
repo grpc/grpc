@@ -44,11 +44,10 @@ namespace Grpc.Core
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public interface IClientStreamWriter<T> : IAsyncStreamWriter<T>
-        where T : class
     {
         /// <summary>
-        /// Closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
+        /// Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
         /// </summary>
-        Task Close();
+        Task CompleteAsync();
     }
 }

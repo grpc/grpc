@@ -67,7 +67,6 @@ static grpc_httpcli_post_override g_post_override = NULL;
 static void next_address(internal_request *req);
 
 static void finish(internal_request *req, int success) {
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   req->on_response(req->user_data, success ? &req->parser.r : NULL);
   grpc_httpcli_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
@@ -85,8 +84,6 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
                     grpc_endpoint_cb_status status) {
   internal_request *req = user_data;
   size_t i;
-
-  gpr_log(GPR_DEBUG, "%s nslices=%d status=%d", __FUNCTION__, nslices, status);
 
   for (i = 0; i < nslices; i++) {
     if (GPR_SLICE_LENGTH(slices[i])) {
@@ -120,13 +117,11 @@ done:
 }
 
 static void on_written(internal_request *req) {
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   grpc_endpoint_notify_on_read(req->ep, on_read, req);
 }
 
 static void done_write(void *arg, grpc_endpoint_cb_status status) {
   internal_request *req = arg;
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   switch (status) {
     case GRPC_ENDPOINT_CB_OK:
       on_written(req);
@@ -141,7 +136,6 @@ static void done_write(void *arg, grpc_endpoint_cb_status status) {
 
 static void start_write(internal_request *req) {
   gpr_slice_ref(req->request_text);
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   switch (
       grpc_endpoint_write(req->ep, &req->request_text, 1, done_write, req)) {
     case GRPC_ENDPOINT_WRITE_DONE:
@@ -159,7 +153,6 @@ static void on_secure_transport_setup_done(void *rp,
                                            grpc_security_status status,
                                            grpc_endpoint *secure_endpoint) {
   internal_request *req = rp;
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
     finish(req, 0);
@@ -172,7 +165,6 @@ static void on_secure_transport_setup_done(void *rp,
 static void on_connected(void *arg, grpc_endpoint *tcp) {
   internal_request *req = arg;
 
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   if (!tcp) {
     next_address(req);
     return;
@@ -200,7 +192,6 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
 
 static void next_address(internal_request *req) {
   grpc_resolved_address *addr;
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   if (req->next_address == req->addresses->naddrs) {
     finish(req, 0);
     return;
@@ -212,7 +203,6 @@ static void next_address(internal_request *req) {
 
 static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   internal_request *req = arg;
-  gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   if (!addresses) {
     finish(req, 0);
     return;
