@@ -62,7 +62,7 @@ namespace math
             {
                 foreach (var num in FibInternal(request.Limit))
                 {
-                    await responseStream.Write(num);
+                    await responseStream.WriteAsync(num);
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace math
         {
             await requestStream.ForEach(async divArgs =>
             {
-                await responseStream.Write(DivInternal(divArgs));
+                await responseStream.WriteAsync(DivInternal(divArgs));
             });
         }
 

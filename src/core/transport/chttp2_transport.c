@@ -154,7 +154,13 @@ typedef enum {
   WRITE_STATE_OPEN,
   WRITE_STATE_QUEUED_CLOSE,
   WRITE_STATE_SENT_CLOSE
-} WRITE_STATE;
+} write_state;
+
+typedef enum {
+  DONT_SEND_CLOSED = 0,
+  SEND_CLOSED,
+  SEND_CLOSED_WITH_RST_STREAM
+} send_closed;
 
 typedef struct {
   stream *head;
@@ -267,6 +273,7 @@ struct transport {
     grpc_chttp2_window_update_parser window_update;
     grpc_chttp2_settings_parser settings;
     grpc_chttp2_ping_parser ping;
+    grpc_chttp2_rst_stream_parser rst_stream;
   } simple_parsers;
 
   /* goaway */
@@ -312,8 +319,8 @@ struct stream {
   /* when the application requests writes be closed, the write_closed is
      'queued'; when the close is flow controlled into the send path, we are
      'sending' it; when the write has been performed it is 'sent' */
-  WRITE_STATE write_state;
-  gpr_uint8 send_closed;
+  write_state write_state;
+  send_closed send_closed;
   gpr_uint8 read_closed;
   gpr_uint8 cancelled;
 
@@ -937,7 +944,11 @@ static int prepare_write(transport *t) {
 
     if (s->write_state == WRITE_STATE_QUEUED_CLOSE &&
         s->outgoing_sopb->nops == 0) {
-      s->send_closed = 1;
+      if (!t->is_client && !s->read_closed) {
+        s->send_closed = SEND_CLOSED_WITH_RST_STREAM;
+      } else {
+        s->send_closed = SEND_CLOSED;
+      }
     }
     if (s->writing_sopb.nops > 0 || s->send_closed) {
       stream_list_join(t, s, WRITING);
@@ -982,9 +993,12 @@ static void finalize_outbuf(transport *t) {
 
   while ((s = stream_list_remove_head(t, WRITING))) {
     grpc_chttp2_encode(s->writing_sopb.ops, s->writing_sopb.nops,
-                       s->send_closed, s->id, &t->hpack_compressor, &t->outbuf);
+                       s->send_closed != DONT_SEND_CLOSED, s->id, &t->hpack_compressor, &t->outbuf);
     s->writing_sopb.nops = 0;
-    if (s->send_closed) {
+    if (s->send_closed == SEND_CLOSED_WITH_RST_STREAM) {
+      gpr_slice_buffer_add(&t->outbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_CHTTP2_NO_ERROR));
+    }
+    if (s->send_closed != DONT_SEND_CLOSED) {
       stream_list_join(t, s, WRITTEN_CLOSED);
     }
   }
@@ -999,9 +1013,10 @@ static void finish_write_common(transport *t, int success) {
   }
   while ((s = stream_list_remove_head(t, WRITTEN_CLOSED))) {
     s->write_state = WRITE_STATE_SENT_CLOSE;
-    if (1||!s->cancelled) {
-      maybe_finish_read(t, s);
+    if (!t->is_client) {
+      s->read_closed = 1;
     }
+    maybe_finish_read(t, s);
   }
   t->outbuf.count = 0;
   t->outbuf.length = 0;
@@ -1127,6 +1142,7 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
 
   if (op->recv_ops) {
     GPR_ASSERT(s->incoming_sopb == NULL);
+    GPR_ASSERT(s->published_state != GRPC_STREAM_CLOSED);
     s->recv_done_closure.cb = op->on_done_recv;
     s->recv_done_closure.user_data = op->recv_user_data;
     s->incoming_sopb = op->recv_ops;
@@ -1214,12 +1230,14 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */
     had_outgoing = s->outgoing_sopb && s->outgoing_sopb->nops != 0;
-    schedule_nuke_sopb(t, &s->parser.incoming_sopb);
-    if (s->outgoing_sopb) {
-      schedule_nuke_sopb(t, s->outgoing_sopb);
-      s->outgoing_sopb = NULL;
-      stream_list_remove(t, s, WRITABLE);
-      schedule_cb(t, s->send_done_closure, 0);
+    if (error_code != GRPC_CHTTP2_NO_ERROR) {
+      schedule_nuke_sopb(t, &s->parser.incoming_sopb);
+      if (s->outgoing_sopb) {
+        schedule_nuke_sopb(t, s->outgoing_sopb);
+        s->outgoing_sopb = NULL;
+        stream_list_remove(t, s, WRITABLE);
+        schedule_cb(t, s->send_done_closure, 0);
+      }
     }
     if (s->cancelled) {
       send_rst = 0;
@@ -1228,31 +1246,34 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
       s->cancelled = 1;
       stream_list_join(t, s, CANCELLED);
 
-      gpr_ltoa(local_status, buffer);
-      add_incoming_metadata(
-          t, s,
-          grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
-      if (!optional_message) {
-        switch (local_status) {
-          case GRPC_STATUS_CANCELLED:
-            add_incoming_metadata(
-                t, s, grpc_mdelem_from_strings(t->metadata_context,
-                                               "grpc-message", "Cancelled"));
-            break;
-          default:
-            break;
-        }
-      } else {
+      if (error_code != GRPC_CHTTP2_NO_ERROR) {
+        /* synthesize a status if we don't believe we'll get one */
+        gpr_ltoa(local_status, buffer);
         add_incoming_metadata(
             t, s,
-            grpc_mdelem_from_metadata_strings(
-                t->metadata_context,
-                grpc_mdstr_from_string(t->metadata_context, "grpc-message"),
-                grpc_mdstr_ref(optional_message)));
+            grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
+        if (!optional_message) {
+          switch (local_status) {
+            case GRPC_STATUS_CANCELLED:
+              add_incoming_metadata(
+                  t, s, grpc_mdelem_from_strings(t->metadata_context,
+                                                 "grpc-message", "Cancelled"));
+              break;
+            default:
+              break;
+          }
+        } else {
+          add_incoming_metadata(
+              t, s,
+              grpc_mdelem_from_metadata_strings(
+                  t->metadata_context,
+                  grpc_mdstr_from_string(t->metadata_context, "grpc-message"),
+                  grpc_mdstr_ref(optional_message)));
+        }
+        add_metadata_batch(t, s);
       }
-      add_metadata_batch(t, s);
-      maybe_finish_read(t, s);
     }
+    maybe_finish_read(t, s);
   }
   if (!id) send_rst = 0;
   if (send_rst) {
@@ -1527,6 +1548,19 @@ static int init_ping_parser(transport *t) {
   return ok;
 }
 
+static int init_rst_stream_parser(transport *t) {
+  int ok = GRPC_CHTTP2_PARSE_OK ==
+           grpc_chttp2_rst_stream_parser_begin_frame(&t->simple_parsers.rst_stream,
+                                                     t->incoming_frame_size,
+                                                     t->incoming_frame_flags);
+  if (!ok) {
+    drop_connection(t);
+  }
+  t->parser = grpc_chttp2_rst_stream_parser_parse;
+  t->parser_data = &t->simple_parsers.rst_stream;
+  return ok;
+}
+
 static int init_goaway_parser(transport *t) {
   int ok =
       GRPC_CHTTP2_PARSE_OK ==
@@ -1581,12 +1615,7 @@ static int init_frame_parser(transport *t) {
       gpr_log(GPR_ERROR, "Unexpected CONTINUATION frame");
       return 0;
     case GRPC_CHTTP2_FRAME_RST_STREAM:
-      /* TODO(ctiller): actually parse the reason */
-      cancel_stream_id(
-          t, t->incoming_stream_id,
-          grpc_chttp2_http2_error_to_grpc_status(GRPC_CHTTP2_CANCEL),
-          GRPC_CHTTP2_CANCEL, 0);
-      return init_skip_frame(t, 0);
+      return init_rst_stream_parser(t);
     case GRPC_CHTTP2_FRAME_SETTINGS:
       return init_settings_frame_parser(t);
     case GRPC_CHTTP2_FRAME_WINDOW_UPDATE:
@@ -1649,6 +1678,12 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
       }
       if (st.goaway) {
         add_goaway(t, st.goaway_error, st.goaway_text);
+      }
+      if (st.rst_stream) {
+        cancel_stream_id(
+            t, t->incoming_stream_id,
+            grpc_chttp2_http2_error_to_grpc_status(st.rst_stream_reason),
+            st.rst_stream_reason, 0);
       }
       if (st.process_ping_reply) {
         for (i = 0; i < t->ping_count; i++) {

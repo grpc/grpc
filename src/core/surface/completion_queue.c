@@ -275,14 +275,14 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
-      GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ev->base);
+      GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
       return ret;
     }
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   ret = ev->base;
   gpr_free(ev);
-  GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ev->base);
+  GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   return ret;
 }
 

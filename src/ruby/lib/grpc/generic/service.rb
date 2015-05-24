@@ -175,23 +175,23 @@ module GRPC
             route = "/#{route_prefix}/#{name}"
             if desc.request_response?
               define_method(mth_name) do |req, deadline = nil, **kw|
-                logger.debug("calling #{@host}:#{route}")
+                GRPC.logger.debug("calling #{@host}:#{route}")
                 request_response(route, req, marshal, unmarshal, deadline, **kw)
               end
             elsif desc.client_streamer?
               define_method(mth_name) do |reqs, deadline = nil, **kw|
-                logger.debug("calling #{@host}:#{route}")
+                GRPC.logger.debug("calling #{@host}:#{route}")
                 client_streamer(route, reqs, marshal, unmarshal, deadline, **kw)
               end
             elsif desc.server_streamer?
               define_method(mth_name) do |req, deadline = nil, **kw, &blk|
-                logger.debug("calling #{@host}:#{route}")
+                GRPC.logger.debug("calling #{@host}:#{route}")
                 server_streamer(route, req, marshal, unmarshal, deadline, **kw,
                                 &blk)
               end
             else  # is a bidi_stream
               define_method(mth_name) do |reqs, deadline = nil, **kw, &blk|
-                logger.debug("calling #{@host}:#{route}")
+                GRPC.logger.debug("calling #{@host}:#{route}")
                 bidi_streamer(route, reqs, marshal, unmarshal, deadline, **kw,
                               &blk)
               end

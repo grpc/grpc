@@ -64,8 +64,8 @@ static void RunAsyncUnaryPingPong() {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  ReportQPS(result);
-  ReportLatency(result);
+  ReportQPS(*result);
+  ReportLatency(*result);
 }
 
 }  // namespace testing

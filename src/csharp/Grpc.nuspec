@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Grpc</id>
-    <title>gRPC</title>
+    <title>gRPC C#</title>
     <summary>C# implementation of gRPC - an RPC library and framework</summary>
     <description>C# implementation of gRPC - an RPC library and framework. See project site for more info.</description>
     <version>0.5.0</version>

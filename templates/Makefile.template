@@ -673,11 +673,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-ifeq ($(HAVE_CXX11),true)
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
-else
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-std=c++0x" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
-endif
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf

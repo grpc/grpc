@@ -49,20 +49,24 @@ std::shared_ptr<grpc::ChannelInterface> SecureCredentials::CreateChannel(
       grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
 }
 
+bool SecureCredentials::ApplyToCall(grpc_call* call) {
+  return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
+}
+
 namespace {
-std::unique_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
+std::shared_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
   return creds == nullptr
              ? nullptr
-             : std::unique_ptr<Credentials>(new SecureCredentials(creds));
+             : std::shared_ptr<Credentials>(new SecureCredentials(creds));
 }
 }  // namespace
 
-std::unique_ptr<Credentials> GoogleDefaultCredentials() {
+std::shared_ptr<Credentials> GoogleDefaultCredentials() {
   return WrapCredentials(grpc_google_default_credentials_create());
 }
 
 // Builds SSL Credentials given SSL specific options
-std::unique_ptr<Credentials> SslCredentials(
+std::shared_ptr<Credentials> SslCredentials(
     const SslCredentialsOptions& options) {
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
       options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
@@ -74,12 +78,12 @@ std::unique_ptr<Credentials> SslCredentials(
 }
 
 // Builds credentials for use when running in GCE
-std::unique_ptr<Credentials> ComputeEngineCredentials() {
+std::shared_ptr<Credentials> ComputeEngineCredentials() {
   return WrapCredentials(grpc_compute_engine_credentials_create());
 }
 
 // Builds service account credentials.
-std::unique_ptr<Credentials> ServiceAccountCredentials(
+std::shared_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     long token_lifetime_seconds) {
   if (token_lifetime_seconds <= 0) {
@@ -94,8 +98,8 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
 }
 
 // Builds JWT credentials.
-std::unique_ptr<Credentials> JWTCredentials(
-    const grpc::string& json_key, long token_lifetime_seconds) {
+std::shared_ptr<Credentials> JWTCredentials(const grpc::string& json_key,
+                                            long token_lifetime_seconds) {
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
@@ -107,14 +111,14 @@ std::unique_ptr<Credentials> JWTCredentials(
 }
 
 // Builds refresh token credentials.
-std::unique_ptr<Credentials> RefreshTokenCredentials(
+std::shared_ptr<Credentials> RefreshTokenCredentials(
     const grpc::string& json_refresh_token) {
   return WrapCredentials(
       grpc_refresh_token_credentials_create(json_refresh_token.c_str()));
 }
 
 // Builds IAM credentials.
-std::unique_ptr<Credentials> IAMCredentials(
+std::shared_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector) {
   return WrapCredentials(grpc_iam_credentials_create(
@@ -122,10 +126,10 @@ std::unique_ptr<Credentials> IAMCredentials(
 }
 
 // Combines two credentials objects into a composite credentials.
-std::unique_ptr<Credentials> CompositeCredentials(
-    const std::unique_ptr<Credentials>& creds1,
-    const std::unique_ptr<Credentials>& creds2) {
-  // Note that we are not saving unique_ptrs to the two credentials
+std::shared_ptr<Credentials> CompositeCredentials(
+    const std::shared_ptr<Credentials>& creds1,
+    const std::shared_ptr<Credentials>& creds2) {
+  // Note that we are not saving shared_ptrs to the two credentials
   // passed in here. This is OK because the underlying C objects (i.e.,
   // creds1 and creds2) into grpc_composite_credentials_create will see their
   // refcounts incremented.

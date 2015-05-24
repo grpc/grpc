@@ -47,17 +47,18 @@ class SecureCredentials;
 class Credentials : public GrpcLibrary {
  public:
   ~Credentials() GRPC_OVERRIDE;
+  virtual bool ApplyToCall(grpc_call* call) = 0;
 
  protected:
-  friend std::unique_ptr<Credentials> CompositeCredentials(
-      const std::unique_ptr<Credentials>& creds1,
-      const std::unique_ptr<Credentials>& creds2);
+  friend std::shared_ptr<Credentials> CompositeCredentials(
+      const std::shared_ptr<Credentials>& creds1,
+      const std::shared_ptr<Credentials>& creds2);
 
   virtual SecureCredentials* AsSecureCredentials() = 0;
 
  private:
   friend std::shared_ptr<ChannelInterface> CreateChannel(
-      const grpc::string& target, const std::unique_ptr<Credentials>& creds,
+      const grpc::string& target, const std::shared_ptr<Credentials>& creds,
       const ChannelArguments& args);
 
   virtual std::shared_ptr<ChannelInterface> CreateChannel(
@@ -80,20 +81,20 @@ struct SslCredentialsOptions {
 };
 
 // Factories for building different types of Credentials
-// The functions may return empty unique_ptr when credentials cannot be created.
+// The functions may return empty shared_ptr when credentials cannot be created.
 // If a Credentials pointer is returned, it can still be invalid when used to
 // create a channel. A lame channel will be created then and all rpcs will
 // fail on it.
 
 // Builds credentials with reasonable defaults.
-std::unique_ptr<Credentials> GoogleDefaultCredentials();
+std::shared_ptr<Credentials> GoogleDefaultCredentials();
 
 // Builds SSL Credentials given SSL specific options
-std::unique_ptr<Credentials> SslCredentials(
+std::shared_ptr<Credentials> SslCredentials(
     const SslCredentialsOptions& options);
 
 // Builds credentials for use when running in GCE
-std::unique_ptr<Credentials> ComputeEngineCredentials();
+std::shared_ptr<Credentials> ComputeEngineCredentials();
 
 // Builds service account credentials.
 // json_key is the JSON key string containing the client's private key.
@@ -101,7 +102,7 @@ std::unique_ptr<Credentials> ComputeEngineCredentials();
 // token_lifetime_seconds is the lifetime in seconds of each token acquired
 // through this service account credentials. It should be positive and should
 // not exceed grpc_max_auth_token_lifetime or will be cropped to this value.
-std::unique_ptr<Credentials> ServiceAccountCredentials(
+std::shared_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     long token_lifetime_seconds);
 
@@ -110,27 +111,27 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
 // token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 // (JWT) created with this credentials. It should not exceed
 // grpc_max_auth_token_lifetime or will be cropped to this value.
-std::unique_ptr<Credentials> JWTCredentials(
-    const grpc::string& json_key, long token_lifetime_seconds);
+std::shared_ptr<Credentials> JWTCredentials(const grpc::string& json_key,
+                                            long token_lifetime_seconds);
 
 // Builds refresh token credentials.
 // json_refresh_token is the JSON string containing the refresh token along
 // with a client_id and client_secret.
-std::unique_ptr<Credentials> RefreshTokenCredentials(
+std::shared_ptr<Credentials> RefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
 // Builds IAM credentials.
-std::unique_ptr<Credentials> IAMCredentials(
+std::shared_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 
 // Combines two credentials objects into a composite credentials
-std::unique_ptr<Credentials> CompositeCredentials(
-    const std::unique_ptr<Credentials>& creds1,
-    const std::unique_ptr<Credentials>& creds2);
+std::shared_ptr<Credentials> CompositeCredentials(
+    const std::shared_ptr<Credentials>& creds1,
+    const std::shared_ptr<Credentials>& creds2);
 
 // Credentials for an unencrypted, unauthenticated channel
-std::unique_ptr<Credentials> InsecureCredentials();
+std::shared_ptr<Credentials> InsecureCredentials();
 
 }  // namespace grpc
 

@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   args[1] = "--bind";
   gpr_join_host_port(&args[2], "::", port);
   args[3] = "--no-secure";
-  svr = gpr_subprocess_create(4, args);
+  svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   args[3] = "--scenario=ping-pong-request";
   args[4] = "--no-secure";
   args[5] = 0;
-  cli = gpr_subprocess_create(6, args);
+  cli = gpr_subprocess_create(6, (const char**)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 

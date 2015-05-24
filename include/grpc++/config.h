@@ -112,6 +112,9 @@ public:
   template <class T> operator std::unique_ptr<T>() const {
     return std::unique_ptr<T>(static_cast<T *>(0));
   }
+  template <class T> operator std::shared_ptr<T>() const {
+    return std::shared_ptr<T>(static_cast<T *>(0));
+  }
   operator bool() const {return false;}
 private:
   void operator&() const = delete;

@@ -306,9 +306,6 @@
     <ClInclude Include="..\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc\grpc_http.h">
-      <Filter>include\grpc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>

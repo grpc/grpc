@@ -354,7 +354,6 @@ cc_library(
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/grpc.h",
-    "include/grpc/grpc_http.h",
     "include/grpc/status.h",
   ],
   includes = [
@@ -561,7 +560,6 @@ cc_library(
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/grpc.h",
-    "include/grpc/grpc_http.h",
     "include/grpc/status.h",
   ],
   includes = [

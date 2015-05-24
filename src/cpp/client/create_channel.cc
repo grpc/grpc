@@ -41,7 +41,7 @@ namespace grpc {
 class ChannelArguments;
 
 std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target, const std::unique_ptr<Credentials>& creds,
+    const grpc::string& target, const std::shared_ptr<Credentials>& creds,
     const ChannelArguments& args) {
   return creds ? creds->CreateChannel(target, args)
                : std::shared_ptr<ChannelInterface>(
