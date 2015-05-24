@@ -227,9 +227,6 @@ static void request_response_with_payload_and_call_creds(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_server, tag(102), 1);
-  cq_verify(v_server);
-
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;

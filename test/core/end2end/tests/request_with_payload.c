@@ -161,9 +161,6 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_server, tag(102), 1);
-  cq_verify(v_server);
-
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -175,17 +172,9 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
-<<<<<<< HEAD
   cq_expect_completion(cqv, tag(102), 1);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
-=======
-  cq_expect_completion(v_server, tag(103), 1);
-  cq_verify(v_server);
-
-  cq_expect_completion(v_client, tag(1), 1);
-  cq_verify(v_client);
->>>>>>> 031dea1df4b6213b9f9779a824fccc6d348b8648
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
