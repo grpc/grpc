@@ -39,8 +39,6 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__)
-
 static void channel_init_func(grpc_channel_element *elem,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
@@ -90,8 +88,6 @@ static void test_create_channel_stack(void) {
   grpc_mdctx *metadata_context;
   int *channel_data;
   int *call_data;
-
-  LOG_TEST_NAME();
 
   metadata_context = grpc_mdctx_create();
 
