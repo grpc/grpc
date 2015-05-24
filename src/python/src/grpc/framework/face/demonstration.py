@@ -34,7 +34,7 @@ from grpc.framework.base import implementations as _base_implementations
 from grpc.framework.face import implementations
 from grpc.framework.foundation import logging_pool
 
-_POOL_SIZE_LIMIT = 20
+_POOL_SIZE_LIMIT = 5
 
 _MAXIMUM_TIMEOUT = 90
 

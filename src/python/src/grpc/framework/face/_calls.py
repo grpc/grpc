@@ -248,7 +248,7 @@ class _OperationFuture(future.Future):
     """See future.Future.add_done_callback for specification."""
     with self._condition:
       if self._callbacks is not None:
-        self._callbacks.add(fn)
+        self._callbacks.append(fn)
         return
 
     callable_util.call_logging_exceptions(fn, _DONE_CALLBACK_LOG_MESSAGE, self)

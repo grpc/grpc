@@ -94,14 +94,16 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
         signal_client_ = true;
       }
       while (!context->IsCancelled()) {
-        std::this_thread::sleep_for(std::chrono::microseconds(
-            request->param().client_cancel_after_us()));
+        gpr_sleep_until(gpr_time_add(
+            gpr_now(),
+            gpr_time_from_micros(request->param().client_cancel_after_us())));
       }
       return Status::Cancelled;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
-      std::this_thread::sleep_for(
-          std::chrono::microseconds(request->param().server_cancel_after_us()));
+      gpr_sleep_until(gpr_time_add(
+          gpr_now(),
+          gpr_time_from_micros(request->param().server_cancel_after_us())));
       return Status::Cancelled;
     } else {
       EXPECT_FALSE(context->IsCancelled());

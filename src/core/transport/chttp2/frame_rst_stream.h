@@ -35,7 +35,18 @@
 #define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H
 
 #include <grpc/support/slice.h>
+#include "src/core/transport/chttp2/frame.h"
+
+typedef struct {
+  gpr_uint8 byte;
+  gpr_uint8 reason_bytes[4];
+} grpc_chttp2_rst_stream_parser;
 
 gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 stream_id, gpr_uint32 code);
+
+grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
+    grpc_chttp2_rst_stream_parser *parser, gpr_uint32 length, gpr_uint8 flags);
+grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
+    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
 
 #endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H */

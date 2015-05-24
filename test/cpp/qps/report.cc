@@ -48,18 +48,20 @@ void ReportQPS(const ScenarioResult& result) {
 }
 
 // QPS: XXX (YYY/server core)
-void ReportQPSPerCore(const ScenarioResult& result, const ServerConfig& server_config) {
-  auto qps = 
-      result.latencies.Count() /
-      average(result.client_resources,
-          [](ResourceUsage u) { return u.wall_time; });
+void ReportQPSPerCore(const ScenarioResult& result,
+                      const ServerConfig& server_config) {
+  auto qps = result.latencies.Count() /
+             average(result.client_resources,
+                     [](ResourceUsage u) { return u.wall_time; });
 
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps, qps/server_config.threads());
+  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
+          qps / server_config.threads());
 }
 
 // Latency (50/90/95/99/99.9%-ile): AA/BB/CC/DD/EE us
 void ReportLatency(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
+  gpr_log(GPR_INFO,
+          "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
           result.latencies.Percentile(50) / 1000,
           result.latencies.Percentile(90) / 1000,
           result.latencies.Percentile(95) / 1000,

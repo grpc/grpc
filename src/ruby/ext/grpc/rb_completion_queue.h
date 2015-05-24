@@ -34,8 +34,9 @@
 #ifndef GRPC_RB_COMPLETION_QUEUE_H_
 #define GRPC_RB_COMPLETION_QUEUE_H_
 
+#include <ruby/ruby.h>
+
 #include <grpc/grpc.h>
-#include <ruby.h>
 
 /* Gets the wrapped completion queue from the ruby wrapper */
 grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);

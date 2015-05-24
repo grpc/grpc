@@ -36,12 +36,45 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import <gRPC/ProtoRPC.h>
 #import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/GRXBufferedPipe.h>
+#import <gRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
+
+// Convenience constructors for the generated proto messages:
+
+@interface RMTStreamingOutputCallRequest (Constructors)
++ (instancetype)messageWithPayloadSize:(NSNumber *)payloadSize
+                 requestedResponseSize:(NSNumber *)responseSize;
+@end
+
+@implementation RMTStreamingOutputCallRequest (Constructors)
++ (instancetype)messageWithPayloadSize:(NSNumber *)payloadSize
+                 requestedResponseSize:(NSNumber *)responseSize {
+  RMTStreamingOutputCallRequest *request = [self message];
+  RMTResponseParameters *parameters = [RMTResponseParameters message];
+  parameters.size = responseSize.integerValue;
+  [request.responseParametersArray addObject:parameters];
+  request.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
+  return request;
+}
+@end
+
+@interface RMTStreamingOutputCallResponse (Constructors)
++ (instancetype)messageWithPayloadSize:(NSNumber *)payloadSize;
+@end
+
+@implementation RMTStreamingOutputCallResponse (Constructors)
++ (instancetype)messageWithPayloadSize:(NSNumber *)payloadSize {
+  RMTStreamingOutputCallResponse * response = [self message];
+  response.payload.type = RMTPayloadType_Compressable;
+  response.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
+  return response;
+}
+@end
 
 @interface RemoteProtoTests : XCTestCase
 @end
@@ -70,7 +103,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:2 handler:nil];
 }
 
 - (void)testLargeUnaryRPC {
@@ -92,7 +125,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testClientStreamingRPC {
@@ -124,11 +157,12 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testServerStreamingRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
+
   NSArray *expectedSizes = @[@31415, @9, @2653, @58979];
 
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
@@ -144,18 +178,65 @@
                                              RMTStreamingOutputCallResponse *response,
                                              NSError *error){
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertTrue(done || response, @"Event handler called without an event.");
 
-    RMTStreamingOutputCallResponse *expectedResponse = [RMTStreamingOutputCallResponse message];
-    expectedResponse.payload.type = RMTPayloadType_Compressable;
-    int expectedSize = [expectedSizes[index] unsignedIntegerValue];
-    expectedResponse.payload.body = [NSMutableData dataWithLength:expectedSize];
-    XCTAssertEqualObjects(response, expectedResponse);
+    if (response) {
+      XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+      id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:expectedSizes[index]];
+      XCTAssertEqualObjects(response, expected);
+      index += 1;
+    }
 
-    [expectation fulfill];
-    index += 1;
+    if (done) {
+      XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
+      [expectation fulfill];
+    }
   }];
   
   [self waitForExpectationsWithTimeout:4 handler:nil];
+}
+
+- (void)testPingPongRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
+
+  NSArray *requests = @[@27182, @8, @1828, @45904];
+  NSArray *responses = @[@31415, @9, @2653, @58979];
+
+  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+
+  __block int index = 0;
+
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                               requestedResponseSize:responses[index]];
+  [requestsBuffer writeValue:request];
+
+  [_service fullDuplexCallWithRequestsWriter:requestsBuffer
+                                     handler:^(BOOL done,
+                                               RMTStreamingOutputCallResponse *response,
+                                               NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+    XCTAssertTrue(done || response, @"Event handler called without an event.");
+
+    if (response) {
+      XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+      id expected = [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+      XCTAssertEqualObjects(response, expected);
+      index += 1;
+      if (index < 4) {
+        id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                     requestedResponseSize:responses[index]];
+        [requestsBuffer writeValue:request];
+      } else {
+        [requestsBuffer writesFinishedWithError:nil];
+      }
+    }
+                                       
+    if (done) {
+      XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
+      [expectation fulfill];
+    }
+  }];
+  [self waitForExpectationsWithTimeout:2 handler:nil];
 }
 
 - (void)testEmptyStreamRPC {
@@ -168,13 +249,16 @@
     XCTAssert(done, @"Unexpected response: %@", response);
     [expectation fulfill];
   }];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:2 handler:nil];
 }
 
 - (void)testCancelAfterBeginRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
-  // TODO(mlumish): change to writing that blocks instead of writing
-  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:[GRXWriter emptyWriter]
+
+  // A buffered pipe to which we never write any value acts as a writer that just hangs.
+  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+
+  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
                                                                handler:^(RMTStreamingInputCallResponse *response,
                                                                          NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
@@ -183,6 +267,39 @@
   [call start];
   [call cancel];
   [self waitForExpectationsWithTimeout:1 handler:nil];
+}
+
+- (void)testCancelAfterFirstResponseRPC {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterFirstResponse"];
+  
+  // A buffered pipe to which we write a single value but never close
+  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+  
+  __block BOOL receivedResponse = NO;
+  
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
+                                               requestedResponseSize:@31415];
+  
+  [requestsBuffer writeValue:request];
+  
+  __block ProtoRPC *call = [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
+                                                           handler:^(BOOL done,
+                                                                     RMTStreamingOutputCallResponse *response,
+                                                                     NSError *error) {
+    if (receivedResponse) {
+      XCTAssert(done, @"Unexpected extra response %@", response);
+      XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+      [expectation fulfill];
+    } else {
+      XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+      XCTAssertFalse(done, @"Finished without response");
+      XCTAssertNotNil(response);
+      receivedResponse = YES;
+      [call cancel];
+    }
+  }];
+  [call start];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end

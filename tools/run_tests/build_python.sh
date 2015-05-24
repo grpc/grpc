@@ -37,6 +37,6 @@ root=`pwd`
 rm -rf python2.7_virtual_environment
 virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
 source python2.7_virtual_environment/bin/activate
-pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0-alpha-1
+pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0a2
 CFLAGS=-I$root/include LDFLAGS=-L$root/libs/$CONFIG pip install src/python/src
 pip install src/python/interop

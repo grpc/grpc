@@ -76,13 +76,13 @@
   return self;
 }
 
-- (void)didReceiveValue:(id)value {
+- (void)writeValue:(id)value {
   if (_valueHandler) {
     _valueHandler(value);
   }
 }
 
-- (void)didFinishWithError:(NSError *)errorOrNil {
+- (void)writesFinishedWithError:(NSError *)errorOrNil {
   if (_completionHandler) {
     _completionHandler(errorOrNil);
   }

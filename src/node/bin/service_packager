@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+require(__dirname+'/../cli/service_packager.js').main(process.argv.slice(2));

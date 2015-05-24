@@ -22,5 +22,8 @@
   </metadata>
   <files>
     <file src="bin/Release/Grpc.Auth.dll" target="lib/net45" />
+	<file src="bin/Release/Grpc.Auth.pdb" target="lib/net45" />
+	<file src="bin/Release/Grpc.Auth.xml" target="lib/net45" />
+	<file src="**\*.cs" target="src" />
   </files>
 </package>

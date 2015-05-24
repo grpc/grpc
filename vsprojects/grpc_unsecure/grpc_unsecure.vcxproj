@@ -149,7 +149,6 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
-    <ClInclude Include="..\..\include\grpc\grpc_http.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
   </ItemGroup>
   <ItemGroup>

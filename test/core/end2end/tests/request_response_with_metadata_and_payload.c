@@ -113,7 +113,7 @@ static void test_request_response_with_metadata_and_payload(
                              {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
   grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}},
                              {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
   grpc_op ops[6];
@@ -174,6 +174,18 @@ static void test_request_response_with_metadata_and_payload(
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_s;
   op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+
+  cq_expect_completion(v_server, tag(102), 1);
+  cq_verify(v_server);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
   op++;
@@ -182,15 +194,9 @@ static void test_request_response_with_metadata_and_payload(
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
-  cq_expect_completion(v_server, tag(102), 1);
+  cq_expect_completion(v_server, tag(103), 1);
   cq_verify(v_server);
 
   cq_expect_completion(v_client, tag(1), 1);

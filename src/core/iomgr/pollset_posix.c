@@ -258,7 +258,6 @@ static void unary_poll_do_promote(void *args, int success) {
   grpc_pollset *pollset = up_args->pollset;
   grpc_fd *fd = up_args->fd;
   int do_shutdown_cb = 0;
-  gpr_free(up_args);
 
   /*
    * This is quite tricky. There are a number of cases to keep in mind here:
@@ -273,8 +272,12 @@ static void unary_poll_do_promote(void *args, int success) {
   /* First we need to ensure that nobody is polling concurrently */
   while (pollset->counter != 0) {
     grpc_pollset_kick(pollset);
-    gpr_cv_wait(&pollset->cv, &pollset->mu, gpr_inf_future);
+    grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+    gpr_mu_unlock(&pollset->mu);
+    return;
   }
+
+  gpr_free(up_args);
   /* At this point the pollset may no longer be a unary poller. In that case
    * we should just call the right add function and be done. */
   /* TODO(klempner): If we're not careful this could cause infinite recursion.

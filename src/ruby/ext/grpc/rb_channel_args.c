@@ -33,7 +33,8 @@
 
 #include "rb_channel_args.h"
 
-#include <ruby.h>
+#include <ruby/ruby.h>
+
 #include <grpc/grpc.h>
 
 #include "rb_grpc.h"

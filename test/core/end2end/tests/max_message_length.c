@@ -126,7 +126,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  f = begin_test(config, __FUNCTION__, NULL, &server_args);
+  f = begin_test(config, "test_max_message_length", NULL, &server_args);
   v_client = cq_verifier_create(f.client_cq);
   v_server = cq_verifier_create(f.server_cq);
 
@@ -178,8 +178,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);
 
-  GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
-  GPR_ASSERT(0 == strcmp(details, "Cancelled"));
+  GPR_ASSERT(status != GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
   GPR_ASSERT(was_cancelled == 1);
@@ -189,6 +188,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
+  grpc_byte_buffer_destroy(request_payload);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);
