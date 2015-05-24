@@ -31,8 +31,6 @@
  *
  */
 
-/** \file grpc.h */
-
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
