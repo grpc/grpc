@@ -28,7 +28,9 @@ override_dh_auto_build:
 	make shared_c prefix=/usr
 
 override_dh_auto_test:
-	#make test_c
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	make test_c
+endif
 
 # at the present time, only the C libraries are installable because protobuf3
 # isn't available yet
