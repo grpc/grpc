@@ -1,5 +1,6 @@
 #!/usr/bin/make -f
-# See debhelper(7) (uncomment to enable)
+# -*- makefile -*-
+
 # output every command that modifies files on the build system.
 #DH_VERBOSE = 1
 
