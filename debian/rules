@@ -17,11 +17,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # package maintainers to append LDFLAGS
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
-
-# main packaging script based on dh7 syntax
-%:
-	dh $@ 
-
 # at the present time, only the C libraries are buildable because protobuf3
 # isn't available yet
 override_dh_auto_build:
@@ -36,3 +31,6 @@ endif
 # isn't available yet
 override_dh_auto_install:
 	make install_c prefix=$(CURDIR)/debian/tmp/usr
+
+%:
+	dh $@ --parallel
