@@ -13,10 +13,12 @@ Package: libgrpc-dev
 Section: libdevel
 Architecture: any
 Depends: libgrpc0 (= ${binary:Version}), ${misc:Depends}
-Description: high performance general RPC framework
+Description: high performance general RPC framework (development)
  A modern, open source remote procedure call (RPC) framework that can
  run anywhere. It enables client and server applications to communicate
  transparently, and makes it easier to build connected systems.
+ .
+ This package contains the headers and the static library for libgrpc0.
 
 Package: libgrpc0
 Architecture: any
@@ -25,3 +27,5 @@ Description: high performance general RPC framework
  A modern, open source remote procedure call (RPC) framework that can
  run anywhere. It enables client and server applications to communicate
  transparently, and makes it easier to build connected systems.
+ .
+ This package provides the gRPC C bindings.
