@@ -1,4 +1,4 @@
-grpc (0.6-1) unstable; urgency=low
+grpc (0.6.0-1) unstable; urgency=low
 
   * Initial release (Closes: #786375)
 
