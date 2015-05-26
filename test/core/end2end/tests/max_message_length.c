@@ -126,7 +126,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  f = begin_test(config, __FUNCTION__, NULL, &server_args);
+  f = begin_test(config, "test_max_message_length", NULL, &server_args);
   v_client = cq_verifier_create(f.client_cq);
   v_server = cq_verifier_create(f.server_cq);
 

@@ -41,7 +41,7 @@ from grpc.framework.base import util as _base_utilities
 from grpc.framework.face import implementations as _face_implementations
 from grpc.framework.foundation import logging_pool
 
-_THREAD_POOL_SIZE = 80
+_THREAD_POOL_SIZE = 8
 _ONE_DAY_IN_SECONDS = 24 * 60 * 60
 
 

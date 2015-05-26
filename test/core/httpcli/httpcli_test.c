@@ -56,7 +56,7 @@ static void on_finish(void *arg, const grpc_httpcli_response *response) {
 static void test_get(int use_ssl) {
   grpc_httpcli_request req;
 
-  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", __FUNCTION__, use_ssl);
+  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_get", use_ssl);
 
   gpr_event_init(&g_done);
   memset(&req, 0, sizeof(req));
@@ -72,7 +72,7 @@ static void test_get(int use_ssl) {
 static void test_post(int use_ssl) {
   grpc_httpcli_request req;
 
-  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", __FUNCTION__, (int)use_ssl);
+  gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_post", (int)use_ssl);
 
   gpr_event_init(&g_done);
   memset(&req, 0, sizeof(req));

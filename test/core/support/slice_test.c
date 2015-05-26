@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__);
+#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
 
 static void test_slice_malloc_returns_something_sensible(void) {
   /* Calls gpr_slice_create for various lengths and verifies the internals for
@@ -47,7 +47,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
   size_t i;
   gpr_slice slice;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_slice_malloc_returns_something_sensible");
 
   for (length = 0; length <= 1024; length++) {
     slice = gpr_slice_malloc(length);
@@ -108,7 +108,7 @@ static void test_slice_sub_works(unsigned length) {
   gpr_slice sub;
   unsigned i, j, k;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_slice_sub_works");
   gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
@@ -147,7 +147,7 @@ static void test_slice_split_head_works(int length) {
   gpr_slice head, tail;
   int i;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_slice_split_head_works");
   gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
@@ -175,7 +175,7 @@ static void test_slice_split_tail_works(int length) {
   gpr_slice head, tail;
   int i;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_slice_split_tail_works");
   gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
@@ -202,7 +202,7 @@ static void test_slice_from_copied_string_works(void) {
   static const char *text = "HELLO WORLD!";
   gpr_slice slice;
 
-  LOG_TEST_NAME();
+  LOG_TEST_NAME("test_slice_from_copied_string_works");
 
   slice = gpr_slice_from_copied_string(text);
   GPR_ASSERT(strlen(text) == GPR_SLICE_LENGTH(slice));

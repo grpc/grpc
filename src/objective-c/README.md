@@ -22,7 +22,7 @@ If you don't want to create the symbolic link, you can alternatively copy the bi
 Finally, run _protoc_ with the following flags to generate the client library for your `.proto` files:
 
 ```sh
-protoc --objc_out=. --objcrpc_out=. *.proto
+protoc --objc_out=. --objcgrpc_out=. *.proto
 ```
 
 This will generate a pair of `.pbobjc.h`/`.pbobjc.m` files for each `.proto` file, with the messages and enums defined in them. And a pair of `.pbrpc.h`/`.pbrpc.m` files for each `.proto` file with services defined. The latter contains the code to make remote calls to the specified API.

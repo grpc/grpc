@@ -36,7 +36,7 @@ from grpc.framework.base import interfaces_test_case
 from grpc.framework.base import util
 from grpc.framework.foundation import logging_pool
 
-POOL_MAX_WORKERS = 100
+POOL_MAX_WORKERS = 10
 DEFAULT_TIMEOUT = 30
 MAXIMUM_TIMEOUT = 60
 

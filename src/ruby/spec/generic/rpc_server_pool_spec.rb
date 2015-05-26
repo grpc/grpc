@@ -74,11 +74,11 @@ describe GRPC::Pool do
   end
 
   describe '#schedule' do
-    it 'throws if the pool is already stopped' do
+    it 'return if the pool is already stopped' do
       p = Pool.new(1)
       p.stop
       job = proc {}
-      expect { p.schedule(&job) }.to raise_error
+      expect { p.schedule(&job) }.to_not raise_error
     end
 
     it 'adds jobs that get run by the pool' do

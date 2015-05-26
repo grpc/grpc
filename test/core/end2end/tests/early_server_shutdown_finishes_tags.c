@@ -99,7 +99,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void test_early_server_shutdown_finishes_tags(
     grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_early_server_shutdown_finishes_tags", NULL, NULL);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
   grpc_call *s = (void *)1;
   grpc_call_details call_details;
