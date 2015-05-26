@@ -106,7 +106,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
       grpc_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_request_with_large_metadata", NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
   grpc_op ops[6];

@@ -121,7 +121,7 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
 static void test_invoke_empty_body(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, __FUNCTION__, NULL, NULL);
+  f = begin_test(config, "test_invoke_empty_body", NULL, NULL);
   empty_batch_body(f);
   end_test(&f);
   config.tear_down_data(&f);

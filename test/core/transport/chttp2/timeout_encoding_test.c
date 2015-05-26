@@ -42,7 +42,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void assert_encodes_as(gpr_timespec ts, const char *s) {
   char buffer[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
@@ -52,7 +52,7 @@ static void assert_encodes_as(gpr_timespec ts, const char *s) {
 }
 
 void test_encoding(void) {
-  LOG_TEST();
+  LOG_TEST("test_encoding");
   assert_encodes_as(gpr_time_from_micros(-1), "1n");
   assert_encodes_as(gpr_time_from_seconds(-10), "1n");
   assert_encodes_as(gpr_time_from_nanos(10), "10n");
@@ -116,7 +116,7 @@ void decode_suite(char ext, gpr_timespec (*answer)(long x)) {
 }
 
 void test_decoding(void) {
-  LOG_TEST();
+  LOG_TEST("test_decoding");
   decode_suite('n', gpr_time_from_nanos);
   decode_suite('u', gpr_time_from_micros);
   decode_suite('m', gpr_time_from_millis);
@@ -128,7 +128,7 @@ void test_decoding(void) {
 
 void test_decoding_fails(void) {
   gpr_timespec x;
-  LOG_TEST();
+  LOG_TEST("test_decoding_fails");
   GPR_ASSERT(0 == grpc_chttp2_decode_timeout("", &x));
   GPR_ASSERT(0 == grpc_chttp2_decode_timeout(" ", &x));
   GPR_ASSERT(0 == grpc_chttp2_decode_timeout("x", &x));

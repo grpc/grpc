@@ -665,7 +665,7 @@ void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host) {
   registered_method *m;
   if (!method) {
-    gpr_log(GPR_ERROR, "%s method string cannot be NULL", __FUNCTION__);
+    gpr_log(GPR_ERROR, "grpc_server_register_method method string cannot be NULL");
     return NULL;
   }
   for (m = server->registered_methods; m; m = m->next) {
