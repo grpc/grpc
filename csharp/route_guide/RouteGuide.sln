@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteGuide", "RouteGuide\RouteGuide.csproj", "{49954D9C-5F17-4662-96B2-73BE833DD81A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteGuideClient", "RouteGuideClient\RouteGuideClient.csproj", "{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteGuideServer", "RouteGuideServer\RouteGuideServer.csproj", "{4B7C7794-BE24-4477-ACE7-18259EB73D27}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49954D9C-5F17-4662-96B2-73BE833DD81A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49954D9C-5F17-4662-96B2-73BE833DD81A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49954D9C-5F17-4662-96B2-73BE833DD81A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49954D9C-5F17-4662-96B2-73BE833DD81A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B7C7794-BE24-4477-ACE7-18259EB73D27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B7C7794-BE24-4477-ACE7-18259EB73D27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B7C7794-BE24-4477-ACE7-18259EB73D27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B7C7794-BE24-4477-ACE7-18259EB73D27}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
