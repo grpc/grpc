@@ -533,8 +533,9 @@ static void destroy_call_elem(grpc_call_element *elem) {
     call_list_remove(elem->call_data, i);
   }
   if (chand->server->shutdown && chand->server->lists[ALL_CALLS] == NULL) {
-    for (i = 0; i < chand->server->num_shutdown_tags; i++) {
-      for (j = 0; j < chand->server->cq_count; j++) {
+    for (j = 0; j < chand->server->cq_count; j++) {
+      grpc_cq_end_silent_op(chand->server->cqs[j]);
+      for (i = 0; i < chand->server->num_shutdown_tags; i++) {
         grpc_cq_end_op(chand->server->cqs[j], chand->server->shutdown_tags[i],
                        NULL, 1);
       }
@@ -821,6 +822,10 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
     return;
   }
 
+  for (i = 0; i < server->cq_count; i++) {
+    grpc_cq_begin_silent_op(server->cqs[i]);
+  }
+
   nchannels = 0;
   for (c = server->root_channel_data.next; c != &server->root_channel_data;
        c = c->next) {
@@ -857,8 +862,9 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
 
   server->shutdown = 1;
   if (server->lists[ALL_CALLS] == NULL) {
-    for (i = 0; i < server->num_shutdown_tags; i++) {
-      for (j = 0; j < server->cq_count; j++) {
+    for (j = 0; j < server->cq_count; j++) {
+      grpc_cq_end_silent_op(server->cqs[j]);
+      for (i = 0; i < server->num_shutdown_tags; i++) {
         grpc_cq_end_op(server->cqs[j], server->shutdown_tags[i], NULL, 1);
       }
     }

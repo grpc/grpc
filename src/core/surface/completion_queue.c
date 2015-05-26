@@ -167,6 +167,26 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
   }
 }
 
+void grpc_cq_begin_silent_op(grpc_completion_queue *cc) {
+  gpr_ref(&cc->refs);
+}
+
+void grpc_cq_end_silent_op(grpc_completion_queue *cc) {
+  int shutdown = 0;
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  if (gpr_unref(&cc->refs)) {
+    GPR_ASSERT(!cc->shutdown);
+    GPR_ASSERT(cc->shutdown_called);
+    cc->shutdown = 1;
+    gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
+    shutdown = 1;
+  }
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+  if (shutdown) {
+    grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
+  }
+}
+
 /* Create a GRPC_QUEUE_SHUTDOWN event without queuing it anywhere */
 static event *create_shutdown_event(void) {
   event *ev = gpr_malloc(sizeof(event));

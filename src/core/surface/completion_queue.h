@@ -50,6 +50,12 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     int success);
 
+/* Begin a 'silent operation' - one that blocks completion queue shutdown
+   until it is ended */
+void grpc_cq_begin_silent_op(grpc_completion_queue *cc);
+/* End such an operation */
+void grpc_cq_end_silent_op(grpc_completion_queue *cc);
+
 /* disable polling for some tests */
 void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc);
 
