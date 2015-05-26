@@ -902,6 +902,47 @@ void grpc_server_listener_destroy_done(void *s) {
   gpr_mu_unlock(&server->mu);
 }
 
+void grpc_server_cancel_all_calls(grpc_server *server) {
+  call_data *calld;
+  grpc_call **calls;
+  size_t call_count;
+  size_t call_capacity;
+  int is_first = 1;
+  size_t i;
+
+  gpr_mu_lock(&server->mu);
+
+  GPR_ASSERT(server->shutdown);
+
+  if (!server->lists[ALL_CALLS]) {
+    gpr_mu_unlock(&server->mu);
+    return;
+  }
+
+  call_capacity = 8;
+  call_count = 0;
+  calls = gpr_malloc(sizeof(grpc_call *) * call_capacity);
+
+  for (calld = server->lists[ALL_CALLS]; calld != server->lists[ALL_CALLS] || is_first; calld = calld->links[ALL_CALLS].next) {
+    if (call_count == call_capacity) {
+      call_capacity *= 2;
+      calls = gpr_realloc(calls, sizeof(grpc_call *) * call_capacity);
+    }
+    calls[call_count++] = calld->call;
+    GRPC_CALL_INTERNAL_REF(calld->call, "cancel_all");
+    is_first = 0;
+  }
+
+  gpr_mu_unlock(&server->mu);
+
+  for (i = 0; i < call_count; i++) {
+    grpc_call_cancel_with_status(calls[i], GRPC_STATUS_UNAVAILABLE, "Unavailable");
+    GRPC_CALL_INTERNAL_UNREF(calls[i], "cancel_all", 1);
+  }
+
+  gpr_free(calls);
+}
+
 void grpc_server_destroy(grpc_server *server) {
   channel_data *c;
   listener *l;
