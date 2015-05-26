@@ -37,7 +37,8 @@
 #include <grpc/grpc.h>
 #include "test/core/util/test_config.h"
 
-typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server, grpc_completion_queue *cq);
+typedef void (*grpc_bad_client_server_side_validator)(
+    grpc_server *server, grpc_completion_queue *cq);
 
 /* Test runner.
 
@@ -45,8 +46,7 @@ typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server, grpc_
    Execute validator in a separate thread to assert that the bytes are
    handled as expected. */
 void grpc_run_bad_client_test(const char *name, const char *client_payload,
-	                            size_t client_payload_length,
-	                            grpc_bad_client_server_side_validator validator
-	                            );
+                              size_t client_payload_length,
+                              grpc_bad_client_server_side_validator validator);
 
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */
