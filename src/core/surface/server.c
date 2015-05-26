@@ -371,6 +371,19 @@ static void kill_zombie(void *elem, int success) {
   grpc_call_destroy(grpc_call_from_top_element(elem));
 }
 
+static void maybe_finish_shutdown(grpc_server *server) {
+  size_t i, j;
+  if (server->shutdown && server->lists[ALL_CALLS] == NULL) {
+    for (j = 0; j < server->cq_count; j++) {
+      grpc_cq_end_silent_op(server->cqs[j]);
+      for (i = 0; i < server->num_shutdown_tags; i++) {
+        grpc_cq_end_op(server->cqs[j], server->shutdown_tags[i],
+                       NULL, 1);
+      }
+    }
+  }
+}
+
 static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   channel_data *chand = elem->channel_data;
@@ -430,6 +443,8 @@ static void server_on_recv(void *ptr, int success) {
         calld->state = ZOMBIED;
         grpc_iomgr_add_callback(kill_zombie, elem);
       }
+      call_list_remove(calld, ALL_CALLS);
+      maybe_finish_shutdown(chand->server);
       gpr_mu_unlock(&chand->server->mu);
       break;
   }
@@ -526,21 +541,13 @@ static void init_call_elem(grpc_call_element *elem,
 static void destroy_call_elem(grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  size_t i, j;
+  size_t i;
 
   gpr_mu_lock(&chand->server->mu);
   for (i = 0; i < CALL_LIST_COUNT; i++) {
     call_list_remove(elem->call_data, i);
   }
-  if (chand->server->shutdown && chand->server->lists[ALL_CALLS] == NULL) {
-    for (j = 0; j < chand->server->cq_count; j++) {
-      grpc_cq_end_silent_op(chand->server->cqs[j]);
-      for (i = 0; i < chand->server->num_shutdown_tags; i++) {
-        grpc_cq_end_op(chand->server->cqs[j], chand->server->shutdown_tags[i],
-                       NULL, 1);
-      }
-    }
-  }
+  maybe_finish_shutdown(chand->server);
   gpr_mu_unlock(&chand->server->mu);
 
   if (calld->host) {
@@ -801,7 +808,7 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   channel_data **channels;
   channel_data *c;
   size_t nchannels;
-  size_t i, j;
+  size_t i;
   grpc_channel_op op;
   grpc_channel_element *elem;
   registered_method *rm;
@@ -861,14 +868,7 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   }
 
   server->shutdown = 1;
-  if (server->lists[ALL_CALLS] == NULL) {
-    for (j = 0; j < server->cq_count; j++) {
-      grpc_cq_end_silent_op(server->cqs[j]);
-      for (i = 0; i < server->num_shutdown_tags; i++) {
-        grpc_cq_end_op(server->cqs[j], server->shutdown_tags[i], NULL, 1);
-      }
-    }
-  }
+  maybe_finish_shutdown(server);
   gpr_mu_unlock(&server->mu);
 
   for (i = 0; i < nchannels; i++) {
