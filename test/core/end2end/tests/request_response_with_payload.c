@@ -223,7 +223,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
    payload and status. */
 static void test_invoke_request_response_with_payload(
     grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_invoke_request_response_with_payload", NULL, NULL);
   request_response_with_payload(f);
   end_test(&f);
   config.tear_down_data(&f);
@@ -232,7 +232,7 @@ static void test_invoke_request_response_with_payload(
 static void test_invoke_10_request_response_with_payload(
     grpc_end2end_test_config config) {
   int i;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_invoke_10_request_response_with_payload", NULL, NULL);
   for (i = 0; i < 10; i++) {
     request_response_with_payload(f);
   }

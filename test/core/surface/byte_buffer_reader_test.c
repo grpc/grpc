@@ -44,13 +44,13 @@
 
 #include <string.h>
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void test_create(void) {
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader *reader;
   gpr_slice empty = gpr_empty_slice();
-  LOG_TEST();
+  LOG_TEST("test_create");
   buffer = grpc_byte_buffer_create(&empty, 1);
   reader = grpc_byte_buffer_reader_create(buffer);
   grpc_byte_buffer_reader_destroy(reader);
@@ -64,7 +64,7 @@ static void test_read_one_slice(void) {
   gpr_slice first_slice, second_slice;
   int first_code, second_code;
 
-  LOG_TEST();
+  LOG_TEST("test_read_one_slice");
   slice = gpr_slice_from_copied_string("test");
   buffer = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
@@ -86,7 +86,7 @@ static void test_read_one_slice_malloc(void) {
   gpr_slice first_slice, second_slice;
   int first_code, second_code;
 
-  LOG_TEST();
+  LOG_TEST("test_read_one_slice_malloc");
   slice = gpr_slice_malloc(4);
   memcpy(GPR_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_byte_buffer_create(&slice, 1);
