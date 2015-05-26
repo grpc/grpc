@@ -234,9 +234,10 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg);
   filters[n++] = &grpc_client_surface_filter;
+  /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
-  }
+    } */
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
   channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);

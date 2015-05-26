@@ -13,6 +13,19 @@
   },
   "filegroups": [
     {
+      "name": "census",
+      "public_headers": [
+        "include/grpc/census.h"
+      ],
+      "headers": [
+        "src/core/census/context.h"
+      ],
+      "src": [
+        "src/core/census/context.c",
+        "src/core/census/initialize.c"
+      ]
+    },
+    {
       "name": "grpc++_base",
       "public_headers": [
         "include/grpc++/async_generic_service.h",
@@ -91,7 +104,7 @@
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/channel/census_filter.h",
+        "src/core/census/grpc_context.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/child_channel.h",
@@ -140,12 +153,6 @@
         "src/core/json/json_writer.h",
         "src/core/profiling/timers.h",
         "src/core/profiling/timers_preciseclock.h",
-        "src/core/statistics/census_interface.h",
-        "src/core/statistics/census_log.h",
-        "src/core/statistics/census_rpc_stats.h",
-        "src/core/statistics/census_tracing.h",
-        "src/core/statistics/hash_table.h",
-        "src/core/statistics/window_stats.h",
         "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
@@ -180,7 +187,7 @@
         "src/core/transport/transport_impl.h"
       ],
       "src": [
-        "src/core/channel/census_filter.c",
+        "src/core/census/grpc_context.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/child_channel.c",
@@ -232,12 +239,6 @@
         "src/core/json/json_writer.c",
         "src/core/profiling/basic_timers.c",
         "src/core/profiling/stap_timers.c",
-        "src/core/statistics/census_init.c",
-        "src/core/statistics/census_log.c",
-        "src/core/statistics/census_rpc_stats.c",
-        "src/core/statistics/census_tracing.c",
-        "src/core/statistics/hash_table.c",
-        "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
         "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
@@ -284,7 +285,6 @@
       "src": [
         "test/core/end2end/cq_verifier.c",
         "test/core/iomgr/endpoint_tests.c",
-        "test/core/statistics/census_log_tests.c",
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
@@ -446,7 +446,8 @@
       ],
       "baselib": true,
       "filegroups": [
-        "grpc_base"
+        "grpc_base",
+        "census"
       ],
       "secure": "yes",
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
@@ -497,7 +498,8 @@
       ],
       "baselib": true,
       "filegroups": [
-        "grpc_base"
+        "grpc_base",
+        "census"
       ],
       "secure": "no",
       "vs_project_guid": "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
@@ -780,151 +782,6 @@
       "language": "c",
       "src": [
         "test/core/transport/chttp2/bin_encoder_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_hash_table_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/hash_table_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_multiple_writers_circular_buffer_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/multiple_writers_circular_buffer_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_multiple_writers_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/multiple_writers_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_performance_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/performance_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_quick_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/quick_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_small_log_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/small_log_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_stats_store_test",
-      "build": "executable",
-      "language": "c",
-      "src": [
-        "test/core/statistics/rpc_stats_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_stub_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/census_stub_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_trace_store_test",
-      "build": "executable",
-      "language": "c",
-      "src": [
-        "test/core/statistics/trace_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_window_stats_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/window_stats_test.c"
       ],
       "deps": [
         "grpc_test_util",

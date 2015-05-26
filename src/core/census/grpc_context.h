@@ -31,60 +31,12 @@
  *
  */
 
-#include <grpc/census.h>
-#include <grpc/grpc.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/debug/trace.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/init.h"
-#include "src/core/surface/surface_trace.h"
-#include "src/core/transport/chttp2_transport.h"
+/* GRPC <--> CENSUS context interface */
 
-static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
-static int g_initializations;
+#ifndef CENSUS_GRPC_CONTEXT_H
+#define CENSUS_GRPC_CONTEXT_H
 
-static void do_basic_init(void) {
-  gpr_mu_init(&g_init_mu);
-  g_initializations = 0;
-}
+void *grpc_census_context_create();
+void grpc_census_context_destroy(void *context);
 
-void grpc_init(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-
-  gpr_mu_lock(&g_init_mu);
-  if (++g_initializations == 1) {
-    grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("surface", &grpc_surface_trace);
-    grpc_register_tracer("http", &grpc_http_trace);
-    grpc_register_tracer("flowctl", &grpc_flowctl_trace);
-    grpc_register_tracer("batch", &grpc_trace_batch);
-    grpc_security_pre_init();
-    grpc_iomgr_init();
-    grpc_tracer_init("GRPC_TRACE");
-    census_initialize(CENSUS_NONE);
-    grpc_timers_global_init();
-  }
-  gpr_mu_unlock(&g_init_mu);
-}
-
-void grpc_shutdown(void) {
-  gpr_mu_lock(&g_init_mu);
-  if (--g_initializations == 0) {
-    grpc_iomgr_shutdown();
-    census_shutdown();
-    grpc_timers_global_destroy();
-  }
-  gpr_mu_unlock(&g_init_mu);
-}
-
-int grpc_is_initialized(void) {
-  int r;
-  gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
-  r = g_initializations > 0;
-  gpr_mu_unlock(&g_init_mu);
-  return r;
-}
+#endif /* CENSUS_GRPC_CONTEXT_H */

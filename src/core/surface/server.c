@@ -592,9 +592,15 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    server_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "server",
+    server_start_transport_op,
+    channel_op,
+    sizeof(call_data),
+    init_call_elem,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    "server",
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,
@@ -640,9 +646,10 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
+  /* TODO(census)
   if (census_enabled) {
     server->channel_filters[1] = &grpc_server_census_filter;
-  }
+    } */
   for (i = 0; i < filter_count; i++) {
     server->channel_filters[i + 1 + census_enabled] = filters[i];
   }
