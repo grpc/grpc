@@ -931,6 +931,7 @@ void grpc_server_destroy(grpc_server *server) {
       grpc_cq_hack_spin_pollset(server->cqs[i]);
     }
 
+    /* delay execution some, and return early */
     grpc_iomgr_add_callback(continue_server_shutdown, server);
     return;
   }
@@ -943,7 +944,6 @@ void grpc_server_destroy(grpc_server *server) {
 
   while ((calld = call_list_remove_head(&server->lists[PENDING_START],
                                         PENDING_START)) != NULL) {
-    gpr_log(GPR_DEBUG, "server destroys call %p", calld->call);
     calld->state = ZOMBIED;
     grpc_iomgr_add_callback(
         kill_zombie,
