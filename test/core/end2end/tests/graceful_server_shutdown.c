@@ -168,11 +168,10 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   cq_expect_completion(v_server, tag(102), 1);
+  cq_expect_completion(v_server, tag(0xdead), 1);
   cq_verify(v_server);
 
   grpc_call_destroy(s);
-  cq_expect_completion(v_server, tag(0xdead), 1);
-  cq_verify(v_server);
 
   cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);

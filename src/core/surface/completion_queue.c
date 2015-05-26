@@ -150,6 +150,7 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     int success) {
   event *ev;
   int shutdown = 0;
+  gpr_log(GPR_DEBUG, "end_op:%p", tag);
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   ev = add_locked(cc, GRPC_OP_COMPLETE, tag, call);
   ev->base.success = success;
@@ -162,26 +163,6 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   if (call) GRPC_CALL_INTERNAL_UNREF(call, "cq", 0);
-  if (shutdown) {
-    grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
-  }
-}
-
-void grpc_cq_begin_silent_op(grpc_completion_queue *cc) {
-  gpr_ref(&cc->refs);
-}
-
-void grpc_cq_end_silent_op(grpc_completion_queue *cc) {
-  int shutdown = 0;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  if (gpr_unref(&cc->refs)) {
-    GPR_ASSERT(!cc->shutdown);
-    GPR_ASSERT(cc->shutdown_called);
-    cc->shutdown = 1;
-    gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
-    shutdown = 1;
-  }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   if (shutdown) {
     grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
   }
