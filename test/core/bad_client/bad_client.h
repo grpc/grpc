@@ -31,37 +31,22 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_SERVER_H
-#define GRPC_INTERNAL_CORE_SURFACE_SERVER_H
+#ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
+#define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-#include "src/core/channel/channel_stack.h"
 #include <grpc/grpc.h>
-#include "src/core/transport/transport.h"
+#include "test/core/util/test_config.h"
 
-/* Create a server */
-grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
-                                             size_t filter_count,
-                                             const grpc_channel_args *args);
+typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server, grpc_completion_queue *cq);
 
-/* Add a listener to the server: when the server starts, it will call start,
-   and when it shuts down, it will call destroy */
-void grpc_server_add_listener(grpc_server *server, void *listener,
-                              void (*start)(grpc_server *server, void *arg,
-                                            grpc_pollset **pollsets,
-                                            size_t npollsets),
-                              void (*destroy)(grpc_server *server, void *arg));
+/* Test runner.
 
-void grpc_server_listener_destroy_done(void *server);
+   Create a server, and send client_payload to it as bytes from a client.
+   Execute validator in a separate thread to assert that the bytes are
+   handled as expected. */
+void grpc_run_bad_client_test(const char *name, const char *client_payload,
+	                            size_t client_payload_length,
+	                            grpc_bad_client_server_side_validator validator
+	                            );
 
-/* Setup a transport - creates a channel stack, binds the transport to the
-   server */
-grpc_transport_setup_result grpc_server_setup_transport(
-    grpc_server *server, grpc_transport *transport,
-    grpc_channel_filter const **extra_filters, size_t num_extra_filters,
-    grpc_mdctx *mdctx);
-
-const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
-
-int grpc_server_has_open_connections(grpc_server *server);
-
-#endif /* GRPC_INTERNAL_CORE_SURFACE_SERVER_H */
+#endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */
