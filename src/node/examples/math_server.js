@@ -119,7 +119,7 @@ var server = new Server({
 });
 
 if (require.main === module) {
-  server.bind('0.0.0.0:7070');
+  server.bind('0.0.0.0:50051');
   server.listen();
 }
 
