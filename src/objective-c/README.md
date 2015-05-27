@@ -8,7 +8,8 @@
 	- [Install protoc and the gRPC plugin without using Homebrew](#nohomebrew)
 	- [Integrate the generated gRPC library without using Cocoapods](#nococoapods)
 
-## Install protoc with the gRPC plugin <a name="install"></a>
+<a name="install"></a>
+## Install protoc with the gRPC plugin
 
 On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
 
@@ -18,7 +19,8 @@ $ curl -fsSL https://goo.gl/getgrpc | bash -
 ```
 This will download and run the [gRPC install script][]. After the command completes, you're ready to proceed.
 
-## Use protoc to generate a gRPC library <a name="protoc"></a>
+<a name="protoc"></a>
+## Use protoc to generate a gRPC library
 
 Run _protoc_ with the following flags to generate the client library for your `.proto` files:
 
@@ -28,7 +30,8 @@ protoc --objc_out=. --objcgrpc_out=. *.proto
 
 This will generate a pair of `.pbobjc.h`/`.pbobjc.m` files for each `.proto` file, with the messages and enums defined in them. And a pair of `.pbrpc.h`/`.pbrpc.m` files for each `.proto` file with services defined. The latter contains the code to make remote calls to the specified API.
 
-## Integrate the generated gRPC library in your project <a name="cocoapods"></a>
+<a name="cocoapods"></a>
+## Integrate the generated gRPC library in your project
 
 Install [Cocoapods](https://cocoapods.org/#install).
 
@@ -81,13 +84,15 @@ Finally, in your project's directory, run:
 pod install
 ```
 
-## Use the generated library in your code <a name="use"></a>
+<a name="use"></a>
+## Use the generated library in your code
 
 Please check this [sample app][] for examples of how to use a generated gRPC library.
 
-## Alternative methods <a name="alternatives"></a>
+<a name="alternatives"></a>
+## Alternative methods
 
-### Install protoc and the gRPC plugin without using Homebrew <a name="nohomebrew"></a>
+<a name="nohomebrew"></a>### Install protoc and the gRPC plugin without using Homebrew
 
 First install v3 of the Protocol Buffers compiler (_protoc_), by cloning [its Git repository](https://github.com/google/protobuf) and following these [installation instructions](https://github.com/google/protobuf#c-installation---unix) (the ones titled C++; don't miss the note for Mac users).
 
