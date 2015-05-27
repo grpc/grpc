@@ -57,7 +57,6 @@ class SimpleConfig(object):
     if environ is None:
       environ = {}
     self.build_config = config
-    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
@@ -93,7 +92,6 @@ class ValgrindConfig(object):
     self.build_config = config
     self.tool = tool
     self.args = args
-    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
   def job_spec(self, cmdline, hash_targets):
@@ -333,7 +331,7 @@ argp.add_argument('-c', '--config',
                   default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
 argp.add_argument('-r', '--regex', default='.*', type=str)
-argp.add_argument('-j', '--jobs', default=1000, type=int)
+argp.add_argument('-j', '--jobs', default=2 * multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
                   default=False,
@@ -455,7 +453,7 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
         itertools.repeat(one_run, runs_per_test))
     if not jobset.run(all_runs, check_cancelled,
                       newline_on_success=newline_on_success, travis=travis,
-                      maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
+                      maxjobs=args.jobs,
                       cache=cache):
       return 2
   finally:
