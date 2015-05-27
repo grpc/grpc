@@ -491,7 +491,8 @@ void grpc_server_start(grpc_server *server);
    Send a GRPC_OP_COMPLETE event when there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
    grpc_server_shutdown_and_notify calls are made. */
-void grpc_server_shutdown_and_notify(grpc_server *server, void *tag);
+void grpc_server_shutdown_and_notify(grpc_server *server,
+                                     grpc_completion_queue *cq, void *tag);
 
 /* Cancel all in-progress calls. 
    Only usable after shutdown. */

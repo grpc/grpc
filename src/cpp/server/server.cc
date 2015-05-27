@@ -52,6 +52,14 @@
 
 namespace grpc {
 
+class Server::ShutdownRequest GRPC_FINAL : public CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    delete this;
+    return false;
+  }
+};
+
 class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
@@ -286,7 +294,7 @@ void Server::Shutdown() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
-    grpc_server_shutdown(server_);
+    grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
 
     // Wait for running callbacks to finish.
