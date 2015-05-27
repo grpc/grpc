@@ -192,7 +192,7 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
-  cq_expect_completion(cqv, tag(102), 1);
+  cq_expect_completion(cqv, tag(103), 1);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 

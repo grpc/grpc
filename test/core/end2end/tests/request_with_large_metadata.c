@@ -170,6 +170,9 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
+  cq_expect_completion(cqv, tag(102), 1);
+  cq_verify(cqv);
+
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -181,7 +184,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
-  cq_expect_completion(cqv, tag(102), 1);
+  cq_expect_completion(cqv, tag(103), 1);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
