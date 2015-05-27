@@ -92,12 +92,13 @@ typedef struct {
   } value;
 } grpc_arg;
 
-/* An array of arguments that can be passed around.
-   Used to set optional channel-level configuration.
-   These configuration options are modelled as key-value pairs as defined
-   by grpc_arg; keys are strings to allow easy backwards-compatible extension
-   by arbitrary parties.
-   All evaluation is performed at channel creation time. */
+/** An array of arguments that can be passed around.
+    
+    Used to set optional channel-level configuration.
+    These configuration options are modelled as key-value pairs as defined
+    by grpc_arg; keys are strings to allow easy backwards-compatible extension
+    by arbitrary parties.
+    All evaluation is performed at channel creation time. */
 typedef struct {
   size_t num_args;
   grpc_arg *args;
@@ -192,15 +193,27 @@ typedef struct grpc_metadata {
   } internal_data;
 } grpc_metadata;
 
+/** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN, /* Shutting down */
-  GRPC_QUEUE_TIMEOUT,  /* No event before timeout */
-  GRPC_OP_COMPLETE     /* operation completion */
+  /** Shutting down */
+  GRPC_QUEUE_SHUTDOWN, 
+  /** No event before timeout */
+  GRPC_QUEUE_TIMEOUT,  
+  /** Operation completion */
+  GRPC_OP_COMPLETE     
 } grpc_completion_type;
 
+/** The result of an operation.
+
+    Returned by a completion queue when the operation started with tag. */
 typedef struct grpc_event {
+  /** The type of the completion. */
   grpc_completion_type type;
+  /** non-zero if the operation was successful, 0 upon failure. 
+      Only GRPC_OP_COMPLETE can succeed or fail. */
   int success;
+  /** The tag passed to grpc_call_start_batch etc to start this operation.
+      Only GRPC_OP_COMPLETE has a tag. */
   void *tag;
 } grpc_event;
 
@@ -322,37 +335,42 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
-/* Initialize the grpc library.
-   It is not safe to call any other grpc functions before calling this.
-   (To avoid overhead, little checking is done, and some things may work. We
-   do not warrant that they will continue to do so in future revisions of this
-   library). */
+/** Initialize the grpc library.
+    
+    It is not safe to call any other grpc functions before calling this.
+    (To avoid overhead, little checking is done, and some things may work. We
+    do not warrant that they will continue to do so in future revisions of this
+    library). */
 void grpc_init(void);
 
-/* Shut down the grpc library.
-   No memory is used by grpc after this call returns, nor are any instructions
-   executing within the grpc library.
-   Prior to calling, all application owned grpc objects must have been
-   destroyed. */
+/** Shut down the grpc library.
+    
+    No memory is used by grpc after this call returns, nor are any instructions
+    executing within the grpc library.
+    Prior to calling, all application owned grpc objects must have been
+    destroyed. */
 void grpc_shutdown(void);
 
+/** Create a completion queue */
 grpc_completion_queue *grpc_completion_queue_create(void);
 
-/* Blocks until an event is available, the completion queue is being shut down,
-   or deadline is reached. Returns NULL on timeout, otherwise the event that
-   occurred.
+/** Blocks until an event is available, the completion queue is being shut down,
+    or deadline is reached. 
 
-   Callers must not call grpc_completion_queue_next and
-   grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    Returns NULL on timeout, otherwise the event that occurred.
+
+    Callers must not call grpc_completion_queue_next and
+    grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                       gpr_timespec deadline);
 
-/* Blocks until an event with tag 'tag' is available, the completion queue is
-   being shutdown or deadline is reached. Returns NULL on timeout, or a pointer
-   to the event that occurred.
+/** Blocks until an event with tag 'tag' is available, the completion queue is
+    being shutdown or deadline is reached. 
 
-   Callers must not call grpc_completion_queue_next and
-   grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    Returns NULL on timeout, or a pointer to the event that occurred.
+
+    Callers must not call grpc_completion_queue_next and
+    grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                        gpr_timespec deadline);
 

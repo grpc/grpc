@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,41 +29,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Allows dot-accessible dictionaries."""
+set -ex
 
+# change to grpc repo root
+cd $(dirname $0)/../..
 
-class Bunch(dict):
-
-  def __init__(self, d):
-    dict.__init__(self, d)
-    self.__dict__.update(d)
-
-
-# Converts any kind of variable to a Bunch
-def to_bunch(var):
-  if isinstance(var, list):
-    return [to_bunch(i) for i in var]
-  if isinstance(var, dict):
-    ret = {}
-    for k, v in var.items():
-      if isinstance(v, (list, dict)):
-        v = to_bunch(v)
-      ret[k] = v
-    return Bunch(ret)
-  else:
-    return var
-
-
-# Merges JSON 'add' into JSON 'dst'
-def merge_json(dst, add):
-  if isinstance(dst, dict) and isinstance(add, dict):
-    for k, v in add.items():
-      if k in dst:
-        if k == '#': continue
-        merge_json(dst[k], v)
-      else:
-        dst[k] = v
-  elif isinstance(dst, list) and isinstance(add, list):
-    dst.extend(add)
-  else:
-    raise Exception('Tried to merge incompatible objects %r, %r' % (dst, add))
+for i in core c++
+do
+	mkdir -p doc/ref/$i
+	doxygen tools/doxygen/Doxyfile.$i
+done

@@ -1157,3 +1157,12 @@ static void publish_registered_or_batch(grpc_call *call, int success,
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {
   return server->channel_args;
 }
+
+int grpc_server_has_open_connections(grpc_server *server) {
+  int r;
+  gpr_mu_lock(&server->mu);
+  r = server->root_channel_data.next != &server->root_channel_data;
+  gpr_mu_unlock(&server->mu);
+  return r;
+}
+

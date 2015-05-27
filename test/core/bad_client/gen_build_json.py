@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,41 +28,52 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Allows dot-accessible dictionaries."""
+
+"""Generates the appropriate build.json data for all the end2end tests."""
 
 
-class Bunch(dict):
+import simplejson
+import collections
 
-  def __init__(self, d):
-    dict.__init__(self, d)
-    self.__dict__.update(d)
+TestOptions = collections.namedtuple('TestOptions', 'flaky')
+default_test_options = TestOptions(False)
+
+# maps test names to options
+BAD_CLIENT_TESTS = {
+    'connection_prefix': default_test_options,
+}
+
+def main():
+  json = {
+      '#': 'generated with test/bad_client/gen_build_json.py',
+      'libs': [
+          {
+            'name': 'bad_client_test',
+            'build': 'private',
+            'language': 'c',
+            'src': [
+              'test/core/bad_client/bad_client.c'
+            ]
+          }],
+      'targets': [
+          {
+              'name': '%s_bad_client_test' % t,
+              'build': 'test',
+              'language': 'c',
+              'secure': 'no',
+              'src': ['test/core/bad_client/tests/%s.c' % t],
+              'flaky': 'invoke_large_request' in t,
+              'deps': [
+                  'bad_client_test',
+                  'grpc_test_util_unsecure',
+                  'grpc_unsecure',
+                  'gpr_test_util',
+                  'gpr'
+              ]
+          }
+      for t in sorted(BAD_CLIENT_TESTS.keys())]}
+  print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
 
 
-# Converts any kind of variable to a Bunch
-def to_bunch(var):
-  if isinstance(var, list):
-    return [to_bunch(i) for i in var]
-  if isinstance(var, dict):
-    ret = {}
-    for k, v in var.items():
-      if isinstance(v, (list, dict)):
-        v = to_bunch(v)
-      ret[k] = v
-    return Bunch(ret)
-  else:
-    return var
-
-
-# Merges JSON 'add' into JSON 'dst'
-def merge_json(dst, add):
-  if isinstance(dst, dict) and isinstance(add, dict):
-    for k, v in add.items():
-      if k in dst:
-        if k == '#': continue
-        merge_json(dst[k], v)
-      else:
-        dst[k] = v
-  elif isinstance(dst, list) and isinstance(add, list):
-    dst.extend(add)
-  else:
-    raise Exception('Tried to merge incompatible objects %r, %r' % (dst, add))
+if __name__ == '__main__':
+  main()
