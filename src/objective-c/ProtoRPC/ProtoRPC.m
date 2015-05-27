@@ -59,7 +59,7 @@
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable {
   // Because we can't tell the type system to constrain the class, we need to check at runtime:
-  if (![responseClass respondsToSelector:@selector(parseFromData:)]) {
+  if (![responseClass respondsToSelector:@selector(parseFromData:error:)]) {
     [NSException raise:NSInvalidArgumentException
                 format:@"A protobuf class to parse the responses must be provided."];
   }
@@ -71,7 +71,7 @@
   if ((self = [super initWithHost:host method:method requestsWriter:bytesWriter])) {
     // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-      [responsesWriteable writeValue:[responseClass parseFromData:value]];
+      [responsesWriteable writeValue:[responseClass parseFromData:value error:NULL]];
     } completionHandler:^(NSError *errorOrNil) {
       [responsesWriteable writesFinishedWithError:errorOrNil];
     }];
