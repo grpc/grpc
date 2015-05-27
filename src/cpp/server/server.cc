@@ -221,6 +221,9 @@ Server::~Server() {
       Shutdown();
     }
   }
+  void* got_tag;
+  bool ok;
+  GPR_ASSERT(!cq_.Next(&got_tag, &ok));
   grpc_server_destroy(server_);
   if (thread_pool_owned_) {
     delete thread_pool_;
