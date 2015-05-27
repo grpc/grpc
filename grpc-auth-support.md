@@ -101,6 +101,19 @@ creds = GRPC::Core::Credentials.new(load_certs)  # load_certs typically loads a 
 stub = Helloworld::Greeter::Stub.new('localhost:50051', creds: creds)
 ```
 
+###SSL/TLS for server authentication and encryption (C#)
+```csharp
+// Base case - No encryption
+var channel = new Channel("localhost:50051");
+var client = new Greeter.GreeterClient(channel);
+...
+
+// With server authentication SSL/TLS
+var credentials = new SslCredentials(File.ReadAllText("ca.pem"));  // Load a CA file
+var channel = new Channel("localhost:50051", credentials);
+var client = new Greeter.GreeterClient(channel);
+```
+
 ###Authenticating with Google (Ruby)
 ```ruby
 # Base case - No encryption/authorization
@@ -137,4 +150,27 @@ var scope = 'https://www.googleapis.com/auth/grpc-testing';
                                     {credentials: creds},
                                     grpc.getGoogleAuthDelegate(auth));
 });
+```
+
+###Authenticating with Google (C#)
+```csharp
+// Base case - No encryption/authorization
+var channel = new Channel("localhost:50051");
+var client = new Greeter.GreeterClient(channel);
+...
+
+// Authenticating with Google
+using Grpc.Auth;  // from Grpc.Auth NuGet package
+...
+var credentials = new SslCredentials(File.ReadAllText("ca.pem"));  // Load a CA file
+var channel = new Channel("localhost:50051", credentials);
+
+string scope = "https://www.googleapis.com/auth/grpc-testing";
+var authorization = GoogleCredential.GetApplicationDefault();
+if (authorization.IsCreateScopedRequired)
+{
+    authorization = credential.CreateScoped(new[] { scope });
+}
+var client = new Greeter.GreeterClient(channel,
+        new StubConfiguration(OAuth2InterceptorFactory.Create(credential)));
 ```
