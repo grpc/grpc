@@ -125,10 +125,6 @@ function _read(size) {
       self.finished = true;
       return;
     }
-    if (self.finished) {
-      self.push(null);
-      return;
-    }
     var data = event.read;
     if (self.push(self.deserialize(data)) && data !== null) {
       var read_batch = {};

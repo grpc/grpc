@@ -100,7 +100,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
                                     cancellation_mode mode) {
   grpc_call *c;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_cancel_in_a_vacuum", NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
 

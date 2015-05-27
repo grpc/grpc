@@ -38,7 +38,7 @@ from grpc.framework.base import in_memory
 from grpc.framework.base import interfaces  # pylint: disable=unused-import
 from grpc.framework.foundation import logging_pool
 
-_POOL_SIZE_LIMIT = 20
+_POOL_SIZE_LIMIT = 5
 
 _MAXIMUM_TIMEOUT = 90
 
