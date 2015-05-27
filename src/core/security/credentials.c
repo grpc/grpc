@@ -832,8 +832,10 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
 
   if (c->is_async) {
     grpc_iomgr_add_callback(
+        grpc_iomgr_cb_create(
         on_simulated_token_fetch_done,
-        grpc_credentials_metadata_request_create(creds, cb, user_data));
+        grpc_credentials_metadata_request_create(creds, cb, user_data),
+        0 /*GPR_FALSE*/));
   } else {
     cb(user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
   }

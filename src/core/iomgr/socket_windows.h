@@ -93,6 +93,8 @@ typedef struct grpc_winsocket {
      there is a pending operation that the IO Completion Port will have to
      wait for. The socket will be collected at that time. */
   int orphan;
+
+  grpc_iomgr_closure shutdown_iocb;
 } grpc_winsocket;
 
 /* Create a wrapped windows handle. This takes ownership of it, meaning that

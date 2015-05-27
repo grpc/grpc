@@ -58,6 +58,9 @@ typedef struct {
   gpr_uint8 sending_farewell;
   /* have we sent farewell (goaway + disconnect) */
   gpr_uint8 sent_farewell;
+
+  grpc_iomgr_closure finally_destroy_channel_iocb;
+  grpc_iomgr_closure send_farewells_iocb;
 } lb_channel_data;
 
 typedef struct { grpc_child_channel *channel; } lb_call_data;
@@ -213,12 +216,18 @@ static void maybe_destroy_channel(grpc_child_channel *channel) {
   lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
   if (chand->destroyed && chand->disconnected && chand->active_calls == 0 &&
       !chand->sending_farewell && !chand->calling_back) {
-    grpc_iomgr_add_callback(finally_destroy_channel, channel);
+    chand->finally_destroy_channel_iocb.cb = finally_destroy_channel;
+    chand->finally_destroy_channel_iocb.cb_arg = channel;
+    chand->finally_destroy_channel_iocb.is_ext_managed = 1; /* GPR_TRUE */
+    grpc_iomgr_add_callback(&chand->finally_destroy_channel_iocb);
   } else if (chand->destroyed && !chand->disconnected &&
              chand->active_calls == 0 && !chand->sending_farewell &&
              !chand->sent_farewell) {
     chand->sending_farewell = 1;
-    grpc_iomgr_add_callback(send_farewells, channel);
+    chand->send_farewells_iocb.cb = send_farewells;
+    chand->send_farewells_iocb.cb_arg = channel;
+    chand->send_farewells_iocb.is_ext_managed = 1;  /* GPR_TRUE */
+    grpc_iomgr_add_callback(&chand->send_farewells_iocb);
   }
 }
 

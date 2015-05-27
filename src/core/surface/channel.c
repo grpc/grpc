@@ -61,6 +61,7 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
+  grpc_iomgr_closure destroy_iocb;
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
@@ -193,7 +194,10 @@ static void destroy_channel(void *p, int ok) {
 
 void grpc_channel_internal_unref(grpc_channel *channel) {
   if (gpr_unref(&channel->refs)) {
-    grpc_iomgr_add_callback(destroy_channel, channel);
+    channel->destroy_iocb.cb = destroy_channel;
+    channel->destroy_iocb.cb_arg = channel;
+    channel->destroy_iocb.is_ext_managed = 1;
+    grpc_iomgr_add_callback(&channel->destroy_iocb);
   }
 }
 

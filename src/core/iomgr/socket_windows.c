@@ -62,15 +62,18 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
 int grpc_winsocket_shutdown(grpc_winsocket *socket) {
   int callbacks_set = 0;
   gpr_mu_lock(&socket->state_mu);
+  socket->shutdown_iocb.is_ext_managed = 1; /* GPR_TRUE */
   if (socket->read_info.cb) {
     callbacks_set++;
-    grpc_iomgr_add_delayed_callback(socket->read_info.cb,
-                                    socket->read_info.opaque, 0);
+    socket->shutdown_iocb.cb = socket->read_info.cb;
+    socket->shutdown_iocb.cb_arg = socket->read_info.opaque;
+    grpc_iomgr_add_delayed_callback(socket->shutdown_iocb, 0);
   }
   if (socket->write_info.cb) {
     callbacks_set++;
-    grpc_iomgr_add_delayed_callback(socket->write_info.cb,
-                                    socket->write_info.opaque, 0);
+    socket->shutdown_iocb.cb = socket->write_info.cb;
+    socket->shutdown_iocb.cb_arg = socket->write_info.opaque;
+    grpc_iomgr_add_delayed_callback(socket->shutdown_iocb, 0);
   }
   gpr_mu_unlock(&socket->state_mu);
   return callbacks_set;

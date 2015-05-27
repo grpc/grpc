@@ -226,6 +226,7 @@ struct grpc_call {
 
   gpr_slice_buffer incoming_message;
   gpr_uint32 incoming_message_length;
+  grpc_iomgr_closure destroy_iocb;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -367,7 +368,10 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
     if (allow_immediate_deletion) {
       destroy_call(c, 1);
     } else {
-      grpc_iomgr_add_callback(destroy_call, c);
+      c->destroy_iocb.cb = destroy_call;
+      c->destroy_iocb.cb_arg = c;
+      c->destroy_iocb.is_ext_managed = 1; /* GPR_TRUE */
+      grpc_iomgr_add_callback(&c->destroy_iocb);
     }
   }
 }

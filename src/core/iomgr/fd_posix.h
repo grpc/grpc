@@ -40,11 +40,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-typedef struct {
-  grpc_iomgr_cb_func cb;
-  void *cb_arg;
-} grpc_iomgr_closure;
-
 typedef struct grpc_fd grpc_fd;
 
 typedef struct grpc_fd_watcher {
@@ -99,6 +94,11 @@ struct grpc_fd {
   grpc_iomgr_cb_func on_done;
   void *on_done_user_data;
   struct grpc_fd *freelist_next;
+
+  grpc_iomgr_closure on_done_iocb;
+  /*grpc_iomgr_closure *ready_iocb; XXX: the only one  we need to allocate on
+   * the spot*/
+  grpc_iomgr_closure shutdown_iocbs[2];
 };
 
 /* Create a wrapped file descriptor.
