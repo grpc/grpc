@@ -125,7 +125,7 @@
     XCTAssertNotNil(value, @"nil value received as response.");
     [response fulfill];
     XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
-    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value];
+    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
     // We expect empty strings, not nil:
     XCTAssertNotNil(response.username, @"Response's username is nil.");
     XCTAssertNotNil(response.oauthScope, @"Response's OAuth scope is nil.");
