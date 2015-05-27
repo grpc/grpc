@@ -589,7 +589,8 @@
         "src/compiler/ruby_generator.cc"
       ],
       "deps": [],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{B6E81D84-2ACB-41B8-8781-493A944C7817}"
     },
     {
       "name": "interop_client_helper",
@@ -1995,7 +1996,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{7E51A25F-AC59-488F-906C-C60FAAE706AA}"
     },
     {
       "name": "grpc_csharp_plugin",
@@ -2007,7 +2009,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{3C813052-A49A-4662-B90A-1ADBEC7EE453}"
     },
     {
       "name": "grpc_objective_c_plugin",
@@ -2019,7 +2022,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{19564640-CEE6-4921-ABA5-676ED79A36F6}"
     },
     {
       "name": "grpc_python_plugin",
@@ -2031,7 +2035,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}"
     },
     {
       "name": "grpc_ruby_plugin",
@@ -2043,7 +2048,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{069E9D05-B78B-4751-9252-D21EBAE7DE8E}"
     },
     {
       "name": "interop_client",
