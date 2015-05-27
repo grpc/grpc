@@ -122,6 +122,16 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
 
+void grpc_server_log_request_call(char *file, int line,
+                                  gpr_log_severity severity,
+                                  grpc_server *server,
+                                  grpc_call **call,
+                                  grpc_call_details *details,
+                                  grpc_metadata_array *initial_metadata,
+                                  grpc_completion_queue *cq_bound_to_call,
+                                  grpc_completion_queue *cq_for_notification,
+                                  void *tag);
+
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
 void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
@@ -131,6 +141,9 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
+
+#define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notifications, tag) \
+  if (grpc_trace_batch) grpc_server_log_request_call(sev, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notifications, tag)
 
 gpr_uint8 grpc_call_is_client(grpc_call *call);
 

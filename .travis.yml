@@ -20,7 +20,8 @@ env:
     - CONFIG=opt TEST=sanity JOBS=1
     - CONFIG=gcov TEST=c JOBS=16
     - CONFIG=gcov TEST=c++ JOBS=16
-    - CONFIG=opt TEST="c c++" JOBS=16
+    - CONFIG=opt TEST=c JOBS=16
+    - CONFIG=opt TEST=c++ JOBS=16
     - CONFIG=opt TEST=node JOBS=16
     - CONFIG=opt TEST=ruby JOBS=16
     - CONFIG=opt TEST=python JOBS=1
