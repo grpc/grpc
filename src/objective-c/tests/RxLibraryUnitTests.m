@@ -34,6 +34,9 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
+#import <gRPC/GRXWriter.h>
+#import <gRPC/GRXWriteable.h>
+
 @interface RxLibraryUnitTests : XCTestCase
 
 @end
