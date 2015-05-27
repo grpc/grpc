@@ -1010,6 +1010,9 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag) {
   requested_call rc;
+  GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
+                               initial_metadata, cq_bound_to_call,
+                               cq_for_notification, tag);
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
