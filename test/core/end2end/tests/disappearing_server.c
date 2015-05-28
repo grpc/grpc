@@ -62,7 +62,6 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown(f->server);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -133,7 +132,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
 
   /* should be able to shut down the server early
      - and still complete the request */
-  grpc_server_shutdown(f->server);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -151,6 +150,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
 
   cq_expect_completion(cqv, tag(102), 1);
   cq_expect_completion(cqv, tag(1), 1);
+  cq_expect_completion(cqv, tag(1000), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);

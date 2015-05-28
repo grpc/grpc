@@ -146,7 +146,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_verify(cqv);
 
   /* shutdown and destroy the server */
-  grpc_server_shutdown_and_notify(f.server, tag(0xdead));
+  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cq_verify_empty(cqv);
 
   op = ops;
@@ -164,12 +164,11 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   cq_expect_completion(cqv, tag(102), 1);
-  cq_verify(cqv);
-
-  grpc_call_destroy(s);
   cq_expect_completion(cqv, tag(0xdead), 1);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
+
+  grpc_call_destroy(s);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));

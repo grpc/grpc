@@ -129,6 +129,10 @@ void grpc_run_bad_client_test(const char *name, const char *client_payload,
 
   /* Shutdown */
   grpc_endpoint_destroy(sfd.client);
+  grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
+  GPR_ASSERT(grpc_completion_queue_pluck(a.cq, NULL,
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
 

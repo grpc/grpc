@@ -166,13 +166,14 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
 void grpc_resolve_address(const char *name, const char *default_port,
                           grpc_resolve_cb cb, void *arg) {
   request *r = gpr_malloc(sizeof(request));
-  gpr_thd_id id;
+  /*gpr_thd_id id;*/
   grpc_iomgr_ref();
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->cb = cb;
   r->arg = arg;
-  gpr_thd_new(&id, do_request, r, NULL);
+  /*gpr_thd_new(&id, do_request, r, NULL);*/
+  do_request(r);
 }
 
 #endif

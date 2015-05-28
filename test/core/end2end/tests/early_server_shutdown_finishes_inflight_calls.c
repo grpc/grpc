@@ -72,13 +72,6 @@ static void drain_cq(grpc_completion_queue *cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
-  if (!f->server) return;
-  grpc_server_shutdown(f->server);
-  grpc_server_destroy(f->server);
-  f->server = NULL;
-}
-
 static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
@@ -86,7 +79,6 @@ static void shutdown_client(grpc_end2end_test_fixture *f) {
 }
 
 static void end_test(grpc_end2end_test_fixture *f) {
-  shutdown_server(f);
   shutdown_client(f);
 
   grpc_completion_queue_shutdown(f->cq);
@@ -153,11 +145,15 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   /* shutdown and destroy the server */
-  shutdown_server(&f);
+  grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
+  grpc_server_cancel_all_calls(f.server);
 
+  cq_expect_completion(cqv, tag(1000), 1);
   cq_expect_completion(cqv, tag(102), 1);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
+
+  grpc_server_destroy(f.server);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
