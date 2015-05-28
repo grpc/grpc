@@ -131,33 +131,63 @@ void gpr_cmdline_on_extra_arg(
   cl->extra_arg_help = help;
 }
 
-static void print_usage_and_die(gpr_cmdline *cl) {
+/* recursively descend argument list, adding the last element
+   to s first - so that arguments are added in the order they were
+   added to the list by api calls */
+static void add_args_to_usage(gpr_strvec *s, arg *a) {
+  char *tmp;
+
+  if (!a) return;
+  add_args_to_usage(s, a->next);
+
+  switch (a->type) {
+    case ARGTYPE_BOOL:
+      gpr_asprintf(&tmp, " [--%s|--no-%s]", a->name, a->name);
+      gpr_strvec_add(s, tmp);
+      break;
+    case ARGTYPE_STRING:
+      gpr_asprintf(&tmp, " [--%s=string]", a->name);
+      gpr_strvec_add(s, tmp);
+      break;
+    case ARGTYPE_INT:
+      gpr_asprintf(&tmp, " [--%s=int]", a->name);
+      gpr_strvec_add(s, tmp);
+      break;
+  }
+}
+
+char *gpr_cmdline_usage_string(gpr_cmdline *cl, const char *argv0) {
   /* TODO(ctiller): make this prettier */
-  arg *a;
-  const char *name = strrchr(cl->argv0, '/');
+  gpr_strvec s;
+  char *tmp;
+  const char *name = strrchr(argv0, '/');
+
   if (name) {
     name++;
   } else {
-    name = cl->argv0;
+    name = argv0;
   }
-  fprintf(stderr, "Usage: %s", name);
-  for (a = cl->args; a; a = a->next) {
-    switch (a->type) {
-      case ARGTYPE_BOOL:
-        fprintf(stderr, " [--%s|--no-%s]", a->name, a->name);
-        break;
-      case ARGTYPE_STRING:
-        fprintf(stderr, " [--%s=string]", a->name);
-        break;
-      case ARGTYPE_INT:
-        fprintf(stderr, " [--%s=int]", a->name);
-        break;
-    }
-  }
+
+  gpr_strvec_init(&s);
+
+  gpr_asprintf(&tmp, "Usage: %s", name);
+  gpr_strvec_add(&s, tmp);
+  add_args_to_usage(&s, cl->args);
   if (cl->extra_arg) {
-    fprintf(stderr, " [%s...]", cl->extra_arg_name);
+    gpr_asprintf(&tmp, " [%s...]", cl->extra_arg_name);
+    gpr_strvec_add(&s, tmp);
   }
-  fprintf(stderr, "\n");
+  gpr_strvec_add(&s, gpr_strdup("\n"));
+
+  tmp = gpr_strvec_flatten(&s, NULL);
+  gpr_strvec_destroy(&s);
+  return tmp;
+}
+
+static void print_usage_and_die(gpr_cmdline *cl) {
+  char *usage = gpr_cmdline_usage_string(cl, cl->argv0);
+  fprintf(stderr, "%s", usage);
+  gpr_free(usage);
   exit(1);
 }
 
