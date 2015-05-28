@@ -236,9 +236,8 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
     /* swap was unsuccessful due to an intervening set_ready call.
        Fall through to the READY code below */
     case READY:
-      assert(gpr_atm_no_barrier_load(st) == READY);
+      GPR_ASSERT(gpr_atm_no_barrier_load(st) == READY);
       gpr_atm_rel_store(st, NOT_READY);
-      closure->success = -1;
       process_callback(closure, !gpr_atm_acq_load(&fd->shutdown),
                     allow_synchronous_callback);
       return;
@@ -271,8 +270,8 @@ static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure *callbacks,
          Fall through to the WAITING code below */
       state = gpr_atm_acq_load(st);
     default: /* waiting */
-      assert(gpr_atm_no_barrier_load(st) != READY &&
-             gpr_atm_no_barrier_load(st) != NOT_READY);
+      GPR_ASSERT(gpr_atm_no_barrier_load(st) != READY &&
+                 gpr_atm_no_barrier_load(st) != NOT_READY);
       callbacks[(*ncallbacks)++] = *(grpc_iomgr_closure *)state;
       gpr_atm_rel_store(st, NOT_READY);
       return;
@@ -291,7 +290,7 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   set_ready_locked(st, &closure, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   success = !gpr_atm_acq_load(&fd->shutdown);
-  assert(ncb <= 1);
+  GPR_ASSERT(ncb <= 1);
   if (ncb > 0) {
     grpc_iomgr_closure *managed_cb = gpr_malloc(sizeof(grpc_iomgr_closure));
     grpc_iomgr_managed_closure_init(managed_cb, closure.cb, closure.cb_arg);
@@ -307,7 +306,7 @@ void grpc_fd_shutdown(grpc_fd *fd) {
   set_ready_locked(&fd->readst, fd->shutdown_iocbs, &ncb);
   set_ready_locked(&fd->writest, fd->shutdown_iocbs, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
-  assert(ncb <= 2);
+  GPR_ASSERT(ncb <= 2);
   process_callbacks(fd->shutdown_iocbs, ncb, 0, 0);
 }
 
