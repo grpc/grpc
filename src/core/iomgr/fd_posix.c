@@ -249,7 +249,7 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
   abort();
 }
 
-static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure *callbacks,
+static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure **callbacks,
                              size_t *ncallbacks) {
   gpr_intptr state = gpr_atm_acq_load(st);
 
@@ -269,7 +269,7 @@ static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure *callbacks,
     default: /* waiting */
       GPR_ASSERT(gpr_atm_no_barrier_load(st) != READY &&
                  gpr_atm_no_barrier_load(st) != NOT_READY);
-      callbacks[(*ncallbacks)++] = *(grpc_iomgr_closure *)state;
+      callbacks[(*ncallbacks)++] = (grpc_iomgr_closure *)state;
       gpr_atm_rel_store(st, NOT_READY);
       return;
   }
@@ -280,7 +280,7 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
   int success;
-  grpc_iomgr_closure closure;
+  grpc_iomgr_closure* closure;
   size_t ncb = 0;
 
   gpr_mu_lock(&fd->set_state_mu);
@@ -289,9 +289,7 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   success = !gpr_atm_acq_load(&fd->shutdown);
   GPR_ASSERT(ncb <= 1);
   if (ncb > 0) {
-    grpc_iomgr_closure *managed_cb = gpr_malloc(sizeof(grpc_iomgr_closure));
-    grpc_iomgr_managed_closure_init(managed_cb, closure.cb, closure.cb_arg);
-    process_callbacks(managed_cb, ncb, success, allow_synchronous_callback);
+    process_callbacks(closure, ncb, success, allow_synchronous_callback);
   }
 }
 
@@ -300,11 +298,11 @@ void grpc_fd_shutdown(grpc_fd *fd) {
   gpr_mu_lock(&fd->set_state_mu);
   GPR_ASSERT(!gpr_atm_no_barrier_load(&fd->shutdown));
   gpr_atm_rel_store(&fd->shutdown, 1);
-  set_ready_locked(&fd->readst, fd->shutdown_closures, &ncb);
-  set_ready_locked(&fd->writest, fd->shutdown_closures, &ncb);
+  set_ready_locked(&fd->readst, &fd->shutdown_closures[0], &ncb);
+  set_ready_locked(&fd->writest, &fd->shutdown_closures[0], &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   GPR_ASSERT(ncb <= 2);
-  process_callbacks(fd->shutdown_closures, ncb, 0, 0);
+  process_callbacks(fd->shutdown_closures[0], ncb, 0, 0);
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure) {

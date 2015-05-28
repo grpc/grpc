@@ -94,7 +94,7 @@ struct grpc_fd {
   struct grpc_fd *freelist_next;
 
   grpc_iomgr_closure on_done_closure;
-  grpc_iomgr_closure shutdown_closures[2];
+  grpc_iomgr_closure *shutdown_closures[2];
 };
 
 /* Create a wrapped file descriptor.
