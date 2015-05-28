@@ -86,16 +86,38 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
   return cc;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef GRPC_CQ_REF_COUNT_DEBUG
+void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason) {
+  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count + 1, reason);
+#else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
+#endif
   gpr_ref(&cc->owning_refs);
 }
 
 static void on_pollset_destroy_done(void *arg) {
   grpc_completion_queue *cc = arg;
-  grpc_cq_internal_unref(cc);
+  GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
 }
 
+#ifdef GRPC_CQ_REF_COUNT_DEBUG
+void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason) {
+  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1, reason);
+#else
 void grpc_cq_internal_unref(grpc_completion_queue *cc) {
+#endif
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->queue == NULL);
     grpc_pollset_destroy(&cc->pollset);
@@ -170,7 +192,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   event *ev = NULL;
   grpc_event ret;
 
-  grpc_cq_internal_ref(cc);
+  GRPC_CQ_INTERNAL_REF(cc, "next");
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     if (cc->queue != NULL) {
@@ -202,7 +224,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
       GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
-      grpc_cq_internal_unref(cc);
+      GRPC_CQ_INTERNAL_UNREF(cc, "next");
       return ret;
     }
   }
@@ -210,7 +232,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   ret = ev->base;
   gpr_free(ev);
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
-  grpc_cq_internal_unref(cc);
+  GRPC_CQ_INTERNAL_UNREF(cc, "next");
   return ret;
 }
 
@@ -248,7 +270,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   event *ev = NULL;
   grpc_event ret;
 
-  grpc_cq_internal_ref(cc);
+  GRPC_CQ_INTERNAL_REF(cc, "pluck");
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     if ((ev = pluck_event(cc, tag))) {
@@ -263,7 +285,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
       GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
-      grpc_cq_internal_unref(cc);
+      GRPC_CQ_INTERNAL_UNREF(cc, "pluck");
       return ret;
     }
   }
@@ -271,7 +293,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   ret = ev->base;
   gpr_free(ev);
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
-  grpc_cq_internal_unref(cc);
+  GRPC_CQ_INTERNAL_UNREF(cc, "pluck");
   return ret;
 }
 
@@ -292,7 +314,7 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
-  grpc_cq_internal_unref(cc);
+  GRPC_CQ_INTERNAL_UNREF(cc, "destroy");
 }
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {

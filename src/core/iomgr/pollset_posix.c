@@ -134,6 +134,7 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   r = pollset->vtable->maybe_work(pollset, deadline, now, 1);
   gpr_tls_set(&g_current_thread_poller, 0);
   if (pollset->shutting_down) {
+    gpr_log(GPR_DEBUG, "shutting_down': cbs=%d ctr=%d", pollset->in_flight_cbs, pollset->counter);
     if (pollset->counter > 0) {
       grpc_pollset_kick(pollset);
     } else if (pollset->in_flight_cbs == 0) {
@@ -155,9 +156,11 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
   int in_flight_cbs;
   int counter;
   gpr_mu_lock(&pollset->mu);
+  GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = 1;
   in_flight_cbs = pollset->in_flight_cbs;
   counter = pollset->counter;
+  gpr_log(GPR_DEBUG, "shutting_down: cbs=%d ctr=%d", in_flight_cbs, counter);
   pollset->shutdown_done_cb = shutdown_done;
   pollset->shutdown_done_arg = shutdown_done_arg;
   if (counter > 0) {
@@ -207,7 +210,7 @@ static void basic_do_promote(void *args, int success) {
 
   gpr_mu_lock(&pollset->mu);
   /* First we need to ensure that nobody is polling concurrently */
-  while (pollset->counter != 0) {
+  if (pollset->counter != 0) {
     grpc_pollset_kick(pollset);
     grpc_iomgr_add_callback(basic_do_promote, up_args);
     gpr_mu_unlock(&pollset->mu);
@@ -344,10 +347,10 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
   pfd[0].events = POLLIN;
   pfd[0].revents = 0;
   nfds = 1;
+  pollset->counter++;
   if (fd) {
     pfd[1].fd = fd->fd;
     pfd[1].revents = 0;
-    pollset->counter++;
     gpr_mu_unlock(&pollset->mu);
     pfd[1].events =
         grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);

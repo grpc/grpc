@@ -276,7 +276,7 @@ static void server_delete(grpc_server *server) {
     gpr_free(rm);
   }
   for (i = 0; i < server->cq_count; i++) {
-    grpc_cq_internal_unref(server->cqs[i]);
+    GRPC_CQ_INTERNAL_UNREF(server->cqs[i], "server");
   }
   gpr_free(server->cqs);
   gpr_free(server->pollsets);
@@ -632,7 +632,7 @@ void grpc_server_register_completion_queue(grpc_server *server,
   for (i = 0; i < server->cq_count; i++) {
     if (server->cqs[i] == cq) return;
   }
-  grpc_cq_internal_ref(cq);
+  GRPC_CQ_INTERNAL_REF(cq, "server");
   n = server->cq_count++;
   server->cqs = gpr_realloc(server->cqs,
                             server->cq_count * sizeof(grpc_completion_queue *));
