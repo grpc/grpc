@@ -97,7 +97,6 @@ static void become_unary_pollset(grpc_pollset *pollset, grpc_fd *fd);
 
 void grpc_pollset_init(grpc_pollset *pollset) {
   gpr_mu_init(&pollset->mu);
-  gpr_cv_init(&pollset->cv);
   grpc_pollset_kick_init(&pollset->kick_state);
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
@@ -107,14 +106,12 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(pollset, fd);
-  gpr_cv_broadcast(&pollset->cv);
   gpr_mu_unlock(&pollset->mu);
 }
 
 void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->del_fd(pollset, fd);
-  gpr_cv_broadcast(&pollset->cv);
   gpr_mu_unlock(&pollset->mu);
 }
 
@@ -165,7 +162,6 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   pollset->vtable->destroy(pollset);
   grpc_pollset_kick_destroy(&pollset->kick_state);
   gpr_mu_destroy(&pollset->mu);
-  gpr_cv_destroy(&pollset->cv);
 }
 
 /*
@@ -268,7 +264,6 @@ static void unary_poll_do_promote(void *args, int success) {
     }
   }
 
-  gpr_cv_broadcast(&pollset->cv);
   gpr_mu_unlock(&pollset->mu);
 
   if (do_shutdown_cb) {
@@ -334,20 +329,15 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   int timeout;
   int r;
 
-  if (pollset->counter) {
-    return 0;
-  }
   if (pollset->in_flight_cbs) {
     /* Give do_promote priority so we don't starve it out */
-    gpr_mu_unlock(&pollset->mu);
-    gpr_mu_lock(&pollset->mu);
-    return 0;
+    return 1;
   }
   fd = pollset->data.ptr;
   if (grpc_fd_is_orphaned(fd)) {
     grpc_fd_unref(fd);
     become_empty_pollset(pollset);
-    return 0;
+    return 1;
   }
   if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
     timeout = -1;
@@ -366,7 +356,7 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   pfd[0].revents = 0;
   pfd[1].fd = fd->fd;
   pfd[1].revents = 0;
-  pollset->counter = 1;
+  pollset->counter++;
   gpr_mu_unlock(&pollset->mu);
 
   pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
@@ -399,8 +389,7 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   grpc_pollset_kick_post_poll(&pollset->kick_state);
 
   gpr_mu_lock(&pollset->mu);
-  pollset->counter = 0;
-  gpr_cv_broadcast(&pollset->cv);
+  pollset->counter--;
   return 1;
 }
 

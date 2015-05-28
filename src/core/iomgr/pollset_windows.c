@@ -48,7 +48,6 @@
 
 void grpc_pollset_init(grpc_pollset *pollset) {
   gpr_mu_init(&pollset->mu);
-  gpr_cv_init(&pollset->cv);
 }
 
 void grpc_pollset_shutdown(grpc_pollset *pollset,
@@ -59,7 +58,6 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
-  gpr_cv_destroy(&pollset->cv);
 }
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {

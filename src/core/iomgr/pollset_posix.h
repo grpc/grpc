@@ -52,7 +52,6 @@ typedef struct grpc_pollset {
      few fds, and an epoll() based implementation for many fds */
   const grpc_pollset_vtable *vtable;
   gpr_mu mu;
-  gpr_cv cv;
   grpc_pollset_kick_state kick_state;
   int counter;
   int in_flight_cbs;
@@ -75,7 +74,6 @@ struct grpc_pollset_vtable {
 };
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-#define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);

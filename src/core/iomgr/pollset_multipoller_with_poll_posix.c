@@ -110,9 +110,6 @@ static int multipoll_with_poll_pollset_maybe_work(
   size_t i, np, nf, nd;
   pollset_hdr *h;
 
-  if (pollset->counter) {
-    return 0;
-  }
   h = pollset->data.ptr;
   if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
     timeout = -1;
@@ -163,7 +160,7 @@ static int multipoll_with_poll_pollset_maybe_work(
     end_polling(pollset);
     return 0;
   }
-  pollset->counter = 1;
+  pollset->counter++;
   gpr_mu_unlock(&pollset->mu);
 
   for (i = 1; i < np; i++) {
@@ -197,8 +194,7 @@ static int multipoll_with_poll_pollset_maybe_work(
   grpc_pollset_kick_post_poll(&pollset->kick_state);
 
   gpr_mu_lock(&pollset->mu);
-  pollset->counter = 0;
-  gpr_cv_broadcast(&pollset->cv);
+  pollset->counter--;
   return 1;
 }
 

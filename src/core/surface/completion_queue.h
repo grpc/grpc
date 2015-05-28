@@ -50,9 +50,6 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     int success);
 
-/* disable polling for some tests */
-void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc);
-
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
 void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc);
