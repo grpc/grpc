@@ -1183,6 +1183,14 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_hash_table_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_hash_table_test || ( echo test census_hash_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_multiple_writers_test"
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test || ( echo test census_statistics_multiple_writers_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_performance_test"
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_performance_test || ( echo test census_statistics_performance_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_quick_test"
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_quick_test || ( echo test census_statistics_quick_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_small_log_test"
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_small_log_test || ( echo test census_statistics_small_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_stub_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_stub_test || ( echo test census_stub_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_window_stats_test"
@@ -2002,14 +2010,6 @@ test_c: buildtests_c
 flaky_test_c: buildtests_c
 	$(E) "[RUN]     Testing census_statistics_multiple_writers_circular_buffer_test"
 	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test || ( echo test census_statistics_multiple_writers_circular_buffer_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_statistics_multiple_writers_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test || ( echo test census_statistics_multiple_writers_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_statistics_performance_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_performance_test || ( echo test census_statistics_performance_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_statistics_quick_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_quick_test || ( echo test census_statistics_quick_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_statistics_small_log_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_small_log_test || ( echo test census_statistics_small_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test || ( echo test chttp2_fake_security_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_invoke_large_request_test"

@@ -830,7 +830,6 @@
     },
     {
       "name": "census_statistics_multiple_writers_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -845,7 +844,6 @@
     },
     {
       "name": "census_statistics_performance_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -860,7 +858,6 @@
     },
     {
       "name": "census_statistics_quick_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -875,7 +872,6 @@
     },
     {
       "name": "census_statistics_small_log_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
