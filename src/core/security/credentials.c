@@ -833,6 +833,7 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
   if (c->is_async) {
     grpc_iomgr_closure *on_simulated_token_fetch_done_closure =
         gpr_malloc(sizeof(grpc_iomgr_closure));
+    /* TODO(dgq): get rid of the managed_closure altogether */
     grpc_iomgr_managed_closure_init(
         on_simulated_token_fetch_done_closure, on_simulated_token_fetch_done,
         grpc_credentials_metadata_request_create(creds, cb, user_data));

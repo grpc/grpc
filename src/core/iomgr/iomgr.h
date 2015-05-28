@@ -47,6 +47,7 @@ typedef struct grpc_iomgr_closure {
 void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
                              void *cb_arg);
 
+/* TODO(dgq): get rid of the managed_closure concept. */
 void grpc_iomgr_managed_closure_init(grpc_iomgr_closure *manager,
                                      grpc_iomgr_cb_func managed_cb,
                                      void *managed_cb_arg);
