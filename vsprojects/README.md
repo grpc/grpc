@@ -32,3 +32,12 @@ Also, you can `make.bat` directly to build and run gRPC tests.
 > REM Run from this directory.
 > make.bat alarm_test
 ```
+
+# Building protoc plugins
+For generating service stub code, gRPC relies on plugins for `protoc` (the protocol buffer compiler). The solution `grpc_protoc_plugins.sln` allows you to build
+Windows .exe binaries of gRPC protoc plugins.
+
+1. Open solution `third_party\protobuf\vsprojects\protobuf.sln`
+2. Accept the conversion to newer Visual Studio version and ignore errors about gtest.
+3. Build libprotoc in Release mode.
+4. Open solution `vsprojects\grpc_protoc_plugins.sln` and build it in Release mode. As a result, you should obtain a set of gRPC protoc plugin binaries (`grpc_cpp_plugin.exe`, `grpc_csharp_plugin.exe`, ...)

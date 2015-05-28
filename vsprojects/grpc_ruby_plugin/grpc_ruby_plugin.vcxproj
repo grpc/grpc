@@ -1,35 +1,5 @@
-﻿<%namespace file="packages.include" import="gen_package_props,gen_package_targets,gen_package_ensure"/>\
-<%def name="get_repo_root()">..\..</%def>\
-<%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
-<%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, collection, configuration_type = None, project_guid = None, props = [], packages = [])">\
-<%
-  target = None
-  for p in vsprojects:
-    if p.name == name:
-      project = p
-  for t in collection:
-    if t.name == name:
-      target = t
-  if not configuration_type and target:
-    if target.build == 'test' or target.build == 'tool':
-      configuration_type = 'Application'
-  if not configuration_type:
-    configuration_type = 'StaticLibrary'
-  if not project_guid:
-    project_guid = project.vs_project_guid
-  if configuration_type == 'Application':
-    if target.build == 'protoc':
-      props.extend(['protoc'])
-    else:
-      props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
-    if target.language == 'c++':
-      props.extend(['protobuf'])
-  props.extend(['global'])
-%>\
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-${gen_package_props(packages)}\
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -49,7 +19,7 @@ ${gen_package_props(packages)}\
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
+    <ProjectGuid>{069E9D05-B78B-4751-9252-D21EBAE7DE8E}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -62,23 +32,23 @@ ${gen_package_props(packages)}\
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
@@ -88,40 +58,40 @@ ${gen_package_props(packages)}\
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    % for prop in props:
-    <Import Project="..\${prop}.props" />
-    % endfor
+    <Import Project="..\protoc.props" />
+    <Import Project="..\protobuf.props" />
+    <Import Project="..\global.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    % for prop in props:
-    <Import Project="..\${prop}.props" />
-    % endfor
+    <Import Project="..\protoc.props" />
+    <Import Project="..\protobuf.props" />
+    <Import Project="..\global.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    % for prop in props:
-    <Import Project="..\${prop}.props" />
-    % endfor
+    <Import Project="..\protoc.props" />
+    <Import Project="..\protobuf.props" />
+    <Import Project="..\global.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    % for prop in props:
-    <Import Project="..\${prop}.props" />
-    % endfor
+    <Import Project="..\protoc.props" />
+    <Import Project="..\protobuf.props" />
+    <Import Project="..\global.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>${name}</TargetName>
+    <TargetName>grpc_ruby_plugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>${name}</TargetName>
+    <TargetName>grpc_ruby_plugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>${name}</TargetName>
+    <TargetName>grpc_ruby_plugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>${name}</TargetName>
+    <TargetName>grpc_ruby_plugin</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -132,7 +102,7 @@ ${gen_package_props(packages)}\
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -145,7 +115,7 @@ ${gen_package_props(packages)}\
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -160,7 +130,7 @@ ${gen_package_props(packages)}\
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
@@ -177,57 +147,23 @@ ${gen_package_props(packages)}\
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  % if project.get('public_headers',[]):
   <ItemGroup>
-    % for public_header in project.public_headers:
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(public_header)}" />
-    % endfor
-  </ItemGroup>
-  % endif
-  % if project.get('headers',[]):
-  <ItemGroup>
-    % for header in project.headers:
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(header)}" />
-    % endfor
-  </ItemGroup>
-  % endif
-  % if project.get('src',[]):
-  <ItemGroup>
-    % for src_name in project.src:
-    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name)}">
-    </ClCompile>
-    % endfor
-  </ItemGroup>
-  % elif configuration_type != 'StaticLibrary':
-  <ItemGroup>
-    <ClCompile Include="${get_repo_root()}\${to_windows_path('vsprojects/dummy.c')}">
+    <ClCompile Include="..\..\src\compiler\ruby_plugin.cc">
     </ClCompile>
   </ItemGroup>
-  % endif
-  % if project.get('deps',[]):
   <ItemGroup>
-    % for dep in project.deps:
-    <ProjectReference Include="..\${dep}\${dep}.vcxproj">
-      <Project>${vsproject_dict[dep].vs_project_guid}</Project>
+    <ProjectReference Include="..\grpc_plugin_support\grpc_plugin_support.vcxproj">
+      <Project>{B6E81D84-2ACB-41B8-8781-493A944C7817}</Project>
     </ProjectReference>
-    % endfor
   </ItemGroup>
-  % endif
-  %if packages:
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  %endif
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-${gen_package_targets(packages)}\
   </ImportGroup>
-${gen_package_ensure(packages)}\
 </Project>
-</%def>\
+
