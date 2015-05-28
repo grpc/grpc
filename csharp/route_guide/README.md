@@ -26,9 +26,11 @@ $ git clone https://github.com/google/grpc-common.git
 All the files for this tutorial are in the directory  `grpc-common/csharp/route_guide`.
 Open the solution `grpc-common/csharp/route_guide/RouteGuide.sln` from Visual Studio (or Monodevelop on Linux).
 
-You also should have the relevant tools installed to generate the server and client interface code.
+On Windows, you should not need to do anything besides opening the solution. All the needed dependencies will be restored
+for you automatically by the `Grpc` NuGet package upon building the solution.
 
-**TODO: more on how to install protoc**
+On Linux (or MacOS), you will first need to install protobuf and gRPC C Core using Linuxbrew (or Homebrew) tool in order to be 
+able to generate the server and client interface code and run the examples. Follow the instructions for [Linux](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono) or [MacOS](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono).
 
 ## Defining the service
 
@@ -90,19 +92,24 @@ message Point {
 
 Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C# plugin.
 
-If you want to run this yourself, make sure you've installed protoc and followed the gRPC C# plugin [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first.
-
-**TODO: more on how to install protoc and grpc_csharp_plugin**
+If you want to run this yourself, make sure you've installed protoc and gRPC C# plugin. The instructions vary based on your OS:
+- For Windows, the `Grpc` NuGet package contains all the libraries and tools you will need. No need to do any extra steps.
+- For Linux, make sure you've [installed gRPC C Core using Linuxbrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono)
+- For MacOS, make sure you've [installed gRPC C Core using Homebrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono)
 
 Once that's done, the following command can be used to generate the C# code.
 
+To generate the code on Windows, we use `protoc.exe` and `grpc_csharp_plugin.exe` binaries that are shipped with the `Grpc` NuGet package under the `tools` directory. Following command should be run from the `csharp/route_guide` directory:
+```
+> packages\Grpc.0.5.0\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.0.5.0\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
+```
+
+On Linux/MacOS, we rely on `protoc` and `grpc_csharp_plugin` being installed by Linuxbrew/Homebrew. Run this command from the route_guide directory:
 ```shell
 $ protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=`which grpc_csharp_plugin` RouteGuide/protos/route_guide.proto
 ```
 
-**TODO: command for windows**
-
-Running this command regenerates the following files in the RouteGuide directory:
+Running one of the previous commands regenerates the following files in the RouteGuide directory:
 - `RouteGuide/RouteGuide.cs` defines a namespace `examples`
   - This contains all the protocol buffer code to populate, serialize, and retrieve our request and response message types
 - `RouteGuide/RouteGuideGrpc.cs`, provides stub and service classes
