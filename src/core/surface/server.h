@@ -62,4 +62,6 @@ grpc_transport_setup_result grpc_server_setup_transport(
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
+int grpc_server_has_open_connections(grpc_server *server);
+
 #endif /* GRPC_INTERNAL_CORE_SURFACE_SERVER_H */

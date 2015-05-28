@@ -31,27 +31,22 @@
  *
  */
 
-#include "src/core/transport/chttp2/alpn.h"
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
+#define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-/* in order of preference */
-static const char *const supported_versions[] = {"h2", "h2-17", "h2-16",
-                                                 "h2-15", "h2-14"};
+#include <grpc/grpc.h>
+#include "test/core/util/test_config.h"
 
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
-  size_t i;
-  for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
-    if (!strncmp(version, supported_versions[i], size)) return 1;
-  }
-  return 0;
-}
+typedef void (*grpc_bad_client_server_side_validator)(
+    grpc_server *server, grpc_completion_queue *cq);
 
-size_t grpc_chttp2_num_alpn_versions(void) {
-  return GPR_ARRAY_SIZE(supported_versions);
-}
+/* Test runner.
 
-const char *grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
-  return supported_versions[i];
-}
+   Create a server, and send client_payload to it as bytes from a client.
+   Execute validator in a separate thread to assert that the bytes are
+   handled as expected. */
+void grpc_run_bad_client_test(const char *name, const char *client_payload,
+                              size_t client_payload_length,
+                              grpc_bad_client_server_side_validator validator);
+
+#endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

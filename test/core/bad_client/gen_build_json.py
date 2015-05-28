@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/usr/bin/env python
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -30,21 +29,51 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-set -e
+"""Generates the appropriate build.json data for all the end2end tests."""
 
-export TEST=true
 
-cd `dirname $0`/../..
+import simplejson
+import collections
 
-./tools/buildgen/generate_projects.sh
+TestOptions = collections.namedtuple('TestOptions', 'flaky')
+default_test_options = TestOptions(False)
 
-submodules=`mktemp`
+# maps test names to options
+BAD_CLIENT_TESTS = {
+    'connection_prefix': default_test_options,
+}
 
-git submodule > $submodules
+def main():
+  json = {
+      '#': 'generated with test/bad_client/gen_build_json.py',
+      'libs': [
+          {
+            'name': 'bad_client_test',
+            'build': 'private',
+            'language': 'c',
+            'src': [
+              'test/core/bad_client/bad_client.c'
+            ]
+          }],
+      'targets': [
+          {
+              'name': '%s_bad_client_test' % t,
+              'build': 'test',
+              'language': 'c',
+              'secure': 'no',
+              'src': ['test/core/bad_client/tests/%s.c' % t],
+              'flaky': 'invoke_large_request' in t,
+              'deps': [
+                  'bad_client_test',
+                  'grpc_test_util_unsecure',
+                  'grpc_unsecure',
+                  'gpr_test_util',
+                  'gpr'
+              ]
+          }
+      for t in sorted(BAD_CLIENT_TESTS.keys())]}
+  print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
 
-diff -u $submodules - << EOF
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- 3df69d3aefde7671053d4e3c242b228e5d79c83f third_party/openssl (OpenSSL_1_0_2a)
- 8908cf16fe81f42c766fdf067b1da4554f54ed87 third_party/protobuf (v3.0.0-alpha-1-1044-g8908cf1)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
-EOF
+
+if __name__ == '__main__':
+  main()
