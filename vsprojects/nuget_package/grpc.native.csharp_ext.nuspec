@@ -4,7 +4,7 @@
     <id>grpc.native.csharp_ext</id>
     <version>0.9.0.0</version>
     <authors>Google Inc.</authors>
-    <owners>Jan Tattermusch</owners>
+    <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>http://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
