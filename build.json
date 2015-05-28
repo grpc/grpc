@@ -526,6 +526,16 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
+      "name": "grpc++_benchmark_config",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/report.cc",
+        "test/cpp/util/benchmark_config.cc"
+      ]
+    },
+    {
       "name": "grpc++_test_config",
       "build": "private",
       "language": "c++",
@@ -589,7 +599,8 @@
         "src/compiler/ruby_generator.cc"
       ],
       "deps": [],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{B6E81D84-2ACB-41B8-8781-493A944C7817}"
     },
     {
       "name": "interop_client_helper",
@@ -694,7 +705,6 @@
         "test/cpp/qps/client_sync.cc",
         "test/cpp/qps/driver.cc",
         "test/cpp/qps/qps_worker.cc",
-        "test/cpp/qps/report.cc",
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/timer.cc"
@@ -820,7 +830,6 @@
     },
     {
       "name": "census_statistics_multiple_writers_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -835,7 +844,6 @@
     },
     {
       "name": "census_statistics_performance_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -850,7 +858,6 @@
     },
     {
       "name": "census_statistics_quick_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -865,7 +872,6 @@
     },
     {
       "name": "census_statistics_small_log_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -1821,6 +1827,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1838,6 +1845,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1995,7 +2003,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{7E51A25F-AC59-488F-906C-C60FAAE706AA}"
     },
     {
       "name": "grpc_csharp_plugin",
@@ -2007,7 +2016,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{3C813052-A49A-4662-B90A-1ADBEC7EE453}"
     },
     {
       "name": "grpc_objective_c_plugin",
@@ -2019,7 +2029,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{19564640-CEE6-4921-ABA5-676ED79A36F6}"
     },
     {
       "name": "grpc_python_plugin",
@@ -2031,7 +2042,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}"
     },
     {
       "name": "grpc_ruby_plugin",
@@ -2043,7 +2055,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{069E9D05-B78B-4751-9252-D21EBAE7DE8E}"
     },
     {
       "name": "interop_client",
@@ -2178,7 +2191,8 @@
         "grpc",
         "gpr_test_util",
         "gpr",
-        "grpc++_test_config"
+        "grpc++_test_config",
+        "grpc++_benchmark_config"
       ]
     },
     {
@@ -2191,6 +2205,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2279,6 +2294,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2296,6 +2312,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",

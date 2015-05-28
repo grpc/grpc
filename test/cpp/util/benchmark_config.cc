@@ -31,53 +31,39 @@
  *
  */
 
-#include <set>
-
-#include <grpc/support/log.h>
-
-#include <signal.h>
-
-#include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/report.h"
+#include <gflags/gflags.h>
 #include "test/cpp/util/benchmark_config.h"
+
+DEFINE_bool(enable_log_reporter, true,
+            "Enable reporting of benchmark results through GprLog");
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 namespace grpc {
 namespace testing {
 
-static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+void InitBenchmark(int* argc, char*** argv, bool remove_flags) {
+  ParseCommandLineFlags(argc, argv, remove_flags);
+}
 
-static void RunAsyncStreamingPingPong() {
-  gpr_log(GPR_INFO, "Running Async Streaming Ping Pong");
+static std::shared_ptr<Reporter> InitBenchmarkReporters() {
+  auto* composite_reporter = new CompositeReporter;
+  if (FLAGS_enable_log_reporter) {
+    composite_reporter->add(
+        std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
+  }
+  return std::shared_ptr<Reporter>(composite_reporter);
+}
 
-  ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
-  client_config.set_outstanding_rpcs_per_channel(1);
-  client_config.set_client_channels(1);
-  client_config.set_payload_size(1);
-  client_config.set_async_client_threads(1);
-  client_config.set_rpc_type(STREAMING);
-
-  ServerConfig server_config;
-  server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(1);
-
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  GetReporter()->ReportQPS(*result);
-  GetReporter()->ReportLatency(*result);
+std::shared_ptr<Reporter> GetReporter() {
+  static std::shared_ptr<Reporter> reporter(InitBenchmarkReporters());
+  return reporter;
 }
 
 }  // namespace testing
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc::testing::InitBenchmark(&argc, &argv, true);
-
-  signal(SIGPIPE, SIG_IGN);
-  grpc::testing::RunAsyncStreamingPingPong();
-  return 0;
-}
