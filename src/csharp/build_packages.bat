@@ -11,8 +11,8 @@ endlocal
 @call buildall.bat || goto :error
 
 %NUGET% pack ..\..\vsprojects\nuget_package\grpc.native.csharp_ext.nuspec || goto :error
-%NUGET% pack Grpc.Core\Grpc.Core.nuspec || goto :error
-%NUGET% pack Grpc.Auth\Grpc.Auth.nuspec || goto :error
+%NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols || goto :error
+%NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols || goto :error
 %NUGET% pack Grpc.nuspec || goto :error
 
 goto :EOF

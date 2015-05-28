@@ -62,6 +62,8 @@ struct grpc_chttp2_hpack_parser {
   grpc_chttp2_hpack_parser_state state;
   /* future states dependent on the opening op code */
   const grpc_chttp2_hpack_parser_state *next_state;
+  /* what to do after skipping prioritization data */
+  grpc_chttp2_hpack_parser_state after_prioritization;
   /* the value we're currently parsing */
   union {
     gpr_uint32 *value;

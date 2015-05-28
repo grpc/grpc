@@ -160,7 +160,7 @@ static void read_and_write_test_write_handler(void *data,
 
   GPR_ASSERT(error != GRPC_ENDPOINT_CB_ERROR);
 
-  gpr_log(GPR_DEBUG, "%s: error=%d", __FUNCTION__, error);
+  gpr_log(GPR_DEBUG, "%s: error=%d", "read_and_write_test_write_handler", error);
 
   if (error == GRPC_ENDPOINT_CB_SHUTDOWN) {
     gpr_log(GPR_INFO, "Write handler shutdown");
@@ -213,7 +213,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t slice_size, int shutdown) {
   struct read_and_write_test_state state;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
-  grpc_endpoint_test_fixture f = begin_test(config, __FUNCTION__, slice_size);
+  grpc_endpoint_test_fixture f = begin_test(config, "read_and_write_test", slice_size);
 
   if (shutdown) {
     gpr_log(GPR_INFO, "Start read and write shutdown test");
@@ -323,7 +323,7 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
   shutdown_during_write_test_state read_st;
   shutdown_during_write_test_state write_st;
   gpr_slice *slices;
-  grpc_endpoint_test_fixture f = begin_test(config, __FUNCTION__, slice_size);
+  grpc_endpoint_test_fixture f = begin_test(config, "shutdown_during_write_test", slice_size);
 
   gpr_log(GPR_INFO, "testing shutdown during a write");
 

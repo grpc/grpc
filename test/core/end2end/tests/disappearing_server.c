@@ -180,7 +180,7 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  gpr_log(GPR_INFO, "%s/%s", __FUNCTION__, config.name);
+  gpr_log(GPR_INFO, "%s/%s", "disappearing_server_test", config.name);
 
   config.init_client(&f, NULL);
   config.init_server(&f, NULL);

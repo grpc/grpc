@@ -189,8 +189,8 @@ class AsyncClient : public Client {
     }
   }
 
-  bool ThreadFunc(Histogram* histogram, size_t thread_idx)
-      GRPC_OVERRIDE GRPC_FINAL {
+  bool ThreadFunc(Histogram* histogram,
+                  size_t thread_idx) GRPC_OVERRIDE GRPC_FINAL {
     void* got_tag;
     bool ok;
     grpc_time deadline, short_deadline;
@@ -244,6 +244,7 @@ class AsyncClient : public Client {
    }
    return true;
   }
+
  private:
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
 
@@ -260,8 +261,8 @@ class AsyncClient : public Client {
 
 class AsyncUnaryClient GRPC_FINAL : public AsyncClient {
  public:
-  explicit AsyncUnaryClient(const ClientConfig& config) :
-      AsyncClient(config, SetupCtx) {
+  explicit AsyncUnaryClient(const ClientConfig& config)
+      : AsyncClient(config, SetupCtx) {
     StartThreads(config.async_client_threads());
   }
   ~AsyncUnaryClient() GRPC_OVERRIDE { EndThreads(); }
@@ -283,12 +284,11 @@ template <class RequestType, class ResponseType>
 class ClientRpcContextStreamingImpl : public ClientRpcContext {
  public:
   ClientRpcContextStreamingImpl(
-      TestService::Stub *stub, const RequestType &req,
-      std::function<
-              std::unique_ptr<grpc::ClientAsyncReaderWriter<
-                              RequestType,ResponseType>>(
-              TestService::Stub *, grpc::ClientContext *, void *)> start_req,
-      std::function<void(grpc::Status, ResponseType *)> on_done)
+      TestService::Stub* stub, const RequestType& req,
+      std::function<std::unique_ptr<
+          grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
+          TestService::Stub*, grpc::ClientContext*, void*)> start_req,
+      std::function<void(grpc::Status, ResponseType*)> on_done)
       : context_(),
         stub_(stub),
         req_(req),
@@ -299,7 +299,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
         start_(Timer::Now()),
         stream_(start_req_(stub_, &context_, ClientRpcContext::tag(this))) {}
   ~ClientRpcContextStreamingImpl() GRPC_OVERRIDE {}
-  bool RunNextState(bool ok, Histogram *hist) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
     return (this->*next_state_)(ok, hist);
   }
   void StartNewClone() GRPC_OVERRIDE {
@@ -307,49 +307,47 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   }
   void Start() GRPC_OVERRIDE {}
  private:
-  bool ReqSent(bool ok, Histogram *) {
-    return StartWrite(ok);
-  }
+  bool ReqSent(bool ok, Histogram*) { return StartWrite(ok); }
   bool StartWrite(bool ok) {
     if (!ok) {
-      return(false);
+      return (false);
     }
     start_ = Timer::Now();
     next_state_ = &ClientRpcContextStreamingImpl::WriteDone;
     stream_->Write(req_, ClientRpcContext::tag(this));
     return true;
   }
-  bool WriteDone(bool ok, Histogram *) {
+  bool WriteDone(bool ok, Histogram*) {
     if (!ok) {
-      return(false);
+      return (false);
     }
     next_state_ = &ClientRpcContextStreamingImpl::ReadDone;
     stream_->Read(&response_, ClientRpcContext::tag(this));
     return true;
   }
-  bool ReadDone(bool ok, Histogram *hist) {
+  bool ReadDone(bool ok, Histogram* hist) {
     hist->Add((Timer::Now() - start_) * 1e9);
     return StartWrite(ok);
   }
   grpc::ClientContext context_;
-  TestService::Stub *stub_;
+  TestService::Stub* stub_;
   RequestType req_;
   ResponseType response_;
-  bool (ClientRpcContextStreamingImpl::*next_state_)(bool, Histogram *);
-  std::function<void(grpc::Status, ResponseType *)> callback_;
-  std::function<std::unique_ptr<grpc::ClientAsyncReaderWriter<
-				  RequestType,ResponseType>>(
-      TestService::Stub *, grpc::ClientContext *, void *)> start_req_;
+  bool (ClientRpcContextStreamingImpl::*next_state_)(bool, Histogram*);
+  std::function<void(grpc::Status, ResponseType*)> callback_;
+  std::function<
+      std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
+          TestService::Stub*, grpc::ClientContext*, void*)> start_req_;
   grpc::Status status_;
   double start_;
-  std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType,ResponseType>>
-    stream_;
+  std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
+      stream_;
 };
 
 class AsyncStreamingClient GRPC_FINAL : public AsyncClient {
  public:
-  explicit AsyncStreamingClient(const ClientConfig &config) :
-      AsyncClient(config, SetupCtx) {
+  explicit AsyncStreamingClient(const ClientConfig& config)
+      : AsyncClient(config, SetupCtx) {
     StartThreads(config.async_client_threads());
   }
 
@@ -358,8 +356,8 @@ private:
   static ClientRpcContext *SetupCtx(CompletionQueue* cq, TestService::Stub* stub,
                        const SimpleRequest& req)  {
     auto check_done = [](grpc::Status s, SimpleResponse* response) {};
-    auto start_req = [cq](TestService::Stub *stub, grpc::ClientContext *ctx,
-                          void *tag) {
+    auto start_req = [cq](TestService::Stub* stub, grpc::ClientContext* ctx,
+                          void* tag) {
       auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
       return stream;
     };

@@ -43,7 +43,7 @@ from grpc.framework.foundation import logging_pool
 
 _TIMEOUT = 3
 _MAXIMUM_TIMEOUT = 90
-_MAXIMUM_POOL_SIZE = 400
+_MAXIMUM_POOL_SIZE = 4
 
 
 class FaceTestCase(test_case.FaceTestCase, coverage.BlockingCoverage):

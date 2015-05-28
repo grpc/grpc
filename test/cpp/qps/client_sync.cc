@@ -110,7 +110,9 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
 class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
  public:
   SynchronousStreamingClient(const ClientConfig& config)
-    : SynchronousClient(config), context_(num_threads_), stream_(num_threads_) {
+      : SynchronousClient(config),
+        context_(num_threads_),
+        stream_(num_threads_) {
     for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
@@ -121,8 +123,8 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     EndThreads();
     for (auto stream = stream_.begin(); stream != stream_.end(); stream++) {
       if (*stream) {
-	(*stream)->WritesDone();
-	EXPECT_TRUE((*stream)->Finish().IsOk());
+        (*stream)->WritesDone();
+        EXPECT_TRUE((*stream)->Finish().IsOk());
       }
     }
   }
@@ -131,7 +133,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     WaitToIssue(thread_idx);
     double start = Timer::Now();
     if (stream_[thread_idx]->Write(request_) &&
-	stream_[thread_idx]->Read(&responses_[thread_idx])) {
+        stream_[thread_idx]->Read(&responses_[thread_idx])) {
       histogram->Add((Timer::Now() - start) * 1e9);
       return true;
     }
@@ -140,8 +142,8 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
 
  private:
   std::vector<grpc::ClientContext> context_;
-  std::vector<std::unique_ptr<grpc::ClientReaderWriter<
-				SimpleRequest, SimpleResponse>>> stream_;
+  std::vector<std::unique_ptr<
+      grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>> stream_;
 };
 
 std::unique_ptr<Client> CreateSynchronousUnaryClient(

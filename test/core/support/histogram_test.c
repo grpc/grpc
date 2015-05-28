@@ -34,7 +34,7 @@
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__);
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x);
 
 static void test_no_op(void) {
   gpr_histogram_destroy(gpr_histogram_create(0.01, 60e9));
@@ -52,7 +52,7 @@ static void expect_percentile(gpr_histogram *h, double percentile,
 static void test_simple(void) {
   gpr_histogram *h;
 
-  LOG_TEST();
+  LOG_TEST("test_simple");
 
   h = gpr_histogram_create(0.01, 60e9);
   gpr_histogram_add(h, 10000);
@@ -72,7 +72,7 @@ static void test_percentile(void) {
   double i;
   double cur;
 
-  LOG_TEST();
+  LOG_TEST("test_percentile");
 
   h = gpr_histogram_create(0.05, 1e9);
   gpr_histogram_add(h, 2.5);
@@ -117,7 +117,7 @@ static void test_merge(void) {
   double i;
   double cur;
 
-  LOG_TEST();
+  LOG_TEST("test_merge");
 
   h1 = gpr_histogram_create(0.05, 1e9);
   gpr_histogram_add(h1, 2.5);

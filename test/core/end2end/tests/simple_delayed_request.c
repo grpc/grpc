@@ -185,7 +185,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  gpr_log(GPR_INFO, "%s/%s", __FUNCTION__, config.name);
+  gpr_log(GPR_INFO, "%s/%s", "test_simple_delayed_request_short", config.name);
   f = config.create_fixture(NULL, NULL);
   simple_delayed_request_body(config, &f, NULL, NULL, 100000);
   end_test(&f);
@@ -195,7 +195,7 @@ static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
 static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  gpr_log(GPR_INFO, "%s/%s", __FUNCTION__, config.name);
+  gpr_log(GPR_INFO, "%s/%s", "test_simple_delayed_request_long", config.name);
   f = config.create_fixture(NULL, NULL);
   /* This timeout should be longer than a single retry */
   simple_delayed_request_body(config, &f, NULL, NULL, 1500000);
