@@ -31,27 +31,27 @@
  *
  */
 
-#include "src/core/transport/chttp2/alpn.h"
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#ifndef GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
+#define GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
 
-/* in order of preference */
-static const char *const supported_versions[] = {"h2", "h2-17", "h2-16",
-                                                 "h2-15", "h2-14"};
+#include <memory>
+#include <vector>
 
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
-  size_t i;
-  for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
-    if (!strncmp(version, supported_versions[i], size)) return 1;
-  }
-  return 0;
-}
+#include "test/cpp/qps/report.h"
 
-size_t grpc_chttp2_num_alpn_versions(void) {
-  return GPR_ARRAY_SIZE(supported_versions);
-}
+namespace grpc {
+namespace testing {
 
-const char *grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
-  return supported_versions[i];
-}
+void InitBenchmark(int* argc, char*** argv, bool remove_flags);
+
+/** Returns the benchmark Reporter instance.
+ *
+ * The returned instance will take care of generating reports for all the actual
+ * reporters configured via the "enable_*_reporter" command line flags (see
+ * benchmark_config.cc). */
+std::shared_ptr<Reporter> GetReporter();
+
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H

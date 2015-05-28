@@ -31,27 +31,39 @@
  *
  */
 
-#include "src/core/transport/chttp2/alpn.h"
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <gflags/gflags.h>
+#include "test/cpp/util/benchmark_config.h"
 
-/* in order of preference */
-static const char *const supported_versions[] = {"h2", "h2-17", "h2-16",
-                                                 "h2-15", "h2-14"};
+DEFINE_bool(enable_log_reporter, true,
+            "Enable reporting of benchmark results through GprLog");
 
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
-  size_t i;
-  for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
-    if (!strncmp(version, supported_versions[i], size)) return 1;
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+namespace grpc {
+namespace testing {
+
+void InitBenchmark(int* argc, char*** argv, bool remove_flags) {
+  ParseCommandLineFlags(argc, argv, remove_flags);
+}
+
+static std::shared_ptr<Reporter> InitBenchmarkReporters() {
+  auto* composite_reporter = new CompositeReporter;
+  if (FLAGS_enable_log_reporter) {
+    composite_reporter->add(
+        std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
   }
-  return 0;
+  return std::shared_ptr<Reporter>(composite_reporter);
 }
 
-size_t grpc_chttp2_num_alpn_versions(void) {
-  return GPR_ARRAY_SIZE(supported_versions);
+std::shared_ptr<Reporter> GetReporter() {
+  static std::shared_ptr<Reporter> reporter(InitBenchmarkReporters());
+  return reporter;
 }
 
-const char *grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
-  return supported_versions[i];
-}
+}  // namespace testing
+}  // namespace grpc

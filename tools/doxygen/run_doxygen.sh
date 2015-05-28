@@ -29,22 +29,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -ex
 
-set -e
+# change to grpc repo root
+cd $(dirname $0)/../..
 
-export TEST=true
-
-cd `dirname $0`/../..
-
-./tools/buildgen/generate_projects.sh
-
-submodules=`mktemp`
-
-git submodule > $submodules
-
-diff -u $submodules - << EOF
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- 3df69d3aefde7671053d4e3c242b228e5d79c83f third_party/openssl (OpenSSL_1_0_2a)
- 8908cf16fe81f42c766fdf067b1da4554f54ed87 third_party/protobuf (v3.0.0-alpha-1-1044-g8908cf1)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
-EOF
+for i in core c++
+do
+	mkdir -p doc/ref/$i
+	doxygen tools/doxygen/Doxyfile.$i
+done
