@@ -67,6 +67,10 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     grpc_metadata_array_init(&request_metadata_);
   }
 
+  ~SyncRequest() {
+    grpc_metadata_array_destroy(&request_metadata_);
+  }
+
   static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
     void* tag = nullptr;
     *ok = false;
