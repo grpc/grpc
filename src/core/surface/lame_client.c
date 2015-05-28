@@ -55,6 +55,7 @@ static void lame_start_transport_op(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   if (op->send_ops) {
+    grpc_stream_ops_unref_owned_objects(op->send_ops->ops, op->send_ops->nops);
     op->on_done_send(op->send_user_data, 0);
   }
   if (op->recv_ops) {
