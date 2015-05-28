@@ -192,8 +192,53 @@ static void empty_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {}
 static int empty_pollset_maybe_work(grpc_pollset *pollset,
                                     gpr_timespec deadline, gpr_timespec now,
                                     int allow_synchronous_callback) {
-  abort();
-  return 0;
+  struct pollfd pfd;
+  int timeout;
+  int r;
+
+  if (pollset->in_flight_cbs) {
+    /* Give do_promote priority so we don't starve it out */
+    return 1;
+  }
+  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
+    timeout = -1;
+  } else {
+    timeout = gpr_time_to_millis(gpr_time_sub(deadline, now));
+    if (timeout <= 0) {
+      return 1;
+    }
+  }
+  pfd.fd = grpc_pollset_kick_pre_poll(&pollset->kick_state);
+  if (pfd.fd < 0) {
+    /* Already kicked */
+    return 1;
+  }
+  pfd.events = POLLIN;
+  pfd.revents = 0;
+  pollset->counter++;
+  gpr_mu_unlock(&pollset->mu);
+
+  /* poll fd count (argument 2) is shortened by one if we have no events
+     to poll on - such that it only includes the kicker */
+  r = poll(&pfd, 1, timeout);
+
+  if (r < 0) {
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    }
+  } else if (r == 0) {
+    /* do nothing */
+  } else {
+    if (pfd.revents & POLLIN) {
+      grpc_pollset_kick_consume(&pollset->kick_state);
+    }
+  }
+
+  grpc_pollset_kick_post_poll(&pollset->kick_state);
+
+  gpr_mu_lock(&pollset->mu);
+  pollset->counter--;
+  return 1;
 }
 
 static void empty_pollset_destroy(grpc_pollset *pollset) {}
