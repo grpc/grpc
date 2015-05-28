@@ -597,7 +597,6 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   tcp->write_closure.cb_arg = tcp;
 
   tcp->handle_read_iocb.cb = grpc_tcp_handle_read;
-  tcp->handle_read_iocb.is_ext_managed = 1;
   return &tcp->base;
 }
 

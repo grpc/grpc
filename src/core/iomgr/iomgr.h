@@ -41,18 +41,21 @@ typedef struct grpc_iomgr_closure {
   grpc_iomgr_cb_func cb;
   void *cb_arg;
   int success;
-  int is_ext_managed;  /** is memory being managed externally? */
   struct grpc_iomgr_closure *next;  /** Do not touch */
 } grpc_iomgr_closure;
 
-grpc_iomgr_closure *grpc_iomgr_cb_create(grpc_iomgr_cb_func cb, void *cb_arg,
-                                    int is_ext_managed);
+void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
+                             void *cb_arg);
+
+void grpc_iomgr_managed_closure_init(grpc_iomgr_closure *manager,
+                                     grpc_iomgr_cb_func managed_cb,
+                                     void *managed_cb_arg);
 
 void grpc_iomgr_init(void);
 void grpc_iomgr_shutdown(void);
 
 /* This function is called from within a callback or from anywhere else
    and causes the invocation of a callback at some point in the future */
-void grpc_iomgr_add_callback(grpc_iomgr_closure *iocb);
+void grpc_iomgr_add_callback(grpc_iomgr_closure *closure);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

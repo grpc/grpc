@@ -366,7 +366,6 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   up_args->original_vtable = pollset->vtable;
   up_args->promotion_iocb.cb = unary_poll_do_promote;
   up_args->promotion_iocb.cb_arg = up_args;
-  up_args->promotion_iocb.is_ext_managed = 1;
   grpc_iomgr_add_callback(&up_args->promotion_iocb);
 
   grpc_pollset_kick(pollset);

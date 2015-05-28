@@ -218,7 +218,6 @@ static void maybe_destroy_channel(grpc_child_channel *channel) {
       !chand->sending_farewell && !chand->calling_back) {
     chand->finally_destroy_channel_iocb.cb = finally_destroy_channel;
     chand->finally_destroy_channel_iocb.cb_arg = channel;
-    chand->finally_destroy_channel_iocb.is_ext_managed = 1; /* GPR_TRUE */
     grpc_iomgr_add_callback(&chand->finally_destroy_channel_iocb);
   } else if (chand->destroyed && !chand->disconnected &&
              chand->active_calls == 0 && !chand->sending_farewell &&
@@ -226,7 +225,6 @@ static void maybe_destroy_channel(grpc_child_channel *channel) {
     chand->sending_farewell = 1;
     chand->send_farewells_iocb.cb = send_farewells;
     chand->send_farewells_iocb.cb_arg = channel;
-    chand->send_farewells_iocb.is_ext_managed = 1;  /* GPR_TRUE */
     grpc_iomgr_add_callback(&chand->send_farewells_iocb);
   }
 }

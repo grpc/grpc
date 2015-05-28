@@ -308,7 +308,6 @@ static void destroy_channel(channel_data *chand) {
   server_ref(chand->server);
   chand->finish_destroy_channel_iocb.cb = finish_destroy_channel;
   chand->finish_destroy_channel_iocb.cb_arg = chand;
-  chand->finish_destroy_channel_iocb.is_ext_managed = 1;
   grpc_iomgr_add_callback(&chand->finish_destroy_channel_iocb);
 }
 
@@ -420,23 +419,29 @@ static void server_on_recv(void *ptr, int success) {
     case GRPC_STREAM_RECV_CLOSED:
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
+        grpc_iomgr_closure *kill_zombie_closure =
+            gpr_malloc(sizeof(grpc_iomgr_closure));
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(
-            grpc_iomgr_cb_create(kill_zombie, elem, 0 /* GPR_FALSE */));
+        grpc_iomgr_managed_closure_init(kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(kill_zombie_closure);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
     case GRPC_STREAM_CLOSED:
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
+        grpc_iomgr_closure *kill_zombie_closure =
+            gpr_malloc(sizeof(grpc_iomgr_closure));
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(
-            grpc_iomgr_cb_create(kill_zombie, elem, 0 /* GPR_FALSE */));
+        grpc_iomgr_managed_closure_init(kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(kill_zombie_closure);
       } else if (calld->state == PENDING) {
+        grpc_iomgr_closure *kill_zombie_closure =
+            gpr_malloc(sizeof(grpc_iomgr_closure));
         call_list_remove(calld, PENDING_START);
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(
-            grpc_iomgr_cb_create(kill_zombie, elem, 0 /* GPR_FALSE */));
+        grpc_iomgr_managed_closure_init(kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(kill_zombie_closure);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -512,7 +517,6 @@ static void shutdown_channel(channel_data *chand) {
   grpc_channel_internal_ref(chand->channel);
   chand->finish_shutdown_channel_iocb.cb = finish_shutdown_channel;
   chand->finish_shutdown_channel_iocb.cb_arg = chand;
-  chand->finish_shutdown_channel_iocb.is_ext_managed = 1;
   grpc_iomgr_add_callback(&chand->finish_shutdown_channel_iocb);
 }
 
@@ -951,13 +955,17 @@ void grpc_server_destroy(grpc_server *server) {
 
   while ((calld = call_list_remove_head(&server->lists[PENDING_START],
                                         PENDING_START)) != NULL) {
+    /* TODO(dgq): If we knew the size of the call list (or an upper bound), we
+     * could allocate all the memory for the closures in advance in a single
+     * chunk */
+    grpc_iomgr_closure *kill_zombie_closure =
+        gpr_malloc(sizeof(grpc_iomgr_closure));
     gpr_log(GPR_DEBUG, "server destroys call %p", calld->call);
     calld->state = ZOMBIED;
-    grpc_iomgr_add_callback(
-        grpc_iomgr_cb_create(
-        kill_zombie,
-        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0),
-        0)); /* XXX */
+    grpc_iomgr_managed_closure_init(
+        kill_zombie_closure, kill_zombie,
+        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
+    grpc_iomgr_add_callback(kill_zombie_closure);
   }
 
   for (c = server->root_channel_data.next; c != &server->root_channel_data;

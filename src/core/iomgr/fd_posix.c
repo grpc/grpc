@@ -118,9 +118,8 @@ static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     close(fd->fd);
-    fd->on_done_iocb.cb = fd->on_done;
-    fd->on_done_iocb.cb_arg = fd->on_done_user_data;
-    fd->on_done_iocb.is_ext_managed = 1;
+    grpc_iomgr_closure_init(&fd->on_done_iocb, fd->on_done,
+                            fd->on_done_user_data);
     grpc_iomgr_add_callback(&fd->on_done_iocb);
     freelist_fd(fd);
     grpc_iomgr_unref();
@@ -199,26 +198,20 @@ void grpc_fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
 
 void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 
-static void make_callback(grpc_iomgr_cb_func cb, void *arg, int success,
-                          int allow_synchronous_callback,
-                          grpc_iomgr_closure *iocb) {
+static void process_callback(grpc_iomgr_closure *closure, int success,
+                          int allow_synchronous_callback) {
   if (allow_synchronous_callback) {
-    cb(arg, success);
+    closure->cb(closure->cb_arg, success);
   } else {
-    /* !iocb: allocate -> managed by iomgr
-     *  iocb: "iocb" holds an instance managed by fd_posix */
-    iocb = grpc_iomgr_cb_create(cb, arg, !iocb /* is_ext_managed */);
-    grpc_iomgr_add_delayed_callback(iocb, success);
+    grpc_iomgr_add_delayed_callback(closure, success);
   }
 }
 
-static void make_callbacks(grpc_iomgr_closure *callbacks, size_t n, int success,
-                           int allow_synchronous_callback,
-                           grpc_iomgr_closure *iocbs) {
+static void process_callbacks(grpc_iomgr_closure *callbacks, size_t n,
+                              int success, int allow_synchronous_callback) {
   size_t i;
   for (i = 0; i < n; i++) {
-    make_callback(callbacks[i].cb, callbacks[i].cb_arg, success,
-                  allow_synchronous_callback, iocbs + i);
+    process_callback(callbacks + i, success, allow_synchronous_callback);
   }
 }
 
@@ -245,9 +238,9 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
     case READY:
       assert(gpr_atm_no_barrier_load(st) == READY);
       gpr_atm_rel_store(st, NOT_READY);
-      make_callback(closure->cb, closure->cb_arg,
-                    !gpr_atm_acq_load(&fd->shutdown),
-                    allow_synchronous_callback, NULL);
+      closure->success = -1;
+      process_callback(closure, !gpr_atm_acq_load(&fd->shutdown),
+                    allow_synchronous_callback);
       return;
     default: /* WAITING */
       /* upcallptr was set to a different closure.  This is an error! */
@@ -291,29 +284,31 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
   int success;
-  grpc_iomgr_closure cb;
+  grpc_iomgr_closure closure;
   size_t ncb = 0;
-  grpc_iomgr_closure *ready_iocb;
+
   gpr_mu_lock(&fd->set_state_mu);
-  set_ready_locked(st, &cb, &ncb);
+  set_ready_locked(st, &closure, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   success = !gpr_atm_acq_load(&fd->shutdown);
   assert(ncb <= 1);
-  ready_iocb = grpc_iomgr_cb_create(cb.cb, cb.cb_arg, 0);
-  make_callbacks(&cb, ncb, success, allow_synchronous_callback, ready_iocb);
+  if (ncb > 0) {
+    grpc_iomgr_closure *managed_cb = gpr_malloc(sizeof(grpc_iomgr_closure));
+    grpc_iomgr_managed_closure_init(managed_cb, closure.cb, closure.cb_arg);
+    process_callbacks(managed_cb, ncb, success, allow_synchronous_callback);
+  }
 }
 
 void grpc_fd_shutdown(grpc_fd *fd) {
-  grpc_iomgr_closure cb[2];
   size_t ncb = 0;
   gpr_mu_lock(&fd->set_state_mu);
   GPR_ASSERT(!gpr_atm_no_barrier_load(&fd->shutdown));
   gpr_atm_rel_store(&fd->shutdown, 1);
-  set_ready_locked(&fd->readst, cb, &ncb);
-  set_ready_locked(&fd->writest, cb, &ncb);
+  set_ready_locked(&fd->readst, fd->shutdown_iocbs, &ncb);
+  set_ready_locked(&fd->writest, fd->shutdown_iocbs, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   assert(ncb <= 2);
-  make_callbacks(cb, ncb, 0, 0, fd->shutdown_iocbs);
+  process_callbacks(fd->shutdown_iocbs, ncb, 0, 0);
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure) {

@@ -96,8 +96,6 @@ struct grpc_fd {
   struct grpc_fd *freelist_next;
 
   grpc_iomgr_closure on_done_iocb;
-  /*grpc_iomgr_closure *ready_iocb; XXX: the only one  we need to allocate on
-   * the spot*/
   grpc_iomgr_closure shutdown_iocbs[2];
 };
 

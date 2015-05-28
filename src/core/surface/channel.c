@@ -196,7 +196,6 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
   if (gpr_unref(&channel->refs)) {
     channel->destroy_iocb.cb = destroy_channel;
     channel->destroy_iocb.cb_arg = channel;
-    channel->destroy_iocb.is_ext_managed = 1;
     grpc_iomgr_add_callback(&channel->destroy_iocb);
   }
 }

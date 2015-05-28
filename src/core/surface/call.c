@@ -370,7 +370,6 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
     } else {
       c->destroy_iocb.cb = destroy_call;
       c->destroy_iocb.cb_arg = c;
-      c->destroy_iocb.is_ext_managed = 1; /* GPR_TRUE */
       grpc_iomgr_add_callback(&c->destroy_iocb);
     }
   }
