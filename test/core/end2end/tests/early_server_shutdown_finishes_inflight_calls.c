@@ -149,7 +149,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   /* shutdown and destroy the server */
-  grpc_server_shutdown_and_notify(f.server, tag(1000));
+  grpc_server_shutdown_and_notify(f.server, f.server_cq, tag(1000));
   grpc_server_cancel_all_calls(f.server);
 
   cq_expect_completion(v_server, tag(102), 1);

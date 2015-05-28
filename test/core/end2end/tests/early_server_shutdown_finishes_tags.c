@@ -106,7 +106,7 @@ static void test_early_server_shutdown_finishes_tags(
              grpc_server_request_call(f.server, &s, &call_details,
                                       &request_metadata_recv, f.server_cq,
                                       f.server_cq, tag(101)));
-  grpc_server_shutdown_and_notify(f.server, tag(1000));
+  grpc_server_shutdown_and_notify(f.server, f.server_cq, tag(1000));
   cq_expect_completion(v_server, tag(101), 0);
   cq_expect_completion(v_server, tag(1000), 1);
   cq_verify(v_server);

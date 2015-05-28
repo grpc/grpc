@@ -136,7 +136,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
 
   /* should be able to shut down the server early
      - and still complete the request */
-  grpc_server_shutdown_and_notify(f->server, tag(1000));
+  grpc_server_shutdown_and_notify(f->server, f->server_cq, tag(1000));
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

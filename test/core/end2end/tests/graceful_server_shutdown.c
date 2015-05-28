@@ -150,7 +150,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_verify(v_server);
 
   /* shutdown and destroy the server */
-  grpc_server_shutdown_and_notify(f.server, tag(0xdead));
+  grpc_server_shutdown_and_notify(f.server, f.server_cq, tag(0xdead));
   cq_verify_empty(v_server);
 
   op = ops;

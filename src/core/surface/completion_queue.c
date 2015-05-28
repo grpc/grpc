@@ -150,7 +150,6 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     int success) {
   event *ev;
   int shutdown = 0;
-  gpr_log(GPR_DEBUG, "end_op:%p", tag);
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   ev = add_locked(cc, GRPC_OP_COMPLETE, tag, call);
   ev->base.success = success;
