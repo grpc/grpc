@@ -43,7 +43,7 @@ if [ "x$TEST" != "x" ] ; then
   tools/buildgen/build-cleaner.py build.json
 fi
 
-source tools/buildgen/generate_build_additions.sh
+. tools/buildgen/generate_build_additions.sh
 
 global_plugins=`find ./tools/buildgen/plugins -name '*.py' |
   sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`
