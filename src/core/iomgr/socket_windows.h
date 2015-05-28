@@ -39,6 +39,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/atm.h>
 
+#include "src/core/iomgr/iomgr.h"
+
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
    inside the winsocket wrapper. */
@@ -94,7 +96,7 @@ typedef struct grpc_winsocket {
      wait for. The socket will be collected at that time. */
   int orphan;
 
-  grpc_iomgr_closure shutdown_iocb;
+  grpc_iomgr_closure shutdown_closure;
 } grpc_winsocket;
 
 /* Create a wrapped windows handle. This takes ownership of it, meaning that
