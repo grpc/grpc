@@ -91,12 +91,10 @@ struct grpc_fd {
   gpr_atm readst;
   gpr_atm writest;
 
-  grpc_iomgr_cb_func on_done;
-  void *on_done_user_data;
   struct grpc_fd *freelist_next;
 
-  grpc_iomgr_closure on_done_iocb;
-  grpc_iomgr_closure shutdown_iocbs[2];
+  grpc_iomgr_closure on_done_closure;
+  grpc_iomgr_closure shutdown_closures[2];
 };
 
 /* Create a wrapped file descriptor.

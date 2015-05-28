@@ -117,10 +117,7 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    close(fd->fd);
-    grpc_iomgr_closure_init(&fd->on_done_iocb, fd->on_done,
-                            fd->on_done_user_data);
-    grpc_iomgr_add_callback(&fd->on_done_iocb);
+    grpc_iomgr_add_callback(&fd->on_done_closure);
     freelist_fd(fd);
     grpc_iomgr_unref();
   } else {
@@ -183,8 +180,8 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
 }
 
 void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data) {
-  fd->on_done = on_done ? on_done : do_nothing;
-  fd->on_done_user_data = user_data;
+  grpc_iomgr_closure_init(&fd->on_done_closure, on_done ? on_done : do_nothing,
+                          user_data);
   shutdown(fd->fd, SHUT_RDWR);
   ref_by(fd, 1); /* remove active status, but keep referenced */
   gpr_mu_lock(&fd->watcher_mu);
@@ -303,11 +300,11 @@ void grpc_fd_shutdown(grpc_fd *fd) {
   gpr_mu_lock(&fd->set_state_mu);
   GPR_ASSERT(!gpr_atm_no_barrier_load(&fd->shutdown));
   gpr_atm_rel_store(&fd->shutdown, 1);
-  set_ready_locked(&fd->readst, fd->shutdown_iocbs, &ncb);
-  set_ready_locked(&fd->writest, fd->shutdown_iocbs, &ncb);
+  set_ready_locked(&fd->readst, fd->shutdown_closures, &ncb);
+  set_ready_locked(&fd->writest, fd->shutdown_closures, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   GPR_ASSERT(ncb <= 2);
-  process_callbacks(fd->shutdown_iocbs, ncb, 0, 0);
+  process_callbacks(fd->shutdown_closures, ncb, 0, 0);
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure) {
