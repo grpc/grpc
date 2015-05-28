@@ -128,16 +128,19 @@ class TestTarget < Grpc::Testing::TestService::Service
     cls = StreamingOutputCallResponse
     Thread.new do
       begin
+        GRPC.logger.info('interop-server: started receiving')
         reqs.each do |req|
-          GRPC.logger.info("read #{req.inspect}")
           resp_size = req.response_parameters[0].size
+          GRPC.logger.info("read a req, response size is #{resp_size}")
           resp = cls.new(payload: Payload.new(type: req.response_type,
                                               body: nulls(resp_size)))
           q.push(resp)
         end
-        GRPC.logger.info('finished reads')
+        GRPC.logger.info('interop-server: finished receiving')
         q.push(self)
       rescue StandardError => e
+        GRPC.logger.info('interop-server: failed')
+        GRPC.logger.warn(e)
         q.push(e)  # share the exception with the enumerator
       end
     end
