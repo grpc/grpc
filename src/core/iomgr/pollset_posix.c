@@ -192,8 +192,7 @@ static void empty_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {}
 static int empty_pollset_maybe_work(grpc_pollset *pollset,
                                     gpr_timespec deadline, gpr_timespec now,
                                     int allow_synchronous_callback) {
-  gpr_mu_unlock(&pollset->mu);
-  gpr_mu_lock(&pollset->mu);
+  abort();
   return 0;
 }
 
