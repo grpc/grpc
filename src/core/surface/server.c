@@ -828,7 +828,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   grpc_cq_begin_op(cq, NULL);
   server->shutdown_tags =
       gpr_realloc(server->shutdown_tags,
-                  sizeof(void *) * (server->num_shutdown_tags + 1));
+                  sizeof(shutdown_tag) * (server->num_shutdown_tags + 1));
   sdt = &server->shutdown_tags[server->num_shutdown_tags++];
   sdt->tag = tag;
   sdt->cq = cq;
