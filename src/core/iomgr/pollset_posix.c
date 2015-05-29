@@ -160,7 +160,6 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
   pollset->shutting_down = 1;
   in_flight_cbs = pollset->in_flight_cbs;
   counter = pollset->counter;
-  gpr_log(GPR_DEBUG, "shutting_down: cbs=%d ctr=%d", in_flight_cbs, counter);
   pollset->shutdown_done_cb = shutdown_done;
   pollset->shutdown_done_arg = shutdown_done_arg;
   if (counter > 0) {
