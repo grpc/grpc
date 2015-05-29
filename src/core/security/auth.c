@@ -77,11 +77,13 @@ static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
   grpc_call_next_op(elem, &calld->op);
 }
 
-static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
+static void on_credentials_metadata(void *user_data,
+                                    grpc_credentials_md *md_elems,
                                     size_t num_md,
                                     grpc_credentials_status status) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   grpc_transport_op *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
@@ -94,8 +96,10 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
              op->send_ops->ops[calld->op_md_idx].type == GRPC_OP_METADATA);
   mdb = &op->send_ops->ops[calld->op_md_idx].data.metadata;
   for (i = 0; i < num_md; i++) {
-    grpc_metadata_batch_add_tail(mdb, &calld->md_links[i],
-                                 grpc_mdelem_ref(md_elems[i]));
+    grpc_metadata_batch_add_tail(
+        mdb, &calld->md_links[i],
+        grpc_mdelem_from_slices(chand->md_ctx, gpr_slice_ref(md_elems[i].key),
+                                gpr_slice_ref(md_elems[i].value)));
   }
   grpc_call_next_op(elem, op);
 }

@@ -226,7 +226,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
       GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create();
   }
-  mdctx = grpc_credentials_get_or_create_metadata_context(creds);
+  mdctx = grpc_mdctx_create();
 
   s = gpr_malloc(sizeof(setup));
   connector_arg = grpc_security_connector_to_arg(&connector->base);
