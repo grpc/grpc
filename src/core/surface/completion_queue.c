@@ -301,6 +301,10 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  if (cc->shutdown_called) {
+    gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+    return;
+  }
   cc->shutdown_called = 1;
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 
@@ -314,6 +318,7 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
+  grpc_completion_queue_shutdown(cc);
   GRPC_CQ_INTERNAL_UNREF(cc, "destroy");
 }
 
