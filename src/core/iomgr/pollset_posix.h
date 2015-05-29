@@ -102,10 +102,11 @@ grpc_pollset *grpc_backup_pollset(void);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_pollset *pollset,
-                                      struct grpc_fd **fds, size_t fd_count);
+                                                      struct grpc_fd **fds,
+                                                      size_t fd_count);
 extern grpc_platform_become_multipoller_type grpc_platform_become_multipoller;
 
-void grpc_poll_become_multipoller(grpc_pollset *pollset,
-                                      struct grpc_fd **fds, size_t fd_count);
+void grpc_poll_become_multipoller(grpc_pollset *pollset, struct grpc_fd **fds,
+                                  size_t fd_count);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */

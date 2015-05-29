@@ -194,6 +194,7 @@ static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
   }
 }
 
-grpc_platform_become_multipoller_type grpc_platform_become_multipoller = epoll_become_multipoller;
+grpc_platform_become_multipoller_type grpc_platform_become_multipoller =
+    epoll_become_multipoller;
 
-#endif  /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
+#endif /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
