@@ -2678,6 +2678,7 @@ LIBGRPC_SRC = \
     src/core/security/auth.c \
     src/core/security/base64.c \
     src/core/security/credentials.c \
+    src/core/security/credentials_metadata.c \
     src/core/security/credentials_posix.c \
     src/core/security/credentials_win32.c \
     src/core/security/google_default_credentials.c \
@@ -13615,6 +13616,7 @@ src/core/httpcli/parser.c: $(OPENSSL_DEP)
 src/core/security/auth.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
+src/core/security/credentials_metadata.c: $(OPENSSL_DEP)
 src/core/security/credentials_posix.c: $(OPENSSL_DEP)
 src/core/security/credentials_win32.c: $(OPENSSL_DEP)
 src/core/security/google_default_credentials.c: $(OPENSSL_DEP)

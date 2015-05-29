@@ -22,6 +22,9 @@
     <ClCompile Include="..\..\src\core\security\credentials.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_metadata.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials_posix.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
