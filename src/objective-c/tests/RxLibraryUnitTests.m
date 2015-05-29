@@ -34,35 +34,107 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
+#import <gRPC/GRXBufferedPipe.h>
 #import <gRPC/GRXWriter.h>
 #import <gRPC/GRXWriteable.h>
 
-@interface RxLibraryUnitTests : XCTestCase
+// A mock of a GRXSingleValueHandler block that can be queried for how many times it was called and
+// what were the last values passed to it.
+//
+// TODO(jcanizales): Move this to a test util library, and add tests for it.
+@interface CapturingSingleValueHandler : NSObject
+@property (nonatomic, readonly) void (^block)(id value, NSError *errorOrNil);
+@property (nonatomic, readonly) NSUInteger timesCalled;
+@property (nonatomic, readonly) id value;
+@property (nonatomic, readonly) NSError *errorOrNil;
++ (instancetype)handler;
+@end
 
+@implementation CapturingSingleValueHandler
++ (instancetype)handler {
+  return [[self alloc] init];
+}
+
+- (GRXSingleValueHandler)block {
+  return ^(id value, NSError *errorOrNil) {
+    ++_timesCalled;
+    _value = value;
+    _errorOrNil = errorOrNil;
+  };
+}
+@end
+
+@interface RxLibraryUnitTests : XCTestCase
 @end
 
 @implementation RxLibraryUnitTests
 
-- (void)setUp {
-    [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
+#pragma mark Writeable
+
+- (void)testWriteableSingleValueHandlerIsCalledForValue {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  id anyValue = @7;
+
+  // If:
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleValueHandler:handler.block];
+  [writeable writeValue:anyValue];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, anyValue);
+  XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
 
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-    [super tearDown];
+- (void)testWriteableSingleValueHandlerIsCalledForError {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  NSError *anyError = [NSError errorWithDomain:@"domain" code:7 userInfo:nil];
+
+  // If:
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleValueHandler:handler.block];
+  [writeable writesFinishedWithError:anyError];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, nil);
+  XCTAssertEqualObjects(handler.errorOrNil, anyError);
 }
 
-- (void)testExample {
-    // This is an example of a functional test case.
-    XCTAssert(YES, @"Pass");
+#pragma mark BufferedPipe
+
+- (void)testBufferedPipePropagatesValue {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleValueHandler:handler.block];
+  id anyValue = @7;
+
+  // If:
+  GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  [pipe writeValue:anyValue];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, anyValue);
+  XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
 
-- (void)testPerformanceExample {
-    // This is an example of a performance test case.
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-    }];
+- (void)testBufferedPipePropagatesError {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleValueHandler:handler.block];
+  NSError *anyError = [NSError errorWithDomain:@"domain" code:7 userInfo:nil];
+
+  // If:
+  GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];
+  [pipe startWithWriteable:writeable];
+  [pipe writesFinishedWithError:anyError];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, nil);
+  XCTAssertEqualObjects(handler.errorOrNil, anyError);
 }
 
 @end
