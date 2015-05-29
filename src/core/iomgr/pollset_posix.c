@@ -238,7 +238,7 @@ static void basic_do_promote(void *args, int success) {
     fds[0] = pollset->data.ptr;
     fds[1] = fd;
 
-    if (!grpc_fd_is_orphaned(fds[0])) {
+    if (fds[0] && !grpc_fd_is_orphaned(fds[0])) {
       grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
       grpc_fd_unref(fds[0]);
     } else {
@@ -246,7 +246,7 @@ static void basic_do_promote(void *args, int success) {
        * unary poller */
       /* Note that it is possible that fds[1] is also orphaned at this point.
        * That's okay, we'll correct it at the next add or poll. */
-      grpc_fd_unref(fds[0]);
+      if (fds[0]) grpc_fd_unref(fds[0]);
       pollset->data.ptr = fd;
       grpc_fd_ref(fd);
     }
