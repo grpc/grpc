@@ -150,6 +150,8 @@ struct grpc_call {
   gpr_uint8 num_completed_requests;
   /* are we currently reading a message? */
   gpr_uint8 reading_message;
+  /* have we bound a pollset yet? */
+  gpr_uint8 bound_pollset;
   /* flags with bits corresponding to write states allowing us to determine
      what was sent */
   gpr_uint16 last_send_contains;
@@ -246,6 +248,9 @@ static grpc_call_error cancel_with_status(
     grpc_call *c, grpc_status_code status, const char *description,
     gpr_uint8 locked);
 
+static void lock(grpc_call *call);
+static void unlock(grpc_call *call);
+
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
@@ -305,7 +310,9 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
 
 void grpc_call_set_completion_queue(grpc_call *call,
                                     grpc_completion_queue *cq) {
+  lock(call);
   call->cq = cq;
+  unlock(call);
 }
 
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
@@ -420,6 +427,12 @@ static void unlock(grpc_call *call) {
   int i;
 
   memset(&op, 0, sizeof(op));
+
+  if (!call->bound_pollset && call->cq) {
+    call->bound_pollset = 1;
+    op.bind_pollset = grpc_cq_pollset(call->cq);
+    start_op = 1;
+  }
 
   if (!call->receiving && need_more_data(call)) {
     op.recv_ops = &call->recv_ops;
@@ -831,7 +844,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
       }
       grpc_sopb_add_metadata(&call->send_ops, mdb);
       op->send_ops = &call->send_ops;
-      op->bind_pollset = grpc_cq_pollset(call->cq);
       call->last_send_contains |= 1 << GRPC_IOREQ_SEND_INITIAL_METADATA;
       call->send_initial_metadata_count = 0;
     /* fall through intended */
