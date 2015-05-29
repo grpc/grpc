@@ -183,7 +183,9 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data) {
   fd->on_done_user_data = user_data;
   shutdown(fd->fd, SHUT_RDWR);
   ref_by(fd, 1); /* remove active status, but keep referenced */
+  gpr_mu_lock(&fd->watcher_mu);
   wake_all_watchers(fd);
+  gpr_mu_unlock(&fd->watcher_mu);
   unref_by(fd, 2); /* drop the reference */
 }
 
