@@ -349,6 +349,10 @@ argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(_LANGUAGES.keys()),
                   nargs='+',
                   default=['all'])
+argp.add_argument('-S', '--stop_on_failure',
+                  default=False,
+                  action='store_const',
+                  const=True)
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 args = argp.parse_args()
 
@@ -457,6 +461,7 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
     if not jobset.run(all_runs, check_cancelled,
                       newline_on_success=newline_on_success, travis=travis,
                       maxjobs=args.jobs,
+                      stop_on_failure=args.stop_on_failure,
                       cache=cache):
       return 2
   finally:
