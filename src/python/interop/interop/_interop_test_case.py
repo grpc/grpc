@@ -53,3 +53,9 @@ class InteropTestCase(object):
 
   def testPingPong(self):
     methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
+
+  def testCancelAfterBegin(self):
+    methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
+
+  def testCancelAfterFirstResponse(self):
+    methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(self.stub, None)
