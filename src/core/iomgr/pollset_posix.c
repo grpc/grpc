@@ -134,7 +134,6 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   r = pollset->vtable->maybe_work(pollset, deadline, now, 1);
   gpr_tls_set(&g_current_thread_poller, 0);
   if (pollset->shutting_down) {
-    gpr_log(GPR_DEBUG, "shutting_down': cbs=%d ctr=%d", pollset->in_flight_cbs, pollset->counter);
     if (pollset->counter > 0) {
       grpc_pollset_kick(pollset);
     } else if (pollset->in_flight_cbs == 0) {
