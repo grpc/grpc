@@ -2718,7 +2718,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/iomgr.c \
     src/core/iomgr/iomgr_posix.c \
     src/core/iomgr/iomgr_windows.c \
-    src/core/iomgr/pollset_kick.c \
+    src/core/iomgr/pollset_kick_posix.c \
     src/core/iomgr/pollset_multipoller_with_epoll.c \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
@@ -2968,7 +2968,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/iomgr.c \
     src/core/iomgr/iomgr_posix.c \
     src/core/iomgr/iomgr_windows.c \
-    src/core/iomgr/pollset_kick.c \
+    src/core/iomgr/pollset_kick_posix.c \
     src/core/iomgr/pollset_multipoller_with_epoll.c \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \

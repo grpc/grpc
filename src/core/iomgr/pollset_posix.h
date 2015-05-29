@@ -36,7 +36,7 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/pollset_kick_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
