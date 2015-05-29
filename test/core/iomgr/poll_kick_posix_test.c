@@ -105,6 +105,7 @@ static void test_over_free(void) {
     grpc_pollset_kick_post_poll(&state, kfds[i]);
   }
   grpc_pollset_kick_destroy(&state);
+  gpr_free(kfds);
 }
 
 static void run_tests(void) {
