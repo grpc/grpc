@@ -93,8 +93,6 @@ static void setup_initiate(grpc_transport_setup *sp) {
   grpc_client_setup_request *r = gpr_malloc(sizeof(grpc_client_setup_request));
   int in_alarm = 0;
 
-  gpr_log(GPR_DEBUG, "setup_initiate: %p", r);
-
   r->setup = s;
   grpc_pollset_set_init(&r->interested_parties);
   /* TODO(klempner): Actually set a deadline */
@@ -170,7 +168,6 @@ static void setup_cancel(grpc_transport_setup *sp) {
   if (s->in_alarm) {
     cancel_alarm = 1;
   }
-  gpr_log(GPR_DEBUG, "%p setup_cancel: refs=%d", s, s->refs);
   if (--s->refs == 0) {
     gpr_mu_unlock(&s->mu);
     destroy_setup(s);
@@ -183,7 +180,6 @@ static void setup_cancel(grpc_transport_setup *sp) {
 }
 
 int grpc_client_setup_cb_begin(grpc_client_setup_request *r, const char *reason) {
-  gpr_log(GPR_DEBUG, "setup_cb_begin: %p %s", r, reason);
   gpr_mu_lock(&r->setup->mu);
   if (r->setup->cancelled) {
     gpr_mu_unlock(&r->setup->mu);
@@ -195,7 +191,6 @@ int grpc_client_setup_cb_begin(grpc_client_setup_request *r, const char *reason)
 }
 
 void grpc_client_setup_cb_end(grpc_client_setup_request *r, const char *reason) {
-  gpr_log(GPR_DEBUG, "setup_cb_end: %p %s", r, reason);
   gpr_mu_lock(&r->setup->mu);
   r->setup->in_cb--;
   if (r->setup->cancelled) gpr_cv_signal(&r->setup->cv);
@@ -213,8 +208,6 @@ void grpc_client_setup_create_and_attach(
     void (*initiate)(void *user_data, grpc_client_setup_request *request),
     void (*done)(void *user_data), void *user_data) {
   grpc_client_setup *s = gpr_malloc(sizeof(grpc_client_setup));
-
-  gpr_log(GPR_DEBUG, "%p setup_create", s);
 
   s->base.vtable = &setup_vtable;
   gpr_mu_init(&s->mu);
@@ -243,7 +236,6 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r, cons
     result = r->setup->active_request == r;
     gpr_mu_unlock(&r->setup->mu);
   }
-  gpr_log(GPR_DEBUG, "should_continue: %p result=%d %s", r, result, reason);
   return result;
 }
 
@@ -275,16 +267,12 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
   int retry = !was_successful;
   grpc_client_setup *s = r->setup;
 
-  gpr_log(GPR_DEBUG, "setup_request_finish: %p success=%d retry0=%d", r, was_successful, retry);
-
   gpr_mu_lock(&s->mu);
   if (s->active_request == r) {
     s->active_request = NULL;
   } else {
     retry = 0;
   }
-
-  gpr_log(GPR_DEBUG, "retry=%d", retry);
 
   if (!retry && 0 == --s->refs) {
     gpr_mu_unlock(&s->mu);
