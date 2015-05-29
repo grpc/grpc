@@ -26,9 +26,11 @@ $ git clone https://github.com/google/grpc-common.git
 All the files for this tutorial are in the directory  `grpc-common/csharp/route_guide`.
 Open the solution `grpc-common/csharp/route_guide/RouteGuide.sln` from Visual Studio (or Monodevelop on Linux).
 
-You also should have the relevant tools installed to generate the server and client interface code.
+On Windows, you should not need to do anything besides opening the solution. All the needed dependencies will be restored
+for you automatically by the `Grpc` NuGet package upon building the solution.
 
-**TODO: more on how to install protoc**
+On Linux (or MacOS), you will first need to install protobuf and gRPC C Core using Linuxbrew (or Homebrew) tool in order to be 
+able to generate the server and client interface code and run the examples. Follow the instructions for [Linux](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono) or [MacOS](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono).
 
 ## Defining the service
 
@@ -90,19 +92,25 @@ message Point {
 
 Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C# plugin.
 
-If you want to run this yourself, make sure you've installed protoc and followed the gRPC C# plugin [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first.
-
-**TODO: more on how to install protoc and grpc_csharp_plugin**
+If you want to run this yourself, make sure you've installed protoc and gRPC C# plugin. The instructions vary based on your OS:
+- For Windows, the `Grpc.Tools` NuGet package contains the binaries you will need to generate the code.
+- For Linux, make sure you've [installed gRPC C Core using Linuxbrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono)
+- For MacOS, make sure you've [installed gRPC C Core using Homebrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono)
 
 Once that's done, the following command can be used to generate the C# code.
 
+To generate the code on Windows, we use `protoc.exe` and `grpc_csharp_plugin.exe` binaries that are shipped with the `Grpc.Tools` NuGet package under the `tools` directory.
+Normally you would need to add the `Grpc.Tools` package to the solution yourself, but in this tutorial it has been already done for you. Following command should be run from the `csharp/route_guide` directory:
+```
+> packages\Grpc.Tools.0.5.0\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.5.0\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
+```
+
+On Linux/MacOS, we rely on `protoc` and `grpc_csharp_plugin` being installed by Linuxbrew/Homebrew. Run this command from the route_guide directory:
 ```shell
 $ protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=`which grpc_csharp_plugin` RouteGuide/protos/route_guide.proto
 ```
 
-**TODO: command for windows**
-
-Running this command regenerates the following files in the RouteGuide directory:
+Running one of the previous commands regenerates the following files in the RouteGuide directory:
 - `RouteGuide/RouteGuide.cs` defines a namespace `examples`
   - This contains all the protocol buffer code to populate, serialize, and retrieve our request and response message types
 - `RouteGuide/RouteGuideGrpc.cs`, provides stub and service classes
@@ -130,6 +138,8 @@ As you can see, our server has a `RouteGuideImpl` class that implements the gene
 public class RouteGuideImpl : RouteGuide.IRouteGuide
 ```
 
+#### Simple RPC
+
 `RouteGuideImpl` implements all our service methods. Let's look at the simplest type first, `GetFeature`, which just gets a `Point` from the client and returns the corresponding feature information from its database in a `Feature`.
 
 ```csharp
@@ -142,6 +152,8 @@ public class RouteGuideImpl : RouteGuide.IRouteGuide
 The method is passed a context for the RPC (which is empty in the alpha release), the client's `Point` protocol buffer request, and returns a `Feature` protocol buffer. In the method we create the `Feature` with the appropriate information, and then return it. To allow asynchronous
 implementation, the method returns `Task<Feature>` rather than just `Feature`. You are free to perform your computations synchronously and return
 the result once you've finished, just as we do in the example.
+
+#### Server-side streaming RPC
 
 Now let's look at something a bit more complicated - a streaming RPC. `ListFeatures` is a server-side streaming RPC, so we need to send back multiple `Feature` protocol buffers to our client.
 
@@ -174,7 +186,9 @@ Now let's look at something a bit more complicated - a streaming RPC. `ListFeatu
 
 As you can see, here the request object is a `Rectangle` in which our client wants to find `Feature`s, but instead of returning a simple response we need to write responses to an asynchronous stream `IServerStreamWriter` using async method `WriteAsync`.
 
-Similarly, the client-side streaming method `RecordRoute` uses an [IAsyncEnumerator](https://github.com/Reactive-Extensions/Rx.NET/blob/master/Ix.NET/Source/System.Interactive.Async/IAsyncEnumerator.cs), to read the stream of requests using async method `MoveNext` and property `Current`.
+#### Client-side streaming RPC
+
+Similarly, the client-side streaming method `RecordRoute` uses an [IAsyncEnumerator](https://github.com/Reactive-Extensions/Rx.NET/blob/master/Ix.NET/Source/System.Interactive.Async/IAsyncEnumerator.cs), to read the stream of requests using the async method `MoveNext` and the `Current` property.
 
 ```csharp
     public async Task<RouteSummary> RecordRoute(Grpc.Core.ServerCallContext context,
@@ -208,6 +222,9 @@ Similarly, the client-side streaming method `RecordRoute` uses an [IAsyncEnumera
             .SetElapsedTime((int) (stopwatch.ElapsedMilliseconds / 1000)).Build();
     }
 ```
+
+#### Bidirectional streaming RPC
+
 Finally, let's look at our bidirectional streaming RPC `RouteChat`.
 
 ```csharp
@@ -238,7 +255,7 @@ Finally, let's look at our bidirectional streaming RPC `RouteChat`.
     }
 ```
 
-Here the method receives both `requestStream` and `responseStream` as an argument.  Reading the requests is done in a same way as in the `RecordRoute` example.  Writing the responses is done the same way as in the `ListFeatures` example.
+Here the method receives both `requestStream` and `responseStream` arguments.  Reading the requests is done the same way as in the client-side streaming method `RecordRoute`.  Writing the responses is done the same way as in the server-side streaming method `ListFeatures`.
 
 ### Starting the server
 
@@ -264,7 +281,7 @@ As you can see, we build and start our server using `Grpc.Core.Server` class. To
 
 1. Create an instance of `Grpc.Core.Server`.
 1. Create an instance of our service implementation class `RouteGuideImpl`.
-3. Register our service implementation with the server using method `AddServiceDefinition` and the generated method `RouteGuide.BindService`.
+3. Register our service implementation with the server using the `AddServiceDefinition` method and the generated method `RouteGuide.BindService`.
 2. Specify the address and port we want to use to listen for client requests using the `AddListeningPort` method.
 4. Call `Start` on the server instance to start an RPC server for our service.
 
