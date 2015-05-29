@@ -174,6 +174,8 @@ void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
   gpr_timespec now = gpr_now();
+  /* FIXME(ctiller): see below */
+  gpr_timespec maximum_deadline = gpr_time_add(now, gpr_time_from_seconds(1));
   int r;
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0;
@@ -183,6 +185,11 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   }
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     return 1;
+  }
+  /* FIXME(ctiller): we should not clamp deadline, however we have some
+     stuck at shutdown bugs that this resolves */
+  if (gpr_time_cmp(deadline, maximum_deadline) > 0) {
+    deadline = maximum_deadline;
   }
   gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
   r = pollset->vtable->maybe_work(pollset, deadline, now, 1);
@@ -413,10 +420,12 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
 
   pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
 
-  r = poll(pfd, GPR_ARRAY_SIZE(pfd), timeout);
+  /* poll fd count (argument 2) is shortened by one if we have no events
+     to poll on - such that it only includes the kicker */
+  r = poll(pfd, GPR_ARRAY_SIZE(pfd) - (pfd[1].events == 0), timeout);
   GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
 
-  grpc_fd_end_poll(&fd_watcher);
+  grpc_fd_end_poll(&fd_watcher, pfd[1].revents & POLLIN, pfd[1].revents & POLLOUT);
 
   if (r < 0) {
     if (errno != EINTR) {

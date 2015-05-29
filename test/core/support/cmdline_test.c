@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
@@ -272,6 +273,27 @@ static void test_many(void) {
   gpr_cmdline_destroy(cl);
 }
 
+static void test_usage(void) {
+  gpr_cmdline *cl;
+  char *usage;
+
+  char *str = NULL;
+  int x = 0;
+  int flag = 2;
+
+  cl = gpr_cmdline_create(NULL);
+  gpr_cmdline_add_string(cl, "str", NULL, &str);
+  gpr_cmdline_add_int(cl, "x", NULL, &x);
+  gpr_cmdline_add_flag(cl, "flag", NULL, &flag);
+
+  usage = gpr_cmdline_usage_string(cl, "test");
+  GPR_ASSERT(0 == strcmp(usage,
+    "Usage: test [--str=string] [--x=int] [--flag|--no-flag]\n"));
+  gpr_free(usage);
+
+  gpr_cmdline_destroy(cl);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_simple_int();
@@ -289,5 +311,6 @@ int main(int argc, char **argv) {
   test_flag_val_true();
   test_flag_val_false();
   test_many();
+  test_usage();
   return 0;
 }

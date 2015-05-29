@@ -35,15 +35,16 @@ Usage: Linux (Mono)
   - (preferred approach) add `libgrpc_csharp_ext.so` to `/etc/ld.so.cache` by running:
 
     ```sh
-    echo "$HOME/.linuxbrew/lib" | sudo tee /etc/ld.so.conf.d/zzz_brew_lib.conf
-    sudo ldconfig
+    $ echo "$HOME/.linuxbrew/lib" | sudo tee /etc/ld.so.conf.d/zzz_brew_lib.conf
+    $ sudo ldconfig
     ```
 
   - (adhoc approach) set `LD_LIBRARY_PATH` environment variable to point to directory containing `libgrpc_csharp_ext.so`:
 
     ```sh
-    export LD_LIBRARY_PATH=$HOME/.linuxbrew/lib:${LD_LIBRARY_PATH}
+    $ export LD_LIBRARY_PATH=$HOME/.linuxbrew/lib:${LD_LIBRARY_PATH}
     ```
+  - (if you are contributor) installing gRPC from sources using `sudo make install_grpc_csharp_ext` also works.
 
 - Open MonoDevelop and start a new project/solution.
 
@@ -87,14 +88,14 @@ If you are a user of gRPC C#, go to Usage section above.
   a convenience batch script that builds everything for you.
 
   ```
-  buildall.bat
+  > buildall.bat
   ```
 
 - Open Grpc.sln using Visual Studio 2013. NuGet dependencies will be restored
   upon build (you need to have NuGet add-in installed).
 
 
-Building: Linux & Mono
+Building: Linux (Mono)
 ----------------------
 
 You only need to go through these steps if you are planning to develop gRPC C#.
@@ -103,8 +104,8 @@ If you are a user of gRPC C#, go to Usage section above.
 - Prerequisites for development: Mono 3.2.8+, MonoDevelop 5.9 with NuGet and NUnit add-ins installed.
 
   ```sh
-  sudo apt-get install mono-devel
-  sudo apt-get install nunit nunit-console
+  $ sudo apt-get install mono-devel
+  $ sudo apt-get install nunit nunit-console
   ```
 
 You can use older versions of MonoDevelop, but then you might need to restore
@@ -114,8 +115,8 @@ don't support NuGet add-in.
 - Compile and install the gRPC C# extension library (that will be used via
   P/Invoke from C#).
   ```sh
-  make grpc_csharp_ext
-  sudo make install_grpc_csharp_ext
+  $ make grpc_csharp_ext
+  $ sudo make install_grpc_csharp_ext
   ```
 
 - Use MonoDevelop to open the solution Grpc.sln
@@ -135,9 +136,9 @@ Then you should be able to run all the test from the Test View.
 
 After building the solution, you can also run the tests from command line 
 using nunit-console tool.
-```
+```sh
 # from Grpc.Core.Test/bin/Debug directory
-nunit-console Grpc.Core.Tests.dll
+$ nunit-console Grpc.Core.Tests.dll
 ```
 
 Contents

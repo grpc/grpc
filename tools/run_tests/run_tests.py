@@ -57,7 +57,6 @@ class SimpleConfig(object):
     if environ is None:
       environ = {}
     self.build_config = config
-    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
@@ -93,7 +92,6 @@ class ValgrindConfig(object):
     self.build_config = config
     self.tool = tool
     self.args = args
-    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
   def job_spec(self, cmdline, hash_targets):
@@ -333,7 +331,7 @@ argp.add_argument('-c', '--config',
                   default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
 argp.add_argument('-r', '--regex', default='.*', type=str)
-argp.add_argument('-j', '--jobs', default=1000, type=int)
+argp.add_argument('-j', '--jobs', default=2 * multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
                   default=False,
@@ -351,6 +349,10 @@ argp.add_argument('-l', '--language',
                   choices=sorted(_LANGUAGES.keys()),
                   nargs='+',
                   default=sorted(_LANGUAGES.keys()))
+argp.add_argument('-S', '--stop_on_failure',
+                  default=False,
+                  action='store_const',
+                  const=True)
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 args = argp.parse_args()
 
@@ -378,11 +380,11 @@ else:
   def make_jobspec(cfg, targets):
     return jobset.JobSpec(['make',
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % 
+                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,
                            'CONFIG=%s' % cfg] + targets)
 
-build_steps = [make_jobspec(cfg, 
+build_steps = [make_jobspec(cfg,
                             list(set(itertools.chain.from_iterable(
                                          l.make_targets() for l in languages))))
                for cfg in build_configs]
@@ -390,7 +392,7 @@ build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
                    for l in languages
-                   for cmdline in l.build_steps()))               
+                   for cmdline in l.build_steps()))
 one_run = set(
     spec
     for config in run_configs
@@ -455,7 +457,8 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
         itertools.repeat(one_run, runs_per_test))
     if not jobset.run(all_runs, check_cancelled,
                       newline_on_success=newline_on_success, travis=travis,
-                      maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
+                      maxjobs=args.jobs,
+                      stop_on_failure=args.stop_on_failure,
                       cache=cache):
       return 2
   finally:

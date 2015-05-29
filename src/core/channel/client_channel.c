@@ -144,6 +144,7 @@ static void handle_op_after_cancellation(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (op->send_ops) {
+    grpc_stream_ops_unref_owned_objects(op->send_ops->ops, op->send_ops->nops);
     op->on_done_send(op->send_user_data, 0);
   }
   if (op->recv_ops) {

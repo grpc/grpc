@@ -34,22 +34,77 @@
 #ifndef TEST_QPS_REPORT_H
 #define TEST_QPS_REPORT_H
 
+#include <memory>
+#include <set>
+#include <vector>
+#include <grpc++/config.h>
+
 #include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
-// QPS: XXX
-void ReportQPS(const ScenarioResult& result);
-// QPS: XXX (YYY/server core)
-void ReportQPSPerCore(const ScenarioResult& result, const ServerConfig& config);
-// Latency (50/90/95/99/99.9%-ile): AA/BB/CC/DD/EE us
-void ReportLatency(const ScenarioResult& result);
-// Server system time: XX%
-// Server user time: XX%
-// Client system time: XX%
-// Client user time: XX%
-void ReportTimes(const ScenarioResult& result);
+/** Interface for all reporters. */
+class Reporter {
+ public:
+  /** Construct a reporter with the given \a name. */
+  Reporter(const string& name) : name_(name) {}
+
+  virtual ~Reporter() {}
+
+  /** Returns this reporter's name.
+   *
+   * Names are constants, set at construction time. */
+  string name() const { return name_; }
+
+  /** Reports QPS for the given \a result. */
+  virtual void ReportQPS(const ScenarioResult& result) const = 0;
+
+  /** Reports QPS per core as (YYY/server core). */
+  virtual void ReportQPSPerCore(const ScenarioResult& result,
+                                const ServerConfig& config) const = 0;
+
+  /** Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in ms. */
+  virtual void ReportLatency(const ScenarioResult& result) const = 0;
+
+  /** Reports system and user time for client and server systems. */
+  virtual void ReportTimes(const ScenarioResult& result) const = 0;
+
+ private:
+  const string name_;
+};
+
+/** A composite for all reporters to be considered. */
+class CompositeReporter : public Reporter {
+ public:
+  CompositeReporter() : Reporter("CompositeReporter") {}
+
+  /** Adds a \a reporter to the composite. */
+  void add(std::unique_ptr<Reporter> reporter);
+
+  void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result,
+                        const ServerConfig& config) const GRPC_OVERRIDE;
+  void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
+
+ private:
+  std::vector<std::unique_ptr<Reporter> > reporters_;
+};
+
+/** Reporter to gpr_log(GPR_INFO). */
+class GprLogReporter : public Reporter {
+ public:
+  GprLogReporter(const string& name) : Reporter(name) {}
+
+ private:
+  void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result,
+                        const ServerConfig& config) const GRPC_OVERRIDE;
+  void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
+};
 
 }  // namespace testing
 }  // namespace grpc
