@@ -110,9 +110,14 @@ void grpc_iomgr_shutdown(void) {
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
-  while (g_cbs_head || g_refs) {
-    gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed%s", g_refs,
-            g_cbs_head ? " and executing final callbacks" : "");
+  while (g_cbs_head != NULL || g_refs > 0) {
+    if (g_cbs_head != NULL && g_refs > 0) {
+      gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed and executing final callbacks", g_refs);
+    } else if (g_cbs_head != NULL) {
+      gpr_log(GPR_DEBUG, "Executing final iomgr callbacks");
+    } else {
+      gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed", g_refs);
+    }
     while (g_cbs_head) {
       cb = g_cbs_head;
       g_cbs_head = cb->next;
