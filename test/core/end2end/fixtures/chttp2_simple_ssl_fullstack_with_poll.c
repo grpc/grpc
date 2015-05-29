@@ -85,8 +85,14 @@ static void chttp2_init_server_secure_fullstack(
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args);
+<<<<<<< HEAD
   grpc_server_register_completion_queue(f->server, f->cq);
   GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr, server_creds));
+=======
+  grpc_server_register_completion_queue(f->server, f->server_cq);
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
+                                               server_creds));
+>>>>>>> 8f17c6c0283aeb78b615580529e98f1a28bf3c77
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
@@ -142,7 +148,8 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   /* Set the SSL roots env var. */
-  roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);
+  roots_file = gpr_tmpfile("chttp2_simple_ssl_with_poll_fullstack_test", 
+                           &roots_filename);
   GPR_ASSERT(roots_filename != NULL);
   GPR_ASSERT(roots_file != NULL);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
