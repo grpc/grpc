@@ -273,6 +273,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_metadata.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials_win32.c">

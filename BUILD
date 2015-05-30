@@ -237,6 +237,7 @@ cc_library(
     "src/core/security/base64.c",
     "src/core/security/client_auth_filter.c",
     "src/core/security/credentials.c",
+    "src/core/security/credentials_metadata.c",
     "src/core/security/credentials_posix.c",
     "src/core/security/credentials_win32.c",
     "src/core/security/google_default_credentials.c",
