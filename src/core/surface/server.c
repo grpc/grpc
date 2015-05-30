@@ -194,6 +194,8 @@ struct call_data {
 static void begin_call(grpc_server *server, call_data *calld,
                        requested_call *rc);
 static void fail_call(grpc_server *server, requested_call *rc);
+static void shutdown_channel(channel_data *chand, int send_goaway,
+                             int send_disconnect);
 
 static int call_list_join(call_data **root, call_data *call, call_list list) {
   GPR_ASSERT(!call->root[list]);
@@ -391,15 +393,28 @@ static int num_listeners(grpc_server *server) {
 
 static void maybe_finish_shutdown(grpc_server *server) {
   size_t i;
-  if (server->shutdown && !server->shutdown_published &&
-      server->root_channel_data.next == &server->root_channel_data &&
-      server->lists[ALL_CALLS] == NULL &&
-      server->listeners_destroyed == num_listeners(server)) {
-    server->shutdown_published = 1;
-    for (i = 0; i < server->num_shutdown_tags; i++) {
-      grpc_cq_end_op(server->shutdown_tags[i].cq, server->shutdown_tags[i].tag,
-                     NULL, 1);
-    }
+  if (!server->shutdown || server->shutdown_published) {
+    return;
+  }
+  if (server->lists[ALL_CALLS] != NULL) {
+    gpr_log(GPR_DEBUG,
+            "Waiting for all calls to finish before destroying server");
+    return;
+  }
+  if (server->root_channel_data.next != &server->root_channel_data) {
+    gpr_log(GPR_DEBUG,
+            "Waiting for all channels to close before destroy server");
+    return;
+  }
+  if (server->listeners_destroyed < num_listeners(server)) {
+    gpr_log(GPR_DEBUG, "Waiting for all listeners to be destroyed (@ %d/%d)",
+            server->listeners_destroyed, num_listeners(server));
+    return;
+  }
+  server->shutdown_published = 1;
+  for (i = 0; i < server->num_shutdown_tags; i++) {
+    grpc_cq_end_op(server->shutdown_tags[i].cq, server->shutdown_tags[i].tag,
+                   NULL, 1);
   }
 }
 
@@ -415,6 +430,14 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     return NULL;
   }
   return md;
+}
+
+static void decrement_call_count(channel_data *chand) {
+  chand->num_calls--;
+  if (0 == chand->num_calls && chand->server->shutdown) {
+    shutdown_channel(chand, 0, 1);
+  }
+  maybe_finish_shutdown(chand->server);
 }
 
 static void server_on_recv(void *ptr, int success) {
@@ -463,7 +486,7 @@ static void server_on_recv(void *ptr, int success) {
         grpc_iomgr_add_callback(kill_zombie, elem);
       }
       if (call_list_remove(calld, ALL_CALLS)) {
-        maybe_finish_shutdown(chand->server);
+        decrement_call_count(chand);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -556,6 +579,7 @@ static void finish_shutdown_channel(void *p, int success) {
 static void shutdown_channel(channel_data *chand, int send_goaway,
                              int send_disconnect) {
   shutdown_channel_args *sca;
+  gpr_log(GPR_DEBUG, "shutdown_channel: %p %d %d", chand, send_goaway, send_disconnect);
   grpc_channel_internal_ref(chand->channel);
   sca = gpr_malloc(sizeof(shutdown_channel_args));
   sca->chand = chand;
@@ -593,12 +617,8 @@ static void destroy_call_elem(grpc_call_element *elem) {
   for (i = 0; i < CALL_LIST_COUNT; i++) {
     removed[i] = call_list_remove(elem->call_data, i);
   }
-  chand->num_calls--;
-  if (0 == chand->num_calls && chand->server->shutdown) {
-    shutdown_channel(chand, 0, 1);
-  }
   if (removed[ALL_CALLS]) {
-    maybe_finish_shutdown(chand->server);
+    decrement_call_count(chand);
   }
   gpr_mu_unlock(&chand->server->mu);
 
