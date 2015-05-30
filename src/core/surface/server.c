@@ -403,7 +403,7 @@ static void maybe_finish_shutdown(grpc_server *server) {
   }
   if (server->root_channel_data.next != &server->root_channel_data) {
     gpr_log(GPR_DEBUG,
-            "Waiting for all channels to close before destroy server");
+            "Waiting for all channels to close before destroying server");
     return;
   }
   if (server->listeners_destroyed < num_listeners(server)) {
