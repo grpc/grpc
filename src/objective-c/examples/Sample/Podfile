@@ -4,7 +4,7 @@ platform :ios, '8.0'
 pod 'gRPC', :path => "../../../.."
 pod 'Protobuf', :git => 'https://github.com/google/protobuf.git'
 pod 'Route_guide', :path => "RouteGuideClient"
-pod 'RemoteTest', :path => "RemoteTestClient"
+pod 'RemoteTest', :path => "../../generated_libraries/RemoteTestClient"
 
 link_with 'Sample', 'SampleTests'
 
