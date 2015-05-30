@@ -306,7 +306,7 @@ static void orphan_channel(channel_data *chand) {
 static void finish_destroy_channel(void *cd, int success) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
-  grpc_channel_internal_unref(chand->channel);
+  GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "server");
   server_unref(server);
 }
 
@@ -573,14 +573,14 @@ static void finish_shutdown_channel(void *p, int success) {
                    grpc_channel_get_channel_stack(sca->chand->channel), 0),
                NULL, &op);
   }
-  grpc_channel_internal_unref(sca->chand->channel);
+  GRPC_CHANNEL_INTERNAL_UNREF(sca->chand->channel, "shutdown");
 }
 
 static void shutdown_channel(channel_data *chand, int send_goaway,
                              int send_disconnect) {
   shutdown_channel_args *sca;
   gpr_log(GPR_DEBUG, "shutdown_channel: %p %d %d", chand, send_goaway, send_disconnect);
-  grpc_channel_internal_ref(chand->channel);
+  GRPC_CHANNEL_INTERNAL_REF(chand->channel, "shutdown");
   sca = gpr_malloc(sizeof(shutdown_channel_args));
   sca->chand = chand;
   sca->send_goaway = send_goaway;

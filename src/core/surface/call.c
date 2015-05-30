@@ -280,7 +280,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   call->send_initial_metadata_count = add_initial_metadata_count;
   call->send_deadline = send_deadline;
-  grpc_channel_internal_ref(channel);
+  GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   call->metadata_context = grpc_channel_get_metadata_context(channel);
   grpc_sopb_init(&call->send_ops);
   grpc_sopb_init(&call->recv_ops);
@@ -333,7 +333,7 @@ static void destroy_call(void *call, int ignored_success) {
   size_t i;
   grpc_call *c = call;
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
-  grpc_channel_internal_unref(c->channel);
+  GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
   gpr_mu_destroy(&c->mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (c->status[i].details) {
