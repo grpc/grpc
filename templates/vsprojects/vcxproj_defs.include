@@ -19,7 +19,10 @@
   if not project_guid:
     project_guid = project.vs_project_guid
   if configuration_type == 'Application':
-    props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
+    if target.build == 'protoc':
+      props.extend(['protoc'])
+    else:
+      props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
     if target.language == 'c++':
       props.extend(['protobuf'])
   props.extend(['global'])

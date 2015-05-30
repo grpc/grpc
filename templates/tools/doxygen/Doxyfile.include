@@ -1,4 +1,4 @@
-<%def name="gen_doxyfile(libnames, packagename, collection)">
+<%def name="gen_doxyfile(libnames, packagename, collection, internal)">
 <%
   import itertools
   targets = []
@@ -770,7 +770,13 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ${' '.join(itertools.chain.from_iterable(target.public_headers for target in targets))}
+INPUT                  = ${' '.join(
+                               itertools.chain.from_iterable(
+			           target.public_headers +
+				   ([]
+				    if not internal
+				    else target.headers + target.src)
+			       for target in targets))}
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
