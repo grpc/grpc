@@ -123,13 +123,8 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
-<<<<<<< HEAD
-  grpc_mdctx *(*get_metadata_context)(grpc_credentials *c);
-  void (*get_request_metadata)(grpc_credentials *c, const char *service_url,
-=======
   void (*get_request_metadata)(grpc_credentials *c,
                                const char *service_url,
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
   grpc_security_status (*create_security_connector)(
@@ -181,13 +176,8 @@ grpc_credentials *grpc_credentials_contains_type(
 /* Exposed for testing only. */
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-<<<<<<< HEAD
-    const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
-    grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
-=======
     const struct grpc_httpcli_response *response, grpc_credentials_md_store **token_md,
     gpr_timespec *token_lifetime);
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(

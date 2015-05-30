@@ -228,18 +228,9 @@ static grpc_security_status ssl_server_create_security_connector(
   return grpc_ssl_server_security_connector_create(&c->config, sc);
 }
 
-<<<<<<< HEAD
-static grpc_credentials_vtable ssl_vtable = {ssl_destroy,
-                                             ssl_has_request_metadata,
-                                             ssl_has_request_metadata_only,
-                                             ssl_get_metadata_context,
-                                             NULL,
-                                             ssl_create_security_connector};
-=======
 static grpc_credentials_vtable ssl_vtable = {
     ssl_destroy, ssl_has_request_metadata, ssl_has_request_metadata_only, NULL,
     ssl_create_security_connector};
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 static grpc_server_credentials_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_create_security_connector};
@@ -421,23 +412,9 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
   }
 }
 
-<<<<<<< HEAD
-static grpc_mdctx *jwt_get_metadata_context(grpc_credentials *creds) {
-  grpc_jwt_credentials *c = (grpc_jwt_credentials *)creds;
-  return c->md_ctx;
-}
-
-static grpc_credentials_vtable jwt_vtable = {jwt_destroy,
-                                             jwt_has_request_metadata,
-                                             jwt_has_request_metadata_only,
-                                             jwt_get_metadata_context,
-                                             jwt_get_request_metadata,
-                                             NULL};
-=======
 static grpc_credentials_vtable jwt_vtable = {
     jwt_destroy, jwt_has_request_metadata, jwt_has_request_metadata_only,
     jwt_get_request_metadata, NULL};
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
                                               gpr_timespec token_lifetime) {
@@ -483,11 +460,7 @@ static void oauth2_token_fetcher_destroy(grpc_credentials *creds) {
       (grpc_oauth2_token_fetcher_credentials *)creds;
   grpc_credentials_md_store_unref(c->access_token_md);
   gpr_mu_destroy(&c->mu);
-<<<<<<< HEAD
-  grpc_mdctx_unref(c->md_ctx);
   grpc_pollset_set_destroy(&c->pollset_set);
-=======
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
   gpr_free(c);
 }
 
@@ -660,13 +633,7 @@ static grpc_credentials_vtable compute_engine_vtable = {
     oauth2_token_fetcher_destroy,
     oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
-<<<<<<< HEAD
-    oauth2_token_fetcher_get_metadata_context,
-    oauth2_token_fetcher_get_request_metadata,
-    NULL};
-=======
     oauth2_token_fetcher_get_request_metadata, NULL};
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 static void compute_engine_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
@@ -712,13 +679,7 @@ static grpc_credentials_vtable service_account_vtable = {
     service_account_destroy,
     oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
-<<<<<<< HEAD
-    oauth2_token_fetcher_get_metadata_context,
-    oauth2_token_fetcher_get_request_metadata,
-    NULL};
-=======
     oauth2_token_fetcher_get_request_metadata, NULL};
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 static void service_account_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
@@ -792,13 +753,7 @@ static grpc_credentials_vtable refresh_token_vtable = {
     refresh_token_destroy,
     oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
-<<<<<<< HEAD
-    oauth2_token_fetcher_get_metadata_context,
-    oauth2_token_fetcher_get_request_metadata,
-    NULL};
-=======
     oauth2_token_fetcher_get_request_metadata, NULL};
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 static void refresh_token_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
@@ -891,16 +846,8 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
 }
 
 static grpc_credentials_vtable fake_oauth2_vtable = {
-<<<<<<< HEAD
-    fake_oauth2_destroy,
-    fake_oauth2_has_request_metadata,
-    fake_oauth2_has_request_metadata_only,
-    fake_oauth2_get_metadata_context,
-    fake_oauth2_get_request_metadata,
-=======
     fake_oauth2_destroy, fake_oauth2_has_request_metadata,
     fake_oauth2_has_request_metadata_only, fake_oauth2_get_request_metadata,
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
     NULL};
 
 grpc_credentials *grpc_fake_oauth2_credentials_create(
@@ -940,17 +887,8 @@ static int fake_transport_security_has_request_metadata_only(
   return 0;
 }
 
-<<<<<<< HEAD
-static grpc_mdctx *fake_transport_security_get_metadata_context(
-    grpc_credentials *c) {
-  return NULL;
-}
-
-static grpc_security_status fake_transport_security_create_security_connector(
-=======
 static grpc_security_status
 fake_transport_security_create_security_connector(
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
     grpc_credentials *c, const char *target, const grpc_channel_args *args,
     grpc_credentials *request_metadata_creds,
     grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
@@ -968,13 +906,7 @@ fake_transport_security_server_create_security_connector(
 static grpc_credentials_vtable fake_transport_security_credentials_vtable = {
     fake_transport_security_credentials_destroy,
     fake_transport_security_has_request_metadata,
-<<<<<<< HEAD
-    fake_transport_security_has_request_metadata_only,
-    fake_transport_security_get_metadata_context,
-    NULL,
-=======
     fake_transport_security_has_request_metadata_only, NULL,
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
     fake_transport_security_create_security_connector};
 
 static grpc_server_credentials_vtable
@@ -1137,16 +1069,8 @@ static grpc_security_status composite_create_security_connector(
 }
 
 static grpc_credentials_vtable composite_credentials_vtable = {
-<<<<<<< HEAD
-    composite_destroy,
-    composite_has_request_metadata,
-    composite_has_request_metadata_only,
-    composite_get_metadata_context,
-    composite_get_request_metadata,
-=======
     composite_destroy, composite_has_request_metadata,
     composite_has_request_metadata_only, composite_get_request_metadata,
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
     composite_create_security_connector};
 
 static grpc_credentials_array get_creds_array(grpc_credentials **creds_addr) {
@@ -1268,18 +1192,9 @@ static void iam_get_request_metadata(grpc_credentials *creds,
      GRPC_CREDENTIALS_OK);
 }
 
-<<<<<<< HEAD
-static grpc_credentials_vtable iam_vtable = {iam_destroy,
-                                             iam_has_request_metadata,
-                                             iam_has_request_metadata_only,
-                                             iam_get_metadata_context,
-                                             iam_get_request_metadata,
-                                             NULL};
-=======
 static grpc_credentials_vtable iam_vtable = {
     iam_destroy, iam_has_request_metadata, iam_has_request_metadata_only,
     iam_get_request_metadata, NULL};
->>>>>>> a2779c122ec3b2c3b6a475afa2ed18145d1f1b61
 
 grpc_credentials *grpc_iam_credentials_create(const char *token,
                                               const char *authority_selector) {
