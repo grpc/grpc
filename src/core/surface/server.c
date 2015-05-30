@@ -196,6 +196,7 @@ static void begin_call(grpc_server *server, call_data *calld,
 static void fail_call(grpc_server *server, requested_call *rc);
 static void shutdown_channel(channel_data *chand, int send_goaway,
                              int send_disconnect);
+static void maybe_finish_shutdown(grpc_server *server);
 
 static int call_list_join(call_data **root, call_data *call, call_list list) {
   GPR_ASSERT(!call->root[list]);
@@ -315,6 +316,7 @@ static void destroy_channel(channel_data *chand) {
   GPR_ASSERT(chand->server != NULL);
   orphan_channel(chand);
   server_ref(chand->server);
+  maybe_finish_shutdown(chand->server);
   grpc_iomgr_add_callback(finish_destroy_channel, chand);
 }
 
