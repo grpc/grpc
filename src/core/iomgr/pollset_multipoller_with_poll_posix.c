@@ -78,7 +78,7 @@ static void multipoll_with_poll_pollset_add_fd(grpc_pollset *pollset,
     h->fds = gpr_realloc(h->fds, sizeof(grpc_fd *) * h->fd_capacity);
   }
   h->fds[h->fd_count++] = fd;
-  grpc_fd_ref(fd);
+  GRPC_FD_REF(fd, "multipoller");
 }
 
 static void multipoll_with_poll_pollset_del_fd(grpc_pollset *pollset,
@@ -90,7 +90,7 @@ static void multipoll_with_poll_pollset_del_fd(grpc_pollset *pollset,
     h->dels = gpr_realloc(h->dels, sizeof(grpc_fd *) * h->del_capacity);
   }
   h->dels[h->del_count++] = fd;
-  grpc_fd_ref(fd);
+  GRPC_FD_REF(fd, "multipoller_del");
 }
 
 static void end_polling(grpc_pollset *pollset) {
@@ -144,7 +144,7 @@ static int multipoll_with_poll_pollset_maybe_work(
       if (h->fds[i] == h->dels[nd]) remove = 1;
     }
     if (remove) {
-      grpc_fd_unref(h->fds[i]);
+      GRPC_FD_UNREF(h->fds[i], "multipoller");
     } else {
       h->fds[nf++] = h->fds[i];
       h->watchers[np].fd = h->fds[i];
@@ -156,7 +156,7 @@ static int multipoll_with_poll_pollset_maybe_work(
   h->pfd_count = np;
   h->fd_count = nf;
   for (nd = 0; nd < h->del_count; nd++) {
-    grpc_fd_unref(h->dels[nd]);
+    GRPC_FD_UNREF(h->dels[nd], "multipoller_del");
   }
   h->del_count = 0;
   if (h->pfd_count == 0) {
@@ -198,6 +198,7 @@ static int multipoll_with_poll_pollset_maybe_work(
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter--;
+
   return 1;
 }
 
@@ -210,10 +211,10 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
   GPR_ASSERT(pollset->counter == 0);
   for (i = 0; i < h->fd_count; i++) {
-    grpc_fd_unref(h->fds[i]);
+    GRPC_FD_UNREF(h->fds[i], "multipoller");
   }
   for (i = 0; i < h->del_count; i++) {
-    grpc_fd_unref(h->dels[i]);
+    GRPC_FD_UNREF(h->dels[i], "multipoller_del");
   }
   gpr_free(h->pfds);
   gpr_free(h->watchers);
@@ -245,7 +246,7 @@ void grpc_poll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
   h->dels = NULL;
   for (i = 0; i < nfds; i++) {
     h->fds[i] = fds[i];
-    grpc_fd_ref(fds[i]);
+    GRPC_FD_REF(fds[i], "multipoller");
   }
 }
 

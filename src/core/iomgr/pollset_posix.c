@@ -119,15 +119,19 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   gpr_timespec now = gpr_now();
   int r;
   if (gpr_time_cmp(now, deadline) > 0) {
+    gpr_log(GPR_DEBUG, "out of time %p", pollset);
     return 0;
   }
   if (grpc_maybe_call_delayed_callbacks(&pollset->mu, 1)) {
+    gpr_log(GPR_DEBUG, "delayed calls %p", pollset);
     return 1;
   }
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
+    gpr_log(GPR_DEBUG, "alarms %p", pollset);
     return 1;
   }
   if (pollset->shutting_down) {
+    gpr_log(GPR_DEBUG, "shutting down %p counter=%d", pollset, pollset->counter);
     return 1;
   }
   gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
@@ -238,15 +242,15 @@ static void basic_do_promote(void *args, int success) {
 
     if (fds[0] && !grpc_fd_is_orphaned(fds[0])) {
       grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
-      grpc_fd_unref(fds[0]);
+      GRPC_FD_UNREF(fds[0], "basicpoll");
     } else {
       /* old fd is orphaned and we haven't cleaned it up until now, so remain a
        * unary poller */
       /* Note that it is possible that fds[1] is also orphaned at this point.
        * That's okay, we'll correct it at the next add or poll. */
-      if (fds[0]) grpc_fd_unref(fds[0]);
+      if (fds[0]) GRPC_FD_UNREF(fds[0], "basicpoll");
       pollset->data.ptr = fd;
-      grpc_fd_ref(fd);
+      GRPC_FD_REF(fd, "basicpoll");
     }
   }
 
@@ -257,7 +261,7 @@ static void basic_do_promote(void *args, int success) {
   }
 
   /* Matching ref in basic_pollset_add_fd */
-  grpc_fd_unref(fd);
+  GRPC_FD_UNREF(fd, "basicpoll_add");
 }
 
 static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
@@ -275,23 +279,23 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
 
     if (fds[0] == NULL) {
       pollset->data.ptr = fd;
-      grpc_fd_ref(fd);
+      GRPC_FD_REF(fd, "basicpoll");
     } else if (!grpc_fd_is_orphaned(fds[0])) {
       grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
-      grpc_fd_unref(fds[0]);
+      GRPC_FD_UNREF(fds[0], "basicpoll");
     } else {
       /* old fd is orphaned and we haven't cleaned it up until now, so remain a
        * unary poller */
-      grpc_fd_unref(fds[0]);
+      GRPC_FD_UNREF(fds[0], "basicpoll");
       pollset->data.ptr = fd;
-      grpc_fd_ref(fd);
+      GRPC_FD_REF(fd, "basicpoll");
     }
     return;
   }
 
   /* Now we need to promote. This needs to happen when we're not polling. Since
    * this may be called from poll, the wait needs to happen asynchronously. */
-  grpc_fd_ref(fd);
+  GRPC_FD_REF(fd, "basicpoll_add");
   pollset->in_flight_cbs++;
   up_args = gpr_malloc(sizeof(*up_args));
   up_args->pollset = pollset;
@@ -305,7 +309,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
 static void basic_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   GPR_ASSERT(fd);
   if (fd == pollset->data.ptr) {
-    grpc_fd_unref(pollset->data.ptr);
+    GRPC_FD_UNREF(pollset->data.ptr, "basicpoll");
     pollset->data.ptr = NULL;
   }
 }
@@ -327,7 +331,7 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
   }
   fd = pollset->data.ptr;
   if (fd && grpc_fd_is_orphaned(fd)) {
-    grpc_fd_unref(fd);
+    GRPC_FD_UNREF(fd, "basicpoll");
     fd = pollset->data.ptr = NULL;
   }
   if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
@@ -399,7 +403,7 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
 static void basic_pollset_destroy(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->counter == 0);
   if (pollset->data.ptr) {
-    grpc_fd_unref(pollset->data.ptr);
+    GRPC_FD_UNREF(pollset->data.ptr, "basicpoll");
   }
 }
 
@@ -412,7 +416,7 @@ static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null) {
   pollset->counter = 0;
   pollset->data.ptr = fd_or_null;
   if (fd_or_null) {
-    grpc_fd_ref(fd_or_null);
+    GRPC_FD_REF(fd_or_null, "basicpoll");
   }
 }
 

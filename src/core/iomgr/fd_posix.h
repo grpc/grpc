@@ -161,8 +161,19 @@ void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback);
 void grpc_fd_become_writable(grpc_fd *fd, int allow_synchronous_callback);
 
 /* Reference counting for fds */
+#define GRPC_FD_REF_COUNT_DEBUG
+
+#ifdef GRPC_FD_REF_COUNT_DEBUG
+void grpc_fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
+void grpc_fd_unref(grpc_fd *fd, const char *reason, const char *file, int line);
+#define GRPC_FD_REF(fd, reason) grpc_fd_ref(fd, reason, __FILE__, __LINE__)
+#define GRPC_FD_UNREF(fd, reason) grpc_fd_unref(fd, reason, __FILE__, __LINE__)
+#else
 void grpc_fd_ref(grpc_fd *fd);
 void grpc_fd_unref(grpc_fd *fd);
+#define GRPC_FD_REF(fd, reason) grpc_fd_ref(fd)
+#define GRPC_FD_UNREF(fd, reason) grpc_fd_unref(fd)
+#endif
 
 void grpc_fd_global_init(void);
 void grpc_fd_global_shutdown(void);
