@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		60BBBBB15823BBF7639D7AA9 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DC7B7C4C0410F43B9621631 /* libPods.a */; };
-		6340F0491AE66E3300FB6A3D /* RemoteProtoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6340F0481AE66E3300FB6A3D /* RemoteProtoTests.m */; };
 		6356D1DE1AC11FE00075FBBC /* RemoteTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6356D1DD1AC11FE00075FBBC /* RemoteTests.m */; };
 		6369A2701A9322E20015FC5C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 6369A26F1A9322E20015FC5C /* main.m */; };
 		6369A2731A9322E20015FC5C /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6369A2721A9322E20015FC5C /* AppDelegate.m */; };
@@ -32,7 +31,6 @@
 
 /* Begin PBXFileReference section */
 		2DC7B7C4C0410F43B9621631 /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		6340F0481AE66E3300FB6A3D /* RemoteProtoTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RemoteProtoTests.m; sourceTree = "<group>"; };
 		6356D1DD1AC11FE00075FBBC /* RemoteTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RemoteTests.m; sourceTree = "<group>"; };
 		6369A26A1A9322E20015FC5C /* Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6369A26E1A9322E20015FC5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -118,7 +116,6 @@
 		6369A2861A9322E20015FC5C /* SampleTests */ = {
 			isa = PBXGroup;
 			children = (
-				6340F0481AE66E3300FB6A3D /* RemoteProtoTests.m */,
 				6369A2891A9322E20015FC5C /* SampleTests.m */,
 				6369A2871A9322E20015FC5C /* Supporting Files */,
 				6356D1DD1AC11FE00075FBBC /* RemoteTests.m */,
@@ -329,7 +326,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6369A28A1A9322E20015FC5C /* SampleTests.m in Sources */,
-				6340F0491AE66E3300FB6A3D /* RemoteProtoTests.m in Sources */,
 				6356D1DE1AC11FE00075FBBC /* RemoteTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
