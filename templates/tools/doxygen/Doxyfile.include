@@ -1,3 +1,10 @@
+## Populates "targets" for all names in the collection "libnames" that are
+## part of "collection".
+##
+## Note that "packagename" and "internal" while not used
+## in the function itself are referenced in the template.
+## When "internal" is true, documentation for non-public headers
+## and sources is also taken as input to Doxygen (see INPUT).
 <%def name="gen_doxyfile(libnames, packagename, collection, internal)">
 <%
   import itertools
