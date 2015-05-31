@@ -33,7 +33,6 @@
 
 #include "src/core/iomgr/iomgr.h"
 
-#include <assert.h>
 #include <stdlib.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
@@ -64,7 +63,6 @@ static void background_callback_executor(void *ignored) {
       g_cbs_head = closure->next;
       if (!g_cbs_head) g_cbs_tail = NULL;
       gpr_mu_unlock(&g_mu);
-      assert(closure->success >= 0);
       closure->cb(closure->cb_arg, closure->success);
       gpr_mu_lock(&g_mu);
     } else if (grpc_alarm_check(&g_mu, gpr_now(), &deadline)) {
@@ -169,32 +167,6 @@ void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
   closure->next = NULL;
 }
 
-typedef struct {
-  grpc_iomgr_closure managed;
-  grpc_iomgr_closure *manager;
-} managed_closure_arg;
-
-static void closure_manager_func(void *arg, int success) {
-  managed_closure_arg *mc_arg = (managed_closure_arg*) arg;
-
-  mc_arg->managed.cb(mc_arg->managed.cb_arg, success);
-  gpr_free(mc_arg->manager);
-  gpr_free(mc_arg);
-}
-
-void grpc_iomgr_managed_closure_init(grpc_iomgr_closure *manager,
-                                     grpc_iomgr_cb_func managed_cb,
-                                     void *managed_cb_arg) {
-    managed_closure_arg *managed_arg = gpr_malloc(sizeof(managed_closure_arg));
-
-    managed_arg->managed.cb = managed_cb;
-    managed_arg->managed.cb_arg = managed_cb_arg;
-    managed_arg->manager= manager;
-
-    grpc_iomgr_closure_init(manager, closure_manager_func, managed_arg);
-}
-
-
 void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
   closure->success = success;
   gpr_mu_lock(&g_mu);
@@ -237,7 +209,6 @@ int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
       retake_mu = drop_mu;
       drop_mu = NULL;
     }
-    assert(closure->success >= 0);
     closure->cb(closure->cb_arg, success && closure->success);
     n++;
   }
