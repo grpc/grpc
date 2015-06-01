@@ -43,7 +43,7 @@ static void test_empty_context(void) {
   grpc_auth_context *ctx = grpc_auth_context_create(NULL, 0);
   grpc_auth_property_iterator it;
 
-  gpr_log(GPR_INFO, __FUNCTION__);
+  gpr_log(GPR_INFO, "test_empty_context");
   GPR_ASSERT(ctx != NULL);
   GPR_ASSERT(grpc_auth_context_peer_identity_property_name(ctx) == NULL);
   it = grpc_auth_context_peer_identity(ctx);
@@ -60,7 +60,7 @@ static void test_simple_context(void) {
   grpc_auth_property_iterator it;
   size_t i;
 
-  gpr_log(GPR_INFO, __FUNCTION__);
+  gpr_log(GPR_INFO, "test_simple_context");
   GPR_ASSERT(ctx != NULL);
   GPR_ASSERT(ctx->property_count == 3);
   ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
@@ -95,7 +95,7 @@ static void test_chained_context(void) {
   grpc_auth_property_iterator it;
   size_t i;
 
-  gpr_log(GPR_INFO, __FUNCTION__);
+  gpr_log(GPR_INFO, "test_chained_context");
   grpc_auth_context_unref(chained);
   chained->properties[0] =
       grpc_auth_property_init_from_cstring("name", "padapo");
