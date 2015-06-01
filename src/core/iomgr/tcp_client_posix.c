@@ -152,7 +152,6 @@ static void on_writable(void *acp, int success) {
         goto finish;
       }
     } else {
-      gpr_log(GPR_DEBUG, "connected");
       ep = grpc_tcp_create(ac->fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
       goto finish;
     }
@@ -210,8 +209,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
     return;
   }
 
-  gpr_log(GPR_DEBUG, "connecting fd %d", fd);
-
   do {
     err = connect(fd, addr, addr_len);
   } while (err < 0 && errno == EINTR);
@@ -220,7 +217,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   grpc_pollset_set_add_fd(interested_parties, fdobj);
 
   if (err >= 0) {
-    gpr_log(GPR_DEBUG, "instant connect");
     cb(arg,
        grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
     return;

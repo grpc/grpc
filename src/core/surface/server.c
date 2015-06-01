@@ -576,6 +576,8 @@ static void finish_shutdown_channel(void *p, int success) {
                NULL, &op);
   }
   GRPC_CHANNEL_INTERNAL_UNREF(sca->chand->channel, "shutdown");
+
+  gpr_free(sca);
 }
 
 static void shutdown_channel(channel_data *chand, int send_goaway,
