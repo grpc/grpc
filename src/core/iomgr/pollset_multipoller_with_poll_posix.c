@@ -206,7 +206,7 @@ static void multipoll_with_poll_pollset_kick(grpc_pollset *p) {
   grpc_pollset_force_kick(p);
 }
 
-static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
+static void multipoll_with_poll_pollset_finish_shutdown(grpc_pollset *pollset) {
   size_t i;
   pollset_hdr *h = pollset->data.ptr;
   GPR_ASSERT(pollset->counter == 0);
@@ -216,6 +216,13 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
   for (i = 0; i < h->del_count; i++) {
     GRPC_FD_UNREF(h->dels[i], "multipoller_del");
   }
+  h->fd_count = 0;
+  h->del_count = 0;
+}
+
+static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
+  pollset_hdr *h = pollset->data.ptr;
+  multipoll_with_poll_pollset_finish_shutdown(pollset);
   gpr_free(h->pfds);
   gpr_free(h->watchers);
   gpr_free(h->fds);
@@ -226,7 +233,7 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
 static const grpc_pollset_vtable multipoll_with_poll_pollset = {
     multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
     multipoll_with_poll_pollset_maybe_work, multipoll_with_poll_pollset_kick,
-    multipoll_with_poll_pollset_destroy};
+    multipoll_with_poll_pollset_finish_shutdown, multipoll_with_poll_pollset_destroy};
 
 void grpc_poll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
                                   size_t nfds) {

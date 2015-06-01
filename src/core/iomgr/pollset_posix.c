@@ -114,24 +114,25 @@ void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_unlock(&pollset->mu);
 }
 
+static void finish_shutdown(grpc_pollset *pollset) {
+  pollset->vtable->finish_shutdown(pollset);
+  pollset->shutdown_done_cb(pollset->shutdown_done_arg);
+}
+
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
   gpr_timespec now = gpr_now();
   int r;
   if (gpr_time_cmp(now, deadline) > 0) {
-    gpr_log(GPR_DEBUG, "out of time %p", pollset);
     return 0;
   }
   if (grpc_maybe_call_delayed_callbacks(&pollset->mu, 1)) {
-    gpr_log(GPR_DEBUG, "delayed calls %p", pollset);
     return 1;
   }
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
-    gpr_log(GPR_DEBUG, "alarms %p", pollset);
     return 1;
   }
   if (pollset->shutting_down) {
-    gpr_log(GPR_DEBUG, "shutting down %p counter=%d", pollset, pollset->counter);
     return 1;
   }
   gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
@@ -142,7 +143,7 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
       grpc_pollset_kick(pollset);
     } else if (pollset->in_flight_cbs == 0) {
       gpr_mu_unlock(&pollset->mu);
-      pollset->shutdown_done_cb(pollset->shutdown_done_arg);
+      finish_shutdown(pollset);
       /* Continuing to access pollset here is safe -- it is the caller's
        * responsibility to not destroy when it has outstanding calls to
        * grpc_pollset_work.
@@ -171,7 +172,7 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
   gpr_mu_unlock(&pollset->mu);
 
   if (in_flight_cbs == 0 && counter == 0) {
-    shutdown_done(shutdown_done_arg);
+    finish_shutdown(pollset);
   }
 }
 
@@ -402,14 +403,15 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
 
 static void basic_pollset_destroy(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->counter == 0);
-  if (pollset->data.ptr) {
+  if (pollset->data.ptr != NULL) {
     GRPC_FD_UNREF(pollset->data.ptr, "basicpoll");
+    pollset->data.ptr = NULL;
   }
 }
 
 static const grpc_pollset_vtable basic_pollset = {
     basic_pollset_add_fd, basic_pollset_del_fd, basic_pollset_maybe_work,
-    kick_using_pollset_kick, basic_pollset_destroy};
+    kick_using_pollset_kick, basic_pollset_destroy, basic_pollset_destroy};
 
 static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null) {
   pollset->vtable = &basic_pollset;
