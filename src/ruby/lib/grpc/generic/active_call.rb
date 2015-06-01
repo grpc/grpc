@@ -39,6 +39,7 @@ class Struct
       return nil if status.nil?
       fail GRPC::Cancelled if status.code == GRPC::Core::StatusCodes::CANCELLED
       if status.code != GRPC::Core::StatusCodes::OK
+        GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
         with_sym_keys = Hash[md.each_pair.collect { |x, y| [x.to_sym, y] }]

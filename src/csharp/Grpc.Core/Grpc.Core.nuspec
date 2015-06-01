@@ -7,7 +7,7 @@
     <description>Core C# implementation of gRPC - an RPC library and framework. See project site for more info.</description>
     <version>0.5.0</version>
     <authors>Google Inc.</authors>
-    <owners>jtattermusch</owners>
+    <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
