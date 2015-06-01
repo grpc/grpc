@@ -93,15 +93,16 @@ message Point {
 Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C# plugin.
 
 If you want to run this yourself, make sure you've installed protoc and gRPC C# plugin. The instructions vary based on your OS:
-- For Windows, the `Grpc` NuGet package contains all the libraries and tools you will need. No need to do any extra steps.
+- For Windows, the `Grpc.Tools` NuGet package contains the binaries you will need to generate the code.
 - For Linux, make sure you've [installed gRPC C Core using Linuxbrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono)
 - For MacOS, make sure you've [installed gRPC C Core using Homebrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono)
 
 Once that's done, the following command can be used to generate the C# code.
 
-To generate the code on Windows, we use `protoc.exe` and `grpc_csharp_plugin.exe` binaries that are shipped with the `Grpc` NuGet package under the `tools` directory. Following command should be run from the `csharp/route_guide` directory:
+To generate the code on Windows, we use `protoc.exe` and `grpc_csharp_plugin.exe` binaries that are shipped with the `Grpc.Tools` NuGet package under the `tools` directory.
+Normally you would need to add the `Grpc.Tools` package to the solution yourself, but in this tutorial it has been already done for you. Following command should be run from the `csharp/route_guide` directory:
 ```
-> packages\Grpc.0.5.0\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.0.5.0\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
+> packages\Grpc.Tools.0.5.0\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.5.0\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
 ```
 
 On Linux/MacOS, we rely on `protoc` and `grpc_csharp_plugin` being installed by Linuxbrew/Homebrew. Run this command from the route_guide directory:
