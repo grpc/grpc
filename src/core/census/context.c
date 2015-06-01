@@ -45,14 +45,14 @@ size_t census_context_serialize(const census_context *context, char *buffer,
   return 0;
 }
 
-census_context *census_context_deserialize(char *buffer) {
-  census_context *ret;
+int census_context_deserialize(const char *buffer, census_context **context) {
+  int ret = 0;
   if (buffer != NULL) {
-    /* TODO(aveitch): implement deserialization */
-    return NULL;
+    /* TODO(aveitch): implement deserialization. */
+    ret = 1;
   }
-  ret = gpr_malloc(sizeof(census_context));
-  memset(ret, 0, sizeof(census_context));
+  *context = gpr_malloc(sizeof(census_context));
+  memset(*context, 0, sizeof(census_context));
   return ret;
 }
 

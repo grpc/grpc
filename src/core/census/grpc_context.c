@@ -34,7 +34,11 @@
 #include <grpc/census.h>
 #include "src/core/census/grpc_context.h"
 
-void *grpc_census_context_create() { return census_context_deserialize(NULL); }
+void *grpc_census_context_create() {
+  census_context *context;
+  census_context_deserialize(NULL, &context);
+  return (void *)context;
+}
 
 void grpc_census_context_destroy(void *context) {
   census_context_destroy((census_context *)context);

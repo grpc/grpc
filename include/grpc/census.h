@@ -82,10 +82,11 @@ size_t census_context_serialize(const census_context *context, char *buffer,
 /* Create a new census context, possibly from a serialized buffer. If 'buffer'
  * is non-NULL, it is assumed that it is a buffer encoded by
  * census_context_serialize(). If `buffer` is NULL, a new, empty context is
- * created.
+ * created. The decoded/new contest is returned in 'context'.
  *
- * Returns NULL on error (buffer is incorrectly formatted) */
-census_context *census_context_deserialize(char *buffer);
+ * Returns 0 if no errors, non-zero if buffer is incorrectly formatted, in
+ * which case a new empty context will be returned. */
+int census_context_deserialize(const char *buffer, census_context **context);
 
 /* The given context is destroyed. Once destroyed, using the context in
  * future census calls will result in undefined behavior. */
