@@ -101,6 +101,7 @@ int grpc_credentials_has_request_metadata_only(grpc_credentials *creds) {
 }
 
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           grpc_pollset *pollset,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data) {
@@ -111,7 +112,8 @@ void grpc_credentials_get_request_metadata(grpc_credentials *creds,
     }
     return;
   }
-  creds->vtable->get_request_metadata(creds, service_url, cb, user_data);
+  creds->vtable->get_request_metadata(creds, pollset, service_url, cb,
+                                      user_data);
 }
 
 grpc_security_status grpc_credentials_create_security_connector(
@@ -362,6 +364,7 @@ static int jwt_has_request_metadata_only(const grpc_credentials *creds) {
 }
 
 static void jwt_get_request_metadata(grpc_credentials *creds,
+                                     grpc_pollset *pollset,
                                      const char *service_url,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {
@@ -443,6 +446,7 @@ grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
 
 typedef void (*grpc_fetch_oauth2_func)(grpc_credentials_metadata_request *req,
                                        grpc_httpcli_context *http_context,
+                                       grpc_pollset *pollset,
                                        grpc_httpcli_response_cb response_cb,
                                        gpr_timespec deadline);
 
@@ -589,7 +593,7 @@ static void on_oauth2_token_fetcher_http_response(
 }
 
 static void oauth2_token_fetcher_get_request_metadata(
-    grpc_credentials *creds, const char *service_url,
+    grpc_credentials *creds, grpc_pollset *pollset, const char *service_url,
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_oauth2_token_fetcher_credentials *c =
       (grpc_oauth2_token_fetcher_credentials *)creds;
@@ -612,7 +616,7 @@ static void oauth2_token_fetcher_get_request_metadata(
   } else {
     c->fetch_func(
         grpc_credentials_metadata_request_create(creds, cb, user_data),
-        &c->httpcli_context, on_oauth2_token_fetcher_http_response,
+        &c->httpcli_context, pollset, on_oauth2_token_fetcher_http_response,
         gpr_time_add(gpr_now(), refresh_threshold));
   }
 }
@@ -638,8 +642,8 @@ static grpc_credentials_vtable compute_engine_vtable = {
 
 static void compute_engine_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
-    grpc_httpcli_context *httpcli_context, grpc_httpcli_response_cb response_cb,
-    gpr_timespec deadline) {
+    grpc_httpcli_context *httpcli_context, grpc_pollset *pollset,
+    grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
   grpc_httpcli_header header = {"Metadata-Flavor", "Google"};
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
@@ -647,7 +651,7 @@ static void compute_engine_fetch_oauth2(
   request.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
   request.hdr_count = 1;
   request.hdrs = &header;
-  grpc_httpcli_get(httpcli_context, &request, deadline, response_cb,
+  grpc_httpcli_get(httpcli_context, pollset, &request, deadline, response_cb,
                    metadata_req);
 }
 
@@ -684,8 +688,8 @@ static grpc_credentials_vtable service_account_vtable = {
 
 static void service_account_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
-    grpc_httpcli_context *httpcli_context, grpc_httpcli_response_cb response_cb,
-    gpr_timespec deadline) {
+    grpc_httpcli_context *httpcli_context, grpc_pollset *pollset,
+    grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
   grpc_service_account_credentials *c =
       (grpc_service_account_credentials *)metadata_req->creds;
   grpc_httpcli_header header = {"Content-Type",
@@ -710,8 +714,8 @@ static void service_account_fetch_oauth2(
   request.hdr_count = 1;
   request.hdrs = &header;
   request.use_ssl = 1;
-  grpc_httpcli_post(httpcli_context, &request, body, strlen(body), deadline,
-                    response_cb, metadata_req);
+  grpc_httpcli_post(httpcli_context, pollset, &request, body, strlen(body),
+                    deadline, response_cb, metadata_req);
   gpr_free(body);
   gpr_free(jwt);
 }
@@ -758,8 +762,8 @@ static grpc_credentials_vtable refresh_token_vtable = {
 
 static void refresh_token_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
-    grpc_httpcli_context *httpcli_context, grpc_httpcli_response_cb response_cb,
-    gpr_timespec deadline) {
+    grpc_httpcli_context *httpcli_context, grpc_pollset *pollset,
+    grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
   grpc_refresh_token_credentials *c =
       (grpc_refresh_token_credentials *)metadata_req->creds;
   grpc_httpcli_header header = {"Content-Type",
@@ -775,8 +779,8 @@ static void refresh_token_fetch_oauth2(
   request.hdr_count = 1;
   request.hdrs = &header;
   request.use_ssl = 1;
-  grpc_httpcli_post(httpcli_context, &request, body, strlen(body), deadline, 
-                    response_cb, metadata_req);
+  grpc_httpcli_post(httpcli_context, pollset, &request, body, strlen(body),
+                    deadline, response_cb, metadata_req);
   gpr_free(body);
 }
 
@@ -832,6 +836,7 @@ void on_simulated_token_fetch_done(void *user_data, int success) {
 }
 
 static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
+                                             grpc_pollset *pollset,
                                              const char *service_url,
                                              grpc_credentials_metadata_cb cb,
                                              void *user_data) {
@@ -947,6 +952,7 @@ typedef struct {
   grpc_credentials_md_store *md_elems;
   char *service_url;
   void *user_data;
+  grpc_pollset *pollset;
   grpc_credentials_metadata_cb cb;
 } grpc_composite_credentials_metadata_context;
 
@@ -1015,7 +1021,8 @@ static void composite_metadata_cb(void *user_data,
     grpc_credentials *inner_creds =
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
     if (grpc_credentials_has_request_metadata(inner_creds)) {
-      grpc_credentials_get_request_metadata(inner_creds, ctx->service_url,
+      grpc_credentials_get_request_metadata(inner_creds, ctx->pollset,
+                                            ctx->service_url,
                                             composite_metadata_cb, ctx);
       return;
     }
@@ -1028,6 +1035,7 @@ static void composite_metadata_cb(void *user_data,
 }
 
 static void composite_get_request_metadata(grpc_credentials *creds,
+                                           grpc_pollset *pollset,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data) {
@@ -1043,11 +1051,12 @@ static void composite_get_request_metadata(grpc_credentials *creds,
   ctx->user_data = user_data;
   ctx->cb = cb;
   ctx->composite_creds = c;
+  ctx->pollset = pollset;
   ctx->md_elems = grpc_credentials_md_store_create(c->inner.num_creds);
   while (ctx->creds_index < c->inner.num_creds) {
     grpc_credentials *inner_creds = c->inner.creds_array[ctx->creds_index++];
     if (grpc_credentials_has_request_metadata(inner_creds)) {
-      grpc_credentials_get_request_metadata(inner_creds, service_url,
+      grpc_credentials_get_request_metadata(inner_creds, pollset, service_url,
                                             composite_metadata_cb, ctx);
       return;
     }
@@ -1185,6 +1194,7 @@ static int iam_has_request_metadata_only(const grpc_credentials *creds) {
 }
 
 static void iam_get_request_metadata(grpc_credentials *creds,
+                                     grpc_pollset *pollset,
                                      const char *service_url,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {

@@ -123,7 +123,7 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
-  void (*get_request_metadata)(grpc_credentials *c,
+  void (*get_request_metadata)(grpc_credentials *c, grpc_pollset *pollset,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
@@ -144,6 +144,7 @@ void grpc_credentials_unref(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           grpc_pollset *pollset,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);

@@ -69,7 +69,8 @@ static void test_get(int use_ssl) {
   req.path = "/";
   req.use_ssl = use_ssl;
 
-  grpc_httpcli_get(&g_context, &req, n_seconds_time(15), on_finish, (void *)42);
+  grpc_httpcli_get(&g_context, &g_pollset, &req, n_seconds_time(15), on_finish,
+                   (void *)42);
   gpr_mu_lock(&g_mu);
   while (!g_done) {
     grpc_pollset_work(&g_pollset, n_seconds_time(20));
@@ -101,7 +102,6 @@ int main(int argc, char **argv) {
   grpc_httpcli_context_init(&g_context);
   grpc_pollset_init(&g_pollset);
   gpr_mu_init(&g_mu);
-  grpc_httpcli_context_add_interested_party(&g_context, &g_pollset);
 
   test_get(0);
   test_get(1);

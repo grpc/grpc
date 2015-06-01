@@ -91,7 +91,6 @@ typedef void (*grpc_httpcli_response_cb)(void *user_data,
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
 void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
-void grpc_httpcli_context_add_interested_party(grpc_httpcli_context *context, grpc_pollset *pollset);
 
 /* Asynchronously perform a HTTP GET.
    'request' contains request parameters - these are caller owned and can be
@@ -101,7 +100,7 @@ void grpc_httpcli_context_add_interested_party(grpc_httpcli_context *context, gr
      lifetime of the request
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
-void grpc_httpcli_get(grpc_httpcli_context *context,
+void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data);
@@ -109,7 +108,7 @@ void grpc_httpcli_get(grpc_httpcli_context *context,
 /* Asynchronously perform a HTTP POST.
    When there is no body, pass in NULL as body_bytes.
    Does not support ?var1=val1&var2=val2 in the path. */
-void grpc_httpcli_post(grpc_httpcli_context *context,
+void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
