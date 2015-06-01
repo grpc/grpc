@@ -32,11 +32,6 @@ INSTALL
 -------
 
 - Clone this repository
-- Install gRPC Ruby using the brew-based installer
-```sh
-$ curl -fsSL https://raw.githubusercontent.com/tbetbetbe/homebrew-grpc/master/scripts/install | bash -s ruby
-```
-
 - Use bundler to install the example package's dependencies
 ```sh
 $ # from this directory
