@@ -90,7 +90,7 @@ static void on_compute_engine_detection_http_response(
 static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
   grpc_httpcli_request request;
-  grpc_pollset_set pollset_set;
+  grpc_httpcli_context context;
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
@@ -104,11 +104,11 @@ static int is_stack_running_on_compute_engine(void) {
   request.host = GRPC_COMPUTE_ENGINE_DETECTION_HOST;
   request.path = "/";
 
-  grpc_pollset_set_init(&pollset_set);
-  grpc_pollset_set_add_pollset(&pollset_set, &detector.pollset);
+  grpc_httpcli_context_init(&context);
+  grpc_httpcli_context_add_interested_party(&context, &detector.pollset);
 
-  grpc_httpcli_get(&request, gpr_time_add(gpr_now(), max_detection_delay),
-                   &pollset_set, on_compute_engine_detection_http_response,
+  grpc_httpcli_get(&context, &request, gpr_time_add(gpr_now(), max_detection_delay),
+                   on_compute_engine_detection_http_response,
                    &detector);
 
   /* Block until we get the response. This is not ideal but this should only be
@@ -119,7 +119,7 @@ static int is_stack_running_on_compute_engine(void) {
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
-  grpc_pollset_set_destroy(&pollset_set);
+  grpc_httpcli_context_destroy(&context);
   grpc_pollset_destroy(&detector.pollset);
 
   return detector.success;
