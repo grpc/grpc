@@ -44,6 +44,8 @@
 #include <sys/socket.h>
 
 #include "src/core/iomgr/tcp_posix.h"
+#include "src/core/support/string.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 static void create_sockets(int sv[2]) {
@@ -55,12 +57,21 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 }
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
+                                                   size_t read_slice_size) {
   int sv[2];
   grpc_endpoint_pair p;
+  char *final_name;
   create_sockets(sv);
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1]), read_slice_size);
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0]), read_slice_size);
+
+  gpr_asprintf(&final_name, "%s:client", name);
+  p.client =
+      grpc_tcp_create(grpc_fd_create(sv[1], final_name), read_slice_size);
+  gpr_free(final_name);
+  gpr_asprintf(&final_name, "%s:server", name);
+  p.server =
+      grpc_tcp_create(grpc_fd_create(sv[0], final_name), read_slice_size);
+  gpr_free(final_name);
   return p;
 }
 
