@@ -7,7 +7,7 @@
     "version": {
       "major": 0,
       "minor": 9,
-      "micro": 0,
+      "micro": 1,
       "build": 0
     }
   },
@@ -405,7 +405,7 @@
         "src/core/httpcli/httpcli.h",
         "src/core/httpcli/httpcli_security_connector.h",
         "src/core/httpcli/parser.h",
-        "src/core/security/auth.h",
+        "src/core/security/auth_filters.h",
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
         "src/core/security/json_token.h",
@@ -423,9 +423,10 @@
         "src/core/httpcli/httpcli.c",
         "src/core/httpcli/httpcli_security_connector.c",
         "src/core/httpcli/parser.c",
-        "src/core/security/auth.c",
         "src/core/security/base64.c",
+        "src/core/security/client_auth_filter.c",
         "src/core/security/credentials.c",
+        "src/core/security/credentials_metadata.c",
         "src/core/security/credentials_posix.c",
         "src/core/security/credentials_win32.c",
         "src/core/security/google_default_credentials.c",
@@ -434,6 +435,7 @@
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_connector.c",
         "src/core/security/security_context.c",
+        "src/core/security/server_auth_filter.c",
         "src/core/security/server_secure_chttp2.c",
         "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
@@ -599,7 +601,8 @@
         "src/compiler/ruby_generator.cc"
       ],
       "deps": [],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{B6E81D84-2ACB-41B8-8781-493A944C7817}"
     },
     {
       "name": "interop_client_helper",
@@ -830,7 +833,6 @@
     },
     {
       "name": "census_statistics_multiple_writers_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -845,7 +847,6 @@
     },
     {
       "name": "census_statistics_performance_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -860,7 +861,6 @@
     },
     {
       "name": "census_statistics_quick_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -875,7 +875,6 @@
     },
     {
       "name": "census_statistics_small_log_test",
-      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -1273,6 +1272,20 @@
         "test/core/support/useful_test.c"
       ],
       "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_auth_context_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/security/auth_context_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
         "gpr_test_util",
         "gpr"
       ]
@@ -2007,7 +2020,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{7E51A25F-AC59-488F-906C-C60FAAE706AA}"
     },
     {
       "name": "grpc_csharp_plugin",
@@ -2019,7 +2033,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{3C813052-A49A-4662-B90A-1ADBEC7EE453}"
     },
     {
       "name": "grpc_objective_c_plugin",
@@ -2031,7 +2046,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{19564640-CEE6-4921-ABA5-676ED79A36F6}"
     },
     {
       "name": "grpc_python_plugin",
@@ -2043,7 +2059,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}"
     },
     {
       "name": "grpc_ruby_plugin",
@@ -2055,7 +2072,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{069E9D05-B78B-4751-9252-D21EBAE7DE8E}"
     },
     {
       "name": "interop_client",

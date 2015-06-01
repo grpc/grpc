@@ -38,19 +38,12 @@ fi
 
 cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
-gen_build_json_dirs="test/core/end2end test/core/bad_client"
 
 if [ "x$TEST" != "x" ] ; then
   tools/buildgen/build-cleaner.py build.json
 fi
 
-gen_build_files=""
-for gen_build_json in $gen_build_json_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_json/gen_build_json.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+. tools/buildgen/generate_build_additions.sh
 
 global_plugins=`find ./tools/buildgen/plugins -name '*.py' |
   sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`

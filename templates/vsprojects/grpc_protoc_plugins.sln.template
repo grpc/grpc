@@ -1,0 +1,5 @@
+<%namespace file="sln_defs.include" import="gen_solution"/>\
+<%
+solution_projects = [p for p in vsprojects if p.build == 'protoc']
+%>\
+${gen_solution(solution_projects)}

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/auth.h"
+#include "src/core/security/auth_filters.h"
 
 #include <string.h>
 
@@ -77,11 +77,13 @@ static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
   grpc_call_next_op(elem, &calld->op);
 }
 
-static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
+static void on_credentials_metadata(void *user_data,
+                                    grpc_credentials_md *md_elems,
                                     size_t num_md,
                                     grpc_credentials_status status) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   grpc_transport_op *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
@@ -94,8 +96,10 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
              op->send_ops->ops[calld->op_md_idx].type == GRPC_OP_METADATA);
   mdb = &op->send_ops->ops[calld->op_md_idx].data.metadata;
   for (i = 0; i < num_md; i++) {
-    grpc_metadata_batch_add_tail(mdb, &calld->md_links[i],
-                                 grpc_mdelem_ref(md_elems[i]));
+    grpc_metadata_batch_add_tail(
+        mdb, &calld->md_links[i],
+        grpc_mdelem_from_slices(chand->md_ctx, gpr_slice_ref(md_elems[i].key),
+                                gpr_slice_ref(md_elems[i].value)));
   }
   grpc_call_next_op(elem, op);
 }
@@ -125,7 +129,7 @@ static void send_security_metadata(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
-      (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY];
+      (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
   char *service_url = NULL;
   grpc_credentials *channel_creds =
       chand->security_connector->request_metadata_creds;
@@ -188,6 +192,8 @@ static void auth_start_transport_op(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   grpc_linked_mdelem *l;
   size_t i;
+
+  /* TODO(jboeuf): write the call auth context. */
 
   if (op->send_ops && !calld->sent_initial_metadata) {
     size_t nops = op->send_ops->nops;
@@ -273,7 +279,7 @@ static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
-  grpc_security_connector *ctx = grpc_find_security_connector_in_args(args);
+  grpc_security_connector *sc = grpc_find_security_connector_in_args(args);
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
 
@@ -282,12 +288,12 @@ static void init_channel_elem(grpc_channel_element *elem,
      path */
   GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
-  GPR_ASSERT(ctx != NULL);
+  GPR_ASSERT(sc != NULL);
 
   /* initialize members */
-  GPR_ASSERT(ctx->is_client_side);
+  GPR_ASSERT(sc->is_client_side);
   chand->security_connector =
-      (grpc_channel_security_connector *)grpc_security_connector_ref(ctx);
+      (grpc_channel_security_connector *)grpc_security_connector_ref(sc);
   chand->md_ctx = metadata_context;
   chand->authority_string =
       grpc_mdstr_from_string(chand->md_ctx, ":authority");
@@ -321,4 +327,4 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 const grpc_channel_filter grpc_client_auth_filter = {
     auth_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
     destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "auth"};
+    destroy_channel_elem, "client-auth"};

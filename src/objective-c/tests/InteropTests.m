@@ -76,10 +76,10 @@
 }
 @end
 
-@interface RemoteProtoTests : XCTestCase
+@interface InteropTests : XCTestCase
 @end
 
-@implementation RemoteProtoTests {
+@implementation InteropTests {
   RMTTestService *_service;
 }
 
@@ -192,7 +192,7 @@
       [expectation fulfill];
     }
   }];
-  
+
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
@@ -230,7 +230,7 @@
         [requestsBuffer writesFinishedWithError:nil];
       }
     }
-                                       
+
     if (done) {
       XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
       [expectation fulfill];
@@ -283,9 +283,9 @@
   [requestsBuffer writeValue:request];
   
   __block ProtoRPC *call = [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
-                                                           handler:^(BOOL done,
-                                                                     RMTStreamingOutputCallResponse *response,
-                                                                     NSError *error) {
+                                                                   handler:^(BOOL done,
+                                                                             RMTStreamingOutputCallResponse *response,
+                                                                             NSError *error) {
     if (receivedResponse) {
       XCTAssert(done, @"Unexpected extra response %@", response);
       XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
