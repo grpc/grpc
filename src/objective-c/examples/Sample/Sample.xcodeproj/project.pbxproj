@@ -12,7 +12,6 @@
 		6369A2761A9322E20015FC5C /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6369A2751A9322E20015FC5C /* ViewController.m */; };
 		6369A2791A9322E20015FC5C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6369A2771A9322E20015FC5C /* Main.storyboard */; };
 		6369A27B1A9322E20015FC5C /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6369A27A1A9322E20015FC5C /* Images.xcassets */; };
-		6369A27E1A9322E20015FC5C /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 6369A27C1A9322E20015FC5C /* LaunchScreen.xib */; };
 		FC81FE63CA655031F3524EC0 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DC7B7C4C0410F43B9621631 /* libPods.a */; };
 /* End PBXBuildFile section */
 
@@ -27,7 +26,6 @@
 		6369A2751A9322E20015FC5C /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		6369A2781A9322E20015FC5C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6369A27A1A9322E20015FC5C /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		6369A27D1A9322E20015FC5C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		AC29DD6FCDF962F519FEBB0D /* Pods.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.debug.xcconfig; path = "Pods/Target Support Files/Pods/Pods.debug.xcconfig"; sourceTree = "<group>"; };
 		C68330F8D451CC6ACEABA09F /* Pods.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.release.xcconfig; path = "Pods/Target Support Files/Pods/Pods.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -71,7 +69,6 @@
 				6369A2751A9322E20015FC5C /* ViewController.m */,
 				6369A2771A9322E20015FC5C /* Main.storyboard */,
 				6369A27A1A9322E20015FC5C /* Images.xcassets */,
-				6369A27C1A9322E20015FC5C /* LaunchScreen.xib */,
 				6369A26D1A9322E20015FC5C /* Supporting Files */,
 			);
 			path = Sample;
@@ -163,7 +160,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6369A2791A9322E20015FC5C /* Main.storyboard in Resources */,
-				6369A27E1A9322E20015FC5C /* LaunchScreen.xib in Resources */,
 				6369A27B1A9322E20015FC5C /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -223,14 +219,6 @@
 				6369A2781A9322E20015FC5C /* Base */,
 			);
 			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		6369A27C1A9322E20015FC5C /* LaunchScreen.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				6369A27D1A9322E20015FC5C /* Base */,
-			);
-			name = LaunchScreen.xib;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
