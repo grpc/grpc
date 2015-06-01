@@ -149,7 +149,7 @@ class NodeLanguage(object):
                             environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
-    return ['static_c']
+    return ['static_c', 'shared_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
@@ -168,7 +168,7 @@ class PhpLanguage(object):
                             environ={'GRPC_TRACE': 'surface,batch'})]
 
   def make_targets(self):
-    return ['static_c']
+    return ['static_c', 'shared_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
@@ -202,7 +202,7 @@ class PythonLanguage(object):
     return files + modules
 
   def make_targets(self):
-    return ['static_c', 'grpc_python_plugin']
+    return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_python.sh']]
