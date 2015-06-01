@@ -54,6 +54,7 @@
 typedef struct {
   grpc_credentials *creds;
   grpc_credentials_metadata_cb cb;
+  grpc_iomgr_closure *on_simulated_token_fetch_done_closure;
   void *user_data;
 } grpc_credentials_metadata_request;
 
@@ -65,6 +66,8 @@ grpc_credentials_metadata_request_create(grpc_credentials *creds,
       gpr_malloc(sizeof(grpc_credentials_metadata_request));
   r->creds = grpc_credentials_ref(creds);
   r->cb = cb;
+  r->on_simulated_token_fetch_done_closure =
+      gpr_malloc(sizeof(grpc_iomgr_closure));
   r->user_data = user_data;
   return r;
 }
@@ -72,6 +75,7 @@ grpc_credentials_metadata_request_create(grpc_credentials *creds,
 static void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request *r) {
   grpc_credentials_unref(r->creds);
+  gpr_free(r->on_simulated_token_fetch_done_closure);
   gpr_free(r);
 }
 
@@ -824,20 +828,6 @@ void on_simulated_token_fetch_done(void *user_data, int success) {
   grpc_credentials_metadata_request_destroy(r);
 }
 
-/* TODO(dgq): get rid of the concept of "managed closure" altogether */
-typedef struct {
-  grpc_iomgr_closure managed;
-  grpc_iomgr_closure *manager;
-} managed_closure_arg;
-
-static void closure_manager_func(void *arg, int success) {
-  managed_closure_arg *mc_arg = (managed_closure_arg*) arg;
-
-  mc_arg->managed.cb(mc_arg->managed.cb_arg, success);
-  gpr_free(mc_arg->manager);
-  gpr_free(mc_arg);
-}
-
 static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
                                              const char *service_url,
                                              grpc_credentials_metadata_cb cb,
@@ -845,20 +835,11 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
 
   if (c->is_async) {
-    /* TODO(dgq): get rid of the managed closure */
-    grpc_iomgr_closure *on_simulated_token_fetch_done_closure =
-        gpr_malloc(sizeof(grpc_iomgr_closure));
-    managed_closure_arg *managed_arg = gpr_malloc(sizeof(managed_closure_arg));
-
-    managed_arg->manager = on_simulated_token_fetch_done_closure;
-    managed_arg->managed.cb = on_simulated_token_fetch_done;
-    managed_arg->managed.cb_arg =
+    grpc_credentials_metadata_request *cb_arg =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-
-    grpc_iomgr_closure_init(on_simulated_token_fetch_done_closure,
-                            closure_manager_func, managed_arg);
-
-    grpc_iomgr_add_callback(on_simulated_token_fetch_done_closure);
+    grpc_iomgr_closure_init(cb_arg->on_simulated_token_fetch_done_closure,
+                            on_simulated_token_fetch_done, cb_arg);
+    grpc_iomgr_add_callback(cb_arg->on_simulated_token_fetch_done_closure);
   } else {
     cb(user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
   }
