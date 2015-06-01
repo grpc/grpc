@@ -620,7 +620,9 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
                                              size_t filter_count,
                                              const grpc_channel_args *args) {
   size_t i;
-  int census_enabled = grpc_channel_args_is_census_enabled(args);
+  /* TODO(census): restore this once we finalize census filter etc.
+     int census_enabled = grpc_channel_args_is_census_enabled(args); */
+  int census_enabled = 0;
 
   grpc_server *server = gpr_malloc(sizeof(grpc_server));
 
@@ -646,7 +648,7 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
-  /* TODO(census)
+  /* TODO(census): restore this once we rework census filter
   if (census_enabled) {
     server->channel_filters[1] = &grpc_server_census_filter;
     } */

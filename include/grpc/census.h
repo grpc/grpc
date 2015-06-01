@@ -39,7 +39,6 @@
 #define CENSUS_CENSUS_H
 
 #include <grpc/grpc.h>
-#include <grpc/support/slice_buffer.h>
 
 /* Identify census functionality that can be enabled via census_initialize(). */
 enum census_functions {
@@ -59,7 +58,9 @@ void census_shutdown();
 /* Internally, Census relies on a context, which should be propagated across
  * RPC's. From the RPC subsystems viewpoint, this is an opaque data structure.
  * A context must be used as the first argument to all other census
- * functions. The context can be serialized for passing across the wire. */
+ * functions. Conceptually, contexts should be thought of as specific to
+ * single RPC/thread. The context can be serialized for passing across the
+ * wire. */
 typedef struct census_context census_context;
 
 /* This function is called by the RPC subsystem whenever it needs to get a
