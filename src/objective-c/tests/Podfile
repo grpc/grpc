@@ -1,0 +1,12 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+pod 'gRPC/RxLibrary', :path => "../../.."
+
+link_with 'AllTests'
+
+target 'Tests' do
+end
+
+target 'AllTests' do
+end
