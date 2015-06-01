@@ -46,7 +46,7 @@
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
-#include "src/core/security/auth.h"
+#include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
@@ -226,7 +226,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
       GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create();
   }
-  mdctx = grpc_credentials_get_or_create_metadata_context(creds);
+  mdctx = grpc_mdctx_create();
 
   s = gpr_malloc(sizeof(setup));
   connector_arg = grpc_security_connector_to_arg(&connector->base);

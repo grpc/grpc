@@ -111,10 +111,27 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->client_cq);
 }
 
+static void print_auth_context(int is_client, const grpc_auth_context *ctx) {
+  const grpc_auth_property *p;
+  grpc_auth_property_iterator it;
+  gpr_log(GPR_INFO, "%s peer:", is_client ? "client" : "server");
+  gpr_log(GPR_INFO, "\tauthenticated: %s",
+          grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
+  it = grpc_auth_context_peer_identity(ctx);
+  while ((p = grpc_auth_property_iterator_next(&it)) != NULL) {
+    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
+  }
+  gpr_log(GPR_INFO, "\tall properties:");
+  it = grpc_auth_context_property_iterator(ctx);
+  while ((p = grpc_auth_property_iterator_next(&it)) != NULL) {
+    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
+  }
+}
+
 static void test_call_creds_failure(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_credentials *creds = NULL;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_call_creds_failure", NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
                                "foo.test.google.fr", deadline);
@@ -124,6 +141,8 @@ static void test_call_creds_failure(grpc_end2end_test_config config) {
   creds = grpc_fake_transport_security_credentials_create();
   GPR_ASSERT(grpc_call_set_credentials(c, creds) != GRPC_CALL_OK);
   grpc_credentials_release(creds);
+
+  grpc_call_destroy(c);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -158,6 +177,7 @@ static void request_response_with_payload_and_call_creds(
   size_t details_capacity = 0;
   int was_cancelled = 2;
   grpc_credentials *creds = NULL;
+  const grpc_auth_context *s_auth_context = NULL;
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
                                "foo.test.google.fr", deadline);
@@ -212,10 +232,13 @@ static void request_response_with_payload_and_call_creds(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq, f.server_cq, 
+                                                      f.server_cq, f.server_cq,
                                                       tag(101)));
   cq_expect_completion(v_server, tag(101), 1);
   cq_verify(v_server);
+  s_auth_context = grpc_call_auth_context(s);
+  GPR_ASSERT(s_auth_context != NULL);
+  print_auth_context(0, s_auth_context);
 
   /* Cannot set creds on the server call object. */
   GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
@@ -223,6 +246,18 @@ static void request_response_with_payload_and_call_creds(
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+
+  cq_expect_completion(v_server, tag(102), 1);
+  cq_verify(v_server);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
@@ -232,15 +267,9 @@ static void request_response_with_payload_and_call_creds(
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
 
-  cq_expect_completion(v_server, tag(102), 1);
+  cq_expect_completion(v_server, tag(103), 1);
   cq_verify(v_server);
 
   cq_expect_completion(v_client, tag(1), 1);
@@ -310,17 +339,17 @@ static void request_response_with_payload_and_call_creds(
 
 void test_request_response_with_payload_and_call_creds(
     grpc_end2end_test_config config) {
-  request_response_with_payload_and_call_creds(__FUNCTION__, config, NONE);
+  request_response_with_payload_and_call_creds("test_request_response_with_payload_and_call_creds", config, NONE);
 }
 
 void test_request_response_with_payload_and_overridden_call_creds(
     grpc_end2end_test_config config) {
-  request_response_with_payload_and_call_creds(__FUNCTION__, config, OVERRIDE);
+  request_response_with_payload_and_call_creds("test_request_response_with_payload_and_overridden_call_creds", config, OVERRIDE);
 }
 
 void test_request_response_with_payload_and_deleted_call_creds(
     grpc_end2end_test_config config) {
-  request_response_with_payload_and_call_creds(__FUNCTION__, config, DESTROY);
+  request_response_with_payload_and_call_creds("test_request_response_with_payload_and_deleted_call_creds", config, DESTROY);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {

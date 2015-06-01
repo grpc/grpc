@@ -76,7 +76,7 @@ module GRPC
       @jobs = Queue.new
       @size = size
       @stopped = false
-      @stop_mutex = Mutex.new
+      @stop_mutex = Mutex.new # needs to be held when accessing @stopped
       @stop_cond = ConditionVariable.new
       @workers = []
       @keep_alive = keep_alive
@@ -92,10 +92,15 @@ module GRPC
     # @param args the args passed blk when it is called
     # @param blk the block to call
     def schedule(*args, &blk)
-      fail 'already stopped' if @stopped
       return if blk.nil?
-      logger.info('schedule another job')
-      @jobs << [blk, args]
+      @stop_mutex.synchronize do
+        if @stopped
+          GRPC.logger.warn('did not schedule job, already stopped')
+          return
+        end
+        GRPC.logger.info('schedule another job')
+        @jobs << [blk, args]
+      end
     end
 
     # Starts running the jobs in the thread pool.
@@ -114,14 +119,14 @@ module GRPC
 
     # Stops the jobs in the pool
     def stop
-      logger.info('stopping, will wait for all the workers to exit')
+      GRPC.logger.info('stopping, will wait for all the workers to exit')
       @workers.size.times { schedule { throw :exit } }
-      @stopped = true
       @stop_mutex.synchronize do  # wait @keep_alive for works to stop
+        @stopped = true
         @stop_cond.wait(@stop_mutex, @keep_alive) if @workers.size > 0
       end
       forcibly_stop_workers
-      logger.info('stopped, all workers are shutdown')
+      GRPC.logger.info('stopped, all workers are shutdown')
     end
 
     protected
@@ -129,14 +134,14 @@ module GRPC
     # Forcibly shutdown any threads that are still alive.
     def forcibly_stop_workers
       return unless @workers.size > 0
-      logger.info("forcibly terminating #{@workers.size} worker(s)")
+      GRPC.logger.info("forcibly terminating #{@workers.size} worker(s)")
       @workers.each do |t|
         next unless t.alive?
         begin
           t.exit
         rescue StandardError => e
-          logger.warn('error while terminating a worker')
-          logger.warn(e)
+          GRPC.logger.warn('error while terminating a worker')
+          GRPC.logger.warn(e)
         end
       end
     end
@@ -156,8 +161,8 @@ module GRPC
           blk, args = @jobs.pop
           blk.call(*args)
         rescue StandardError => e
-          logger.warn('Error in worker thread')
-          logger.warn(e)
+          GRPC.logger.warn('Error in worker thread')
+          GRPC.logger.warn(e)
         end
       end
     end
@@ -249,15 +254,18 @@ module GRPC
                    server_override:nil,
                    connect_md_proc:nil,
                    **kw)
-      @cq = RpcServer.setup_cq(completion_queue_override)
-      @server = RpcServer.setup_srv(server_override, @cq, **kw)
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
-      @pool_size = pool_size
+      @cq = RpcServer.setup_cq(completion_queue_override)
       @max_waiting_requests = max_waiting_requests
       @poll_period = poll_period
-      @run_mutex = Mutex.new
-      @run_cond = ConditionVariable.new
+      @pool_size = pool_size
       @pool = Pool.new(@pool_size)
+      @run_cond = ConditionVariable.new
+      @run_mutex = Mutex.new
+      @running = false
+      @server = RpcServer.setup_srv(server_override, @cq, **kw)
+      @stopped = false
+      @stop_mutex = Mutex.new
     end
 
     # stops a running server
@@ -266,20 +274,23 @@ module GRPC
     # server's current call loop is it's last.
     def stop
       return unless @running
-      @stopped = true
+      @stop_mutex.synchronize do
+        @stopped = true
+      end
       @pool.stop
+      @server.close
+    end
 
-      # TODO: uncomment this:
-      #
-      # This segfaults in the c layer, so its commented out for now.  Shutdown
-      # still occurs, but the c layer has to do the cleanup.
-      #
-      # @server.close
+    # determines if the server has been stopped
+    def stopped?
+      @stop_mutex.synchronize do
+        return @stopped
+      end
     end
 
     # determines if the server is currently running
     def running?
-      @running ||= false
+      @running
     end
 
     # Is called from other threads to wait for #run to start up the server.
@@ -309,11 +320,6 @@ module GRPC
       end
       stop
       t.join
-    end
-
-    # Determines if the server is currently stopped
-    def stopped?
-      @stopped ||= false
     end
 
     # handle registration of classes
@@ -365,7 +371,7 @@ module GRPC
     #   the server to stop.
     def run
       if rpc_descs.size.zero?
-        logger.warn('did not run as no services were present')
+        GRPC.logger.warn('did not run as no services were present')
         return
       end
       @run_mutex.synchronize do
@@ -381,9 +387,9 @@ module GRPC
     # Sends UNAVAILABLE if there are too many unprocessed jobs
     def available?(an_rpc)
       jobs_count, max = @pool.jobs_waiting, @max_waiting_requests
-      logger.info("waiting: #{jobs_count}, max: #{max}")
+      GRPC.logger.info("waiting: #{jobs_count}, max: #{max}")
       return an_rpc if @pool.jobs_waiting <= @max_waiting_requests
-      logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
+      GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
       c.send_status(StatusCodes::UNAVAILABLE, '')
@@ -394,7 +400,7 @@ module GRPC
     def found?(an_rpc)
       mth = an_rpc.method.to_sym
       return an_rpc if rpc_descs.key?(mth)
-      logger.warn("NOT_FOUND: #{an_rpc}")
+      GRPC.logger.warn("NOT_FOUND: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
       c.send_status(StatusCodes::NOT_FOUND, '')
@@ -407,7 +413,13 @@ module GRPC
       request_call_tag = Object.new
       until stopped?
         deadline = from_relative_time(@poll_period)
-        an_rpc = @server.request_call(@cq, request_call_tag, deadline)
+        begin
+          an_rpc = @server.request_call(@cq, request_call_tag, deadline)
+        rescue Core::CallError, RuntimeError => e
+          # can happen during server shutdown
+          GRPC.logger.warn("server call failed: #{e}")
+          next
+        end
         c = new_active_server_call(an_rpc)
         unless c.nil?
           mth = an_rpc.method.to_sym
@@ -434,7 +446,7 @@ module GRPC
       return nil unless found?(an_rpc)
 
       # Create the ActiveCall
-      logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")
+      GRPC.logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")
       rpc_desc = rpc_descs[an_rpc.method.to_sym]
       ActiveCall.new(an_rpc.call, @cq,
                      rpc_desc.marshal_proc, rpc_desc.unmarshal_proc(:input),
@@ -474,7 +486,7 @@ module GRPC
         else
           handlers[route] = service.method(rpc_name)
         end
-        logger.info("handling #{route} with #{handlers[route]}")
+        GRPC.logger.info("handling #{route} with #{handlers[route]}")
       end
     end
   end

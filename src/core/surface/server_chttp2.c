@@ -48,7 +48,8 @@ static grpc_transport_setup_result setup_transport(void *server,
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   return grpc_server_setup_transport(server, transport, extra_filters,
-                                     GPR_ARRAY_SIZE(extra_filters), mdctx);
+                                     GPR_ARRAY_SIZE(extra_filters), mdctx,
+                                     grpc_server_get_channel_args(server));
 }
 
 static void new_transport(void *server, grpc_endpoint *tcp) {

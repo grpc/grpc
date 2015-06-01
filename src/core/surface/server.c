@@ -427,6 +427,8 @@ static void server_on_recv(void *ptr, int success) {
         grpc_iomgr_add_callback(kill_zombie, elem);
       } else if (calld->state == PENDING) {
         call_list_remove(calld, PENDING_START);
+        calld->state = ZOMBIED;
+        grpc_iomgr_add_callback(kill_zombie, elem);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -672,7 +674,7 @@ void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host) {
   registered_method *m;
   if (!method) {
-    gpr_log(GPR_ERROR, "%s method string cannot be NULL", __FUNCTION__);
+    gpr_log(GPR_ERROR, "grpc_server_register_method method string cannot be NULL");
     return NULL;
   }
   for (m = server->registered_methods; m; m = m->next) {
@@ -708,7 +710,7 @@ void grpc_server_start(grpc_server *server) {
 grpc_transport_setup_result grpc_server_setup_transport(
     grpc_server *s, grpc_transport *transport,
     grpc_channel_filter const **extra_filters, size_t num_extra_filters,
-    grpc_mdctx *mdctx) {
+    grpc_mdctx *mdctx, const grpc_channel_args *args) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters =
       gpr_malloc(sizeof(grpc_channel_filter *) * num_filters);
@@ -739,8 +741,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
     grpc_transport_add_to_pollset(transport, grpc_cq_pollset(s->cqs[i]));
   }
 
-  channel = grpc_channel_create_from_filters(filters, num_filters,
-                                             s->channel_args, mdctx, 0);
+  channel =
+      grpc_channel_create_from_filters(filters, num_filters, args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;
@@ -1017,6 +1019,9 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag) {
   requested_call rc;
+  GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
+                               initial_metadata, cq_bound_to_call,
+                               cq_for_notification, tag);
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
@@ -1135,3 +1140,12 @@ static void publish_registered_or_batch(grpc_call *call, int success,
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {
   return server->channel_args;
 }
+
+int grpc_server_has_open_connections(grpc_server *server) {
+  int r;
+  gpr_mu_lock(&server->mu);
+  r = server->root_channel_data.next != &server->root_channel_data;
+  gpr_mu_unlock(&server->mu);
+  return r;
+}
+

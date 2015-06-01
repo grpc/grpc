@@ -39,6 +39,7 @@ class Struct
       return nil if status.nil?
       fail GRPC::Cancelled if status.code == GRPC::Core::StatusCodes::CANCELLED
       if status.code != GRPC::Core::StatusCodes::OK
+        GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
         with_sym_keys = Hash[md.each_pair.collect { |x, y| [x.to_sym, y] }]
@@ -188,7 +189,7 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      logger.debug("sending #{req}, marshalled? #{marshalled}")
+      GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
       if marshalled
         payload = req
       else
@@ -230,14 +231,14 @@ module GRPC
         @call.metadata = batch_result.metadata
         @metadata_tag = nil
       end
-      logger.debug("received req: #{batch_result}")
+      GRPC.logger.debug("received req: #{batch_result}")
       unless batch_result.nil? || batch_result.message.nil?
-        logger.debug("received req.to_s: #{batch_result.message}")
+        GRPC.logger.debug("received req.to_s: #{batch_result.message}")
         res = @unmarshal.call(batch_result.message)
-        logger.debug("received_req (unmarshalled): #{res.inspect}")
+        GRPC.logger.debug("received_req (unmarshalled): #{res.inspect}")
         return res
       end
-      logger.debug('found nil; the final response has been sent')
+      GRPC.logger.debug('found nil; the final response has been sent')
       nil
     end
 

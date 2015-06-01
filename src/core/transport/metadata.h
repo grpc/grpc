@@ -96,6 +96,7 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *mdctx);
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
 grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str);
+/* Unrefs the slice. */
 grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
                                    size_t length);
@@ -110,6 +111,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx, grpc_mdstr *key,
                                                grpc_mdstr *value);
 grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
                                       const char *value);
+/* Unrefs the slices. */
 grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
                                      gpr_slice value);
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,

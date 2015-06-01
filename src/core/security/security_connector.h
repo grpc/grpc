@@ -77,6 +77,7 @@ struct grpc_security_connector {
   gpr_refcount refcount;
   int is_client_side;
   const char *url_scheme;
+  grpc_auth_context *auth_context; /* Populated after the peer is checked. */
 };
 
 /* Increments the refcount. */
@@ -197,5 +198,9 @@ typedef struct {
 */
 grpc_security_status grpc_ssl_server_security_connector_create(
     const grpc_ssl_server_config *config, grpc_security_connector **sc);
+
+/* Util. */
+const tsi_peer_property *tsi_peer_get_property_by_name(
+    const tsi_peer *peer, const char *name);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONNECTOR_H */

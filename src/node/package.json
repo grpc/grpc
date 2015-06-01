@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
@@ -36,6 +36,7 @@
     "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
+    "mustache": "^2.0.0",
     "strftime": "^0.8.2"
   },
   "engines": {
@@ -46,6 +47,8 @@
     "README.md",
     "index.js",
     "binding.gyp",
+    "bin",
+    "cli",
     "examples",
     "ext",
     "interop",

@@ -67,6 +67,10 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     grpc_metadata_array_init(&request_metadata_);
   }
 
+  ~SyncRequest() {
+    grpc_metadata_array_destroy(&request_metadata_);
+  }
+
   static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
     void* tag = nullptr;
     *ok = false;
@@ -149,7 +153,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       }
       buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
       call_.PerformOps(&buf);
-      GPR_ASSERT(cq_.Pluck(&buf));
+      cq_.Pluck(&buf);  /* status ignored */
       void* ignored_tag;
       bool ignored_ok;
       cq_.Shutdown();

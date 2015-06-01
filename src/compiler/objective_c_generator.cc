@@ -32,204 +32,216 @@
  */
 
 #include <map>
+#include <sstream>
 
+#include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator.h"
 #include "src/compiler/objective_c_generator_helpers.h"
 
-#include "src/compiler/config.h"
+#include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
 
-#include <sstream>
+using ::google::protobuf::compiler::objectivec::ClassName;
+using ::grpc::protobuf::io::Printer;
+using ::grpc::protobuf::MethodDescriptor;
+using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::string;
+using ::std::map;
 
 namespace grpc_objective_c_generator {
 namespace {
 
-void PrintSimpleBlockSignature(grpc::protobuf::io::Printer *printer,
-                               const grpc::protobuf::MethodDescriptor *method,
-                               std::map<grpc::string, grpc::string> *vars) {
-  (*vars)["method_name"] = method->name();
-  (*vars)["request_type"] = PrefixedName(method->input_type()->name());
-  (*vars)["response_type"] = PrefixedName(method->output_type()->name());
+void PrintProtoRpcDeclarationAsPragma(Printer *printer,
+                                      const MethodDescriptor *method,
+                                      map<string, string> vars) {
+  vars["client_stream"] = method->client_streaming() ? "stream " : "";
+  vars["server_stream"] = method->server_streaming() ? "stream " : "";
 
-  if (method->server_streaming()) {
-    printer->Print("// When the response stream finishes, the handler is "
-                   "called with nil for both arguments.\n\n");
+  printer->Print(vars,
+      "#pragma mark $method_name$($client_stream$$request_type$)"
+      " returns ($server_stream$$response_type$)\n\n");
+}
+
+void PrintMethodSignature(Printer *printer,
+                          const MethodDescriptor *method,
+                          const map<string, string>& vars) {
+  // TODO(jcanizales): Print method comments.
+
+  printer->Print(vars, "- ($return_type$)$method_name$With");
+  if (method->client_streaming()) {
+    printer->Print("RequestsWriter:(id<GRXWriter>)request");
   } else {
-    printer->Print("// The handler is only called once.\n\n");
+    printer->Print(vars, "Request:($request_class$ *)request");
   }
-  printer->Print(*vars, "- (id<GRXLiveSource>)$method_name$WithRequest:"
-                 "($request_type$)request completionHandler:(void(^)"
-                 "($response_type$ *, NSError *))handler");
+
+  // TODO(jcanizales): Put this on a new line and align colons.
+  // TODO(jcanizales): eventHandler for server streaming?
+  printer->Print(" handler:(void(^)(");
+  if (method->server_streaming()) {
+    printer->Print("BOOL done, ");
+  }
+  printer->Print(vars, "$response_class$ *response, NSError *error))handler");
 }
 
-void PrintSimpleDelegateSignature(grpc::protobuf::io::Printer *printer,
-                                  const grpc::protobuf::MethodDescriptor *method,
-                                  std::map<grpc::string, grpc::string> *vars) {
-  (*vars)["method_name"] = method->name();
-  (*vars)["request_type"] = PrefixedName(method->input_type()->name());
-
-  printer->Print(*vars, "- (id<GRXLiveSource>)$method_name$WithRequest:"
-                 "($request_type$)request delegate:(id<GRXSink>)delegate");
+void PrintSimpleSignature(Printer *printer,
+                          const MethodDescriptor *method,
+                          map<string, string> vars) {
+  vars["method_name"] =
+      grpc_generator::LowercaseFirstLetter(vars["method_name"]);
+  vars["return_type"] = "void";
+  PrintMethodSignature(printer, method, vars);
 }
 
-void PrintAdvancedSignature(grpc::protobuf::io::Printer *printer,
-                            const grpc::protobuf::MethodDescriptor *method,
-                            std::map<grpc::string, grpc::string> *vars) {
-  (*vars)["method_name"] = method->name();
-  printer->Print(*vars, "- (GRXSource *)$method_name$WithRequest:"
-                 "(id<GRXSource>)request");
+void PrintAdvancedSignature(Printer *printer,
+                            const MethodDescriptor *method,
+                            map<string, string> vars) {
+  vars["method_name"] = "RPCTo" + vars["method_name"];
+  vars["return_type"] = "ProtoRPC *";
+  PrintMethodSignature(printer, method, vars);
 }
 
-void PrintSourceMethodSimpleBlock(grpc::protobuf::io::Printer *printer,
-                                  const grpc::protobuf::MethodDescriptor *method,
-                                  std::map<grpc::string, grpc::string> *vars) {
-  PrintSimpleBlockSignature(printer, method, vars);
-
-  (*vars)["method_name"] = method->name();
-  printer->Print(" {\n");
-  printer->Indent();
-  printer->Print(*vars, "return [[self $method_name$WithRequest:request] "
-                 "connectHandler:^(id value, NSError *error) {\n");
-  printer->Indent();
-  printer->Print("handler(value, error);\n");
-  printer->Outdent();
-  printer->Print("}];\n");
-  printer->Outdent();
-  printer->Print("}\n");
+inline map<string, string> GetMethodVars(const MethodDescriptor *method) {
+  return {{ "method_name", method->name() },
+          { "request_type", method->input_type()->name() },
+          { "response_type", method->output_type()->name() },
+          { "request_class", ClassName(method->input_type()) },
+          { "response_class", ClassName(method->output_type()) }};
 }
 
-void PrintSourceMethodSimpleDelegate(grpc::protobuf::io::Printer *printer,
-                                     const grpc::protobuf::MethodDescriptor *method,
-                                     std::map<grpc::string, grpc::string> *vars) {
-  PrintSimpleDelegateSignature(printer, method, vars);
+void PrintMethodDeclarations(Printer *printer,
+                             const MethodDescriptor *method) {
+  map<string, string> vars = GetMethodVars(method);
 
-  (*vars)["method_name"] = method->name();
-  printer->Print(" {\n");
-  printer->Indent();
-  printer->Print(*vars, "return [[self $method_name$WithRequest:request]"
-                 "connectToSink:delegate];\n");
-  printer->Outdent();
-  printer->Print("}\n");
-}
+  PrintProtoRpcDeclarationAsPragma(printer, method, vars);
 
-void PrintSourceMethodAdvanced(grpc::protobuf::io::Printer *printer,
-                               const grpc::protobuf::MethodDescriptor *method,
-                               std::map<grpc::string, grpc::string> *vars) {
+  PrintSimpleSignature(printer, method, vars);
+  printer->Print(";\n\n");
   PrintAdvancedSignature(printer, method, vars);
+  printer->Print(";\n\n\n");
+}
 
-  (*vars)["method_name"] = method->name();
-  printer->Print(" {\n");
-  printer->Indent();
-  printer->Print(*vars, "return [self $method_name$WithRequest:request "
-                 "client:[self newClient]];\n");
-  printer->Outdent();
+void PrintSimpleImplementation(Printer *printer,
+                               const MethodDescriptor *method,
+                               map<string, string> vars) {
+  printer->Print("{\n");
+  printer->Print(vars, "  [[self RPCTo$method_name$With");
+  if (method->client_streaming()) {
+    printer->Print("RequestsWriter:request");
+  } else {
+    printer->Print("Request:request");
+  }
+  printer->Print(" handler:handler] start];\n");
   printer->Print("}\n");
 }
 
-void PrintSourceMethodHandler(grpc::protobuf::io::Printer *printer,
-                              const grpc::protobuf::MethodDescriptor *method,
-                              std::map<grpc::string, grpc::string> *vars) {
-  (*vars)["method_name"] = method->name();
-  (*vars)["response_type"] = PrefixedName(method->output_type()->name());
-  (*vars)["caps_name"] = grpc_generator::CapitalizeFirstLetter(method->name());
+void PrintAdvancedImplementation(Printer *printer,
+                                 const MethodDescriptor *method,
+                                 map<string, string> vars) {
+  printer->Print("{\n");
+  printer->Print(vars, "  return [self RPCToMethod:@\"$method_name$\"\n");
 
-  printer->Print(*vars, "- (GRXSource *)$method_name$WithRequest:"
-                 "(id<GRXSource>)request client:(PBgRPCClient *)client {\n");
-  printer->Indent();
-  printer->Print(*vars,
-                 "return [self responseWithMethod:$@\"$caps_name\"\n");
-  printer->Print(*vars,
-                 "                          class:[$response_type$ class]\n");
-  printer->Print("                        request:request\n");
-  printer->Print("                         client:client];\n");
-  printer->Outdent();
+  printer->Print("            requestsWriter:");
+  if (method->client_streaming()) {
+    printer->Print("request\n");
+  } else {
+    printer->Print("[GRXWriter writerWithValue:request]\n");
+  }
+
+  printer->Print(vars, "             responseClass:[$response_class$ class]\n");
+
+  printer->Print("        responsesWriteable:[GRXWriteable ");
+  if (method->server_streaming()) {
+    printer->Print("writeableWithStreamHandler:handler]];\n");
+  } else {
+    printer->Print("writeableWithSingleValueHandler:handler]];\n");
+  }
+
   printer->Print("}\n");
 }
 
+void PrintMethodImplementations(Printer *printer,
+                                const MethodDescriptor *method) {
+  map<string, string> vars = GetMethodVars(method);
+
+  PrintProtoRpcDeclarationAsPragma(printer, method, vars);
+
+  // TODO(jcanizales): Print documentation from the method.
+  PrintSimpleSignature(printer, method, vars);
+  PrintSimpleImplementation(printer, method, vars);
+
+  printer->Print("// Returns a not-yet-started RPC object.\n");
+  PrintAdvancedSignature(printer, method, vars);
+  PrintAdvancedImplementation(printer, method, vars);
 }
 
-grpc::string GetHeader(const grpc::protobuf::ServiceDescriptor *service,
-                       const grpc::string message_header) {
-  grpc::string output;
-  grpc::protobuf::io::StringOutputStream output_stream(&output);
-  grpc::protobuf::io::Printer printer(&output_stream, '$');
-  std::map<grpc::string, grpc::string> vars;
-  printer.Print("#import \"PBgRPCClient.h\"\n");
-  printer.Print("#import \"PBStub.h\"\n");
-  vars["message_header"] = message_header;
-  printer.Print(vars, "#import \"$message_header$\"\n\n");
-  printer.Print("@protocol GRXSource\n");
-  printer.Print("@class GRXSource\n\n");
-  vars["service_name"] = service->name();
-  printer.Print("@protocol $service_name$Stub <NSObject>\n\n");
-  printer.Print("#pragma mark Simple block handlers\n\n");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintSimpleBlockSignature(&printer, service->method(i), &vars);
-    printer.Print(";\n");
+} // namespace
+
+string GetHeader(const ServiceDescriptor *service) {
+  string output;
+  {
+    // Scope the output stream so it closes and finalizes output to the string.
+    grpc::protobuf::io::StringOutputStream output_stream(&output);
+    Printer printer(&output_stream, '$');
+  
+    printer.Print("@protocol GRXWriteable;\n");
+    printer.Print("@protocol GRXWriter;\n\n");
+
+    map<string, string> vars = {{"service_class", ServiceClassName(service)}};
+
+    printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
+
+    for (int i = 0; i < service->method_count(); i++) {
+      PrintMethodDeclarations(&printer, service->method(i));
+    }
+    printer.Print("@end\n\n");
+
+    printer.Print("// Basic service implementation, over gRPC, that only does"
+        " marshalling and parsing.\n");
+    printer.Print(vars, "@interface $service_class$ :"
+      " ProtoService<$service_class$>\n");
+    printer.Print("- (instancetype)initWithHost:(NSString *)host"
+      " NS_DESIGNATED_INITIALIZER;\n");
+    printer.Print("@end\n");
   }
-  printer.Print("\n");
-  printer.Print("#pragma mark Simple delegate handlers.\n\n");
-  printer.Print("# TODO(jcanizales): Use high-level snippets to remove this duplication.");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintSimpleDelegateSignature(&printer, service->method(i), &vars);
-    printer.Print(";\n");
-  }
-  printer.Print("\n");
-  printer.Print("#pragma mark Advanced handlers.\n\n");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintAdvancedSignature(&printer, service->method(i), &vars);
-    printer.Print(";\n");
-  }
-  printer.Print("\n");
-  printer.Print("@end\n\n");
-  printer.Print("// Basic stub that only does marshalling and parsing\n");
-  printer.Print(vars, "@interface $service_name$Stub :"
-                " PBStub<$service_name$Stub>\n");
-  printer.Print("- (instancetype)initWithHost:(NSString *)host;\n");
-  printer.Print("@end\n");
   return output;
 }
 
-grpc::string GetSource(const grpc::protobuf::ServiceDescriptor *service) {
-  grpc::string output;
-  grpc::protobuf::io::StringOutputStream output_stream(&output);
-  grpc::protobuf::io::Printer printer(&output_stream, '$');
-  std::map<grpc::string, grpc::string> vars;
-  vars["service_name"] = service->name();
-  printer.Print(vars, "#import \"$service_name$Stub.pb.h\"\n");
-  printer.Print("#import \"PBGeneratedMessage+GRXSource.h\"\n\n");
-  vars["full_name"] = service->full_name();
-  printer.Print(vars,
-                "static NSString *const kInterface = @\"$full_name$\";\n");
-  printer.Print("@implementation $service_name$Stub\n\n");
-  printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-  printer.Indent();
-  printer.Print("if ((self = [super initWithHost:host "
-                "interface:kInterface])) {\n");
-  printer.Print("}\n");
-  printer.Print("return self;\n");
-  printer.Outdent();
-  printer.Print("}\n\n");
-  printer.Print("#pragma mark Simple block handlers.\n");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintSourceMethodSimpleBlock(&printer, service->method(i), &vars);
+string GetSource(const ServiceDescriptor *service) {
+  string output;
+  {
+    // Scope the output stream so it closes and finalizes output to the string.
+    grpc::protobuf::io::StringOutputStream output_stream(&output);
+    Printer printer(&output_stream, '$');
+
+    map<string, string> vars = {{"service_name", service->name()},
+                                {"service_class", ServiceClassName(service)},
+                                {"package", service->file()->package()}};
+
+    printer.Print(vars,
+        "static NSString *const kPackageName = @\"$package$\";\n");
+    printer.Print(vars,
+        "static NSString *const kServiceName = @\"$service_name$\";\n\n");
+
+    printer.Print(vars, "@implementation $service_class$\n\n");
+  
+    printer.Print("// Designated initializer\n");
+    printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
+    printer.Print("  return (self = [super initWithHost:host"
+        " packageName:kPackageName serviceName:kServiceName]);\n");
+    printer.Print("}\n\n");
+    printer.Print("// Override superclass initializer to disallow different"
+        " package and service names.\n");
+    printer.Print("- (instancetype)initWithHost:(NSString *)host\n");
+    printer.Print("                 packageName:(NSString *)packageName\n");
+    printer.Print("                 serviceName:(NSString *)serviceName {\n");
+    printer.Print("  return [self initWithHost:host];\n");
+    printer.Print("}\n\n\n");
+
+    for (int i = 0; i < service->method_count(); i++) {
+      PrintMethodImplementations(&printer, service->method(i));
+    }
+
+    printer.Print("@end\n");
   }
-  printer.Print("\n");
-  printer.Print("#pragma mark Simple delegate handlers.\n");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintSourceMethodSimpleDelegate(&printer, service->method(i), &vars);
-  }
-  printer.Print("\n");
-  printer.Print("#pragma mark Advanced handlers.\n");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintSourceMethodAdvanced(&printer, service->method(i), &vars);
-  }
-  printer.Print("\n");
-  printer.Print("#pragma mark Handlers for subclasses "
-                "(stub wrappers) to override.\n");
-  for (int i = 0; i < service->method_count(); i++) {
-    PrintSourceMethodHandler(&printer, service->method(i), &vars);
-  }
-  printer.Print("@end\n");
   return output;
 }
 

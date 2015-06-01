@@ -31,11 +31,22 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_AUTH_H
-#define GRPC_INTERNAL_CORE_SECURITY_AUTH_H
+#ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
+#define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-#include "src/core/channel/channel_stack.h"
+#include <grpc/grpc.h>
+#include "test/core/util/test_config.h"
 
-extern const grpc_channel_filter grpc_client_auth_filter;
+typedef void (*grpc_bad_client_server_side_validator)(
+    grpc_server *server, grpc_completion_queue *cq);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_AUTH_H */
+/* Test runner.
+
+   Create a server, and send client_payload to it as bytes from a client.
+   Execute validator in a separate thread to assert that the bytes are
+   handled as expected. */
+void grpc_run_bad_client_test(const char *name, const char *client_payload,
+                              size_t client_payload_length,
+                              grpc_bad_client_server_side_validator validator);
+
+#endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

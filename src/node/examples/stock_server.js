@@ -83,7 +83,7 @@ var stockServer = new StockServer({
 });
 
 if (require.main === module) {
-  stockServer.bind('0.0.0.0:8080');
+  stockServer.bind('0.0.0.0:50051');
   stockServer.listen();
 }
 

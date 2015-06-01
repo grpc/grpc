@@ -38,10 +38,16 @@
 
 namespace grpc_objective_c_generator {
 
-grpc::string GetHeader(const grpc::protobuf::ServiceDescriptor *service,
-                       const grpc::string message_header);
+using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::string;
 
-grpc::string GetSource(const grpc::protobuf::ServiceDescriptor *service);
+// Returns the content to be included in the "global_scope" insertion point of
+// the generated header file.
+string GetHeader(const ServiceDescriptor *service);
+
+// Returns the content to be included in the "global_scope" insertion point of
+// the generated implementation file.
+string GetSource(const ServiceDescriptor *service);
 
 }  // namespace grpc_objective_c_generator
 

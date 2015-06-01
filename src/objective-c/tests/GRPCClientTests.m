@@ -38,28 +38,27 @@
 #import <gRPC/GRPCMethodName.h>
 #import <gRPC/GRXWriter+Immediate.h>
 #import <gRPC/GRXWriteable.h>
-#import <Route_guide/RouteGuide.pbobjc.h>
-#import <Route_guide/RouteGuide.pbrpc.h>
+#import <RemoteTest/Messages.pbobjc.h>
 
-@interface SampleTests : XCTestCase
+// These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
+// rather than a generated proto library on top of it.
+
+@interface GRPCClientTests : XCTestCase
 @end
 
-// These tests require the gRPC-Java "RouteGuide" sample server to be running locally. Install the
-// gRPC-Java library following the instructions here: https://github.com/grpc/grpc-java And run the
-// server by following the instructions here: https://github.com/grpc/grpc-java/tree/master/examples
-@implementation SampleTests
+@implementation GRPCClientTests
 
-- (void)testConnectionToLocalServer {
+- (void)testConnectionToRemoteServer {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
 
-  // This method isn't implemented by the local server.
+  // This method isn't implemented by the remote server.
   GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
                                                          interface:@"TestService"
-                                                            method:@"EmptyCall"];
+                                                            method:@"Nonexistent"];
 
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
                                            method:method
                                    requestsWriter:requestsWriter];
 
@@ -67,26 +66,27 @@
     XCTFail(@"Received unexpected response: %@", value);
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNotNil(errorOrNil, @"Finished without error!");
-    XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
+    // TODO(jcanizales): The server should return code 12 UNIMPLEMENTED, not 5 NOT FOUND.
+    XCTAssertEqual(errorOrNil.code, 5, @"Finished with unexpected error: %@", errorOrNil);
     [expectation fulfill];
   }];
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2.0 handler:nil];
+  [self waitForExpectationsWithTimeout:2. handler:nil];
 }
 
 - (void)testEmptyRPC {
   __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.example.routeguide"
-                                                         interface:@"RouteGuide"
-                                                            method:@"RecordRoute"];
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
+                                                         interface:@"TestService"
+                                                            method:@"EmptyCall"];
 
-  id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
                                            method:method
                                    requestsWriter:requestsWriter];
 
@@ -101,32 +101,38 @@
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2.0 handler:nil];
+  [self waitForExpectationsWithTimeout:2. handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
   __weak XCTestExpectation *response = [self expectationWithDescription:@"Response received."];
+  __weak XCTestExpectation *expectedResponse =
+  [self expectationWithDescription:@"Expected response."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.example.routeguide"
-                                                         interface:@"RouteGuide"
-                                                            method:@"GetFeature"];
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
+                                                         interface:@"TestService"
+                                                            method:@"UnaryCall"];
 
-  RGDPoint *point = [RGDPoint message];
-  point.latitude = 28E7;
-  point.longitude = -15E7;
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
+  RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
+  request.responseSize = 100;
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
                                            method:method
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTAssertNotNil(value, @"nil value received as response.");
-    RGDFeature *feature = [RGDFeature parseFromData:value];
-    XCTAssertEqualObjects(point, feature.location);
-    XCTAssertNotNil(feature.name, @"Response's name is nil.");
     [response fulfill];
+    XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
+    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
+    // We expect empty strings, not nil:
+    XCTAssertNotNil(response.username, @"Response's username is nil.");
+    XCTAssertNotNil(response.oauthScope, @"Response's OAuth scope is nil.");
+    [expectedResponse fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
     [completion fulfill];
@@ -134,24 +140,7 @@
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2.0 handler:nil];
+  [self waitForExpectationsWithTimeout:2. handler:nil];
 }
 
-- (void)testSimpleProtoRPCUsingGeneratedService {
-  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
-
-  RGDPoint *point = [RGDPoint message];
-  point.latitude = 28E7;
-  point.longitude = -15E7;
-
-  RGDRouteGuide *service = [[RGDRouteGuide alloc] initWithHost:@"http://127.0.0.1:8980"];
-  [service getFeatureWithRequest:point handler:^(RGDFeature *response, NSError *error) {
-    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-    XCTAssertEqualObjects(point, response.location);
-    XCTAssertNotNil(response.name, @"Response's name is nil.");
-    [completion fulfill];
-  }];
-
-  [self waitForExpectationsWithTimeout:2.0 handler:nil];
-}
 @end
