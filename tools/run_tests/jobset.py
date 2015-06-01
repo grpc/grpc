@@ -66,6 +66,7 @@ def shuffle_iteratable(it):
   # p as we take elements - this gives us a somewhat random set of values before
   # we've seen all the values, but starts producing values without having to
   # compute ALL of them at once, allowing tests to start a little earlier
+  LARGE_THRESHOLD = 1000
   nextit = []
   p = 1
   for val in it:
@@ -74,6 +75,17 @@ def shuffle_iteratable(it):
       yield val
     else:
       nextit.append(val)
+      # if the input iterates over a large number of values (potentially
+      # infinite, we'd be in the loop for a while (again, potentially forever).
+      # We need to reset "nextit" every so often to, in the case of an infinite
+      # iterator, avoid growing "nextit" without ever freeing it.
+      if len(nextit) > LARGE_THRESHOLD:
+        random.shuffle(nextit)
+        for val in nextit:
+          yield val
+        nextit = []
+        p = 1
+
   # after taking a random sampling, we shuffle the rest of the elements and
   # yield them
   random.shuffle(nextit)
