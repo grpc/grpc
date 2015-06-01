@@ -339,13 +339,15 @@ def run(cmdlines,
         maxjobs=None,
         newline_on_success=False,
         travis=False,
+        infinite_runs=False,
         stop_on_failure=False,
         cache=None):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure,
               cache if cache is not None else NoCache())
-  if not travis:
+  # We can't sort an infinite sequence of runs.
+  if not travis or infinite_runs:
     cmdlines = shuffle_iteratable(cmdlines)
   else:
     cmdlines = sorted(cmdlines, key=lambda x: x.shortname)
