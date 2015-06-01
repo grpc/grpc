@@ -186,6 +186,9 @@ void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
     g_cbs_tail->next = dcb;
     g_cbs_tail = dcb;
   }
+  if (g_shutdown) {
+    gpr_cv_signal(&g_rcv);
+  }
   gpr_mu_unlock(&g_mu);
 }
 
