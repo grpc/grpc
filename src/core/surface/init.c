@@ -64,7 +64,9 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_tracer_init("GRPC_TRACE");
-    census_initialize(CENSUS_NONE);
+    if (census_initialize(CENSUS_NONE)) {
+      gpr_log(GPR_ERROR, "Could not initialize census.");
+    }
     grpc_timers_global_init();
   }
   gpr_mu_unlock(&g_init_mu);

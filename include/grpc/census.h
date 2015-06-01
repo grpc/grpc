@@ -51,7 +51,9 @@ enum census_functions {
 
 /* Shutdown and startup census subsystem. The 'functions' argument should be
  * the OR (|) of census_functions values. If census fails to initialize, then
- * census_initialize() will return a non-zero value. */
+ * census_initialize() will return a non-zero value. It is an error to call
+ * census_initialize() more than once (without an intervening
+ * census_shutdown()). */
 int census_initialize(int functions);
 void census_shutdown();
 

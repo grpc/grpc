@@ -33,6 +33,18 @@
 
 #include <grpc/census.h>
 
-int census_initialize(int functions) { return 0; }
+static int census_fns_enabled = CENSUS_NONE;
 
-void census_shutdown() {}
+int census_initialize(int functions) {
+  if (census_fns_enabled != CENSUS_NONE) {
+    return 1;
+  }
+  if (functions != CENSUS_NONE) {
+    return 1;
+  } else {
+    census_fns_enabled = functions;
+    return 0;
+  }
+}
+
+void census_shutdown() { census_fns_enabled = CENSUS_NONE; }
