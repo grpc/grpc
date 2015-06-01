@@ -42,7 +42,7 @@
 
 static gpr_mu g_mu;
 static int g_done = 0;
-static grpc_pollset_set g_pollset_set;
+static grpc_httpcli_context g_context;
 static grpc_pollset g_pollset;
 
 static gpr_timespec n_seconds_time(int seconds) {
@@ -69,7 +69,7 @@ static void test_get(int use_ssl) {
   req.path = "/";
   req.use_ssl = use_ssl;
 
-  grpc_httpcli_get(&req, n_seconds_time(15), &g_pollset_set, on_finish, (void *)42);
+  grpc_httpcli_get(&g_context, &req, n_seconds_time(15), on_finish, (void *)42);
   gpr_mu_lock(&g_mu);
   while (!g_done) {
     grpc_pollset_work(&g_pollset, n_seconds_time(20));
@@ -98,10 +98,10 @@ static void test_post(int use_ssl) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
-  grpc_pollset_set_init(&g_pollset_set);
+  grpc_httpcli_context_init(&g_context);
   grpc_pollset_init(&g_pollset);
   gpr_mu_init(&g_mu);
-  grpc_pollset_set_add_pollset(&g_pollset_set, &g_pollset);
+  grpc_httpcli_context_add_interested_party(&g_context, &g_pollset);
 
   test_get(0);
   test_get(1);
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   /* test_post(0); */
   /* test_post(1); */
 
-  grpc_pollset_set_destroy(&g_pollset_set);
+  grpc_httpcli_context_destroy(&g_context);
   grpc_pollset_destroy(&g_pollset);
   grpc_iomgr_shutdown();
   gpr_mu_destroy(&g_mu);
