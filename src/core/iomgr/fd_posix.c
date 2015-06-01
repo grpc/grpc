@@ -302,7 +302,8 @@ void grpc_fd_shutdown(grpc_fd *fd) {
   set_ready_locked(&fd->writest, &fd->shutdown_closures[0], &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   GPR_ASSERT(ncb <= 2);
-  process_callbacks(fd->shutdown_closures[0], ncb, 0, 0);
+  process_callbacks(fd->shutdown_closures[0], ncb, 0 /* GPR_FALSE */,
+                    0 /* GPR_FALSE */);
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure) {

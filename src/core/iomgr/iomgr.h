@@ -34,29 +34,43 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 #define GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 
-/* gRPC Callback definition */
+/** gRPC Callback definition.
+ *
+ * \param arg Arbitrary input.
+ * \param success An indication on the state of the iomgr. On false, cleanup
+ * actions should be taken (eg, shutdown). */
 typedef void (*grpc_iomgr_cb_func)(void *arg, int success);
 
+/** A closure over a grpc_iomgr_cb_func. */
 typedef struct grpc_iomgr_closure {
+  /** Bound callback. */
   grpc_iomgr_cb_func cb;
+
+  /** Arguments to be passed to "cb". */
   void *cb_arg;
+
+  /** Internal. A boolean indication to "cb" on the state of the iomgr.
+   * For instance, closures created during a shutdown would have this field set
+   * to false. */
   int success;
-  struct grpc_iomgr_closure *next;  /** Do not touch */
+
+  /**< Internal. Do not touch */
+  struct grpc_iomgr_closure *next;
 } grpc_iomgr_closure;
 
+/** Initializes \a closure with \a cb and \a cb_arg. */
 void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
                              void *cb_arg);
 
-/* TODO(dgq): get rid of the managed_closure concept. */
-void grpc_iomgr_managed_closure_init(grpc_iomgr_closure *manager,
-                                     grpc_iomgr_cb_func managed_cb,
-                                     void *managed_cb_arg);
-
+/** Initializes the iomgr. */
 void grpc_iomgr_init(void);
+
+/** Signals the intention to shutdown the iomgr. */
 void grpc_iomgr_shutdown(void);
 
-/* This function is called from within a callback or from anywhere else
-   and causes the invocation of a callback at some point in the future */
+/** Registers a closure to be invoked at some point in the future.
+ *
+ * Can be called from within a callback or from anywhere else */
 void grpc_iomgr_add_callback(grpc_iomgr_closure *closure);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

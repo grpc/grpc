@@ -163,7 +163,6 @@ void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
                              void *cb_arg) {
   closure->cb = cb;
   closure->cb_arg = cb_arg;
-  closure->success = -1;  /* uninitialized */
   closure->next = NULL;
 }
 
@@ -182,7 +181,7 @@ void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
 
 
 void grpc_iomgr_add_callback(grpc_iomgr_closure *closure) {
-  grpc_iomgr_add_delayed_callback(closure, 1);
+  grpc_iomgr_add_delayed_callback(closure, 1 /* GPR_TRUE */);
 }
 
 
