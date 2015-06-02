@@ -134,7 +134,9 @@ static void unref_by(grpc_fd *fd, int n) {
 #endif
   old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    grpc_iomgr_add_callback(&fd->on_done_closure);
+    if (fd->on_done_closure) {
+      grpc_iomgr_add_callback(fd->on_done_closure);
+    }
     freelist_fd(fd);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
   } else {
@@ -152,8 +154,6 @@ void grpc_fd_global_shutdown(void) {
   }
   gpr_mu_destroy(&fd_freelist_mu);
 }
-
-static void do_nothing(void *ignored, int success) {}
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
@@ -195,9 +195,8 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
   }
 }
 
-void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data) {
-  grpc_iomgr_closure_init(&fd->on_done_closure, on_done ? on_done : do_nothing,
-                          user_data);
+void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done) {
+  fd->on_done_closure = on_done;
   shutdown(fd->fd, SHUT_RDWR);
   REF_BY(fd, 1, "orphan"); /* remove active status, but keep referenced */
   gpr_mu_lock(&fd->watcher_mu);
@@ -208,21 +207,18 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data) {
 
 /* increment refcount by two to avoid changing the orphan bit */
 #ifdef GRPC_FD_REF_COUNT_DEBUG
-void grpc_fd_ref(grpc_fd *fd, const char *reason, const char *file, int line) { 
-  ref_by(fd, 2, reason, file, line); 
+void grpc_fd_ref(grpc_fd *fd, const char *reason, const char *file, int line) {
+  ref_by(fd, 2, reason, file, line);
 }
 
-void grpc_fd_unref(grpc_fd *fd, const char *reason, const char *file, int line) { 
-  unref_by(fd, 2, reason, file, line); 
+void grpc_fd_unref(grpc_fd *fd, const char *reason, const char *file,
+                   int line) {
+  unref_by(fd, 2, reason, file, line);
 }
 #else
-void grpc_fd_ref(grpc_fd *fd) { 
-  ref_by(fd, 2); 
-}
+void grpc_fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
 
-void grpc_fd_unref(grpc_fd *fd) { 
-  unref_by(fd, 2); 
-}
+void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 #endif
 
 static void process_callback(grpc_iomgr_closure *closure, int success,

@@ -84,6 +84,7 @@ typedef struct {
   } addr;
   int addr_len;
   grpc_iomgr_closure read_closure;
+  grpc_iomgr_closure destroyed_closure;
 } server_port;
 
 static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
@@ -175,7 +176,9 @@ static void deactivated_all_ports(grpc_tcp_server *s) {
       if (sp->addr.sockaddr.sa_family == AF_UNIX) {
         unlink_if_unix_domain_socket(&sp->addr.un);
       }
-      grpc_fd_orphan(sp->emfd, destroyed_port, s);
+      sp->destroyed_closure.cb = destroyed_port;
+      sp->destroyed_closure.cb_arg = s;
+      grpc_fd_orphan(sp->emfd, &sp->destroyed_closure);
     }
     gpr_mu_unlock(&s->mu);
   } else {

@@ -93,7 +93,7 @@ struct grpc_fd {
 
   struct grpc_fd *freelist_next;
 
-  grpc_iomgr_closure on_done_closure;
+  grpc_iomgr_closure *on_done_closure;
   grpc_iomgr_closure *shutdown_closures[2];
 
   grpc_iomgr_object iomgr_object;
@@ -109,7 +109,7 @@ grpc_fd *grpc_fd_create(int fd, const char *name);
    If on_done is NULL, no callback will be made.
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write. */
-void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data);
+void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done);
 
 /* Begin polling on an fd.
    Registers that the given pollset is interested in this fd - so that if read

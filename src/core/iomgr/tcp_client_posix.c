@@ -112,8 +112,6 @@ static void on_writable(void *acp, int success) {
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
 
-  grpc_alarm_cancel(&ac->alarm);
-
   if (success) {
     do {
       so_error_size = sizeof(so_error);
@@ -166,13 +164,15 @@ static void on_writable(void *acp, int success) {
 finish:
   gpr_mu_lock(&ac->mu);
   if (!ep) {
-    grpc_fd_orphan(ac->fd, NULL, NULL);
+    grpc_fd_orphan(ac->fd, NULL);
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac);
+  } else {
+    grpc_alarm_cancel(&ac->alarm);
   }
   cb(cb_arg, ep);
 }
@@ -230,7 +230,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     gpr_log(GPR_ERROR, "connect error to '%s': %s", strerror(errno));
-    grpc_fd_orphan(fdobj, NULL, NULL);
+    grpc_fd_orphan(fdobj, NULL);
     cb(arg, NULL);
     goto done;
   }
@@ -244,8 +244,10 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
 
-  grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+  gpr_mu_lock(&ac->mu);
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
+  grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+  gpr_mu_unlock(&ac->mu);
 
 done:
   gpr_free(name);
