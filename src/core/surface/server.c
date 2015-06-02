@@ -123,7 +123,6 @@ struct channel_data {
   channel_registered_method *registered_methods;
   gpr_uint32 registered_method_slots;
   gpr_uint32 registered_method_max_probes;
-  grpc_iomgr_closure finish_shutdown_channel_closure;
   grpc_iomgr_closure finish_destroy_channel_closure;
 };
 
@@ -563,6 +562,7 @@ typedef struct {
   channel_data *chand;
   int send_goaway;
   int send_disconnect;
+  grpc_iomgr_closure finish_shutdown_channel_closure;
 } shutdown_channel_args;
 
 static void finish_shutdown_channel(void *p, int success) {
@@ -597,9 +597,9 @@ static void shutdown_channel(channel_data *chand, int send_goaway, int send_disc
   sca->chand = chand;
   sca->send_goaway = send_goaway;
   sca->send_disconnect = send_disconnect;
-  chand->finish_shutdown_channel_closure.cb = finish_shutdown_channel;
-  chand->finish_shutdown_channel_closure.cb_arg = sca;
-  grpc_iomgr_add_callback(&chand->finish_shutdown_channel_closure);
+  sca->finish_shutdown_channel_closure.cb = finish_shutdown_channel;
+  sca->finish_shutdown_channel_closure.cb_arg = sca;
+  grpc_iomgr_add_callback(&sca->finish_shutdown_channel_closure);
 }
 
 static void init_call_elem(grpc_call_element *elem,
