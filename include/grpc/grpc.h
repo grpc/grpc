@@ -170,14 +170,15 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
 struct grpc_byte_buffer_reader;
 typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
 
-grpc_byte_buffer_reader *grpc_byte_buffer_reader_create(
-    grpc_byte_buffer *buffer);
+/** Initialize \a reader to read over \a buffer */
+void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                  grpc_byte_buffer *buffer);
+
 /* At the end of the stream, returns 0. Otherwise, returns 1 and sets slice to
    be the returned slice. Caller is responsible for calling gpr_slice_unref on
    the result. */
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice);
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 
 /* A single metadata element */
 typedef struct grpc_metadata {
