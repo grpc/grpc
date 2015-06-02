@@ -103,6 +103,9 @@ void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
   if (op->recv_ops) {
     op->on_done_recv(op->recv_user_data, 0);
   }
+  if (op->on_consumed) {
+    op->on_consumed(op->on_consumed_user_data, 0);
+  }
 }
 
 void grpc_transport_op_add_cancellation(grpc_transport_op *op,

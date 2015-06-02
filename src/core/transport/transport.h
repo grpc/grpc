@@ -64,6 +64,9 @@ typedef enum grpc_stream_state {
 
 /* Transport op: a set of operations to perform on a transport */
 typedef struct grpc_transport_op {
+  void (*on_consumed)(void *user_data, int success);
+  void *on_consumed_user_data;
+
   grpc_stream_op_buffer *send_ops;
   int is_last_send;
   void (*on_done_send)(void *user_data, int success);

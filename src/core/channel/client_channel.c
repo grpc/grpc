@@ -171,6 +171,9 @@ static void handle_op_after_cancellation(grpc_call_element *elem,
     *op->recv_state = GRPC_STREAM_CLOSED;
     op->on_done_recv(op->recv_user_data, 1);
   }
+  if (op->on_consumed) {
+    op->on_consumed(op->on_consumed_user_data, 0);
+  }
 }
 
 static void cc_start_transport_op(grpc_call_element *elem,
@@ -264,6 +267,9 @@ static void cc_start_transport_op(grpc_call_element *elem,
           calld->s.waiting_op.recv_user_data = op->recv_user_data;
         }
         gpr_mu_unlock(&chand->mu);
+        if (op->on_consumed) {
+          op->on_consumed(op->on_consumed_user_data, 0);
+        }
       }
       break;
     case CALL_CANCELLED:

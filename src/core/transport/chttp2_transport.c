@@ -1162,6 +1162,13 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
   if (op->bind_pollset) {
     add_to_pollset_locked(t, op->bind_pollset);
   }
+
+  if (op->on_consumed) {
+    op_closure c;
+    c.cb = op->on_consumed;
+    c.user_data = op->on_consumed_user_data;
+    schedule_cb(t, c, 1);    
+  }
 }
 
 static void perform_op(grpc_transport *gt, grpc_stream *gs,
