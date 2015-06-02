@@ -43,17 +43,10 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/sync.h>
 
-typedef struct delayed_callback {
-  grpc_iomgr_cb_func cb;
-  void *cb_arg;
-  int success;
-  struct delayed_callback *next;
-} delayed_callback;
-
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
-static delayed_callback *g_cbs_head = NULL;
-static delayed_callback *g_cbs_tail = NULL;
+static grpc_iomgr_closure *g_cbs_head = NULL;
+static grpc_iomgr_closure *g_cbs_tail = NULL;
 static int g_shutdown;
 static gpr_event g_background_callback_executor_done;
 static grpc_iomgr_object g_root_object;
@@ -67,12 +60,11 @@ static void background_callback_executor(void *ignored) {
     gpr_timespec short_deadline =
         gpr_time_add(gpr_now(), gpr_time_from_millis(100));
     if (g_cbs_head) {
-      delayed_callback *cb = g_cbs_head;
-      g_cbs_head = cb->next;
+      grpc_iomgr_closure *closure = g_cbs_head;
+      g_cbs_head = closure->next;
       if (!g_cbs_head) g_cbs_tail = NULL;
       gpr_mu_unlock(&g_mu);
-      cb->cb(cb->cb_arg, cb->success);
-      gpr_free(cb);
+      closure->cb(closure->cb_arg, closure->success);
       gpr_mu_lock(&g_mu);
     } else if (grpc_alarm_check(&g_mu, gpr_now(), &deadline)) {
     } else {
@@ -114,8 +106,8 @@ static size_t count_objects(void) {
 }
 
 void grpc_iomgr_shutdown(void) {
-  delayed_callback *cb;
   grpc_iomgr_object *obj;
+  grpc_iomgr_closure *closure;
   gpr_timespec shutdown_deadline =
       gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
 
@@ -128,13 +120,12 @@ void grpc_iomgr_shutdown(void) {
             g_cbs_head ? " and executing final callbacks" : "");
     if (g_cbs_head) {
       do {
-        cb = g_cbs_head;
-        g_cbs_head = cb->next;
+        closure = g_cbs_head;
+        g_cbs_head = closure->next;
         if (!g_cbs_head) g_cbs_tail = NULL;
         gpr_mu_unlock(&g_mu);
 
-        cb->cb(cb->cb_arg, 0);
-        gpr_free(cb);
+        closure->cb(closure->cb_arg, 0);
         gpr_mu_lock(&g_mu);
       } while (g_cbs_head);
       continue;
@@ -190,42 +181,48 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
-                                     int success) {
-  delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
-  dcb->cb = cb;
-  dcb->cb_arg = cb_arg;
-  dcb->success = success;
+
+void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
+                             void *cb_arg) {
+  closure->cb = cb;
+  closure->cb_arg = cb_arg;
+  closure->next = NULL;
+}
+
+void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
+  closure->success = success;
   gpr_mu_lock(&g_mu);
-  dcb->next = NULL;
+  closure->next = NULL;
   if (!g_cbs_tail) {
-    g_cbs_head = g_cbs_tail = dcb;
+    g_cbs_head = g_cbs_tail = closure;
   } else {
-    g_cbs_tail->next = dcb;
-    g_cbs_tail = dcb;
+    g_cbs_tail->next = closure;
+    g_cbs_tail = closure;
   }
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_add_callback(grpc_iomgr_cb_func cb, void *cb_arg) {
-  grpc_iomgr_add_delayed_callback(cb, cb_arg, 1);
+
+void grpc_iomgr_add_callback(grpc_iomgr_closure *closure) {
+  grpc_iomgr_add_delayed_callback(closure, 1 /* GPR_TRUE */);
 }
+
 
 int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
   int n = 0;
   gpr_mu *retake_mu = NULL;
-  delayed_callback *cb;
+  grpc_iomgr_closure *closure;
   for (;;) {
     /* check for new work */
     if (!gpr_mu_trylock(&g_mu)) {
       break;
     }
-    cb = g_cbs_head;
-    if (!cb) {
+    closure = g_cbs_head;
+    if (!closure) {
       gpr_mu_unlock(&g_mu);
       break;
     }
-    g_cbs_head = cb->next;
+    g_cbs_head = closure->next;
     if (!g_cbs_head) g_cbs_tail = NULL;
     gpr_mu_unlock(&g_mu);
     /* if we have a mutex to drop, do so before executing work */
@@ -234,8 +231,7 @@ int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
       retake_mu = drop_mu;
       drop_mu = NULL;
     }
-    cb->cb(cb->cb_arg, success && cb->success);
-    gpr_free(cb);
+    closure->cb(closure->cb_arg, success && closure->success);
     n++;
   }
   if (retake_mu) {

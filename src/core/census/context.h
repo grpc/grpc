@@ -31,35 +31,19 @@
  *
  */
 
-#include "grpc/_adapter/_tag.h"
+#ifndef GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H
+#define GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H
 
-#include <Python.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/census.h>
 
-pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
-                           Call *call) {
-  pygrpc_tag *self = (pygrpc_tag *)gpr_malloc(sizeof(pygrpc_tag));
-  memset(self, 0, sizeof(pygrpc_tag));
-  if (user_tag == NULL) {
-    self->user_tag = Py_None;
-  } else {
-    self->user_tag = user_tag;
-  }
-  Py_INCREF(self->user_tag);
-  self->type = type;
-  self->call = call;
-  Py_INCREF(call);
-  return self;
-}
+/* census_context is the in-memory representation of information needed to
+ * maintain tracing, RPC statistics and resource usage information. */
+struct census_context {
+  gpr_uint64 op_id;    /* Operation identifier - unique per-context */
+  gpr_uint64 trace_id; /* Globally unique trace identifier */
+  /* TODO(aveitch) Add census tags:
+  const census_tag_set *tags;
+  */
+};
 
-pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag) {
-  return pygrpc_tag_new(PYGRPC_SERVER_RPC_NEW, user_tag,
-                        (Call *)pygrpc_CallType.tp_alloc(&pygrpc_CallType, 0));
-}
-
-void pygrpc_tag_destroy(pygrpc_tag *self) {
-  Py_XDECREF(self->user_tag);
-  Py_XDECREF(self->call);
-  gpr_free(self);
-}
+#endif /* GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H */
