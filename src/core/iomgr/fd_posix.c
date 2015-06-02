@@ -137,8 +137,8 @@ static void unref_by(grpc_fd *fd, int n) {
     if (fd->on_done_closure) {
       grpc_iomgr_add_callback(fd->on_done_closure);
     }
-    freelist_fd(fd);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
+    freelist_fd(fd);
   } else {
     GPR_ASSERT(old > n);
   }
