@@ -120,7 +120,7 @@ static void session_shutdown_cb(void *arg, /*session*/
                                 int success) {
   session *se = arg;
   server *sv = se->sv;
-  grpc_fd_orphan(se->em_fd, NULL);
+  grpc_fd_orphan(se->em_fd, NULL, "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(sv->em_fd);
@@ -175,7 +175,7 @@ static void session_read_cb(void *arg, /*session*/
 static void listen_shutdown_cb(void *arg /*server*/, int success) {
   server *sv = arg;
 
-  grpc_fd_orphan(sv->em_fd, NULL);
+  grpc_fd_orphan(sv->em_fd, NULL, "b");
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   sv->done = 1;
@@ -284,7 +284,7 @@ static void client_init(client *cl) {
 /* Called when a client upload session is ready to shutdown. */
 static void client_session_shutdown_cb(void *arg /*client*/, int success) {
   client *cl = arg;
-  grpc_fd_orphan(cl->em_fd, NULL);
+  grpc_fd_orphan(cl->em_fd, NULL, "c");
   cl->done = 1;
   grpc_pollset_kick(&g_pollset);
 }
@@ -472,7 +472,7 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_fd_orphan(em_fd, NULL);
+  grpc_fd_orphan(em_fd, NULL, "d");
   destroy_change_data(&a);
   destroy_change_data(&b);
   close(sv[1]);

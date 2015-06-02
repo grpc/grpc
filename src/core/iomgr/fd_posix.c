@@ -114,7 +114,8 @@ static void destroy(grpc_fd *fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file, int line) {
   gpr_log(GPR_DEBUG, "FD %d %p  ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          fd->refst, fd->refst + n, reason, file, line);
+          gpr_atm_no_barrier_load(&fd->refst),
+          gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -127,7 +128,8 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file, int line) {
   gpr_atm old;
   gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          fd->refst, fd->refst - n, reason, file, line);
+          gpr_atm_no_barrier_load(&fd->refst),
+          gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
 #else
 static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old;
@@ -195,14 +197,15 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
   }
 }
 
-void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done) {
+void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
+                    const char *reason) {
   fd->on_done_closure = on_done;
   shutdown(fd->fd, SHUT_RDWR);
-  REF_BY(fd, 1, "orphan"); /* remove active status, but keep referenced */
+  REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   gpr_mu_lock(&fd->watcher_mu);
   wake_all_watchers_locked(fd);
   gpr_mu_unlock(&fd->watcher_mu);
-  UNREF_BY(fd, 2, "orphan"); /* drop the reference */
+  UNREF_BY(fd, 2, reason); /* drop the reference */
 }
 
 /* increment refcount by two to avoid changing the orphan bit */

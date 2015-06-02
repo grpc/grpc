@@ -178,7 +178,7 @@ static void deactivated_all_ports(grpc_tcp_server *s) {
       }
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
-      grpc_fd_orphan(sp->emfd, &sp->destroyed_closure);
+      grpc_fd_orphan(sp->emfd, &sp->destroyed_closure, "tcp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {

@@ -164,7 +164,7 @@ static void on_writable(void *acp, int success) {
 finish:
   gpr_mu_lock(&ac->mu);
   if (!ep) {
-    grpc_fd_orphan(ac->fd, NULL);
+    grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -220,7 +220,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
 
   fdobj = grpc_fd_create(fd, name);
-  grpc_pollset_set_add_fd(interested_parties, fdobj);
 
   if (err >= 0) {
     cb(arg,
@@ -229,11 +228,13 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    gpr_log(GPR_ERROR, "connect error to '%s': %s", strerror(errno));
-    grpc_fd_orphan(fdobj, NULL);
+    gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
+    grpc_fd_orphan(fdobj, NULL, "tcp_client_connect_error");
     cb(arg, NULL);
     goto done;
   }
+
+  grpc_pollset_set_add_fd(interested_parties, fdobj);
 
   ac = gpr_malloc(sizeof(async_connect));
   ac->cb = cb;
