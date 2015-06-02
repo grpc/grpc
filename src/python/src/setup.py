@@ -30,6 +30,8 @@
 """A setup module for the GRPC Python package."""
 
 from distutils import core as _core
+import os.path
+import pip.req
 import setuptools
 import sys
 
@@ -84,15 +86,23 @@ _PACKAGE_DIRECTORIES = {
     'grpc.framework': 'grpc/framework',
 }
 
+requirements_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                 'requirements.txt')
+try:
+  pip_requirements = list(pip.req.parse_requirements(requirements_path))
+except TypeError as e:
+  pip_requirements = list(pip.req.parse_requirements(
+      requirements_path, session=''))
+
+_INSTALL_REQUIREMENTS = [
+    str(requirement.req) for requirement in pip_requirements
+]
+
 setuptools.setup(
     name='grpcio',
     version='0.9.0a0',
     ext_modules=[_EXTENSION_MODULE],
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
-    install_requires=[
-        'enum34==1.0.4',
-        'futures==2.2.0',
-        'protobuf==3.0.0a2'
-    ]
+    install_requires=_INSTALL_REQUIREMENTS
 )

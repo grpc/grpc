@@ -53,13 +53,16 @@ Installing
 
 - Install gRPC Python's dependencies
 ```
-$ pip install -r src/python/requirements.txt
+$ pip install -r src/python/src/requirements.txt
 ```
 
 - Install gRPC Python
 ```
 $ pip install src/python/src
 ```
+
+Note that we require `pip` to be installed even if you intend on installing
+gRPC Python without it.
 
 Packaging to PyPI
 -----------------------
