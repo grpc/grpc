@@ -94,6 +94,26 @@ static void test_cq_end_op(void) {
   shutdown_and_destroy(cc);
 }
 
+static void test_shutdown_then_next_polling(void) {
+  grpc_completion_queue *cc;
+  LOG_TEST("test_shutdown_then_next_polling");
+
+  cc = grpc_completion_queue_create();
+  grpc_completion_queue_shutdown(cc);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_past).type == GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cc);
+}
+
+static void test_shutdown_then_next_with_timeout(void) {
+  grpc_completion_queue *cc;
+  LOG_TEST("test_shutdown_then_next_with_timeout");
+
+  cc = grpc_completion_queue_create();
+  grpc_completion_queue_shutdown(cc);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_future).type == GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cc);
+}
+
 static void test_pluck(void) {
   grpc_event ev;
   grpc_completion_queue *cc;
@@ -289,6 +309,8 @@ int main(int argc, char **argv) {
   grpc_iomgr_init();
   test_no_op();
   test_wait_empty();
+  test_shutdown_then_next_polling();
+  test_shutdown_then_next_with_timeout();
   test_cq_end_op();
   test_pluck();
   test_threading(1, 1);

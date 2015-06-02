@@ -234,20 +234,36 @@ class RubyLanguage(object):
 
 
 class CSharpLanguage(object):
+  def __init__(self):
+    if platform.system() == 'Windows':
+      plat = 'windows'
+    else:
+      plat = 'posix'
+    self.platform = plat
+
   def test_specs(self, config, travis):
     assemblies = ['Grpc.Core.Tests',
                   'Grpc.Examples.Tests',
                   'Grpc.IntegrationTesting']
-    return [config.job_spec(['tools/run_tests/run_csharp.sh', assembly],
+    if self.platform == 'windows':
+      cmd = 'tools\\run_tests\\run_csharp.bat'
+    else:
+      cmd = 'tools/run_tests/run_csharp.sh'
+    return [config.job_spec([cmd, assembly],
             None, shortname=assembly,
             environ={'GRPC_TRACE': 'surface,batch'})
             for assembly in assemblies ]
 
   def make_targets(self):
+    # For Windows, this target doesn't really build anything,
+    # everything is build by buildall script later.
     return ['grpc_csharp_ext']
 
   def build_steps(self):
-    return [['tools/run_tests/build_csharp.sh']]
+    if self.platform == 'windows':
+      return [['src\\csharp\\buildall.bat']]
+    else:
+      return [['tools/run_tests/build_csharp.sh']]
 
   def supports_multi_config(self):
     return False
@@ -346,6 +362,7 @@ def runs_per_test_type(arg_str):
     try:
         n = int(arg_str)
         if n <= 0: raise ValueError
+        return n
     except:
         msg = "'{}' isn't a positive integer or 'inf'".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
