@@ -44,12 +44,12 @@
 #include "src/core/iomgr/pollset_windows.h"
 #include "src/core/iomgr/socket_windows.h"
 
-grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
+grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
   grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  grpc_iomgr_ref();
+  grpc_iomgr_register_object(&r->iomgr_object, name);
   grpc_iocp_add_socket(r);
   return r;
 }
@@ -91,7 +91,7 @@ void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
     grpc_winsocket_destroy(winsocket);
   }
   closesocket(socket);
-  grpc_iomgr_unref();
+  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {

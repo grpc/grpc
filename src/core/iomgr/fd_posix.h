@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_FD_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_FD_POSIX_H
 
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset.h"
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
@@ -95,12 +95,14 @@ struct grpc_fd {
 
   grpc_iomgr_closure on_done_closure;
   grpc_iomgr_closure *shutdown_closures[2];
+
+  grpc_iomgr_object iomgr_object;
 };
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
    This takes ownership of closing fd. */
-grpc_fd *grpc_fd_create(int fd);
+grpc_fd *grpc_fd_create(int fd, const char *name);
 
 /* Releases fd to be asynchronously destroyed.
    on_done is called when the underlying file descriptor is definitely close()d.

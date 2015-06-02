@@ -41,7 +41,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -119,7 +118,7 @@ static void unref_by(grpc_fd *fd, int n) {
   if (old == n) {
     grpc_iomgr_add_callback(&fd->on_done_closure);
     freelist_fd(fd);
-    grpc_iomgr_unref();
+    grpc_iomgr_unregister_object(&fd->iomgr_object);
   } else {
     GPR_ASSERT(old > n);
   }
@@ -138,9 +137,9 @@ void grpc_fd_global_shutdown(void) {
 
 static void do_nothing(void *ignored, int success) {}
 
-grpc_fd *grpc_fd_create(int fd) {
+grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
-  grpc_iomgr_ref();
+  grpc_iomgr_register_object(&r->iomgr_object, name);
   grpc_pollset_add_fd(grpc_backup_pollset(), r);
   return r;
 }
