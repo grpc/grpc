@@ -48,6 +48,11 @@ void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
   }
 }
 
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
+  /* no-op: the user is responsible for memory deallocation.
+   * Other cleanup operations would go here if needed. */
+}
+
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice) {
   grpc_byte_buffer *buffer = reader->buffer;

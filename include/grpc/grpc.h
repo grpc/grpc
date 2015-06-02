@@ -93,7 +93,7 @@ typedef struct {
 } grpc_arg;
 
 /** An array of arguments that can be passed around.
-    
+
     Used to set optional channel-level configuration.
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
@@ -173,6 +173,9 @@ typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
 /** Initialize \a reader to read over \a buffer */
 void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                   grpc_byte_buffer *buffer);
+
+/** Cleanup and destroy \a reader */
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 
 /* At the end of the stream, returns 0. Otherwise, returns 1 and sets slice to
    be the returned slice. Caller is responsible for calling gpr_slice_unref on
