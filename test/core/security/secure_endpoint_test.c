@@ -53,7 +53,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
-  tcp = grpc_iomgr_create_endpoint_pair(slice_size);
+  tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
   grpc_endpoint_add_to_pollset(tcp.client, &g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, &g_pollset);
 

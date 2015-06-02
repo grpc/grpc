@@ -172,7 +172,7 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size);
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -207,8 +207,9 @@ static void large_read_test(ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), slice_size);
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
+
   written_bytes = fill_socket(sv[0]);
   gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
 
@@ -338,7 +339,8 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"),
+                       GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
 
   state.ep = ep;
@@ -391,8 +393,10 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_error_test"),
+                       GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
+
   close(sv[0]);
 
   state.ep = ep;
@@ -455,8 +459,10 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
 
   create_sockets(sv);
-  f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0]), slice_size);
-  f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
+  f.client_ep =
+      grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client"), slice_size);
+  f.server_ep =
+      grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server"), slice_size);
   grpc_endpoint_add_to_pollset(f.client_ep, &g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, &g_pollset);
 

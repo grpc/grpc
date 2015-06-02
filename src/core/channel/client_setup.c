@@ -96,7 +96,7 @@ static void setup_initiate(grpc_transport_setup *sp) {
   r->setup = s;
   grpc_pollset_set_init(&r->interested_parties);
   /* TODO(klempner): Actually set a deadline */
-  r->deadline = gpr_inf_future;
+  r->deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(60));
 
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->refs > 0);

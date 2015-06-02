@@ -330,7 +330,28 @@ argp.add_argument('-c', '--config',
                   choices=['all'] + sorted(_CONFIGS.keys()),
                   nargs='+',
                   default=_DEFAULT)
-argp.add_argument('-n', '--runs_per_test', default=1, type=int)
+
+def runs_per_test_type(arg_str):
+    """Auxilary function to parse the "runs_per_test" flag.
+
+       Returns:
+           A positive integer or 0, the latter indicating an infinite number of
+           runs.
+
+       Raises:
+           argparse.ArgumentTypeError: Upon invalid input.
+    """
+    if arg_str == 'inf':
+        return 0
+    try:
+        n = int(arg_str)
+        if n <= 0: raise ValueError
+    except:
+        msg = "'{}' isn't a positive integer or 'inf'".format(arg_str)
+        raise argparse.ArgumentTypeError(msg)
+argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
+        help='A positive integer or "inf". If "inf", all tests will run in an '
+             'infinite loop. Especially useful in combination with "-f"')
 argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('-j', '--jobs', default=2 * multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
@@ -456,11 +477,14 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py']) 
                  for _ in range(0, args.antagonists)]
   try:
+    infinite_runs = runs_per_test == 0
     # run all the tests
-    all_runs = itertools.chain.from_iterable(
-        itertools.repeat(one_run, runs_per_test))
+    runs_sequence = (itertools.repeat(one_run) if infinite_runs
+                     else itertools.repeat(one_run, runs_per_test))
+    all_runs = itertools.chain.from_iterable(runs_sequence)
     if not jobset.run(all_runs, check_cancelled,
                       newline_on_success=newline_on_success, travis=travis,
+                      infinite_runs=infinite_runs,
                       maxjobs=args.jobs,
                       stop_on_failure=args.stop_on_failure,
                       cache=cache):

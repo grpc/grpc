@@ -41,7 +41,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -113,7 +112,8 @@ static void destroy(grpc_fd *fd) {
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file, int line) {
-  gpr_log(GPR_DEBUG, "FD %d   ref %d %d -> %d [%s; %s:%d]", fd->fd, n, fd->refst, fd->refst + n, reason, file, line);
+  gpr_log(GPR_DEBUG, "FD %d %p  ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
+          fd->refst, fd->refst + n, reason, file, line);
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n)
@@ -125,7 +125,8 @@ static void ref_by(grpc_fd *fd, int n) {
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file, int line) {
   gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d unref %d %d -> %d [%s; %s:%d]", fd->fd, n, fd->refst, fd->refst - n, reason, file, line);
+  gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
+          fd->refst, fd->refst - n, reason, file, line);
 #else
 static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old;
@@ -135,7 +136,7 @@ static void unref_by(grpc_fd *fd, int n) {
     close(fd->fd);
     grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);
     freelist_fd(fd);
-    grpc_iomgr_unref();
+    grpc_iomgr_unregister_object(&fd->iomgr_object);
   } else {
     GPR_ASSERT(old > n);
   }
@@ -154,9 +155,9 @@ void grpc_fd_global_shutdown(void) {
 
 static void do_nothing(void *ignored, int success) {}
 
-grpc_fd *grpc_fd_create(int fd) {
+grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
-  grpc_iomgr_ref();
+  grpc_iomgr_register_object(&r->iomgr_object, name);
   return r;
 }
 
