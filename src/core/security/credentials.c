@@ -54,6 +54,7 @@
 typedef struct {
   grpc_credentials *creds;
   grpc_credentials_metadata_cb cb;
+  grpc_iomgr_closure *on_simulated_token_fetch_done_closure;
   void *user_data;
 } grpc_credentials_metadata_request;
 
@@ -65,6 +66,8 @@ grpc_credentials_metadata_request_create(grpc_credentials *creds,
       gpr_malloc(sizeof(grpc_credentials_metadata_request));
   r->creds = grpc_credentials_ref(creds);
   r->cb = cb;
+  r->on_simulated_token_fetch_done_closure =
+      gpr_malloc(sizeof(grpc_iomgr_closure));
   r->user_data = user_data;
   return r;
 }
@@ -72,6 +75,7 @@ grpc_credentials_metadata_request_create(grpc_credentials *creds,
 static void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request *r) {
   grpc_credentials_unref(r->creds);
+  gpr_free(r->on_simulated_token_fetch_done_closure);
   gpr_free(r);
 }
 
@@ -831,9 +835,11 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
 
   if (c->is_async) {
-    grpc_iomgr_add_callback(
-        on_simulated_token_fetch_done,
-        grpc_credentials_metadata_request_create(creds, cb, user_data));
+    grpc_credentials_metadata_request *cb_arg =
+        grpc_credentials_metadata_request_create(creds, cb, user_data);
+    grpc_iomgr_closure_init(cb_arg->on_simulated_token_fetch_done_closure,
+                            on_simulated_token_fetch_done, cb_arg);
+    grpc_iomgr_add_callback(cb_arg->on_simulated_token_fetch_done_closure);
   } else {
     cb(user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
   }

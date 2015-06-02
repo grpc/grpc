@@ -35,12 +35,10 @@
 #define GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
 
 #include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/iomgr_internal.h"
 #include <grpc/support/sync.h>
 
 int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success);
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
-                                     int success);
+void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
 
 void grpc_iomgr_ref(void);
 void grpc_iomgr_unref(void);
