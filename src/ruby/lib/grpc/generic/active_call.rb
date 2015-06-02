@@ -55,7 +55,6 @@ module GRPC
   # The ActiveCall class provides simple methods for sending marshallable
   # data to a call
   class ActiveCall
-    include Core::StatusCodes
     include Core::TimeConsts
     include Core::CallOps
     extend Forwardable
@@ -129,6 +128,11 @@ module GRPC
       @output_metadata ||= {}
     end
 
+    # cancelled indicates if the call was cancelled
+    def cancelled
+      !@call.status.nil? && @call.status.code == Core::StatusCodes::CANCELLED
+    end
+
     # multi_req_view provides a restricted view of this ActiveCall for use
     # in a server client-streaming handler.
     def multi_req_view
@@ -162,6 +166,7 @@ module GRPC
       ops[RECV_STATUS_ON_CLIENT] = nil if assert_finished
       batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
       return unless assert_finished
+      @call.status = batch_result.status
       batch_result.check_status
     end
 
@@ -178,6 +183,7 @@ module GRPC
           @call.metadata.merge!(batch_result.status.metadata)
         end
       end
+      @call.status = batch_result.status
       batch_result.check_status
     end
 
@@ -410,9 +416,6 @@ module GRPC
       start_call(**kw) unless @started
       bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
       bd.run_on_client(requests, &blk)
-    rescue GRPC::Core::CallError => e
-      finished  # checks for Cancelled
-      raise e
     end
 
     # run_server_bidi orchestrates a BiDi stream processing on a server.

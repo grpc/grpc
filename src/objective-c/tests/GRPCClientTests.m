@@ -40,10 +40,13 @@
 #import <gRPC/GRXWriteable.h>
 #import <RemoteTest/Messages.pbobjc.h>
 
-@interface RemoteTests : XCTestCase
+// These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
+// rather than a generated proto library on top of it.
+
+@interface GRPCClientTests : XCTestCase
 @end
 
-@implementation RemoteTests
+@implementation GRPCClientTests
 
 - (void)testConnectionToRemoteServer {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];

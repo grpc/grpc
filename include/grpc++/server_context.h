@@ -106,6 +106,10 @@ class ServerContext {
   template <class R, class W>
   friend class ::grpc::ServerReaderWriter;
 
+  // Prevent copying.
+  ServerContext(const ServerContext&);
+  ServerContext& operator=(const ServerContext&);
+
   class CompletionOp;
 
   void BeginCompletionOp(Call* call);

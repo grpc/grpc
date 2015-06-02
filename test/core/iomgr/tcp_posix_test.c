@@ -172,7 +172,7 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size);
   written_bytes = fill_socket_partial(sv[0], num_bytes);
   gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
 
@@ -213,7 +213,7 @@ static void large_read_test(ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), slice_size);
   written_bytes = fill_socket(sv[0]);
   gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
 
@@ -350,7 +350,8 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"),
+                       GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
 
   gpr_mu_init(&state.mu);
   gpr_cv_init(&state.cv);
@@ -406,7 +407,8 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1]), GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_error_test"),
+                       GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
   close(sv[0]);
 
   gpr_mu_init(&state.mu);
@@ -473,8 +475,10 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
 
   create_sockets(sv);
-  f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0]), slice_size);
-  f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
+  f.client_ep =
+      grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client"), slice_size);
+  f.server_ep =
+      grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server"), slice_size);
 
   return f;
 }

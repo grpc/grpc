@@ -31,6 +31,7 @@
  *
  */
 
+#include "src/core/census/grpc_context.h"
 #include "src/core/surface/call.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
@@ -226,6 +227,7 @@ struct grpc_call {
 
   gpr_slice_buffer incoming_message;
   gpr_uint32 incoming_message_length;
+  grpc_iomgr_closure destroy_closure;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -242,9 +244,9 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
 static void execute_op(grpc_call *call, grpc_transport_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
-static grpc_call_error cancel_with_status(
-    grpc_call *c, grpc_status_code status, const char *description,
-    gpr_uint8 locked);
+static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
+                                          const char *description,
+                                          gpr_uint8 locked);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
@@ -268,6 +270,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   if (call->is_client) {
     call->request_set[GRPC_IOREQ_SEND_TRAILING_METADATA] = REQSET_DONE;
     call->request_set[GRPC_IOREQ_SEND_STATUS] = REQSET_DONE;
+    call->context[GRPC_CONTEXT_TRACING].value = grpc_census_context_create();
+    call->context[GRPC_CONTEXT_TRACING].destroy = grpc_census_context_destroy;
   }
   GPR_ASSERT(add_initial_metadata_count < MAX_SEND_INITIAL_METADATA_COUNT);
   for (i = 0; i < add_initial_metadata_count; i++) {
@@ -367,7 +371,9 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
     if (allow_immediate_deletion) {
       destroy_call(c, 1);
     } else {
-      grpc_iomgr_add_callback(destroy_call, c);
+      c->destroy_closure.cb = destroy_call;
+      c->destroy_closure.cb_arg = c;
+      grpc_iomgr_add_callback(&c->destroy_closure);
     }
   }
 }
@@ -403,7 +409,8 @@ static void lock(grpc_call *call) { gpr_mu_lock(&call->mu); }
 static int need_more_data(grpc_call *call) {
   if (call->read_state == READ_STATE_STREAM_CLOSED) return 0;
   return is_op_live(call, GRPC_IOREQ_RECV_INITIAL_METADATA) ||
-         (is_op_live(call, GRPC_IOREQ_RECV_MESSAGE) && grpc_bbq_empty(&call->incoming_queue)) ||
+         (is_op_live(call, GRPC_IOREQ_RECV_MESSAGE) &&
+          grpc_bbq_empty(&call->incoming_queue)) ||
          is_op_live(call, GRPC_IOREQ_RECV_TRAILING_METADATA) ||
          is_op_live(call, GRPC_IOREQ_RECV_STATUS) ||
          is_op_live(call, GRPC_IOREQ_RECV_STATUS_DETAILS) ||
@@ -556,13 +563,13 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
           break;
         case GRPC_IOREQ_RECV_INITIAL_METADATA:
           GPR_SWAP(grpc_metadata_array, call->buffered_metadata[0],
-               *call->request_data[GRPC_IOREQ_RECV_INITIAL_METADATA]
-                    .recv_metadata);
+                   *call->request_data[GRPC_IOREQ_RECV_INITIAL_METADATA]
+                        .recv_metadata);
           break;
         case GRPC_IOREQ_RECV_TRAILING_METADATA:
           GPR_SWAP(grpc_metadata_array, call->buffered_metadata[1],
-               *call->request_data[GRPC_IOREQ_RECV_TRAILING_METADATA]
-                    .recv_metadata);
+                   *call->request_data[GRPC_IOREQ_RECV_TRAILING_METADATA]
+                        .recv_metadata);
           break;
         case GRPC_IOREQ_OP_COUNT:
           abort();
@@ -676,9 +683,8 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
-    cancel_with_status(
-        call, GRPC_STATUS_INVALID_ARGUMENT,
-        "Received payload data while not reading a message", 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT,
+                       "Received payload data while not reading a message", 1);
     return 0;
   }
   /* append the slice to the incoming buffer */
@@ -1025,9 +1031,9 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   return cancel_with_status(c, status, description, 0);
 }
 
-static grpc_call_error cancel_with_status(
-    grpc_call *c, grpc_status_code status, const char *description,
-    gpr_uint8 locked) {
+static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
+                                          const char *description,
+                                          gpr_uint8 locked) {
   grpc_transport_op op;
   grpc_mdstr *details =
       description ? grpc_mdstr_from_string(c->metadata_context, description)
@@ -1294,12 +1300,11 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
   grpc_cq_begin_op(call->cq, call);
 
-  return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_func,
-                                             tag);
+  return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_func, tag);
 }
 
-void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
-                           void (*destroy)(void *value)) {
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
+                           void *value, void (*destroy)(void *value)) {
   if (call->context[elem].destroy) {
     call->context[elem].destroy(call->context[elem].value);
   }

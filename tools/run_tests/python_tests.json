@@ -1,18 +1,12 @@
 [
   {
-    "file": "test/compiler/python_plugin_test.py"
-  },
-  {
-    "module": "grpc._adapter._blocking_invocation_inline_service_test"
-  },
-  {
     "module": "grpc._adapter._c_test"
   },
   {
-    "module": "grpc._adapter._event_invocation_synchronous_event_service_test"
+    "module": "grpc._adapter._low_test"
   },
   {
-    "module": "grpc._adapter._future_invocation_asynchronous_event_service_test"
+    "module": "grpc._adapter._intermediary_low_test"
   },
   {
     "module": "grpc._adapter._links_test"
@@ -21,7 +15,13 @@
     "module": "grpc._adapter._lonely_rear_link_test"
   },
   {
-    "module": "grpc._adapter._low_test"
+    "module": "grpc._adapter._blocking_invocation_inline_service_test"
+  },
+  {
+    "module": "grpc._adapter._event_invocation_synchronous_event_service_test"
+  },
+  {
+    "module": "grpc._adapter._future_invocation_asynchronous_event_service_test"
   },
   {
     "module": "grpc.early_adopter.implementations_test"
@@ -49,5 +49,8 @@
   },
   {
     "module": "interop._secure_interop_test"
+  },
+  {
+    "file": "test/compiler/python_plugin_test.py"
   }
 ]

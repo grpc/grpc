@@ -88,7 +88,7 @@ void grpc_run_bad_client_test(const char *name, const char *client_payload,
   grpc_init();
 
   /* Create endpoints */
-  sfd = grpc_iomgr_create_endpoint_pair(65536);
+  sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
   /* Create server, completion events */
   a.server = grpc_server_create_from_filters(NULL, 0, NULL);

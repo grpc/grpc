@@ -272,6 +272,7 @@ typedef struct grpc_unary_promote_args {
   const grpc_pollset_vtable *original_vtable;
   grpc_pollset *pollset;
   grpc_fd *fd;
+  grpc_iomgr_closure promotion_closure;
 } grpc_unary_promote_args;
 
 static void unary_poll_do_promote(void *args, int success) {
@@ -294,7 +295,7 @@ static void unary_poll_do_promote(void *args, int success) {
   /* First we need to ensure that nobody is polling concurrently */
   while (pollset->counter != 0) {
     grpc_pollset_kick(pollset);
-    grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+    grpc_iomgr_add_callback(&up_args->promotion_closure);
     gpr_mu_unlock(&pollset->mu);
     return;
   }
@@ -378,7 +379,9 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   up_args->pollset = pollset;
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
-  grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+  up_args->promotion_closure.cb = unary_poll_do_promote;
+  up_args->promotion_closure.cb_arg = up_args;
+  grpc_iomgr_add_callback(&up_args->promotion_closure);
 
   grpc_pollset_kick(pollset);
 }
