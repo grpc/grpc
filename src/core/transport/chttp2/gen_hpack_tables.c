@@ -219,10 +219,10 @@ static int state_index(int bitofs, symset syms, int *isnew) {
    emit    - the symbol to emit on this nibble (or -1 if no symbol has been
              found)
    syms    - the set of symbols that could be matched */
-static void build_dec_tbl(int state, int nibble, int nibbits, int bitofs,
+static void build_dec_tbl(int state, int nibble, int nibbits, unsigned bitofs,
                           int emit, symset syms) {
   int i;
-  int bit;
+  unsigned bit;
 
   /* If we have four bits in the nibble we're looking at, then we can fill in
      a slot in the lookup tables. */
@@ -338,7 +338,7 @@ static void generate_base64_inverse_table(void) {
   static const char alphabet[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
   unsigned char inverse[256];
-  int i;
+  unsigned i;
 
   memset(inverse, 255, sizeof(inverse));
   for (i = 0; i < strlen(alphabet); i++) {
