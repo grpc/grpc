@@ -1220,7 +1220,7 @@ endif
     mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
   if lib.get('secure', 'check') == 'yes':
-    common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     for src in lib.src:
       sources_that_need_openssl.add(src)
   else:
