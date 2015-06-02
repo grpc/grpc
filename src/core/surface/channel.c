@@ -61,6 +61,7 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
+  grpc_iomgr_closure destroy_closure;
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
@@ -204,8 +205,10 @@ void grpc_channel_internal_unref(grpc_channel *c, const char *reason) {
 #else
 void grpc_channel_internal_unref(grpc_channel *c) {
 #endif
-  if (gpr_unref(&c->refs)) {
-    grpc_iomgr_add_callback(destroy_channel, c);
+  if (gpr_unref(&channel->refs)) {
+    channel->destroy_closure.cb = destroy_channel;
+    channel->destroy_closure.cb_arg = channel;
+    grpc_iomgr_add_callback(&channel->destroy_closure);
   }
 }
 

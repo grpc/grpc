@@ -35,7 +35,7 @@ import threading
 import time
 
 from grpc._adapter import _common
-from grpc._adapter import _low
+from grpc._adapter import _intermediary_low as _low
 from grpc.framework.base import interfaces as base_interfaces
 from grpc.framework.base import null
 from grpc.framework.foundation import activated
@@ -204,7 +204,7 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
           call, sequence_number,
           base_interfaces.FrontToBackTicket.Kind.CANCELLATION, None, None,
           None, None, None)
-    elif code is _low.Code.EXPIRED:
+    elif code is _low.Code.DEADLINE_EXCEEDED:
       ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
           base_interfaces.FrontToBackTicket.Kind.EXPIRATION, None, None, None,

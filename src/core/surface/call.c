@@ -31,6 +31,7 @@
  *
  */
 
+#include "src/core/census/grpc_context.h"
 #include "src/core/surface/call.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
@@ -228,6 +229,7 @@ struct grpc_call {
 
   gpr_slice_buffer incoming_message;
   gpr_uint32 incoming_message_length;
+  grpc_iomgr_closure destroy_closure;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -273,6 +275,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   if (call->is_client) {
     call->request_set[GRPC_IOREQ_SEND_TRAILING_METADATA] = REQSET_DONE;
     call->request_set[GRPC_IOREQ_SEND_STATUS] = REQSET_DONE;
+    call->context[GRPC_CONTEXT_TRACING].value = grpc_census_context_create();
+    call->context[GRPC_CONTEXT_TRACING].destroy = grpc_census_context_destroy;
   }
   GPR_ASSERT(add_initial_metadata_count < MAX_SEND_INITIAL_METADATA_COUNT);
   for (i = 0; i < add_initial_metadata_count; i++) {
@@ -374,7 +378,9 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
     if (allow_immediate_deletion) {
       destroy_call(c, 1);
     } else {
-      grpc_iomgr_add_callback(destroy_call, c);
+      c->destroy_closure.cb = destroy_call;
+      c->destroy_closure.cb_arg = c;
+      grpc_iomgr_add_callback(&c->destroy_closure);
     }
   }
 }
@@ -1309,8 +1315,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_func, tag);
 }
 
-void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
-                           void (*destroy)(void *value)) {
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
+                           void *value, void (*destroy)(void *value)) {
   if (call->context[elem].destroy) {
     call->context[elem].destroy(call->context[elem].value);
   }

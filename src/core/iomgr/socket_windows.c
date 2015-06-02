@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_windows.h"
@@ -64,13 +63,15 @@ int grpc_winsocket_shutdown(grpc_winsocket *socket) {
   gpr_mu_lock(&socket->state_mu);
   if (socket->read_info.cb) {
     callbacks_set++;
-    grpc_iomgr_add_delayed_callback(socket->read_info.cb,
-                                    socket->read_info.opaque, 0);
+    grpc_iomgr_closure_init(&socket->shutdown_closure, socket->read_info.cb,
+                            socket->read_info.opaque);
+    grpc_iomgr_add_delayed_callback(&socket->shutdown_closure, 0);
   }
   if (socket->write_info.cb) {
     callbacks_set++;
-    grpc_iomgr_add_delayed_callback(socket->write_info.cb,
-                                    socket->write_info.opaque, 0);
+    grpc_iomgr_closure_init(&socket->shutdown_closure, socket->write_info.cb,
+                            socket->write_info.opaque);
+    grpc_iomgr_add_delayed_callback(&socket->shutdown_closure, 0);
   }
   gpr_mu_unlock(&socket->state_mu);
   return callbacks_set;

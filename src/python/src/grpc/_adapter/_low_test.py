@@ -27,375 +27,141 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests for _adapter._low."""
-
 import time
 import unittest
 
+from grpc._adapter import _types
 from grpc._adapter import _low
 
-_STREAM_LENGTH = 300
-_TIMEOUT = 5
-_AFTER_DELAY = 2
-_FUTURE = time.time() + 60 * 60 * 24
-_BYTE_SEQUENCE = b'\abcdefghijklmnopqrstuvwxyz0123456789' * 200
-_BYTE_SEQUENCE_SEQUENCE = tuple(
-    bytes(bytearray((row + column) % 256 for column in range(row)))
-    for row in range(_STREAM_LENGTH))
 
-class LonelyClientTest(unittest.TestCase):
-
-  def testLonelyClient(self):
-    host = 'nosuchhostexists'
-    port = 54321
-    method = 'test method'
-    deadline = time.time() + _TIMEOUT
-    after_deadline = deadline + _AFTER_DELAY
-    metadata_tag = object()
-    finish_tag = object()
-
-    completion_queue = _low.CompletionQueue()
-    channel = _low.Channel('%s:%d' % (host, port), None)
-    client_call = _low.Call(channel, completion_queue, method, host, deadline)
-
-    client_call.invoke(completion_queue, metadata_tag, finish_tag)
-    first_event = completion_queue.get(after_deadline)
-    self.assertIsNotNone(first_event)
-    second_event = completion_queue.get(after_deadline)
-    self.assertIsNotNone(second_event)
-    kinds = [event.kind for event in (first_event, second_event)]
-    self.assertItemsEqual(
-        (_low.Event.Kind.METADATA_ACCEPTED, _low.Event.Kind.FINISH),
-        kinds)
-
-    self.assertIsNone(completion_queue.get(after_deadline))
-
-    completion_queue.stop()
-    stop_event = completion_queue.get(_FUTURE)
-    self.assertEqual(_low.Event.Kind.STOP, stop_event.kind)
-
-
-class EchoTest(unittest.TestCase):
+class InsecureServerInsecureClient(unittest.TestCase):
 
   def setUp(self):
-    self.host = 'localhost'
+    self.server_completion_queue = _low.CompletionQueue()
+    self.server = _low.Server(self.server_completion_queue, [])
+    self.port = self.server.add_http2_port('[::]:0')
+    self.client_completion_queue = _low.CompletionQueue()
+    self.client_channel = _low.Channel('localhost:%d'%self.port, [])
 
-    self.completion_queue = _low.CompletionQueue()
-
-    self.server = _low.Server(self.completion_queue)
-    port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 
-    self.channel = _low.Channel('%s:%d' % (self.host, port), None)
-
   def tearDown(self):
-    self.server.stop()
-    # NOTE(nathaniel): Yep, this is weird; it's a consequence of
-    # grpc_server_destroy's being what has the effect of telling the server's
-    # completion queue to pump out all pending events/tags immediately rather
-    # than gracefully completing all outstanding RPCs while accepting no new
-    # ones.
-    # TODO(nathaniel): Deallocation of a Python object shouldn't have this kind
-    # of observable side effect let alone such an important one.
+    self.server.shutdown()
+    del self.client_channel
     del self.server
-    self.completion_queue.stop()
-    while True:
-      event = self.completion_queue.get(_FUTURE)
-      if event is not None and event.kind is _low.Event.Kind.STOP:
-        break
-    self.completion_queue = None
 
-  def _perform_echo_test(self, test_data):
-    method = 'test method'
-    details = 'test details'
-    server_leading_metadata_key = 'my_server_leading_key'
-    server_leading_metadata_value = 'my_server_leading_value'
-    server_trailing_metadata_key = 'my_server_trailing_key'
-    server_trailing_metadata_value = 'my_server_trailing_value'
-    client_metadata_key = 'my_client_key'
-    client_metadata_value = 'my_client_value'
-    server_leading_binary_metadata_key = 'my_server_leading_key-bin'
-    server_leading_binary_metadata_value = b'\0'*2047
-    server_trailing_binary_metadata_key = 'my_server_trailing_key-bin'
-    server_trailing_binary_metadata_value = b'\0'*2047
-    client_binary_metadata_key = 'my_client_key-bin'
-    client_binary_metadata_value = b'\0'*2047
-    deadline = _FUTURE
-    metadata_tag = object()
-    finish_tag = object()
-    write_tag = object()
-    complete_tag = object()
-    service_tag = object()
-    read_tag = object()
-    status_tag = object()
+    self.client_completion_queue.shutdown()
+    while self.client_completion_queue.next().type != _types.EventType.QUEUE_SHUTDOWN:
+      pass
+    self.server_completion_queue.shutdown()
+    while self.server_completion_queue.next().type != _types.EventType.QUEUE_SHUTDOWN:
+      pass
 
-    server_data = []
-    client_data = []
+    del self.client_completion_queue
+    del self.server_completion_queue
 
-    client_call = _low.Call(self.channel, self.completion_queue,
-                            method, self.host, deadline)
-    client_call.add_metadata(client_metadata_key, client_metadata_value)
-    client_call.add_metadata(client_binary_metadata_key,
-                             client_binary_metadata_value)
+  def testEcho(self):
+    DEADLINE = time.time()+5
+    DEADLINE_TOLERANCE = 0.25
+    CLIENT_METADATA_ASCII_KEY = 'key'
+    CLIENT_METADATA_ASCII_VALUE = 'val'
+    CLIENT_METADATA_BIN_KEY = 'key-bin'
+    CLIENT_METADATA_BIN_VALUE = b'\0'*1000
+    SERVER_INITIAL_METADATA_KEY = 'init_me_me_me'
+    SERVER_INITIAL_METADATA_VALUE = 'whodawha?'
+    SERVER_TRAILING_METADATA_KEY = 'California_is_in_a_drought'
+    SERVER_TRAILING_METADATA_VALUE = 'zomg it is'
+    SERVER_STATUS_CODE = _types.StatusCode.OK
+    SERVER_STATUS_DETAILS = 'our work is never over'
+    REQUEST = 'in death a member of project mayhem has a name'
+    RESPONSE = 'his name is robert paulson'
+    METHOD = 'twinkies'
+    HOST = 'hostess'
+    server_request_tag = object()
+    request_call_result = self.server.request_call(self.server_completion_queue, server_request_tag)
 
-    client_call.invoke(self.completion_queue, metadata_tag, finish_tag)
+    self.assertEquals(_types.CallError.OK, request_call_result)
 
-    self.server.service(service_tag)
-    service_accepted = self.completion_queue.get(_FUTURE)
-    self.assertIsNotNone(service_accepted)
-    self.assertIs(service_accepted.kind, _low.Event.Kind.SERVICE_ACCEPTED)
-    self.assertIs(service_accepted.tag, service_tag)
-    self.assertEqual(method, service_accepted.service_acceptance.method)
-    self.assertEqual(self.host, service_accepted.service_acceptance.host)
-    self.assertIsNotNone(service_accepted.service_acceptance.call)
-    metadata = dict(service_accepted.metadata)
-    self.assertIn(client_metadata_key, metadata)
-    self.assertEqual(client_metadata_value, metadata[client_metadata_key])
-    self.assertIn(client_binary_metadata_key, metadata)
-    self.assertEqual(client_binary_metadata_value,
-                     metadata[client_binary_metadata_key])
-    server_call = service_accepted.service_acceptance.call
-    server_call.accept(self.completion_queue, finish_tag)
-    server_call.add_metadata(server_leading_metadata_key,
-                             server_leading_metadata_value)
-    server_call.add_metadata(server_leading_binary_metadata_key,
-                             server_leading_binary_metadata_value)
-    server_call.premetadata()
+    client_call_tag = object()
+    client_call = self.client_channel.create_call(self.client_completion_queue, METHOD, HOST, DEADLINE)
+    client_initial_metadata = [(CLIENT_METADATA_ASCII_KEY, CLIENT_METADATA_ASCII_VALUE), (CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)]
+    client_start_batch_result = client_call.start_batch([
+        _types.OpArgs.send_initial_metadata(client_initial_metadata),
+        _types.OpArgs.send_message(REQUEST),
+        _types.OpArgs.send_close_from_client(),
+        _types.OpArgs.recv_initial_metadata(),
+        _types.OpArgs.recv_message(),
+        _types.OpArgs.recv_status_on_client()
+    ], client_call_tag)
+    self.assertEquals(_types.CallError.OK, client_start_batch_result)
 
-    metadata_accepted = self.completion_queue.get(_FUTURE)
-    self.assertIsNotNone(metadata_accepted)
-    self.assertEqual(_low.Event.Kind.METADATA_ACCEPTED, metadata_accepted.kind)
-    self.assertEqual(metadata_tag, metadata_accepted.tag)
-    metadata = dict(metadata_accepted.metadata)
-    self.assertIn(server_leading_metadata_key, metadata)
-    self.assertEqual(server_leading_metadata_value,
-                     metadata[server_leading_metadata_key])
-    self.assertIn(server_leading_binary_metadata_key, metadata)
-    self.assertEqual(server_leading_binary_metadata_value,
-                     metadata[server_leading_binary_metadata_key])
+    request_event = self.server_completion_queue.next(DEADLINE)
+    self.assertEquals(_types.EventType.OP_COMPLETE, request_event.type)
+    self.assertIsInstance(request_event.call, _low.Call)
+    self.assertIs(server_request_tag, request_event.tag)
+    self.assertEquals(1, len(request_event.results))
+    self.assertEquals(dict(client_initial_metadata), dict(request_event.results[0].initial_metadata))
+    self.assertEquals(METHOD, request_event.call_details.method)
+    self.assertEquals(HOST, request_event.call_details.host)
+    self.assertLess(abs(DEADLINE - request_event.call_details.deadline), DEADLINE_TOLERANCE)
 
-    for datum in test_data:
-      client_call.write(datum, write_tag)
-      write_accepted = self.completion_queue.get(_FUTURE)
-      self.assertIsNotNone(write_accepted)
-      self.assertIs(write_accepted.kind, _low.Event.Kind.WRITE_ACCEPTED)
-      self.assertIs(write_accepted.tag, write_tag)
-      self.assertIs(write_accepted.write_accepted, True)
+    server_call_tag = object()
+    server_call = request_event.call
+    server_initial_metadata = [(SERVER_INITIAL_METADATA_KEY, SERVER_INITIAL_METADATA_VALUE)]
+    server_trailing_metadata = [(SERVER_TRAILING_METADATA_KEY, SERVER_TRAILING_METADATA_VALUE)]
+    server_start_batch_result = server_call.start_batch([
+        _types.OpArgs.send_initial_metadata(server_initial_metadata),
+        _types.OpArgs.recv_message(),
+        _types.OpArgs.send_message(RESPONSE),
+        _types.OpArgs.recv_close_on_server(),
+        _types.OpArgs.send_status_from_server(server_trailing_metadata, SERVER_STATUS_CODE, SERVER_STATUS_DETAILS)
+    ], server_call_tag)
+    self.assertEquals(_types.CallError.OK, server_start_batch_result)
 
-      server_call.read(read_tag)
-      read_accepted = self.completion_queue.get(_FUTURE)
-      self.assertIsNotNone(read_accepted)
-      self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
-      self.assertEqual(read_tag, read_accepted.tag)
-      self.assertIsNotNone(read_accepted.bytes)
-      server_data.append(read_accepted.bytes)
+    client_event = self.client_completion_queue.next(DEADLINE)
+    server_event = self.server_completion_queue.next(DEADLINE)
 
-      server_call.write(read_accepted.bytes, write_tag)
-      write_accepted = self.completion_queue.get(_FUTURE)
-      self.assertIsNotNone(write_accepted)
-      self.assertEqual(_low.Event.Kind.WRITE_ACCEPTED, write_accepted.kind)
-      self.assertEqual(write_tag, write_accepted.tag)
-      self.assertTrue(write_accepted.write_accepted)
+    self.assertEquals(6, len(client_event.results))
+    found_client_op_types = set()
+    for client_result in client_event.results:
+      self.assertNotIn(client_result.type, found_client_op_types)  # we expect each op type to be unique
+      found_client_op_types.add(client_result.type)
+      if client_result.type == _types.OpType.RECV_INITIAL_METADATA:
+        self.assertEquals(dict(server_initial_metadata), dict(client_result.initial_metadata))
+      elif client_result.type == _types.OpType.RECV_MESSAGE:
+        self.assertEquals(RESPONSE, client_result.message)
+      elif client_result.type == _types.OpType.RECV_STATUS_ON_CLIENT:
+        self.assertEquals(dict(server_trailing_metadata), dict(client_result.trailing_metadata))
+        self.assertEquals(SERVER_STATUS_DETAILS, client_result.status.details)
+        self.assertEquals(SERVER_STATUS_CODE, client_result.status.code)
+    self.assertEquals(set([
+          _types.OpType.SEND_INITIAL_METADATA,
+          _types.OpType.SEND_MESSAGE,
+          _types.OpType.SEND_CLOSE_FROM_CLIENT,
+          _types.OpType.RECV_INITIAL_METADATA,
+          _types.OpType.RECV_MESSAGE,
+          _types.OpType.RECV_STATUS_ON_CLIENT
+      ]), found_client_op_types)
 
-      client_call.read(read_tag)
-      read_accepted = self.completion_queue.get(_FUTURE)
-      self.assertIsNotNone(read_accepted)
-      self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
-      self.assertEqual(read_tag, read_accepted.tag)
-      self.assertIsNotNone(read_accepted.bytes)
-      client_data.append(read_accepted.bytes)
+    self.assertEquals(5, len(server_event.results))
+    found_server_op_types = set()
+    for server_result in server_event.results:
+      self.assertNotIn(client_result.type, found_server_op_types)
+      found_server_op_types.add(server_result.type)
+      if server_result.type == _types.OpType.RECV_MESSAGE:
+        self.assertEquals(REQUEST, server_result.message)
+      elif server_result.type == _types.OpType.RECV_CLOSE_ON_SERVER:
+        self.assertFalse(server_result.cancelled)
+    self.assertEquals(set([
+          _types.OpType.SEND_INITIAL_METADATA,
+          _types.OpType.RECV_MESSAGE,
+          _types.OpType.SEND_MESSAGE,
+          _types.OpType.RECV_CLOSE_ON_SERVER,
+          _types.OpType.SEND_STATUS_FROM_SERVER
+      ]), found_server_op_types)
 
-    client_call.complete(complete_tag)
-    complete_accepted = self.completion_queue.get(_FUTURE)
-    self.assertIsNotNone(complete_accepted)
-    self.assertIs(complete_accepted.kind, _low.Event.Kind.COMPLETE_ACCEPTED)
-    self.assertIs(complete_accepted.tag, complete_tag)
-    self.assertIs(complete_accepted.complete_accepted, True)
-
-    server_call.read(read_tag)
-    read_accepted = self.completion_queue.get(_FUTURE)
-    self.assertIsNotNone(read_accepted)
-    self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
-    self.assertEqual(read_tag, read_accepted.tag)
-    self.assertIsNone(read_accepted.bytes)
-
-    server_call.add_metadata(server_trailing_metadata_key,
-                             server_trailing_metadata_value)
-    server_call.add_metadata(server_trailing_binary_metadata_key,
-                             server_trailing_binary_metadata_value)
-
-    server_call.status(_low.Status(_low.Code.OK, details), status_tag)
-    server_terminal_event_one = self.completion_queue.get(_FUTURE)
-    server_terminal_event_two = self.completion_queue.get(_FUTURE)
-    if server_terminal_event_one.kind == _low.Event.Kind.COMPLETE_ACCEPTED:
-      status_accepted = server_terminal_event_one
-      rpc_accepted = server_terminal_event_two
-    else:
-      status_accepted = server_terminal_event_two
-      rpc_accepted = server_terminal_event_one
-    self.assertIsNotNone(status_accepted)
-    self.assertIsNotNone(rpc_accepted)
-    self.assertEqual(_low.Event.Kind.COMPLETE_ACCEPTED, status_accepted.kind)
-    self.assertEqual(status_tag, status_accepted.tag)
-    self.assertTrue(status_accepted.complete_accepted)
-    self.assertEqual(_low.Event.Kind.FINISH, rpc_accepted.kind)
-    self.assertEqual(finish_tag, rpc_accepted.tag)
-    self.assertEqual(_low.Status(_low.Code.OK, ''), rpc_accepted.status)
-
-    client_call.read(read_tag)
-    client_terminal_event_one = self.completion_queue.get(_FUTURE)
-    client_terminal_event_two = self.completion_queue.get(_FUTURE)
-    if client_terminal_event_one.kind == _low.Event.Kind.READ_ACCEPTED:
-      read_accepted = client_terminal_event_one
-      finish_accepted = client_terminal_event_two
-    else:
-      read_accepted = client_terminal_event_two
-      finish_accepted = client_terminal_event_one
-    self.assertIsNotNone(read_accepted)
-    self.assertIsNotNone(finish_accepted)
-    self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
-    self.assertEqual(read_tag, read_accepted.tag)
-    self.assertIsNone(read_accepted.bytes)
-    self.assertEqual(_low.Event.Kind.FINISH, finish_accepted.kind)
-    self.assertEqual(finish_tag, finish_accepted.tag)
-    self.assertEqual(_low.Status(_low.Code.OK, details), finish_accepted.status)
-    metadata = dict(finish_accepted.metadata)
-    self.assertIn(server_trailing_metadata_key, metadata)
-    self.assertEqual(server_trailing_metadata_value,
-                     metadata[server_trailing_metadata_key])
-    self.assertIn(server_trailing_binary_metadata_key, metadata)
-    self.assertEqual(server_trailing_binary_metadata_value,
-                     metadata[server_trailing_binary_metadata_key])
-
-    server_timeout_none_event = self.completion_queue.get(0)
-    self.assertIsNone(server_timeout_none_event)
-    client_timeout_none_event = self.completion_queue.get(0)
-    self.assertIsNone(client_timeout_none_event)
-
-    self.assertSequenceEqual(test_data, server_data)
-    self.assertSequenceEqual(test_data, client_data)
-
-  def testNoEcho(self):
-    self._perform_echo_test(())
-
-  def testOneByteEcho(self):
-    self._perform_echo_test([b'\x07'])
-
-  def testOneManyByteEcho(self):
-    self._perform_echo_test([_BYTE_SEQUENCE])
-
-  def testManyOneByteEchoes(self):
-    self._perform_echo_test(_BYTE_SEQUENCE)
-
-  def testManyManyByteEchoes(self):
-    self._perform_echo_test(_BYTE_SEQUENCE_SEQUENCE)
-
-class CancellationTest(unittest.TestCase):
-
-  def setUp(self):
-    self.host = 'localhost'
-
-    self.completion_queue = _low.CompletionQueue()
-    self.server = _low.Server(self.completion_queue)
-    port = self.server.add_http2_addr('[::]:0')
-    self.server.start()
-
-    self.channel = _low.Channel('%s:%d' % (self.host, port), None)
-
-  def tearDown(self):
-    self.server.stop()
-    del self.server
-    self.completion_queue.stop()
-    while True:
-      event = self.completion_queue.get(0)
-      if event is not None and event.kind is _low.Event.Kind.STOP:
-        break
-
-  def testCancellation(self):
-    method = 'test method'
-    deadline = _FUTURE
-    metadata_tag = object()
-    client_finish_tag = object()
-    server_finish_tag = object()
-    write_tag = object()
-    service_tag = object()
-    read_tag = object()
-    test_data = _BYTE_SEQUENCE_SEQUENCE
-
-    server_data = []
-    client_data = []
-
-    client_call = _low.Call(self.channel, self.completion_queue,
-                            method, self.host, deadline)
-
-    client_call.invoke(self.completion_queue, metadata_tag, client_finish_tag)
-
-    self.server.service(service_tag)
-    service_accepted = self.completion_queue.get(_FUTURE)
-    server_call = service_accepted.service_acceptance.call
-
-    server_call.accept(self.completion_queue, server_finish_tag)
-    server_call.premetadata()
-
-    metadata_accepted = self.completion_queue.get(_FUTURE)
-    self.assertIsNotNone(metadata_accepted)
-
-    for datum in test_data:
-      client_call.write(datum, write_tag)
-      write_accepted = self.completion_queue.get(_FUTURE)
-
-      server_call.read(read_tag)
-      read_accepted = self.completion_queue.get(_FUTURE)
-      server_data.append(read_accepted.bytes)
-
-      server_call.write(read_accepted.bytes, write_tag)
-      write_accepted = self.completion_queue.get(_FUTURE)
-      self.assertIsNotNone(write_accepted)
-
-      client_call.read(read_tag)
-      read_accepted = self.completion_queue.get(_FUTURE)
-      client_data.append(read_accepted.bytes)
-
-    client_call.cancel()
-    # cancel() is idempotent.
-    client_call.cancel()
-    client_call.cancel()
-    client_call.cancel()
-
-    server_call.read(read_tag)
-
-    events = dict((ev.tag, ev) for ev in [
-        self.completion_queue.get(_FUTURE),
-        self.completion_queue.get(_FUTURE),
-        self.completion_queue.get(_FUTURE)])
-    read_accepted = events[read_tag]
-    rpc_accepted = events[server_finish_tag]
-    finish_event = events[client_finish_tag]
-    self.assertIsNotNone(read_accepted)
-    self.assertIsNotNone(rpc_accepted)
-    self.assertEqual(_low.Event.Kind.READ_ACCEPTED, read_accepted.kind)
-    self.assertIsNone(read_accepted.bytes)
-    self.assertEqual(_low.Event.Kind.FINISH, rpc_accepted.kind)
-    self.assertEqual(_low.Status(_low.Code.CANCELLED, ''), rpc_accepted.status)
-
-    self.assertEqual(_low.Event.Kind.FINISH, finish_event.kind)
-    self.assertEqual(_low.Status(_low.Code.CANCELLED, 'Cancelled'), 
-                                 finish_event.status)
-
-    server_timeout_none_event = self.completion_queue.get(0)
-    self.assertIsNone(server_timeout_none_event)
-    client_timeout_none_event = self.completion_queue.get(0)
-    self.assertIsNone(client_timeout_none_event)
-
-    self.assertSequenceEqual(test_data, server_data)
-    self.assertSequenceEqual(test_data, client_data)
-
-
-class ExpirationTest(unittest.TestCase):
-
-  @unittest.skip('TODO(nathaniel): Expiration test!')
-  def testExpiration(self):
-    pass
+    del client_call
+    del server_call
 
 
 if __name__ == '__main__':

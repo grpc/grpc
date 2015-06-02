@@ -123,6 +123,8 @@ struct channel_data {
   channel_registered_method *registered_methods;
   gpr_uint32 registered_method_slots;
   gpr_uint32 registered_method_max_probes;
+  grpc_iomgr_closure finish_shutdown_channel_closure;
+  grpc_iomgr_closure finish_destroy_channel_closure;
 };
 
 typedef struct shutdown_tag {
@@ -183,6 +185,8 @@ struct call_data {
   grpc_stream_state *recv_state;
   void (*on_done_recv)(void *user_data, int success);
   void *recv_user_data;
+
+  grpc_iomgr_closure kill_zombie_closure;
 
   call_data **root[CALL_LIST_COUNT];
   call_link links[CALL_LIST_COUNT];
@@ -317,7 +321,9 @@ static void destroy_channel(channel_data *chand) {
   orphan_channel(chand);
   server_ref(chand->server);
   maybe_finish_shutdown(chand->server);
-  grpc_iomgr_add_callback(finish_destroy_channel, chand);
+  chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
+  chand->finish_destroy_channel_closure.cb_arg = chand;
+  grpc_iomgr_add_callback(&chand->finish_destroy_channel_closure);
 }
 
 static void finish_start_new_rpc_and_unlock(grpc_server *server,
@@ -473,7 +479,8 @@ static void server_on_recv(void *ptr, int success) {
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(&calld->kill_zombie_closure);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -481,11 +488,14 @@ static void server_on_recv(void *ptr, int success) {
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(&calld->kill_zombie_closure);
       } else if (calld->state == PENDING) {
         call_list_remove(calld, PENDING_START);
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(&calld->kill_zombie_closure);
+
       }
       if (call_list_remove(calld, ALL_CALLS)) {
         decrement_call_count(chand);
@@ -580,16 +590,16 @@ static void finish_shutdown_channel(void *p, int success) {
   gpr_free(sca);
 }
 
-static void shutdown_channel(channel_data *chand, int send_goaway,
-                             int send_disconnect) {
+static void shutdown_channel(channel_data *chand) {
   shutdown_channel_args *sca;
-  gpr_log(GPR_DEBUG, "shutdown_channel: %p %d %d", chand, send_goaway, send_disconnect);
   GRPC_CHANNEL_INTERNAL_REF(chand->channel, "shutdown");
   sca = gpr_malloc(sizeof(shutdown_channel_args));
   sca->chand = chand;
   sca->send_goaway = send_goaway;
   sca->send_disconnect = send_disconnect;
-  grpc_iomgr_add_callback(finish_shutdown_channel, sca);
+  chand->finish_shutdown_channel_closure.cb = finish_shutdown_channel;
+  chand->finish_shutdown_channel_closure.cb_arg = sca;
+  grpc_iomgr_add_callback(&chand->finish_shutdown_channel_closure);
 }
 
 static void init_call_elem(grpc_call_element *elem,
@@ -708,7 +718,9 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
                                              size_t filter_count,
                                              const grpc_channel_args *args) {
   size_t i;
-  int census_enabled = grpc_channel_args_is_census_enabled(args);
+  /* TODO(census): restore this once we finalize census filter etc.
+     int census_enabled = grpc_channel_args_is_census_enabled(args); */
+  int census_enabled = 0;
 
   grpc_server *server = gpr_malloc(sizeof(grpc_server));
 
@@ -733,9 +745,10 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
+  /* TODO(census): restore this once we rework census filter
   if (census_enabled) {
     server->channel_filters[1] = &grpc_server_census_filter;
-  }
+    } */
   for (i = 0; i < filter_count; i++) {
     server->channel_filters[i + 1 + census_enabled] = filters[i];
   }
@@ -1004,6 +1017,7 @@ void grpc_server_destroy(grpc_server *server) {
     server->listeners = l->next;
     gpr_free(l);
   }
+
   gpr_mu_unlock(&server->mu);
 
   server_unref(server);

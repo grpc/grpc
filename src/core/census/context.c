@@ -31,40 +31,29 @@
  *
  */
 
-#ifndef _ADAPTER__TAG_H_
-#define _ADAPTER__TAG_H_
+#include "context.h"
 
-#include <Python.h>
-#include <grpc/grpc.h>
+#include <string.h>
+#include <grpc/census.h>
+#include <grpc/support/alloc.h>
 
-#include "grpc/_adapter/_call.h"
-#include "grpc/_adapter/_completion_queue.h"
+/* Placeholder implementation only. */
 
-/* grpc_completion_type is becoming meaningless in grpc_event; this is a partial
-   replacement for its descriptive functionality until Python can move its whole
-   C and C adapter stack to more closely resemble the core batching API. */
-typedef enum {
-  PYGRPC_SERVER_RPC_NEW = 0,
-  PYGRPC_INITIAL_METADATA = 1,
-  PYGRPC_READ = 2,
-  PYGRPC_WRITE_ACCEPTED = 3,
-  PYGRPC_FINISH_ACCEPTED = 4,
-  PYGRPC_CLIENT_METADATA_READ = 5,
-  PYGRPC_FINISHED_CLIENT = 6,
-  PYGRPC_FINISHED_SERVER = 7
-} pygrpc_tag_type;
+size_t census_context_serialize(const census_context *context, char *buffer,
+                                size_t buf_size) {
+  /* TODO(aveitch): implement serialization */
+  return 0;
+}
 
-typedef struct {
-  pygrpc_tag_type type;
-  PyObject *user_tag;
+int census_context_deserialize(const char *buffer, census_context **context) {
+  int ret = 0;
+  if (buffer != NULL) {
+    /* TODO(aveitch): implement deserialization. */
+    ret = 1;
+  }
+  *context = gpr_malloc(sizeof(census_context));
+  memset(*context, 0, sizeof(census_context));
+  return ret;
+}
 
-  Call *call;
-} pygrpc_tag;
-
-pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
-                           Call *call);
-pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag);
-void pygrpc_tag_destroy(pygrpc_tag *self);
-
-#endif /* _ADAPTER__TAG_H_ */
-
+void census_context_destroy(census_context *context) { gpr_free(context); }
