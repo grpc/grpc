@@ -75,6 +75,19 @@
 }
 
 - (void)grpc_initMetadata:(grpc_metadata *)metadata withKey:(NSString *)key {
+  if ([key hasSuffix:@"-bin"]) {
+    // Disallow this, as at best it will confuse the server. If the app really needs to send a
+    // textual header with a name ending in "-bin", it can be done by removing the suffix and
+    // encoding the NSString as a NSData object.
+    //
+    // Why raise an exception: In the most common case, the developer knows this won't happen in
+    // their code, so the exception isn't triggered. In the rare cases when the developer can't
+    // tell, it's easy enough to add a sanitizing filter before the header is set. There, the
+    // developer can choose whether to drop such a header, or trim its name. Doing either ourselves,
+    // silently, would be very unintuitive for the user.
+    [NSException raise:NSInvalidArgumentException
+                format:@"Metadata keys ending in '-bin' are reserved for NSData values."];
+  }
   // TODO(jcanizales): Encode Unicode chars as ASCII.
   metadata->key = key.UTF8String;
   metadata->value = self.UTF8String;
