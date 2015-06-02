@@ -303,7 +303,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   up_args->pollset = pollset;
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
-  up_args->promotion_closure.cb = unary_poll_do_promote;
+  up_args->promotion_closure.cb = basic_do_promote;
   up_args->promotion_closure.cb_arg = up_args;
   grpc_iomgr_add_callback(&up_args->promotion_closure);
 

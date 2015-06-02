@@ -590,7 +590,7 @@ static void finish_shutdown_channel(void *p, int success) {
   gpr_free(sca);
 }
 
-static void shutdown_channel(channel_data *chand) {
+static void shutdown_channel(channel_data *chand, int send_goaway, int send_disconnect) {
   shutdown_channel_args *sca;
   GRPC_CHANNEL_INTERNAL_REF(chand->channel, "shutdown");
   sca = gpr_malloc(sizeof(shutdown_channel_args));
