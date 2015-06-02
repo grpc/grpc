@@ -346,6 +346,7 @@ def runs_per_test_type(arg_str):
     try:
         n = int(arg_str)
         if n <= 0: raise ValueError
+        return n
     except:
         msg = "'{}' isn't a positive integer or 'inf'".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
