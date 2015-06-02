@@ -389,11 +389,13 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
     if (pfd[0].revents & POLLIN) {
       grpc_pollset_kick_consume(&pollset->kick_state, kfd);
     }
-    if (pfd[1].revents & (POLLIN | POLLHUP | POLLERR)) {
-      grpc_fd_become_readable(fd, allow_synchronous_callback);
-    }
-    if (pfd[1].revents & (POLLOUT | POLLHUP | POLLERR)) {
-      grpc_fd_become_writable(fd, allow_synchronous_callback);
+    if (nfds > 1) {
+      if (pfd[1].revents & (POLLIN | POLLHUP | POLLERR)) {
+        grpc_fd_become_readable(fd, allow_synchronous_callback);
+      }
+      if (pfd[1].revents & (POLLOUT | POLLHUP | POLLERR)) {
+        grpc_fd_become_writable(fd, allow_synchronous_callback);
+      }
     }
   }
 
