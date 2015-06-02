@@ -38,14 +38,24 @@ log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-ou
 
 main() {
   source grpc_docker.sh
-  clients=(cxx java go ruby node csharp_mono python php)
-  servers=(cxx java go ruby node python csharp_mono)
+  clients=(cxx java go ruby node csharp_mono csharp_dotnet python php)
+  servers=(cxx java go ruby node csharp_mono csharp_dotnet python csharp_mono)
   for client in "${clients[@]}"
   do
+    client_vm_test=$client_vm
+    if [ "$client" = "csharp_dotnet" ]
+    then
+      client_vm_test="grpc-windows-interop1"
+    fi
     for server in "${servers[@]}"
     do
       log_file_name=cloud_{$test_case}_{$client}_{$server}.txt 
-      if grpc_interop_test $test_case $client_vm $client $server_vm $server> /tmp/$log_file_name 2>&1
+      server_vm_test=$server_vm
+      if [ "$server" = "csharp_dotnet" ]
+      then
+        server_vm_test="grpc-windows-interop1"
+      fi
+      if grpc_interop_test $test_case $client_vm_test $client $server_vm_test $server> /tmp/$log_file_name 2>&1
       then
         echo "          ['$test_case', '$client', '$server', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/$result.txt
       else
