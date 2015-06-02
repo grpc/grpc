@@ -36,6 +36,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <grpc/grpc.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
@@ -443,18 +444,18 @@ PyObject *pygrpc_cast_metadata_array_to_pylist(grpc_metadata_array metadata) {
 
 void pygrpc_byte_buffer_to_bytes(
     grpc_byte_buffer *buffer, char **result, size_t *result_size) {
-  grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer_reader_init(&reader, buffer);
   gpr_slice slice;
   char *read_result = NULL;
   size_t size = 0;
-  while (grpc_byte_buffer_reader_next(reader, &slice)) {
+  while (grpc_byte_buffer_reader_next(&reader, &slice)) {
     read_result = gpr_realloc(read_result, size + GPR_SLICE_LENGTH(slice));
     memcpy(read_result + size, GPR_SLICE_START_PTR(slice),
            GPR_SLICE_LENGTH(slice));
     size = size + GPR_SLICE_LENGTH(slice);
     gpr_slice_unref(slice);
   }
-  grpc_byte_buffer_reader_destroy(reader);
   *result_size = size;
   *result = read_result;
 }

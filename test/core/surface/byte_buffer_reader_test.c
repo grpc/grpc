@@ -46,21 +46,10 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void test_create(void) {
-  grpc_byte_buffer *buffer;
-  grpc_byte_buffer_reader *reader;
-  gpr_slice empty = gpr_empty_slice();
-  LOG_TEST("test_create");
-  buffer = grpc_byte_buffer_create(&empty, 1);
-  reader = grpc_byte_buffer_reader_create(buffer);
-  grpc_byte_buffer_reader_destroy(reader);
-  grpc_byte_buffer_destroy(buffer);
-}
-
 static void test_read_one_slice(void) {
   gpr_slice slice;
   grpc_byte_buffer *buffer;
-  grpc_byte_buffer_reader *reader;
+  grpc_byte_buffer_reader reader;
   gpr_slice first_slice, second_slice;
   int first_code, second_code;
 
@@ -68,21 +57,20 @@ static void test_read_one_slice(void) {
   slice = gpr_slice_from_copied_string("test");
   buffer = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
-  reader = grpc_byte_buffer_reader_create(buffer);
-  first_code = grpc_byte_buffer_reader_next(reader, &first_slice);
+  grpc_byte_buffer_reader_init(&reader, buffer);
+  first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
   GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(first_slice), "test", 4) == 0);
   gpr_slice_unref(first_slice);
-  second_code = grpc_byte_buffer_reader_next(reader, &second_slice);
+  second_code = grpc_byte_buffer_reader_next(&reader, &second_slice);
   GPR_ASSERT(second_code == 0);
-  grpc_byte_buffer_reader_destroy(reader);
   grpc_byte_buffer_destroy(buffer);
 }
 
 static void test_read_one_slice_malloc(void) {
   gpr_slice slice;
   grpc_byte_buffer *buffer;
-  grpc_byte_buffer_reader *reader;
+  grpc_byte_buffer_reader reader;
   gpr_slice first_slice, second_slice;
   int first_code, second_code;
 
@@ -91,20 +79,18 @@ static void test_read_one_slice_malloc(void) {
   memcpy(GPR_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
-  reader = grpc_byte_buffer_reader_create(buffer);
-  first_code = grpc_byte_buffer_reader_next(reader, &first_slice);
+  grpc_byte_buffer_reader_init(&reader, buffer);
+  first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
   GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(first_slice), "test", 4) == 0);
   gpr_slice_unref(first_slice);
-  second_code = grpc_byte_buffer_reader_next(reader, &second_slice);
+  second_code = grpc_byte_buffer_reader_next(&reader, &second_slice);
   GPR_ASSERT(second_code == 0);
-  grpc_byte_buffer_reader_destroy(reader);
   grpc_byte_buffer_destroy(buffer);
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  test_create();
   test_read_one_slice();
   test_read_one_slice_malloc();
   return 0;
