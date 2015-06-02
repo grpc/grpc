@@ -372,12 +372,24 @@ static void init_call_elem(grpc_call_element *elem,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
 
   /* if the call got activated, we need to destroy the child stack also, and
      remove it from the in-flight requests tracked by the child_entry we
      picked */
-  if (calld->state == CALL_ACTIVE) {
-    grpc_child_call_destroy(calld->s.active.child_call);
+  gpr_mu_lock(&chand->mu);
+  switch (calld->state) {
+    case CALL_ACTIVE:
+      gpr_mu_unlock(&chand->mu);
+      grpc_child_call_destroy(calld->s.active.child_call);
+      break;
+    case CALL_WAITING:
+      remove_waiting_child(chand, calld);
+      gpr_mu_unlock(&chand->mu);
+      break;
+    default:
+      gpr_mu_unlock(&chand->mu);
+      break;
   }
   GPR_ASSERT(calld->state != CALL_WAITING);
 }
