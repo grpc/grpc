@@ -43,9 +43,22 @@
 #include <mutex>
 
 namespace grpc {
+
+// Specialize Timepoint for high res clock as we need that  
+template <>
+class TimePoint<std::chrono::high_resolution_clock::time_point> {
+ public:
+  TimePoint(const std::chrono::high_resolution_clock::time_point& time) {
+	Timepoint2Timespec(time, &time_);
+  }
+  gpr_timespec raw_time() const { return time_; }
+ private:
+  gpr_timespec time_;
+};
+
 namespace testing {
 
-typedef std::chrono::system_clock grpc_time_source;
+typedef std::chrono::high_resolution_clock grpc_time_source;
 typedef std::chrono::time_point<grpc_time_source> grpc_time;
 
 class Client {
