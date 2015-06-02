@@ -57,7 +57,7 @@ class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
   grpc::condition_variable cv_;
   bool shutdown_;
   std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread> threads_;
+  std::vector<grpc::thread*> threads_;
 
   void ThreadFunc();
 };

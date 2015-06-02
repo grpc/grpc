@@ -76,9 +76,9 @@ class lock_guard {
 template <class mutex>
 class unique_lock : public lock_guard<mutex> {
  public:
-  unique_lock(mutex &mu) : lock_guard(mu) { }
-  void lock() { lock_internal(); }
-  void unlock() { unlock_internal(); }
+  unique_lock(mutex &mu) : lock_guard<mutex>(mu) { }
+  void lock() { this->lock_internal(); }
+  void unlock() { this->unlock_internal(); }
 };
 
 class condition_variable {
