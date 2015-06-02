@@ -10,12 +10,9 @@
 		124E20A2FC8EAE54460D4ED2 /* libPods-RouteGuideClient.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 71CEE03D66D40FC37264D6E4 /* libPods-RouteGuideClient.a */; };
 		632527831B1D0396003073D9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 632527821B1D0396003073D9 /* main.m */; };
 		632527861B1D0396003073D9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 632527851B1D0396003073D9 /* AppDelegate.m */; };
-		632527891B1D0396003073D9 /* GetFeatureViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 632527881B1D0396003073D9 /* GetFeatureViewController.m */; };
-		6325278C1B1D0396003073D9 /* ListFeaturesViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6325278B1B1D0396003073D9 /* ListFeaturesViewController.m */; };
 		6325278F1B1D0396003073D9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6325278D1B1D0396003073D9 /* Main.storyboard */; };
 		632527911B1D0396003073D9 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 632527901B1D0396003073D9 /* Images.xcassets */; };
-		632527AB1B1D1C20003073D9 /* RecordRouteViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 632527AA1B1D1C20003073D9 /* RecordRouteViewController.m */; };
-		632527AE1B1D1DFE003073D9 /* RouteChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 632527AD1B1D1DFE003073D9 /* RouteChatViewController.m */; };
+		63A6015C1B1DAB5000FA5B86 /* ViewControllers.m in Sources */ = {isa = PBXBuildFile; fileRef = 63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,16 +21,9 @@
 		632527821B1D0396003073D9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		632527841B1D0396003073D9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		632527851B1D0396003073D9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		632527871B1D0396003073D9 /* GetFeatureViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GetFeatureViewController.h; sourceTree = "<group>"; };
-		632527881B1D0396003073D9 /* GetFeatureViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GetFeatureViewController.m; sourceTree = "<group>"; };
-		6325278A1B1D0396003073D9 /* ListFeaturesViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ListFeaturesViewController.h; sourceTree = "<group>"; };
-		6325278B1B1D0396003073D9 /* ListFeaturesViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ListFeaturesViewController.m; sourceTree = "<group>"; };
 		6325278E1B1D0396003073D9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		632527901B1D0396003073D9 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		632527A91B1D1C20003073D9 /* RecordRouteViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RecordRouteViewController.h; sourceTree = "<group>"; };
-		632527AA1B1D1C20003073D9 /* RecordRouteViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RecordRouteViewController.m; sourceTree = "<group>"; };
-		632527AC1B1D1DFE003073D9 /* RouteChatViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RouteChatViewController.h; sourceTree = "<group>"; };
-		632527AD1B1D1DFE003073D9 /* RouteChatViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RouteChatViewController.m; sourceTree = "<group>"; };
+		63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewControllers.m; sourceTree = "<group>"; };
 		71CEE03D66D40FC37264D6E4 /* libPods-RouteGuideClient.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RouteGuideClient.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADA4C647BAE906F79AD9A45E /* Pods-RouteGuideClient.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RouteGuideClient.debug.xcconfig"; path = "Pods/Target Support Files/Pods-RouteGuideClient/Pods-RouteGuideClient.debug.xcconfig"; sourceTree = "<group>"; };
 		C83C5A54D1A4EA07569F1AED /* Pods-RouteGuideClient.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RouteGuideClient.release.xcconfig"; path = "Pods/Target Support Files/Pods-RouteGuideClient/Pods-RouteGuideClient.release.xcconfig"; sourceTree = "<group>"; };
@@ -81,19 +71,12 @@
 		6325277F1B1D0396003073D9 /* RouteGuideClient */ = {
 			isa = PBXGroup;
 			children = (
+				63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */,
+				6325278D1B1D0396003073D9 /* Main.storyboard */,
 				632527841B1D0396003073D9 /* AppDelegate.h */,
 				632527851B1D0396003073D9 /* AppDelegate.m */,
-				632527871B1D0396003073D9 /* GetFeatureViewController.h */,
-				632527881B1D0396003073D9 /* GetFeatureViewController.m */,
-				6325278A1B1D0396003073D9 /* ListFeaturesViewController.h */,
-				6325278B1B1D0396003073D9 /* ListFeaturesViewController.m */,
-				6325278D1B1D0396003073D9 /* Main.storyboard */,
 				632527901B1D0396003073D9 /* Images.xcassets */,
 				632527801B1D0396003073D9 /* Supporting Files */,
-				632527A91B1D1C20003073D9 /* RecordRouteViewController.h */,
-				632527AA1B1D1C20003073D9 /* RecordRouteViewController.m */,
-				632527AC1B1D1DFE003073D9 /* RouteChatViewController.h */,
-				632527AD1B1D1DFE003073D9 /* RouteChatViewController.m */,
 			);
 			name = RouteGuideClient;
 			sourceTree = SOURCE_ROOT;
@@ -219,12 +202,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				632527AE1B1D1DFE003073D9 /* RouteChatViewController.m in Sources */,
-				6325278C1B1D0396003073D9 /* ListFeaturesViewController.m in Sources */,
 				632527861B1D0396003073D9 /* AppDelegate.m in Sources */,
-				632527891B1D0396003073D9 /* GetFeatureViewController.m in Sources */,
 				632527831B1D0396003073D9 /* main.m in Sources */,
-				632527AB1B1D1C20003073D9 /* RecordRouteViewController.m in Sources */,
+				63A6015C1B1DAB5000FA5B86 /* ViewControllers.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

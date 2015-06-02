@@ -32,6 +32,71 @@
  */
 
 #import <UIKit/UIKit.h>
+#import <RouteGuide/RouteGuide.pbrpc.h>
+
+static NSString * const kHostAddress = @"http://localhost:50051";
+
+#pragma mark Get Feature
 
 @interface GetFeatureViewController : UIViewController
+@end
+
+@implementation GetFeatureViewController
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+
+  RTGPoint *point = [RTGPoint message];
+  point.latitude = 409146138;
+  point.longitude = -746188906;
+
+  [client getFeatureWithRequest:point handler:^(RTGFeature *response, NSError *error) {
+    NSLog(@"Response: %@", response);
+  }];
+}
+
+@end
+
+#pragma mark List Features
+
+@interface ListFeaturesViewController : UIViewController
+@end
+
+@implementation ListFeaturesViewController
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+  // Do any additional setup after loading the view, typically from a nib.
+}
+
+@end
+
+#pragma mark Record Route
+
+@interface RecordRouteViewController : UIViewController
+@end
+
+@implementation RecordRouteViewController
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+  // Do any additional setup after loading the view.
+}
+
+@end
+
+#pragma mark Route Chat
+
+@interface RouteChatViewController : UIViewController
+@end
+
+@implementation RouteChatViewController
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+  // Do any additional setup after loading the view.
+}
+
 @end
