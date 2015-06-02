@@ -50,6 +50,17 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		631C63891B1DBC41001295D5 /* Misc */ = {
+			isa = PBXGroup;
+			children = (
+				632527841B1D0396003073D9 /* AppDelegate.h */,
+				632527851B1D0396003073D9 /* AppDelegate.m */,
+				632527901B1D0396003073D9 /* Images.xcassets */,
+				632527801B1D0396003073D9 /* Supporting Files */,
+			);
+			path = Misc;
+			sourceTree = "<group>";
+		};
 		632527741B1D0395003073D9 = {
 			isa = PBXGroup;
 			children = (
@@ -73,10 +84,7 @@
 			children = (
 				63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */,
 				6325278D1B1D0396003073D9 /* Main.storyboard */,
-				632527841B1D0396003073D9 /* AppDelegate.h */,
-				632527851B1D0396003073D9 /* AppDelegate.m */,
-				632527901B1D0396003073D9 /* Images.xcassets */,
-				632527801B1D0396003073D9 /* Supporting Files */,
+				631C63891B1DBC41001295D5 /* Misc */,
 			);
 			name = RouteGuideClient;
 			sourceTree = SOURCE_ROOT;
@@ -217,6 +225,7 @@
 				6325278E1B1D0396003073D9 /* Base */,
 			);
 			name = Main.storyboard;
+			path = Misc;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -309,7 +318,7 @@
 			baseConfigurationReference = ADA4C647BAE906F79AD9A45E /* Pods-RouteGuideClient.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = Misc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -320,7 +329,7 @@
 			baseConfigurationReference = C83C5A54D1A4EA07569F1AED /* Pods-RouteGuideClient.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = Misc/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
