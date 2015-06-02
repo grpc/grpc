@@ -45,6 +45,9 @@
 namespace grpc {
 namespace testing {
 
+typedef std::chrono::system_clock grpc_time_source;
+typedef std::chrono::time_point<grpc_time_source> grpc_time;
+
 class Client {
  public:
   explicit Client(const ClientConfig& config) : timer_(new Timer),
@@ -145,19 +148,18 @@ class Client {
 
       interarrival_timer_.init(*random_dist, num_threads);
       for (size_t i = 0; i<num_threads; i++) {
-        next_time_.push_back(std::chrono::high_resolution_clock::now()
-                             + interarrival_timer_(i));
+        next_time_.push_back(grpc_time_source::now() +
+			     std::chrono::duration_cast<grpc_time_source::duration>(interarrival_timer_(i)));
       }
     }
   }
-  template<class Timepoint>
-    bool NextIssueTime(int thread_idx, Timepoint *time_delay) {
+  bool NextIssueTime(int thread_idx, grpc_time *time_delay) {
     if (closed_loop_) {
       return false;
     }
     else {
       *time_delay = next_time_[thread_idx];
-      next_time_[thread_idx] += interarrival_timer_(thread_idx);
+      next_time_[thread_idx] += std::chrono::duration_cast<grpc_time_source::duration>(interarrival_timer_(thread_idx));
       return true;
     }
   }
@@ -226,8 +228,7 @@ class Client {
   std::unique_ptr<Timer> timer_;
 
   InterarrivalTimer interarrival_timer_;
-  std::vector<std::chrono::time_point
-             <std::chrono::high_resolution_clock>> next_time_;
+  std::vector<grpc_time> next_time_;
 };
 
 std::unique_ptr<Client> CreateSynchronousUnaryClient(const ClientConfig& args);

@@ -32,8 +32,10 @@
  */
 
 #include <cassert>
+#include <forward_list>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -55,8 +57,6 @@
 namespace grpc {
 namespace testing {
 
-typedef std::chrono::high_resolution_clock grpc_time_source;
-typedef std::chrono::time_point<grpc_time_source> grpc_time;
 typedef std::forward_list<grpc_time> deadline_list;
 
 class ClientRpcContext {
@@ -98,7 +98,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   }
   void Start() GRPC_OVERRIDE {
     start_ = Timer::Now();
-    response_reader_.reset(start_req(stub_, &context_, req_));
+    response_reader_ = start_req_(stub_, &context_, req_);
     response_reader_->Finish(&response_, &status_, ClientRpcContext::tag(this));
   }
   ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
@@ -142,7 +142,7 @@ class AsyncClient : public Client {
   explicit AsyncClient(const ClientConfig& config,
 		       std::function<ClientRpcContext*(CompletionQueue*, TestService::Stub*,
 					  const SimpleRequest&)> setup_ctx) :
-      Client(config) {
+    Client(config), channel_rpc_lock_(config.client_channels()) {
     for (int i = 0; i < config.async_client_threads(); i++) {
       cli_cqs_.emplace_back(new CompletionQueue);
       if (!closed_loop_) {
@@ -158,7 +158,6 @@ class AsyncClient : public Client {
     if (!closed_loop_) {
       for (auto channel = channels_.begin(); channel != channels_.end();
 	   channel++) {
-	channel_rpc_lock_.emplace_back();
 	rpcs_outstanding_.push_back(0);
       }
     }
@@ -202,6 +201,9 @@ class AsyncClient : public Client {
       short_deadline = issue_allowed_[thread_idx] ?
 	next_issue_[thread_idx] : deadline;
     }
+    
+    bool got_event;
+
     switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, short_deadline)) {
       case CompletionQueue::SHUTDOWN: return false;
       case CompletionQueue::TIMEOUT:
@@ -232,15 +234,16 @@ class AsyncClient : public Client {
      bool issued = false;
      for (int num_attempts = 0; num_attempts < channel_count_ && !issued;
 	  num_attempts++, next_channel_[thread_idx] = (next_channel_[thread_idx]+1)%channel_count_) {
-       std::lock_guard g(channel_rpc_lock_[next_channel_[thread_idx]]);
-       if (rpcs_outstanding[next_channel_[thread_idx]] < max_outstanding_per_channel_) {
+       std::lock_guard<std::mutex>
+	 g(channel_rpc_lock_[next_channel_[thread_idx]]);
+       if (rpcs_outstanding_[next_channel_[thread_idx]] < max_outstanding_per_channel_) {
 	 // do the work to issue
-	 rpcs_outstanding[next_channel_[thread_idx]]++;
+	 rpcs_outstanding_[next_channel_[thread_idx]]++;
 	 issued = true;
        }
      }
      if (!issued)
-       issue_allowed = false;   
+       issue_allowed_[thread_idx] = false;   
    }
    return true;
   }

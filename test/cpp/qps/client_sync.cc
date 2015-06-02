@@ -77,7 +77,7 @@ class SynchronousClient : public Client {
 
  protected:
   void WaitToIssue(int thread_idx) {
-    std::chrono::time_point<std::chrono::high_resolution_clock> next_time;
+    grpc_time next_time;
     if (NextIssueTime(thread_idx, &next_time)) {
       std::this_thread::sleep_until(next_time);
     }
