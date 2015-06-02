@@ -33,61 +33,28 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_call_error from grpc/grpc.h
+    /// grpc_event from grpc/grpc.h
     /// </summary>
-    internal enum GRPCCallError
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct CompletionQueueEvent
     {
-        /* everything went ok */
-        OK = 0,
-        /* something failed, we don't know what */
-        Error,
-        /* this method is not available on the server */
-        NotOnServer,
-        /* this method is not available on the client */
-        NotOnClient,
-        /* this method must be called before server_accept */
-        AlreadyAccepted,
-        /* this method must be called before invoke */
-        AlreadyInvoked,
-        /* this method must be called after invoke */
-        NotInvoked,
-        /* this call is already finished
-     (writes_done or write_status has already been called) */
-        AlreadyFinished,
-        /* there is already an outstanding read/write operation on the call */
-        TooManyOperations,
-        /* the flags value was illegal for this call */
-        InvalidFlags
-    }
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern int grpcsharp_sizeof_grpc_event();
 
-    internal static class CallErrorExtensions
-    {
-        /// <summary>
-        /// Checks the call API invocation's result is OK.
-        /// </summary>
-        public static void CheckOk(this GRPCCallError callError)
+        public GRPCCompletionType type;
+        public int success;
+        public IntPtr tag;
+
+        internal static int NativeSize
         {
-            Preconditions.CheckState(callError == GRPCCallError.OK, "Call error: " + callError);
+            get
+            {
+                return grpcsharp_sizeof_grpc_event();
+            }
         }
-    }
-
-    /// <summary>
-    /// grpc_completion_type from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCCompletionType
-    {
-        /* Shutting down */
-        Shutdown, 
-
-        /* No event before timeout */
-        Timeout,  
-
-        /* operation completion */
-        OpComplete
     }
 }

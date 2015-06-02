@@ -33,61 +33,20 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core.Internal.Tests
 {
-    /// <summary>
-    /// grpc_call_error from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCCallError
+    public class CompletionQueueEventTest
     {
-        /* everything went ok */
-        OK = 0,
-        /* something failed, we don't know what */
-        Error,
-        /* this method is not available on the server */
-        NotOnServer,
-        /* this method is not available on the client */
-        NotOnClient,
-        /* this method must be called before server_accept */
-        AlreadyAccepted,
-        /* this method must be called before invoke */
-        AlreadyInvoked,
-        /* this method must be called after invoke */
-        NotInvoked,
-        /* this call is already finished
-     (writes_done or write_status has already been called) */
-        AlreadyFinished,
-        /* there is already an outstanding read/write operation on the call */
-        TooManyOperations,
-        /* the flags value was illegal for this call */
-        InvalidFlags
-    }
-
-    internal static class CallErrorExtensions
-    {
-        /// <summary>
-        /// Checks the call API invocation's result is OK.
-        /// </summary>
-        public static void CheckOk(this GRPCCallError callError)
+        [Test]
+        public void CreateAndDestroy()
         {
-            Preconditions.CheckState(callError == GRPCCallError.OK, "Call error: " + callError);
+            Assert.AreEqual(CompletionQueueEvent.NativeSize, Marshal.SizeOf(typeof(CompletionQueueEvent)));
         }
-    }
-
-    /// <summary>
-    /// grpc_completion_type from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCCompletionType
-    {
-        /* Shutting down */
-        Shutdown, 
-
-        /* No event before timeout */
-        Timeout,  
-
-        /* operation completion */
-        OpComplete
     }
 }
