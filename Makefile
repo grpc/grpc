@@ -262,6 +262,8 @@ LDFLAGS += -fPIC
 endif
 
 INCLUDES = . include $(GENDIR)
+LDFLAGS += -Llibs/$(CONFIG)
+
 ifeq ($(SYSTEM),Darwin)
 ifneq ($(wildcard /usr/local/ssl/include),)
 INCLUDES += /usr/local/ssl/include
