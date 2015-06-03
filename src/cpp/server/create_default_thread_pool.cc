@@ -31,39 +31,19 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#include <grpc/support/cpu.h>
+#include "src/cpp/server/thread_pool.h"
 
-#include <grpc++/config.h>
-
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
-
-#include <queue>
-#include <vector>
+#ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
 
 namespace grpc {
 
-class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
- public:
-  explicit ThreadPool(int num_threads);
-  ~ThreadPool();
-
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
-
- private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread*> threads_;
-
-  void ThreadFunc();
-};
-
-ThreadPoolInterface* CreateDefaultThreadPool();
+ThreadPoolInterface* CreateDefaultThreadPool() {
+   int cores = gpr_cpu_num_cores();
+   if (!cores) cores = 4;
+   return new ThreadPool(cores);
+}
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#endif  // !GRPC_CUSTOM_DEFAULT_THREAD_POOL
