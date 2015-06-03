@@ -27,11 +27,15 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#
 # This script is invoked by Jenkins and triggers a test run based on
 # env variable settings.
-
-set -ex
+#
+# To prevent cygwin bash complaining about empty lines ending with \r
+# we set the igncr option. The option doesn't exist on Linux, so we fallback
+# to just 'set -ex' there.
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
 if [ "$platform" == "linux" ]
 then
