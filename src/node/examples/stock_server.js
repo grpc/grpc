@@ -33,7 +33,7 @@
 
 'use strict';
 
-var _ = require('underscore');
+var _ = require('lodash');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/stock.proto').examples;
 
