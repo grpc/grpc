@@ -97,7 +97,7 @@ class ValgrindConfig(object):
   def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
-                          shortname='valgrind %s' % binary,
+                          shortname='valgrind %s' % cmdline[0],
                           hash_targets=None)
 
 
