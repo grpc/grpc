@@ -276,6 +276,8 @@ LDFLAGS += -fPIC
 endif
 
 INCLUDES = . include $(GENDIR)
+LDFLAGS += -Llibs/$(CONFIG)
+
 ifeq ($(SYSTEM),Darwin)
 ifneq ($(wildcard /usr/local/ssl/include),)
 INCLUDES += /usr/local/ssl/include
@@ -1220,7 +1222,7 @@ endif
     mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
   if lib.get('secure', 'check') == 'yes':
-    common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     for src in lib.src:
       sources_that_need_openssl.add(src)
   else:
