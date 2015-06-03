@@ -60,7 +60,7 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   to->tv_nsec = nsecs.count();
 }
 
-void Timepoint2Timespec(const high_resolution_clock::time_point& from,
+void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
 			gpr_timespec* to) {
   high_resolution_clock::duration deadline = from.time_since_epoch();
   seconds secs = duration_cast<seconds>(deadline);

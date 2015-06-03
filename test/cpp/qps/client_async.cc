@@ -204,7 +204,7 @@ class AsyncClient : public Client {
       short_deadline = issue_allowed_[thread_idx] ?
 	next_issue_[thread_idx] : deadline;
     }
-    
+
     bool got_event;
 
     switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, short_deadline)) {
@@ -215,6 +215,9 @@ class AsyncClient : public Client {
       case CompletionQueue::GOT_EVENT:
 	got_event = true;
 	break;
+      default:
+        GPR_ASSERT(false);
+        break;
     }
    if (grpc_time_source::now() > deadline) {
      // we have missed some 1-second deadline, which is too much                            gpr_log(GPR_INFO, "Missed an RPC deadline, giving up");

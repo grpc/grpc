@@ -44,17 +44,19 @@
 
 namespace grpc {
 
-// Specialize Timepoint for high res clock as we need that  
+#if defined(__APPLE__)
+// Specialize Timepoint for high res clock as we need that
 template <>
 class TimePoint<std::chrono::high_resolution_clock::time_point> {
  public:
   TimePoint(const std::chrono::high_resolution_clock::time_point& time) {
-	Timepoint2Timespec(time, &time_);
+	TimepointHR2Timespec(time, &time_);
   }
   gpr_timespec raw_time() const { return time_; }
  private:
   gpr_timespec time_;
 };
+#endif
 
 namespace testing {
 

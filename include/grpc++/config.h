@@ -46,7 +46,7 @@
 #define GRPC_CXX0X_NO_OVERRIDE 1
 #define GRPC_CXX0X_NO_CHRONO 1
 #define GRPC_CXX0X_NO_THREAD 1
-#endif  
+#endif
 #endif  // Visual Studio
 
 #ifndef __clang__
