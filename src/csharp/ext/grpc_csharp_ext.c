@@ -33,6 +33,7 @@
 
 #include "src/core/support/string.h"
 
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -236,13 +237,13 @@ GPR_EXPORT gpr_intptr GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
  */
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
     const grpcsharp_batch_context *ctx, char *buffer, size_t buffer_len) {
-  grpc_byte_buffer_reader *reader;
+  grpc_byte_buffer_reader reader;
   gpr_slice slice;
   size_t offset = 0;
 
-  reader = grpc_byte_buffer_reader_create(ctx->recv_message);
+  grpc_byte_buffer_reader_init(&reader, ctx->recv_message);
 
-  while (grpc_byte_buffer_reader_next(reader, &slice)) {
+  while (grpc_byte_buffer_reader_next(&reader, &slice)) {
     size_t len = GPR_SLICE_LENGTH(slice);
     GPR_ASSERT(offset + len <= buffer_len);
     memcpy(buffer + offset, GPR_SLICE_START_PTR(slice),
@@ -250,7 +251,6 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
     offset += len;
     gpr_slice_unref(slice);
   }
-  grpc_byte_buffer_reader_destroy(reader);
 }
 
 GPR_EXPORT grpc_status_code GPR_CALLTYPE

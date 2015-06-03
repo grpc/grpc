@@ -55,6 +55,7 @@ typedef struct {
   char *default_port;
   grpc_resolve_cb cb;
   void *arg;
+  grpc_iomgr_object iomgr_object;
 } request;
 
 grpc_resolved_addresses *grpc_blocking_resolve_address(
@@ -153,9 +154,9 @@ static void do_request(void *rp) {
   grpc_resolve_cb cb = r->cb;
   gpr_free(r->name);
   gpr_free(r->default_port);
+  grpc_iomgr_unregister_object(&r->iomgr_object);
   gpr_free(r);
   cb(arg, resolved);
-  grpc_iomgr_unref();
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
@@ -167,7 +168,11 @@ void grpc_resolve_address(const char *name, const char *default_port,
                           grpc_resolve_cb cb, void *arg) {
   request *r = gpr_malloc(sizeof(request));
   gpr_thd_id id;
-  grpc_iomgr_ref();
+  char *tmp;
+  gpr_asprintf(&tmp, "resolve_address:name='%s':default_port='%s'", name,
+               default_port);
+  grpc_iomgr_register_object(&r->iomgr_object, tmp);
+  gpr_free(tmp);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->cb = cb;

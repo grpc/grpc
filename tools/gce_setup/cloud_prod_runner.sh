@@ -36,13 +36,18 @@ main() {
   source grpc_docker.sh
   test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response)
   auth_test_cases=(service_account_creds compute_engine_creds jwt_token_creds)
-  clients=(cxx java go ruby node csharp_mono python php)
+  clients=(cxx java go ruby node csharp_mono csharp_dotnet python php)
   for test_case in "${test_cases[@]}"
   do
     for client in "${clients[@]}"
     do
+      client_vm="grpc-docker-testclients"
+      if [ "$client" = "csharp_dotnet" ]
+      then
+        client_vm="grpc-windows-interop1"
+      fi
       log_file_name=cloud_{$test_case}_{$client}.txt 
-      if grpc_cloud_prod_test $test_case grpc-docker-testclients $client > /tmp/$log_file_name 2>&1
+      if grpc_cloud_prod_test $test_case $client_vm $client > /tmp/$log_file_name 2>&1
       then
         echo "          ['$test_case', '$client', 'prod', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       else
@@ -56,8 +61,13 @@ main() {
   do
     for client in "${clients[@]}"
     do
+      client_vm="grpc-docker-testclients"
+      if [ "$client" = "csharp_dotnet" ]
+      then
+        client_vm="grpc-windows-interop1"
+      fi
       log_file_name=cloud_{$test_case}_{$client}.txt 
-      if grpc_cloud_prod_auth_test $test_case grpc-docker-testclients $client > /tmp/$log_file_name 2>&1
+      if grpc_cloud_prod_auth_test $test_case $client_vm $client > /tmp/$log_file_name 2>&1
       then
         echo "          ['$test_case', '$client', 'prod', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/cloud_prod_result.txt
       else

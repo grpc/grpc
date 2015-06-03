@@ -193,7 +193,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
     goto failure;
   }
 
-  socket = grpc_winsocket_create(sock);
+  socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
   info->outstanding = 1;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);

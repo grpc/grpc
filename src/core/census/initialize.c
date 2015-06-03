@@ -31,19 +31,20 @@
  *
  */
 
-#ifndef _ADAPTER__COMPLETION_QUEUE_H_
-#define _ADAPTER__COMPLETION_QUEUE_H_
+#include <grpc/census.h>
 
-#include <Python.h>
-#include <grpc/grpc.h>
+static int census_fns_enabled = CENSUS_NONE;
 
-typedef struct {
-  PyObject_HEAD
-  grpc_completion_queue *c_completion_queue;
-} CompletionQueue;
+int census_initialize(int functions) {
+  if (census_fns_enabled != CENSUS_NONE) {
+    return 1;
+  }
+  if (functions != CENSUS_NONE) {
+    return 1;
+  } else {
+    census_fns_enabled = functions;
+    return 0;
+  }
+}
 
-extern PyTypeObject pygrpc_CompletionQueueType;
-
-int pygrpc_add_completion_queue(PyObject *module);
-
-#endif /* _ADAPTER__COMPLETION_QUEUE_H_ */
+void census_shutdown() { census_fns_enabled = CENSUS_NONE; }

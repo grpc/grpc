@@ -31,47 +31,12 @@
  *
  */
 
-#ifndef _ADAPTER__CALL_H_
-#define _ADAPTER__CALL_H_
+/* GRPC <--> CENSUS context interface */
 
-#include <Python.h>
-#include <grpc/grpc.h>
+#ifndef CENSUS_GRPC_CONTEXT_H
+#define CENSUS_GRPC_CONTEXT_H
 
-#include "grpc/_adapter/_completion_queue.h"
-#include "grpc/_adapter/_channel.h"
-#include "grpc/_adapter/_server.h"
+void *grpc_census_context_create();
+void grpc_census_context_destroy(void *context);
 
-typedef struct {
-  PyObject_HEAD
-
-  CompletionQueue *completion_queue;
-  Channel *channel;
-  Server *server;
-
-  /* Legacy state. */
-  grpc_call_details call_details;
-  grpc_metadata_array recv_metadata;
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_metadata *send_metadata;
-  size_t send_metadata_count;
-  grpc_metadata *send_trailing_metadata;
-  size_t send_trailing_metadata_count;
-  int adding_to_trailing;
-
-  grpc_byte_buffer *send_message;
-  grpc_byte_buffer *recv_message;
-
-  grpc_status_code status;
-  char *status_details;
-  size_t status_details_capacity;
-
-  int cancelled;
-
-  grpc_call *c_call;
-} Call;
-
-extern PyTypeObject pygrpc_CallType;
-
-int pygrpc_add_call(PyObject *module);
-
-#endif /* _ADAPTER__CALL_H_ */
+#endif /* CENSUS_GRPC_CONTEXT_H */
