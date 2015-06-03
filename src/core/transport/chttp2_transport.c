@@ -314,6 +314,18 @@ struct transport {
 struct stream {
   gpr_uint32 id;
 
+  /** The number of bytes the upper layers have offered to receive.
+      As the upper layer offers more bytes, this value increases.
+      As bytes are read, this value decreases. */
+  gpr_uint32 max_recv_bytes;
+  /** The number of bytes the upper layer has offered to read but we have
+      not yet announced to HTTP2 flow control.
+      As the upper layers offer to read more bytes, this value increases.
+      As we advertise incoming flow control window, this value decreases. */
+  gpr_uint32 unannounced_incoming_window;
+  /** The number of bytes of HTTP2 flow control we have advertised.
+      As we advertise incoming flow control window, this value increases.
+      As bytes are read, this value decreases. */
   gpr_uint32 incoming_window;
   gpr_int64 outgoing_window;
   /* when the application requests writes be closed, the write_closed is
@@ -659,7 +671,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     s->id = (gpr_uint32)(gpr_uintptr)server_data;
     s->outgoing_window =
         t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-    s->incoming_window =
+    s->max_recv_bytes = s->incoming_window =
         t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
@@ -970,14 +982,13 @@ static int prepare_write(transport *t) {
 
   /* for each stream that wants to update its window, add that window here */
   while ((s = stream_list_remove_head(t, WINDOW_UPDATE))) {
-    window_delta =
-        t->settings[LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
-        s->incoming_window;
-    if (!s->read_closed && window_delta) {
-      gpr_slice_buffer_add(
-          &t->outbuf, grpc_chttp2_window_update_create(s->id, window_delta));
-      FLOWCTL_TRACE(t, s, incoming, s->id, window_delta);
-      s->incoming_window += window_delta;
+    if (!s->read_closed && s->unannounced_incoming_window > 0) {
+      gpr_slice_buffer_add(&t->outbuf,
+                           grpc_chttp2_window_update_create(
+                               s->id, s->unannounced_incoming_window));
+      FLOWCTL_TRACE(t, s, incoming, s->id, s->unannounced_incoming_window);
+      s->incoming_window += s->unannounced_incoming_window;
+      s->unannounced_incoming_window = 0;
     }
   }
 
@@ -1101,8 +1112,10 @@ static void maybe_start_some_streams(transport *t) {
         t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     s->incoming_window =
         t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+    s->max_recv_bytes = GPR_MAX(s->incoming_window, s->max_recv_bytes);
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
     stream_list_join(t, s, WRITABLE);
+    maybe_join_window_updates(t, s);
   }
   /* cancel out streams that will never be started */
   while (t->next_stream_id > MAX_CLIENT_STREAM_ID) {
@@ -1153,6 +1166,10 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
     s->incoming_sopb = op->recv_ops;
     s->incoming_sopb->nops = 0;
     s->publish_state = op->recv_state;
+    if (s->max_recv_bytes < op->max_recv_bytes) {
+      s->unannounced_incoming_window += op->max_recv_bytes - s->max_recv_bytes;
+      s->max_recv_bytes = op->max_recv_bytes;
+    }
     gpr_free(s->old_incoming_metadata);
     s->old_incoming_metadata = NULL;
     maybe_finish_read(t, s);
@@ -1337,10 +1354,10 @@ static void maybe_finish_read(transport *t, stream *s) {
 
 static void maybe_join_window_updates(transport *t, stream *s) {
   if (s->incoming_sopb != NULL &&
-      s->incoming_window <
+      s->unannounced_incoming_window >
           t->settings[LOCAL_SETTINGS]
-                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] *
-              3 / 4) {
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] /
+              4) {
     stream_list_join(t, s, WINDOW_UPDATE);
   }
 }
@@ -1362,6 +1379,8 @@ static grpc_chttp2_parse_error update_incoming_window(transport *t, stream *s) {
   FLOWCTL_TRACE(t, s, incoming, s->id, -(gpr_int64)t->incoming_frame_size);
   t->incoming_window -= t->incoming_frame_size;
   s->incoming_window -= t->incoming_frame_size;
+  GPR_ASSERT(s->max_recv_bytes > t->incoming_frame_size);
+  s->max_recv_bytes -= t->incoming_frame_size;
 
   /* if the stream incoming window is getting low, schedule an update */
   maybe_join_window_updates(t, s);
