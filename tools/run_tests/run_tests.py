@@ -36,15 +36,15 @@ import itertools
 import json
 import multiprocessing
 import os
+import platform
+import random
 import re
+import subprocess
 import sys
 import time
-import platform
-import subprocess
 
 import jobset
 import watch_dirs
-
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
@@ -488,13 +488,21 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
     return 1
 
   # start antagonists
-  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py']) 
+  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
                  for _ in range(0, args.antagonists)]
   try:
     infinite_runs = runs_per_test == 0
-    # run all the tests
-    runs_sequence = (itertools.repeat(one_run) if infinite_runs
-                     else itertools.repeat(one_run, runs_per_test))
+    # When running on travis, we want out test runs to be as similar as possible
+    # for reproducibility purposes.
+    if travis:
+      massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
+    else:
+      # whereas otherwise, we want to shuffle things up to give all tests a
+      # chance to run.
+      massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
+      random.shuffle(massaged_one_run)  # which it modifies in-place.
+    runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
+                     else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
     if not jobset.run(all_runs, check_cancelled,
                       newline_on_success=newline_on_success, travis=travis,
