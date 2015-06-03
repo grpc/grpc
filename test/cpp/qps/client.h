@@ -124,7 +124,7 @@ class Client {
   void EndThreads() { threads_.clear(); }
 
   virtual bool ThreadFunc(Histogram* histogram, size_t thread_idx) = 0;
-  
+
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
     if (config.load_type() == CLOSED_LOOP) {
