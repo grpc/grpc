@@ -269,6 +269,9 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   gpr_mu_init(&call->mu);
   call->channel = channel;
   call->cq = cq;
+  if (cq) {
+    grpc_cq_internal_ref(cq);
+  }
   call->is_client = server_transport_data == NULL;
   for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
     call->request_set[i] = REQSET_EMPTY;
@@ -317,6 +320,9 @@ void grpc_call_set_completion_queue(grpc_call *call,
                                     grpc_completion_queue *cq) {
   lock(call);
   call->cq = cq;
+  if (cq) {
+    grpc_cq_internal_ref(cq);
+  }
   unlock(call);
 }
 
@@ -364,6 +370,9 @@ static void destroy_call(void *call, int ignored_success) {
   grpc_sopb_destroy(&c->recv_ops);
   grpc_bbq_destroy(&c->incoming_queue);
   gpr_slice_buffer_destroy(&c->incoming_message);
+  if (c->cq) {
+    grpc_cq_internal_ref(c->cq);
+  }
   gpr_free(c);
 }
 
