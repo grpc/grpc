@@ -331,6 +331,8 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
 
   if (pollset->in_flight_cbs) {
     /* Give do_promote priority so we don't starve it out */
+    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_lock(&pollset->mu);
     return 1;
   }
   fd = pollset->data.ptr;
