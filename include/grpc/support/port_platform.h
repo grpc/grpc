@@ -266,4 +266,12 @@ typedef uintptr_t gpr_uintptr;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
+#ifndef GRPC_MUST_USE_RESULT
+#ifdef __GNUC__
+#define GRPC_MUST_USE_RESULT __attribute__ ((warn_unused_result))
+#else
+#define GRPC_MUST_USE_RESULT
+#endif
+#endif
+
 #endif  /* GRPC_SUPPORT_PORT_PLATFORM_H */
