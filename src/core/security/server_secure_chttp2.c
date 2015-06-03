@@ -66,6 +66,10 @@ static void state_ref(grpc_server_secure_state *state) {
 
 static void state_unref(grpc_server_secure_state *state) {
   if (gpr_unref(&state->refcount)) {
+    /* ensure all threads have unlocked */
+    gpr_mu_lock(&state->mu);
+    gpr_mu_unlock(&state->mu);
+    /* clean up */
     grpc_security_connector_unref(state->sc);
     gpr_free(state);
   }
