@@ -4,23 +4,21 @@ gRPC in 3 minutes (Node.js)
 PREREQUISITES
 -------------
 
-This requires Node 10.x or greater.
+- `node`: This requires Node 10.x or greater.
+- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
 
 INSTALL
 -------
+ - On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][]. Run the following command to install gRPC Node.js.
 
+  ```sh
+  $ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
+  ```
+  This will download and run the [gRPC install script][], then install the latest version of gRPC Nodejs npm package.
  - Clone this repository
 
    ```sh
    $ git clone https://github.com/grpc/grpc-common.git
-   ```
-
- - Download the grpc debian packages from the [latest grpc release](https://github.com/grpc/grpc/releases) and install them.
-   - Later, it will possible to install them directly using `apt-get install`
-   ```sh
-   $ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc_0.5.0_amd64.deb
-   $ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc-dev_0.5.0_amd64.deb
-   $ sudo dpkg -i libgrpc_0.5.0_amd64.deb libgrpc-dev_0.5.0_amd64.deb
    ```
 
  - Install this package's dependencies
@@ -49,11 +47,14 @@ TRY IT!
 
 NOTE
 ----
-
 This directory has a copy of `helloworld.proto` because it currently depends on
 some Protocol Buffer 2.0 syntax that is deprecated in Protocol Buffer 3.0.
 
 TUTORIAL
 --------
+You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
-You can find a more detailed tutorial in [gRPC Basics: Node.js](https://github.com/grpc/grpc-common/blob/master/node/route_guide/README.md).
+[homebrew]:http://brew.sh
+[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
+[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+[gRPC Basics: Node.js]:https://github.com/grpc/grpc-common/blob/master/node/route_guide/README.md
