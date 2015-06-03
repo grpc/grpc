@@ -143,6 +143,9 @@ class AsyncClient : public Client {
 		       std::function<ClientRpcContext*(CompletionQueue*, TestService::Stub*,
 					  const SimpleRequest&)> setup_ctx) :
     Client(config), channel_rpc_lock_(config.client_channels()) {
+
+    SetupLoadTest(config, num_threads_);
+
     for (int i = 0; i < config.async_client_threads(); i++) {
       cli_cqs_.emplace_back(new CompletionQueue);
       if (!closed_loop_) {
