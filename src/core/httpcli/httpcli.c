@@ -46,6 +46,7 @@
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 typedef struct {
   gpr_slice request_text;

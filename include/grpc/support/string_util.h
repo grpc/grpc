@@ -31,27 +31,31 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_SUPPORT_STRING_UTIL_H
+#define GRPC_SUPPORT_STRING_UTIL_H
 
-#ifdef GPR_POSIX_ENV
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "src/core/support/env.h"
+/* String utility functions */
 
-#include <stdlib.h>
+/* Returns a copy of src that can be passed to gpr_free().
+   If allocation fails or if src is NULL, returns NULL. */
+char *gpr_strdup(const char *src);
 
-#include <grpc/support/log.h>
+/* printf to a newly-allocated string.  The set of supported formats may vary
+   between platforms.
 
-#include "src/core/support/string.h"
-#include <grpc/support/string_util.h>
+   On success, returns the number of bytes printed (excluding the final '\0'),
+   and *strp points to a string which must later be destroyed with gpr_free().
 
-char *gpr_getenv(const char *name) {
-  char *result = getenv(name);
-  return result == NULL ? result : gpr_strdup(result);
+   On error, returns -1 and sets *strp to NULL. If the format string is bad,
+   the result is undefined. */
+int gpr_asprintf(char **strp, const char *format, ...);
+
+#ifdef __cplusplus
 }
+#endif
 
-void gpr_setenv(const char *name, const char *value) {
-  int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
-}
-
-#endif /* GPR_POSIX_ENV */
+#endif  /* GRPC_SUPPORT_STRING_UTIL_H */
