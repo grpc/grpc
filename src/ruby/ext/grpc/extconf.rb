@@ -49,10 +49,12 @@ else
   GRPC_CONFIG = 'opt'
 end
 
-if (ENV.key? 'GRPC_LIB_DIR') && (!GRPC_ROOT.nil?)
-  GRPC_LIB_DIR = File.join(GRPC_ROOT, ENV['GRPC_LIB_DIR'])
-else
-  GRPC_LIB_DIR = File.join(File.join(GRPC_ROOT, 'libs'), GRPC_CONFIG)
+unless GRPC_ROOT.nil?
+  if ENV.key? 'GRPC_LIB_DIR'
+    GRPC_LIB_DIR = File.join(GRPC_ROOT, ENV['GRPC_LIB_DIR'])
+  else
+    GRPC_LIB_DIR = File.join(File.join(GRPC_ROOT, 'libs'), GRPC_CONFIG)
+  end
 end
 
 HEADER_DIRS = [
