@@ -52,6 +52,7 @@ extern "C" {
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
 
 int test_client(const char* root, const char* host, int port) {
