@@ -639,7 +639,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   tsi_result result = TSI_OK;
 
   /* First see if we have some pending data in the SSL BIO. */
-  size_t pending_in_ssl = BIO_ctrl_pending(impl->from_ssl);
+  size_t pending_in_ssl = BIO_pending(impl->from_ssl);
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
     read_from_ssl = BIO_read(impl->from_ssl, protected_output_frames,
@@ -694,7 +694,7 @@ static tsi_result ssl_protector_protect_flush(
     impl->buffer_offset = 0;
   }
 
-  *still_pending_size = BIO_ctrl_pending(impl->from_ssl);
+  *still_pending_size = BIO_pending(impl->from_ssl);
   if (*still_pending_size == 0) return TSI_OK;
 
   read_from_ssl = BIO_read(impl->from_ssl, protected_output_frames,
@@ -704,7 +704,7 @@ static tsi_result ssl_protector_protect_flush(
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = read_from_ssl;
-  *still_pending_size = BIO_ctrl_pending(impl->from_ssl);
+  *still_pending_size = BIO_pending(impl->from_ssl);
   return TSI_OK;
 }
 
@@ -782,7 +782,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
     }
   }
   *bytes_size = (size_t)bytes_read_from_ssl;
-  return BIO_ctrl_pending(impl->from_ssl) == 0 ? TSI_OK : TSI_INCOMPLETE_DATA;
+  return BIO_pending(impl->from_ssl) == 0 ? TSI_OK : TSI_INCOMPLETE_DATA;
 }
 
 static tsi_result ssl_handshaker_get_result(tsi_handshaker* self) {
@@ -818,7 +818,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
-        if (BIO_ctrl_pending(impl->from_ssl) == 0) {
+        if (BIO_pending(impl->from_ssl) == 0) {
           /* We need more data. */
           return TSI_INCOMPLETE_DATA;
         } else {

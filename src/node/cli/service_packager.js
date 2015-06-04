@@ -36,7 +36,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var _ = require('underscore');
+var _ = require('lodash');
 var async = require('async');
 var pbjs = require('protobufjs/cli/pbjs');
 var parseArgs = require('minimist');

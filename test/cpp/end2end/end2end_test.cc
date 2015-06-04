@@ -31,6 +31,7 @@
  *
  */
 
+#include <mutex>
 #include <thread>
 
 #include "src/core/security/credentials.h"

@@ -152,13 +152,14 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
+    <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
     <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
     <ClInclude Include="..\..\src\core\httpcli\httpcli_security_connector.h" />
     <ClInclude Include="..\..\src\core\httpcli\parser.h" />
-    <ClInclude Include="..\..\src\core\security\auth.h" />
+    <ClInclude Include="..\..\src\core\security\auth_filters.h" />
     <ClInclude Include="..\..\src\core\security\base64.h" />
     <ClInclude Include="..\..\src\core\security\credentials.h" />
     <ClInclude Include="..\..\src\core\security\json_token.h" />
@@ -170,7 +171,7 @@
     <ClInclude Include="..\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h" />
-    <ClInclude Include="..\..\src\core\channel\census_filter.h" />
+    <ClInclude Include="..\..\src\core\census\grpc_context.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\child_channel.h" />
@@ -219,12 +220,6 @@
     <ClInclude Include="..\..\src\core\json\json_writer.h" />
     <ClInclude Include="..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_log.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_tracing.h" />
-    <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
-    <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
@@ -257,6 +252,7 @@
     <ClInclude Include="..\..\src\core\transport\stream_op.h" />
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
+    <ClInclude Include="..\..\src\core\census\context.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\httpcli\format_request.c">
@@ -267,11 +263,13 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\auth.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\security\base64.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\client_auth_filter.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials_posix.c">
     </ClCompile>
@@ -289,6 +287,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\security_context.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\server_auth_filter.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\init_secure.c">
@@ -301,7 +301,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\tsi\transport_security.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\census_filter.c">
+    <ClCompile Include="..\..\src\core\census\grpc_context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
     </ClCompile>
@@ -405,18 +405,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_init.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_log.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_rpc_stats.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_tracing.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\hash_table.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\window_stats.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer_queue.c">
@@ -494,6 +482,10 @@
     <ClCompile Include="..\..\src\core\transport\transport.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport_op_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\context.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\initialize.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

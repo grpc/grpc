@@ -49,6 +49,9 @@
     <ClCompile Include="..\..\src\cpp\server\async_generic_service.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>

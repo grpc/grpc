@@ -70,7 +70,7 @@ def mako_plugin(dictionary):
                 if project.get('vs_project_guid', None)]
 
   projects = [project for project in projects
-                if project['language'] != 'c++' or project['build'] == 'all']
+                if project['language'] != 'c++' or project['build'] == 'all' or project['build'] == 'protoc']
 
   project_dict = dict([(p['name'], p) for p in projects])
 

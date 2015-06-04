@@ -35,13 +35,13 @@ import threading
 import time
 
 from grpc._adapter import _common
-from grpc._adapter import _low
+from grpc._adapter import _intermediary_low as _low
 from grpc.framework.base import interfaces as base_interfaces
 from grpc.framework.base import null
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import logging_pool
 
-_THREAD_POOL_SIZE = 100
+_THREAD_POOL_SIZE = 10
 
 _INVOCATION_EVENT_KINDS = (
     _low.Event.Kind.METADATA_ACCEPTED,
@@ -195,7 +195,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
       kind = base_interfaces.BackToFrontTicket.Kind.COMPLETION
     elif event.status.code is _low.Code.CANCELLED:
       kind = base_interfaces.BackToFrontTicket.Kind.CANCELLATION
-    elif event.status.code is _low.Code.EXPIRED:
+    elif event.status.code is _low.Code.DEADLINE_EXCEEDED:
       kind = base_interfaces.BackToFrontTicket.Kind.EXPIRATION
     else:
       kind = base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE

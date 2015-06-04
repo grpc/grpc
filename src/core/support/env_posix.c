@@ -42,6 +42,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/support/string.h"
+#include <grpc/support/string_util.h>
 
 char *gpr_getenv(const char *name) {
   char *result = getenv(name);

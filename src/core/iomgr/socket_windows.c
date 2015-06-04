@@ -39,18 +39,17 @@
 #include <grpc/support/log.h>
 
 #include "src/core/iomgr/iocp_windows.h"
-#include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_windows.h"
 #include "src/core/iomgr/socket_windows.h"
 
-grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
+grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
   grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  grpc_iomgr_ref();
+  grpc_iomgr_register_object(&r->iomgr_object, name);
   grpc_iocp_add_socket(r);
   return r;
 }
@@ -64,13 +63,15 @@ int grpc_winsocket_shutdown(grpc_winsocket *socket) {
   gpr_mu_lock(&socket->state_mu);
   if (socket->read_info.cb) {
     callbacks_set++;
-    grpc_iomgr_add_delayed_callback(socket->read_info.cb,
-                                    socket->read_info.opaque, 0);
+    grpc_iomgr_closure_init(&socket->shutdown_closure, socket->read_info.cb,
+                            socket->read_info.opaque);
+    grpc_iomgr_add_delayed_callback(&socket->shutdown_closure, 0);
   }
   if (socket->write_info.cb) {
     callbacks_set++;
-    grpc_iomgr_add_delayed_callback(socket->write_info.cb,
-                                    socket->write_info.opaque, 0);
+    grpc_iomgr_closure_init(&socket->shutdown_closure, socket->write_info.cb,
+                            socket->write_info.opaque);
+    grpc_iomgr_add_delayed_callback(&socket->shutdown_closure, 0);
   }
   gpr_mu_unlock(&socket->state_mu);
   return callbacks_set;
@@ -90,7 +91,7 @@ void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
     grpc_winsocket_destroy(winsocket);
   }
   closesocket(socket);
-  grpc_iomgr_unref();
+  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
