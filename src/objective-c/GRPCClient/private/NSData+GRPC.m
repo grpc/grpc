@@ -34,23 +34,26 @@
 #import "NSData+GRPC.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <string.h>
 
 // TODO(jcanizales): Move these two incantations to the C library.
 
 static void CopyByteBufferToCharArray(grpc_byte_buffer *buffer, char *array) {
   size_t offset = 0;
-  grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer_reader_init(&reader, buffer);
   gpr_slice next;
-  while (grpc_byte_buffer_reader_next(reader, &next) != 0){
-    memcpy(array + offset, GPR_SLICE_START_PTR(next), (size_t) GPR_SLICE_LENGTH(next));
+  while (grpc_byte_buffer_reader_next(&reader, &next) != 0){
+    memcpy(array + offset, GPR_SLICE_START_PTR(next),
+           (size_t)GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
     gpr_slice_unref(next);
   }
-  grpc_byte_buffer_reader_destroy(reader);
 }
 
-static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array, size_t length) {
+static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
+                                                      size_t length) {
   gpr_slice slice = gpr_slice_from_copied_buffer(array, length);
   grpc_byte_buffer *buffer = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);

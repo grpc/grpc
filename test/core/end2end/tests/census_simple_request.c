@@ -40,6 +40,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
@@ -204,7 +205,7 @@ static void test_invoke_request_with_census(
   server_args.num_args = 1;
   server_args.args = &server_arg;
 
-  gpr_asprintf(&fullname, "%s/%s", __FUNCTION__, name);
+  gpr_asprintf(&fullname, "%s/%s", "test_invoke_request_with_census", name);
   f = begin_test(config, fullname, &client_args, &server_args);
   body(f);
   end_test(&f);

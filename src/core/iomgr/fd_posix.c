@@ -41,7 +41,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -91,13 +90,16 @@ static grpc_fd *alloc_fd(int fd) {
     gpr_mu_init(&r->set_state_mu);
     gpr_mu_init(&r->watcher_mu);
   }
+
   gpr_atm_rel_store(&r->refst, 1);
   gpr_atm_rel_store(&r->readst, NOT_READY);
   gpr_atm_rel_store(&r->writest, NOT_READY);
   gpr_atm_rel_store(&r->shutdown, 0);
   r->fd = fd;
-  r->watcher_root.next = r->watcher_root.prev = &r->watcher_root;
+  r->inactive_watcher_root.next = r->inactive_watcher_root.prev =
+      &r->inactive_watcher_root;
   r->freelist_next = NULL;
+  r->read_watcher = r->write_watcher = NULL;
   return r;
 }
 
@@ -114,10 +116,9 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    close(fd->fd);
-    grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);
+    grpc_iomgr_add_callback(&fd->on_done_closure);
     freelist_fd(fd);
-    grpc_iomgr_unref();
+    grpc_iomgr_unregister_object(&fd->iomgr_object);
   } else {
     GPR_ASSERT(old > n);
   }
@@ -136,9 +137,9 @@ void grpc_fd_global_shutdown(void) {
 
 static void do_nothing(void *ignored, int success) {}
 
-grpc_fd *grpc_fd_create(int fd) {
+grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
-  grpc_iomgr_ref();
+  grpc_iomgr_register_object(&r->iomgr_object, name);
   grpc_pollset_add_fd(grpc_backup_pollset(), r);
   return r;
 }
@@ -147,22 +148,44 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
   return (gpr_atm_acq_load(&fd->refst) & 1) == 0;
 }
 
-static void wake_watchers(grpc_fd *fd) {
-  grpc_fd_watcher *watcher;
-  gpr_mu_lock(&fd->watcher_mu);
-  for (watcher = fd->watcher_root.next; watcher != &fd->watcher_root;
-       watcher = watcher->next) {
-    grpc_pollset_force_kick(watcher->pollset);
+static void maybe_wake_one_watcher_locked(grpc_fd *fd) {
+  if (fd->inactive_watcher_root.next != &fd->inactive_watcher_root) {
+    grpc_pollset_force_kick(fd->inactive_watcher_root.next->pollset);
+  } else if (fd->read_watcher) {
+    grpc_pollset_force_kick(fd->read_watcher->pollset);
+  } else if (fd->write_watcher) {
+    grpc_pollset_force_kick(fd->write_watcher->pollset);
   }
+}
+
+static void maybe_wake_one_watcher(grpc_fd *fd) {
+  gpr_mu_lock(&fd->watcher_mu);
+  maybe_wake_one_watcher_locked(fd);
   gpr_mu_unlock(&fd->watcher_mu);
 }
 
+static void wake_all_watchers_locked(grpc_fd *fd) {
+  grpc_fd_watcher *watcher;
+  for (watcher = fd->inactive_watcher_root.next;
+       watcher != &fd->inactive_watcher_root; watcher = watcher->next) {
+    grpc_pollset_force_kick(watcher->pollset);
+  }
+  if (fd->read_watcher) {
+    grpc_pollset_force_kick(fd->read_watcher->pollset);
+  }
+  if (fd->write_watcher && fd->write_watcher != fd->read_watcher) {
+    grpc_pollset_force_kick(fd->write_watcher->pollset);
+  }
+}
+
 void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data) {
-  fd->on_done = on_done ? on_done : do_nothing;
-  fd->on_done_user_data = user_data;
+  grpc_iomgr_closure_init(&fd->on_done_closure, on_done ? on_done : do_nothing,
+                          user_data);
   shutdown(fd->fd, SHUT_RDWR);
   ref_by(fd, 1); /* remove active status, but keep referenced */
-  wake_watchers(fd);
+  gpr_mu_lock(&fd->watcher_mu);
+  wake_all_watchers_locked(fd);
+  gpr_mu_unlock(&fd->watcher_mu);
   unref_by(fd, 2); /* drop the reference */
 }
 
@@ -171,21 +194,20 @@ void grpc_fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
 
 void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 
-static void make_callback(grpc_iomgr_cb_func cb, void *arg, int success,
+static void process_callback(grpc_iomgr_closure *closure, int success,
                           int allow_synchronous_callback) {
   if (allow_synchronous_callback) {
-    cb(arg, success);
+    closure->cb(closure->cb_arg, success);
   } else {
-    grpc_iomgr_add_delayed_callback(cb, arg, success);
+    grpc_iomgr_add_delayed_callback(closure, success);
   }
 }
 
-static void make_callbacks(grpc_iomgr_closure *callbacks, size_t n, int success,
-                           int allow_synchronous_callback) {
+static void process_callbacks(grpc_iomgr_closure *callbacks, size_t n,
+                              int success, int allow_synchronous_callback) {
   size_t i;
   for (i = 0; i < n; i++) {
-    make_callback(callbacks[i].cb, callbacks[i].cb_arg, success,
-                  allow_synchronous_callback);
+    process_callback(callbacks + i, success, allow_synchronous_callback);
   }
 }
 
@@ -204,16 +226,15 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
            set_ready call.  NOTE: we don't have an ABA problem here,
            since we should never have concurrent calls to the same
            notify_on function. */
-        wake_watchers(fd);
+        maybe_wake_one_watcher(fd);
         return;
       }
     /* swap was unsuccessful due to an intervening set_ready call.
        Fall through to the READY code below */
     case READY:
-      assert(gpr_atm_no_barrier_load(st) == READY);
+      GPR_ASSERT(gpr_atm_no_barrier_load(st) == READY);
       gpr_atm_rel_store(st, NOT_READY);
-      make_callback(closure->cb, closure->cb_arg,
-                    !gpr_atm_acq_load(&fd->shutdown),
+      process_callback(closure, !gpr_atm_acq_load(&fd->shutdown),
                     allow_synchronous_callback);
       return;
     default: /* WAITING */
@@ -227,7 +248,7 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
   abort();
 }
 
-static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure *callbacks,
+static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure **callbacks,
                              size_t *ncallbacks) {
   gpr_intptr state = gpr_atm_acq_load(st);
 
@@ -245,9 +266,9 @@ static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure *callbacks,
          Fall through to the WAITING code below */
       state = gpr_atm_acq_load(st);
     default: /* waiting */
-      assert(gpr_atm_no_barrier_load(st) != READY &&
-             gpr_atm_no_barrier_load(st) != NOT_READY);
-      callbacks[(*ncallbacks)++] = *(grpc_iomgr_closure *)state;
+      GPR_ASSERT(gpr_atm_no_barrier_load(st) != READY &&
+                 gpr_atm_no_barrier_load(st) != NOT_READY);
+      callbacks[(*ncallbacks)++] = (grpc_iomgr_closure *)state;
       gpr_atm_rel_store(st, NOT_READY);
       return;
   }
@@ -258,25 +279,30 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
   int success;
-  grpc_iomgr_closure cb;
+  grpc_iomgr_closure* closure;
   size_t ncb = 0;
+
   gpr_mu_lock(&fd->set_state_mu);
-  set_ready_locked(st, &cb, &ncb);
+  set_ready_locked(st, &closure, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   success = !gpr_atm_acq_load(&fd->shutdown);
-  make_callbacks(&cb, ncb, success, allow_synchronous_callback);
+  GPR_ASSERT(ncb <= 1);
+  if (ncb > 0) {
+    process_callbacks(closure, ncb, success, allow_synchronous_callback);
+  }
 }
 
 void grpc_fd_shutdown(grpc_fd *fd) {
-  grpc_iomgr_closure cb[2];
   size_t ncb = 0;
   gpr_mu_lock(&fd->set_state_mu);
   GPR_ASSERT(!gpr_atm_no_barrier_load(&fd->shutdown));
   gpr_atm_rel_store(&fd->shutdown, 1);
-  set_ready_locked(&fd->readst, cb, &ncb);
-  set_ready_locked(&fd->writest, cb, &ncb);
+  set_ready_locked(&fd->readst, &fd->shutdown_closures[0], &ncb);
+  set_ready_locked(&fd->writest, &fd->shutdown_closures[0], &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
-  make_callbacks(cb, ncb, 0, 0);
+  GPR_ASSERT(ncb <= 2);
+  process_callbacks(fd->shutdown_closures[0], ncb, 0 /* GPR_FALSE */,
+                    0 /* GPR_FALSE */);
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure) {
@@ -290,29 +316,65 @@ void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_closure *closure) {
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
                               gpr_uint32 read_mask, gpr_uint32 write_mask,
                               grpc_fd_watcher *watcher) {
+  gpr_uint32 mask = 0;
   /* keep track of pollers that have requested our events, in case they change
    */
   grpc_fd_ref(fd);
 
   gpr_mu_lock(&fd->watcher_mu);
-  watcher->next = &fd->watcher_root;
-  watcher->prev = watcher->next->prev;
-  watcher->next->prev = watcher->prev->next = watcher;
+  /* if there is nobody polling for read, but we need to, then start doing so */
+  if (!fd->read_watcher && gpr_atm_acq_load(&fd->readst) > READY) {
+    fd->read_watcher = watcher;
+    mask |= read_mask;
+  }
+  /* if there is nobody polling for write, but we need to, then start doing so
+   */
+  if (!fd->write_watcher && gpr_atm_acq_load(&fd->writest) > READY) {
+    fd->write_watcher = watcher;
+    mask |= write_mask;
+  }
+  /* if not polling, remember this watcher in case we need someone to later */
+  if (mask == 0) {
+    watcher->next = &fd->inactive_watcher_root;
+    watcher->prev = watcher->next->prev;
+    watcher->next->prev = watcher->prev->next = watcher;
+  }
   watcher->pollset = pollset;
   watcher->fd = fd;
   gpr_mu_unlock(&fd->watcher_mu);
 
-  return (gpr_atm_acq_load(&fd->readst) != READY ? read_mask : 0) |
-         (gpr_atm_acq_load(&fd->writest) != READY ? write_mask : 0);
+  return mask;
 }
 
-void grpc_fd_end_poll(grpc_fd_watcher *watcher) {
-  gpr_mu_lock(&watcher->fd->watcher_mu);
-  watcher->next->prev = watcher->prev;
-  watcher->prev->next = watcher->next;
-  gpr_mu_unlock(&watcher->fd->watcher_mu);
+void grpc_fd_end_poll(grpc_fd_watcher *watcher, int got_read, int got_write) {
+  int was_polling = 0;
+  int kick = 0;
+  grpc_fd *fd = watcher->fd;
 
-  grpc_fd_unref(watcher->fd);
+  gpr_mu_lock(&fd->watcher_mu);
+  if (watcher == fd->read_watcher) {
+    /* remove read watcher, kick if we still need a read */
+    was_polling = 1;
+    kick = kick || !got_read;
+    fd->read_watcher = NULL;
+  }
+  if (watcher == fd->write_watcher) {
+    /* remove write watcher, kick if we still need a write */
+    was_polling = 1;
+    kick = kick || !got_write;
+    fd->write_watcher = NULL;
+  }
+  if (!was_polling) {
+    /* remove from inactive list */
+    watcher->next->prev = watcher->prev;
+    watcher->prev->next = watcher->next;
+  }
+  if (kick) {
+    maybe_wake_one_watcher_locked(fd);
+  }
+  gpr_mu_unlock(&fd->watcher_mu);
+
+  grpc_fd_unref(fd);
 }
 
 void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback) {

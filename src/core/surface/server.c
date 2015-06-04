@@ -48,6 +48,7 @@
 #include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 typedef enum { PENDING_START, ALL_CALLS, CALL_LIST_COUNT } call_list;
@@ -122,6 +123,8 @@ struct channel_data {
   channel_registered_method *registered_methods;
   gpr_uint32 registered_method_slots;
   gpr_uint32 registered_method_max_probes;
+  grpc_iomgr_closure finish_shutdown_channel_closure;
+  grpc_iomgr_closure finish_destroy_channel_closure;
 };
 
 struct grpc_server {
@@ -177,6 +180,8 @@ struct call_data {
   grpc_stream_state *recv_state;
   void (*on_done_recv)(void *user_data, int success);
   void *recv_user_data;
+
+  grpc_iomgr_closure kill_zombie_closure;
 
   call_data **root[CALL_LIST_COUNT];
   call_link links[CALL_LIST_COUNT];
@@ -304,7 +309,9 @@ static void destroy_channel(channel_data *chand) {
   GPR_ASSERT(chand->server != NULL);
   orphan_channel(chand);
   server_ref(chand->server);
-  grpc_iomgr_add_callback(finish_destroy_channel, chand);
+  chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
+  chand->finish_destroy_channel_closure.cb_arg = chand;
+  grpc_iomgr_add_callback(&chand->finish_destroy_channel_closure);
 }
 
 static void finish_start_new_rpc_and_unlock(grpc_server *server,
@@ -416,7 +423,8 @@ static void server_on_recv(void *ptr, int success) {
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(&calld->kill_zombie_closure);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -424,11 +432,14 @@ static void server_on_recv(void *ptr, int success) {
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(&calld->kill_zombie_closure);
       } else if (calld->state == PENDING) {
         call_list_remove(calld, PENDING_START);
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_iomgr_add_callback(&calld->kill_zombie_closure);
+
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
@@ -502,7 +513,9 @@ static void finish_shutdown_channel(void *cd, int success) {
 
 static void shutdown_channel(channel_data *chand) {
   grpc_channel_internal_ref(chand->channel);
-  grpc_iomgr_add_callback(finish_shutdown_channel, chand);
+  chand->finish_shutdown_channel_closure.cb = finish_shutdown_channel;
+  chand->finish_shutdown_channel_closure.cb_arg = chand;
+  grpc_iomgr_add_callback(&chand->finish_shutdown_channel_closure);
 }
 
 static void init_call_elem(grpc_call_element *elem,
@@ -594,9 +607,15 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    server_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "server",
+    server_start_transport_op,
+    channel_op,
+    sizeof(call_data),
+    init_call_elem,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    "server",
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,
@@ -616,7 +635,9 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
                                              size_t filter_count,
                                              const grpc_channel_args *args) {
   size_t i;
-  int census_enabled = grpc_channel_args_is_census_enabled(args);
+  /* TODO(census): restore this once we finalize census filter etc.
+     int census_enabled = grpc_channel_args_is_census_enabled(args); */
+  int census_enabled = 0;
 
   grpc_server *server = gpr_malloc(sizeof(grpc_server));
 
@@ -642,9 +663,10 @@ grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
+  /* TODO(census): restore this once we rework census filter
   if (census_enabled) {
     server->channel_filters[1] = &grpc_server_census_filter;
-  }
+    } */
   for (i = 0; i < filter_count; i++) {
     server->channel_filters[i + 1 + census_enabled] = filters[i];
   }
@@ -665,7 +687,7 @@ void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host) {
   registered_method *m;
   if (!method) {
-    gpr_log(GPR_ERROR, "%s method string cannot be NULL", __FUNCTION__);
+    gpr_log(GPR_ERROR, "grpc_server_register_method method string cannot be NULL");
     return NULL;
   }
   for (m = server->registered_methods; m; m = m->next) {
@@ -701,7 +723,7 @@ void grpc_server_start(grpc_server *server) {
 grpc_transport_setup_result grpc_server_setup_transport(
     grpc_server *s, grpc_transport *transport,
     grpc_channel_filter const **extra_filters, size_t num_extra_filters,
-    grpc_mdctx *mdctx) {
+    grpc_mdctx *mdctx, const grpc_channel_args *args) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters =
       gpr_malloc(sizeof(grpc_channel_filter *) * num_filters);
@@ -732,8 +754,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
     grpc_transport_add_to_pollset(transport, grpc_cq_pollset(s->cqs[i]));
   }
 
-  channel = grpc_channel_create_from_filters(filters, num_filters,
-                                             s->channel_args, mdctx, 0);
+  channel =
+      grpc_channel_create_from_filters(filters, num_filters, args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;
@@ -940,11 +962,15 @@ void grpc_server_destroy(grpc_server *server) {
 
   while ((calld = call_list_remove_head(&server->lists[PENDING_START],
                                         PENDING_START)) != NULL) {
+    /* TODO(dgq): If we knew the size of the call list (or an upper bound), we
+     * could allocate all the memory for the closures in advance in a single
+     * chunk */
     gpr_log(GPR_DEBUG, "server destroys call %p", calld->call);
     calld->state = ZOMBIED;
-    grpc_iomgr_add_callback(
-        kill_zombie,
+    grpc_iomgr_closure_init(
+        &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
+    grpc_iomgr_add_callback(&calld->kill_zombie_closure);
   }
 
   for (c = server->root_channel_data.next; c != &server->root_channel_data;
@@ -1010,6 +1036,9 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag) {
   requested_call rc;
+  GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
+                               initial_metadata, cq_bound_to_call,
+                               cq_for_notification, tag);
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
@@ -1128,3 +1157,12 @@ static void publish_registered_or_batch(grpc_call *call, int success,
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {
   return server->channel_args;
 }
+
+int grpc_server_has_open_connections(grpc_server *server) {
+  int r;
+  gpr_mu_lock(&server->mu);
+  r = server->root_channel_data.next != &server->root_channel_data;
+  gpr_mu_unlock(&server->mu);
+  return r;
+}
+

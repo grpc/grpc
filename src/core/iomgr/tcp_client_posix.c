@@ -48,8 +48,10 @@
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 typedef struct {
@@ -185,6 +187,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   async_connect *ac;
   struct sockaddr_in6 addr6_v4mapped;
   struct sockaddr_in addr4_copy;
+  char *name;
+  char *addr_str;
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
@@ -211,24 +215,27 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
     err = connect(fd, addr, addr_len);
   } while (err < 0 && errno == EINTR);
 
+  grpc_sockaddr_to_string(&addr_str, addr, 1);
+  gpr_asprintf(&name, "tcp-client:%s", addr_str);
+
   if (err >= 0) {
     gpr_log(GPR_DEBUG, "instant connect");
-    cb(arg,
-       grpc_tcp_create(grpc_fd_create(fd), GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
-    return;
+    cb(arg, grpc_tcp_create(grpc_fd_create(fd, name),
+                            GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    gpr_log(GPR_ERROR, "connect error: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
     close(fd);
     cb(arg, NULL);
-    return;
+    goto done;
   }
 
   ac = gpr_malloc(sizeof(async_connect));
   ac->cb = cb;
   ac->cb_arg = arg;
-  ac->fd = grpc_fd_create(fd);
+  ac->fd = grpc_fd_create(fd, name);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   ac->write_closure.cb = on_writable;
@@ -236,6 +243,10 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+
+done:
+  gpr_free(name);
+  gpr_free(addr_str);
 }
 
 #endif

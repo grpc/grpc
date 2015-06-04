@@ -221,6 +221,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server.cc">

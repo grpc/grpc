@@ -112,7 +112,7 @@ static void test_request_response_with_metadata_and_payload(
   grpc_metadata meta_c[2] = {{"key1", "val1", 4, {{NULL, NULL, NULL}}}, {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
   grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}}, {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
   grpc_metadata meta_t[2] = {{"key5", "val5", 4, {{NULL, NULL, NULL}}}, {"key6", "val6", 4, {{NULL, NULL, NULL}}}};
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
   grpc_op ops[6];

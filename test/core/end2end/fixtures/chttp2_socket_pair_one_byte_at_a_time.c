@@ -62,7 +62,8 @@ static grpc_transport_setup_result server_setup_transport(
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   return grpc_server_setup_transport(f->server, transport, extra_filters,
-                                     GPR_ARRAY_SIZE(extra_filters), mdctx);
+                                     GPR_ARRAY_SIZE(extra_filters), mdctx,
+                                     grpc_server_get_channel_args(f->server));
 }
 
 typedef struct {
@@ -97,7 +98,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   f.client_cq = grpc_completion_queue_create();
   f.server_cq = grpc_completion_queue_create();
 
-  *sfd = grpc_iomgr_create_endpoint_pair(1);
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", 1);
 
   return f;
 }

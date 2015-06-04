@@ -35,10 +35,12 @@
 
 #include <string.h>
 
+#include "src/core/channel/channel_args.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_server.h"
+#include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_connector.h"
 #include "src/core/security/secure_transport_setup.h"
@@ -69,13 +71,21 @@ static void state_unref(grpc_server_secure_state *state) {
   }
 }
 
-static grpc_transport_setup_result setup_transport(void *server,
+static grpc_transport_setup_result setup_transport(void *statep,
                                                    grpc_transport *transport,
                                                    grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
-      &grpc_http_server_filter};
-  return grpc_server_setup_transport(server, transport, extra_filters,
-                                     GPR_ARRAY_SIZE(extra_filters), mdctx);
+      &grpc_server_auth_filter, &grpc_http_server_filter};
+  grpc_server_secure_state *state = statep;
+  grpc_transport_setup_result result;
+  grpc_arg connector_arg = grpc_security_connector_to_arg(state->sc);
+  grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
+      grpc_server_get_channel_args(state->server), &connector_arg);
+  result = grpc_server_setup_transport(state->server, transport, extra_filters,
+                                       GPR_ARRAY_SIZE(extra_filters), mdctx,
+                                       args_copy);
+  grpc_channel_args_destroy(args_copy);
+  return result;
 }
 
 static void on_secure_transport_setup_done(void *statep,
@@ -85,10 +95,9 @@ static void on_secure_transport_setup_done(void *statep,
   if (status == GRPC_SECURITY_OK) {
     gpr_mu_lock(&state->mu);
     if (!state->is_shutdown) {
-      grpc_create_chttp2_transport(setup_transport, state->server,
-                                   grpc_server_get_channel_args(state->server),
-                                   secure_endpoint, NULL, 0,
-                                   grpc_mdctx_create(), 0);
+      grpc_create_chttp2_transport(
+          setup_transport, state, grpc_server_get_channel_args(state->server),
+          secure_endpoint, NULL, 0, grpc_mdctx_create(), 0);
     } else {
       /* We need to consume this here, because the server may already have gone
        * away. */

@@ -36,13 +36,59 @@
 
 #include "src/core/security/credentials.h"
 
-/* Security context attached to a client-side call. */
+/* --- grpc_auth_context ---
+
+   High level authentication context object. Can optionally be chained. */
+
+/* Property names are always NULL terminated. */
+
+struct grpc_auth_context {
+  struct grpc_auth_context *chained;
+  grpc_auth_property *properties;
+  size_t property_count;
+  gpr_refcount refcount;
+  const char *peer_identity_property_name;
+};
+
+/* Constructor. */
+grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained,
+                                            size_t property_count);
+
+/* Refcounting. */
+grpc_auth_context *grpc_auth_context_ref(
+    grpc_auth_context *ctx);
+void grpc_auth_context_unref(grpc_auth_context *ctx);
+
+grpc_auth_property grpc_auth_property_init_from_cstring(const char *name,
+                                                        const char *value);
+
+grpc_auth_property grpc_auth_property_init(const char *name, const char *value,
+                                           size_t value_length);
+
+void grpc_auth_property_reset(grpc_auth_property *property);
+
+/* --- grpc_client_security_context ---
+
+   Internal client-side security context. */
+
 typedef struct {
   grpc_credentials *creds;
+  grpc_auth_context *auth_context;
 } grpc_client_security_context;
 
 grpc_client_security_context *grpc_client_security_context_create(void);
 void grpc_client_security_context_destroy(void *ctx);
+
+/* --- grpc_server_security_context ---
+
+   Internal server-side security context. */
+
+typedef struct {
+  grpc_auth_context *auth_context;
+} grpc_server_security_context;
+
+grpc_server_security_context *grpc_server_security_context_create(void);
+void grpc_server_security_context_destroy(void *ctx);
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
 

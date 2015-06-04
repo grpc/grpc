@@ -87,6 +87,8 @@ void gpr_cmdline_on_extra_arg(
 void gpr_cmdline_parse(gpr_cmdline *cl, int argc, char **argv);
 /* Destroy the parser */
 void gpr_cmdline_destroy(gpr_cmdline *cl);
+/* Get a string describing usage */
+char *gpr_cmdline_usage_string(gpr_cmdline *cl, const char *argv0);
 
 #ifdef __cplusplus
 }

@@ -36,5 +36,8 @@ RUN cd /var/local/git/grpc-java/lib/netty && \
 RUN cd /var/local/git/grpc-java && \
   ./gradlew build installDist
 
+# Add a service_account directory containing the auth creds file
+ADD service_account service_account
+
 # Specify the default command such that the interop server runs on its known testing port
 CMD ["/var/local/git/grpc-java/run-test-server.sh", "--use_tls=true", "--port=8030"]

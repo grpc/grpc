@@ -33,7 +33,7 @@
 
 'use strict';
 
-var _ = require('underscore');
+var _ = require('lodash');
 
 var grpc = require('bindings')('grpc.node');
 
@@ -47,8 +47,6 @@ var Duplex = stream.Duplex;
 var util = require('util');
 
 var EventEmitter = require('events').EventEmitter;
-
-var common = require('./common.js');
 
 /**
  * Handle an error on a call by sending it as a status

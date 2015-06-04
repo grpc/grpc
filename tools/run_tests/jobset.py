@@ -33,7 +33,6 @@ import hashlib
 import multiprocessing
 import os
 import platform
-import random
 import signal
 import subprocess
 import sys
@@ -57,28 +56,6 @@ else:
 
   signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
   signal.signal(signal.SIGALRM, alarm_handler)
-
-
-def shuffle_iteratable(it):
-  """Return an iterable that randomly walks it"""
-  # take a random sampling from the passed in iterable
-  # we take an element with probability 1/p and rapidly increase
-  # p as we take elements - this gives us a somewhat random set of values before
-  # we've seen all the values, but starts producing values without having to
-  # compute ALL of them at once, allowing tests to start a little earlier
-  nextit = []
-  p = 1
-  for val in it:
-    if random.randint(0, p) == 0:
-      p = min(p*2, 100)
-      yield val
-    else:
-      nextit.append(val)
-  # after taking a random sampling, we shuffle the rest of the elements and
-  # yield them
-  random.shuffle(nextit)
-  for val in nextit:
-    yield val
 
 
 _SUCCESS = object()
@@ -234,7 +211,8 @@ class Job(object):
 class Jobset(object):
   """Manages one run of jobs."""
 
-  def __init__(self, check_cancelled, maxjobs, newline_on_success, travis, cache):
+  def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
+               stop_on_failure, cache):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -244,6 +222,7 @@ class Jobset(object):
     self._newline_on_success = newline_on_success
     self._travis = travis
     self._cache = cache
+    self._stop_on_failure = stop_on_failure
 
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
@@ -280,8 +259,12 @@ class Jobset(object):
       for job in self._running:
         st = job.state(self._cache)
         if st == _RUNNING: continue
-        if st == _FAILURE: self._failures += 1
-        if st == _KILLED: self._failures += 1
+        if st == _FAILURE or st == _KILLED:
+          self._failures += 1
+          if self._stop_on_failure:
+            self._cancelled = True
+            for job in self._running:
+              job.kill()
         dead.add(job)
       for job in dead:
         self._completed += 1
@@ -333,15 +316,13 @@ def run(cmdlines,
         maxjobs=None,
         newline_on_success=False,
         travis=False,
+        infinite_runs=False,
+        stop_on_failure=False,
         cache=None):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success, travis,
+              newline_on_success, travis, stop_on_failure,
               cache if cache is not None else NoCache())
-  if not travis:
-    cmdlines = shuffle_iteratable(cmdlines)
-  else:
-    cmdlines = sorted(cmdlines, key=lambda x: x.shortname)
   for cmdline in cmdlines:
     if not js.start(cmdline):
       break
