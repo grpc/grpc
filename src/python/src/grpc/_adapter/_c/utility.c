@@ -145,6 +145,11 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
   static const int STATUS_INDEX = 4;
   static const int STATUS_CODE_INDEX = 0;
   static const int STATUS_DETAILS_INDEX = 1;
+  int type;
+  Py_ssize_t message_size;
+  char *message;
+  char *status_details;
+  gpr_slice message_slice;
   grpc_op c_op;
   if (!PyTuple_Check(op)) {
     PyErr_SetString(PyExc_TypeError, "expected tuple op");
@@ -156,14 +161,10 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     PyErr_SetString(PyExc_ValueError, buf);
     return 0;
   }
-  int type = PyInt_AsLong(PyTuple_GET_ITEM(op, TYPE_INDEX));
+  type = PyInt_AsLong(PyTuple_GET_ITEM(op, TYPE_INDEX));
   if (PyErr_Occurred()) {
     return 0;
   }
-  Py_ssize_t message_size;
-  char *message;
-  char *status_details;
-  gpr_slice message_slice;
   c_op.op = type;
   switch (type) {
   case GRPC_OP_SEND_INITIAL_METADATA:
@@ -366,7 +367,9 @@ gpr_timespec pygrpc_cast_double_to_gpr_timespec(double seconds) {
 int pygrpc_produce_channel_args(PyObject *py_args, grpc_channel_args *c_args) {
   size_t num_args = PyList_Size(py_args);
   size_t i;
-  grpc_channel_args args = {num_args, gpr_malloc(sizeof(grpc_arg) * num_args)};
+  grpc_channel_args args;
+  args.num_args = num_args;
+  args.args = gpr_malloc(sizeof(grpc_arg) * num_args);
   for (i = 0; i < args.num_args; ++i) {
     char *key;
     PyObject *value;
