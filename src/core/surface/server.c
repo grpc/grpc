@@ -48,6 +48,7 @@
 #include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 typedef enum { PENDING_START, ALL_CALLS, CALL_LIST_COUNT } call_list;

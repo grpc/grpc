@@ -2838,6 +2838,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/slice.h \
     include/grpc/support/slice_buffer.h \
+    include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
     include/grpc/support/sync_generic.h \
@@ -3331,6 +3332,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
+    src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
@@ -3618,6 +3620,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/async_generic_service.cc \
+    src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \

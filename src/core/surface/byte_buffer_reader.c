@@ -39,15 +39,18 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/byte_buffer.h>
 
-grpc_byte_buffer_reader *grpc_byte_buffer_reader_create(
-    grpc_byte_buffer *buffer) {
-  grpc_byte_buffer_reader *reader = malloc(sizeof(grpc_byte_buffer_reader));
+void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                  grpc_byte_buffer *buffer) {
   reader->buffer = buffer;
   switch (buffer->type) {
     case GRPC_BB_SLICE_BUFFER:
       reader->current.index = 0;
   }
-  return reader;
+}
+
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
+  /* no-op: the user is responsible for memory deallocation.
+   * Other cleanup operations would go here if needed. */
 }
 
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
@@ -67,8 +70,4 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
       break;
   }
   return 0;
-}
-
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
-  free(reader);
 }

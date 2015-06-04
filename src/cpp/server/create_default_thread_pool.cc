@@ -31,38 +31,19 @@
  *
  */
 
-#include "rb_byte_buffer.h"
+#include <grpc/support/cpu.h>
+#include "src/cpp/server/thread_pool.h"
 
-#include <ruby/ruby.h>
+#ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/slice.h>
-#include "rb_grpc.h"
+namespace grpc {
 
-grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
-  grpc_byte_buffer *buffer = grpc_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
-  return buffer;
+ThreadPoolInterface* CreateDefaultThreadPool() {
+   int cores = gpr_cpu_num_cores();
+   if (!cores) cores = 4;
+   return new ThreadPool(cores);
 }
 
-VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
-  size_t length = 0;
-  char *string = NULL;
-  size_t offset = 0;
-  grpc_byte_buffer_reader reader;
-  gpr_slice next;
-  if (buffer == NULL) {
-    return Qnil;
+}  // namespace grpc
 
-  }
-  length = grpc_byte_buffer_length(buffer);
-  string = xmalloc(length + 1);
-  grpc_byte_buffer_reader_init(&reader, buffer);
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-  }
-  return rb_str_new(string, length);
-}
+#endif  // !GRPC_CUSTOM_DEFAULT_THREAD_POOL
