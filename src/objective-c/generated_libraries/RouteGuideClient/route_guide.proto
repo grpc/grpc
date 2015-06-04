@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-package grpc.example.routeguide;
+package examples;
 
 option objc_class_prefix = "RGD";
 
