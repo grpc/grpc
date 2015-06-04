@@ -31,27 +31,19 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include <grpc/support/cpu.h>
+#include "src/cpp/server/thread_pool.h"
 
-#ifdef GPR_POSIX_ENV
+#ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
 
-#include "src/core/support/env.h"
+namespace grpc {
 
-#include <stdlib.h>
-
-#include <grpc/support/log.h>
-
-#include "src/core/support/string.h"
-#include <grpc/support/string_util.h>
-
-char *gpr_getenv(const char *name) {
-  char *result = getenv(name);
-  return result == NULL ? result : gpr_strdup(result);
+ThreadPoolInterface* CreateDefaultThreadPool() {
+   int cores = gpr_cpu_num_cores();
+   if (!cores) cores = 4;
+   return new ThreadPool(cores);
 }
 
-void gpr_setenv(const char *name, const char *value) {
-  int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
-}
+}  // namespace grpc
 
-#endif /* GPR_POSIX_ENV */
+#endif  // !GRPC_CUSTOM_DEFAULT_THREAD_POOL

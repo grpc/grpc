@@ -45,9 +45,7 @@ var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 
-var capitalize = require('underscore.string/capitalize');
-
-var _ = require('underscore');
+var _ = require('lodash');
 
 describe('File loader', function() {
   it('Should load a proto file by default', function() {
@@ -159,7 +157,7 @@ describe('Generic client and server', function() {
       server = new Server({
         string: {
           capitalize: function(call, callback) {
-            callback(null, capitalize(call.request));
+            callback(null, _.capitalize(call.request));
           }
         }
       });

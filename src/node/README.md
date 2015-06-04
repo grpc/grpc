@@ -1,16 +1,22 @@
 # Node.js gRPC Library
 
 ## Status
-
 Alpha : Ready for early adopters
 
-## Prerequisites
+## PREREQUISITES
+- `node`: This requires `node` to be installed. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
+- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
 
-This requires `node` to be installed. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
+## INSTALLATION
+On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
+Run the following command to install gRPC Node.js.
+```sh
+$ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
+```
+This will download and run the [gRPC install script][], then install the latest version of gRPC Nodejs npm package.
 
-## Installation
-
- 1. Clone [the grpc repository](https://github.com/grpc/grpc).
+## BUILD FROM SOURCE
+ 1. Clone [the grpc Git Repository](https://github.com/grpc/grpc).
  2. Follow the instructions in the `INSTALL` file in the root of that repository to install the C core library that this package depends on.
  3. Run `npm install`.
 
@@ -20,12 +26,10 @@ If you install the gRPC C core library in a custom location, then you need to se
 CXXFLAGS=-I<custom location>/include LDFLAGS=-L<custom location>/lib npm install [grpc]
 ```
 
-## Tests
-
+## TESTING
 To run the test suite, simply run `npm test` in the install location.
 
 ## API
-
 This library internally uses [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js), and some structures it exports match those exported by that library
 
 If you require this module, you will get an object with the following members
@@ -82,3 +86,7 @@ ServerCredentials
 ```
 
 An object with factory methods fro creating credential objects for servers.
+
+[homebrew]:http://brew.sh
+[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
+[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install

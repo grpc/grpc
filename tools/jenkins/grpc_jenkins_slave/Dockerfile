@@ -27,7 +27,57 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# GRPC contains the General RPC module.
-module GRPC
-  VERSION = '0.9.2'
-end
+# A work-in-progress Dockerfile that allows running gRPC test suites
+# inside a docker container.
+
+FROM debian:wheezy
+
+# Install Git.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  curl \
+  gcc \
+  git \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  strace \
+  python-dev \
+  python-setuptools \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
+
+##################
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev
+
+#################
+# C# dependencies
+
+# Update to a newer version of mono
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    mono-devel \
+    nunit \
+    nunit-console \
+    monodevelop
+
+# Download NuGet
+RUN cd /var/local && wget www.nuget.org/NuGet.exe
+ENV NUGET mono /var/local/NuGet.exe
+
+# TODO(jtattermusch): add dependencies for other languages
+
+# Define the default command.
+CMD ["bash"]

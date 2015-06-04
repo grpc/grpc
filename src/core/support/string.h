@@ -44,10 +44,6 @@ extern "C" {
 
 /* String utility functions */
 
-/* Returns a copy of src that can be passed to gpr_free().
-   If allocation fails or if src is NULL, returns NULL. */
-char *gpr_strdup(const char *src);
-
 /* flag to include plaintext after a hexdump */
 #define GPR_HEXDUMP_PLAINTEXT 0x00000001
 
@@ -70,16 +66,6 @@ int gpr_ltoa(long value, char *output);
 
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
-
-/* printf to a newly-allocated string.  The set of supported formats may vary
-   between platforms.
-
-   On success, returns the number of bytes printed (excluding the final '\0'),
-   and *strp points to a string which must later be destroyed with gpr_free().
-
-   On error, returns -1 and sets *strp to NULL. If the format string is bad,
-   the result is undefined. */
-int gpr_asprintf(char **strp, const char *format, ...);
 
 /* Join a set of strings, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length
