@@ -1,0 +1,2 @@
+<%namespace file="../vcxproj_defs.include" import="gen_project"/>\
+${gen_project('grpc_cpp_plugin', targets, configuration_type='Application')}

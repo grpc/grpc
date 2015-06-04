@@ -40,9 +40,6 @@
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
 
-@interface ViewController ()
-@end
-
 @implementation ViewController
 
 - (void)viewDidLoad {
@@ -80,7 +77,7 @@
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value];
+    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
     NSLog(@"Received response:\n%@", response);
   } completionHandler:^(NSError *errorOrNil) {
     if (errorOrNil) {

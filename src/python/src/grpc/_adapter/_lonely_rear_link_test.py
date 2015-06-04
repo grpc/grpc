@@ -43,7 +43,7 @@ _TIMEOUT = 2
 class LonelyRearLinkTest(unittest.TestCase):
 
   def setUp(self):
-    self.pool = logging_pool.pool(80)
+    self.pool = logging_pool.pool(8)
 
   def tearDown(self):
     self.pool.shutdown(wait=True)
@@ -97,4 +97,4 @@ class LonelyRearLinkTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  unittest.main(verbosity=2)

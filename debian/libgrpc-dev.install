@@ -1,3 +1,5 @@
-usr/include/*
-usr/lib/lib*.a
-usr/lib/lib*.so
+usr/include/grpc/
+usr/lib/libgpr.a
+usr/lib/libgpr.so
+usr/lib/libgrpc.a
+usr/lib/libgrpc.so

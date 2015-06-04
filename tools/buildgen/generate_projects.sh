@@ -38,14 +38,12 @@ fi
 
 cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
-gen_build_json=test/core/end2end/gen_build_json.py
 
 if [ "x$TEST" != "x" ] ; then
   tools/buildgen/build-cleaner.py build.json
 fi
 
-end2end_test_build=`mktemp /tmp/genXXXXXX`
-$gen_build_json > $end2end_test_build
+. tools/buildgen/generate_build_additions.sh
 
 global_plugins=`find ./tools/buildgen/plugins -name '*.py' |
   sort | grep -v __init__ | awk ' { printf "-p %s ", $0 } '`
@@ -60,7 +58,7 @@ for dir in . ; do
     out=${dir}/${file#$dir/templates/}  # strip templates dir prefix
     out=${out%.*}  # strip template extension
     echo "generating file: $out"
-    json_files="build.json $end2end_test_build"
+    json_files="build.json $gen_build_files"
     data=`for i in $json_files ; do echo $i ; done | awk ' { printf "-d %s ", $0 } '`
     if [ "x$TEST" = "xtrue" ] ; then
       actual_out=$out
@@ -75,4 +73,4 @@ for dir in . ; do
   done
 done
 
-rm $end2end_test_build
+rm $gen_build_files

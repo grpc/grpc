@@ -41,7 +41,7 @@
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void *create_test_tag(void) {
   static gpr_intptr i = 0;
@@ -59,14 +59,14 @@ static void shutdown_and_destroy(grpc_completion_queue *cc) {
 
 /* ensure we can create and destroy a completion channel */
 static void test_no_op(void) {
-  LOG_TEST();
+  LOG_TEST("test_no_op");
   shutdown_and_destroy(grpc_completion_queue_create());
 }
 
 static void test_wait_empty(void) {
   grpc_completion_queue *cc;
 
-  LOG_TEST();
+  LOG_TEST("test_wait_empty");
 
   cc = grpc_completion_queue_create();
   GPR_ASSERT(grpc_completion_queue_next(cc, gpr_now()).type ==
@@ -79,7 +79,7 @@ static void test_cq_end_op(void) {
   grpc_completion_queue *cc;
   void *tag = create_test_tag();
 
-  LOG_TEST();
+  LOG_TEST("test_cq_end_op");
 
   cc = grpc_completion_queue_create();
 
@@ -94,13 +94,33 @@ static void test_cq_end_op(void) {
   shutdown_and_destroy(cc);
 }
 
+static void test_shutdown_then_next_polling(void) {
+  grpc_completion_queue *cc;
+  LOG_TEST("test_shutdown_then_next_polling");
+
+  cc = grpc_completion_queue_create();
+  grpc_completion_queue_shutdown(cc);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_past).type == GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cc);
+}
+
+static void test_shutdown_then_next_with_timeout(void) {
+  grpc_completion_queue *cc;
+  LOG_TEST("test_shutdown_then_next_with_timeout");
+
+  cc = grpc_completion_queue_create();
+  grpc_completion_queue_shutdown(cc);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_future).type == GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cc);
+}
+
 static void test_pluck(void) {
   grpc_event ev;
   grpc_completion_queue *cc;
   void *tags[128];
   unsigned i, j;
 
-  LOG_TEST();
+  LOG_TEST("test_pluck");
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     tags[i] = create_test_tag();
@@ -222,7 +242,7 @@ static void test_threading(int producers, int consumers) {
   int total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %d producers, %d consumers", __FUNCTION__, producers,
+  gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading", producers,
           consumers);
 
   grpc_completion_queue_dont_poll_test_only(cc);
@@ -291,6 +311,8 @@ int main(int argc, char **argv) {
   grpc_iomgr_init();
   test_no_op();
   test_wait_empty();
+  test_shutdown_then_next_polling();
+  test_shutdown_then_next_with_timeout();
   test_cq_end_op();
   test_pluck();
   test_threading(1, 1);

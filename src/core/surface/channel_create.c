@@ -53,6 +53,7 @@
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
@@ -195,9 +196,10 @@ grpc_channel *grpc_channel_create(const char *target,
   const grpc_channel_filter *filters[MAX_FILTERS];
   int n = 0;
   filters[n++] = &grpc_client_surface_filter;
+  /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
-  }
+    } */
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
   channel = grpc_channel_create_from_filters(filters, n, args, mdctx, 1);

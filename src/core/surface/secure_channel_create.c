@@ -46,7 +46,7 @@
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
-#include "src/core/security/auth.h"
+#include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
@@ -56,6 +56,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 #include "src/core/tsi/transport_security_interface.h"
@@ -226,7 +227,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
       GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create();
   }
-  mdctx = grpc_credentials_get_or_create_metadata_context(creds);
+  mdctx = grpc_mdctx_create();
 
   s = gpr_malloc(sizeof(setup));
   connector_arg = grpc_security_connector_to_arg(&connector->base);
@@ -234,9 +235,10 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg);
   filters[n++] = &grpc_client_surface_filter;
+  /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
-  }
+    } */
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
   channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);

@@ -34,15 +34,15 @@ import setuptools
 import sys
 
 _EXTENSION_SOURCES = (
-    'grpc/_adapter/_c.c',
-    'grpc/_adapter/_call.c',
-    'grpc/_adapter/_channel.c',
-    'grpc/_adapter/_completion_queue.c',
-    'grpc/_adapter/_error.c',
-    'grpc/_adapter/_server.c',
-    'grpc/_adapter/_client_credentials.c',
-    'grpc/_adapter/_server_credentials.c',
-    'grpc/_adapter/_tag.c'
+    'grpc/_adapter/_c/module.c',
+    'grpc/_adapter/_c/types.c',
+    'grpc/_adapter/_c/utility.c',
+    'grpc/_adapter/_c/types/client_credentials.c',
+    'grpc/_adapter/_c/types/server_credentials.c',
+    'grpc/_adapter/_c/types/completion_queue.c',
+    'grpc/_adapter/_c/types/call.c',
+    'grpc/_adapter/_c/types/channel.c',
+    'grpc/_adapter/_c/types/server.c',
 )
 
 _EXTENSION_INCLUDE_DIRECTORIES = (
@@ -86,7 +86,7 @@ _PACKAGE_DIRECTORIES = {
 
 setuptools.setup(
     name='grpcio',
-    version='0.5.0a2',
+    version='0.9.0a0',
     ext_modules=[_EXTENSION_MODULE],
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,

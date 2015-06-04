@@ -40,7 +40,7 @@ from grpc.framework.base import interfaces
 from grpc.framework.foundation import logging_pool
 
 _IDENTITY = lambda x: x
-_TIMEOUT = 2
+_TIMEOUT = 32
 
 
 # TODO(nathaniel): End-to-end metadata testing.
@@ -54,8 +54,8 @@ def _transform_metadata(unused_metadata):
 class RoundTripTest(unittest.TestCase):
 
   def setUp(self):
-    self.fore_link_pool = logging_pool.pool(80)
-    self.rear_link_pool = logging_pool.pool(80)
+    self.fore_link_pool = logging_pool.pool(8)
+    self.rear_link_pool = logging_pool.pool(8)
 
   def tearDown(self):
     self.rear_link_pool.shutdown(wait=True)
@@ -274,4 +274,4 @@ class RoundTripTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  unittest.main(verbosity=2)

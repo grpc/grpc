@@ -39,9 +39,10 @@
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_mdstr *mdstr,
                        const char *str) {
@@ -62,7 +63,7 @@ static void test_static_lookup(void) {
   mdctx = grpc_mdctx_create();
   grpc_chttp2_hptbl_init(&tbl, mdctx);
 
-  LOG_TEST();
+  LOG_TEST("test_static_lookup");
   assert_index(&tbl, 1, ":authority", "");
   assert_index(&tbl, 2, ":method", "GET");
   assert_index(&tbl, 3, ":method", "POST");
@@ -136,7 +137,7 @@ static void test_many_additions(void) {
   char *value;
   grpc_mdctx *mdctx;
 
-  LOG_TEST();
+  LOG_TEST("test_many_additions");
 
   mdctx = grpc_mdctx_create();
   grpc_chttp2_hptbl_init(&tbl, mdctx);
@@ -177,7 +178,7 @@ static void test_find(void) {
   grpc_mdctx *mdctx;
   grpc_chttp2_hptbl_find_result r;
 
-  LOG_TEST();
+  LOG_TEST("test_find");
 
   mdctx = grpc_mdctx_create();
   grpc_chttp2_hptbl_init(&tbl, mdctx);
