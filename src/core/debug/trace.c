@@ -99,6 +99,9 @@ void grpc_tracer_init(const char *env_var) {
     parse(e);
     gpr_free(e);
   }
+}
+
+void grpc_tracer_shutdown(void) {
   while (tracers) {
     tracer *t = tracers;
     tracers = t->next;
