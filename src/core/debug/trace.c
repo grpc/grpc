@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/support/env.h"
@@ -80,27 +81,10 @@ static void parse(const char *s) {
   char **strings = NULL;
   size_t nstrings = 0;
   size_t i;
-  tracer *t;
   split(s, &strings, &nstrings);
 
   for (i = 0; i < nstrings; i++) {
-    const char *s = strings[i];
-    if (0 == strcmp(s, "all")) {
-      for (t = tracers; t; t = t->next) {
-        *t->flag = 1;
-      }
-    } else {
-      int found = 0;
-      for (t = tracers; t; t = t->next) {
-        if (0 == strcmp(s, t->name)) {
-          *t->flag = 1;
-          found = 1;
-        }
-      }
-      if (!found) {
-        gpr_log(GPR_ERROR, "Unknown trace var: '%s'", s);
-      }
-    }
+    grpc_tracer_set_enabled(strings[i], 1);
   }
 
   for (i = 0; i < nstrings; i++) {
@@ -120,4 +104,26 @@ void grpc_tracer_init(const char *env_var) {
     tracers = t->next;
     gpr_free(t);
   }
+}
+
+int grpc_tracer_set_enabled(const char *name, int enabled) {
+  tracer *t;
+  if (0 == strcmp(name, "all")) {
+    for (t = tracers; t; t = t->next) {
+      *t->flag = 1;
+    }
+  } else {
+    int found = 0;
+    for (t = tracers; t; t = t->next) {
+      if (0 == strcmp(name, t->name)) {
+        *t->flag = enabled;
+        found = 1;
+      }
+    }
+    if (!found) {
+      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
+      return 0;  /* early return */
+    }
+  }
+  return 1;
 }
