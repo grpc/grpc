@@ -1,5 +1,14 @@
 # gRPC for Objective-C
 
+- [Install protoc with the gRPC plugin](#install)
+- [Write your API declaration in proto format](#write-protos)
+- [Integrate a proto library in your project](#cocoapods)
+- [Use the generated library in your code](#use)
+- [Use gRPC without Protobuf](#no-proto)
+- [Alternative installation methods](#alternatives)
+    - [Install protoc and the gRPC plugin without using Homebrew](#no-homebrew)
+    - [Integrate the generated gRPC library without using Cocoapods](#no-cocoapods)
+
 While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
 usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
 plugin for the Protobuf Compiler (_protoc_) to generate client libraries to communicate with gRPC
