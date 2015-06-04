@@ -150,6 +150,7 @@ class AsyncClient : public Client {
 					  const SimpleRequest&)> setup_ctx) :
       Client(config), channel_lock_(config.client_channels()),
       max_outstanding_per_channel_(config.outstanding_rpcs_per_channel()),
+      contexts_(config.client_channels()),
       channel_count_(config.client_channels()) {
 
     SetupLoadTest(config, config.async_client_threads());
