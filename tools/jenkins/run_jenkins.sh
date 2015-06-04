@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -26,8 +27,38 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# This script is invoked by Jenkins and triggers a test run based on
+# env variable settings.
+#
+# To prevent cygwin bash complaining about empty lines ending with \r
+# we set the igncr option. The option doesn't exist on Linux, so we fallback
+# to just 'set -ex' there.
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-# GRPC contains the General RPC module.
-module GRPC
-  VERSION = '0.9.3'
-end
+if [ "$platform" == "linux" ]
+then
+  echo "building $language on Linux"
+
+  # Run tests inside docker
+  docker run grpc/grpc_jenkins_slave bash -c "git clone --recursive $GIT_URL /var/local/git/grpc \
+    && cd /var/local/git/grpc && git checkout -f $GIT_COMMIT \
+    && git submodule update \
+    && tools/run_tests/run_tests.py -t -l $language"
+elif [ "$platform" == "windows" ]
+then
+  echo "building $language on Windows"
+
+  # Prevent msbuild from picking up "platform" env variable, which would break the build
+  unset platform
+
+  # TODO(jtattermusch): integrate nuget restore in a nicer way.
+  /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
+  /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
+
+  python tools/run_tests/run_tests.py -t -l $language
+else
+  echo "Unknown platform $platform"
+  exit 1
+fi
