@@ -58,40 +58,41 @@ template <class R>
 class ClientAsyncResponseReader GRPC_FINAL
     : public ClientAsyncResponseReaderInterface<R> {
  public:
+  template <class W>
   ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
                             const RpcMethod& method, ClientContext* context,
-                            const grpc::protobuf::Message& request)
+                            const W& request)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
-    init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
-    init_buf_.AddSendMessage(request);
-    init_buf_.AddClientSendClose();
+    init_buf_.SendInitialMetadata(context->send_initial_metadata_);
+    init_buf_.SendMessage(request);
+    init_buf_.ClientSendClose();
     call_.PerformOps(&init_buf_);
   }
 
   void ReadInitialMetadata(void* tag) {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
-    meta_buf_.Reset(tag);
-    meta_buf_.AddRecvInitialMetadata(context_);
+    meta_buf_.SetOutputTag(tag);
+    meta_buf_.RecvInitialMetadata(context_);
     call_.PerformOps(&meta_buf_);
   }
 
   void Finish(R* msg, Status* status, void* tag) {
-    finish_buf_.Reset(tag);
+    finish_buf_.SetOutputTag(tag);
     if (!context_->initial_metadata_received_) {
       finish_buf_.AddRecvInitialMetadata(context_);
     }
-    finish_buf_.AddRecvMessage(msg);
-    finish_buf_.AddClientRecvStatus(context_, status);
+    finish_buf_.RecvMessage(msg);
+    finish_buf_.ClientRecvStatus(context_, status);
     call_.PerformOps(&finish_buf_);
   }
 
  private:
   ClientContext* context_;
   Call call_;
-  SneakyCallOpBuffer init_buf_;
-  CallOpBuffer meta_buf_;
-  CallOpBuffer finish_buf_;
+  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose> init_buf_;
+  CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
+  CallOpSet<CallOpRecvMessage<R>, CallOpClientRecvStatus> finish_buf_;
 };
 
 template <class W>
@@ -104,34 +105,34 @@ class ServerAsyncResponseWriter GRPC_FINAL
   void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
     GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
-    meta_buf_.Reset(tag);
-    meta_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
+    meta_buf_.SetOutputTag(tag);
+    meta_buf_.SendInitialMetadata(ctx_->initial_metadata_);
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_buf_);
   }
 
   void Finish(const W& msg, const Status& status, void* tag) {
-    finish_buf_.Reset(tag);
+    finish_buf_.SetOutputTag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
     if (status.IsOk()) {
-      finish_buf_.AddSendMessage(msg);
+      finish_buf_.SendMessage(msg);
     }
-    finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
+    finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
 
   void FinishWithError(const Status& status, void* tag) {
     GPR_ASSERT(!status.IsOk());
-    finish_buf_.Reset(tag);
+    finish_buf_.SetOutputTag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
+    finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
 
@@ -140,8 +141,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
 
   Call call_;
   ServerContext* ctx_;
-  CallOpBuffer meta_buf_;
-  CallOpBuffer finish_buf_;
+  CallOpSet<CallOpSendInitialMetadata> meta_buf_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> finish_buf_;
 };
 
 }  // namespace grpc

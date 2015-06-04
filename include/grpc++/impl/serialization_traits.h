@@ -31,48 +31,19 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CLIENT_UNARY_CALL_H
-#define GRPCXX_IMPL_CLIENT_UNARY_CALL_H
+#ifndef GRPCXX_IMPL_SERIALIZATION_TRAITS_H
+#define GRPCXX_IMPL_SERIALIZATION_TRAITS_H
 
-#include <grpc++/config.h>
-
-#include <grpc++/impl/call.h>
+struct grpc_byte_buffer;
 
 namespace grpc {
 
-class ChannelInterface;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class Status;
+template <class Message>
+class SerializationTraits;
 
-// Wrapper that performs a blocking unary call
-template <class InputMessage, class OutputMessage>
-Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context,
-                         const InputMessage& request,
-                         OutputMessage* result) {
-  CompletionQueue cq;
-  Call call(channel->CreateCall(method, context, &cq));
-  CallOpSet<
-  		CallOpSendInitialMetadata, 
-  		CallOpSendMessage, 
-  		CallOpRecvInitialMetadata, 
-  		CallOpRecvMessage<OutputMessage>, 
-  		CallOpClientSendClose, 
-  		CallOpClientRecvStatus> ops;
-  Status status;
-  ops.AddSendInitialMetadata(context);
-  ops.AddSendMessage(request);
-  ops.AddRecvInitialMetadata(context);
-  ops.AddRecvMessage(result);
-  ops.AddClientSendClose();
-  ops.AddClientRecvStatus(context, &status);
-  call.PerformOps(&ops);
-  GPR_ASSERT((cq.Pluck(&ops) && ops.got_message) || !status.IsOk());
-  return status;
-}
+typedef bool (*SerializationTraitsReadFunction)(grpc_byte_buffer* src, void* dest);
+typedef bool (*SerializationTraitsWriteFunction)(const void* src, grpc_byte_buffer* dst);
 
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_CLIENT_UNARY_CALL_H
+#endif // GRPCXX_IMPL_SERIALIZATION_TRAITS_H
