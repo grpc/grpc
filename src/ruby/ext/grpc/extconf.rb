@@ -32,29 +32,6 @@ require 'mkmf'
 LIBDIR = RbConfig::CONFIG['libdir']
 INCLUDEDIR = RbConfig::CONFIG['includedir']
 
-if ENV.key? 'GRPC_ROOT'
-  GRPC_ROOT = ENV['GRPC_ROOT']
-else
-  grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
-  if File.exist?(File.join(grpc_root, 'include/grpc/grpc.h'))
-    GRPC_ROOT = grpc_root
-  else
-    GRPC_ROOT = nil
-  end
-end
-
-if ENV.key? 'CONFIG'
-  GRPC_CONFIG = ENV['CONFIG']
-else
-  GRPC_CONFIG = 'opt'
-end
-
-if (ENV.key? 'GRPC_LIB_DIR') && (!GRPC_ROOT.nil?)
-  GRPC_LIB_DIR = File.join(GRPC_ROOT, ENV['GRPC_LIB_DIR'])
-else
-  GRPC_LIB_DIR = File.join(File.join(GRPC_ROOT, 'libs'), GRPC_CONFIG)
-end
-
 HEADER_DIRS = [
   # Search /opt/local (Mac source install)
   '/opt/local/include',
@@ -77,12 +54,26 @@ LIB_DIRS = [
   LIBDIR
 ]
 
-unless GRPC_ROOT.nil?
-  HEADER_DIRS.unshift File.join(GRPC_ROOT, 'include')
-  LIB_DIRS.unshift GRPC_LIB_DIR
-  unless File.exist?(File.join(GRPC_LIB_DIR, 'libgrpc.a'))
-    system("make -C #{GRPC_ROOT} static_c CONFIG=#{GRPC_CONFIG}")
+# Check to see if GRPC_ROOT is defined or available
+grpc_root = ENV['GRPC_ROOT']
+if grpc_root.nil?
+  r = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
+  grpc_root = r if File.exist?(File.join(r, 'include/grpc/grpc.h'))
+end
+
+# When grpc_root is available attempt to build the grpc core.
+unless grpc_root.nil?
+  grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+  if ENV.key?('GRPC_LIB_DIR')
+    grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
+  else
+    grpc_lib_dir = File.join(File.join(grpc_root, 'libs'), grpc_config)
   end
+  unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
+    system("make -C #{grpc_root} static_c CONFIG=#{grpc_config}")
+  end
+  HEADER_DIRS.unshift File.join(grpc_root, 'include')
+  LIB_DIRS.unshift grpc_lib_dir
 end
 
 def crash(msg)
