@@ -62,6 +62,12 @@ class ByteBuffer GRPC_FINAL {
   void Clear();
   size_t Length();
 
+ private:
+  friend class SerializationTraits<ByteBuffer, void>;
+
+  ByteBuffer(const ByteBuffer&);
+  ByteBuffer& operator=(const ByteBuffer&);
+
   // takes ownership
   void set_buffer(grpc_byte_buffer* buf) {
     if (buffer_) {
@@ -70,9 +76,6 @@ class ByteBuffer GRPC_FINAL {
     }
     buffer_ = buf;
   }
-
- private:
-  friend class CallOpBuffer;
 
   grpc_byte_buffer* buffer() const { return buffer_; }
 
@@ -85,6 +88,10 @@ class SerializationTraits<ByteBuffer, void> {
   static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest, int max_message_size) {
     dest->set_buffer(byte_buffer);
     return Status::OK;
+  }
+  static bool Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer) {
+    *buffer = source.buffer();
+    return true;
   }
 };
 

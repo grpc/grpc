@@ -99,7 +99,8 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
-    ops.SendMessage(request);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(ops.SendMessage(request));
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
@@ -169,7 +170,9 @@ class ClientWriter : public ClientWriterInterface<W> {
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
-    ops.SendMessage(msg);
+    if (!ops.SendMessage(msg)) {
+      return false;
+    }
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops);
   }
@@ -245,7 +248,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
-    ops.SendMessage(msg);
+    if (!ops.SendMessage(msg)) return false;
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops);
   }
@@ -316,11 +319,13 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
+    if (!ops.SendMessage(msg)) {
+      return false;
+    }
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    ops.SendMessage(msg);
     call_->PerformOps(&ops);
     return call_->cq()->Pluck(&ops);
   }
@@ -356,11 +361,13 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
+    if (!ops.SendMessage(msg)) {
+      return false;
+    }
     if (!ctx_->sent_initial_metadata_) {
       ops.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    ops.SendMessage(msg);
     call_->PerformOps(&ops);
     return call_->cq()->Pluck(&ops);
   }
@@ -415,7 +422,8 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_);
-    init_ops_.SendMessage(request);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(init_ops_.SendMessage(request));
     init_ops_.ClientSendClose();
     call_.PerformOps(&init_ops_);
   }
@@ -488,7 +496,8 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
 
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
-    write_ops_.SendMessage(msg);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(write_ops_.SendMessage(msg));
     call_.PerformOps(&write_ops_);
   }
 
@@ -558,7 +567,8 @@ class ClientAsyncReaderWriter GRPC_FINAL
 
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
-    write_ops_.SendMessage(msg);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(write_ops_.SendMessage(msg));
     call_.PerformOps(&write_ops_);
   }
 
@@ -617,10 +627,11 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
-    if (status.IsOk()) {
-      finish_ops_.SendMessage(msg);
+    if (status.IsOk() && !finish_ops_.SendMessage(msg)) {
+      finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, Status(INTERNAL, "Failed to serialize response"));
+    } else {
+      finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }
-    finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_ops_);
   }
 
@@ -667,7 +678,8 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    write_ops_.SendMessage(msg);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(write_ops_.SendMessage(msg));
     call_.PerformOps(&write_ops_);
   }
 
@@ -721,7 +733,8 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    write_ops_.SendMessage(msg);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(write_ops_.SendMessage(msg));
     call_.PerformOps(&write_ops_);
   }
 

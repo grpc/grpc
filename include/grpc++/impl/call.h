@@ -35,6 +35,7 @@
 #define GRPCXX_IMPL_CALL_H
 
 #include <grpc/grpc.h>
+#include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/status.h>
@@ -51,6 +52,10 @@ namespace grpc {
 class ByteBuffer;
 class Call;
 
+void FillMetadataMap(grpc_metadata_array* arr,
+                     std::multimap<grpc::string, grpc::string>* metadata);
+grpc_metadata* FillMetadataArray(const std::multimap<grpc::string, grpc::string>& metadata);
+
 class CallNoOp {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {}
@@ -59,11 +64,29 @@ class CallNoOp {
 
 class CallOpSendInitialMetadata {
  public:
-  void SendInitialMetadata(const std::multimap<grpc::string, grpc::string>& metadata);
+  CallOpSendInitialMetadata() : send_(false) {}
+
+  void SendInitialMetadata(const std::multimap<grpc::string, grpc::string>& metadata) {
+    send_ = true;
+    initial_metadata_count_ = metadata.size();
+    initial_metadata_ = FillMetadataArray(metadata);
+  }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops);
-  void FinishOp(void* tag, bool* status, int max_message_size);
+  void AddOp(grpc_op* ops, size_t* nops) {
+    if (!send_) return;
+    grpc_op* op = &ops[(*nops)++];
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = initial_metadata_count_;
+    op->data.send_initial_metadata.metadata = initial_metadata_;
+  }
+  void FinishOp(void* tag, bool* status, int max_message_size) {
+    // nothing to do
+  }
+
+  bool send_;
+  size_t initial_metadata_count_;
+  grpc_metadata* initial_metadata_;
 };
 
 class CallOpSendMessage {
@@ -71,7 +94,7 @@ class CallOpSendMessage {
   CallOpSendMessage() : send_buf_(nullptr) {}
 
   template <class M>
-  bool SendMessage(const M& message) {
+  bool SendMessage(const M& message) GRPC_MUST_USE_RESULT {
     return SerializationTraits<M>::Serialize(message, &send_buf_);
   }
 
@@ -132,50 +155,167 @@ class CallOpRecvMessage {
 
 class CallOpGenericRecvMessage {
  public:
+  CallOpGenericRecvMessage() : got_message(false) {}
+
   template <class R>
-  void RecvMessage(R* message);
+  void RecvMessage(R* message) {
+    deserialize_ = [message](grpc_byte_buffer* buf, int max_message_size) -> Status {
+      return SerializationTraits<R>::Deserialize(buf, message, max_message_size);
+    };
+  }
 
   bool got_message;
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops);
-  void FinishOp(void* tag, bool* status, int max_message_size);
+  void AddOp(grpc_op* ops, size_t* nops) {
+    if (!deserialize_) return;
+    grpc_op *op = &ops[(*nops)++];
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message = &recv_buf_;
+  }
+
+  void FinishOp(void* tag, bool* status, int max_message_size) {
+    if (!deserialize_) return;
+    if (recv_buf_) {
+      if (*status) {
+        got_message = true;
+        *status = deserialize_(recv_buf_, max_message_size).IsOk();
+      } else {
+        got_message = false;
+        grpc_byte_buffer_destroy(recv_buf_);
+      }
+    } else {
+      got_message = false;
+      *status = false;
+    }
+  }
+
+ private:
+  std::function<Status(grpc_byte_buffer*, int)> deserialize_;
+  grpc_byte_buffer* recv_buf_;
 };
 
 class CallOpClientSendClose {
  public:
-  void ClientSendClose();
+  CallOpClientSendClose() : send_(false) {}
+
+  void ClientSendClose() { send_ = true; }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops);
-  void FinishOp(void* tag, bool* status, int max_message_size);
+  void AddOp(grpc_op* ops, size_t* nops) {
+    if (!send_) return;
+    ops[(*nops)++].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  }
+  void FinishOp(void* tag, bool* status, int max_message_size) {
+    // nothing to do
+  }
+
+ private:
+  bool send_;
 };
 
 class CallOpServerSendStatus {
  public:
-  void ServerSendStatus(const std::multimap<grpc::string, grpc::string>& trailing_metadata, const Status& status);
+  CallOpServerSendStatus() : send_status_available_(false) {}
+
+  void ServerSendStatus(const std::multimap<grpc::string, grpc::string>& trailing_metadata, const Status& status){
+    trailing_metadata_count_ = trailing_metadata.size();
+    trailing_metadata_ = FillMetadataArray(trailing_metadata);
+    send_status_available_ = true;
+    send_status_code_ = static_cast<grpc_status_code>(status.code());
+    send_status_details_ = status.details();
+  }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops);
-  void FinishOp(void* tag, bool* status, int max_message_size);
+  void AddOp(grpc_op* ops, size_t* nops) {
+    grpc_op* op = &ops[(*nops)++];
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count =
+        trailing_metadata_count_;
+    op->data.send_status_from_server.trailing_metadata =
+        trailing_metadata_;
+    op->data.send_status_from_server.status = send_status_code_;
+    op->data.send_status_from_server.status_details =
+        send_status_details_.empty() ? nullptr : send_status_details_.c_str();
+  }
+
+  void FinishOp(void* tag, bool* status, int max_message_size) {
+    // nothing to do
+  }
+
+ private:
+  bool send_status_available_;
+  grpc_status_code send_status_code_;
+  grpc::string send_status_details_;
+  size_t trailing_metadata_count_;
+  grpc_metadata* trailing_metadata_;
 };
 
 class CallOpRecvInitialMetadata {
  public:
-  void RecvInitialMetadata(ClientContext* context);
+  CallOpRecvInitialMetadata() : recv_initial_metadata_(nullptr) {
+    memset(&recv_initial_metadata_arr_, 0, sizeof(recv_initial_metadata_arr_));
+  }
+
+  void RecvInitialMetadata(ClientContext* context) {
+    context->initial_metadata_received_ = true;
+    recv_initial_metadata_ = &context->recv_initial_metadata_;
+  }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops);
-  void FinishOp(void* tag, bool* status, int max_message_size);
+  void AddOp(grpc_op* ops, size_t* nops) {
+    if (!recv_initial_metadata_) return;
+    grpc_op* op = &ops[(*nops)++];
+    op->op = GRPC_OP_RECV_INITIAL_METADATA;
+    op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
+  }
+  void FinishOp(void* tag, bool* status, int max_message_size) {
+    FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
+  }
+
+ private:
+  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_;
+  grpc_metadata_array recv_initial_metadata_arr_;
 };
 
 class CallOpClientRecvStatus {
  public:
-  void ClientRecvStatus(ClientContext* context, Status* status);
+  CallOpClientRecvStatus() {
+    memset(this, 0, sizeof(*this));
+  }
+
+  void ClientRecvStatus(ClientContext* context, Status* status) {
+    recv_trailing_metadata_ = &context->trailing_metadata_;
+    recv_status_ = status;
+  }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops);
-  void FinishOp(void* tag, bool* status, int max_message_size);
+  void AddOp(grpc_op* ops, size_t* nops) {
+    if (recv_status_ == nullptr) return;
+    grpc_op* op = &ops[(*nops)++];
+    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+    op->data.recv_status_on_client.trailing_metadata =
+        &recv_trailing_metadata_arr_;
+    op->data.recv_status_on_client.status = &status_code_;
+    op->data.recv_status_on_client.status_details = &status_details_;
+    op->data.recv_status_on_client.status_details_capacity =
+        &status_details_capacity_;
+  }
+
+  void FinishOp(void* tag, bool* status, int max_message_size) {
+    FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
+    *recv_status_ = Status(
+        static_cast<StatusCode>(status_code_),
+        status_details_ ? grpc::string(status_details_) : grpc::string());
+  }
+
+ private:
+  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_;
+  Status* recv_status_;
+  grpc_metadata_array recv_trailing_metadata_arr_;
+  grpc_status_code status_code_;
+  char* status_details_;
+  size_t status_details_capacity_;
 };
 
 class CallOpSetInterface : public CompletionQueueTag {

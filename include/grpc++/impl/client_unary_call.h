@@ -63,7 +63,9 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   		CallOpClientRecvStatus> ops;
   Status status;
   ops.SendInitialMetadata(context->send_initial_metadata_);
-  ops.SendMessage(request);
+  if (!ops.SendMessage(request)) {
+    return Status(INVALID_ARGUMENT, "Failed to serialize message");
+  }
   ops.RecvInitialMetadata(context);
   ops.RecvMessage(result);
   ops.ClientSendClose();

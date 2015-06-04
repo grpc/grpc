@@ -63,7 +63,8 @@ class ClientAsyncResponseReader GRPC_FINAL
                             const W& request)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.SendInitialMetadata(context->send_initial_metadata_);
-    init_buf_.SendMessage(request);
+    // TODO(ctiller): don't assert
+    GPR_ASSERT(init_buf_.SendMessage(request));
     init_buf_.ClientSendClose();
     call_.PerformOps(&init_buf_);
   }
@@ -117,10 +118,11 @@ class ServerAsyncResponseWriter GRPC_FINAL
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
-    if (status.IsOk()) {
-      finish_buf_.SendMessage(msg);
+    if (status.IsOk() && !finish_buf_.SendMessage(msg)) {
+      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, Status(INVALID_ARGUMENT, "Failed to serialize message"));
+    } else {
+      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }
-    finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
 

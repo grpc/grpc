@@ -48,7 +48,6 @@ struct grpc_completion_queue;
 
 namespace grpc {
 
-class CallOpBuffer;
 class ChannelInterface;
 class CompletionQueue;
 class Credentials;
@@ -115,7 +114,8 @@ class ClientContext {
   ClientContext(const ClientContext&);
   ClientContext& operator=(const ClientContext&);
 
-  friend class CallOpBuffer;
+  friend class CallOpClientRecvStatus;
+  friend class CallOpRecvInitialMetadata;
   friend class Channel;
   template <class R>
   friend class ::grpc::ClientReader;
