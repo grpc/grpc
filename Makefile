@@ -2838,6 +2838,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/port_platform.h \
     include/grpc/support/slice.h \
     include/grpc/support/slice_buffer.h \
+    include/grpc/support/string_util.h \
     include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
     include/grpc/support/sync_generic.h \

@@ -38,6 +38,7 @@
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 int gpr_join_host_port(char **out, const char *host, int port) {
   if (host[0] != '[' && strchr(host, ':') != NULL) {
