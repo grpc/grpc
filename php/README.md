@@ -8,20 +8,17 @@ This requires PHP 5.5 or greater.
 
 INSTALL
 -------
+ - On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][]. Run the following command to install gRPC.
+
+  ```sh
+  $ curl -fsSL https://goo.gl/getgrpc | bash -
+  ```
+  This will download and run the [gRPC install script][].
 
  - Clone this repository
 
    ```sh
    $ git clone https://github.com/grpc/grpc-common.git
-   ```
-
- - Install Protobuf-PHP
-
-   ```
-   $ git clone https://github.com/murgatroid99/Protobuf-PHP.git
-   $ cd Protobuf-PHP
-   $ rake pear:package version=1.0
-   $ pear install Protobuf-1.0.tgz
    ```
 
  - Install composer
@@ -40,16 +37,7 @@ INSTALL
  - (Temporary workaround) Compile gRPC extension from source
 
    ```
-   $ git clone https://github.com/grpc/grpc.git
-   $ cd grpc
-   $ git checkout --track origin/release-0_9
-   $ git pull --recurse-submodules && git submodule update --init --recursive
-   $ cd third_party/protobuf
-   $ ./autogen.sh && ./configure --prefix=/usr && make && make install
-   $ cd ../..
-   $ make && make install
-   $ cd src/php/ext/grpc
-   $ phpize && ./configure && make && make install
+   $ curl -fsSL https://goo.gl/getgrpc | bash -s php
    ```
 
 
@@ -58,7 +46,7 @@ TRY IT!
 
  - Run the server
 
-   Please follow the instruction in [Node](https://github.com/grpc/grpc-common/tree/master/node) to run the server
+   Please follow the instruction in [Node][] to run the server
    ```
    $ cd grpc-common/node
    $ nodejs greeter_server.js
@@ -82,3 +70,8 @@ TUTORIAL
 --------
 
 Coming soon
+
+[homebrew]:http://brew.sh
+[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
+[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+[Node]:https://github.com/grpc/grpc-common/tree/master/node
