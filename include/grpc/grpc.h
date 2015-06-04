@@ -244,7 +244,10 @@ typedef enum {
   GRPC_OP_RECV_INITIAL_METADATA,
   /* Receive a message: 0 or more of these operations can occur for each call */
   GRPC_OP_RECV_MESSAGE,
-  /* Receive status on the client: one and only one must be made on the client
+  /* Receive status on the client: one and only one must be made on the client.
+     This operation always succeeds, meaning ops paired with this operation
+     will also appear to succeed, even though they may not have. In that case
+     the status will indicate some failure.
      */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /* Receive status on the server: one and only one must be made on the server

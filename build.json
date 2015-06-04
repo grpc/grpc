@@ -543,7 +543,8 @@
         "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/cli_call.cc",
         "test/cpp/util/create_test_channel.cc",
-        "test/cpp/util/fake_credentials.cc"
+        "test/cpp/util/fake_credentials.cc",
+        "test/cpp/util/subprocess.cc"
       ]
     },
     {
@@ -1874,6 +1875,39 @@
       ]
     },
     {
+      "name": "client_crash_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/client_crash_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "client_crash_test_server",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/client_crash_test_server.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "credentials_test",
       "build": "test",
       "language": "c++",
@@ -2185,6 +2219,39 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "server_crash_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/server_crash_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "server_crash_test_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/server_crash_test_client.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
       ]
     },
     {

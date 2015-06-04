@@ -114,7 +114,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     CallOpBuffer buf;
     buf.AddRecvInitialMetadata(context_);
     call_.PerformOps(&buf);
-    GPR_ASSERT(cq_.Pluck(&buf));
+    cq_.Pluck(&buf);  // status ignored
   }
 
   bool Read(R* msg) GRPC_OVERRIDE {
@@ -216,7 +216,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     CallOpBuffer buf;
     buf.AddSendInitialMetadata(&context->send_initial_metadata_);
     call_.PerformOps(&buf);
-    GPR_ASSERT(cq_.Pluck(&buf));
+    cq_.Pluck(&buf);
   }
 
   // Blocking wait for initial metadata from server. The received metadata
@@ -229,7 +229,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     CallOpBuffer buf;
     buf.AddRecvInitialMetadata(context_);
     call_.PerformOps(&buf);
-    GPR_ASSERT(cq_.Pluck(&buf));
+    cq_.Pluck(&buf);  // status ignored
   }
 
   bool Read(R* msg) GRPC_OVERRIDE {

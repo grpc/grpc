@@ -64,17 +64,19 @@ namespace testing {
 std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   switch (config.client_type()) {
     case ClientType::SYNCHRONOUS_CLIENT:
-      return (config.rpc_type() == RpcType::UNARY) ?
-	CreateSynchronousUnaryClient(config) :
-	CreateSynchronousStreamingClient(config);
+      return (config.rpc_type() == RpcType::UNARY)
+                 ? CreateSynchronousUnaryClient(config)
+                 : CreateSynchronousStreamingClient(config);
     case ClientType::ASYNC_CLIENT:
-      return (config.rpc_type() == RpcType::UNARY) ?
-	CreateAsyncUnaryClient(config) : CreateAsyncStreamingClient(config);
+      return (config.rpc_type() == RpcType::UNARY)
+                 ? CreateAsyncUnaryClient(config)
+                 : CreateAsyncStreamingClient(config);
   }
   abort();
 }
 
-std::unique_ptr<Server> CreateServer(const ServerConfig& config, int server_port) {
+std::unique_ptr<Server> CreateServer(const ServerConfig& config,
+                                     int server_port) {
   switch (config.server_type()) {
     case ServerType::SYNCHRONOUS_SERVER:
       return CreateSynchronousServer(config, server_port);
@@ -86,7 +88,8 @@ std::unique_ptr<Server> CreateServer(const ServerConfig& config, int server_port
 
 class WorkerImpl GRPC_FINAL : public Worker::Service {
  public:
-  explicit WorkerImpl(int server_port) : server_port_(server_port), acquired_(false) {}
+  explicit WorkerImpl(int server_port)
+      : server_port_(server_port), acquired_(false) {}
 
   Status RunTest(ServerContext* ctx,
                  ServerReaderWriter<ClientStatus, ClientArgs>* stream)
@@ -97,7 +100,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     }
 
     grpc_profiler_start("qps_client.prof");
-    Status ret = RunTestBody(ctx,stream);
+    Status ret = RunTestBody(ctx, stream);
     grpc_profiler_stop();
     return ret;
   }
@@ -111,7 +114,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     }
 
     grpc_profiler_start("qps_server.prof");
-    Status ret = RunServerBody(ctx,stream);
+    Status ret = RunServerBody(ctx, stream);
     grpc_profiler_stop();
     return ret;
   }
@@ -226,8 +229,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port) {
   server_ = std::move(builder.BuildAndStart());
 }
 
-QpsWorker::~QpsWorker() {
-}
+QpsWorker::~QpsWorker() {}
 
 }  // namespace testing
 }  // namespace grpc
