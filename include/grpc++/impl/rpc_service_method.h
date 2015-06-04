@@ -56,15 +56,15 @@ class MethodHandler {
   virtual ~MethodHandler() {}
   struct HandlerParameter {
     HandlerParameter(Call* c, ServerContext* context,
-                     const grpc::protobuf::Message* req,
-                     grpc::protobuf::Message* resp)
-        : call(c), server_context(context), request(req), response(resp) {}
+                     grpc_byte_buffer* req, int max_size)
+        : call(c), server_context(context), request(req), max_message_size(max_size) {}
     Call* call;
     ServerContext* server_context;
-    const grpc::protobuf::Message* request;
-    grpc::protobuf::Message* response;
+    // Handler required to grpc_byte_buffer_destroy this
+    grpc_byte_buffer* request;
+    int max_message_size;
   };
-  virtual Status RunHandler(const HandlerParameter& param) = 0;
+  virtual void RunHandler(const HandlerParameter& param) = 0;
 };
 
 // A wrapper class of an application provided rpc method handler.
@@ -77,11 +77,23 @@ class RpcMethodHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
-    // Invoke application function, cast proto messages to their actual types.
-    return func_(service_, param.server_context,
-                 dynamic_cast<const RequestType*>(param.request),
-                 dynamic_cast<ResponseType*>(param.response));
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+    RequestType req;
+    Status status = SerializationTraits<RequestType>::Deserialize(param.request, &req, param.max_message_size);
+    ResponseType rsp;
+    if (status.IsOk()) {
+      status = func_(service_, param.server_context, &req, &rsp);
+    }
+
+    GPR_ASSERT(!param.server_context->sent_initial_metadata_);
+    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> ops;
+    ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    if (status.IsOk()) {
+      ops.SendMessage(rsp);
+    }
+    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    param.call->PerformOps(&ops);
+    param.call->cq()->Pluck(&ops);
   }
 
  private:
@@ -102,10 +114,20 @@ class ClientStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerReader<RequestType> reader(param.call, param.server_context);
-    return func_(service_, param.server_context, &reader,
-                 dynamic_cast<ResponseType*>(param.response));
+    ResponseType rsp;
+    Status status = func_(service_, param.server_context, &reader, &rsp);
+
+    GPR_ASSERT(!param.server_context->sent_initial_metadata_);
+    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> ops;
+    ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    if (status.IsOk()) {
+      ops.SendMessage(rsp);
+    }
+    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    param.call->PerformOps(&ops);
+    param.call->cq()->Pluck(&ops);
   }
 
  private:
@@ -124,10 +146,22 @@ class ServerStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
-    ServerWriter<ResponseType> writer(param.call, param.server_context);
-    return func_(service_, param.server_context,
-                 dynamic_cast<const RequestType*>(param.request), &writer);
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+    RequestType req;
+    Status status = SerializationTraits<RequestType>::Deserialize(param.request, &req, param.max_message_size);
+
+    if (status.IsOk()) {
+      ServerWriter<ResponseType> writer(param.call, param.server_context);
+      status = func_(service_, param.server_context, &req, &writer);
+    }
+
+    CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
+    if (!param.server_context->sent_initial_metadata_) {
+      ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    }
+    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    param.call->PerformOps(&ops);
+    param.call->cq()->Pluck(&ops);
   }
 
  private:
@@ -147,10 +181,18 @@ class BidiStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerReaderWriter<ResponseType, RequestType> stream(param.call,
                                                          param.server_context);
-    return func_(service_, param.server_context, &stream);
+    Status status = func_(service_, param.server_context, &stream);
+
+    CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
+    if (!param.server_context->sent_initial_metadata_) {
+      ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    }
+    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    param.call->PerformOps(&ops);
+    param.call->cq()->Pluck(&ops);
   }
 
  private:
@@ -162,29 +204,16 @@ class BidiStreamingHandler : public MethodHandler {
 // Server side rpc method class
 class RpcServiceMethod : public RpcMethod {
  public:
-  // Takes ownership of the handler and two prototype objects.
+  // Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
-                   MethodHandler* handler,
-                   grpc::protobuf::Message* request_prototype,
-                   grpc::protobuf::Message* response_prototype)
+                   MethodHandler* handler)
       : RpcMethod(name, type, nullptr),
-        handler_(handler),
-        request_prototype_(request_prototype),
-        response_prototype_(response_prototype) {}
+        handler_(handler) {}
 
   MethodHandler* handler() { return handler_.get(); }
 
-  grpc::protobuf::Message* AllocateRequestProto() {
-    return request_prototype_->New();
-  }
-  grpc::protobuf::Message* AllocateResponseProto() {
-    return response_prototype_->New();
-  }
-
  private:
   std::unique_ptr<MethodHandler> handler_;
-  std::unique_ptr<grpc::protobuf::Message> request_prototype_;
-  std::unique_ptr<grpc::protobuf::Message> response_prototype_;
 };
 
 // This class contains all the method information for an rpc service. It is

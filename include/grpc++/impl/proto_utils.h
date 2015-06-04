@@ -34,7 +34,11 @@
 #ifndef GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
 #define GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
 
-#include <grpc++/config.h>
+#include <type_traits>
+
+#include <grpc++/impl/serialization_traits.h>
+#include <grpc++/config_protobuf.h>
+#include <grpc++/status.h>
 
 struct grpc_byte_buffer;
 
@@ -47,8 +51,19 @@ bool SerializeProto(const grpc::protobuf::Message& msg,
                     grpc_byte_buffer** buffer);
 
 // The caller keeps ownership of buffer and msg.
-bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                      int max_message_size);
+Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
+                        int max_message_size);
+
+template <class T>
+class SerializationTraits<T, typename std::enable_if<std::is_base_of<grpc::protobuf::Message, T>::value>::type> {
+ public:
+ 	static bool Serialize(const grpc::protobuf::Message& msg, grpc_byte_buffer** buffer) {
+ 		return SerializeProto(msg, buffer);
+ 	}
+ 	static Status Deserialize(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg, int max_message_size) {
+ 		return DeserializeProto(buffer, msg, max_message_size);
+ 	}
+};
 
 }  // namespace grpc
 

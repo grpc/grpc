@@ -51,7 +51,6 @@ class ClientAsyncResponseReaderInterface {
   virtual ~ClientAsyncResponseReaderInterface() {}
   virtual void ReadInitialMetadata(void* tag) = 0;
   virtual void Finish(R* msg, Status* status, void* tag) = 0;
-
 };
 
 template <class R>
@@ -72,15 +71,15 @@ class ClientAsyncResponseReader GRPC_FINAL
   void ReadInitialMetadata(void* tag) {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
-    meta_buf_.SetOutputTag(tag);
+    meta_buf_.set_output_tag(tag);
     meta_buf_.RecvInitialMetadata(context_);
     call_.PerformOps(&meta_buf_);
   }
 
   void Finish(R* msg, Status* status, void* tag) {
-    finish_buf_.SetOutputTag(tag);
+    finish_buf_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
-      finish_buf_.AddRecvInitialMetadata(context_);
+      finish_buf_.RecvInitialMetadata(context_);
     }
     finish_buf_.RecvMessage(msg);
     finish_buf_.ClientRecvStatus(context_, status);
@@ -92,7 +91,7 @@ class ClientAsyncResponseReader GRPC_FINAL
   Call call_;
   SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose> init_buf_;
   CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
-  CallOpSet<CallOpRecvMessage<R>, CallOpClientRecvStatus> finish_buf_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>, CallOpClientRecvStatus> finish_buf_;
 };
 
 template <class W>
@@ -105,14 +104,14 @@ class ServerAsyncResponseWriter GRPC_FINAL
   void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
     GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
-    meta_buf_.SetOutputTag(tag);
+    meta_buf_.set_output_tag(tag);
     meta_buf_.SendInitialMetadata(ctx_->initial_metadata_);
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_buf_);
   }
 
   void Finish(const W& msg, const Status& status, void* tag) {
-    finish_buf_.SetOutputTag(tag);
+    finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
@@ -127,7 +126,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
 
   void FinishWithError(const Status& status, void* tag) {
     GPR_ASSERT(!status.IsOk());
-    finish_buf_.SetOutputTag(tag);
+    finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;

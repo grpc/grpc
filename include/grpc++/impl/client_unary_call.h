@@ -62,12 +62,12 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   		CallOpClientSendClose, 
   		CallOpClientRecvStatus> ops;
   Status status;
-  ops.AddSendInitialMetadata(context);
-  ops.AddSendMessage(request);
-  ops.AddRecvInitialMetadata(context);
-  ops.AddRecvMessage(result);
-  ops.AddClientSendClose();
-  ops.AddClientRecvStatus(context, &status);
+  ops.SendInitialMetadata(context->send_initial_metadata_);
+  ops.SendMessage(request);
+  ops.RecvInitialMetadata(context);
+  ops.RecvMessage(result);
+  ops.ClientSendClose();
+  ops.ClientRecvStatus(context, &status);
   call.PerformOps(&ops);
   GPR_ASSERT((cq.Pluck(&ops) && ops.got_message) || !status.IsOk());
   return status;

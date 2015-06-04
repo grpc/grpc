@@ -16,9 +16,6 @@
     <ClCompile Include="..\..\src\cpp\client\client_context.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\client\client_unary_call.cc">
-      <Filter>src\cpp\client</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>

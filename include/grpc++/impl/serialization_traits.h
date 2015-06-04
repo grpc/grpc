@@ -38,11 +38,8 @@ struct grpc_byte_buffer;
 
 namespace grpc {
 
-template <class Message>
+template <class Message, class UnusedButHereForPartialTemplateSpecialization = void>
 class SerializationTraits;
-
-typedef bool (*SerializationTraitsReadFunction)(grpc_byte_buffer* src, void* dest);
-typedef bool (*SerializationTraitsWriteFunction)(const void* src, grpc_byte_buffer* dst);
 
 }  // namespace grpc
 

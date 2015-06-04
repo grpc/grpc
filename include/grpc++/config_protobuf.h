@@ -34,8 +34,6 @@
 #ifndef GRPCXX_CONFIG_PROTOBUF_H
 #define GRPCXX_CONFIG_PROTOBUF_H
 
-#include <grpc++/impl/serialization_traits.h>
-
 #ifndef GRPC_CUSTOM_PROTOBUF_INT64
 #include <google/protobuf/stubs/common.h>
 #define GRPC_CUSTOM_PROTOBUF_INT64 ::google::protobuf::int64

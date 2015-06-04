@@ -39,10 +39,10 @@
 #include <grpc++/channel_interface.h>
 
 #include "src/core/profiling/timers.h"
-#include "src/cpp/proto/proto_utils.h"
 
 namespace grpc {
 
+#if 0
 CallOpBuffer::CallOpBuffer()
     : return_tag_(this),
       send_initial_metadata_(false),
@@ -338,6 +338,7 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   }
   return true;
 }
+#endif
 
 Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
     : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
@@ -349,11 +350,11 @@ Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
       call_(call),
       max_message_size_(max_message_size) {}
 
-void Call::PerformOps(CallOpBuffer* buffer) {
+void Call::PerformOps(CallOpSetInterface* ops) {
   if (max_message_size_ > 0) {
-    buffer->set_max_message_size(max_message_size_);
+    ops->set_max_message_size(max_message_size_);
   }
-  call_hook_->PerformOpsOnCall(buffer, this);
+  call_hook_->PerformOpsOnCall(ops, this);
 }
 
 }  // namespace grpc

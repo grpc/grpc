@@ -113,6 +113,7 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
   grpc::string temp =
       "#include <grpc++/impl/internal_stub.h>\n"
       "#include <grpc++/impl/rpc_method.h>\n"
+      "#include <grpc++/impl/proto_utils.h>\n"
       "#include <grpc++/impl/service_type.h>\n"
       "#include <grpc++/async_unary_call.h>\n"
       "#include <grpc++/status.h>\n"
@@ -1045,8 +1046,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "    new ::grpc::RpcMethodHandler< $ns$$Service$::Service, "
           "$Request$, "
           "$Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this),\n"
-          "    new $Request$, new $Response$));\n");
+          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
     } else if (ClientOnlyStreaming(method)) {
       printer->Print(
           *vars,
@@ -1055,8 +1055,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "    ::grpc::RpcMethod::CLIENT_STREAMING,\n"
           "    new ::grpc::ClientStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this),\n"
-          "    new $Request$, new $Response$));\n");
+          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
     } else if (ServerOnlyStreaming(method)) {
       printer->Print(
           *vars,
@@ -1065,8 +1064,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "    ::grpc::RpcMethod::SERVER_STREAMING,\n"
           "    new ::grpc::ServerStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this),\n"
-          "    new $Request$, new $Response$));\n");
+          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
     } else if (BidiStreaming(method)) {
       printer->Print(
           *vars,
@@ -1075,8 +1073,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "    ::grpc::RpcMethod::BIDI_STREAMING,\n"
           "    new ::grpc::BidiStreamingHandler< "
           "$ns$$Service$::Service, $Request$, $Response$>(\n"
-          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this),\n"
-          "    new $Request$, new $Response$));\n");
+          "        std::mem_fn(&$ns$$Service$::Service::$Method$), this)));\n");
     }
   }
   printer->Print("return service_;\n");

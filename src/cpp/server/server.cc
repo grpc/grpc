@@ -48,7 +48,6 @@
 #include <grpc++/time.h>
 
 #include "src/core/profiling/timers.h"
-#include "src/cpp/proto/proto_utils.h"
 
 namespace grpc {
 
@@ -68,10 +67,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
         in_flight_(false),
         has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
                              method->method_type() ==
-                                 RpcMethod::SERVER_STREAMING),
-        has_response_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
-                              method->method_type() ==
-                                  RpcMethod::CLIENT_STREAMING) {
+                                 RpcMethod::SERVER_STREAMING) {
     grpc_metadata_array_init(&request_metadata_);
   }
 
@@ -116,7 +112,6 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
                mrd->request_metadata_.count),
           has_request_payload_(mrd->has_request_payload_),
-          has_response_payload_(mrd->has_response_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
       ctx_.call_ = mrd->call_;
@@ -133,35 +128,9 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     }
 
     void Run() {
-      std::unique_ptr<grpc::protobuf::Message> req;
-      std::unique_ptr<grpc::protobuf::Message> res;
-      if (has_request_payload_) {
-        GRPC_TIMER_BEGIN(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
-        req.reset(method_->AllocateRequestProto());
-        if (!DeserializeProto(request_payload_, req.get(),
-                              call_.max_message_size())) {
-          // FIXME(yangg) deal with deserialization failure
-          cq_.Shutdown();
-          return;
-        }
-        GRPC_TIMER_END(GRPC_PTAG_PROTO_DESERIALIZE, call_.call());
-      }
-      if (has_response_payload_) {
-        res.reset(method_->AllocateResponseProto());
-      }
       ctx_.BeginCompletionOp(&call_);
-      auto status = method_->handler()->RunHandler(
-          MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
-      CallOpBuffer buf;
-      if (!ctx_.sent_initial_metadata_) {
-        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
-      }
-      if (has_response_payload_) {
-        buf.AddSendMessage(*res);
-      }
-      buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
-      call_.PerformOps(&buf);
-      cq_.Pluck(&buf);  /* status ignored */
+      method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_, call_.max_message_size()));
       void* ignored_tag;
       bool ignored_ok;
       cq_.Shutdown();
@@ -173,7 +142,6 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     Call call_;
     ServerContext ctx_;
     const bool has_request_payload_;
-    const bool has_response_payload_;
     grpc_byte_buffer* request_payload_;
     RpcServiceMethod* const method_;
   };
@@ -183,7 +151,6 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
-  const bool has_response_payload_;
   grpc_call* call_;
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
@@ -251,9 +218,9 @@ bool Server::RegisterService(RpcService* service) {
 }
 
 bool Server::RegisterAsyncService(AsynchronousService* service) {
-  GPR_ASSERT(service->dispatch_impl_ == nullptr &&
+  GPR_ASSERT(service->server_ == nullptr &&
              "Can only register an asynchronous service against one server.");
-  service->dispatch_impl_ = this;
+  service->server_ = this;
   service->request_args_ = new void*[service->method_count_];
   for (size_t i = 0; i < service->method_count_; ++i) {
     void* tag = grpc_server_register_method(server_, service->method_names_[i],
@@ -318,15 +285,16 @@ void Server::Wait() {
   }
 }
 
-void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
+void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   static const size_t MAX_OPS = 8;
-  size_t nops = MAX_OPS;
-  grpc_op ops[MAX_OPS];
-  buf->FillOps(ops, &nops);
+  size_t nops = 0;
+  grpc_op cops[MAX_OPS];
+  ops->FillOps(cops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), ops, nops, buf));
+             grpc_call_start_batch(call->call(), cops, nops, ops));
 }
 
+#if 0
 class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
  public:
   AsyncRequest(Server* server, void* registered_method, ServerContext* ctx,
@@ -352,9 +320,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         notification_cq->cq(), this);
   }
 
-  AsyncRequest(Server* server, GenericServerContext* ctx,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-               ServerCompletionQueue* notification_cq, void* tag)
+  AsyncRequest()
       : tag_(tag),
         request_(nullptr),
         stream_(stream),
@@ -454,6 +420,7 @@ void Server::RequestAsyncGenericCall(GenericServerContext* context,
                                      void* tag) {
   new AsyncRequest(this, context, stream, call_cq, notification_cq, tag);
 }
+#endif
 
 void Server::ScheduleCallback() {
   {

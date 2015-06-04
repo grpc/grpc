@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/cpp/proto/proto_utils.h"
+#include <grpc++/impl/proto_utils.h>
 #include <grpc++/config.h>
 
 #include <grpc/grpc.h>
@@ -157,15 +157,23 @@ bool SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
   return msg.SerializeToZeroCopyStream(&writer);
 }
 
-bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
+Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
                       int max_message_size) {
-  if (!buffer) return false;
+  if (!buffer) {
+    return Status(INVALID_ARGUMENT, "No payload");
+  }
   GrpcBufferReader reader(buffer);
   ::grpc::protobuf::io::CodedInputStream decoder(&reader);
   if (max_message_size > 0) {
     decoder.SetTotalBytesLimit(max_message_size, max_message_size);
   }
-  return msg->ParseFromCodedStream(&decoder) && decoder.ConsumedEntireMessage();
+  if (!msg->ParseFromCodedStream(&decoder)) {
+    return Status(INVALID_ARGUMENT, msg->InitializationErrorString());
+  } 
+  if (!decoder.ConsumedEntireMessage()) {
+    return Status(INVALID_ARGUMENT, "Did not read entire message");
+  }
+  return Status::OK;
 }
 
 }  // namespace grpc

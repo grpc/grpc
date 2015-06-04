@@ -131,6 +131,12 @@ class ClientContext {
   friend class ::grpc::ClientAsyncReaderWriter;
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
+  template <class InputMessage, class OutputMessage>
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
+                                  ClientContext* context,
+                                  const InputMessage& request,
+                                  OutputMessage* result);
 
   grpc_call* call() { return call_; }
   void set_call(grpc_call* call,

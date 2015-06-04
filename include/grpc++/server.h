@@ -41,13 +41,13 @@
 #include <grpc++/config.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
-#include <grpc++/impl/service_type.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/status.h>
 
 struct grpc_server;
 
 namespace grpc {
+
 class AsynchronousService;
 class GenericServerContext;
 class AsyncGenericService;
@@ -99,6 +99,44 @@ class Server GRPC_FINAL : public GrpcLibrary,
 
   void PerformOpsOnCall(CallOpSetInterface *ops, Call* call) GRPC_OVERRIDE;
 
+  class BaseAsyncRequest : public CompletionQueueTag {
+   public:
+    BaseAsyncRequest(Server* server,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+               ServerCompletionQueue* notification_cq, void* tag);
+
+   private:
+  };
+
+  class RegisteredAsyncRequest : public BaseAsyncRequest {
+   public:
+    RegisteredAsyncRequest(Server* server, ServerContext* context,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+               ServerCompletionQueue* notification_cq, void* tag)
+    : BaseAsyncRequest(server, stream, call_cq, notification_cq, tag) {}
+  };
+
+  class NoPayloadAsyncRequest : public RegisteredAsyncRequest {
+   public:
+    NoPayloadAsyncRequest(Server* server, ServerContext* context,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+               ServerCompletionQueue* notification_cq, void* tag)
+      : RegisteredAsyncRequest(server, context, stream, call_cq, notification_cq, tag) {
+    }
+  };
+
+  template <class Message>
+  class PayloadAsyncRequest : public RegisteredAsyncRequest {
+    PayloadAsyncRequest(Server* server, ServerContext* context,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+               ServerCompletionQueue* notification_cq, void* tag)
+      : RegisteredAsyncRequest(server, context, stream, call_cq, notification_cq, tag) {
+    }
+  };
+
+  class GenericAsyncRequest : public BaseAsyncRequest {
+  };
+
   template <class Message>
   void RequestAsyncCall(void* registered_method, ServerContext* context,
                         ServerAsyncStreamingInterface* stream,
@@ -139,8 +177,6 @@ class Server GRPC_FINAL : public GrpcLibrary,
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
- private:
-  Server() : max_message_size_(-1), server_(NULL) { abort(); }
 };
 
 }  // namespace grpc
