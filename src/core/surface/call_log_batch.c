@@ -35,6 +35,7 @@
 
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 int grpc_trace_batch = 0;
 
