@@ -108,8 +108,6 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
    protected:
-    void FinalizeMetadata(ServerContext* context);
-
     Server* const server_;
     ServerContext* const context_;
     ServerAsyncStreamingInterface* const stream_;

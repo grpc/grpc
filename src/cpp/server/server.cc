@@ -317,6 +317,7 @@ bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
                            initial_metadata_array_.metadata[i].value_length)));
     }
   }
+  grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->call_ = call_;
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_message_size_);
