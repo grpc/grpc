@@ -85,7 +85,7 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.metadata = initial_metadata_;
   }
   void FinishOp(bool* status, int max_message_size) {
-    // nothing to do
+    send_ = false;
   }
 
   bool send_;
@@ -109,6 +109,7 @@ class CallOpSendMessage {
   }
   void FinishOp(bool* status, int max_message_size) {
     if (own_buf_) grpc_byte_buffer_destroy(send_buf_);
+    send_buf_ = nullptr;
   }
 
  private:
@@ -154,6 +155,7 @@ class CallOpRecvMessage {
       got_message = false;
       *status = false;
     }
+    message_ = nullptr;
   }
 
  private:
@@ -198,10 +200,12 @@ class CallOpGenericRecvMessage {
       got_message = false;
       *status = false;
     }
+    deserialize_ = DeserializeFunc();
   }
 
  private:
-  std::function<Status(grpc_byte_buffer*, int)> deserialize_;
+  typedef std::function<Status(grpc_byte_buffer*, int)> DeserializeFunc;
+  DeserializeFunc deserialize_;
   grpc_byte_buffer* recv_buf_;
 };
 
@@ -217,7 +221,7 @@ class CallOpClientSendClose {
     ops[(*nops)++].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   }
   void FinishOp(bool* status, int max_message_size) {
-    // nothing to do
+    send_ = false;
   }
 
  private:
@@ -251,7 +255,7 @@ class CallOpServerSendStatus {
   }
 
   void FinishOp(bool* status, int max_message_size) {
-    // nothing to do
+    send_status_details_ = false;
   }
 
  private:
@@ -281,7 +285,9 @@ class CallOpRecvInitialMetadata {
     op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
   }
   void FinishOp(bool* status, int max_message_size) {
+    if (recv_initial_metadata_ == nullptr) return;
     FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
+    recv_initial_metadata_ = nullptr;
   }
 
  private:
@@ -312,10 +318,12 @@ class CallOpClientRecvStatus {
   }
 
   void FinishOp(bool* status, int max_message_size) {
+    if (recv_status_ == nullptr) return;
     FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
     *recv_status_ = Status(
         static_cast<StatusCode>(status_code_),
         status_details_ ? grpc::string(status_details_) : grpc::string());
+    recv_status_ = nullptr;
   }
 
  private:
