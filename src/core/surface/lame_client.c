@@ -118,9 +118,9 @@ static void init_channel_elem(grpc_channel_element *elem,
 static void destroy_channel_elem(grpc_channel_element *elem) {}
 
 static const grpc_channel_filter lame_filter = {
-    lame_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "lame-client",
+    lame_start_transport_op, channel_op,           sizeof(call_data),
+    init_call_elem,          destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem,       destroy_channel_elem, "lame-client",
 };
 
 grpc_channel *grpc_lame_client_channel_create(void) {

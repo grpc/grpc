@@ -303,13 +303,10 @@ static void init_channel_elem(grpc_channel_element *elem,
   chand->security_connector =
       (grpc_channel_security_connector *)grpc_security_connector_ref(sc);
   chand->md_ctx = metadata_context;
-  chand->authority_string =
-      grpc_mdstr_from_string(chand->md_ctx, ":authority");
+  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority");
   chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
-  chand->error_msg_key =
-      grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
-  chand->status_key =
-      grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
+  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
+  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
@@ -333,6 +330,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "client-auth"};
+    auth_start_transport_op, channel_op,           sizeof(call_data),
+    init_call_elem,          destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem,       destroy_channel_elem, "client-auth"};

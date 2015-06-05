@@ -157,16 +157,11 @@ static void lb_destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_child_channel_top_filter = {
-    lb_start_transport_op, 
-    lb_channel_op,           
+    lb_start_transport_op,   lb_channel_op,
 
-    sizeof(lb_call_data),
-    lb_init_call_elem,     
-    lb_destroy_call_elem,    
+    sizeof(lb_call_data),    lb_init_call_elem,    lb_destroy_call_elem,
 
-    sizeof(lb_channel_data),
-    lb_init_channel_elem,  
-    lb_destroy_channel_elem, 
+    sizeof(lb_channel_data), lb_init_channel_elem, lb_destroy_channel_elem,
 
     "child-channel",
 };

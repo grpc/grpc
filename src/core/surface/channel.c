@@ -200,7 +200,7 @@ static void destroy_channel(void *p, int ok) {
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void grpc_channel_internal_unref(grpc_channel *channel, const char *reason) {
-  gpr_log(GPR_DEBUG, "CHANNEL: unref %p %d -> %d [%s]", channel, 
+  gpr_log(GPR_DEBUG, "CHANNEL: unref %p %d -> %d [%s]", channel,
           channel->refs.count, channel->refs.count - 1, reason);
 #else
 void grpc_channel_internal_unref(grpc_channel *channel) {

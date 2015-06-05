@@ -336,9 +336,8 @@ static void on_read(void *arg, int success) {
     for (i = 0; i < sp->server->pollset_count; i++) {
       grpc_pollset_add_fd(sp->server->pollsets[i], fdobj);
     }
-    sp->server->cb(
-        sp->server->cb_arg,
-        grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    sp->server->cb(sp->server->cb_arg,
+                   grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
 
     gpr_free(name);
     gpr_free(addr_str);

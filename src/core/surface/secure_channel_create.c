@@ -97,7 +97,8 @@ static void on_secure_transport_setup_done(void *rp,
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
     done(r, 0);
-  } else if (grpc_client_setup_cb_begin(r->cs_request, "on_secure_transport_setup_done")) {
+  } else if (grpc_client_setup_cb_begin(r->cs_request,
+                                        "on_secure_transport_setup_done")) {
     grpc_create_chttp2_transport(
         r->setup->setup_callback, r->setup->setup_user_data,
         grpc_client_setup_get_channel_args(r->cs_request), secure_endpoint,
@@ -113,7 +114,8 @@ static void on_secure_transport_setup_done(void *rp,
 static void on_connect(void *rp, grpc_endpoint *tcp) {
   request *r = rp;
 
-  if (!grpc_client_setup_request_should_continue(r->cs_request, "on_connect.secure")) {
+  if (!grpc_client_setup_request_should_continue(r->cs_request,
+                                                 "on_connect.secure")) {
     if (tcp) {
       grpc_endpoint_shutdown(tcp);
       grpc_endpoint_destroy(tcp);
@@ -153,7 +155,8 @@ static void on_resolved(void *rp, grpc_resolved_addresses *resolved) {
   request *r = rp;
 
   /* if we're not still the active request, abort */
-  if (!grpc_client_setup_request_should_continue(r->cs_request, "on_resolved.secure")) {
+  if (!grpc_client_setup_request_should_continue(r->cs_request,
+                                                 "on_resolved.secure")) {
     if (resolved) {
       grpc_resolved_addresses_destroy(resolved);
     }

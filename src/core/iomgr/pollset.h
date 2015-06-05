@@ -58,7 +58,6 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void *shutdown_done_arg);
 void grpc_pollset_destroy(grpc_pollset *pollset);
 
-
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file
    descriptors.
@@ -70,4 +69,4 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
    Requires GRPC_POLLSET_MU(pollset) locked. */
 void grpc_pollset_kick(grpc_pollset *pollset);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

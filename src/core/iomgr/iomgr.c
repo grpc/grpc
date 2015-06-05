@@ -144,8 +144,8 @@ void grpc_iomgr_shutdown(void) {
     }
     if (g_root_object.next != &g_root_object) {
       int timeout = 0;
-      gpr_timespec short_deadline = gpr_time_add(gpr_now(),
-                                                 gpr_time_from_millis(100));
+      gpr_timespec short_deadline =
+          gpr_time_add(gpr_now(), gpr_time_from_millis(100));
       while (gpr_cv_wait(&g_rcv, &g_mu, short_deadline) && g_cbs_head == NULL) {
         if (gpr_time_cmp(gpr_now(), shutdown_deadline) > 0) {
           timeout = 1;
@@ -194,7 +194,6 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
   gpr_mu_unlock(&g_mu);
 }
 
-
 void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
                              void *cb_arg) {
   closure->cb = cb;
@@ -218,11 +217,9 @@ void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
   gpr_mu_unlock(&g_mu);
 }
 
-
 void grpc_iomgr_add_callback(grpc_iomgr_closure *closure) {
   grpc_iomgr_add_delayed_callback(closure, 1 /* GPR_TRUE */);
 }
-
 
 int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
   int n = 0;

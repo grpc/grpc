@@ -138,7 +138,8 @@ static void on_resolved(void *rp, grpc_resolved_addresses *resolved) {
   request *r = rp;
 
   /* if we're not still the active request, abort */
-  if (!grpc_client_setup_request_should_continue(r->cs_request, "on_resolved")) {
+  if (!grpc_client_setup_request_should_continue(r->cs_request,
+                                                 "on_resolved")) {
     if (resolved) {
       grpc_resolved_addresses_destroy(resolved);
     }

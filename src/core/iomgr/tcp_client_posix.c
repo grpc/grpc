@@ -223,8 +223,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    cb(arg,
-       grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    cb(arg, grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
     goto done;
   }
 
