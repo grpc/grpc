@@ -97,7 +97,8 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
-    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose> ops;
+    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+              CallOpClientSendClose> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
     GPR_ASSERT(ops.SendMessage(request));
@@ -158,8 +159,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
                ClientContext* context, R* response)
-      : context_(context),
-        call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -408,8 +408,7 @@ class AsyncWriterInterface {
 
 template <class R>
 class ClientAsyncReaderInterface : public ClientAsyncStreamingInterface,
-                                   public AsyncReaderInterface<R> {
-};
+                                   public AsyncReaderInterface<R> {};
 
 template <class R>
 class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
@@ -457,7 +456,8 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
  private:
   ClientContext* context_;
   Call call_;
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose> init_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
+      init_ops_;
   CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> read_ops_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> finish_ops_;
@@ -477,8 +477,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   ClientAsyncWriter(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
                     R* response, void* tag)
-      : context_(context),
-        call_(channel->CreateCall(method, context, cq)) {
+      : context_(context), call_(channel->CreateCall(method, context, cq)) {
     finish_ops_.RecvMessage(response);
 
     init_ops_.set_output_tag(tag);
@@ -523,7 +522,8 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   CallOpSet<CallOpRecvInitialMetadata> meta_ops_;
   CallOpSet<CallOpSendMessage> write_ops_;
   CallOpSet<CallOpClientSendClose> writes_done_ops_;
-  CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage, CallOpClientRecvStatus> finish_ops_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage,
+            CallOpClientRecvStatus> finish_ops_;
 };
 
 // Client-side interface for bi-directional streaming.
@@ -628,7 +628,9 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
     }
     // The response is dropped if the status is not OK.
     if (status.IsOk() && !finish_ops_.SendMessage(msg)) {
-      finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, Status(INTERNAL, "Failed to serialize response"));
+      finish_ops_.ServerSendStatus(
+          ctx_->trailing_metadata_,
+          Status(INTERNAL, "Failed to serialize response"));
     } else {
       finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }
@@ -653,7 +655,8 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
   ServerContext* ctx_;
   CallOpSet<CallOpSendInitialMetadata> meta_ops_;
   CallOpSet<CallOpRecvMessage<R>> read_ops_;
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> finish_ops_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus> finish_ops_;
 };
 
 template <class W>

@@ -38,9 +38,10 @@ struct grpc_byte_buffer;
 
 namespace grpc {
 
-template <class Message, class UnusedButHereForPartialTemplateSpecialization = void>
+template <class Message,
+          class UnusedButHereForPartialTemplateSpecialization = void>
 class SerializationTraits;
 
 }  // namespace grpc
 
-#endif // GRPCXX_IMPL_SERIALIZATION_TRAITS_H
+#endif  // GRPCXX_IMPL_SERIALIZATION_TRAITS_H

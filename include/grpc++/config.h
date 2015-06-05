@@ -46,7 +46,7 @@
 #define GRPC_CXX0X_NO_OVERRIDE 1
 #define GRPC_CXX0X_NO_CHRONO 1
 #define GRPC_CXX0X_NO_THREAD 1
-#endif  
+#endif
 #endif  // Visual Studio
 
 #ifndef __clang__
@@ -80,16 +80,22 @@
 #ifdef GRPC_CXX0X_NO_NULLPTR
 #include <memory>
 const class {
-public:
-  template <class T> operator T*() const {return static_cast<T *>(0);}
-  template <class T> operator std::unique_ptr<T>() const {
+ public:
+  template <class T>
+  operator T *() const {
+    return static_cast<T *>(0);
+  }
+  template <class T>
+  operator std::unique_ptr<T>() const {
     return std::unique_ptr<T>(static_cast<T *>(0));
   }
-  template <class T> operator std::shared_ptr<T>() const {
+  template <class T>
+  operator std::shared_ptr<T>() const {
     return std::shared_ptr<T>(static_cast<T *>(0));
   }
-  operator bool() const {return false;}
-private:
+  operator bool() const { return false; }
+
+ private:
   void operator&() const = delete;
 } nullptr = {};
 #endif

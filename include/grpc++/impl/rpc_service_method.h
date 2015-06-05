@@ -55,9 +55,12 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
-    HandlerParameter(Call* c, ServerContext* context,
-                     grpc_byte_buffer* req, int max_size)
-        : call(c), server_context(context), request(req), max_message_size(max_size) {}
+    HandlerParameter(Call* c, ServerContext* context, grpc_byte_buffer* req,
+                     int max_size)
+        : call(c),
+          server_context(context),
+          request(req),
+          max_message_size(max_size) {}
     Call* call;
     ServerContext* server_context;
     // Handler required to grpc_byte_buffer_destroy this
@@ -79,14 +82,16 @@ class RpcMethodHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(param.request, &req, param.max_message_size);
+    Status status = SerializationTraits<RequestType>::Deserialize(
+        param.request, &req, param.max_message_size);
     ResponseType rsp;
     if (status.IsOk()) {
       status = func_(service_, param.server_context, &req, &rsp);
     }
 
     GPR_ASSERT(!param.server_context->sent_initial_metadata_);
-    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> ops;
+    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+              CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.IsOk()) {
       if (!ops.SendMessage(rsp)) {
@@ -122,7 +127,8 @@ class ClientStreamingHandler : public MethodHandler {
     Status status = func_(service_, param.server_context, &reader, &rsp);
 
     GPR_ASSERT(!param.server_context->sent_initial_metadata_);
-    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> ops;
+    CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+              CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.IsOk()) {
       if (!ops.SendMessage(rsp)) {
@@ -152,7 +158,8 @@ class ServerStreamingHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(param.request, &req, param.max_message_size);
+    Status status = SerializationTraits<RequestType>::Deserialize(
+        param.request, &req, param.max_message_size);
 
     if (status.IsOk()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
@@ -211,8 +218,7 @@ class RpcServiceMethod : public RpcMethod {
   // Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
                    MethodHandler* handler)
-      : RpcMethod(name, type, nullptr),
-        handler_(handler) {}
+      : RpcMethod(name, type, nullptr), handler_(handler) {}
 
   MethodHandler* handler() { return handler_.get(); }
 

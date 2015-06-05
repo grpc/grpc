@@ -85,7 +85,8 @@ class ByteBuffer GRPC_FINAL {
 template <>
 class SerializationTraits<ByteBuffer, void> {
  public:
-  static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest, int max_message_size) {
+  static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest,
+                            int max_message_size) {
     dest->set_buffer(byte_buffer);
     return Status::OK;
   }

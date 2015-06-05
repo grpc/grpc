@@ -55,14 +55,18 @@ Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
                         int max_message_size);
 
 template <class T>
-class SerializationTraits<T, typename std::enable_if<std::is_base_of<grpc::protobuf::Message, T>::value>::type> {
+class SerializationTraits<T, typename std::enable_if<std::is_base_of<
+                                 grpc::protobuf::Message, T>::value>::type> {
  public:
- 	static bool Serialize(const grpc::protobuf::Message& msg, grpc_byte_buffer** buffer) {
- 		return SerializeProto(msg, buffer);
- 	}
- 	static Status Deserialize(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg, int max_message_size) {
- 		return DeserializeProto(buffer, msg, max_message_size);
- 	}
+  static bool Serialize(const grpc::protobuf::Message& msg,
+                        grpc_byte_buffer** buffer) {
+    return SerializeProto(msg, buffer);
+  }
+  static Status Deserialize(grpc_byte_buffer* buffer,
+                            grpc::protobuf::Message* msg,
+                            int max_message_size) {
+    return DeserializeProto(buffer, msg, max_message_size);
+  }
 };
 
 }  // namespace grpc

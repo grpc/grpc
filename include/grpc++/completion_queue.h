@@ -95,7 +95,7 @@ class CompletionQueue : public GrpcLibrary {
 
   // Nonblocking (until deadline) read from queue.
   // Cannot rely on result of tag or ok if return is TIMEOUT
-  template<typename T>
+  template <typename T>
   NextStatus AsyncNext(void** tag, bool* ok, const T& deadline) {
     TimePoint<T> deadline_tp(deadline);
     return AsyncNextInternal(tag, ok, deadline_tp.raw_time());

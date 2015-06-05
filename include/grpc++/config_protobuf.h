@@ -51,8 +51,7 @@
   ::google::protobuf::io::ZeroCopyOutputStream
 #define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
   ::google::protobuf::io::ZeroCopyInputStream
-#define GRPC_CUSTOM_CODEDINPUTSTREAM \
-  ::google::protobuf::io::CodedInputStream
+#define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
 #endif
 
 namespace grpc {

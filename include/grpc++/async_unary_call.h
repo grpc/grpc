@@ -90,9 +90,11 @@ class ClientAsyncResponseReader GRPC_FINAL
  private:
   ClientContext* context_;
   Call call_;
-  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose> init_buf_;
+  SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+                  CallOpClientSendClose> init_buf_;
   CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
-  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>, CallOpClientRecvStatus> finish_buf_;
+  CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
+            CallOpClientRecvStatus> finish_buf_;
 };
 
 template <class W>
@@ -119,7 +121,9 @@ class ServerAsyncResponseWriter GRPC_FINAL
     }
     // The response is dropped if the status is not OK.
     if (status.IsOk() && !finish_buf_.SendMessage(msg)) {
-      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, Status(INVALID_ARGUMENT, "Failed to serialize message"));
+      finish_buf_.ServerSendStatus(
+          ctx_->trailing_metadata_,
+          Status(INVALID_ARGUMENT, "Failed to serialize message"));
     } else {
       finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }
@@ -143,7 +147,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
   Call call_;
   ServerContext* ctx_;
   CallOpSet<CallOpSendInitialMetadata> meta_buf_;
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpServerSendStatus> finish_buf_;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpServerSendStatus> finish_buf_;
 };
 
 }  // namespace grpc

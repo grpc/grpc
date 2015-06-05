@@ -77,21 +77,20 @@ class AsynchronousService {
 
  protected:
   template <class Message>
-  void RequestAsyncUnary(int index, ServerContext* context,
-                         Message* request,
+  void RequestAsyncUnary(int index, ServerContext* context, Message* request,
                          ServerAsyncStreamingInterface* stream,
                          CompletionQueue* call_cq,
                          ServerCompletionQueue* notification_cq, void* tag) {
-    server_->RequestAsyncCall(request_args_[index], context,
-                                     stream, call_cq, notification_cq, tag, request);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag, request);
   }
   void RequestClientStreaming(int index, ServerContext* context,
                               ServerAsyncStreamingInterface* stream,
                               CompletionQueue* call_cq,
                               ServerCompletionQueue* notification_cq,
                               void* tag) {
-    server_->RequestAsyncCall(request_args_[index], context, 
-                                     stream, call_cq, notification_cq, tag);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag);
   }
   template <class Message>
   void RequestServerStreaming(int index, ServerContext* context,
@@ -100,15 +99,15 @@ class AsynchronousService {
                               CompletionQueue* call_cq,
                               ServerCompletionQueue* notification_cq,
                               void* tag) {
-    server_->RequestAsyncCall(request_args_[index], context, 
-                                     stream, call_cq, notification_cq, tag, request);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag, request);
   }
   void RequestBidiStreaming(int index, ServerContext* context,
                             ServerAsyncStreamingInterface* stream,
                             CompletionQueue* call_cq,
                             ServerCompletionQueue* notification_cq, void* tag) {
-    server_->RequestAsyncCall(request_args_[index], context, 
-                                     stream, call_cq, notification_cq, tag);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag);
   }
 
  private:

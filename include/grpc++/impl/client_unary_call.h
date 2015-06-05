@@ -49,18 +49,13 @@ class Status;
 // Wrapper that performs a blocking unary call
 template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context,
-                         const InputMessage& request,
+                         ClientContext* context, const InputMessage& request,
                          OutputMessage* result) {
   CompletionQueue cq;
   Call call(channel->CreateCall(method, context, &cq));
-  CallOpSet<
-  		CallOpSendInitialMetadata, 
-  		CallOpSendMessage, 
-  		CallOpRecvInitialMetadata, 
-  		CallOpRecvMessage<OutputMessage>, 
-  		CallOpClientSendClose, 
-  		CallOpClientRecvStatus> ops;
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+            CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
+            CallOpClientSendClose, CallOpClientRecvStatus> ops;
   Status status;
   ops.SendInitialMetadata(context->send_initial_metadata_);
   if (!ops.SendMessage(request)) {

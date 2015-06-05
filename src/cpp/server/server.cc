@@ -71,9 +71,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     grpc_metadata_array_init(&request_metadata_);
   }
 
-  ~SyncRequest() {
-    grpc_metadata_array_destroy(&request_metadata_);
-  }
+  ~SyncRequest() { grpc_metadata_array_destroy(&request_metadata_); }
 
   static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
     void* tag = nullptr;
@@ -129,8 +127,8 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 
     void Run() {
       ctx_.BeginCompletionOp(&call_);
-      method_->handler()->RunHandler(
-          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_, call_.max_message_size()));
+      method_->handler()->RunHandler(MethodHandler::HandlerParameter(
+          &call_, &ctx_, request_payload_, call_.max_message_size()));
       void* ignored_tag;
       bool ignored_ok;
       cq_.Shutdown();
@@ -422,23 +420,27 @@ void Server::RequestAsyncGenericCall(GenericServerContext* context,
 }
 #endif
 
-Server::BaseAsyncRequest::BaseAsyncRequest(Server* server, ServerContext* context,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag) 
-: server_(server), context_(context), stream_(stream), call_cq_(call_cq), call_(nullptr) {
+Server::BaseAsyncRequest::BaseAsyncRequest(
+    Server* server, ServerContext* context,
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
+    : server_(server),
+      context_(context),
+      stream_(stream),
+      call_cq_(call_cq),
+      call_(nullptr) {
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
 
-Server::BaseAsyncRequest::~BaseAsyncRequest() {
-}
+Server::BaseAsyncRequest::~BaseAsyncRequest() {}
 
 bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
       context_->client_metadata_.insert(std::make_pair(
           grpc::string(initial_metadata_array_.metadata[i].key),
-          grpc::string(
-              initial_metadata_array_.metadata[i].value,
-              initial_metadata_array_.metadata[i].value + initial_metadata_array_.metadata[i].value_length)));
+          grpc::string(initial_metadata_array_.metadata[i].value,
+                       initial_metadata_array_.metadata[i].value +
+                           initial_metadata_array_.metadata[i].value_length)));
     }
   }
   context_->call_ = call_;
@@ -453,27 +455,31 @@ bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   return true;
 }
 
-Server::RegisteredAsyncRequest::RegisteredAsyncRequest(Server* server, ServerContext* context,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
+Server::RegisteredAsyncRequest::RegisteredAsyncRequest(
+    Server* server, ServerContext* context,
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
     : BaseAsyncRequest(server, context, stream, call_cq, tag) {}
 
-
-void Server::RegisteredAsyncRequest::IssueRequest(void* registered_method, grpc_byte_buffer** payload, ServerCompletionQueue *notification_cq) {
+void Server::RegisteredAsyncRequest::IssueRequest(
+    void* registered_method, grpc_byte_buffer** payload,
+    ServerCompletionQueue* notification_cq) {
   grpc_server_request_registered_call(
-    server_->server_, registered_method, &call_, &context_->deadline_, &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(), this);
+      server_->server_, registered_method, &call_, &context_->deadline_,
+      &initial_metadata_array_, payload, call_cq_->cq(), notification_cq->cq(),
+      this);
 }
 
-Server::GenericAsyncRequest::GenericAsyncRequest(Server* server, GenericServerContext* context,
-                               ServerAsyncStreamingInterface* stream,
-                               CompletionQueue* call_cq,
-                               ServerCompletionQueue* notification_cq,
-                               void* tag) 
-: BaseAsyncRequest(server, context, stream, call_cq, tag) {
+Server::GenericAsyncRequest::GenericAsyncRequest(
+    Server* server, GenericServerContext* context,
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+    ServerCompletionQueue* notification_cq, void* tag)
+    : BaseAsyncRequest(server, context, stream, call_cq, tag) {
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  grpc_server_request_call(server->server_, &call_, &call_details_, &initial_metadata_array_,
-                           call_cq->cq(), notification_cq->cq(), this);
+  grpc_server_request_call(server->server_, &call_, &call_details_,
+                           &initial_metadata_array_, call_cq->cq(),
+                           notification_cq->cq(), this);
 }
 
 bool Server::GenericAsyncRequest::FinalizeResult(void** tag, bool* status) {

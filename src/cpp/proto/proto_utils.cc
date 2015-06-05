@@ -67,7 +67,7 @@ class GrpcBufferWriter GRPC_FINAL
       slice_ = gpr_slice_malloc(block_size_);
     }
     *data = GPR_SLICE_START_PTR(slice_);
-    byte_count_ += *size = GPR_SLICE_LENGTH(slice_);
+    byte_count_ += * size = GPR_SLICE_LENGTH(slice_);
     gpr_slice_buffer_add(slice_buffer_, slice_);
     return true;
   }
@@ -118,7 +118,7 @@ class GrpcBufferReader GRPC_FINAL
     }
     gpr_slice_unref(slice_);
     *data = GPR_SLICE_START_PTR(slice_);
-    byte_count_ += *size = GPR_SLICE_LENGTH(slice_);
+    byte_count_ += * size = GPR_SLICE_LENGTH(slice_);
     return true;
   }
 
@@ -158,7 +158,7 @@ bool SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
 }
 
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                      int max_message_size) {
+                        int max_message_size) {
   if (!buffer) {
     return Status(INVALID_ARGUMENT, "No payload");
   }
@@ -169,7 +169,7 @@ Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
   }
   if (!msg->ParseFromCodedStream(&decoder)) {
     return Status(INVALID_ARGUMENT, msg->InitializationErrorString());
-  } 
+  }
   if (!decoder.ConsumedEntireMessage()) {
     return Status(INVALID_ARGUMENT, "Did not read entire message");
   }
