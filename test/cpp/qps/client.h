@@ -136,7 +136,7 @@ class Client {
       closed_loop_ = false;
 
       std::unique_ptr<RandomDist> random_dist;
-      auto& load = config.load_params();
+      const auto& load = config.load_params();
       switch (config.load_type()) {
         case POISSON:
           random_dist.reset(
@@ -170,6 +170,7 @@ class Client {
       }
     }
   }
+
   bool NextIssueTime(int thread_idx, grpc_time* time_delay) {
     if (closed_loop_) {
       return false;
