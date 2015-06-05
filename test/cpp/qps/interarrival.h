@@ -115,7 +115,7 @@ class ParetoDist GRPC_FINAL : public RandomDist {
 // in an efficient re-entrant way. The random table is built at construction
 // time, and each call must include the thread id of the invoker
 
-using qps_random_engine = std::default_random_engine;
+typedef std::default_random_engine qps_random_engine;
 
 class InterarrivalTimer {
  public:
