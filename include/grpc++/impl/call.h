@@ -34,7 +34,7 @@
 #ifndef GRPCXX_IMPL_CALL_H
 #define GRPCXX_IMPL_CALL_H
 
-#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
@@ -85,6 +85,8 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.metadata = initial_metadata_;
   }
   void FinishOp(bool* status, int max_message_size) {
+    if (!send_) return;
+    gpr_free(initial_metadata_);
     send_ = false;
   }
 
@@ -244,6 +246,7 @@ class CallOpServerSendStatus {
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
+    if (!send_status_available_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count =
@@ -255,7 +258,9 @@ class CallOpServerSendStatus {
   }
 
   void FinishOp(bool* status, int max_message_size) {
-    send_status_details_ = false;
+    if (!send_status_available_) return;
+    gpr_free(trailing_metadata_);
+    send_status_available_ = false;
   }
 
  private:
@@ -269,7 +274,6 @@ class CallOpServerSendStatus {
 class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : recv_initial_metadata_(nullptr) {
-    memset(&recv_initial_metadata_arr_, 0, sizeof(recv_initial_metadata_arr_));
   }
 
   void RecvInitialMetadata(ClientContext* context) {
@@ -280,6 +284,7 @@ class CallOpRecvInitialMetadata {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (!recv_initial_metadata_) return;
+    memset(&recv_initial_metadata_arr_, 0, sizeof(recv_initial_metadata_arr_));
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
@@ -297,7 +302,7 @@ class CallOpRecvInitialMetadata {
 
 class CallOpClientRecvStatus {
  public:
-  CallOpClientRecvStatus() { memset(this, 0, sizeof(*this)); }
+  CallOpClientRecvStatus() : recv_status_(nullptr) {}
 
   void ClientRecvStatus(ClientContext* context, Status* status) {
     recv_trailing_metadata_ = &context->trailing_metadata_;
@@ -307,6 +312,9 @@ class CallOpClientRecvStatus {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (recv_status_ == nullptr) return;
+    memset(&recv_trailing_metadata_arr_, 0, sizeof(recv_trailing_metadata_arr_));
+    status_details_ = nullptr;
+    status_details_capacity_ = 0;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op->data.recv_status_on_client.trailing_metadata =
@@ -323,6 +331,7 @@ class CallOpClientRecvStatus {
     *recv_status_ = Status(
         static_cast<StatusCode>(status_code_),
         status_details_ ? grpc::string(status_details_) : grpc::string());
+    gpr_free(status_details_);
     recv_status_ = nullptr;
   }
 

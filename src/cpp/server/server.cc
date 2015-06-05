@@ -129,6 +129,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       ctx_.BeginCompletionOp(&call_);
       method_->handler()->RunHandler(MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_, call_.max_message_size()));
+      request_payload_ = nullptr;
       void* ignored_tag;
       bool ignored_ok;
       cq_.Shutdown();
@@ -316,6 +317,7 @@ bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
                            initial_metadata_array_.metadata[i].value_length)));
     }
   }
+  grpc_metadata_array_destroy(&initial_metadata_array_);
   context_->call_ = call_;
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_message_size_);
