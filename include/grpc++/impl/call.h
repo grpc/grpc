@@ -376,81 +376,6 @@ class CallOpSet : public CallOpSetInterface,
   void* return_tag_;
 };
 
-#if 0
-class CallOpBuffer : public CompletionQueueTag {
- public:
-  CallOpBuffer();
-  ~CallOpBuffer();
-
-  void Reset(void* next_return_tag);
-
-  // Does not take ownership.
-  void AddSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata);
-  void AddSendInitialMetadata(ClientContext* ctx);
-  void AddRecvInitialMetadata(ClientContext* ctx);
-  void AddSendMessage(const grpc::protobuf::Message& message);
-  void AddSendMessage(const ByteBuffer& message);
-  void AddRecvMessage(grpc::protobuf::Message* message);
-  void AddRecvMessage(ByteBuffer* message);
-  void AddClientSendClose();
-  void AddClientRecvStatus(ClientContext* ctx, Status* status);
-  void AddServerSendStatus(std::multimap<grpc::string, grpc::string>* metadata,
-                           const Status& status);
-  void AddServerRecvClose(bool* cancelled);
-
-  // INTERNAL API:
-
-  // Convert to an array of grpc_op elements
-  void FillOps(grpc_op* ops, size_t* nops);
-
-  // Called by completion queue just prior to returning from Next() or Pluck()
-  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
-
-  void set_max_message_size(int max_message_size) {
-    max_message_size_ = max_message_size;
-  }
-
-  bool got_message;
-
- private:
-  void* return_tag_;
-  // Send initial metadata
-  bool send_initial_metadata_;
-  size_t initial_metadata_count_;
-  grpc_metadata* initial_metadata_;
-  // Recv initial metadta
-  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_;
-  grpc_metadata_array recv_initial_metadata_arr_;
-  // Send message
-  const grpc::protobuf::Message* send_message_;
-  const ByteBuffer* send_message_buffer_;
-  grpc_byte_buffer* send_buf_;
-  // Recv message
-  grpc::protobuf::Message* recv_message_;
-  ByteBuffer* recv_message_buffer_;
-  grpc_byte_buffer* recv_buf_;
-  int max_message_size_;
-  // Client send close
-  bool client_send_close_;
-  // Client recv status
-  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_;
-  Status* recv_status_;
-  grpc_metadata_array recv_trailing_metadata_arr_;
-  grpc_status_code status_code_;
-  char* status_details_;
-  size_t status_details_capacity_;
-  // Server send status
-  bool send_status_available_;
-  grpc_status_code send_status_code_;
-  grpc::string send_status_details_;
-  size_t trailing_metadata_count_;
-  grpc_metadata* trailing_metadata_;
-  int cancelled_buf_;
-  bool* recv_closed_;
-};
-#endif
-
 // SneakyCallOpBuffer does not post completions to the completion queue
 template <class Op1 = CallNoOp, class Op2 = CallNoOp, class Op3 = CallNoOp,
           class Op4 = CallNoOp, class Op5 = CallNoOp, class Op6 = CallNoOp>
@@ -458,9 +383,8 @@ class SneakyCallOpSet GRPC_FINAL
     : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
  public:
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
-    return CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6>::FinalizeResult(tag,
-                                                                   status) &&
-           false;
+    typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;
+    return Base::FinalizeResult(tag, status) && false;
   }
 };
 
