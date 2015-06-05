@@ -179,10 +179,9 @@ class AsyncClient : public Client {
     int t = 0;
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
       for (int ch = 0; ch < channel_count_; ch++) {
-        auto& channel = channels_[ch];
         auto* cq = cli_cqs_[t].get();
         t = (t + 1) % cli_cqs_.size();
-        auto ctx = setup_ctx(ch, channel.get_stub(), request_);
+        auto ctx = setup_ctx(ch, channels_[ch].get_stub(), request_);
         if (closed_loop_) {
           ctx->Start(cq);
         } else {
