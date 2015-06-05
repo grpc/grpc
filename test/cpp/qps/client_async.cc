@@ -273,17 +273,23 @@ class AsyncClient : public Client {
      // Attempt to issue
      bool issued = false;
      for (int num_attempts = 0; num_attempts < channel_count_ && !issued;
-	  num_attempts++,
-              next_channel_[thread_idx] =
-              (next_channel_[thread_idx]+1)%channel_count_) {
-       std::lock_guard<std::mutex>
-           g(channel_lock_[next_channel_[thread_idx]]);
-       if ((rpcs_outstanding_[next_channel_[thread_idx]] <
-            max_outstanding_per_channel_) &&
-           !contexts_[next_channel_[thread_idx]].empty()) {
-         // Get an idle context from the front of the list
-         auto ctx = *(contexts_[next_channel_[thread_idx]].begin());
-         contexts_[next_channel_[thread_idx]].pop_front();
+	  num_attempts++) {
+       bool can_issue = false;
+       ClientRpcContext* ctx;
+       {
+         std::lock_guard<std::mutex>
+             g(channel_lock_[next_channel_[thread_idx]]);
+         if ((rpcs_outstanding_[next_channel_[thread_idx]] <
+              max_outstanding_per_channel_) &&
+             !contexts_[next_channel_[thread_idx]].empty()) {
+           // Get an idle context from the front of the list
+           ctx = *(contexts_[next_channel_[thread_idx]].begin());
+           contexts_[next_channel_[thread_idx]].pop_front();
+           rpcs_outstanding_[next_channel_[thread_idx]]++;
+           can_issue = true;
+         }
+       }
+       if (can_issue) {
 	 // do the work to issue
          rpc_deadlines_[thread_idx].emplace_back(
              grpc_time_source::now() + std::chrono::seconds(1));
@@ -291,11 +297,15 @@ class AsyncClient : public Client {
          --it;
          ctx->set_deadline_posn(it);
          ctx->Start(cli_cqs_[thread_idx].get());
-	 rpcs_outstanding_[next_channel_[thread_idx]]++;
 	 issued = true;
+       } else {
+         // Do a modular increment of next_channel only if we didn't issue
+         next_channel_[thread_idx] =
+             (next_channel_[thread_idx]+1)%channel_count_;
        }
      }
      if (issued) {
+       // We issued one; see when we can issue the next
        grpc_time next_issue;
        NextIssueTime(thread_idx, &next_issue);
        next_issue_[thread_idx]=next_issue;
