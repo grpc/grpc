@@ -85,13 +85,13 @@ int grpc_winsocket_shutdown(grpc_winsocket *socket) {
    both memory and sockets. */
 void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
   SOCKET socket = winsocket->socket;
+  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   if (winsocket->read_info.outstanding || winsocket->write_info.outstanding) {
     grpc_iocp_socket_orphan(winsocket);
   } else {
     grpc_winsocket_destroy(winsocket);
   }
   closesocket(socket);
-  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
