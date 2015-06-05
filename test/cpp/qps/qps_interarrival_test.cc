@@ -39,14 +39,16 @@
 #include <grpc/support/histogram.h>
 #include <grpc++/config.h>
 
-using grpc::testing::ExpDist;
+using grpc::testing::RandomDist;
 using grpc::testing::InterarrivalTimer;
 
-void RunTest(InterarrivalTimer &&timer, std::string title) {
+void RunTest(RandomDist&& r, int threads, std::string title) {
+  InterarrivalTimer timer;
+  timer.init(r, threads);
   gpr_histogram *h(gpr_histogram_create(0.01, 60e9));
 
   for (int i = 0; i < 10000000; i++) {
-    for (int j = 0; j < 5; j++) {
+    for (int j = 0; j < threads; j++) {
       gpr_histogram_add(h, timer(j).count());
     }
   }
@@ -66,12 +68,9 @@ using grpc::testing::UniformDist;
 using grpc::testing::ParetoDist;
 
 int main(int argc, char **argv) {
-  RunTest(InterarrivalTimer(ExpDist(10.0), 5), std::string("Exponential(10)"));
-  RunTest(InterarrivalTimer(DetDist(5.0), 5), std::string("Det(5)"));
-  RunTest(InterarrivalTimer(UniformDist(0.0, 10.0), 5),
-          std::string("Uniform(1,10)"));
-  RunTest(InterarrivalTimer(ParetoDist(1.0, 1.0), 5),
-          std::string("Pareto(1,1)"));
-
+  RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));
+  RunTest(DetDist(5.0), 5, std::string("Det(5)"));
+  RunTest(UniformDist(0.0, 10.0), 5, std::string("Uniform(1,10)"));
+  RunTest(ParetoDist(1.0, 1.0), 5, std::string("Pareto(1,1)"));
   return 0;
 }

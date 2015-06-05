@@ -60,18 +60,13 @@ class RandomDist {
 
 inline RandomDist::~RandomDist() {}
 
-class UniformDist GRPC_FINAL : public RandomDist {
- public:
-  UniformDist(double lo, double hi) : lo_(lo), range_(hi - lo) {}
-  ~UniformDist() GRPC_OVERRIDE {}
-  double operator()(double uni) const GRPC_OVERRIDE {
-    return uni * range_ + lo_;
-  }
-
- private:
-  double lo_;
-  double range_;
-};
+// ExpDist implements an exponential distribution, which is the
+// interarrival distribution for a Poisson process. The parameter
+// lambda is the mean rate of arrivals. This is the
+// most useful distribution since it is actually additive and
+// memoryless. It is a good representation of activity coming in from
+// independent identical stationary sources. For more information,
+// see http://en.wikipedia.org/wiki/Exponential_distribution
 
 class ExpDist GRPC_FINAL : public RandomDist {
  public:
@@ -86,6 +81,30 @@ class ExpDist GRPC_FINAL : public RandomDist {
   double lambda_recip_;
 };
 
+// UniformDist implements a random distribution that has
+// interarrival time uniformly spread between [lo,hi). The
+// mean interarrival time is (lo+hi)/2. For more information,
+// see http://en.wikipedia.org/wiki/Uniform_distribution_%28continuous%29
+
+class UniformDist GRPC_FINAL : public RandomDist {
+ public:
+  UniformDist(double lo, double hi) : lo_(lo), range_(hi - lo) {}
+  ~UniformDist() GRPC_OVERRIDE {}
+  double operator()(double uni) const GRPC_OVERRIDE {
+    return uni * range_ + lo_;
+  }
+
+ private:
+  double lo_;
+  double range_;
+};
+
+// DetDist provides a random distribution with interarrival time
+// of val. Note that this is not additive, so using this on multiple
+// flows of control (threads within the same client or separate
+// clients) will not preserve any deterministic interarrival gap across
+// requests.
+
 class DetDist GRPC_FINAL : public RandomDist {
  public:
   explicit DetDist(double val) : val_(val) {}
@@ -95,6 +114,13 @@ class DetDist GRPC_FINAL : public RandomDist {
  private:
   double val_;
 };
+
+// ParetoDist provides a random distribution with interarrival time
+// spread according to a Pareto (heavy-tailed) distribution. In this
+// model, many interarrival times are close to the base, but a sufficient
+// number will be high (up to infinity) as to disturb the mean. It is a
+// good representation of the response times of data center jobs. See
+// http://en.wikipedia.org/wiki/Pareto_distribution
 
 class ParetoDist GRPC_FINAL : public RandomDist {
  public:
@@ -120,9 +146,6 @@ typedef std::default_random_engine qps_random_engine;
 class InterarrivalTimer {
  public:
   InterarrivalTimer() {}
-  InterarrivalTimer(const RandomDist& r, int threads, int entries = 1000000) {
-    init(r, threads, entries);
-  }
   void init(const RandomDist& r, int threads, int entries = 1000000) {
     qps_random_engine gen;
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
