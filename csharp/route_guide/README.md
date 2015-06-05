@@ -102,7 +102,7 @@ Once that's done, the following command can be used to generate the C# code.
 To generate the code on Windows, we use `protoc.exe` and `grpc_csharp_plugin.exe` binaries that are shipped with the `Grpc.Tools` NuGet package under the `tools` directory.
 Normally you would need to add the `Grpc.Tools` package to the solution yourself, but in this tutorial it has been already done for you. Following command should be run from the `csharp/route_guide` directory:
 ```
-> packages\Grpc.Tools.0.5.0\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.5.0\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
+> packages\Grpc.Tools.0.5.1\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.5.1\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
 ```
 
 On Linux/MacOS, we rely on `protoc` and `grpc_csharp_plugin` being installed by Linuxbrew/Homebrew. Run this command from the route_guide directory:
