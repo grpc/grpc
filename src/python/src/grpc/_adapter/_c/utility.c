@@ -36,6 +36,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <grpc/grpc.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
@@ -144,6 +145,11 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
   static const int STATUS_INDEX = 4;
   static const int STATUS_CODE_INDEX = 0;
   static const int STATUS_DETAILS_INDEX = 1;
+  int type;
+  Py_ssize_t message_size;
+  char *message;
+  char *status_details;
+  gpr_slice message_slice;
   grpc_op c_op;
   if (!PyTuple_Check(op)) {
     PyErr_SetString(PyExc_TypeError, "expected tuple op");
@@ -155,14 +161,10 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     PyErr_SetString(PyExc_ValueError, buf);
     return 0;
   }
-  int type = PyInt_AsLong(PyTuple_GET_ITEM(op, TYPE_INDEX));
+  type = PyInt_AsLong(PyTuple_GET_ITEM(op, TYPE_INDEX));
   if (PyErr_Occurred()) {
     return 0;
   }
-  Py_ssize_t message_size;
-  char *message;
-  char *status_details;
-  gpr_slice message_slice;
   c_op.op = type;
   switch (type) {
   case GRPC_OP_SEND_INITIAL_METADATA:
@@ -365,7 +367,9 @@ gpr_timespec pygrpc_cast_double_to_gpr_timespec(double seconds) {
 int pygrpc_produce_channel_args(PyObject *py_args, grpc_channel_args *c_args) {
   size_t num_args = PyList_Size(py_args);
   size_t i;
-  grpc_channel_args args = {num_args, gpr_malloc(sizeof(grpc_arg) * num_args)};
+  grpc_channel_args args;
+  args.num_args = num_args;
+  args.args = gpr_malloc(sizeof(grpc_arg) * num_args);
   for (i = 0; i < args.num_args; ++i) {
     char *key;
     PyObject *value;
@@ -443,18 +447,18 @@ PyObject *pygrpc_cast_metadata_array_to_pylist(grpc_metadata_array metadata) {
 
 void pygrpc_byte_buffer_to_bytes(
     grpc_byte_buffer *buffer, char **result, size_t *result_size) {
-  grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer_reader_init(&reader, buffer);
   gpr_slice slice;
   char *read_result = NULL;
   size_t size = 0;
-  while (grpc_byte_buffer_reader_next(reader, &slice)) {
+  while (grpc_byte_buffer_reader_next(&reader, &slice)) {
     read_result = gpr_realloc(read_result, size + GPR_SLICE_LENGTH(slice));
     memcpy(read_result + size, GPR_SLICE_START_PTR(slice),
            GPR_SLICE_LENGTH(slice));
     size = size + GPR_SLICE_LENGTH(slice);
     gpr_slice_unref(slice);
   }
-  grpc_byte_buffer_reader_destroy(reader);
   *result_size = size;
   *result = read_result;
 }

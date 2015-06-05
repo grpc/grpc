@@ -31,38 +31,31 @@
  *
  */
 
-#include "rb_byte_buffer.h"
+#ifndef GRPC_SUPPORT_STRING_UTIL_H
+#define GRPC_SUPPORT_STRING_UTIL_H
 
-#include <ruby/ruby.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/slice.h>
-#include "rb_grpc.h"
+/* String utility functions */
 
-grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
-  grpc_byte_buffer *buffer = grpc_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
-  return buffer;
+/* Returns a copy of src that can be passed to gpr_free().
+   If allocation fails or if src is NULL, returns NULL. */
+char *gpr_strdup(const char *src);
+
+/* printf to a newly-allocated string.  The set of supported formats may vary
+   between platforms.
+
+   On success, returns the number of bytes printed (excluding the final '\0'),
+   and *strp points to a string which must later be destroyed with gpr_free().
+
+   On error, returns -1 and sets *strp to NULL. If the format string is bad,
+   the result is undefined. */
+int gpr_asprintf(char **strp, const char *format, ...);
+
+#ifdef __cplusplus
 }
+#endif
 
-VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
-  size_t length = 0;
-  char *string = NULL;
-  size_t offset = 0;
-  grpc_byte_buffer_reader reader;
-  gpr_slice next;
-  if (buffer == NULL) {
-    return Qnil;
-
-  }
-  length = grpc_byte_buffer_length(buffer);
-  string = xmalloc(length + 1);
-  grpc_byte_buffer_reader_init(&reader, buffer);
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-  }
-  return rb_str_new(string, length);
-}
+#endif  /* GRPC_SUPPORT_STRING_UTIL_H */

@@ -170,14 +170,18 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
 struct grpc_byte_buffer_reader;
 typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
 
-grpc_byte_buffer_reader *grpc_byte_buffer_reader_create(
-    grpc_byte_buffer *buffer);
+/** Initialize \a reader to read over \a buffer */
+void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                  grpc_byte_buffer *buffer);
+
+/** Cleanup and destroy \a reader */
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
+
 /* At the end of the stream, returns 0. Otherwise, returns 1 and sets slice to
    be the returned slice. Caller is responsible for calling gpr_slice_unref on
    the result. */
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice);
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 
 /* A single metadata element */
 typedef struct grpc_metadata {
@@ -521,6 +525,16 @@ void grpc_server_cancel_all_calls(grpc_server *server);
    grpc_server_shutdown_and_notify must have been received, and at least
    one call to grpc_server_shutdown_and_notify must have been made). */
 void grpc_server_destroy(grpc_server *server);
+
+/** Enable or disable a tracer.
+
+    Tracers (usually controlled by the environment variable GRPC_TRACE)
+    allow printf-style debugging on GRPC internals, and are useful for
+    tracking down problems in the field. 
+
+    Use of this function is not strictly thread-safe, but the 
+    thread-safety issues raised by it should not be of concern. */
+int grpc_tracer_set_enabled(const char *name, int enabled);
 
 #ifdef __cplusplus
 }

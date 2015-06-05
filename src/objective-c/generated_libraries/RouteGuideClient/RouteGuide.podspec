@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name     = "RemoteTest"
+  s.name     = "RouteGuide"
   s.version  = "0.0.1"
   s.license  = "New BSD"
 
