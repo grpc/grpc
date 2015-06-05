@@ -106,6 +106,20 @@ class GprLogReporter : public Reporter {
   void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
 };
 
+/** Reporter for client leaderboard. */
+class UserDatabaseReporter : public Reporter {
+ public:
+  UserDatabaseReporter(const string& name, const string& access_token) : Reporter(name), access_token_(access_token) {}
+
+ private:
+  std::string access_token_;
+  void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result,
+                        const ServerConfig& config) const GRPC_OVERRIDE;
+  void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
+};
+
 }  // namespace testing
 }  // namespace grpc
 

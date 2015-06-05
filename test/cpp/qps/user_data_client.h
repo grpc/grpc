@@ -31,45 +31,58 @@
  *
  */
 
-#include <gflags/gflags.h>
-#include "test/cpp/util/benchmark_config.h"
+#include <iostream>
+#include <memory>
+#include <string>
 
-DEFINE_bool(enable_log_reporter, true,
-            "Enable reporting of benchmark results through GprLog");
+#include <grpc/grpc.h>
+#include <grpc++/channel_arguments.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
+#include <grpc++/status.h>
+#include "test/cpp/qps/user_data.grpc.pb.h"
 
-DEFINE_string(access_token, "", "Authorizing JSON string for leaderboard");
+using grpc::ChannelArguments;
+using grpc::ChannelInterface;
+using grpc::ClientContext;
+using grpc::Status;
+using UserData::UserDataTransfer;
+using UserData::Metrics;
+using UserData::SingleUserRecordRequest;
+using UserData::SingleUserRecordReply;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
+class UserDataClient {
+ public:
+  UserDataClient(std::shared_ptr<ChannelInterface> channel)
+    : stub_(UserDataTransfer::NewStub(channel)) {}
+  
+  ~UserDataClient() {}
 
-namespace grpc {
-namespace testing {
+  void setAccessToken(std::string access_token);
+  
+  void setQPS(double QPS);
 
-void InitBenchmark(int* argc, char*** argv, bool remove_flags) {
-  ParseCommandLineFlags(argc, argv, remove_flags);
-}
+  void setQPSPerCore(double qpsPerCore);
 
-static std::shared_ptr<Reporter> InitBenchmarkReporters() {
-  auto* composite_reporter = new CompositeReporter;
-  if (FLAGS_enable_log_reporter) {
-    composite_reporter->add(
-        std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
-  }
-  if(!FLAGS_access_token.empty())
-    composite_reporter->add(
-      std::unique_ptr<Reporter>(new UserDatabaseReporter("UserDataReporter", FLAGS_access_token)));
+  void setLatencies(double percentileLatency50, double percentileLatency90,
+     double percentileLatency95, double percentileLatency99, double percentileLatency99Point9);
 
-  return std::shared_ptr<Reporter>(composite_reporter);
-}
+  void setTimes(double serverSystemTime, double serverUserTime, 
+    double clientSystemTime, double clientUserTime);
 
-std::shared_ptr<Reporter> GetReporter() {
-  static std::shared_ptr<Reporter> reporter(InitBenchmarkReporters());
-  return reporter;
-}
+  int sendDataIfReady();
 
-}  // namespace testing
-}  // namespace grpc
+ private:
+  std::unique_ptr<UserDataTransfer::Stub> stub_;
+  std::string access_token_;
+  double QPS_;
+  double percentileLatency50_;
+  double percentileLatency90_;
+  double percentileLatency95_;
+  double percentileLatency99_;
+  double percentileLatency99Point9_;
+  bool qpsSet = false;
+  bool latenciesSet = false;
+};

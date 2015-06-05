@@ -1,0 +1,99 @@
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+syntax = "proto2";
+
+package UserData;
+
+service UserDataTransfer {
+  // Sends client info
+  rpc RecordSingleClientData (SingleUserRecordRequest) returns (SingleUserRecordReply) {}
+
+  rpc RetrieveSingleUserData (SingleUserRetrieveRequest) returns (SingleUserRetrieveReply) {}
+
+  rpc RetrieveAllUsersData (AllUsersRetrieveRequest) returns (AllUsersRetrieveReply) {}
+}
+
+//Metrics to be stored
+message Metrics {
+  required double qps = 1;
+  required double perc_lat_50 = 2;
+  required double perc_lat_90 = 3;
+  required double perc_lat_95 = 4;
+  required double perc_lat_99 = 5;
+  required double perc_lat_99_point_9 = 6;
+}
+
+//Timestamped details
+message DataDetails {
+  required string timestamp = 1;
+  required Metrics metrics = 2;
+}
+
+//User details
+message UserDetails {
+  required string id = 1;
+  required string name = 2;
+  required string link = 3;
+}
+
+//Stored to database
+message SingleUserDetails {
+  repeated DataDetails data_details = 1;
+  required UserDetails user_details = 2;
+}
+
+//Request for storing a single user's data
+message SingleUserRecordRequest {
+  required string access_token = 1;
+  required Metrics metrics = 2;
+}
+
+//Reply to request for storing single user's data
+message SingleUserRecordReply {
+}
+
+//Request for retrieving single user's data
+message SingleUserRetrieveRequest {
+  required string client_id = 1;
+}
+
+//Reply for request to retrieve single user's data
+message SingleUserRetrieveReply {
+  required SingleUserDetails details = 1;
+}
+
+//Request for retrieving all users' data
+message AllUsersRetrieveReply {
+  repeated SingleUserDetails user_data = 1;
+}
+
+//Reply to request for retrieving all users' data
+message AllUsersRetrieveRequest {
+}
