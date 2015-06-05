@@ -59,7 +59,8 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
                                  grpc::protobuf::Message, T>::value>::type> {
  public:
   static bool Serialize(const grpc::protobuf::Message& msg,
-                        grpc_byte_buffer** buffer) {
+                        grpc_byte_buffer** buffer, bool* own_buffer) {
+    *own_buffer = true;
     return SerializeProto(msg, buffer);
   }
   static Status Deserialize(grpc_byte_buffer* buffer,

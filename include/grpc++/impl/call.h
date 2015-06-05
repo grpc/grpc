@@ -95,11 +95,11 @@ class CallOpSendInitialMetadata {
 
 class CallOpSendMessage {
  public:
-  CallOpSendMessage() : send_buf_(nullptr) {}
+  CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
 
   template <class M>
   bool SendMessage(const M& message) GRPC_MUST_USE_RESULT {
-    return SerializationTraits<M>::Serialize(message, &send_buf_);
+    return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
   }
 
  protected:
@@ -110,11 +110,12 @@ class CallOpSendMessage {
     op->data.send_message = send_buf_;
   }
   void FinishOp(void* tag, bool* status, int max_message_size) {
-    grpc_byte_buffer_destroy(send_buf_);
+    if (own_buf_) grpc_byte_buffer_destroy(send_buf_);
   }
 
  private:
   grpc_byte_buffer* send_buf_;
+  bool own_buf_;
 };
 
 template <class R>
