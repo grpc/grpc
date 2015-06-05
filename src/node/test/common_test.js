@@ -39,7 +39,8 @@ var common = require('../src/common.js');
 
 var ProtoBuf = require('protobufjs');
 
-var messages_proto = ProtoBuf.loadProtoFile(__dirname + '/test_messages.proto').build();
+var messages_proto = ProtoBuf.loadProtoFile(
+    __dirname + '/test_messages.proto').build();
 
 describe('Proto message serialize and deserialize', function() {
   var longSerialize = common.serializeCls(messages_proto.LongValues);
