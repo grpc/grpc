@@ -225,9 +225,7 @@ class CallOpClientSendClose {
     if (!send_) return;
     ops[(*nops)++].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   }
-  void FinishOp(bool* status, int max_message_size) {
-    send_ = false;
-  }
+  void FinishOp(bool* status, int max_message_size) { send_ = false; }
 
  private:
   bool send_;
@@ -276,8 +274,7 @@ class CallOpServerSendStatus {
 
 class CallOpRecvInitialMetadata {
  public:
-  CallOpRecvInitialMetadata() : recv_initial_metadata_(nullptr) {
-  }
+  CallOpRecvInitialMetadata() : recv_initial_metadata_(nullptr) {}
 
   void RecvInitialMetadata(ClientContext* context) {
     context->initial_metadata_received_ = true;
@@ -315,7 +312,8 @@ class CallOpClientRecvStatus {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (recv_status_ == nullptr) return;
-    memset(&recv_trailing_metadata_arr_, 0, sizeof(recv_trailing_metadata_arr_));
+    memset(&recv_trailing_metadata_arr_, 0,
+           sizeof(recv_trailing_metadata_arr_));
     status_details_ = nullptr;
     status_details_capacity_ = 0;
     grpc_op* op = &ops[(*nops)++];
@@ -373,8 +371,9 @@ class CallOpSetInterface : public CompletionQueueTag {
 /// empty base class optimization to slim this class (especially
 /// when there are many unused slots used). To avoid duplicate base classes,
 /// the template parmeter for CallNoOp is varied by argument position.
-template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>, class Op3 = CallNoOp<3>,
-          class Op4 = CallNoOp<4>, class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
+template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
+          class Op3 = CallNoOp<3>, class Op4 = CallNoOp<4>,
+          class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
 class CallOpSet : public CallOpSetInterface,
                   public Op1,
                   public Op2,
@@ -414,8 +413,9 @@ class CallOpSet : public CallOpSetInterface,
 ///
 /// Allows hiding some completions that the C core must generate from
 /// C++ users.
-template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>, class Op3 = CallNoOp<3>,
-          class Op4 = CallNoOp<4>, class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
+template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
+          class Op3 = CallNoOp<3>, class Op4 = CallNoOp<4>,
+          class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
 class SneakyCallOpSet GRPC_FINAL
     : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
  public:
