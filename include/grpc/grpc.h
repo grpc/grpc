@@ -44,6 +44,9 @@
 extern "C" {
 #endif
 
+#define GRPC_TRUE 1
+#define GRPC_FALSE 0
+
 /* Completion Queues enable notification of the completion of asynchronous
    actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
@@ -200,11 +203,11 @@ typedef struct grpc_metadata {
 /** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
   /** Shutting down */
-  GRPC_QUEUE_SHUTDOWN, 
+  GRPC_QUEUE_SHUTDOWN,
   /** No event before timeout */
-  GRPC_QUEUE_TIMEOUT,  
+  GRPC_QUEUE_TIMEOUT,
   /** Operation completion */
-  GRPC_OP_COMPLETE     
+  GRPC_OP_COMPLETE
 } grpc_completion_type;
 
 /** The result of an operation.
@@ -340,7 +343,7 @@ typedef struct grpc_op {
 } grpc_op;
 
 /** Initialize the grpc library.
-    
+
     It is not safe to call any other grpc functions before calling this.
     (To avoid overhead, little checking is done, and some things may work. We
     do not warrant that they will continue to do so in future revisions of this
@@ -348,7 +351,7 @@ typedef struct grpc_op {
 void grpc_init(void);
 
 /** Shut down the grpc library.
-    
+
     No memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.
     Prior to calling, all application owned grpc objects must have been
