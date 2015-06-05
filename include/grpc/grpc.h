@@ -526,6 +526,16 @@ void grpc_server_cancel_all_calls(grpc_server *server);
    one call to grpc_server_shutdown_and_notify must have been made). */
 void grpc_server_destroy(grpc_server *server);
 
+/** Enable or disable a tracer.
+
+    Tracers (usually controlled by the environment variable GRPC_TRACE)
+    allow printf-style debugging on GRPC internals, and are useful for
+    tracking down problems in the field. 
+
+    Use of this function is not strictly thread-safe, but the 
+    thread-safety issues raised by it should not be of concern. */
+int grpc_tracer_set_enabled(const char *name, int enabled);
+
 #ifdef __cplusplus
 }
 #endif
