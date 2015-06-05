@@ -1575,12 +1575,21 @@ static int init_goaway_parser(transport *t) {
 }
 
 static int init_settings_frame_parser(transport *t) {
-  int ok = GRPC_CHTTP2_PARSE_OK ==
+  int ok;
+
+  if (t->incoming_stream_id != 0) {
+    gpr_log(GPR_ERROR, "settings frame received for stream %d", t->incoming_stream_id);
+    drop_connection(t);
+    return 0;
+  }
+
+  ok = GRPC_CHTTP2_PARSE_OK ==
            grpc_chttp2_settings_parser_begin_frame(
                &t->simple_parsers.settings, t->incoming_frame_size,
                t->incoming_frame_flags, t->settings[PEER_SETTINGS]);
   if (!ok) {
     drop_connection(t);
+    return 0;
   }
   if (t->incoming_frame_flags & GRPC_CHTTP2_FLAG_ACK) {
     memcpy(t->settings[ACKED_SETTINGS], t->settings[SENT_SETTINGS],
