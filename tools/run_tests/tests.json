@@ -351,6 +351,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "httpcli_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "json_rewrite_test", 
     "platforms": [
       "windows", 
