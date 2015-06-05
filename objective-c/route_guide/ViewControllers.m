@@ -73,6 +73,9 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark List Features
 
+// Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
+// the pre-generated database. Prints each response as it comes in.
+
 @interface ListFeaturesViewController : UIViewController
 @end
 
@@ -80,7 +83,23 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  // Do any additional setup after loading the view, typically from a nib.
+
+  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+
+  RTGRectangle *rectangle = [RTGRectangle message];
+  rectangle.lo.latitude = 40E7;
+  rectangle.lo.longitude = -75E7;
+  rectangle.hi.latitude = 42E7;
+  rectangle.hi.longitude = -73E7;
+
+  NSLog(@"Looking for features between 40, -75 and 42, -73");
+  [client listFeaturesWithRequest:rectangle handler:^(BOOL done, RTGFeature *response, NSError *error) {
+    if (response) {
+      NSLog(@"Found feature called %@ at %@.", response.name, response.location);
+    } else if (error) {
+      NSLog(@"RPC error: %@", error);
+    }
+  }];
 }
 
 @end
