@@ -98,7 +98,7 @@ class CallOpSendMessage {
   CallOpSendMessage() : send_buf_(nullptr), own_buf_(false) {}
 
   template <class M>
-  bool SendMessage(const M& message) GRPC_MUST_USE_RESULT;
+  Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -118,7 +118,7 @@ class CallOpSendMessage {
 };
 
 template <class M>
-bool CallOpSendMessage::SendMessage(const M& message) {
+Status CallOpSendMessage::SendMessage(const M& message) {
   return SerializationTraits<M>::Serialize(message, &send_buf_, &own_buf_);
 }
 

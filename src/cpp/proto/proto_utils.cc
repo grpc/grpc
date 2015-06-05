@@ -152,9 +152,9 @@ class GrpcBufferReader GRPC_FINAL
 
 namespace grpc {
 
-bool SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
+Status SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
   GrpcBufferWriter writer(bp);
-  return msg.SerializeToZeroCopyStream(&writer);
+  return msg.SerializeToZeroCopyStream(&writer) ? Status::OK : Status(INVALID_ARGUMENT, "Failed to serialize message");
 }
 
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,

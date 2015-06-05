@@ -47,8 +47,8 @@ namespace grpc {
 // Serialize the msg into a buffer created inside the function. The caller
 // should destroy the returned buffer when done with it. If serialization fails,
 // false is returned and buffer is left unchanged.
-bool SerializeProto(const grpc::protobuf::Message& msg,
-                    grpc_byte_buffer** buffer);
+Status SerializeProto(const grpc::protobuf::Message& msg,
+                      grpc_byte_buffer** buffer);
 
 // The caller keeps ownership of buffer and msg.
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
@@ -58,8 +58,8 @@ template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
                                  grpc::protobuf::Message, T>::value>::type> {
  public:
-  static bool Serialize(const grpc::protobuf::Message& msg,
-                        grpc_byte_buffer** buffer, bool* own_buffer) {
+  static Status Serialize(const grpc::protobuf::Message& msg,
+                          grpc_byte_buffer** buffer, bool* own_buffer) {
     *own_buffer = true;
     return SerializeProto(msg, buffer);
   }

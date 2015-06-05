@@ -90,11 +90,11 @@ class SerializationTraits<ByteBuffer, void> {
     dest->set_buffer(byte_buffer);
     return Status::OK;
   }
-  static bool Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer, 
+  static Status Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer, 
                         bool* own_buffer) {
     *buffer = source.buffer();
     *own_buffer = false;
-    return true;
+    return Status::OK;
   }
 };
 

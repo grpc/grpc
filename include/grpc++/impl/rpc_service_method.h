@@ -94,9 +94,7 @@ class RpcMethodHandler : public MethodHandler {
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.IsOk()) {
-      if (!ops.SendMessage(rsp)) {
-        status = Status(INTERNAL, "Failed to serialize response");
-      }
+      status = ops.SendMessage(rsp);
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -131,9 +129,7 @@ class ClientStreamingHandler : public MethodHandler {
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
     if (status.IsOk()) {
-      if (!ops.SendMessage(rsp)) {
-        status = Status(INTERNAL, "Failed to serialize response");
-      }
+      status = ops.SendMessage(rsp);
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
