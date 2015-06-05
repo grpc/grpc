@@ -170,12 +170,6 @@ class AsyncClient : public Client {
         next_issue_.push_back(next_issue);
       }
     }
-    if (!closed_loop_) {
-      for (auto channel = channels_.begin(); channel != channels_.end();
-           channel++) {
-        rpcs_outstanding_.push_back(0);
-      }
-    }
 
     int t = 0;
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
@@ -259,7 +253,6 @@ class AsyncClient : public Client {
 	 // Under lock
 	 int ch = clone_ctx->channel_id();
 	 std::lock_guard<std::mutex> g(channel_lock_[ch]);
-         rpcs_outstanding_[ch]--;
 	 contexts_[ch].push_front(clone_ctx);
        }
        // delete the old version
@@ -275,17 +268,14 @@ class AsyncClient : public Client {
      for (int num_attempts = 0; num_attempts < channel_count_ && !issued;
 	  num_attempts++) {
        bool can_issue = false;
-       ClientRpcContext* ctx;
+       ClientRpcContext* ctx = nullptr;
        {
          std::lock_guard<std::mutex>
              g(channel_lock_[next_channel_[thread_idx]]);
-         if ((rpcs_outstanding_[next_channel_[thread_idx]] <
-              max_outstanding_per_channel_) &&
-             !contexts_[next_channel_[thread_idx]].empty()) {
+         if (!contexts_[next_channel_[thread_idx]].empty()) {
            // Get an idle context from the front of the list
            ctx = *(contexts_[next_channel_[thread_idx]].begin());
            contexts_[next_channel_[thread_idx]].pop_front();
-           rpcs_outstanding_[next_channel_[thread_idx]]++;
            can_issue = true;
          }
        }
@@ -326,7 +316,6 @@ class AsyncClient : public Client {
   std::vector<grpc_time> next_issue_; // when should it issue?
 
   std::vector<std::mutex> channel_lock_;
-  std::vector<int> rpcs_outstanding_; // per-channel vector
   std::vector<context_list> contexts_; // per-channel list of idle contexts
   int max_outstanding_per_channel_;
   int channel_count_;
