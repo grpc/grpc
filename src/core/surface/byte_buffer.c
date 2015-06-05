@@ -36,10 +36,16 @@
 #include <grpc/support/log.h>
 
 grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices) {
+  return grpc_byte_buffer_typed_create(slices, nslices, GRPC_BB_SLICE_BUFFER);
+}
+
+grpc_byte_buffer *grpc_byte_buffer_typed_create(gpr_slice *slices,
+                                               size_t nslices,
+                                               grpc_byte_buffer_type type) {
   size_t i;
   grpc_byte_buffer *bb = malloc(sizeof(grpc_byte_buffer));
 
-  bb->type = GRPC_BB_SLICE_BUFFER;
+  bb->type = type;
   gpr_slice_buffer_init(&bb->data.slice_buffer);
   for (i = 0; i < nslices; i++) {
     gpr_slice_ref(slices[i]);
@@ -49,9 +55,13 @@ grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices) {
   return bb;
 }
 
+
 grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
   switch (bb->type) {
     case GRPC_BB_SLICE_BUFFER:
+    case GRPC_BB_COMPRESSED_NONE:
+    case GRPC_BB_COMPRESSED_DEFLATE:
+    case GRPC_BB_COMPRESSED_GZIP:
       return grpc_byte_buffer_create(bb->data.slice_buffer.slices,
                                      bb->data.slice_buffer.count);
   }
@@ -64,6 +74,9 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
   if (!bb) return;
   switch (bb->type) {
     case GRPC_BB_SLICE_BUFFER:
+    case GRPC_BB_COMPRESSED_NONE:
+    case GRPC_BB_COMPRESSED_DEFLATE:
+    case GRPC_BB_COMPRESSED_GZIP:
       gpr_slice_buffer_destroy(&bb->data.slice_buffer);
       break;
   }
@@ -73,6 +86,9 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
 size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) {
   switch (bb->type) {
     case GRPC_BB_SLICE_BUFFER:
+    case GRPC_BB_COMPRESSED_NONE:
+    case GRPC_BB_COMPRESSED_DEFLATE:
+    case GRPC_BB_COMPRESSED_GZIP:
       return bb->data.slice_buffer.length;
   }
   gpr_log(GPR_ERROR, "should never reach here");

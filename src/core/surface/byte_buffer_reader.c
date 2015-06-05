@@ -39,35 +39,68 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/byte_buffer.h>
 
+#include "src/core/compression/algorithm.h"
+#include "src/core/compression/message_compress.h"
+
 void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                   grpc_byte_buffer *buffer) {
-  reader->buffer = buffer;
+  grpc_compression_algorithm compress_algo;
+  gpr_slice_buffer decompressed_slices_buffer;
+  reader->buffer_in = buffer;
   switch (buffer->type) {
+    case GRPC_BB_COMPRESSED_DEFLATE:
+    case GRPC_BB_COMPRESSED_GZIP:
+      compress_algo =
+          GRPC_COMPRESS_ALGORITHM_FROM_BB_TYPE(reader->buffer_in->type);
+      gpr_slice_buffer_init(&decompressed_slices_buffer);
+      grpc_msg_decompress(compress_algo, &reader->buffer_in->data.slice_buffer,
+                          &decompressed_slices_buffer);
+      /* the output buffer is a regular GRPC_BB_SLICE_BUFFER */
+      reader->buffer_out = grpc_byte_buffer_create(
+          decompressed_slices_buffer.slices,
+          decompressed_slices_buffer.count);
+      gpr_slice_buffer_destroy(&decompressed_slices_buffer);
+    /* fallthrough */
     case GRPC_BB_SLICE_BUFFER:
+    case GRPC_BB_COMPRESSED_NONE:
       reader->current.index = 0;
   }
 }
 
 void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
-  /* no-op: the user is responsible for memory deallocation.
-   * Other cleanup operations would go here if needed. */
+  switch (reader->buffer_in->type) {
+    case GRPC_BB_COMPRESSED_DEFLATE:
+    case GRPC_BB_COMPRESSED_GZIP:
+      grpc_byte_buffer_destroy(reader->buffer_out);
+      break;
+    case GRPC_BB_SLICE_BUFFER:
+    case GRPC_BB_COMPRESSED_NONE:
+      ; /* no-op */
+  }
 }
 
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice) {
-  grpc_byte_buffer *buffer = reader->buffer;
   gpr_slice_buffer *slice_buffer;
-  switch (buffer->type) {
+  grpc_byte_buffer *buffer = NULL;
+
+  /* Pick the right buffer based on the input type */
+  switch (reader->buffer_in->type) {
     case GRPC_BB_SLICE_BUFFER:
-      slice_buffer = &buffer->data.slice_buffer;
-      if (reader->current.index < slice_buffer->count) {
-        *slice = gpr_slice_ref(slice_buffer->slices[reader->current.index]);
-        reader->current.index += 1;
-        return 1;
-      } else {
-        return 0;
-      }
+    case GRPC_BB_COMPRESSED_NONE:
+      buffer = reader->buffer_in;
       break;
+    case GRPC_BB_COMPRESSED_DEFLATE:
+    case GRPC_BB_COMPRESSED_GZIP:
+      buffer = reader->buffer_out;
+      break;
+  }
+  GPR_ASSERT(buffer);
+  slice_buffer = &buffer->data.slice_buffer;
+  if (reader->current.index < slice_buffer->count) {
+    *slice = gpr_slice_ref(slice_buffer->slices[reader->current.index]);
+    reader->current.index += 1;
+    return 1;
   }
   return 0;
 }
