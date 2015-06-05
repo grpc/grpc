@@ -62,7 +62,7 @@ grpc_metadata* FillMetadataArray(
 class CallNoOp {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {}
-  void FinishOp(void* tag, bool* status, int max_message_size) {}
+  void FinishOp(bool* status, int max_message_size) {}
 };
 
 class CallOpSendInitialMetadata {
@@ -84,7 +84,7 @@ class CallOpSendInitialMetadata {
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
   }
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     // nothing to do
   }
 
@@ -109,7 +109,7 @@ class CallOpSendMessage {
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message = send_buf_;
   }
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     if (own_buf_) grpc_byte_buffer_destroy(send_buf_);
   }
 
@@ -135,7 +135,7 @@ class CallOpRecvMessage {
     op->data.recv_message = &recv_buf_;
   }
 
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     if (message_ == nullptr) return;
     if (recv_buf_) {
       if (*status) {
@@ -181,7 +181,7 @@ class CallOpGenericRecvMessage {
     op->data.recv_message = &recv_buf_;
   }
 
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     if (!deserialize_) return;
     if (recv_buf_) {
       if (*status) {
@@ -213,7 +213,7 @@ class CallOpClientSendClose {
     if (!send_) return;
     ops[(*nops)++].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   }
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     // nothing to do
   }
 
@@ -247,7 +247,7 @@ class CallOpServerSendStatus {
         send_status_details_.empty() ? nullptr : send_status_details_.c_str();
   }
 
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     // nothing to do
   }
 
@@ -277,7 +277,7 @@ class CallOpRecvInitialMetadata {
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
   }
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
   }
 
@@ -308,7 +308,7 @@ class CallOpClientRecvStatus {
         &status_details_capacity_;
   }
 
-  void FinishOp(void* tag, bool* status, int max_message_size) {
+  void FinishOp(bool* status, int max_message_size) {
     FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
     *recv_status_ = Status(
         static_cast<StatusCode>(status_code_),
@@ -361,12 +361,12 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
-    this->WrapAndDerive<Op1, 1>::FinishOp(*tag, status, max_message_size_);
-    this->WrapAndDerive<Op2, 2>::FinishOp(*tag, status, max_message_size_);
-    this->WrapAndDerive<Op3, 3>::FinishOp(*tag, status, max_message_size_);
-    this->WrapAndDerive<Op4, 4>::FinishOp(*tag, status, max_message_size_);
-    this->WrapAndDerive<Op5, 5>::FinishOp(*tag, status, max_message_size_);
-    this->WrapAndDerive<Op6, 6>::FinishOp(*tag, status, max_message_size_);
+    this->WrapAndDerive<Op1, 1>::FinishOp(status, max_message_size_);
+    this->WrapAndDerive<Op2, 2>::FinishOp(status, max_message_size_);
+    this->WrapAndDerive<Op3, 3>::FinishOp(status, max_message_size_);
+    this->WrapAndDerive<Op4, 4>::FinishOp(status, max_message_size_);
+    this->WrapAndDerive<Op5, 5>::FinishOp(status, max_message_size_);
+    this->WrapAndDerive<Op6, 6>::FinishOp(status, max_message_size_);
     *tag = return_tag_;
     return true;
   }
