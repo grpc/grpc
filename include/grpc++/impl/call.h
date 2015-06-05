@@ -44,6 +44,8 @@
 #include <memory>
 #include <map>
 
+#include <string.h>
+
 struct grpc_call;
 struct grpc_op;
 
