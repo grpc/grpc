@@ -179,7 +179,8 @@ static void setup_cancel(grpc_transport_setup *sp) {
   }
 }
 
-int grpc_client_setup_cb_begin(grpc_client_setup_request *r, const char *reason) {
+int grpc_client_setup_cb_begin(grpc_client_setup_request *r,
+                               const char *reason) {
   gpr_mu_lock(&r->setup->mu);
   if (r->setup->cancelled) {
     gpr_mu_unlock(&r->setup->mu);
@@ -190,7 +191,8 @@ int grpc_client_setup_cb_begin(grpc_client_setup_request *r, const char *reason)
   return 1;
 }
 
-void grpc_client_setup_cb_end(grpc_client_setup_request *r, const char *reason) {
+void grpc_client_setup_cb_end(grpc_client_setup_request *r,
+                              const char *reason) {
   gpr_mu_lock(&r->setup->mu);
   r->setup->in_cb--;
   if (r->setup->cancelled) gpr_cv_signal(&r->setup->cv);
@@ -227,7 +229,8 @@ void grpc_client_setup_create_and_attach(
   grpc_client_channel_set_transport_setup(newly_minted_channel, &s->base);
 }
 
-int grpc_client_setup_request_should_continue(grpc_client_setup_request *r, const char *reason) {
+int grpc_client_setup_request_should_continue(grpc_client_setup_request *r,
+                                              const char *reason) {
   int result;
   if (gpr_time_cmp(gpr_now(), r->deadline) > 0) {
     result = 0;

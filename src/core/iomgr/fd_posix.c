@@ -112,7 +112,8 @@ static void destroy(grpc_fd *fd) {
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
-static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file, int line) {
+static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
+                   int line) {
   gpr_log(GPR_DEBUG, "FD %d %p  ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
           gpr_atm_no_barrier_load(&fd->refst),
           gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
@@ -125,7 +126,8 @@ static void ref_by(grpc_fd *fd, int n) {
 }
 
 #ifdef GRPC_FD_REF_COUNT_DEBUG
-static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file, int line) {
+static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
+                     int line) {
   gpr_atm old;
   gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
           gpr_atm_no_barrier_load(&fd->refst),
@@ -225,7 +227,7 @@ void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 #endif
 
 static void process_callback(grpc_iomgr_closure *closure, int success,
-                          int allow_synchronous_callback) {
+                             int allow_synchronous_callback) {
   if (allow_synchronous_callback) {
     closure->cb(closure->cb_arg, success);
   } else {
@@ -265,7 +267,7 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
       GPR_ASSERT(gpr_atm_no_barrier_load(st) == READY);
       gpr_atm_rel_store(st, NOT_READY);
       process_callback(closure, !gpr_atm_acq_load(&fd->shutdown),
-                    allow_synchronous_callback);
+                       allow_synchronous_callback);
       return;
     default: /* WAITING */
       /* upcallptr was set to a different closure.  This is an error! */
@@ -309,7 +311,7 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
   int success;
-  grpc_iomgr_closure* closure;
+  grpc_iomgr_closure *closure;
   size_t ncb = 0;
 
   gpr_mu_lock(&fd->set_state_mu);

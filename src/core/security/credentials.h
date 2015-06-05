@@ -108,7 +108,6 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
     grpc_credentials_md_store *store);
 void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
 
-
 /* --- grpc_credentials. --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
@@ -177,8 +176,8 @@ grpc_credentials *grpc_credentials_contains_type(
 /* Exposed for testing only. */
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_httpcli_response *response, grpc_credentials_md_store **token_md,
-    gpr_timespec *token_lifetime);
+    const struct grpc_httpcli_response *response,
+    grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(

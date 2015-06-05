@@ -494,7 +494,6 @@ static void server_on_recv(void *ptr, int success) {
         calld->state = ZOMBIED;
         grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_iomgr_add_callback(&calld->kill_zombie_closure);
-
       }
       if (call_list_remove(calld, ALL_CALLS)) {
         decrement_call_count(chand);
@@ -590,7 +589,8 @@ static void finish_shutdown_channel(void *p, int success) {
   gpr_free(sca);
 }
 
-static void shutdown_channel(channel_data *chand, int send_goaway, int send_disconnect) {
+static void shutdown_channel(channel_data *chand, int send_goaway,
+                             int send_disconnect) {
   shutdown_channel_args *sca;
   GRPC_CHANNEL_INTERNAL_REF(chand->channel, "shutdown");
   sca = gpr_malloc(sizeof(shutdown_channel_args));

@@ -143,7 +143,8 @@ static int multipoll_with_epoll_pollset_maybe_work(
   return 1;
 }
 
-static void multipoll_with_epoll_pollset_finish_shutdown(grpc_pollset *pollset) {}
+static void multipoll_with_epoll_pollset_finish_shutdown(
+    grpc_pollset *pollset) {}
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
@@ -158,9 +159,12 @@ static void epoll_kick(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
-    multipoll_with_epoll_pollset_add_fd, multipoll_with_epoll_pollset_del_fd,
-    multipoll_with_epoll_pollset_maybe_work, epoll_kick,
-    multipoll_with_epoll_pollset_finish_shutdown, multipoll_with_epoll_pollset_destroy};
+    multipoll_with_epoll_pollset_add_fd,
+    multipoll_with_epoll_pollset_del_fd,
+    multipoll_with_epoll_pollset_maybe_work,
+    epoll_kick,
+    multipoll_with_epoll_pollset_finish_shutdown,
+    multipoll_with_epoll_pollset_destroy};
 
 static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
                                      size_t nfds) {

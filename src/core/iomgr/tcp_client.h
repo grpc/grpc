@@ -47,4 +47,4 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
                              const struct sockaddr *addr, int addr_len,
                              gpr_timespec deadline);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */

@@ -266,7 +266,7 @@ typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
-  int iov_size;            /* Number of slices to allocate per read attempt */
+  int iov_size; /* Number of slices to allocate per read attempt */
   int finished_edge;
   size_t slice_size;
   gpr_refcount refcount;
@@ -412,8 +412,7 @@ static void grpc_tcp_continue_read(grpc_tcp *tcp) {
       ++tcp->iov_size;
     }
     GPR_ASSERT(slice_state_has_available(&read_state));
-    slice_state_transfer_ownership(&read_state, &final_slices,
-                                   &final_nslices);
+    slice_state_transfer_ownership(&read_state, &final_slices, &final_nslices);
     call_read_cb(tcp, final_slices, final_nslices, GRPC_ENDPOINT_CB_OK);
     slice_state_destroy(&read_state);
     grpc_tcp_unref(tcp);

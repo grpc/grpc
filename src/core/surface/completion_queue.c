@@ -86,21 +86,10 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
   return cc;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason) {
-  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count + 1, reason);
+  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count,
+          (int)cc->owning_refs.count + 1, reason);
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 #endif
@@ -114,7 +103,8 @@ static void on_pollset_destroy_done(void *arg) {
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason) {
-  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1, reason);
+  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count,
+          (int)cc->owning_refs.count - 1, reason);
 #else
 void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif

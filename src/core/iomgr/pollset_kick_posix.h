@@ -51,7 +51,8 @@ typedef struct grpc_pollset_kick_state {
   struct grpc_kick_fd_info fd_list;
 } grpc_pollset_kick_state;
 
-#define GRPC_POLLSET_KICK_GET_FD(kick_fd_info) GRPC_WAKEUP_FD_GET_READ_FD(&(kick_fd_info)->wakeup_fd)
+#define GRPC_POLLSET_KICK_GET_FD(kick_fd_info) \
+  GRPC_WAKEUP_FD_GET_READ_FD(&(kick_fd_info)->wakeup_fd)
 
 /* This is an abstraction around the typical pipe mechanism for waking up a
    thread sitting in a poll() style call. */
@@ -69,15 +70,18 @@ void grpc_pollset_kick_global_init_fallback_fd(void);
 /* Must be called before entering poll(). If return value is -1, this consumed
    an existing kick. Otherwise the return value is an FD to add to the poll set.
  */
-grpc_kick_fd_info *grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state);
+grpc_kick_fd_info *grpc_pollset_kick_pre_poll(
+    grpc_pollset_kick_state *kick_state);
 
 /* Consume an existing kick. Must be called after poll returns that the fd was
    readable, and before calling kick_post_poll. */
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state, grpc_kick_fd_info *fd_info);
+void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state,
+                               grpc_kick_fd_info *fd_info);
 
 /* Must be called after pre_poll, and after consume if applicable */
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state, grpc_kick_fd_info *fd_info);
+void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state,
+                                 grpc_kick_fd_info *fd_info);
 
 void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_POSIX_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_POSIX_H */
