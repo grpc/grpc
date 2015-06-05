@@ -36,6 +36,7 @@
 
 #include <type_traits>
 
+#include <grpc/grpc.h>
 #include <grpc++/impl/serialization_traits.h>
 #include <grpc++/config_protobuf.h>
 #include <grpc++/status.h>
@@ -66,7 +67,9 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
   static Status Deserialize(grpc_byte_buffer* buffer,
                             grpc::protobuf::Message* msg,
                             int max_message_size) {
-    return DeserializeProto(buffer, msg, max_message_size);
+    auto status = DeserializeProto(buffer, msg, max_message_size);
+    grpc_byte_buffer_destroy(buffer);
+    return status;
   }
 };
 

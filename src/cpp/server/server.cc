@@ -129,6 +129,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       ctx_.BeginCompletionOp(&call_);
       method_->handler()->RunHandler(MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_, call_.max_message_size()));
+      request_payload_ = nullptr;
       void* ignored_tag;
       bool ignored_ok;
       cq_.Shutdown();
