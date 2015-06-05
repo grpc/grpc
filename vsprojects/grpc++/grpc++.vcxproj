@@ -163,6 +163,7 @@
     <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h" />
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h" />
     <ClInclude Include="..\..\include\grpc++\impl\sync.h" />
     <ClInclude Include="..\..\include\grpc++\impl\sync_cxx11.h" />

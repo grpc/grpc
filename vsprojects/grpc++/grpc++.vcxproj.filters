@@ -132,6 +132,9 @@
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
