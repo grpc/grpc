@@ -38,6 +38,9 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark Get Feature
 
+// Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
+// not to have a feature.
+
 @interface GetFeatureViewController : UIViewController
 @end
 
@@ -48,13 +51,22 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
   RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
+  void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
+    if (response.name.length) {
+      NSLog(@"Found feature called %@ at %@.", response.name, response.location);
+    } else if (response) {
+      NSLog(@"Found no features at %@", response.location);
+    } else {
+      NSLog(@"RPC error: %@", error);
+    }
+  };
+
   RTGPoint *point = [RTGPoint message];
   point.latitude = 409146138;
   point.longitude = -746188906;
 
-  [client getFeatureWithRequest:point handler:^(RTGFeature *response, NSError *error) {
-    NSLog(@"Response: %@", response);
-  }];
+  [client getFeatureWithRequest:point handler:handler];
+  [client getFeatureWithRequest:[RTGPoint message] handler:handler];
 }
 
 @end
