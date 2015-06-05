@@ -330,6 +330,10 @@ struct transport {
   size_t ping_count;
   size_t ping_capacity;
   gpr_int64 ping_counter;
+
+  /* closures */
+  grpc_iomgr_closure callback_closure;
+  grpc_iomgr_closure write_closure;
 };
 
 struct stream {
@@ -516,6 +520,8 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->deframe_state = is_client ? DTS_FH_0 : DTS_CLIENT_PREFIX_0;
   t->ping_counter = gpr_now().tv_nsec;
+  grpc_iomgr_closure_init(&t->callback_closure, run_callbacks, t);
+  grpc_iomgr_closure_init(&t->write_closure, perform_write, t);
   grpc_chttp2_hpack_compressor_init(&t->hpack_compressor, mdctx);
   grpc_chttp2_goaway_parser_init(&t->goaway_parser);
   gpr_slice_buffer_init(&t->outbuf);
@@ -816,25 +822,23 @@ static void remove_from_stream_map(transport *t, stream *s) {
 static void start_transaction(transport *t) { gpr_mu_lock(&t->mu); }
 
 static void end_transaction(transport *t) {
-  int start_write = 0;
-  int perform_callbacks = 0;
+  grpc_iomgr_closure* dispatch_closures[2];
+  int num_dispatch_closures = 0;
   int call_closed = 0;
   int num_goaways = 0;
   int i;
   pending_goaway *goaways = NULL;
   const grpc_transport_callbacks *cb = t->cb;
-  grpc_iomgr_cb_func immediate_callback = NULL;
 
   GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_UNLOCK, 0);
 
   gpr_tls_set(&g_end_transaction_depth, gpr_tls_get(&g_end_transaction_depth) + 1);
 
   /* see if we need to trigger a write - and if so, get the data ready */
-  if (t->ep && !t->writing) {
-    t->writing = start_write = prepare_write(t);
-    if (start_write) {
-      ref_transport(t);
-    }
+  if (t->ep && !t->writing && prepare_write(t)) {
+    dispatch_closures[num_dispatch_closures++] = &t->write_closure;
+    t->writing = 1;
+    ref_transport(t);
   }
 
   if (!t->writing) {
@@ -843,11 +847,10 @@ static void end_transaction(transport *t) {
 
   finish_reads(t);
 
-  if (!t->performing_callbacks) {
-    t->performing_callbacks = perform_callbacks = prepare_callbacks(t);
-    if (perform_callbacks) {
-      ref_transport(t);
-    }
+  if (!t->performing_callbacks && prepare_callbacks(t)) {
+    dispatch_closures[num_dispatch_closures++] = &t->callback_closure;
+    t->performing_callbacks = 1;
+    ref_transport(t);
   }
 
   /* gather any callbacks that need to be made */
@@ -877,26 +880,18 @@ static void end_transaction(transport *t) {
 
   GRPC_TIMER_MARK(GRPC_PTAG_HTTP2_UNLOCK_CLEANUP, 0);
 
-  if (perform_callbacks) {
-    if (immediate_callback == NULL && !gpr_tls_get(&g_ops_performed)) {
-      immediate_callback = run_callbacks;
-    } else {
-      grpc_iomgr_add_callback(run_callbacks, t);
+  if (gpr_tls_get(&g_ops_performed) == 0) {
+    for (i = 1; i < num_dispatch_closures; i++) {
+      grpc_iomgr_add_callback(dispatch_closures[i]);
     }
-  }
 
-  /* write some bytes if necessary */
-  if (start_write) {
-    if (immediate_callback == NULL && !gpr_tls_get(&g_ops_performed)) {
-      /* ultimately calls unref_transport(t); and clears t->writing */
-      immediate_callback = perform_write;
-    } else {
-      grpc_iomgr_add_callback(perform_write, t);
+    if (num_dispatch_closures >= 1) {
+      dispatch_closures[0]->cb(dispatch_closures[0]->cb_arg, 1);
     }
-  }
-
-  if (immediate_callback) {
-    immediate_callback(t, 1);
+  } else {
+    for (i = 0; i < num_dispatch_closures; i++) {
+      grpc_iomgr_add_callback(dispatch_closures[i]);
+    }
   }
 
   /* perform some callbacks if necessary */
