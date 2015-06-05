@@ -36,6 +36,7 @@
 
 static NSString * const kHostAddress = @"http://localhost:50051";
 
+
 #pragma mark Get Feature
 
 // Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
@@ -71,6 +72,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 @end
 
+
 #pragma mark List Features
 
 // Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
@@ -104,6 +106,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 @end
 
+
 #pragma mark Record Route
 
 @interface RecordRouteViewController : UIViewController
@@ -117,6 +120,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 }
 
 @end
+
 
 #pragma mark Route Chat
 
