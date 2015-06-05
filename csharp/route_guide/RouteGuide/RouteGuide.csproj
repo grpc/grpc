@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.props" Condition="Exists('..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.props')" />
+  <Import Project="..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.props" Condition="Exists('..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.props')" />
   <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props')" />
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -14,7 +14,7 @@
     <AssemblyName>RouteGuide</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <NuGetPackageImportStamp>247686dc</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>58253d57</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,8 +40,9 @@
     <Reference Include="Google.ProtocolBuffers.Serialization">
       <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.555\lib\net40\Google.ProtocolBuffers.Serialization.dll</HintPath>
     </Reference>
-    <Reference Include="Grpc.Core">
-      <HintPath>..\packages\Grpc.Core.0.5.0\lib\net45\Grpc.Core.dll</HintPath>
+    <Reference Include="Grpc.Core, Version=0.5.5631.27743, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Grpc.Core.0.5.1\lib\net45\Grpc.Core.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -83,12 +84,12 @@
     <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets'))" />
     <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props'))" />
     <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.props'))" />
-    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.props'))" />
+    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.targets'))" />
   </Target>
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
   <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
-  <Import Project="..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.targets" Condition="Exists('..\packages\grpc.native.csharp_ext.0.9.0.0\build\portable-net45\grpc.native.csharp_ext.targets')" />
+  <Import Project="..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.targets" Condition="Exists('..\packages\grpc.native.csharp_ext.0.9.1\build\portable-net45\grpc.native.csharp_ext.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
