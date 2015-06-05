@@ -114,6 +114,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     ServerContext* const context_;
     ServerAsyncStreamingInterface* const stream_;
     CompletionQueue* const call_cq_;
+    void* const tag_;
     grpc_call* call_;
     grpc_metadata_array initial_metadata_array_;
   };

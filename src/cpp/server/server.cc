@@ -427,6 +427,7 @@ Server::BaseAsyncRequest::BaseAsyncRequest(
       context_(context),
       stream_(stream),
       call_cq_(call_cq),
+      tag_(tag),
       call_(nullptr) {
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
@@ -451,6 +452,7 @@ bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   }
   // just the pointers inside call are copied here
   stream_->BindCall(&call);
+  *tag = tag_;
   delete this;
   return true;
 }
