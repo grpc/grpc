@@ -42,21 +42,21 @@
 using grpc::testing::ExpDist;
 using grpc::testing::InterarrivalTimer;
 
-void RunTest(InterarrivalTimer&& timer, std::string title) {
-  gpr_histogram *h(gpr_histogram_create(0.01,60e9));
-  
-  for (int i=0; i<10000000; i++) {
-    for (int j=0; j<5; j++) {
+void RunTest(InterarrivalTimer &&timer, std::string title) {
+  gpr_histogram *h(gpr_histogram_create(0.01, 60e9));
+
+  for (int i = 0; i < 10000000; i++) {
+    for (int j = 0; j < 5; j++) {
       gpr_histogram_add(h, timer(j).count());
     }
   }
-  
-  std::cout << title <<  " Distribution" << std::endl;
+
+  std::cout << title << " Distribution" << std::endl;
   std::cout << "Value, Percentile" << std::endl;
   for (double pct = 0.0; pct < 100.0; pct += 1.0) {
     std::cout << gpr_histogram_percentile(h, pct) << "," << pct << std::endl;
   }
-  
+
   gpr_histogram_destroy(h);
 }
 
@@ -68,9 +68,9 @@ using grpc::testing::ParetoDist;
 int main(int argc, char **argv) {
   RunTest(InterarrivalTimer(ExpDist(10.0), 5), std::string("Exponential(10)"));
   RunTest(InterarrivalTimer(DetDist(5.0), 5), std::string("Det(5)"));
-  RunTest(InterarrivalTimer(UniformDist(0.0,10.0), 5),
+  RunTest(InterarrivalTimer(UniformDist(0.0, 10.0), 5),
           std::string("Uniform(1,10)"));
-  RunTest(InterarrivalTimer(ParetoDist(1.0,1.0), 5),
+  RunTest(InterarrivalTimer(ParetoDist(1.0, 1.0), 5),
           std::string("Pareto(1,1)"));
 
   return 0;

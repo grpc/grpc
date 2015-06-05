@@ -55,53 +55,60 @@ class RandomDist {
   RandomDist() {}
   virtual ~RandomDist() = 0;
   // Argument to operator() is a uniform double in the range [0,1)
-  virtual double operator() (double uni) const = 0;
+  virtual double operator()(double uni) const = 0;
 };
 
 inline RandomDist::~RandomDist() {}
 
-class UniformDist GRPC_FINAL: public RandomDist {
-public:
- UniformDist(double lo, double hi): lo_(lo), range_(hi-lo) {}
- ~UniformDist() GRPC_OVERRIDE {}
- double operator() (double uni) const GRPC_OVERRIDE {return uni*range_+lo_;}
-private:
+class UniformDist GRPC_FINAL : public RandomDist {
+ public:
+  UniformDist(double lo, double hi) : lo_(lo), range_(hi - lo) {}
+  ~UniformDist() GRPC_OVERRIDE {}
+  double operator()(double uni) const GRPC_OVERRIDE {
+    return uni * range_ + lo_;
+  }
+
+ private:
   double lo_;
   double range_;
 };
 
 class ExpDist GRPC_FINAL : public RandomDist {
-public:
- explicit ExpDist(double lambda): lambda_recip_(1.0/lambda) {}
- ~ExpDist() GRPC_OVERRIDE {}
- double operator() (double uni) const GRPC_OVERRIDE {
-   // Note: Use 1.0-uni above to avoid NaN if uni is 0
-   return lambda_recip_ * (-log(1.0-uni));
- }
-private:
+ public:
+  explicit ExpDist(double lambda) : lambda_recip_(1.0 / lambda) {}
+  ~ExpDist() GRPC_OVERRIDE {}
+  double operator()(double uni) const GRPC_OVERRIDE {
+    // Note: Use 1.0-uni above to avoid NaN if uni is 0
+    return lambda_recip_ * (-log(1.0 - uni));
+  }
+
+ private:
   double lambda_recip_;
 };
 
 class DetDist GRPC_FINAL : public RandomDist {
-public:
- explicit DetDist(double val): val_(val) {}
- ~DetDist() GRPC_OVERRIDE {}
- double operator() (double uni) const GRPC_OVERRIDE {return val_;}
-private:
+ public:
+  explicit DetDist(double val) : val_(val) {}
+  ~DetDist() GRPC_OVERRIDE {}
+  double operator()(double uni) const GRPC_OVERRIDE { return val_; }
+
+ private:
   double val_;
 };
 
 class ParetoDist GRPC_FINAL : public RandomDist {
-public:
-  ParetoDist(double base, double alpha): base_(base), alpha_recip_(1.0/alpha) {}
+ public:
+  ParetoDist(double base, double alpha)
+      : base_(base), alpha_recip_(1.0 / alpha) {}
   ~ParetoDist() GRPC_OVERRIDE {}
-  double operator() (double uni) const GRPC_OVERRIDE {
-   // Note: Use 1.0-uni above to avoid div by zero if uni is 0
-    return base_ / pow(1.0-uni, alpha_recip_);
- }
-private:
- double base_;
- double alpha_recip_;
+  double operator()(double uni) const GRPC_OVERRIDE {
+    // Note: Use 1.0-uni above to avoid div by zero if uni is 0
+    return base_ / pow(1.0 - uni, alpha_recip_);
+  }
+
+ private:
+  double base_;
+  double alpha_recip_;
 };
 
 // A class library for generating pseudo-random interarrival times
@@ -111,38 +118,37 @@ private:
 using qps_random_engine = std::default_random_engine;
 
 class InterarrivalTimer {
-public:
+ public:
   InterarrivalTimer() {}
-  InterarrivalTimer(const RandomDist& r, int threads, int entries=1000000) {
+  InterarrivalTimer(const RandomDist& r, int threads, int entries = 1000000) {
     init(r, threads, entries);
   }
-  void init(const RandomDist& r, int threads, int entries=1000000) {
+  void init(const RandomDist& r, int threads, int entries = 1000000) {
     qps_random_engine gen;
-    std::uniform_real_distribution<double> uniform(0.0,1.0);
-    for (int i=0; i<entries; i++) {
-      random_table_.push_back(
-          std::chrono::nanoseconds(
-              static_cast<int64_t>(1e9*r(uniform(gen)))));
+    std::uniform_real_distribution<double> uniform(0.0, 1.0);
+    for (int i = 0; i < entries; i++) {
+      random_table_.push_back(std::chrono::nanoseconds(
+          static_cast<int64_t>(1e9 * r(uniform(gen)))));
     }
     // Now set up the thread positions
-    for (int i=0; i<threads; i++) {
-      thread_posns_.push_back(random_table_.begin() + (entries * i)/threads);
+    for (int i = 0; i < threads; i++) {
+      thread_posns_.push_back(random_table_.begin() + (entries * i) / threads);
     }
   }
-  virtual ~InterarrivalTimer() {};
+  virtual ~InterarrivalTimer(){};
 
-  std::chrono::nanoseconds operator() (int thread_num) {
+  std::chrono::nanoseconds operator()(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
     if (thread_posns_[thread_num] == random_table_.end())
       thread_posns_[thread_num] = random_table_.begin();
     return ret;
   }
+
  private:
   typedef std::vector<std::chrono::nanoseconds> time_table;
   std::vector<time_table::const_iterator> thread_posns_;
   time_table random_table_;
 };
-
 }
 }
 

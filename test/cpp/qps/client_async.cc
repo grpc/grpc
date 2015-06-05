@@ -62,7 +62,7 @@ typedef std::list<grpc_time> deadline_list;
 
 class ClientRpcContext {
  public:
-  ClientRpcContext(int ch): channel_id_(ch) {}
+  ClientRpcContext(int ch) : channel_id_(ch) {}
   virtual ~ClientRpcContext() {}
   // next state, return false if done. Collect stats when appropriate
   virtual bool RunNextState(bool, Histogram* hist) = 0;
@@ -72,12 +72,16 @@ class ClientRpcContext {
     return reinterpret_cast<ClientRpcContext*>(t);
   }
 
-  deadline_list::iterator deadline_posn() const {return deadline_posn_;}
-  void set_deadline_posn(const deadline_list::iterator& it) {deadline_posn_ = it;}
-  virtual void Start(CompletionQueue *cq) = 0;
-  int channel_id() const {return channel_id_;}
+  deadline_list::iterator deadline_posn() const { return deadline_posn_; }
+  void set_deadline_posn(const deadline_list::iterator& it) {
+    deadline_posn_ = it;
+  }
+  virtual void Start(CompletionQueue* cq) = 0;
+  int channel_id() const { return channel_id_; }
+
  protected:
   int channel_id_;
+
  private:
   deadline_list::iterator deadline_posn_;
 };
@@ -85,23 +89,22 @@ class ClientRpcContext {
 template <class RequestType, class ResponseType>
 class ClientRpcContextUnaryImpl : public ClientRpcContext {
  public:
-  ClientRpcContextUnaryImpl(int channel_id,
-      TestService::Stub* stub, const RequestType& req,
+  ClientRpcContextUnaryImpl(
+      int channel_id, TestService::Stub* stub, const RequestType& req,
       std::function<
           std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
               TestService::Stub*, grpc::ClientContext*, const RequestType&,
-              CompletionQueue*)>
-          start_req,
+              CompletionQueue*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
-    : ClientRpcContext(channel_id), context_(),
+      : ClientRpcContext(channel_id),
+        context_(),
         stub_(stub),
         req_(req),
         response_(),
         next_state_(&ClientRpcContextUnaryImpl::RespDone),
         callback_(on_done),
-        start_req_(start_req) {
-  }
-  void Start(CompletionQueue *cq) GRPC_OVERRIDE {
+        start_req_(start_req) {}
+  void Start(CompletionQueue* cq) GRPC_OVERRIDE {
     start_ = Timer::Now();
     response_reader_ = start_req_(stub_, &context_, req_, cq);
     response_reader_->Finish(&response_, &status_, ClientRpcContext::tag(this));
@@ -116,8 +119,8 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   }
 
   ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
-    return new ClientRpcContextUnaryImpl(channel_id_,
-                                         stub_, req_, start_req_, callback_);
+    return new ClientRpcContextUnaryImpl(channel_id_, stub_, req_, start_req_,
+                                         callback_);
   }
 
  private:
@@ -125,9 +128,9 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     next_state_ = &ClientRpcContextUnaryImpl::DoCallBack;
     return false;
   }
-  bool DoCallBack (bool) {
+  bool DoCallBack(bool) {
     callback_(status_, &response_);
-    return true; // we're done, this'll be ignored
+    return true;  // we're done, this'll be ignored
   }
   grpc::ClientContext context_;
   TestService::Stub* stub_;
@@ -136,27 +139,28 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   bool (ClientRpcContextUnaryImpl::*next_state_)(bool);
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-      TestService::Stub*, grpc::ClientContext*,
-      const RequestType&, CompletionQueue *)> start_req_;
+      TestService::Stub*, grpc::ClientContext*, const RequestType&,
+      CompletionQueue*)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
       response_reader_;
 };
 
-typedef std::forward_list<ClientRpcContext *> context_list;
+typedef std::forward_list<ClientRpcContext*> context_list;
 
 class AsyncClient : public Client {
  public:
-  explicit AsyncClient(const ClientConfig& config,
-		       std::function<ClientRpcContext*(int, TestService::Stub*,
-					  const SimpleRequest&)> setup_ctx) :
-      Client(config), channel_lock_(config.client_channels()),
-      contexts_(config.client_channels()),
-      max_outstanding_per_channel_(config.outstanding_rpcs_per_channel()),
-      channel_count_(config.client_channels()),
-      pref_channel_inc_(config.async_client_threads()) {
-
+  explicit AsyncClient(
+      const ClientConfig& config,
+      std::function<ClientRpcContext*(int, TestService::Stub*,
+                                      const SimpleRequest&)> setup_ctx)
+      : Client(config),
+        channel_lock_(config.client_channels()),
+        contexts_(config.client_channels()),
+        max_outstanding_per_channel_(config.outstanding_rpcs_per_channel()),
+        channel_count_(config.client_channels()),
+        pref_channel_inc_(config.async_client_threads()) {
     SetupLoadTest(config, config.async_client_threads());
 
     for (int i = 0; i < config.async_client_threads(); i++) {
@@ -181,8 +185,7 @@ class AsyncClient : public Client {
         auto ctx = setup_ctx(ch, channel.get_stub(), request_);
         if (closed_loop_) {
           ctx->Start(cq);
-        }
-        else {
+        } else {
           contexts_[ch].push_front(ctx);
         }
       }
@@ -210,24 +213,24 @@ class AsyncClient : public Client {
     } else {
       if (rpc_deadlines_[thread_idx].empty()) {
         deadline = grpc_time_source::now() + std::chrono::seconds(1);
-      }
-      else {
+      } else {
         deadline = *(rpc_deadlines_[thread_idx].begin());
       }
-      short_deadline = issue_allowed_[thread_idx] ?
-	next_issue_[thread_idx] : deadline;
+      short_deadline =
+          issue_allowed_[thread_idx] ? next_issue_[thread_idx] : deadline;
     }
 
     bool got_event;
 
     switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, short_deadline)) {
-      case CompletionQueue::SHUTDOWN: return false;
+      case CompletionQueue::SHUTDOWN:
+        return false;
       case CompletionQueue::TIMEOUT:
-	got_event = false;
-	break;
+        got_event = false;
+        break;
       case CompletionQueue::GOT_EVENT:
-	got_event = true;
-	break;
+        got_event = true;
+        break;
       default:
         GPR_ASSERT(false);
         break;
@@ -239,89 +242,87 @@ class AsyncClient : public Client {
       return false;
     }
     if (got_event) {
-     ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
-     if (ctx->RunNextState(ok, histogram) == false) {
-       // call the callback and then clone the ctx
-       ctx->RunNextState(ok, histogram);
-       ClientRpcContext *clone_ctx = ctx->StartNewClone();
-       if (closed_loop_) {
-         clone_ctx->Start(cli_cqs_[thread_idx].get());
-       }
-       else {
-         // Remove the entry from the rpc deadlines list
-         rpc_deadlines_[thread_idx].erase(ctx->deadline_posn());
-         // Put the clone_ctx in the list of idle contexts for this channel
-	 // Under lock
-	 int ch = clone_ctx->channel_id();
-	 std::lock_guard<std::mutex> g(channel_lock_[ch]);
-	 contexts_[ch].push_front(clone_ctx);
-       }
-       // delete the old version
-       delete ctx;
-     }
-     if (!closed_loop_)
-       issue_allowed_[thread_idx] = true; // may be ok now even if it hadn't been
-   }
-   if (!closed_loop_ && issue_allowed_[thread_idx] &&
-       grpc_time_source::now() >= next_issue_[thread_idx]) {
-     // Attempt to issue
-     bool issued = false;
-     for (int num_attempts = 0, channel_attempt = next_channel_[thread_idx];
-          num_attempts < channel_count_ && !issued; num_attempts++) {
-       bool can_issue = false;
-       ClientRpcContext* ctx = nullptr;
-       {
-         std::lock_guard<std::mutex>
-             g(channel_lock_[channel_attempt]);
-         if (!contexts_[channel_attempt].empty()) {
-           // Get an idle context from the front of the list
-           ctx = *(contexts_[channel_attempt].begin());
-           contexts_[channel_attempt].pop_front();
-           can_issue = true;
-         }
-       }
-       if (can_issue) {
-	 // do the work to issue
-         rpc_deadlines_[thread_idx].emplace_back(
-             grpc_time_source::now() + std::chrono::seconds(1));
-         auto it = rpc_deadlines_[thread_idx].end();
-         --it;
-         ctx->set_deadline_posn(it);
-         ctx->Start(cli_cqs_[thread_idx].get());
-	 issued = true;
-         // If we did issue, then next time, try our thread's next
-         // preferred channel
-         next_channel_[thread_idx] += pref_channel_inc_;
-         if (next_channel_[thread_idx] >= channel_count_)
-           next_channel_[thread_idx] = (thread_idx % channel_count_);
-       } else {
-         // Do a modular increment of channel attempt if we couldn't issue
-         channel_attempt = (channel_attempt+1) % channel_count_;
-       }
-     }
-     if (issued) {
-       // We issued one; see when we can issue the next
-       grpc_time next_issue;
-       NextIssueTime(thread_idx, &next_issue);
-       next_issue_[thread_idx]=next_issue;
-     }
-     else {
-       issue_allowed_[thread_idx] = false;
-     }
-   }
-   return true;
+      ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
+      if (ctx->RunNextState(ok, histogram) == false) {
+        // call the callback and then clone the ctx
+        ctx->RunNextState(ok, histogram);
+        ClientRpcContext* clone_ctx = ctx->StartNewClone();
+        if (closed_loop_) {
+          clone_ctx->Start(cli_cqs_[thread_idx].get());
+        } else {
+          // Remove the entry from the rpc deadlines list
+          rpc_deadlines_[thread_idx].erase(ctx->deadline_posn());
+          // Put the clone_ctx in the list of idle contexts for this channel
+          // Under lock
+          int ch = clone_ctx->channel_id();
+          std::lock_guard<std::mutex> g(channel_lock_[ch]);
+          contexts_[ch].push_front(clone_ctx);
+        }
+        // delete the old version
+        delete ctx;
+      }
+      if (!closed_loop_)
+        issue_allowed_[thread_idx] =
+            true;  // may be ok now even if it hadn't been
+    }
+    if (!closed_loop_ && issue_allowed_[thread_idx] &&
+        grpc_time_source::now() >= next_issue_[thread_idx]) {
+      // Attempt to issue
+      bool issued = false;
+      for (int num_attempts = 0, channel_attempt = next_channel_[thread_idx];
+           num_attempts < channel_count_ && !issued; num_attempts++) {
+        bool can_issue = false;
+        ClientRpcContext* ctx = nullptr;
+        {
+          std::lock_guard<std::mutex> g(channel_lock_[channel_attempt]);
+          if (!contexts_[channel_attempt].empty()) {
+            // Get an idle context from the front of the list
+            ctx = *(contexts_[channel_attempt].begin());
+            contexts_[channel_attempt].pop_front();
+            can_issue = true;
+          }
+        }
+        if (can_issue) {
+          // do the work to issue
+          rpc_deadlines_[thread_idx].emplace_back(grpc_time_source::now() +
+                                                  std::chrono::seconds(1));
+          auto it = rpc_deadlines_[thread_idx].end();
+          --it;
+          ctx->set_deadline_posn(it);
+          ctx->Start(cli_cqs_[thread_idx].get());
+          issued = true;
+          // If we did issue, then next time, try our thread's next
+          // preferred channel
+          next_channel_[thread_idx] += pref_channel_inc_;
+          if (next_channel_[thread_idx] >= channel_count_)
+            next_channel_[thread_idx] = (thread_idx % channel_count_);
+        } else {
+          // Do a modular increment of channel attempt if we couldn't issue
+          channel_attempt = (channel_attempt + 1) % channel_count_;
+        }
+      }
+      if (issued) {
+        // We issued one; see when we can issue the next
+        grpc_time next_issue;
+        NextIssueTime(thread_idx, &next_issue);
+        next_issue_[thread_idx] = next_issue;
+      } else {
+        issue_allowed_[thread_idx] = false;
+      }
+    }
+    return true;
   }
 
  private:
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
 
-  std::vector<deadline_list> rpc_deadlines_; // per thread deadlines
-  std::vector<int> next_channel_; // per thread round-robin channel ctr
-  std::vector<bool> issue_allowed_; // may this thread attempt to issue
-  std::vector<grpc_time> next_issue_; // when should it issue?
+  std::vector<deadline_list> rpc_deadlines_;  // per thread deadlines
+  std::vector<int> next_channel_;      // per thread round-robin channel ctr
+  std::vector<bool> issue_allowed_;    // may this thread attempt to issue
+  std::vector<grpc_time> next_issue_;  // when should it issue?
 
   std::vector<std::mutex> channel_lock_;
-  std::vector<context_list> contexts_; // per-channel list of idle contexts
+  std::vector<context_list> contexts_;  // per-channel list of idle contexts
   int max_outstanding_per_channel_;
   int channel_count_;
   int pref_channel_inc_;
@@ -334,34 +335,31 @@ class AsyncUnaryClient GRPC_FINAL : public AsyncClient {
     StartThreads(config.async_client_threads());
   }
   ~AsyncUnaryClient() GRPC_OVERRIDE { EndThreads(); }
-private:
-  static ClientRpcContext *SetupCtx(int channel_id,
-				    TestService::Stub* stub,
-				    const SimpleRequest& req) {
+
+ private:
+  static ClientRpcContext* SetupCtx(int channel_id, TestService::Stub* stub,
+                                    const SimpleRequest& req) {
     auto check_done = [](grpc::Status s, SimpleResponse* response) {};
     auto start_req = [](TestService::Stub* stub, grpc::ClientContext* ctx,
                         const SimpleRequest& request, CompletionQueue* cq) {
       return stub->AsyncUnaryCall(ctx, request, cq);
     };
-    return new ClientRpcContextUnaryImpl<SimpleRequest,
-					 SimpleResponse>(channel_id, stub, req,
-							 start_req, check_done);
+    return new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
+        channel_id, stub, req, start_req, check_done);
   }
-  
 };
 
 template <class RequestType, class ResponseType>
 class ClientRpcContextStreamingImpl : public ClientRpcContext {
  public:
-  ClientRpcContextStreamingImpl(int channel_id,
-      TestService::Stub* stub, const RequestType& req,
-      std::function<std::unique_ptr<
-          grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
-              TestService::Stub*, grpc::ClientContext*, CompletionQueue*,
-              void*)> start_req,
+  ClientRpcContextStreamingImpl(
+      int channel_id, TestService::Stub* stub, const RequestType& req,
+      std::function<std::unique_ptr<grpc::ClientAsyncReaderWriter<
+          RequestType, ResponseType>>(TestService::Stub*, grpc::ClientContext*,
+                                      CompletionQueue*, void*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : ClientRpcContext(channel_id),
-	context_(),
+        context_(),
         stub_(stub),
         req_(req),
         response_(),
@@ -374,12 +372,13 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
     return (this->*next_state_)(ok, hist);
   }
   ClientRpcContext* StartNewClone() GRPC_OVERRIDE {
-    return new ClientRpcContextStreamingImpl(channel_id_,
-					     stub_, req_, start_req_, callback_);
+    return new ClientRpcContextStreamingImpl(channel_id_, stub_, req_,
+                                             start_req_, callback_);
   }
-  void Start(CompletionQueue *cq) GRPC_OVERRIDE {
+  void Start(CompletionQueue* cq) GRPC_OVERRIDE {
     stream_ = start_req_(stub_, &context_, cq, ClientRpcContext::tag(this));
   }
+
  private:
   bool ReqSent(bool ok, Histogram*) { return StartWrite(ok); }
   bool StartWrite(bool ok) {
@@ -411,8 +410,8 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<
       std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
-          TestService::Stub*, grpc::ClientContext*,
-          CompletionQueue *, void*)> start_req_;
+          TestService::Stub*, grpc::ClientContext*, CompletionQueue*, void*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
@@ -430,20 +429,18 @@ class AsyncStreamingClient GRPC_FINAL : public AsyncClient {
   }
 
   ~AsyncStreamingClient() GRPC_OVERRIDE { EndThreads(); }
-private:
-  static ClientRpcContext *SetupCtx(int channel_id,
-                                    TestService::Stub* stub,
-                                    const SimpleRequest& req)  {
+
+ private:
+  static ClientRpcContext* SetupCtx(int channel_id, TestService::Stub* stub,
+                                    const SimpleRequest& req) {
     auto check_done = [](grpc::Status s, SimpleResponse* response) {};
     auto start_req = [](TestService::Stub* stub, grpc::ClientContext* ctx,
-                          CompletionQueue *cq, void* tag) {
+                        CompletionQueue* cq, void* tag) {
       auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
       return stream;
     };
-    return new ClientRpcContextStreamingImpl<SimpleRequest,
-					     SimpleResponse>(channel_id, stub,
-							     req, start_req,
-							     check_done);
+    return new ClientRpcContextStreamingImpl<SimpleRequest, SimpleResponse>(
+        channel_id, stub, req, start_req, check_done);
   }
 };
 
