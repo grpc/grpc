@@ -101,40 +101,82 @@ class Server GRPC_FINAL : public GrpcLibrary,
 
   class BaseAsyncRequest : public CompletionQueueTag {
    public:
-    BaseAsyncRequest(Server* server,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-               ServerCompletionQueue* notification_cq, void* tag);
+    BaseAsyncRequest(Server* server, ServerContext* context,
+               ServerAsyncStreamingInterface* stream, 
+               CompletionQueue* call_cq,
+               void* tag);
+    virtual ~BaseAsyncRequest();
 
-   private:
+    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+
+   protected:
+    void FinalizeMetadata(ServerContext* context);
+
+    Server* const server_;
+    ServerContext* const context_;
+    ServerAsyncStreamingInterface* const stream_;
+    CompletionQueue* const call_cq_;
+    grpc_call* call_;
+    grpc_metadata_array initial_metadata_array_;
   };
 
   class RegisteredAsyncRequest : public BaseAsyncRequest {
    public:
     RegisteredAsyncRequest(Server* server, ServerContext* context,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-               ServerCompletionQueue* notification_cq, void* tag)
-    : BaseAsyncRequest(server, stream, call_cq, notification_cq, tag) {}
+               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag);
+
+    // uses BaseAsyncRequest::FinalizeResult
+
+   protected:
+    void IssueRequest(void* registered_method, grpc_byte_buffer** payload, ServerCompletionQueue *notification_cq);
   };
 
-  class NoPayloadAsyncRequest : public RegisteredAsyncRequest {
+  class NoPayloadAsyncRequest GRPC_FINAL : public RegisteredAsyncRequest {
    public:
-    NoPayloadAsyncRequest(Server* server, ServerContext* context,
+    NoPayloadAsyncRequest(void* registered_method, Server* server, ServerContext* context,
                ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
                ServerCompletionQueue* notification_cq, void* tag)
-      : RegisteredAsyncRequest(server, context, stream, call_cq, notification_cq, tag) {
+      : RegisteredAsyncRequest(server, context, stream, call_cq, tag) {
+      IssueRequest(registered_method, nullptr, notification_cq);
     }
+
+    // uses RegisteredAsyncRequest::FinalizeResult
   };
 
   template <class Message>
-  class PayloadAsyncRequest : public RegisteredAsyncRequest {
-    PayloadAsyncRequest(Server* server, ServerContext* context,
+  class PayloadAsyncRequest GRPC_FINAL : public RegisteredAsyncRequest {
+   public:
+    PayloadAsyncRequest(void* registered_method, Server* server, ServerContext* context,
                ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-               ServerCompletionQueue* notification_cq, void* tag)
-      : RegisteredAsyncRequest(server, context, stream, call_cq, notification_cq, tag) {
+               ServerCompletionQueue* notification_cq, void* tag, Message* request)
+      : RegisteredAsyncRequest(server, context, stream, call_cq, tag), request_(request) {
+      IssueRequest(registered_method, &payload_, notification_cq);
     }
+
+    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+      bool serialization_status = *status && payload_ && SerializationTraits<Message>::Deserialize(payload_, request_, server_->max_message_size_).IsOk();
+      bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
+      *status = serialization_status && *status;
+      return ret;
+    }
+
+   private:
+    grpc_byte_buffer* payload_;
+    Message* const request_;
   };
 
-  class GenericAsyncRequest : public BaseAsyncRequest {
+  class GenericAsyncRequest GRPC_FINAL : public BaseAsyncRequest {
+   public:
+    GenericAsyncRequest(Server* server, GenericServerContext* context,
+                               ServerAsyncStreamingInterface* stream,
+                               CompletionQueue* call_cq,
+                               ServerCompletionQueue* notification_cq,
+                               void* tag);
+
+    bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+
+   private:
+    grpc_call_details call_details_;
   };
 
   template <class Message>
@@ -142,19 +184,25 @@ class Server GRPC_FINAL : public GrpcLibrary,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq,
-                        void* tag, Message *message);
+                        void* tag, Message *message) {
+    new PayloadAsyncRequest<Message>(registered_method, this, context, stream, call_cq, notification_cq, tag, message);
+  }
 
   void RequestAsyncCall(void* registered_method, ServerContext* context,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq,
-                        void* tag);
+                        void* tag) {
+    new NoPayloadAsyncRequest(registered_method, this, context, stream, call_cq, notification_cq, tag);
+  }
 
   void RequestAsyncGenericCall(GenericServerContext* context,
                                ServerAsyncStreamingInterface* stream,
-                               CompletionQueue* cq,
+                               CompletionQueue* call_cq,
                                ServerCompletionQueue* notification_cq,
-                               void* tag);
+                               void* tag) {
+    new GenericAsyncRequest(this, context, stream, call_cq, notification_cq, tag);
+  }
 
   const int max_message_size_;
 
