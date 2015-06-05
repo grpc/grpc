@@ -31,23 +31,17 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
+#include <grpc/support/port_platform.h>
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/transport/transport.h"
+#ifdef GPR_WINSOCK_SOCKET
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+#include "src/core/iomgr/pollset_set.h"
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {}
 
-void grpc_chttp2_module_init(void);
-void grpc_chttp2_module_destroy(void);
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {}
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {}
+
+#endif /* GPR_WINSOCK_SOCKET */

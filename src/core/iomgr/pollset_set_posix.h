@@ -31,23 +31,25 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/transport/transport.h"
+#include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/pollset_posix.h"
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+typedef struct grpc_pollset_set {
+  gpr_mu mu;
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+  size_t pollset_count;
+  size_t pollset_capacity;
+  grpc_pollset **pollsets;
 
-void grpc_chttp2_module_init(void);
-void grpc_chttp2_module_destroy(void);
+  size_t fd_count;
+  size_t fd_capacity;
+  grpc_fd **fds;
+} grpc_pollset_set;
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */
+void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
+
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

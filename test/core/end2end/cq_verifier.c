@@ -166,6 +166,9 @@ static void verify_matches(expectation *e, grpc_event *ev) {
 static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   char *tmp;
 
+  gpr_asprintf(&tmp, "%p ", e->tag);
+  gpr_strvec_add(buf, tmp);
+
   switch (e->type) {
     case GRPC_OP_COMPLETE:
       gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->success);

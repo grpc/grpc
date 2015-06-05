@@ -229,7 +229,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
       return Qnil;
     }
     ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) {
+    if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       grpc_request_call_stack_cleanup(&st);
       return Qnil;
     }

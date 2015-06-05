@@ -52,7 +52,6 @@
 #include "src/core/iomgr/pollset_windows.h"
 #endif
 
-
 void grpc_pollset_init(grpc_pollset *pollset);
 void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),

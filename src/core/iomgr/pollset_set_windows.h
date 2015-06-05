@@ -31,18 +31,11 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_WINDOWS_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_WINDOWS_H
 
-#include <grpc/support/sync.h>
+typedef struct grpc_pollset_set {
+	void *unused;
+} grpc_pollset_set;
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. */
-
-struct grpc_kick_fd_info;
-
-typedef struct grpc_pollset_kick_state {
-  int unused;
-} grpc_pollset_kick_state;
-
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

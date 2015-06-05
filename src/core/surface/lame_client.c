@@ -77,6 +77,9 @@ static void lame_start_transport_op(grpc_call_element *elem,
     *op->recv_state = GRPC_STREAM_CLOSED;
     op->on_done_recv(op->recv_user_data, 1);
   }
+  if (op->on_consumed) {
+    op->on_consumed(op->on_consumed_user_data, 0);
+  }
 }
 
 static void channel_op(grpc_channel_element *elem,

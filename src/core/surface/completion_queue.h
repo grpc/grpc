@@ -39,8 +39,17 @@
 #include "src/core/iomgr/pollset.h"
 #include <grpc/grpc.h>
 
+#ifdef GRPC_CQ_REF_COUNT_DEBUG
+void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason);
+void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason);
+#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc, reason)
+#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc, reason)
+#else
 void grpc_cq_internal_ref(grpc_completion_queue *cc);
 void grpc_cq_internal_unref(grpc_completion_queue *cc);
+#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc)
+#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc)
+#endif
 
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made */
@@ -49,9 +58,6 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
 /* Queue a GRPC_OP_COMPLETED operation */
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
                     int success);
-
-/* disable polling for some tests */
-void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 

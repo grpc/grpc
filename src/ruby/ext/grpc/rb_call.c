@@ -610,6 +610,11 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
     return Qnil;
   }
+  if (ev.type == GRPC_QUEUE_SHUTDOWN) {
+    grpc_run_batch_stack_cleanup(&st);
+    rb_raise(grpc_rb_eCallError, "grpc_call_start_batch shutdown");
+    return Qnil;
+  }
   if (!ev.success) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError, "start_batch completion failed");

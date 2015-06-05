@@ -34,7 +34,7 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/pollset_kick_posix.h"
 
 #include <errno.h>
 #include <string.h>
@@ -96,41 +96,46 @@ static void free_wfd(grpc_kick_fd_info *fd_info) {
 void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state) {
   gpr_mu_init(&kick_state->mu);
   kick_state->kicked = 0;
-  kick_state->fd_info = NULL;
+  kick_state->fd_list.next = kick_state->fd_list.prev = &kick_state->fd_list;
 }
 
 void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state) {
   gpr_mu_destroy(&kick_state->mu);
-  GPR_ASSERT(kick_state->fd_info == NULL);
+  GPR_ASSERT(kick_state->fd_list.next == &kick_state->fd_list);
 }
 
-int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state) {
+grpc_kick_fd_info *grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state) {
+  grpc_kick_fd_info *fd_info;
   gpr_mu_lock(&kick_state->mu);
   if (kick_state->kicked) {
     kick_state->kicked = 0;
     gpr_mu_unlock(&kick_state->mu);
-    return -1;
+    return NULL;
   }
-  kick_state->fd_info = allocate_wfd();
+  fd_info = allocate_wfd();
+  fd_info->next = &kick_state->fd_list;
+  fd_info->prev = fd_info->next->prev;
+  fd_info->next->prev = fd_info->prev->next = fd_info;
   gpr_mu_unlock(&kick_state->mu);
-  return GRPC_WAKEUP_FD_GET_READ_FD(&kick_state->fd_info->wakeup_fd);
+  return fd_info;
 }
 
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state) {
-  grpc_wakeup_fd_consume_wakeup(&kick_state->fd_info->wakeup_fd);
+void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state, grpc_kick_fd_info *fd_info) {
+  grpc_wakeup_fd_consume_wakeup(&fd_info->wakeup_fd);
 }
 
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state) {
+void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state, grpc_kick_fd_info *fd_info) {
   gpr_mu_lock(&kick_state->mu);
-  free_wfd(kick_state->fd_info);
-  kick_state->fd_info = NULL;
+  fd_info->next->prev = fd_info->prev;
+  fd_info->prev->next = fd_info->next;
+  free_wfd(fd_info);
   gpr_mu_unlock(&kick_state->mu);
 }
 
 void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state) {
   gpr_mu_lock(&kick_state->mu);
-  if (kick_state->fd_info != NULL) {
-    grpc_wakeup_fd_wakeup(&kick_state->fd_info->wakeup_fd);
+  if (kick_state->fd_list.next != &kick_state->fd_list) {
+    grpc_wakeup_fd_wakeup(&kick_state->fd_list.next->wakeup_fd);
   } else {
     kick_state->kicked = 1;
   }
