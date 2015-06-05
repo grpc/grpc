@@ -280,6 +280,8 @@ typedef struct {
 
   grpc_iomgr_closure read_closure;
   grpc_iomgr_closure write_closure;
+
+  grpc_iomgr_closure handle_read_closure;
 } grpc_tcp;
 
 static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success);
@@ -293,7 +295,7 @@ static void grpc_tcp_shutdown(grpc_endpoint *ep) {
 static void grpc_tcp_unref(grpc_tcp *tcp) {
   int refcount_zero = gpr_unref(&tcp->refcount);
   if (refcount_zero) {
-    grpc_fd_orphan(tcp->em_fd, NULL, NULL);
+    grpc_fd_orphan(tcp->em_fd, NULL, "tcp_unref_orphan");
     gpr_free(tcp);
   }
 }
@@ -443,7 +445,8 @@ static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
     tcp->finished_edge = 0;
     grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_iomgr_add_callback(grpc_tcp_handle_read, tcp);
+    tcp->handle_read_closure.cb_arg = tcp;
+    grpc_iomgr_add_callback(&tcp->handle_read_closure);
   }
 }
 
@@ -592,6 +595,8 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   tcp->read_closure.cb_arg = tcp;
   tcp->write_closure.cb = grpc_tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
+
+  tcp->handle_read_closure.cb = grpc_tcp_handle_read;
   return &tcp->base;
 }
 

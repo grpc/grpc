@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/pollset_kick_posix.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -45,31 +45,31 @@ static void test_allocation(void) {
 
 static void test_non_kick(void) {
   grpc_pollset_kick_state state;
-  int fd;
+  grpc_kick_fd_info *kfd;
 
   grpc_pollset_kick_init(&state);
-  fd = grpc_pollset_kick_pre_poll(&state);
-  GPR_ASSERT(fd >= 0);
+  kfd = grpc_pollset_kick_pre_poll(&state);
+  GPR_ASSERT(kfd != NULL);
 
-  grpc_pollset_kick_post_poll(&state);
+  grpc_pollset_kick_post_poll(&state, kfd);
   grpc_pollset_kick_destroy(&state);
 }
 
 static void test_basic_kick(void) {
   /* Kicked during poll */
   grpc_pollset_kick_state state;
-  int fd;
+  grpc_kick_fd_info *kfd;
   grpc_pollset_kick_init(&state);
 
-  fd = grpc_pollset_kick_pre_poll(&state);
-  GPR_ASSERT(fd >= 0);
+  kfd = grpc_pollset_kick_pre_poll(&state);
+  GPR_ASSERT(kfd != NULL);
 
   grpc_pollset_kick_kick(&state);
 
   /* Now hypothetically we polled and found that we were kicked */
-  grpc_pollset_kick_consume(&state);
+  grpc_pollset_kick_consume(&state, kfd);
 
-  grpc_pollset_kick_post_poll(&state);
+  grpc_pollset_kick_post_poll(&state, kfd);
 
   grpc_pollset_kick_destroy(&state);
 }
@@ -77,13 +77,13 @@ static void test_basic_kick(void) {
 static void test_non_poll_kick(void) {
   /* Kick before entering poll */
   grpc_pollset_kick_state state;
-  int fd;
+  grpc_kick_fd_info *kfd;
 
   grpc_pollset_kick_init(&state);
 
   grpc_pollset_kick_kick(&state);
-  fd = grpc_pollset_kick_pre_poll(&state);
-  GPR_ASSERT(fd < 0);
+  kfd = grpc_pollset_kick_pre_poll(&state);
+  GPR_ASSERT(kfd == NULL);
   grpc_pollset_kick_destroy(&state);
 }
 
@@ -92,20 +92,20 @@ static void test_non_poll_kick(void) {
 static void test_over_free(void) {
   /* Check high watermark pipe free logic */
   int i;
-  struct grpc_pollset_kick_state *kick_state =
-      gpr_malloc(sizeof(grpc_pollset_kick_state) * GRPC_MAX_CACHED_PIPES);
+  grpc_kick_fd_info **kfds =
+      gpr_malloc(sizeof(grpc_kick_fd_info*) * GRPC_MAX_CACHED_PIPES);
+  grpc_pollset_kick_state state;
+  grpc_pollset_kick_init(&state);
   for (i = 0; i < GRPC_MAX_CACHED_PIPES; ++i) {
-    int fd;
-    grpc_pollset_kick_init(&kick_state[i]);
-    fd = grpc_pollset_kick_pre_poll(&kick_state[i]);
-    GPR_ASSERT(fd >= 0);
+    kfds[i] = grpc_pollset_kick_pre_poll(&state);
+    GPR_ASSERT(kfds[i] != NULL);
   }
 
   for (i = 0; i < GRPC_MAX_CACHED_PIPES; ++i) {
-    grpc_pollset_kick_post_poll(&kick_state[i]);
-    grpc_pollset_kick_destroy(&kick_state[i]);
+    grpc_pollset_kick_post_poll(&state, kfds[i]);
   }
-  gpr_free(kick_state);
+  grpc_pollset_kick_destroy(&state);
+  gpr_free(kfds);
 }
 
 static void run_tests(void) {

@@ -46,6 +46,7 @@
 #include "byte_buffer.h"
 
 #include <grpc/grpc.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/slice.h>
 
 grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
@@ -65,9 +66,10 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
   size_t length = grpc_byte_buffer_length(buffer);
   char *string = ecalloc(length + 1, sizeof(char));
   size_t offset = 0;
-  grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer_reader_init(&reader, buffer);
   gpr_slice next;
-  while (grpc_byte_buffer_reader_next(reader, &next) != 0) {
+  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
   }

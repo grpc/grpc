@@ -40,6 +40,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 
 static const gpr_uint8 kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                             0, 0, 0, 0, 0xff, 0xff};

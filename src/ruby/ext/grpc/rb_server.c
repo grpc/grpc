@@ -282,12 +282,12 @@ static VALUE grpc_rb_server_destroy(VALUE self) {
   call-seq:
     // insecure port
     insecure_server = Server.new(cq, {'arg1': 'value1'})
-    insecure_server.add_http2_port('mydomain:7575')
+    insecure_server.add_http2_port('mydomain:50051')
 
     // secure port
     server_creds = ...
     secure_server = Server.new(cq, {'arg1': 'value1'})
-    secure_server.add_http_port('mydomain:7575', server_creds)
+    secure_server.add_http_port('mydomain:50051', server_creds)
 
     Adds a http2 port to server */
 static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {

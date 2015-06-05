@@ -2,14 +2,7 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
 pod 'gRPC', :path => "../../../.."
-pod 'Protobuf', :git => 'https://github.com/google/protobuf.git'
-pod 'Route_guide', :path => "RouteGuideClient"
-pod 'RemoteTest', :path => "RemoteTestClient"
-
-link_with 'Sample', 'SampleTests'
+pod 'RemoteTest', :path => "../../generated_libraries/RemoteTestClient"
 
 target 'Sample' do
-end
-
-target 'SampleTests' do
 end

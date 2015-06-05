@@ -48,6 +48,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
@@ -70,8 +71,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
                unique++);
 
   f.fixture_data = ffd;
-  f.client_cq = grpc_completion_queue_create();
-  f.server_cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create();
 
   return f;
 }
@@ -89,7 +89,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args);
-  grpc_server_register_completion_queue(f->server, f->server_cq);
+  grpc_server_register_completion_queue(f->server, f->cq);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }

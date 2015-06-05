@@ -37,7 +37,9 @@
 #include <stddef.h>
 
 #include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/pollset_set.h"
 #include "src/core/transport/stream_op.h"
+#include "src/core/channel/context.h"
 
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
@@ -62,6 +64,9 @@ typedef enum grpc_stream_state {
 
 /* Transport op: a set of operations to perform on a transport */
 typedef struct grpc_transport_op {
+  void (*on_consumed)(void *user_data, int success);
+  void *on_consumed_user_data;
+
   grpc_stream_op_buffer *send_ops;
   int is_last_send;
   void (*on_done_send)(void *user_data, int success);
@@ -78,7 +83,7 @@ typedef struct grpc_transport_op {
   grpc_mdstr *cancel_message;
 
   /* Indexes correspond to grpc_context_index enum values */
-  void *const *context;
+  grpc_call_context_element *context;
 } grpc_transport_op;
 
 /* Callbacks made from the transport to the upper layers of grpc. */
@@ -194,6 +199,10 @@ typedef struct grpc_transport_setup_vtable grpc_transport_setup_vtable;
 
 struct grpc_transport_setup_vtable {
   void (*initiate)(grpc_transport_setup *setup);
+  void (*add_interested_party)(grpc_transport_setup *setup,
+                               grpc_pollset *pollset);
+  void (*del_interested_party)(grpc_transport_setup *setup,
+                               grpc_pollset *pollset);
   void (*cancel)(grpc_transport_setup *setup);
 };
 
@@ -210,6 +219,12 @@ struct grpc_transport_setup {
    This *may* be implemented as a no-op if the setup process monitors something
    continuously. */
 void grpc_transport_setup_initiate(grpc_transport_setup *setup);
+
+void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset);
+void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset);
+
 /* Cancel transport setup. After this returns, no new transports should be
    created, and all pending transport setup callbacks should be completed.
    After this call completes, setup should be considered invalid (this can be

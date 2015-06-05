@@ -47,10 +47,8 @@
 
 typedef struct grpc_pollset {
   gpr_mu mu;
-  gpr_cv cv;
 } grpc_pollset;
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-#define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

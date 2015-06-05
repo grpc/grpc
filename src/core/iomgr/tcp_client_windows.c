@@ -138,9 +138,10 @@ static void on_connect(void *acp, int from_iocp) {
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, const struct sockaddr *addr,
-                             int addr_len, gpr_timespec deadline) {
+void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
+                             void *arg, grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -193,7 +194,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
     goto failure;
   }
 
-  socket = grpc_winsocket_create(sock);
+  socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
   info->outstanding = 1;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);

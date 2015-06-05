@@ -41,6 +41,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_win32.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -270,7 +271,8 @@ static void on_accept(void *arg, int from_iocp) {
       gpr_free(utf8_message);
       closesocket(sock);
     } else {
-      ep = grpc_tcp_create(grpc_winsocket_create(sock));
+	  /* TODO(ctiller): add sockaddr address to label */
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, "server"));
     }
   } else {
     /* If we're not notified from the IOCP, it means we are asked to shutdown.
@@ -336,7 +338,7 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     }
     sp = &s->ports[s->nports++];
     sp->server = s;
-    sp->socket = grpc_winsocket_create(sock);
+    sp->socket = grpc_winsocket_create(sock, "listener");
     sp->shutting_down = 0;
     sp->AcceptEx = AcceptEx;
     sp->new_socket = INVALID_SOCKET;

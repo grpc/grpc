@@ -150,9 +150,10 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
+    <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\channel\census_filter.h" />
+    <ClInclude Include="..\..\src\core\census\grpc_context.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\child_channel.h" />
@@ -176,10 +177,10 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\resolve_address.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr.h" />
@@ -201,12 +202,6 @@
     <ClInclude Include="..\..\src\core\json\json_writer.h" />
     <ClInclude Include="..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_log.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_tracing.h" />
-    <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
-    <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
@@ -239,11 +234,12 @@
     <ClInclude Include="..\..\src\core\transport\stream_op.h" />
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
+    <ClInclude Include="..\..\src\core\census\context.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\census_filter.c">
+    <ClCompile Include="..\..\src\core\census\grpc_context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
     </ClCompile>
@@ -289,13 +285,17 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
     </ClCompile>
@@ -346,18 +346,6 @@
     <ClCompile Include="..\..\src\core\profiling\basic_timers.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_init.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_log.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_rpc_stats.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_tracing.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\hash_table.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\window_stats.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
     </ClCompile>
@@ -436,6 +424,10 @@
     <ClCompile Include="..\..\src\core\transport\transport.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport_op_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\context.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\initialize.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -92,12 +92,13 @@ typedef struct {
   } value;
 } grpc_arg;
 
-/* An array of arguments that can be passed around.
-   Used to set optional channel-level configuration.
-   These configuration options are modelled as key-value pairs as defined
-   by grpc_arg; keys are strings to allow easy backwards-compatible extension
-   by arbitrary parties.
-   All evaluation is performed at channel creation time. */
+/** An array of arguments that can be passed around.
+
+    Used to set optional channel-level configuration.
+    These configuration options are modelled as key-value pairs as defined
+    by grpc_arg; keys are strings to allow easy backwards-compatible extension
+    by arbitrary parties.
+    All evaluation is performed at channel creation time. */
 typedef struct {
   size_t num_args;
   grpc_arg *args;
@@ -169,14 +170,18 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
 struct grpc_byte_buffer_reader;
 typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
 
-grpc_byte_buffer_reader *grpc_byte_buffer_reader_create(
-    grpc_byte_buffer *buffer);
+/** Initialize \a reader to read over \a buffer */
+void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                  grpc_byte_buffer *buffer);
+
+/** Cleanup and destroy \a reader */
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
+
 /* At the end of the stream, returns 0. Otherwise, returns 1 and sets slice to
    be the returned slice. Caller is responsible for calling gpr_slice_unref on
    the result. */
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice);
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 
 /* A single metadata element */
 typedef struct grpc_metadata {
@@ -192,15 +197,27 @@ typedef struct grpc_metadata {
   } internal_data;
 } grpc_metadata;
 
+/** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN, /* Shutting down */
-  GRPC_QUEUE_TIMEOUT,  /* No event before timeout */
-  GRPC_OP_COMPLETE     /* operation completion */
+  /** Shutting down */
+  GRPC_QUEUE_SHUTDOWN, 
+  /** No event before timeout */
+  GRPC_QUEUE_TIMEOUT,  
+  /** Operation completion */
+  GRPC_OP_COMPLETE     
 } grpc_completion_type;
 
+/** The result of an operation.
+
+    Returned by a completion queue when the operation started with tag. */
 typedef struct grpc_event {
+  /** The type of the completion. */
   grpc_completion_type type;
+  /** non-zero if the operation was successful, 0 upon failure. 
+      Only GRPC_OP_COMPLETE can succeed or fail. */
   int success;
+  /** The tag passed to grpc_call_start_batch etc to start this operation.
+      Only GRPC_OP_COMPLETE has a tag. */
   void *tag;
 } grpc_event;
 
@@ -322,37 +339,42 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
-/* Initialize the grpc library.
-   It is not safe to call any other grpc functions before calling this.
-   (To avoid overhead, little checking is done, and some things may work. We
-   do not warrant that they will continue to do so in future revisions of this
-   library). */
+/** Initialize the grpc library.
+    
+    It is not safe to call any other grpc functions before calling this.
+    (To avoid overhead, little checking is done, and some things may work. We
+    do not warrant that they will continue to do so in future revisions of this
+    library). */
 void grpc_init(void);
 
-/* Shut down the grpc library.
-   No memory is used by grpc after this call returns, nor are any instructions
-   executing within the grpc library.
-   Prior to calling, all application owned grpc objects must have been
-   destroyed. */
+/** Shut down the grpc library.
+    
+    No memory is used by grpc after this call returns, nor are any instructions
+    executing within the grpc library.
+    Prior to calling, all application owned grpc objects must have been
+    destroyed. */
 void grpc_shutdown(void);
 
+/** Create a completion queue */
 grpc_completion_queue *grpc_completion_queue_create(void);
 
-/* Blocks until an event is available, the completion queue is being shut down,
-   or deadline is reached. Returns NULL on timeout, otherwise the event that
-   occurred.
+/** Blocks until an event is available, the completion queue is being shut down,
+    or deadline is reached. 
 
-   Callers must not call grpc_completion_queue_next and
-   grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    Returns NULL on timeout, otherwise the event that occurred.
+
+    Callers must not call grpc_completion_queue_next and
+    grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                       gpr_timespec deadline);
 
-/* Blocks until an event with tag 'tag' is available, the completion queue is
-   being shutdown or deadline is reached. Returns NULL on timeout, or a pointer
-   to the event that occurred.
+/** Blocks until an event with tag 'tag' is available, the completion queue is
+    being shutdown or deadline is reached. 
 
-   Callers must not call grpc_completion_queue_next and
-   grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    Returns NULL on timeout, or a pointer to the event that occurred.
+
+    Callers must not call grpc_completion_queue_next and
+    grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                        gpr_timespec deadline);
 
@@ -488,19 +510,31 @@ void grpc_server_start(grpc_server *server);
 /* Begin shutting down a server.
    After completion, no new calls or connections will be admitted.
    Existing calls will be allowed to complete.
-   Shutdown is idempotent. */
-void grpc_server_shutdown(grpc_server *server);
-
-/* As per grpc_server_shutdown, but send a GRPC_OP_COMPLETE event when
-   there are no more calls being serviced.
+   Send a GRPC_OP_COMPLETE event when there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
    grpc_server_shutdown_and_notify calls are made. */
-void grpc_server_shutdown_and_notify(grpc_server *server, void *tag);
+void grpc_server_shutdown_and_notify(grpc_server *server,
+                                     grpc_completion_queue *cq, void *tag);
+
+/* Cancel all in-progress calls. 
+   Only usable after shutdown. */
+void grpc_server_cancel_all_calls(grpc_server *server);
 
 /* Destroy a server.
-   Forcefully cancels all existing calls.
-   Implies grpc_server_shutdown() if one was not previously performed. */
+   Shutdown must have completed beforehand (i.e. all tags generated by
+   grpc_server_shutdown_and_notify must have been received, and at least
+   one call to grpc_server_shutdown_and_notify must have been made). */
 void grpc_server_destroy(grpc_server *server);
+
+/** Enable or disable a tracer.
+
+    Tracers (usually controlled by the environment variable GRPC_TRACE)
+    allow printf-style debugging on GRPC internals, and are useful for
+    tracking down problems in the field. 
+
+    Use of this function is not strictly thread-safe, but the 
+    thread-safety issues raised by it should not be of concern. */
+int grpc_tracer_set_enabled(const char *name, int enabled);
 
 #ifdef __cplusplus
 }

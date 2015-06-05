@@ -58,6 +58,9 @@ typedef struct {
   gpr_uint8 sending_farewell;
   /* have we sent farewell (goaway + disconnect) */
   gpr_uint8 sent_farewell;
+
+  grpc_iomgr_closure finally_destroy_channel_closure;
+  grpc_iomgr_closure send_farewells_closure;
 } lb_channel_data;
 
 typedef struct { grpc_child_channel *channel; } lb_call_data;
@@ -154,9 +157,18 @@ static void lb_destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_child_channel_top_filter = {
-    lb_start_transport_op, lb_channel_op,           sizeof(lb_call_data),
-    lb_init_call_elem,     lb_destroy_call_elem,    sizeof(lb_channel_data),
-    lb_init_channel_elem,  lb_destroy_channel_elem, "child-channel",
+    lb_start_transport_op, 
+    lb_channel_op,           
+
+    sizeof(lb_call_data),
+    lb_init_call_elem,     
+    lb_destroy_call_elem,    
+
+    sizeof(lb_channel_data),
+    lb_init_channel_elem,  
+    lb_destroy_channel_elem, 
+
+    "child-channel",
 };
 
 /* grpc_child_channel proper */
@@ -213,12 +225,16 @@ static void maybe_destroy_channel(grpc_child_channel *channel) {
   lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
   if (chand->destroyed && chand->disconnected && chand->active_calls == 0 &&
       !chand->sending_farewell && !chand->calling_back) {
-    grpc_iomgr_add_callback(finally_destroy_channel, channel);
+    chand->finally_destroy_channel_closure.cb = finally_destroy_channel;
+    chand->finally_destroy_channel_closure.cb_arg = channel;
+    grpc_iomgr_add_callback(&chand->finally_destroy_channel_closure);
   } else if (chand->destroyed && !chand->disconnected &&
              chand->active_calls == 0 && !chand->sending_farewell &&
              !chand->sent_farewell) {
     chand->sending_farewell = 1;
-    grpc_iomgr_add_callback(send_farewells, channel);
+    chand->send_farewells_closure.cb = send_farewells;
+    chand->send_farewells_closure.cb_arg = channel;
+    grpc_iomgr_add_callback(&chand->send_farewells_closure);
   }
 }
 

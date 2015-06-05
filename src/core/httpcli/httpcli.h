@@ -38,6 +38,8 @@
 
 #include <grpc/support/time.h>
 
+#include "src/core/iomgr/pollset_set.h"
+
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 /* Maximum length of a header string of the form 'Key: Value\r\n' */
@@ -48,6 +50,13 @@ typedef struct grpc_httpcli_header {
   char *key;
   char *value;
 } grpc_httpcli_header;
+
+/* Tracks in-progress http requests
+   TODO(ctiller): allow caching and capturing multiple requests for the
+                  same content and combining them */
+typedef struct grpc_httpcli_context {
+  grpc_pollset_set pollset_set;
+} grpc_httpcli_context;
 
 /* A request */
 typedef struct grpc_httpcli_request {
@@ -80,6 +89,9 @@ typedef struct grpc_httpcli_response {
 typedef void (*grpc_httpcli_response_cb)(void *user_data,
                                          const grpc_httpcli_response *response);
 
+void grpc_httpcli_context_init(grpc_httpcli_context *context);
+void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
+
 /* Asynchronously perform a HTTP GET.
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
@@ -88,14 +100,16 @@ typedef void (*grpc_httpcli_response_cb)(void *user_data,
      lifetime of the request
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
-void grpc_httpcli_get(const grpc_httpcli_request *request,
+void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
+                      const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data);
 
 /* Asynchronously perform a HTTP POST.
    When there is no body, pass in NULL as body_bytes.
    Does not support ?var1=val1&var2=val2 in the path. */
-void grpc_httpcli_post(const grpc_httpcli_request *request,
+void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
+                       const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data);
@@ -115,4 +129,4 @@ typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */
+#endif /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */

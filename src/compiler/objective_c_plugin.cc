@@ -77,7 +77,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       string declarations;
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor *service = file->service(i);
-        declarations += grpc_objective_c_generator::GetHeader(service, prefix);
+        declarations += grpc_objective_c_generator::GetHeader(service);
       }
 
       Write(context, file_name + ".pbrpc.h",
@@ -95,7 +95,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       string definitions;
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor *service = file->service(i);
-        definitions += grpc_objective_c_generator::GetSource(service, prefix);
+        definitions += grpc_objective_c_generator::GetSource(service);
       }
 
       Write(context, file_name + ".pbrpc.m", imports + '\n' + definitions);

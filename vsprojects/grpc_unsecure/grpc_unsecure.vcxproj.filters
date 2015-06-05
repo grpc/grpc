@@ -4,8 +4,8 @@
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\census_filter.c">
-      <Filter>src\core\channel</Filter>
+    <ClCompile Include="..\..\src\core\census\grpc_context.c">
+      <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
       <Filter>src\core\channel</Filter>
@@ -73,7 +73,7 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
@@ -83,6 +83,12 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
@@ -159,24 +165,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
       <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_init.c">
-      <Filter>src\core\statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_log.c">
-      <Filter>src\core\statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_rpc_stats.c">
-      <Filter>src\core\statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_tracing.c">
-      <Filter>src\core\statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\hash_table.c">
-      <Filter>src\core\statistics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\window_stats.c">
-      <Filter>src\core\statistics</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
       <Filter>src\core\surface</Filter>
@@ -295,6 +283,12 @@
     <ClCompile Include="..\..\src\core\transport\transport_op_string.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\context.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\initialize.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\byte_buffer.h">
@@ -309,10 +303,13 @@
     <ClInclude Include="..\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\census.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\channel\census_filter.h">
-      <Filter>src\core\channel</Filter>
+    <ClInclude Include="..\..\src\core\census\grpc_context.h">
+      <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
@@ -383,16 +380,16 @@
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_windows.h">
+    <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h">
@@ -457,24 +454,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h">
       <Filter>src\core\profiling</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\statistics\census_interface.h">
-      <Filter>src\core\statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\statistics\census_log.h">
-      <Filter>src\core\statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h">
-      <Filter>src\core\statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\statistics\census_tracing.h">
-      <Filter>src\core\statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\statistics\hash_table.h">
-      <Filter>src\core\statistics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\statistics\window_stats.h">
-      <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
       <Filter>src\core\surface</Filter>
@@ -572,6 +551,9 @@
     <ClInclude Include="..\..\src\core\transport\transport_impl.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\census\context.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -586,6 +568,9 @@
     </Filter>
     <Filter Include="src\core">
       <UniqueIdentifier>{88491077-386b-2039-d14c-0c40136b5f7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\census">
+      <UniqueIdentifier>{a7596ee2-afee-3a82-7e6e-bd8b8f904e04}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\channel">
       <UniqueIdentifier>{cc102c4b-66ff-cf4c-2288-d76327e1a183}</UniqueIdentifier>
@@ -604,9 +589,6 @@
     </Filter>
     <Filter Include="src\core\profiling">
       <UniqueIdentifier>{7f91d9bf-c9de-835a-d74d-b16f843b89a9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\statistics">
-      <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\surface">
       <UniqueIdentifier>{6cd0127e-c24b-d43c-38f5-198db8d4322a}</UniqueIdentifier>

@@ -36,6 +36,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/port_platform.h>
@@ -100,11 +101,9 @@ class GrpcBufferReader GRPC_FINAL
  public:
   explicit GrpcBufferReader(grpc_byte_buffer* buffer)
       : byte_count_(0), backup_count_(0) {
-    reader_ = grpc_byte_buffer_reader_create(buffer);
+    grpc_byte_buffer_reader_init(&reader_, buffer);
   }
-  ~GrpcBufferReader() GRPC_OVERRIDE {
-    grpc_byte_buffer_reader_destroy(reader_);
-  }
+  ~GrpcBufferReader() GRPC_OVERRIDE {}
 
   bool Next(const void** data, int* size) GRPC_OVERRIDE {
     if (backup_count_ > 0) {
@@ -114,7 +113,7 @@ class GrpcBufferReader GRPC_FINAL
       backup_count_ = 0;
       return true;
     }
-    if (!grpc_byte_buffer_reader_next(reader_, &slice_)) {
+    if (!grpc_byte_buffer_reader_next(&reader_, &slice_)) {
       return false;
     }
     gpr_slice_unref(slice_);
@@ -147,7 +146,7 @@ class GrpcBufferReader GRPC_FINAL
  private:
   gpr_int64 byte_count_;
   gpr_int64 backup_count_;
-  grpc_byte_buffer_reader* reader_;
+  grpc_byte_buffer_reader reader_;
   gpr_slice slice_;
 };
 
