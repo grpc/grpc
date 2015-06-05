@@ -75,16 +75,16 @@ static grpc_transport_setup_result server_setup_transport(
 
 void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
                               const char *client_payload,
-                              size_t client_payload_length,
-                              gpr_uint32 flags) {
+                              size_t client_payload_length, gpr_uint32 flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;
-  char* hex;
+  char *hex;
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
 
-  hex = gpr_hexdump(client_payload, client_payload_length, GPR_HEXDUMP_PLAINTEXT);
+  hex =
+      gpr_hexdump(client_payload, client_payload_length, GPR_HEXDUMP_PLAINTEXT);
 
   /* Add a debug log */
   gpr_log(GPR_INFO, "TEST: %s", hex);
