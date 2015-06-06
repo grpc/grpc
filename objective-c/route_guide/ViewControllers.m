@@ -53,6 +53,25 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 }
 @end
 
+// Category to give RTGRouteNote a convenience constructor.
+@interface RTGRouteNote (Constructors)
++ (instancetype)noteWithMessage:(NSString *)message
+                       latitude:(float)latitude
+                      longitude:(float)longitude;
+@end
+
+@implementation RTGRouteNote (Constructors)
++ (instancetype)noteWithMessage:(NSString *)message
+                       latitude:(float)latitude
+                      longitude:(float)longitude {
+  RTGRouteNote *note = [self message];
+  note.message = message;
+  note.location.latitude = (int32_t) latitude * 1E7;
+  note.location.longitude = (int32_t) longitude * 1E7;
+  return note;
+}
+@end
+
 #pragma mark Get Feature
 
 // Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
@@ -136,21 +155,6 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  // Do any additional setup after loading the view.
-}
-
-@end
-
-
-#pragma mark Route Chat
-
-@interface RouteChatViewController : UIViewController
-@end
-
-@implementation RouteChatViewController
-
-- (void)viewDidLoad {
-  [super viewDidLoad];
 
   NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
                                                          ofType:@"json"];
@@ -175,6 +179,45 @@ static NSString * const kHostAddress = @"http://localhost:50051";
       NSLog(@"It took %i seconds", response.elapsedTime);
     } else {
       NSLog(@"RPC error: %@", error);
+    }
+  }];
+}
+
+@end
+
+
+#pragma mark Route Chat
+
+// Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
+// the server.
+
+@interface RouteChatViewController : UIViewController
+@end
+
+@implementation RouteChatViewController
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  NSArray *notes = @[[RTGRouteNote noteWithMessage:@"First message" latitude:0 longitude:0],
+                     [RTGRouteNote noteWithMessage:@"Second message" latitude:0 longitude:1],
+                     [RTGRouteNote noteWithMessage:@"Third message" latitude:1 longitude:0],
+                     [RTGRouteNote noteWithMessage:@"Fourth message" latitude:0 longitude:0]];
+  GRXWriter *notesWriter = [[GRXWriter writerWithContainer:notes] map:^id(RTGRouteNote *note) {
+    NSLog(@"Sending message %@ at %@", note.message, note.location);
+    return note;
+  }];
+
+  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+
+  [client routeChatWithRequestsWriter:notesWriter handler:^(BOOL done, RTGRouteNote *note, NSError *error) {
+    if (note) {
+      NSLog(@"Got message %@ at %@", note.message, note.location);
+    } else if (error) {
+      NSLog(@"RPC error: %@", error);
+    }
+    if (done) {
+      NSLog(@"Chat ended.");
     }
   }];
 }
