@@ -32,6 +32,8 @@
  */
 
 #import <UIKit/UIKit.h>
+#import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/GRXWriter+Transformations.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
 
 static NSString * const kHostAddress = @"http://localhost:50051";
@@ -123,6 +125,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark Record Route
 
+// Run the recordRoute demo. Sends several randomly chosen points from the pre-generated feature
+// database with a variable delay in between. Prints the statistics when they are sent from the
+// server.
+
 @interface RecordRouteViewController : UIViewController
 @end
 
@@ -145,7 +151,32 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  // Do any additional setup after loading the view.
+
+  NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
+                                                         ofType:@"json"];
+  NSData *dataBaseContent = [NSData dataWithContentsOfFile:dataBasePath];
+  NSArray *features = [NSJSONSerialization JSONObjectWithData:dataBaseContent options:0 error:NULL];
+
+  GRXWriter *locations = [[GRXWriter writerWithContainer:features] map:^id(id feature) {
+    RTGPoint *location = [RTGPoint message];
+    location.longitude = [((NSNumber *) feature[@"location"][@"longitude"]) intValue];
+    location.latitude = [((NSNumber *) feature[@"location"][@"latitude"]) intValue];
+    NSLog(@"Visiting point %@", location);
+    return location;
+  }];
+
+  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+
+  [client recordRouteWithRequestsWriter:locations handler:^(RTGRouteSummary *response, NSError *error) {
+    if (response) {
+      NSLog(@"Finished trip with %i points", response.pointCount);
+      NSLog(@"Passed %i features", response.featureCount);
+      NSLog(@"Travelled %i meters", response.distance);
+      NSLog(@"It took %i seconds", response.elapsedTime);
+    } else {
+      NSLog(@"RPC error: %@", error);
+    }
+  }];
 }
 
 @end

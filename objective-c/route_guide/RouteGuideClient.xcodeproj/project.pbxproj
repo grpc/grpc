@@ -12,6 +12,7 @@
 		632527861B1D0396003073D9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 632527851B1D0396003073D9 /* AppDelegate.m */; };
 		6325278F1B1D0396003073D9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6325278D1B1D0396003073D9 /* Main.storyboard */; };
 		632527911B1D0396003073D9 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 632527901B1D0396003073D9 /* Images.xcassets */; };
+		6367B55B1B223AFA008861F5 /* route_guide_db.json in Resources */ = {isa = PBXBuildFile; fileRef = 6367B55A1B223AFA008861F5 /* route_guide_db.json */; };
 		63A6015C1B1DAB5000FA5B86 /* ViewControllers.m in Sources */ = {isa = PBXBuildFile; fileRef = 63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,7 @@
 		632527851B1D0396003073D9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		6325278E1B1D0396003073D9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		632527901B1D0396003073D9 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		6367B55A1B223AFA008861F5 /* route_guide_db.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = route_guide_db.json; sourceTree = "<group>"; };
 		63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewControllers.m; sourceTree = "<group>"; };
 		71CEE03D66D40FC37264D6E4 /* libPods-RouteGuideClient.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RouteGuideClient.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADA4C647BAE906F79AD9A45E /* Pods-RouteGuideClient.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RouteGuideClient.debug.xcconfig"; path = "Pods/Target Support Files/Pods-RouteGuideClient/Pods-RouteGuideClient.debug.xcconfig"; sourceTree = "<group>"; };
@@ -83,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				63A6015B1B1DAB5000FA5B86 /* ViewControllers.m */,
+				6367B55A1B223AFA008861F5 /* route_guide_db.json */,
 				6325278D1B1D0396003073D9 /* Main.storyboard */,
 				631C63891B1DBC41001295D5 /* Misc */,
 			);
@@ -167,6 +170,7 @@
 			files = (
 				6325278F1B1D0396003073D9 /* Main.storyboard in Resources */,
 				632527911B1D0396003073D9 /* Images.xcassets in Resources */,
+				6367B55B1B223AFA008861F5 /* route_guide_db.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
