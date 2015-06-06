@@ -36,6 +36,20 @@
 
 static NSString * const kHostAddress = @"http://localhost:50051";
 
+// Category to override RTGPoint's description.
+@interface RTGPoint (Description)
+- (NSString *)description;
+@end
+
+@implementation RTGPoint (Description)
+- (NSString *)description {
+  NSString *verticalDirection = self.latitude >= 0 ? @"N" : @"S";
+  NSString *horizontalDirection = self.longitude >= 0 ? @"E" : @"W";
+  return [NSString stringWithFormat:@"%.02f%@ %.02f%@",
+          abs(self.latitude) / 1E7f, verticalDirection,
+          abs(self.longitude) / 1E7f, horizontalDirection];
+}
+@end
 
 #pragma mark Get Feature
 
@@ -89,15 +103,15 @@ static NSString * const kHostAddress = @"http://localhost:50051";
   RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   RTGRectangle *rectangle = [RTGRectangle message];
-  rectangle.lo.latitude = 40E7;
-  rectangle.lo.longitude = -75E7;
-  rectangle.hi.latitude = 42E7;
-  rectangle.hi.longitude = -73E7;
+  rectangle.lo.latitude = 405E6;
+  rectangle.lo.longitude = -750E6;
+  rectangle.hi.latitude = 410E6;
+  rectangle.hi.longitude = -745E6;
 
-  NSLog(@"Looking for features between 40, -75 and 42, -73");
+  NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
   [client listFeaturesWithRequest:rectangle handler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
-      NSLog(@"Found feature called %@ at %@.", response.name, response.location);
+      NSLog(@"Found feature at %@ called %@.", response.location, response.name);
     } else if (error) {
       NSLog(@"RPC error: %@", error);
     }
