@@ -4682,6 +4682,15 @@
       "windows", 
       "posix"
     ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "initial_settings_frame_bad_client_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }
 ]
 
