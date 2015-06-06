@@ -72,7 +72,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 }
 @end
 
-#pragma mark Get Feature
+
+#pragma mark Demo: Get Feature
 
 // Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
 // not to have a feature.
@@ -108,7 +109,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 @end
 
 
-#pragma mark List Features
+#pragma mark Demo: List Features
 
 // Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
 // the pre-generated database. Prints each response as it comes in.
@@ -142,7 +143,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 @end
 
 
-#pragma mark Record Route
+#pragma mark Demo: Record Route
 
 // Run the recordRoute demo. Sends several randomly chosen points from the pre-generated feature
 // database with a variable delay in between. Prints the statistics when they are sent from the
@@ -186,7 +187,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 @end
 
 
-#pragma mark Route Chat
+#pragma mark Demo: Route Chat
 
 // Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
 // the server.
