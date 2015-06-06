@@ -38,6 +38,7 @@
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/surface/poller.h"
 #include "src/core/surface/server.h"
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2_transport.h"
 
 #include <grpc/support/sync.h>
@@ -72,17 +73,21 @@ static grpc_transport_setup_result server_setup_transport(
                                      grpc_server_get_channel_args(a->server));
 }
 
-void grpc_run_bad_client_test(const char *name, const char *client_payload,
-                              size_t client_payload_length,
-                              grpc_bad_client_server_side_validator validator) {
+void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
+                              const char *client_payload,
+                              size_t client_payload_length, gpr_uint32 flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;
+  char *hex;
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
 
+  hex =
+      gpr_hexdump(client_payload, client_payload_length, GPR_HEXDUMP_PLAINTEXT);
+
   /* Add a debug log */
-  gpr_log(GPR_INFO, "TEST: %s", name);
+  gpr_log(GPR_INFO, "TEST: %s", hex);
 
   /* Init grpc */
   grpc_init();
@@ -126,10 +131,18 @@ void grpc_run_bad_client_test(const char *name, const char *client_payload,
   /* Await completion */
   GPR_ASSERT(
       gpr_event_wait(&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+
+  if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
+    grpc_endpoint_destroy(sfd.client);
+    sfd.client = NULL;
+  }
+
   GPR_ASSERT(gpr_event_wait(&a.done_thd, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
 
   /* Shutdown */
-  grpc_endpoint_destroy(sfd.client);
+  if (sfd.client) {
+    grpc_endpoint_destroy(sfd.client);
+  }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
   GPR_ASSERT(grpc_poller_pluck(a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))
                  .type == GRPC_OP_COMPLETE);
