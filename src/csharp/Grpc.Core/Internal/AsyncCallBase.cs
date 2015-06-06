@@ -53,7 +53,6 @@ namespace Grpc.Core.Internal
 
         protected readonly object myLock = new object();
 
-        protected GCHandle gchandle;
         protected CallSafeHandle call;
         protected bool disposed;
 
@@ -113,9 +112,6 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                // Make sure this object and the delegated held by it will not be garbage collected
-                // before we release this handle.
-                gchandle = GCHandle.Alloc(this);
                 this.call = call;
             }
         }
@@ -189,7 +185,6 @@ namespace Grpc.Core.Internal
             {
                 call.Dispose();
             }
-            gchandle.Free();
             disposed = true;
         }
 
