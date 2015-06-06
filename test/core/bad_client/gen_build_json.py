@@ -41,6 +41,7 @@ default_test_options = TestOptions(False)
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'connection_prefix': default_test_options,
+    'initial_settings_frame': default_test_options,
 }
 
 def main():
