@@ -279,15 +279,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_completion_queue_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "grpc_credentials_test", 
     "platforms": [
       "windows", 
@@ -298,6 +289,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "grpc_json_token_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "grpc_poller_test", 
     "platforms": [
       "windows", 
       "posix"

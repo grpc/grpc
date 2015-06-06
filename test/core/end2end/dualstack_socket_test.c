@@ -49,10 +49,10 @@ static gpr_timespec ms_from_now(int ms) {
   return GRPC_TIMEOUT_MILLIS_TO_DEADLINE(ms);
 }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_poller *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, ms_from_now(5000));
+    ev = grpc_poller_next(cq, ms_from_now(5000));
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -62,7 +62,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   char *server_hostport;
   grpc_channel *client;
   grpc_server *server;
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   grpc_call *c;
   grpc_call *s;
   cq_verifier *cqv;
@@ -91,9 +91,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
-  cq = grpc_completion_queue_create();
+  cq = grpc_poller_create();
   server = grpc_server_create(NULL);
-  grpc_server_register_completion_queue(server, cq);
+  grpc_server_register_poller(server, cq);
   GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
              0);
   if (port == 0) {
@@ -197,11 +197,13 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Destroy server. */
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(
+      grpc_poller_pluck(cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+          .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
-  grpc_completion_queue_shutdown(cq);
+  grpc_poller_shutdown(cq);
   drain_cq(cq);
-  grpc_completion_queue_destroy(cq);
+  grpc_poller_destroy(cq);
 
   grpc_call_details_destroy(&call_details);
   gpr_free(details);

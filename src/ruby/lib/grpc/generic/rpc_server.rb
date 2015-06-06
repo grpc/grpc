@@ -189,12 +189,12 @@ module GRPC
     # Signal check period is 0.25s
     SIGNAL_CHECK_PERIOD = 0.25
 
-    # setup_cq is used by #initialize to constuct a Core::CompletionQueue from
+    # setup_cq is used by #initialize to constuct a Core::Poller from
     # its arguments.
     def self.setup_cq(alt_cq)
-      return Core::CompletionQueue.new if alt_cq.nil?
-      unless alt_cq.is_a? Core::CompletionQueue
-        fail(TypeError, '!CompletionQueue')
+      return Core::Poller.new if alt_cq.nil?
+      unless alt_cq.is_a? Core::Poller
+        fail(TypeError, '!Poller')
       end
       alt_cq
     end

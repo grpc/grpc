@@ -84,14 +84,14 @@ typedef struct {
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
                                            void *user_data);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
+grpc_call *grpc_call_create(grpc_channel *channel, grpc_poller *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline);
 
-void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
+void grpc_call_set_poller(grpc_call *call, grpc_poller *cq);
+grpc_poller *grpc_call_get_poller(grpc_call *call);
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
@@ -129,9 +129,8 @@ void grpc_server_log_request_call(char *file, int line,
                                   grpc_server *server, grpc_call **call,
                                   grpc_call_details *details,
                                   grpc_metadata_array *initial_metadata,
-                                  grpc_completion_queue *cq_bound_to_call,
-                                  grpc_completion_queue *cq_for_notification,
-                                  void *tag);
+                                  grpc_poller *cq_bound_to_call,
+                                  grpc_poller *cq_for_notification, void *tag);
 
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */

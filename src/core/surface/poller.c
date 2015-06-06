@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/completion_queue.h"
+#include "src/core/surface/poller.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -58,7 +58,7 @@ typedef struct event {
 } event;
 
 /* Completion queue structure */
-struct grpc_completion_queue {
+struct grpc_poller {
   /* When refs drops to zero, we are in shutdown mode, and will be destroyable
      once all queued events are drained */
   gpr_refcount refs;
@@ -75,10 +75,10 @@ struct grpc_completion_queue {
   event *buckets[NUM_TAG_BUCKETS];
 };
 
-grpc_completion_queue *grpc_completion_queue_create(void) {
-  grpc_completion_queue *cc = gpr_malloc(sizeof(grpc_completion_queue));
+grpc_poller *grpc_poller_create(void) {
+  grpc_poller *cc = gpr_malloc(sizeof(grpc_poller));
   memset(cc, 0, sizeof(*cc));
-  /* Initial ref is dropped by grpc_completion_queue_shutdown */
+  /* Initial ref is dropped by grpc_poller_shutdown */
   gpr_ref_init(&cc->refs, 1);
   /* One for destroy(), one for pollset_shutdown */
   gpr_ref_init(&cc->owning_refs, 2);
@@ -86,37 +86,27 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
   return cc;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason) {
-  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count + 1, reason);
+void grpc_poller_internal_ref(grpc_poller *cc, const char *reason) {
+  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count,
+          (int)cc->owning_refs.count + 1, reason);
 #else
-void grpc_cq_internal_ref(grpc_completion_queue *cc) {
+void grpc_poller_internal_ref(grpc_poller *cc) {
 #endif
   gpr_ref(&cc->owning_refs);
 }
 
 static void on_pollset_destroy_done(void *arg) {
-  grpc_completion_queue *cc = arg;
+  grpc_poller *cc = arg;
   GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
 }
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason) {
-  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1, reason);
+void grpc_poller_internal_unref(grpc_poller *cc, const char *reason) {
+  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count,
+          (int)cc->owning_refs.count - 1, reason);
 #else
-void grpc_cq_internal_unref(grpc_completion_queue *cc) {
+void grpc_poller_internal_unref(grpc_poller *cc) {
 #endif
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->queue == NULL);
@@ -128,8 +118,8 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 /* Create and append an event to the queue. Returns the event so that its data
    members can be filled in.
    Requires GRPC_POLLSET_MU(&cc->pollset) locked. */
-static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
-                         void *tag, grpc_call *call) {
+static event *add_locked(grpc_poller *cc, grpc_completion_type type, void *tag,
+                         grpc_call *call) {
   event *ev = gpr_malloc(sizeof(event));
   gpr_uintptr bucket = ((gpr_uintptr)tag) % NUM_TAG_BUCKETS;
   ev->base.type = type;
@@ -152,15 +142,15 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
   return ev;
 }
 
-void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call) {
+void grpc_poller_begin_op(grpc_poller *cc, grpc_call *call) {
   gpr_ref(&cc->refs);
   if (call) GRPC_CALL_INTERNAL_REF(call, "cq");
 }
 
 /* Signal the end of an operation - if this is the last waiting-to-be-queued
    event, then enter shutdown mode */
-void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                    int success) {
+void grpc_poller_end_op(grpc_poller *cc, void *tag, grpc_call *call,
+                        int success) {
   event *ev;
   int shutdown = 0;
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
@@ -187,8 +177,7 @@ static event *create_shutdown_event(void) {
   return ev;
 }
 
-grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
-                                      gpr_timespec deadline) {
+grpc_event grpc_poller_next(grpc_poller *cc, gpr_timespec deadline) {
   event *ev = NULL;
   grpc_event ret;
 
@@ -236,7 +225,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   return ret;
 }
 
-static event *pluck_event(grpc_completion_queue *cc, void *tag) {
+static event *pluck_event(grpc_poller *cc, void *tag) {
   gpr_uintptr bucket = ((gpr_uintptr)tag) % NUM_TAG_BUCKETS;
   event *ev = cc->buckets[bucket];
   if (ev == NULL) return NULL;
@@ -265,8 +254,8 @@ static event *pluck_event(grpc_completion_queue *cc, void *tag) {
   return NULL;
 }
 
-grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
-                                       gpr_timespec deadline) {
+grpc_event grpc_poller_pluck(grpc_poller *cc, void *tag,
+                             gpr_timespec deadline) {
   event *ev = NULL;
   grpc_event ret;
 
@@ -299,7 +288,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
 
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop
    to zero here, then enter shutdown mode and wake up any waiters */
-void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
+void grpc_poller_shutdown(grpc_poller *cc) {
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   if (cc->shutdown_called) {
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
@@ -317,16 +306,14 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   }
 }
 
-void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
-  grpc_completion_queue_shutdown(cc);
+void grpc_poller_destroy(grpc_poller *cc) {
+  grpc_poller_shutdown(cc);
   GRPC_CQ_INTERNAL_UNREF(cc, "destroy");
 }
 
-grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
-  return &cc->pollset;
-}
+grpc_pollset *grpc_poller_pollset(grpc_poller *cc) { return &cc->pollset; }
 
-void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
+void grpc_poller_hack_spin_pollset(grpc_poller *cc) {
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   grpc_pollset_kick(&cc->pollset);
   grpc_pollset_work(&cc->pollset,

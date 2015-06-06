@@ -43,7 +43,7 @@
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
 #include "call.h"
-#include "completion_queue_async_worker.h"
+#include "poller_async_worker.h"
 #include "server_credentials.h"
 #include "timeval.h"
 
@@ -113,15 +113,15 @@ class NewCallOp : public Op {
 };
 
 Server::Server(grpc_server *server) : wrapped_server(server) {
-  shutdown_queue = grpc_completion_queue_create();
-  grpc_server_register_completion_queue(server, shutdown_queue);
+  shutdown_queue = grpc_poller_create();
+  grpc_server_register_poller(server, shutdown_queue);
 }
 
 Server::~Server() {
   this->ShutdownServer();
-  grpc_completion_queue_shutdown(this->shutdown_queue);
+  grpc_poller_shutdown(this->shutdown_queue);
   grpc_server_destroy(wrapped_server);
-  grpc_completion_queue_destroy(this->shutdown_queue);
+  grpc_poller_destroy(this->shutdown_queue);
 }
 
 void Server::Init(Handle<Object> exports) {
@@ -161,7 +161,7 @@ void Server::ShutdownServer() {
     grpc_server_shutdown_and_notify(this->wrapped_server,
                                     this->shutdown_queue,
                                     NULL);
-    grpc_completion_queue_pluck(this->shutdown_queue, NULL, gpr_inf_future);
+    grpc_poller_pluck(this->shutdown_queue, NULL, gpr_inf_future);
     this->wrapped_server = NULL;
   }
 }
@@ -177,7 +177,7 @@ NAN_METHOD(Server::New) {
     NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
   }
   grpc_server *wrapped_server;
-  grpc_completion_queue *queue = CompletionQueueAsyncWorker::GetQueue();
+  grpc_poller *queue = PollerAsyncWorker::GetQueue();
   if (args[0]->IsUndefined()) {
     wrapped_server = grpc_server_create(NULL);
   } else if (args[0]->IsObject()) {
@@ -213,7 +213,7 @@ NAN_METHOD(Server::New) {
   } else {
     return NanThrowTypeError("Server expects an object");
   }
-  grpc_server_register_completion_queue(wrapped_server, queue);
+  grpc_server_register_poller(wrapped_server, queue);
   Server *server = new Server(wrapped_server);
   server->Wrap(args.This());
   NanReturnValue(args.This());
@@ -233,14 +233,13 @@ NAN_METHOD(Server::RequestCall) {
   ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
-      CompletionQueueAsyncWorker::GetQueue(),
-      CompletionQueueAsyncWorker::GetQueue(),
+      PollerAsyncWorker::GetQueue(), PollerAsyncWorker::GetQueue(),
       new struct tag(new NanCallback(args[0].As<Function>()), ops.release(),
                      shared_ptr<Resources>(nullptr)));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("requestCall failed", error);
   }
-  CompletionQueueAsyncWorker::Next();
+  PollerAsyncWorker::Next();
   NanReturnUndefined();
 }
 

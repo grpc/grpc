@@ -34,10 +34,10 @@ ClientCredentials = _c.ClientCredentials
 ServerCredentials = _c.ServerCredentials
 
 
-class CompletionQueue(_types.CompletionQueue):
+class Poller(_types.Poller):
 
   def __init__(self):
-    self.completion_queue = _c.CompletionQueue()
+    self.completion_queue = _c.Poller()
 
   def next(self, deadline=float('+inf')):
     raw_event = self.completion_queue.next(deadline)

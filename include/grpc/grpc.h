@@ -46,7 +46,7 @@ extern "C" {
 
 /* Completion Queues enable notification of the completion of asynchronous
    actions. */
-typedef struct grpc_completion_queue grpc_completion_queue;
+typedef struct grpc_poller grpc_poller;
 
 /* The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;
@@ -356,46 +356,43 @@ void grpc_init(void);
 void grpc_shutdown(void);
 
 /** Create a completion queue */
-grpc_completion_queue *grpc_completion_queue_create(void);
+grpc_poller *grpc_poller_create(void);
 
 /** Blocks until an event is available, the completion queue is being shut down,
-    or deadline is reached. 
+    or deadline is reached.
 
     Returns NULL on timeout, otherwise the event that occurred.
 
-    Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. */
-grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
-                                      gpr_timespec deadline);
+    Callers must not call grpc_poller_next and
+    grpc_poller_pluck simultaneously on the same completion queue. */
+grpc_event grpc_poller_next(grpc_poller *cq, gpr_timespec deadline);
 
 /** Blocks until an event with tag 'tag' is available, the completion queue is
-    being shutdown or deadline is reached. 
+    being shutdown or deadline is reached.
 
     Returns NULL on timeout, or a pointer to the event that occurred.
 
-    Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. */
-grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
-                                       gpr_timespec deadline);
+    Callers must not call grpc_poller_next and
+    grpc_poller_pluck simultaneously on the same completion queue. */
+grpc_event grpc_poller_pluck(grpc_poller *cq, void *tag, gpr_timespec deadline);
 
 /* Begin destruction of a completion queue. Once all possible events are
-   drained then grpc_completion_queue_next will start to produce
+   drained then grpc_poller_next will start to produce
    GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call
-   grpc_completion_queue_destroy.
+   grpc_poller_destroy.
 
    After calling this function applications should ensure that no
    NEW work is added to be published on this completion queue. */
-void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
+void grpc_poller_shutdown(grpc_poller *cq);
 
 /* Destroy a completion queue. The caller must ensure that the queue is
-   drained and no threads are executing grpc_completion_queue_next */
-void grpc_completion_queue_destroy(grpc_completion_queue *cq);
+   drained and no threads are executing grpc_poller_next */
+void grpc_poller_destroy(grpc_poller *cq);
 
 /* Create a call given a grpc_channel, in order to call 'method'. The request
    is not sent until grpc_call_invoke is called. All completions are sent to
-   'completion_queue'. */
-grpc_call *grpc_channel_create_call(grpc_channel *channel,
-                                    grpc_completion_queue *completion_queue,
+   'poller'. */
+grpc_call *grpc_channel_create_call(grpc_channel *channel, grpc_poller *poller,
                                     const char *method, const char *host,
                                     gpr_timespec deadline);
 
@@ -404,9 +401,10 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host);
 
 /* Create a call given a handle returned from grpc_channel_register_call */
-grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline);
+grpc_call *grpc_channel_create_registered_call(grpc_channel *channel,
+                                               grpc_poller *poller,
+                                               void *registered_call_handle,
+                                               gpr_timespec deadline);
 
 /* Start a batch of operations defined in the array ops; when complete, post a
    completion of type 'tag' to the completion queue bound to the call.
@@ -464,11 +462,12 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 void grpc_call_destroy(grpc_call *call);
 
 /* Request notification of a new call */
-grpc_call_error grpc_server_request_call(
-    grpc_server *server, grpc_call **call, grpc_call_details *details,
-    grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag_new);
+grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
+                                         grpc_call_details *details,
+                                         grpc_metadata_array *request_metadata,
+                                         grpc_poller *cq_bound_to_call,
+                                         grpc_poller *cq_for_notification,
+                                         void *tag_new);
 
 /* Registers a method in the server.
    Methods to this (host, method) pair will not be reported by
@@ -484,9 +483,8 @@ void *grpc_server_register_method(grpc_server *server, const char *method,
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *request_metadata,
-    grpc_byte_buffer **optional_payload,
-    grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag_new);
+    grpc_byte_buffer **optional_payload, grpc_poller *cq_bound_to_call,
+    grpc_poller *cq_for_notification, void *tag_new);
 
 /* Create a server. Additional configuration for each incoming channel can
    be specified with args. If no additional configuration is needed, args can
@@ -496,8 +494,7 @@ grpc_server *grpc_server_create(const grpc_channel_args *args);
 /* Register a completion queue with the server. Must be done for any completion
    queue that is passed to grpc_server_request_* call. Must be performed prior
    to grpc_server_start. */
-void grpc_server_register_completion_queue(grpc_server *server,
-                                           grpc_completion_queue *cq);
+void grpc_server_register_poller(grpc_server *server, grpc_poller *cq);
 
 /* Add a HTTP2 over plaintext over tcp listener.
    Returns bound port number on success, 0 on failure.
@@ -513,8 +510,8 @@ void grpc_server_start(grpc_server *server);
    Send a GRPC_OP_COMPLETE event when there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
    grpc_server_shutdown_and_notify calls are made. */
-void grpc_server_shutdown_and_notify(grpc_server *server,
-                                     grpc_completion_queue *cq, void *tag);
+void grpc_server_shutdown_and_notify(grpc_server *server, grpc_poller *cq,
+                                     void *tag);
 
 /* Cancel all in-progress calls. 
    Only usable after shutdown. */

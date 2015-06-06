@@ -37,21 +37,17 @@
 #include <Python.h>
 #include <grpc/grpc.h>
 
-
-PyMethodDef pygrpc_CompletionQueue_methods[] = {
-    {"next", (PyCFunction)pygrpc_CompletionQueue_next, METH_KEYWORDS, ""},
-    {"shutdown", (PyCFunction)pygrpc_CompletionQueue_shutdown, METH_NOARGS, ""},
-    {NULL}
-};
-const char pygrpc_CompletionQueue_doc[] =
-    "See grpc._adapter._types.CompletionQueue.";
-PyTypeObject pygrpc_CompletionQueue_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                        /* ob_size */
-    "CompletionQueue",                        /* tp_name */
-    sizeof(CompletionQueue),                  /* tp_basicsize */
+PyMethodDef pygrpc_Poller_methods[] = {
+    {"next", (PyCFunction)pygrpc_Poller_next, METH_KEYWORDS, ""},
+    {"shutdown", (PyCFunction)pygrpc_Poller_shutdown, METH_NOARGS, ""},
+    {NULL}};
+const char pygrpc_Poller_doc[] = "See grpc._adapter._types.Poller.";
+PyTypeObject pygrpc_Poller_type = {
+    PyObject_HEAD_INIT(NULL)0,                /* ob_size */
+    "Poller",                                 /* tp_name */
+    sizeof(Poller),                           /* tp_basicsize */
     0,                                        /* tp_itemsize */
-    (destructor)pygrpc_CompletionQueue_dealloc, /* tp_dealloc */
+    (destructor)pygrpc_Poller_dealloc,        /* tp_dealloc */
     0,                                        /* tp_print */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
@@ -67,14 +63,14 @@ PyTypeObject pygrpc_CompletionQueue_type = {
     0,                                        /* tp_setattro */
     0,                                        /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    pygrpc_CompletionQueue_doc,               /* tp_doc */
+    pygrpc_Poller_doc,                        /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
     0,                                        /* tp_iter */
     0,                                        /* tp_iternext */
-    pygrpc_CompletionQueue_methods,           /* tp_methods */
+    pygrpc_Poller_methods,                    /* tp_methods */
     0,                                        /* tp_members */
     0,                                        /* tp_getset */
     0,                                        /* tp_base */
@@ -84,23 +80,22 @@ PyTypeObject pygrpc_CompletionQueue_type = {
     0,                                        /* tp_dictoffset */
     0,                                        /* tp_init */
     0,                                        /* tp_alloc */
-    (newfunc)pygrpc_CompletionQueue_new       /* tp_new */
+    (newfunc)pygrpc_Poller_new                /* tp_new */
 };
 
-CompletionQueue *pygrpc_CompletionQueue_new(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  CompletionQueue *self = (CompletionQueue *)type->tp_alloc(type, 0);
-  self->c_cq = grpc_completion_queue_create();
+Poller *pygrpc_Poller_new(PyTypeObject *type, PyObject *args,
+                          PyObject *kwargs) {
+  Poller *self = (Poller *)type->tp_alloc(type, 0);
+  self->c_cq = grpc_poller_create();
   return self;
 }
 
-void pygrpc_CompletionQueue_dealloc(CompletionQueue *self) {
-  grpc_completion_queue_destroy(self->c_cq);
+void pygrpc_Poller_dealloc(Poller *self) {
+  grpc_poller_destroy(self->c_cq);
   self->ob_type->tp_free((PyObject *)self);
 }
 
-PyObject *pygrpc_CompletionQueue_next(
-    CompletionQueue *self, PyObject *args, PyObject *kwargs) {
+PyObject *pygrpc_Poller_next(Poller *self, PyObject *args, PyObject *kwargs) {
   double deadline;
   grpc_event event;
   PyObject *transliterated_event;
@@ -110,15 +105,14 @@ PyObject *pygrpc_CompletionQueue_next(
     return NULL;
   }
   Py_BEGIN_ALLOW_THREADS;
-  event = grpc_completion_queue_next(
-      self->c_cq, pygrpc_cast_double_to_gpr_timespec(deadline));
+  event = grpc_poller_next(self->c_cq,
+                           pygrpc_cast_double_to_gpr_timespec(deadline));
   Py_END_ALLOW_THREADS;
   transliterated_event = pygrpc_consume_event(event);
   return transliterated_event;
 }
 
-PyObject *pygrpc_CompletionQueue_shutdown(
-    CompletionQueue *self, PyObject *ignored) {
-  grpc_completion_queue_shutdown(self->c_cq);
+PyObject *pygrpc_Poller_shutdown(Poller *self, PyObject *ignored) {
+  grpc_poller_shutdown(self->c_cq);
   Py_RETURN_NONE;
 }

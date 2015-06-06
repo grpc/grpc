@@ -65,17 +65,19 @@ static gpr_timespec n_seconds_time(int n) {
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_poller *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_poller_next(cq, five_seconds_time());
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(
+      grpc_poller_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+          .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -90,9 +92,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->cq);
+  grpc_poller_shutdown(f->cq);
   drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
+  grpc_poller_destroy(f->cq);
 }
 
 static void simple_request_body(grpc_end2end_test_fixture f) {
@@ -296,8 +298,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   got_server_start = 0;
   live_call = -1;
   while (!got_client_start || !got_server_start) {
-    ev = grpc_completion_queue_next(f.cq,
-                                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3));
+    ev = grpc_poller_next(f.cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3));
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.success);
     if (ev.tag == tag(101)) {

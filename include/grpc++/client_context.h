@@ -44,13 +44,13 @@
 #include <grpc++/time.h>
 
 struct grpc_call;
-struct grpc_completion_queue;
+struct grpc_poller;
 
 namespace grpc {
 
 class CallOpBuffer;
 class ChannelInterface;
-class CompletionQueue;
+class Poller;
 class Credentials;
 class RpcMethod;
 class Status;
@@ -136,15 +136,15 @@ class ClientContext {
   void set_call(grpc_call* call,
                 const std::shared_ptr<ChannelInterface>& channel);
 
-  grpc_completion_queue* cq() { return cq_; }
-  void set_cq(grpc_completion_queue* cq) { cq_ = cq; }
+  grpc_poller* cq() { return cq_; }
+  void set_cq(grpc_poller* cq) { cq_ = cq; }
 
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
   std::shared_ptr<ChannelInterface> channel_;
   grpc_call* call_;
-  grpc_completion_queue* cq_;
+  grpc_poller* cq_;
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;

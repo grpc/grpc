@@ -39,8 +39,7 @@ namespace grpc {
 
 // begin a call to a named method
 std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::Call(
-    ClientContext* context, const grpc::string& method, CompletionQueue* cq,
-    void* tag) {
+    ClientContext* context, const grpc::string& method, Poller* cq, void* tag) {
   return std::unique_ptr<GenericClientAsyncReaderWriter>(
       new GenericClientAsyncReaderWriter(
           channel_.get(), cq,

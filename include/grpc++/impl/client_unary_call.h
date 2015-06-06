@@ -40,7 +40,7 @@ namespace grpc {
 
 class ChannelInterface;
 class ClientContext;
-class CompletionQueue;
+class Poller;
 class RpcMethod;
 class Status;
 

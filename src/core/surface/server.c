@@ -43,7 +43,7 @@
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
-#include "src/core/surface/completion_queue.h"
+#include "src/core/surface/poller.h"
 #include "src/core/surface/init.h"
 #include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
@@ -75,8 +75,8 @@ typedef enum { BATCH_CALL, REGISTERED_CALL } requested_call_type;
 typedef struct {
   requested_call_type type;
   void *tag;
-  grpc_completion_queue *cq_bound_to_call;
-  grpc_completion_queue *cq_for_notification;
+  grpc_poller *cq_bound_to_call;
+  grpc_poller *cq_for_notification;
   grpc_call **call;
   union {
     struct {
@@ -129,7 +129,7 @@ struct channel_data {
 
 typedef struct shutdown_tag {
   void *tag;
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
 } shutdown_tag;
 
 struct grpc_server {
@@ -137,7 +137,7 @@ struct grpc_server {
   const grpc_channel_filter **channel_filters;
   grpc_channel_args *channel_args;
 
-  grpc_completion_queue **cqs;
+  grpc_poller **cqs;
   grpc_pollset **pollsets;
   size_t cq_count;
 
@@ -179,7 +179,7 @@ struct call_data {
   gpr_timespec deadline;
   int got_initial_metadata;
 
-  grpc_completion_queue *cq_new;
+  grpc_poller *cq_new;
 
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
@@ -421,8 +421,8 @@ static void maybe_finish_shutdown(grpc_server *server) {
   }
   server->shutdown_published = 1;
   for (i = 0; i < server->num_shutdown_tags; i++) {
-    grpc_cq_end_op(server->shutdown_tags[i].cq, server->shutdown_tags[i].tag,
-                   NULL, 1);
+    grpc_poller_end_op(server->shutdown_tags[i].cq,
+                       server->shutdown_tags[i].tag, NULL, 1);
   }
 }
 
@@ -702,16 +702,15 @@ static const grpc_channel_filter server_surface_filter = {
     "server",
 };
 
-void grpc_server_register_completion_queue(grpc_server *server,
-                                           grpc_completion_queue *cq) {
+void grpc_server_register_poller(grpc_server *server, grpc_poller *cq) {
   size_t i, n;
   for (i = 0; i < server->cq_count; i++) {
     if (server->cqs[i] == cq) return;
   }
   GRPC_CQ_INTERNAL_REF(cq, "server");
   n = server->cq_count++;
-  server->cqs = gpr_realloc(server->cqs,
-                            server->cq_count * sizeof(grpc_completion_queue *));
+  server->cqs =
+      gpr_realloc(server->cqs, server->cq_count * sizeof(grpc_poller *));
   server->cqs[n] = cq;
 }
 
@@ -796,7 +795,7 @@ void grpc_server_start(grpc_server *server) {
 
   server->pollsets = gpr_malloc(sizeof(grpc_pollset *) * server->cq_count);
   for (i = 0; i < server->cq_count; i++) {
-    server->pollsets[i] = grpc_cq_pollset(server->cqs[i]);
+    server->pollsets[i] = grpc_poller_pollset(server->cqs[i]);
   }
 
   for (l = server->listeners; l; l = l->next) {
@@ -835,7 +834,7 @@ grpc_transport_setup_result grpc_server_setup_transport(
   filters[i] = &grpc_connected_channel_filter;
 
   for (i = 0; i < s->cq_count; i++) {
-    grpc_transport_add_to_pollset(transport, grpc_cq_pollset(s->cqs[i]));
+    grpc_transport_add_to_pollset(transport, grpc_poller_pollset(s->cqs[i]));
   }
 
   channel =
@@ -890,8 +889,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
   return result;
 }
 
-void grpc_server_shutdown_and_notify(grpc_server *server,
-                                     grpc_completion_queue *cq, void *tag) {
+void grpc_server_shutdown_and_notify(grpc_server *server, grpc_poller *cq,
+                                     void *tag) {
   listener *l;
   requested_call_array requested_calls;
   channel_data *c;
@@ -901,7 +900,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu);
-  grpc_cq_begin_op(cq, NULL);
+  grpc_poller_begin_op(cq, NULL);
   server->shutdown_tags =
       gpr_realloc(server->shutdown_tags,
                   sizeof(shutdown_tag) * (server->num_shutdown_tags + 1));
@@ -1072,16 +1071,17 @@ static grpc_call_error queue_call_request(grpc_server *server,
   }
 }
 
-grpc_call_error grpc_server_request_call(
-    grpc_server *server, grpc_call **call, grpc_call_details *details,
-    grpc_metadata_array *initial_metadata,
-    grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag) {
+grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
+                                         grpc_call_details *details,
+                                         grpc_metadata_array *initial_metadata,
+                                         grpc_poller *cq_bound_to_call,
+                                         grpc_poller *cq_for_notification,
+                                         void *tag) {
   requested_call rc;
   GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
                                initial_metadata, cq_bound_to_call,
                                cq_for_notification, tag);
-  grpc_cq_begin_op(cq_for_notification, NULL);
+  grpc_poller_begin_op(cq_for_notification, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
   rc.cq_bound_to_call = cq_bound_to_call;
@@ -1095,11 +1095,11 @@ grpc_call_error grpc_server_request_call(
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *rm, grpc_call **call, gpr_timespec *deadline,
     grpc_metadata_array *initial_metadata, grpc_byte_buffer **optional_payload,
-    grpc_completion_queue *cq_bound_to_call,
-    grpc_completion_queue *cq_for_notification, void *tag) {
+    grpc_poller *cq_bound_to_call, grpc_poller *cq_for_notification,
+    void *tag) {
   requested_call rc;
   registered_method *registered_method = rm;
-  grpc_cq_begin_op(cq_for_notification, NULL);
+  grpc_poller_begin_op(cq_for_notification, NULL);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
   rc.cq_bound_to_call = cq_bound_to_call;
@@ -1141,7 +1141,7 @@ static void begin_call(grpc_server *server, call_data *calld,
      fill in the metadata array passed by the client, we need to perform
      an ioreq op, that should complete immediately. */
 
-  grpc_call_set_completion_queue(calld->call, rc->cq_bound_to_call);
+  grpc_call_set_poller(calld->call, rc->cq_bound_to_call);
   *rc->call = calld->call;
   calld->cq_new = rc->cq_for_notification;
   switch (rc->type) {
@@ -1185,7 +1185,7 @@ static void fail_call(grpc_server *server, requested_call *rc) {
       rc->data.registered.initial_metadata->count = 0;
       break;
   }
-  grpc_cq_end_op(rc->cq_for_notification, rc->tag, NULL, 0);
+  grpc_poller_end_op(rc->cq_for_notification, rc->tag, NULL, 0);
 }
 
 static void publish_registered_or_batch(grpc_call *call, int success,
@@ -1193,7 +1193,7 @@ static void publish_registered_or_batch(grpc_call *call, int success,
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   call_data *calld = elem->call_data;
-  grpc_cq_end_op(calld->cq_new, tag, call, success);
+  grpc_poller_end_op(calld->cq_new, tag, call, success);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {

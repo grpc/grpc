@@ -335,7 +335,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     object.
     """
     with self._condition:
-      self._completion_queue = _low.CompletionQueue()
+      self._completion_queue = _low.Poller()
       self._channel = _low.Channel(
           '%s:%d' % (self._host, self._port), self._client_credentials,
           server_host_override=self._server_host_override)

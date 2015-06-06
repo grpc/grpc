@@ -291,28 +291,25 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_shutdown(void) { grpc_shutdown(); }
 
 /* Completion queue */
 
-GPR_EXPORT grpc_completion_queue *GPR_CALLTYPE
-grpcsharp_completion_queue_create(void) {
-  return grpc_completion_queue_create();
+GPR_EXPORT grpc_poller *GPR_CALLTYPE grpcsharp_poller_create(void) {
+  return grpc_poller_create();
 }
 
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_completion_queue_shutdown(grpc_completion_queue *cq) {
-  grpc_completion_queue_shutdown(cq);
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_poller_shutdown(grpc_poller *cq) {
+  grpc_poller_shutdown(cq);
 }
 
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_completion_queue_destroy(grpc_completion_queue *cq) {
-  grpc_completion_queue_destroy(cq);
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_poller_destroy(grpc_poller *cq) {
+  grpc_poller_destroy(cq);
 }
 
 GPR_EXPORT grpc_completion_type GPR_CALLTYPE
-grpcsharp_completion_queue_next_with_callback(grpc_completion_queue *cq) {
+grpcsharp_poller_next_with_callback(grpc_poller *cq) {
   grpc_event ev;
   grpcsharp_batch_context *batch_context;
   grpc_completion_type t;
 
-  ev = grpc_completion_queue_next(cq, gpr_inf_future);
+  ev = grpc_poller_next(cq, gpr_inf_future);
   t = ev.type;
   if (t == GRPC_OP_COMPLETE && ev.tag) {
     /* NEW API handler */
@@ -338,10 +335,9 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel *channel) {
   grpc_channel_destroy(channel);
 }
 
-GPR_EXPORT grpc_call *GPR_CALLTYPE
-grpcsharp_channel_create_call(grpc_channel *channel, grpc_completion_queue *cq,
-                              const char *method, const char *host,
-                              gpr_timespec deadline) {
+GPR_EXPORT grpc_call *GPR_CALLTYPE grpcsharp_channel_create_call(
+    grpc_channel *channel, grpc_poller *cq, const char *method,
+    const char *host, gpr_timespec deadline) {
   return grpc_channel_create_call(channel, cq, method, host, deadline);
 }
 
@@ -455,21 +451,19 @@ grpcsharp_call_start_unary(grpc_call *call, callback_funcptr callback,
 }
 
 /* Synchronous unary call */
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_call_blocking_unary(grpc_call *call,
-                              grpc_completion_queue *dedicated_cq,
-                              callback_funcptr callback,
-                              const char *send_buffer, size_t send_buffer_len,
-                              grpc_metadata_array *initial_metadata) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_blocking_unary(
+    grpc_call *call, grpc_poller *dedicated_cq, callback_funcptr callback,
+    const char *send_buffer, size_t send_buffer_len,
+    grpc_metadata_array *initial_metadata) {
   GPR_ASSERT(grpcsharp_call_start_unary(call, callback, send_buffer,
                                         send_buffer_len,
                                         initial_metadata) == GRPC_CALL_OK);
 
   /* TODO: we would like to use pluck, but we don't know the tag */
-  GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) ==
+  GPR_ASSERT(grpcsharp_poller_next_with_callback(dedicated_cq) ==
              GRPC_OP_COMPLETE);
-  grpc_completion_queue_shutdown(dedicated_cq);
-  GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) ==
+  grpc_poller_shutdown(dedicated_cq);
+  GPR_ASSERT(grpcsharp_poller_next_with_callback(dedicated_cq) ==
              GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -662,10 +656,9 @@ grpcsharp_call_start_serverside(grpc_call *call, callback_funcptr callback) {
 /* Server */
 
 GPR_EXPORT grpc_server *GPR_CALLTYPE
-grpcsharp_server_create(grpc_completion_queue *cq,
-                        const grpc_channel_args *args) {
+grpcsharp_server_create(grpc_poller *cq, const grpc_channel_args *args) {
   grpc_server *server = grpc_server_create(args);
-  grpc_server_register_completion_queue(server, cq);
+  grpc_server_register_poller(server, cq);
   return server;
 }
 
@@ -678,10 +671,8 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {
   grpc_server_start(server);
 }
 
-GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_server_shutdown_and_notify_callback(grpc_server *server,
-                                              grpc_completion_queue *cq,
-                                              callback_funcptr callback) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_shutdown_and_notify_callback(
+    grpc_server *server, grpc_poller *cq, callback_funcptr callback) {
   grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
   ctx->callback = callback;
   grpc_server_shutdown_and_notify(server, cq, ctx);
@@ -695,9 +686,8 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_destroy(grpc_server *server) {
   grpc_server_destroy(server);
 }
 
-GPR_EXPORT grpc_call_error GPR_CALLTYPE
-grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
-                              callback_funcptr callback) {
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_server_request_call(
+    grpc_server *server, grpc_poller *cq, callback_funcptr callback) {
   grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
   ctx->callback = callback;
 

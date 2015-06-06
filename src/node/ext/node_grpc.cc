@@ -39,7 +39,7 @@
 #include "call.h"
 #include "channel.h"
 #include "server.h"
-#include "completion_queue_async_worker.h"
+#include "poller_async_worker.h"
 #include "credentials.h"
 #include "server_credentials.h"
 
@@ -169,7 +169,7 @@ void init(Handle<Object> exports) {
   grpc::node::Call::Init(exports);
   grpc::node::Channel::Init(exports);
   grpc::node::Server::Init(exports);
-  grpc::node::CompletionQueueAsyncWorker::Init(exports);
+  grpc::node::PollerAsyncWorker::Init(exports);
   grpc::node::Credentials::Init(exports);
   grpc::node::ServerCredentials::Init(exports);
 }

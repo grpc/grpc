@@ -259,9 +259,6 @@
     <ClCompile Include="..\..\src\core\surface\client.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\completion_queue.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\event_string.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -272,6 +269,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\metadata_array.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\poller.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server.c">
@@ -584,13 +584,13 @@
     <ClInclude Include="..\..\src\core\surface\client.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\surface\completion_queue.h">
-      <Filter>src\core\surface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\surface\event_string.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\init.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\poller.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\server.h">

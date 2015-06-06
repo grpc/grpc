@@ -116,7 +116,7 @@ grpc_channel *grpc_channel_create_from_filters(
 }
 
 static grpc_call *grpc_channel_create_call_internal(
-    grpc_channel *channel, grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
+    grpc_channel *channel, grpc_poller *cq, grpc_mdelem *path_mdelem,
     grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
   grpc_mdelem *send_metadata[2];
 
@@ -129,8 +129,7 @@ static grpc_call *grpc_channel_create_call_internal(
                           GPR_ARRAY_SIZE(send_metadata), deadline);
 }
 
-grpc_call *grpc_channel_create_call(grpc_channel *channel,
-                                    grpc_completion_queue *cq,
+grpc_call *grpc_channel_create_call(grpc_channel *channel, grpc_poller *cq,
                                     const char *method, const char *host,
                                     gpr_timespec deadline) {
   return grpc_channel_create_call_internal(
@@ -160,12 +159,13 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
   return rc;
 }
 
-grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline) {
+grpc_call *grpc_channel_create_registered_call(grpc_channel *channel,
+                                               grpc_poller *poller,
+                                               void *registered_call_handle,
+                                               gpr_timespec deadline) {
   registered_call *rc = registered_call_handle;
   return grpc_channel_create_call_internal(
-      channel, completion_queue, grpc_mdelem_ref(rc->path),
+      channel, poller, grpc_mdelem_ref(rc->path),
       grpc_mdelem_ref(rc->authority), deadline);
 }
 

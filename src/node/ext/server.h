@@ -73,7 +73,7 @@ class Server : public ::node::ObjectWrap {
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
+  grpc_poller *shutdown_queue;
 };
 
 }  // namespace node

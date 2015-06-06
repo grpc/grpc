@@ -88,7 +88,7 @@ describe GRPC::Core::CallOps do
 end
 
 describe GRPC::Core::Call do
-  let(:client_queue) { GRPC::Core::CompletionQueue.new }
+  let(:client_queue) { GRPC::Core::Poller.new }
   let(:test_tag)  { Object.new }
   let(:fake_host) { 'localhost:10101' }
 

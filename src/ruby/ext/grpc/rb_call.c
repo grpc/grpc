@@ -39,7 +39,7 @@
 #include <grpc/support/alloc.h>
 
 #include "rb_byte_buffer.h"
-#include "rb_completion_queue.h"
+#include "rb_poller.h"
 #include "rb_grpc.h"
 
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
@@ -560,7 +560,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
 }
 
 /* call-seq:
-   cq = CompletionQueue.new
+   cq = Poller.new
    ops = {
      GRPC::Core::CallOps::SEND_INITIAL_METADATA => <op_value>,
      GRPC::Core::CallOps::SEND_MESSAGE => <op_value>,
@@ -604,7 +604,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
              grpc_call_error_detail_of(err), err);
     return Qnil;
   }
-  ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
+  ev = grpc_rb_poller_pluck_event(cqueue, tag, timeout);
   if (ev.type == GRPC_QUEUE_TIMEOUT) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");

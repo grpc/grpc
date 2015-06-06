@@ -37,7 +37,7 @@
     <ClCompile Include="..\..\src\cpp\common\call.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\common\completion_queue.cc">
+    <ClCompile Include="..\..\src\cpp\common\poller.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\common\rpc_method.cc">
@@ -102,9 +102,6 @@
     <ClInclude Include="..\..\include\grpc++\client_context.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\completion_queue.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\config.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -155,6 +152,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h">
       <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\poller.h">
+      <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\server.h">
       <Filter>include\grpc++</Filter>

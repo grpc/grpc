@@ -39,14 +39,12 @@
 
 int pygrpc_module_add_types(PyObject *module) {
   int i;
-  PyTypeObject *types[] = {
-      &pygrpc_ClientCredentials_type,
-      &pygrpc_ServerCredentials_type,
-      &pygrpc_CompletionQueue_type,
-      &pygrpc_Call_type,
-      &pygrpc_Channel_type,
-      &pygrpc_Server_type
-  };
+  PyTypeObject *types[] = {&pygrpc_ClientCredentials_type,
+                           &pygrpc_ServerCredentials_type,
+                           &pygrpc_Poller_type,
+                           &pygrpc_Call_type,
+                           &pygrpc_Channel_type,
+                           &pygrpc_Server_type};
   for (i = 0; i < sizeof(types)/sizeof(PyTypeObject *); ++i) {
     if (PyType_Ready(types[i]) < 0) {
       return -1;

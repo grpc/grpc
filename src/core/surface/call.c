@@ -39,7 +39,7 @@
 #include "src/core/support/string.h"
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/channel.h"
-#include "src/core/surface/completion_queue.h"
+#include "src/core/surface/poller.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -128,7 +128,7 @@ typedef enum {
 } write_state;
 
 struct grpc_call {
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   grpc_channel *channel;
   grpc_mdctx *metadata_context;
   /* TODO(ctiller): share with cq if possible? */
@@ -255,7 +255,7 @@ static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
 static void lock(grpc_call *call);
 static void unlock(grpc_call *call);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
+grpc_call *grpc_call_create(grpc_channel *channel, grpc_poller *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
@@ -317,8 +317,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   return call;
 }
 
-void grpc_call_set_completion_queue(grpc_call *call,
-                                    grpc_completion_queue *cq) {
+void grpc_call_set_poller(grpc_call *call, grpc_poller *cq) {
   lock(call);
   call->cq = cq;
   if (cq) {
@@ -327,9 +326,7 @@ void grpc_call_set_completion_queue(grpc_call *call,
   unlock(call);
 }
 
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
-  return call->cq;
-}
+grpc_poller *grpc_call_get_poller(grpc_call *call) { return call->cq; }
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *c, const char *reason) {
@@ -472,7 +469,7 @@ static void unlock(grpc_call *call) {
 
   if (!call->bound_pollset && call->cq && (!call->is_client || start_op)) {
     call->bound_pollset = 1;
-    op.bind_pollset = grpc_cq_pollset(call->cq);
+    op.bind_pollset = grpc_poller_pollset(call->cq);
     start_op = 1;
   }
 
@@ -1220,11 +1217,11 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
 }
 
 static void finish_batch(grpc_call *call, int success, void *tag) {
-  grpc_cq_end_op(call->cq, tag, call, success);
+  grpc_poller_end_op(call->cq, tag, call, success);
 }
 
 static void finish_batch_with_close(grpc_call *call, int success, void *tag) {
-  grpc_cq_end_op(call->cq, tag, call, 1);
+  grpc_poller_end_op(call->cq, tag, call, 1);
 }
 
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
@@ -1239,8 +1236,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
   if (nops == 0) {
-    grpc_cq_begin_op(call->cq, call);
-    grpc_cq_end_op(call->cq, tag, call, 1);
+    grpc_poller_begin_op(call->cq, call);
+    grpc_poller_end_op(call->cq, tag, call, 1);
     return GRPC_CALL_OK;
   }
 
@@ -1333,7 +1330,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
     }
   }
 
-  grpc_cq_begin_op(call->cq, call);
+  grpc_poller_begin_op(call->cq, call);
 
   return grpc_call_start_ioreq_and_call_back(call, reqs, out, finish_func, tag);
 }

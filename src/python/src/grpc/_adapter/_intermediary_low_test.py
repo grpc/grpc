@@ -54,7 +54,7 @@ class LonelyClientTest(unittest.TestCase):
     metadata_tag = object()
     finish_tag = object()
 
-    completion_queue = _low.CompletionQueue()
+    completion_queue = _low.Poller()
     channel = _low.Channel('%s:%d' % (host, port), None)
     client_call = _low.Call(channel, completion_queue, method, host, deadline)
 
@@ -84,12 +84,12 @@ class EchoTest(unittest.TestCase):
   def setUp(self):
     self.host = 'localhost'
 
-    self.server_completion_queue = _low.CompletionQueue()
+    self.server_completion_queue = _low.Poller()
     self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 
-    self.client_completion_queue = _low.CompletionQueue()
+    self.client_completion_queue = _low.Poller()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
 
   def tearDown(self):
@@ -306,12 +306,12 @@ class CancellationTest(unittest.TestCase):
   def setUp(self):
     self.host = 'localhost'
 
-    self.server_completion_queue = _low.CompletionQueue()
+    self.server_completion_queue = _low.Poller()
     self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 
-    self.client_completion_queue = _low.CompletionQueue()
+    self.client_completion_queue = _low.Poller()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
 
   def tearDown(self):

@@ -92,12 +92,12 @@ PyTypeObject pygrpc_Server_type = {
 
 Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   Server *self;
-  CompletionQueue *cq;
+  Poller *cq;
   PyObject *py_args;
   grpc_channel_args c_args;
   char *keywords[] = {"cq", "args", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O:Channel", keywords,
-        &pygrpc_CompletionQueue_type, &cq, &py_args)) {
+                                   &pygrpc_Poller_type, &cq, &py_args)) {
     return NULL;
   }
   if (!pygrpc_produce_channel_args(py_args, &c_args)) {
@@ -119,15 +119,14 @@ void pygrpc_Server_dealloc(Server *self) {
 
 PyObject *pygrpc_Server_request_call(
     Server *self, PyObject *args, PyObject *kwargs) {
-  CompletionQueue *cq;
+  Poller *cq;
   PyObject *user_tag;
   pygrpc_tag *tag;
   Call *empty_call;
   grpc_call_error errcode;
   static char *keywords[] = {"cq", "tag", NULL};
-  if (!PyArg_ParseTupleAndKeywords(
-      args, kwargs, "O!O", keywords,
-      &pygrpc_CompletionQueue_type, &cq, &user_tag)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O", keywords,
+                                   &pygrpc_Poller_type, &cq, &user_tag)) {
     return NULL;
   }
   empty_call = pygrpc_Call_new_empty(cq);

@@ -385,8 +385,8 @@ end
 describe 'the http client/server' do
   before(:example) do
     server_host = '0.0.0.0:0'
-    @client_queue = GRPC::Core::CompletionQueue.new
-    @server_queue = GRPC::Core::CompletionQueue.new
+    @client_queue = GRPC::Core::Poller.new
+    @server_queue = GRPC::Core::Poller.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host)
     @server.start
@@ -409,8 +409,8 @@ describe 'the secure http client/server' do
   before(:example) do
     certs = load_test_certs
     server_host = '0.0.0.0:0'
-    @client_queue = GRPC::Core::CompletionQueue.new
-    @server_queue = GRPC::Core::CompletionQueue.new
+    @client_queue = GRPC::Core::Poller.new
+    @server_queue = GRPC::Core::Poller.new
     server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host, server_creds)

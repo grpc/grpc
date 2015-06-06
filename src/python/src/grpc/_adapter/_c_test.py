@@ -44,12 +44,12 @@ class CTypeSmokeTest(unittest.TestCase):
     credentials = _c.ServerCredentials.fake_transport_security()
     del credentials
 
-  def testCompletionQueueUpDown(self):
-    completion_queue = _c.CompletionQueue()
+  def testPollerUpDown(self):
+    completion_queue = _c.Poller()
     del completion_queue
 
   def testServerUpDown(self):
-    completion_queue = _c.CompletionQueue()
+    completion_queue = _c.Poller()
     serv = _c.Server(completion_queue, [])
     del serv
     del completion_queue

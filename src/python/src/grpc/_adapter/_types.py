@@ -221,7 +221,7 @@ class Event(collections.namedtuple(
   """
 
 
-class CompletionQueue:
+class Poller:
   __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
@@ -310,7 +310,7 @@ class Channel:
     """Create a call from this channel.
 
     Args:
-      completion_queue (CompletionQueue): ...
+      completion_queue (Poller): ...
       method (str): ...
       host (str): ...
       deadline (float): absolute deadline in seconds from the Python epoch, or
@@ -330,7 +330,7 @@ class Server:
     """Initialize a server.
 
     Args:
-      completion_queue (CompletionQueue): ...
+      completion_queue (Poller): ...
       args (sequence of 2-sequence of str, (str|integer)): ...
     """
 
@@ -362,7 +362,7 @@ class Server:
     """Requests a call from the server on the server's completion queue.
 
     Args:
-      completion_queue (CompletionQueue): Completion queue for the call. May be
+      completion_queue (Poller): Completion queue for the call. May be
         the same as the server's completion queue.
       tag (object) ...
     """

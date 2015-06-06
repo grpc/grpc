@@ -117,13 +117,14 @@ void pygrpc_Channel_dealloc(Channel *self) {
 Call *pygrpc_Channel_create_call(
     Channel *self, PyObject *args, PyObject *kwargs) {
   Call *call;
-  CompletionQueue *cq;
+  Poller *cq;
   const char *method;
   const char *host;
   double deadline;
   char *keywords[] = {"cq", "method", "host", "deadline", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!ssd:create_call", keywords,
-        &pygrpc_CompletionQueue_type, &cq, &method, &host, &deadline)) {
+                                   &pygrpc_Poller_type, &cq, &method, &host,
+                                   &deadline)) {
     return NULL;
   }
   call = pygrpc_Call_new_empty(cq);

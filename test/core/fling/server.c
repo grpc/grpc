@@ -54,7 +54,7 @@
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
-static grpc_completion_queue *cq;
+static grpc_poller *cq;
 static grpc_server *server;
 static grpc_call *call;
 static grpc_call_details call_details;
@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create();
+  cq = grpc_poller_create();
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
     server = grpc_server_create(NULL);
     GPR_ASSERT(grpc_server_add_http2_port(server, addr));
   }
-  grpc_server_register_completion_queue(server, cq);
+  grpc_server_register_poller(server, cq);
   grpc_server_start(server);
 
   gpr_free(addr_buf);
@@ -234,11 +234,13 @@ int main(int argc, char **argv) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       grpc_server_shutdown_and_notify(server, cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
-      grpc_completion_queue_shutdown(cq);
+      GPR_ASSERT(
+          grpc_poller_pluck(cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+              .type == GRPC_OP_COMPLETE);
+      grpc_poller_shutdown(cq);
       shutdown_started = 1;
     }
-    ev = grpc_completion_queue_next(
+    ev = grpc_poller_next(
         cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
     s = ev.tag;
     switch (ev.type) {
@@ -311,7 +313,7 @@ int main(int argc, char **argv) {
   grpc_call_details_destroy(&call_details);
 
   grpc_server_destroy(server);
-  grpc_completion_queue_destroy(cq);
+  grpc_poller_destroy(cq);
   grpc_shutdown();
   return 0;
 }

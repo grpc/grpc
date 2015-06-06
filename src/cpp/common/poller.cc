@@ -30,7 +30,7 @@
  *
  */
 
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 
 #include <memory>
 
@@ -40,25 +40,25 @@
 
 namespace grpc {
 
-CompletionQueue::CompletionQueue() { cq_ = grpc_completion_queue_create(); }
+Poller::Poller() { cq_ = grpc_poller_create(); }
 
-CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {}
+Poller::Poller(grpc_poller* take) : cq_(take) {}
 
-CompletionQueue::~CompletionQueue() { grpc_completion_queue_destroy(cq_); }
+Poller::~Poller() { grpc_poller_destroy(cq_); }
 
-void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
+void Poller::Shutdown() { grpc_poller_shutdown(cq_); }
 
-CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
-    void** tag, bool* ok, gpr_timespec deadline) {
+Poller::NextStatus Poller::AsyncNextInternal(void** tag, bool* ok,
+                                             gpr_timespec deadline) {
   for (;;) {
-    auto ev = grpc_completion_queue_next(cq_, deadline);
+    auto ev = grpc_poller_next(cq_, deadline);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         return TIMEOUT;
       case GRPC_QUEUE_SHUTDOWN:
         return SHUTDOWN;
       case GRPC_OP_COMPLETE:
-        auto cq_tag = static_cast<CompletionQueueTag*>(ev.tag);
+        auto cq_tag = static_cast<PollerTag*>(ev.tag);
         *ok = ev.success != 0;
         *tag = cq_tag;
         if (cq_tag->FinalizeResult(tag, ok)) {
@@ -69,8 +69,8 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
   }
 }
 
-bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
-  auto ev = grpc_completion_queue_pluck(cq_, tag, gpr_inf_future);
+bool Poller::Pluck(PollerTag* tag) {
+  auto ev = grpc_poller_pluck(cq_, tag, gpr_inf_future);
   bool ok = ev.success != 0;
   void* ignored = tag;
   GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
@@ -79,8 +79,8 @@ bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
   return ev.success != 0;
 }
 
-void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
-  auto ev = grpc_completion_queue_pluck(cq_, tag, gpr_time_0);
+void Poller::TryPluck(PollerTag* tag) {
+  auto ev = grpc_poller_pluck(cq_, tag, gpr_time_0);
   if (ev.type == GRPC_QUEUE_TIMEOUT) return;
   bool ok = ev.success != 0;
   void* ignored = tag;

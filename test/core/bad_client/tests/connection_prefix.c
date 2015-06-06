@@ -34,10 +34,9 @@
 #include "test/core/bad_client/bad_client.h"
 #include "src/core/surface/server.h"
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq) {
+static void verifier(grpc_server *server, grpc_poller *cq) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20)).type ==
+    GPR_ASSERT(grpc_poller_next(cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20)).type ==
                GRPC_QUEUE_TIMEOUT);
   }
 }

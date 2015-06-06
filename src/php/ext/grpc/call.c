@@ -52,7 +52,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 
-#include "completion_queue.h"
+#include "poller.h"
 #include "timeval.h"
 #include "channel.h"
 #include "byte_buffer.h"
@@ -239,9 +239,8 @@ PHP_METHOD(Call, __construct) {
   wrapped_grpc_timeval *deadline =
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
-  call->wrapped = grpc_channel_create_call(
-      channel->wrapped, completion_queue, method, channel->target,
-      deadline->wrapped);
+  call->wrapped = grpc_channel_create_call(channel->wrapped, poller, method,
+                                           channel->target, deadline->wrapped);
 }
 
 /**
@@ -406,8 +405,7 @@ PHP_METHOD(Call, startBatch) {
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
-                                      gpr_inf_future);
+  event = grpc_poller_pluck(poller, call->wrapped, gpr_inf_future);
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "The batch failed for some reason",

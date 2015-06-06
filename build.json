@@ -34,7 +34,6 @@
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
-        "include/grpc++/completion_queue.h",
         "include/grpc++/config.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/credentials.h",
@@ -52,6 +51,7 @@
         "include/grpc++/impl/thd.h",
         "include/grpc++/impl/thd_cxx11.h",
         "include/grpc++/impl/thd_no_cxx11.h",
+        "include/grpc++/poller.h",
         "include/grpc++/server.h",
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
@@ -79,7 +79,7 @@
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/internal_stub.cc",
         "src/cpp/common/call.cc",
-        "src/cpp/common/completion_queue.cc",
+        "src/cpp/common/poller.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
         "src/cpp/server/async_generic_service.cc",
@@ -158,9 +158,9 @@
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
         "src/core/surface/client.h",
-        "src/core/surface/completion_queue.h",
         "src/core/surface/event_string.h",
         "src/core/surface/init.h",
+        "src/core/surface/poller.h",
         "src/core/surface/server.h",
         "src/core/surface/surface_trace.h",
         "src/core/transport/chttp2/alpn.h",
@@ -251,11 +251,11 @@
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
-        "src/core/surface/completion_queue.c",
         "src/core/surface/event_string.c",
         "src/core/surface/init.c",
         "src/core/surface/lame_client.c",
         "src/core/surface/metadata_array.c",
+        "src/core/surface/poller.c",
         "src/core/surface/server.c",
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
@@ -1197,20 +1197,6 @@
       ]
     },
     {
-      "name": "grpc_completion_queue_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/surface/completion_queue_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "grpc_create_jwt",
       "build": "tool",
       "language": "c",
@@ -1258,6 +1244,20 @@
       "language": "c",
       "src": [
         "test/core/security/json_token_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_poller_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/surface/poller_test.c"
       ],
       "deps": [
         "grpc_test_util",

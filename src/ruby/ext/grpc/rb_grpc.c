@@ -42,7 +42,7 @@
 #include <grpc/support/time.h>
 #include "rb_call.h"
 #include "rb_channel.h"
-#include "rb_completion_queue.h"
+#include "rb_poller.h"
 #include "rb_server.h"
 #include "rb_credentials.h"
 #include "rb_server_credentials.h"
@@ -283,7 +283,7 @@ void Init_grpc() {
   sym_metadata = ID2SYM(rb_intern("metadata"));
 
   Init_grpc_channel();
-  Init_grpc_completion_queue();
+  Init_grpc_poller();
   Init_grpc_call();
   Init_grpc_credentials();
   Init_grpc_server();

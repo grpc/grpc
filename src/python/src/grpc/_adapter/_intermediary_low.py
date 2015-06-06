@@ -176,11 +176,11 @@ class Channel(object):
     self._internal = _low.Channel(hostport, args, creds)
 
 
-class CompletionQueue(object):
-  """Adapter from old _low.CompletionQueue interface to new _low.CompletionQueue."""
+class Poller(object):
+  """Adapter from old _low.Poller interface to new _low.Poller."""
 
   def __init__(self):
-    self._internal = _low.CompletionQueue()
+    self._internal = _low.Poller()
 
   def get(self, deadline=None):
     if deadline is None:

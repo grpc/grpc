@@ -44,7 +44,7 @@
 #include "src/cpp/proto/proto_utils.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 #include <grpc++/config.h>
 #include <grpc++/credentials.h>
 #include <grpc++/impl/call.h>
@@ -59,7 +59,7 @@ Channel::Channel(const grpc::string& target, grpc_channel* channel)
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
-                         CompletionQueue* cq) {
+                         Poller* cq) {
   auto c_call =
       method.channel_tag()
           ? grpc_channel_create_registered_call(c_channel_, cq->cq(),

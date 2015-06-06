@@ -32,7 +32,7 @@
  */
 
 #include <grpc/grpc.h>
-#include "src/core/surface/completion_queue.h"
+#include "src/core/surface/poller.h"
 #include "src/core/surface/server.h"
 
 grpc_server *grpc_server_create(const grpc_channel_args *args) {

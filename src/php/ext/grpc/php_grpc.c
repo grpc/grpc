@@ -37,7 +37,7 @@
 #include "timeval.h"
 #include "credentials.h"
 #include "server_credentials.h"
-#include "completion_queue.h"
+#include "poller.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -189,7 +189,7 @@ PHP_MINIT_FUNCTION(grpc) {
   grpc_init_timeval(TSRMLS_C);
   grpc_init_credentials(TSRMLS_C);
   grpc_init_server_credentials(TSRMLS_C);
-  grpc_php_init_completion_queue(TSRMLS_C);
+  grpc_php_init_poller(TSRMLS_C);
   return SUCCESS;
 }
 /* }}} */
@@ -201,7 +201,7 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
   UNREGISTER_INI_ENTRIES();
   */
   grpc_shutdown_timeval(TSRMLS_C);
-  grpc_php_shutdown_completion_queue(TSRMLS_C);
+  grpc_php_shutdown_poller(TSRMLS_C);
   grpc_shutdown();
   return SUCCESS;
 }

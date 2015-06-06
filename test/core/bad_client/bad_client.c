@@ -36,7 +36,7 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/surface/completion_queue.h"
+#include "src/core/surface/poller.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 
@@ -45,7 +45,7 @@
 
 typedef struct {
   grpc_server *server;
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   grpc_bad_client_server_side_validator validator;
   gpr_event done_thd;
   gpr_event done_write;
@@ -92,18 +92,18 @@ void grpc_run_bad_client_test(const char *name, const char *client_payload,
 
   /* Create server, completion events */
   a.server = grpc_server_create_from_filters(NULL, 0, NULL);
-  a.cq = grpc_completion_queue_create();
+  a.cq = grpc_poller_create();
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
   a.validator = validator;
-  grpc_server_register_completion_queue(a.server, a.cq);
+  grpc_server_register_poller(a.server, a.cq);
   grpc_server_start(a.server);
   grpc_create_chttp2_transport(server_setup_transport, &a, NULL, sfd.server,
                                NULL, 0, grpc_mdctx_create(), 0);
 
   /* Bind everything into the same pollset */
-  grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(a.cq));
-  grpc_endpoint_add_to_pollset(sfd.server, grpc_cq_pollset(a.cq));
+  grpc_endpoint_add_to_pollset(sfd.client, grpc_poller_pollset(a.cq));
+  grpc_endpoint_add_to_pollset(sfd.server, grpc_poller_pollset(a.cq));
 
   /* Check a ground truth */
   GPR_ASSERT(grpc_server_has_open_connections(a.server));
@@ -131,11 +131,10 @@ void grpc_run_bad_client_test(const char *name, const char *client_payload,
   /* Shutdown */
   grpc_endpoint_destroy(sfd.client);
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
-  GPR_ASSERT(grpc_completion_queue_pluck(a.cq, NULL,
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))
+  GPR_ASSERT(grpc_poller_pluck(a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
-  grpc_completion_queue_destroy(a.cq);
+  grpc_poller_destroy(a.cq);
 
   grpc_shutdown();
 }

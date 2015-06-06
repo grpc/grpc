@@ -51,11 +51,10 @@ ClientContext::~ClientContext() {
   }
   if (cq_) {
     // Drain cq_.
-    grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
+    grpc_poller_shutdown(cq_);
+    while (grpc_poller_next(cq_, gpr_inf_future).type != GRPC_QUEUE_SHUTDOWN)
       ;
-    grpc_completion_queue_destroy(cq_);
+    grpc_poller_destroy(cq_);
   }
 }
 

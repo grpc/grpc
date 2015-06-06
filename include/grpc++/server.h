@@ -37,7 +37,7 @@
 #include <list>
 #include <memory>
 
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 #include <grpc++/config.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
@@ -101,21 +101,18 @@ class Server GRPC_FINAL : public GrpcLibrary,
   // DispatchImpl
   void RequestAsyncCall(void* registered_method, ServerContext* context,
                         grpc::protobuf::Message* request,
-                        ServerAsyncStreamingInterface* stream,
-                        CompletionQueue* call_cq,
-                        ServerCompletionQueue* notification_cq,
-                        void* tag) GRPC_OVERRIDE;
+                        ServerAsyncStreamingInterface* stream, Poller* call_cq,
+                        ServerPoller* notification_cq, void* tag) GRPC_OVERRIDE;
 
   void RequestAsyncGenericCall(GenericServerContext* context,
                                ServerAsyncStreamingInterface* stream,
-                               CompletionQueue* cq,
-                               ServerCompletionQueue* notification_cq,
+                               Poller* cq, ServerPoller* notification_cq,
                                void* tag);
 
   const int max_message_size_;
 
   // Completion queue.
-  CompletionQueue cq_;
+  Poller cq_;
 
   // Sever status
   grpc::mutex mu_;

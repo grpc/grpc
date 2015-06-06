@@ -90,19 +90,12 @@ extern PyTypeObject pygrpc_ServerCredentials_type;
 /* Completion queue */
 /*==================*/
 
-typedef struct CompletionQueue {
-  PyObject_HEAD
-  grpc_completion_queue *c_cq;
-} CompletionQueue;
-CompletionQueue *pygrpc_CompletionQueue_new(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs);
-void pygrpc_CompletionQueue_dealloc(CompletionQueue *self);
-PyObject *pygrpc_CompletionQueue_next(
-    CompletionQueue *self, PyObject *args, PyObject *kwargs);
-PyObject *pygrpc_CompletionQueue_shutdown(
-    CompletionQueue *self, PyObject *ignored);
-extern PyTypeObject pygrpc_CompletionQueue_type;
-
+typedef struct Poller { PyObject_HEAD grpc_poller *c_cq; } Poller;
+Poller *pygrpc_Poller_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
+void pygrpc_Poller_dealloc(Poller *self);
+PyObject *pygrpc_Poller_next(Poller *self, PyObject *args, PyObject *kwargs);
+PyObject *pygrpc_Poller_shutdown(Poller *self, PyObject *ignored);
+extern PyTypeObject pygrpc_Poller_type;
 
 /*======*/
 /* Call */
@@ -111,9 +104,9 @@ extern PyTypeObject pygrpc_CompletionQueue_type;
 typedef struct Call {
   PyObject_HEAD
   grpc_call *c_call;
-  CompletionQueue *cq;
+  Poller *cq;
 } Call;
-Call *pygrpc_Call_new_empty(CompletionQueue *cq);
+Call *pygrpc_Call_new_empty(Poller *cq);
 void pygrpc_Call_dealloc(Call *self);
 PyObject *pygrpc_Call_start_batch(Call *self, PyObject *args, PyObject *kwargs);
 PyObject *pygrpc_Call_cancel(Call *self, PyObject *args, PyObject *kwargs);
@@ -143,7 +136,7 @@ extern PyTypeObject pygrpc_Channel_type;
 typedef struct Server {
   PyObject_HEAD
   grpc_server *c_serv;
-  CompletionQueue *cq;
+  Poller *cq;
 } Server;
 Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 void pygrpc_Server_dealloc(Server *self);

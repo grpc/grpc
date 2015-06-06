@@ -36,7 +36,7 @@
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 #include <grpc++/server_context.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/service_type.h>
@@ -138,7 +138,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
 
  private:
   ClientContext* context_;
-  CompletionQueue cq_;
+  Poller cq_;
   Call call_;
 };
 
@@ -192,7 +192,7 @@ class ClientWriter GRPC_FINAL : public ClientWriterInterface<W> {
  private:
   ClientContext* context_;
   grpc::protobuf::Message* const response_;
-  CompletionQueue cq_;
+  Poller cq_;
   Call call_;
 };
 
@@ -267,7 +267,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
 
  private:
   ClientContext* context_;
-  CompletionQueue cq_;
+  Poller cq_;
   Call call_;
 };
 
@@ -407,7 +407,7 @@ template <class R>
 class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
  public:
   // Create a stream and write the first request out.
-  ClientAsyncReader(ChannelInterface* channel, CompletionQueue* cq,
+  ClientAsyncReader(ChannelInterface* channel, Poller* cq,
                     const RpcMethod& method, ClientContext* context,
                     const grpc::protobuf::Message& request, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
@@ -463,7 +463,7 @@ class ClientAsyncWriterInterface : public ClientAsyncStreamingInterface,
 template <class W>
 class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
  public:
-  ClientAsyncWriter(ChannelInterface* channel, CompletionQueue* cq,
+  ClientAsyncWriter(ChannelInterface* channel, Poller* cq,
                     const RpcMethod& method, ClientContext* context,
                     grpc::protobuf::Message* response, void* tag)
       : context_(context),
@@ -528,7 +528,7 @@ template <class W, class R>
 class ClientAsyncReaderWriter GRPC_FINAL
     : public ClientAsyncReaderWriterInterface<W, R> {
  public:
-  ClientAsyncReaderWriter(ChannelInterface* channel, CompletionQueue* cq,
+  ClientAsyncReaderWriter(ChannelInterface* channel, Poller* cq,
                           const RpcMethod& method, ClientContext* context,
                           void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {

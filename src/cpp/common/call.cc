@@ -339,10 +339,10 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   return true;
 }
 
-Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
+Call::Call(grpc_call* call, CallHook* call_hook, Poller* cq)
     : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
 
-Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+Call::Call(grpc_call* call, CallHook* call_hook, Poller* cq,
            int max_message_size)
     : call_hook_(call_hook),
       cq_(cq),

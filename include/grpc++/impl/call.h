@@ -35,7 +35,7 @@
 #define GRPCXX_IMPL_CALL_H
 
 #include <grpc/grpc.h>
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 #include <grpc++/config.h>
 #include <grpc++/status.h>
 
@@ -50,7 +50,7 @@ namespace grpc {
 class ByteBuffer;
 class Call;
 
-class CallOpBuffer : public CompletionQueueTag {
+class CallOpBuffer : public PollerTag {
  public:
   CallOpBuffer();
   ~CallOpBuffer();
@@ -142,20 +142,19 @@ class CallHook {
 class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
-  Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq);
-  Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq,
-       int max_message_size);
+  Call(grpc_call* call, CallHook* call_hook_, Poller* cq);
+  Call(grpc_call* call, CallHook* call_hook_, Poller* cq, int max_message_size);
 
   void PerformOps(CallOpBuffer* buffer);
 
   grpc_call* call() { return call_; }
-  CompletionQueue* cq() { return cq_; }
+  Poller* cq() { return cq_; }
 
   int max_message_size() { return max_message_size_; }
 
  private:
   CallHook* call_hook_;
-  CompletionQueue* cq_;
+  Poller* cq_;
   grpc_call* call_;
   int max_message_size_;
 };

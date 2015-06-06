@@ -39,12 +39,12 @@
 #include <grpc/grpc.h>
 
 /* The global completion queue for all operations */
-extern grpc_completion_queue *completion_queue;
+extern grpc_poller *poller;
 
 /* Initializes the completion queue */
-void grpc_php_init_completion_queue(TSRMLS_D);
+void grpc_php_init_poller(TSRMLS_D);
 
 /* Shut down the completion queue */
-void grpc_php_shutdown_completion_queue(TSRMLS_D);
+void grpc_php_shutdown_poller(TSRMLS_D);
 
 #endif /* GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */

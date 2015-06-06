@@ -44,7 +44,7 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 #define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
 
 struct grpc_end2end_test_fixture {
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   grpc_server *server;
   grpc_channel *client;
   void *fixture_data;
