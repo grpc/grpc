@@ -236,9 +236,9 @@ class AsyncClient : public Client {
     }
     if ((closed_loop_ || !rpc_deadlines_[thread_idx].empty()) &&
         grpc_time_source::now() > deadline) {
-      // we have missed some 1-second deadline, which is too much
-      gpr_log(GPR_INFO, "Missed an RPC deadline, giving up");
-      return false;
+      // we have missed some 1-second deadline, which is worth noting
+      gpr_log(GPR_INFO, "Missed an RPC deadline");
+      // Don't give up, as there might be some truly heavy tails
     }
     if (got_event) {
       ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
