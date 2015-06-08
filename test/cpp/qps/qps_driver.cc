@@ -112,7 +112,7 @@ static void QpsDriver() {
       FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
   GetReporter()->ReportQPS(*result);
-  GetReporter()->ReportQPSPerCore(*result, server_config);
+  GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);
   GetReporter()->ReportTimes(*result);
 }
