@@ -33,17 +33,20 @@
 
 #include "user_data_client.h"
 
-void UserDataClient::setAccessToken(std::string access_token) {
-  access_token_ = access_token;
+namespace grpc {
+namespace testing {
+
+void UserDataClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) {
+  clientConfig_ = clientConfig;
+  serverConfig_ = serverConfig;
 }
 
 void UserDataClient::setQPS(double QPS) {
   QPS_ = QPS;
-  qpsSet = true;
 }
 
-void UserDataClient::setQPSPerCore(double qpsPerCore) {
-  //TBD
+void UserDataClient::setQPSPerCore(double QPSPerCore) {
+  QPSPerCore_ = QPSPerCore;
 }
 
 void UserDataClient::setLatencies(double percentileLatency50, double percentileLatency90,
@@ -53,29 +56,37 @@ void UserDataClient::setLatencies(double percentileLatency50, double percentileL
   percentileLatency95_ = percentileLatency95;
   percentileLatency99_ = percentileLatency99;
   percentileLatency99Point9_ = percentileLatency99Point9;
-
-  latenciesSet = true;
 }
 
 void UserDataClient::setTimes(double serverSystemTime, double serverUserTime, 
     double clientSystemTime, double clientUserTime) {
-  //TBD
+  serverSystemTime_ = serverSystemTime;
+  serverUserTime_ = serverUserTime;
+  clientSystemTime_ = clientSystemTime;
+  clientUserTime_ = clientUserTime;
 }
 
-int UserDataClient::sendDataIfReady() {
-  if(!(qpsSet && latenciesSet))
-    return 0;
+int UserDataClient::sendData(std::string access_token, std::string test_name) {
 
   SingleUserRecordRequest singleUserRecordRequest;
-  singleUserRecordRequest.set_access_token(access_token_);
+  singleUserRecordRequest.set_access_token(access_token);
+  singleUserRecordRequest.set_test_name(test_name);
+  *(singleUserRecordRequest.mutable_client_config()) = clientConfig_;
+  *(singleUserRecordRequest.mutable_server_config()) = serverConfig_;
   
   Metrics* metrics = singleUserRecordRequest.mutable_metrics();
-  metrics->set_qps(QPS_);
-  metrics->set_perc_lat_50(percentileLatency50_);
-  metrics->set_perc_lat_90(percentileLatency90_);
-  metrics->set_perc_lat_95(percentileLatency95_);
-  metrics->set_perc_lat_99(percentileLatency99_);
-  metrics->set_perc_lat_99_point_9(percentileLatency99Point9_);
+
+  if(QPS_ != DBL_MIN) metrics->set_qps(QPS_);
+  if(QPSPerCore_ != DBL_MIN) metrics->set_qps_per_core(QPSPerCore_);
+  if(percentileLatency50_ != DBL_MIN) metrics->set_perc_lat_50(percentileLatency50_);
+  if(percentileLatency90_ != DBL_MIN) metrics->set_perc_lat_90(percentileLatency90_);
+  if(percentileLatency95_ != DBL_MIN) metrics->set_perc_lat_95(percentileLatency95_);
+  if(percentileLatency99_ != DBL_MIN) metrics->set_perc_lat_99(percentileLatency99_);
+  if(percentileLatency99Point9_ != DBL_MIN) metrics->set_perc_lat_99_point_9(percentileLatency99Point9_);
+  if(serverSystemTime_ != DBL_MIN) metrics->set_server_system_time(serverSystemTime_);
+  if(serverUserTime_ != DBL_MIN) metrics->set_server_user_time(serverUserTime_);
+  if(clientSystemTime_ != DBL_MIN) metrics->set_client_system_time(clientSystemTime_);
+  if(clientUserTime_ != DBL_MIN) metrics->set_client_user_time(clientUserTime_);
 
   SingleUserRecordReply singleUserRecordReply;
   ClientContext context;
@@ -90,11 +101,14 @@ int UserDataClient::sendDataIfReady() {
 
 // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
 const std::string currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
+  time_t     now = time(0);
+  struct tm  tstruct;
+  char       buf[80];
+  tstruct = *localtime(&now);
 
-    strftime(buf, sizeof(buf), "%Y/%m/%d, %X", &tstruct);
-    return buf;
+  strftime(buf, sizeof(buf), "%Y/%m/%d, %X", &tstruct);
+  return buf;
+}
+
+}
 }

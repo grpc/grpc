@@ -106,15 +106,18 @@ class GprLogReporter : public Reporter {
 /** Reporter for client leaderboard. */
 class UserDatabaseReporter : public Reporter {
  public:
-  UserDatabaseReporter(const string& name, const string& access_token) : Reporter(name), access_token_(access_token) {}
+  UserDatabaseReporter(const string& name, const string& access_token, 
+    const string& test_name) : Reporter(name), access_token_(access_token), test_name_(test_name) {}
+  ~UserDatabaseReporter() { Flush(); };
 
  private:
   std::string access_token_;
+  std::string test_name_;
   void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result,
-                        const ServerConfig& config) const GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result) const GRPC_OVERRIDE;
   void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
   void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
+  void Flush() const;
 };
 
 }  // namespace testing

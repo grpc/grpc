@@ -34,6 +34,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <cfloat>
 
 #include <grpc/grpc.h>
 #include <grpc++/channel_arguments.h>
@@ -44,27 +45,22 @@
 #include <grpc++/status.h>
 #include "test/cpp/qps/user_data.grpc.pb.h"
 
-using grpc::ChannelArguments;
-using grpc::ChannelInterface;
-using grpc::ClientContext;
-using grpc::Status;
-using UserData::UserDataTransfer;
-using UserData::Metrics;
-using UserData::SingleUserRecordRequest;
-using UserData::SingleUserRecordReply;
+
+namespace grpc{
+namespace testing {
 
 class UserDataClient {
- public:
+public:
   UserDataClient(std::shared_ptr<ChannelInterface> channel)
     : stub_(UserDataTransfer::NewStub(channel)) {}
   
   ~UserDataClient() {}
 
-  void setAccessToken(std::string access_token);
+  void setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig);
   
   void setQPS(double QPS);
 
-  void setQPSPerCore(double qpsPerCore);
+  void setQPSPerCore(double QPSPerCore);
 
   void setLatencies(double percentileLatency50, double percentileLatency90,
      double percentileLatency95, double percentileLatency99, double percentileLatency99Point9);
@@ -72,17 +68,26 @@ class UserDataClient {
   void setTimes(double serverSystemTime, double serverUserTime, 
     double clientSystemTime, double clientUserTime);
 
-  int sendDataIfReady();
+  int sendData(std::string access_token, std::string test_name);
 
- private:
+private:
   std::unique_ptr<UserDataTransfer::Stub> stub_;
-  std::string access_token_;
-  double QPS_;
-  double percentileLatency50_;
-  double percentileLatency90_;
-  double percentileLatency95_;
-  double percentileLatency99_;
-  double percentileLatency99Point9_;
-  bool qpsSet = false;
-  bool latenciesSet = false;
+  ClientConfig clientConfig_;
+  ServerConfig serverConfig_;
+  double QPS_ = DBL_MIN;
+  double QPSPerCore_ = DBL_MIN;
+  double percentileLatency50_ = DBL_MIN;
+  double percentileLatency90_ = DBL_MIN;
+  double percentileLatency95_ = DBL_MIN;
+  double percentileLatency99_ = DBL_MIN;
+  double percentileLatency99Point9_ = DBL_MIN;
+  double serverSystemTime_ = DBL_MIN;
+  double serverUserTime_ = DBL_MIN;
+  double clientSystemTime_ = DBL_MIN;
+  double clientUserTime_ = DBL_MIN;
 };
+
+} //namespace testing
+} //namespace grpc
+
+
