@@ -104,8 +104,6 @@ namespace Grpc.IntegrationTesting
         {
             GrpcEnvironment.Initialize();
 
-            string addr = string.Format("{0}:{1}", options.serverHost, options.serverPort);
-
             Credentials credentials = null;
             if (options.useTls)
             {
@@ -119,7 +117,7 @@ namespace Grpc.IntegrationTesting
                     .AddString(ChannelArgs.SslTargetNameOverrideKey, options.serverHostOverride).Build();
             }
 
-            using (Channel channel = new Channel(addr, credentials, channelArgs))
+            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelArgs))
             {
                 var stubConfig = StubConfiguration.Default;
                 if (options.testCase == "service_account_creds" || options.testCase == "compute_engine_creds")

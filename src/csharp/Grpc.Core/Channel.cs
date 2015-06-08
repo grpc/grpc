@@ -45,9 +45,13 @@ namespace Grpc.Core
         readonly string target;
 
         /// <summary>
-        /// Creates a channel.
+        /// Creates a channel that connects to a specific host.
+        /// Port will default to 80 for an unsecure channel and to 443 a secure channel.
         /// </summary>
-        public Channel(string target, Credentials credentials = null, ChannelArgs channelArgs = null)
+        /// <param name="host">The DNS name of IP address of the host.</param>
+        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="channelArgs">Optional channel arguments.</param>
+        public Channel(string host, Credentials credentials = null, ChannelArgs channelArgs = null)
         {
             using (ChannelArgsSafeHandle nativeChannelArgs = CreateNativeChannelArgs(channelArgs))
             {
@@ -55,29 +59,41 @@ namespace Grpc.Core
                 {
                     using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
                     {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
+                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
                     }
                 }
                 else
                 {
-                    this.handle = ChannelSafeHandle.Create(target, nativeChannelArgs);
+                    this.handle = ChannelSafeHandle.Create(host, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(target, channelArgs);
+            this.target = GetOverridenTarget(host, channelArgs);
         }
 
-        public string Target
+        /// <summary>
+        /// Creates a channel that connects to a specific host and port.
+        /// </summary>
+        /// <param name="host">DNS name or IP address</param>
+        /// <param name="port">the port</param>
+        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="channelArgs">Optional channel arguments.</param>
+        public Channel(string host, int port, Credentials credentials = null, ChannelArgs channelArgs = null) :
+            this(string.Format("{0}:{1}", host, port), credentials, channelArgs)
         {
-            get
-            {
-                return this.target;
-            }
         }
 
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        internal string Target
+        {
+            get
+            {
+                return target;
+            }
         }
 
         internal ChannelSafeHandle Handle
