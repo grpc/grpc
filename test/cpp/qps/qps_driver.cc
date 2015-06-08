@@ -132,6 +132,9 @@ static void QpsDriver() {
       pareto->set_alpha(FLAGS_load_param_2);
       break;
     }
+    default:
+      GPR_ASSERT(false);
+      break;
   }
 
   ServerConfig server_config;
