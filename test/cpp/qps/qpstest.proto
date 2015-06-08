@@ -36,7 +36,7 @@ package grpc.testing;
 
 enum PayloadType {
   // Compressable text format.
-  COMPRESSABLE= 1;
+  COMPRESSABLE = 1;
 
   // Uncompressable binary format.
   UNCOMPRESSABLE = 2;
@@ -92,21 +92,59 @@ enum RpcType {
   STREAMING = 2;
 }
 
+enum LoadType {
+  CLOSED_LOOP = 1;
+  POISSON = 2;
+  UNIFORM = 3;
+  DETERMINISTIC = 4;
+  PARETO = 5;
+}
+
+message PoissonParams {
+  optional double offered_load = 1;
+}
+
+message UniformParams {
+  optional double interarrival_lo = 1;
+  optional double interarrival_hi = 2;
+}
+
+message DeterministicParams {
+  optional double offered_load = 1;
+}
+
+message ParetoParams {
+  optional double interarrival_base = 1;
+  optional double alpha = 2;
+}
+
+message LoadParams {
+  oneof load {
+    PoissonParams poisson = 1;
+    UniformParams uniform = 2;
+    DeterministicParams determ = 3;
+    ParetoParams pareto = 4;
+  };
+}
+
 message ClientConfig {
   repeated string server_targets = 1;
   required ClientType client_type = 2;
-  optional bool enable_ssl = 3 [default=false];
+  optional bool enable_ssl = 3 [default = false];
   required int32 outstanding_rpcs_per_channel = 4;
   required int32 client_channels = 5;
   required int32 payload_size = 6;
   // only for async client:
   optional int32 async_client_threads = 7;
-  optional RpcType rpc_type = 8 [default=UNARY];
+  optional RpcType rpc_type = 8 [default = UNARY];
   optional string host = 9;
+  optional LoadType load_type = 10 [default = CLOSED_LOOP];
+  optional LoadParams load_params = 11;
 }
 
 // Request current stats
-message Mark {}
+message Mark {
+}
 
 message ClientArgs {
   oneof argtype {
@@ -128,8 +166,8 @@ message ClientStatus {
 
 message ServerConfig {
   required ServerType server_type = 1;
-  optional int32 threads = 2 [default=1];
-  optional bool enable_ssl = 3 [default=false];
+  optional int32 threads = 2 [default = 1];
+  optional bool enable_ssl = 3 [default = false];
   optional string host = 4;
 }
 
@@ -148,11 +186,11 @@ message ServerStatus {
 message SimpleRequest {
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
-  optional PayloadType response_type = 1 [default=COMPRESSABLE];
+  optional PayloadType response_type = 1 [default = COMPRESSABLE];
 
   // Desired payload size in the response from the server.
   // If response_type is COMPRESSABLE, this denotes the size before compression.
-  optional int32 response_size = 2 [default=0];
+  optional int32 response_size = 2 [default = 0];
 
   // Optional input payload sent along with the request.
   optional Payload payload = 3;
