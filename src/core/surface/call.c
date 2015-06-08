@@ -42,6 +42,7 @@
 #include "src/core/surface/completion_queue.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <assert.h>
 
 #include <stdio.h>

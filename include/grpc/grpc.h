@@ -334,7 +334,8 @@ grpc_completion_queue *grpc_completion_queue_create(void);
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached. 
 
-    Returns NULL on timeout, otherwise the event that occurred.
+    Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
+    otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
@@ -344,7 +345,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
 /** Blocks until an event with tag 'tag' is available, the completion queue is
     being shutdown or deadline is reached. 
 
-    Returns NULL on timeout, or a pointer to the event that occurred.
+    Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
+    otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
@@ -496,6 +498,16 @@ void grpc_server_shutdown_and_notify(grpc_server *server, void *tag);
    Forcefully cancels all existing calls.
    Implies grpc_server_shutdown() if one was not previously performed. */
 void grpc_server_destroy(grpc_server *server);
+
+/** Enable or disable a tracer.
+
+    Tracers (usually controlled by the environment variable GRPC_TRACE)
+    allow printf-style debugging on GRPC internals, and are useful for
+    tracking down problems in the field. 
+
+    Use of this function is not strictly thread-safe, but the 
+    thread-safety issues raised by it should not be of concern. */
+int grpc_tracer_set_enabled(const char *name, int enabled);
 
 #ifdef __cplusplus
 }

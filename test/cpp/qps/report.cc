@@ -49,10 +49,9 @@ void CompositeReporter::ReportQPS(const ScenarioResult& result) const {
   }
 }
 
-void CompositeReporter::ReportQPSPerCore(const ScenarioResult& result,
-                                         const ServerConfig& config) const {
+void CompositeReporter::ReportQPSPerCore(const ScenarioResult& result) const {
   for (size_t i = 0; i < reporters_.size(); ++i) {
-    reporters_[i]->ReportQPSPerCore(result, config);
+    reporters_[i]->ReportQPSPerCore(result);
   }
 }
 
@@ -76,15 +75,14 @@ void GprLogReporter::ReportQPS(const ScenarioResult& result) const {
                       [](ResourceUsage u) { return u.wall_time; }));
 }
 
-void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result,
-                                      const ServerConfig& server_config) const {
+void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result)  const {
   auto qps =
       result.latencies.Count() /
       average(result.client_resources,
           [](ResourceUsage u) { return u.wall_time; });
 
   gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
-          qps / server_config.threads());
+          qps / result.server_config.threads());
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) const {

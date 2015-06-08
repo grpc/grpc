@@ -27,18 +27,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Base Dockerfile for the gRPC Java dev image
-FROM grpc/base
+FROM debian:latest
 
-# Install JDK 8
+# Install JDK 8 and Git
 #
 # TODO(temiola): simplify this if/when a simpler process is available.
 #
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
-RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
-RUN echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
-RUN apt-get update && apt-get -y install oracle-java8-installer && \
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
+  apt-get update && \
+  apt-get -y install \
+      git \
+      oracle-java8-installer \
+      && \
   apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
 
 # Install maven
@@ -49,15 +52,6 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 ENV M2_HOME /var/local/apache-maven-3.2.1
 ENV PATH $PATH:$JAVA_HOME/bin:$M2_HOME/bin
 ENV LD_LIBRARY_PATH /usr/local/lib
-
-# Get the protobuf source from GitHub and install it
-RUN wget -O - https://github.com/google/protobuf/archive/v3.0.0-alpha-2.tar.gz | \
-  tar xz && \
-  cd protobuf-3.0.0-alpha-2 && \
-  ./autogen.sh && \
-  ./configure --prefix=/usr && \
-  make -j12 && make check && make install && \
-  rm -r "$(pwd)"
 
 # Trigger download of as many Maven and Gradle artifacts as possible. We don't build grpc-java
 # because we don't want to install netty

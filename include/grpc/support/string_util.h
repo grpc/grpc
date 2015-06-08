@@ -31,27 +31,31 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
-#define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
+#ifndef GRPC_SUPPORT_STRING_UTIL_H
+#define GRPC_SUPPORT_STRING_UTIL_H
 
-#include <grpc/grpc.h>
-#include "test/core/util/test_config.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef void (*grpc_bad_client_server_side_validator)(
-    grpc_server *server, grpc_completion_queue *cq);
+/* String utility functions */
 
-#define GRPC_BAD_CLIENT_DISCONNECT 1
+/* Returns a copy of src that can be passed to gpr_free().
+   If allocation fails or if src is NULL, returns NULL. */
+char *gpr_strdup(const char *src);
 
-/* Test runner.
+/* printf to a newly-allocated string.  The set of supported formats may vary
+   between platforms.
 
-   Create a server, and send client_payload to it as bytes from a client.
-   Execute validator in a separate thread to assert that the bytes are
-   handled as expected. */
-void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
-                              const char *client_payload,
-                              size_t client_payload_length, gpr_uint32 flags);
+   On success, returns the number of bytes printed (excluding the final '\0'),
+   and *strp points to a string which must later be destroyed with gpr_free().
 
-#define GRPC_RUN_BAD_CLIENT_TEST(validator, payload, flags) \
-  grpc_run_bad_client_test(validator, payload, sizeof(payload) - 1, flags)
+   On error, returns -1 and sets *strp to NULL. If the format string is bad,
+   the result is undefined. */
+int gpr_asprintf(char **strp, const char *format, ...);
 
-#endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* GRPC_SUPPORT_STRING_UTIL_H */
