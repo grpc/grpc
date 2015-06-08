@@ -34,7 +34,7 @@ RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git /var/l
 RUN cd /var/local/git/grpc-java/lib/netty && \
   mvn -pl codec-http2 -am -DskipTests install clean
 RUN cd /var/local/git/grpc-java && \
-  ./gradlew build installDist
+  ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
 
 # Add a service_account directory containing the auth creds file
 ADD service_account service_account

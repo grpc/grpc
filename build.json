@@ -1353,7 +1353,6 @@
     {
       "name": "httpcli_test",
       "build": "test",
-      "run": false,
       "language": "c",
       "src": [
         "test/core/httpcli/httpcli_test.c"

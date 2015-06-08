@@ -36,44 +36,38 @@
 
 static void verifier(grpc_server *server, grpc_completion_queue *cq) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20)).type ==
-               GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20))
+            .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
-  grpc_run_bad_client_test("conpfx_1", "X", 1, verifier);
-  grpc_run_bad_client_test("conpfx_2", "PX", 2, verifier);
-  grpc_run_bad_client_test("conpfx_3", "PRX", 3, verifier);
-  grpc_run_bad_client_test("conpfx_4", "PRIX", 4, verifier);
-  grpc_run_bad_client_test("conpfx_5", "PRI X", 5, verifier);
-  grpc_run_bad_client_test("conpfx_6", "PRI *X", 6, verifier);
-  grpc_run_bad_client_test("conpfx_7", "PRI * X", 7, verifier);
-  grpc_run_bad_client_test("conpfx_8", "PRI * HX", 8, verifier);
-  grpc_run_bad_client_test("conpfx_9", "PRI * HTX", 9, verifier);
-  grpc_run_bad_client_test("conpfx_10", "PRI * HTTX", 10, verifier);
-  grpc_run_bad_client_test("conpfx_11", "PRI * HTTPX", 11, verifier);
-  grpc_run_bad_client_test("conpfx_12", "PRI * HTTP/X", 12, verifier);
-  grpc_run_bad_client_test("conpfx_13", "PRI * HTTP/2X", 13, verifier);
-  grpc_run_bad_client_test("conpfx_14", "PRI * HTTP/2.X", 14, verifier);
-  grpc_run_bad_client_test("conpfx_15", "PRI * HTTP/2.0X", 15, verifier);
-  grpc_run_bad_client_test("conpfx_16", "PRI * HTTP/2.0\rX", 16, verifier);
-  grpc_run_bad_client_test("conpfx_17", "PRI * HTTP/2.0\r\nX", 17, verifier);
-  grpc_run_bad_client_test("conpfx_18", "PRI * HTTP/2.0\r\n\rX", 18, verifier);
-  grpc_run_bad_client_test("conpfx_19", "PRI * HTTP/2.0\r\n\r\nX", 19,
-                           verifier);
-  grpc_run_bad_client_test("conpfx_20", "PRI * HTTP/2.0\r\n\r\nSX", 20,
-                           verifier);
-  grpc_run_bad_client_test("conpfx_21", "PRI * HTTP/2.0\r\n\r\nSMX", 21,
-                           verifier);
-  grpc_run_bad_client_test("conpfx_22", "PRI * HTTP/2.0\r\n\r\nSM\rX", 22,
-                           verifier);
-  grpc_run_bad_client_test("conpfx_23", "PRI * HTTP/2.0\r\n\r\nSM\r\nX", 23,
-                           verifier);
-  grpc_run_bad_client_test("conpfx_24", "PRI * HTTP/2.0\r\n\r\nSM\r\n\rX", 24,
-                           verifier);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRIX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI *X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTPX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0X", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\rX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\nX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\rX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\r\nX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\r\nSX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\r\nSMX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\r\nSM\rX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\r\nSM\r\nX", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, "PRI * HTTP/2.0\r\n\r\nSM\r\n\rX", 0);
   return 0;
 }

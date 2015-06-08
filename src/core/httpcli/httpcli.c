@@ -62,6 +62,7 @@ typedef struct {
   void *user_data;
   grpc_httpcli_context *context;
   grpc_pollset *pollset;
+  grpc_iomgr_object iomgr_obj;
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
@@ -89,6 +90,7 @@ static void finish(internal_request *req, int success) {
   }
   gpr_slice_unref(req->request_text);
   gpr_free(req->host);
+  grpc_iomgr_unregister_object(&req->iomgr_obj);
   gpr_free(req);
 }
 
@@ -230,6 +232,7 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req;
+  char *name;
   if (g_get_override &&
       g_get_override(request, deadline, on_response, user_data)) {
     return;
@@ -244,6 +247,9 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
   req->use_ssl = request->use_ssl;
   req->context = context;
   req->pollset = pollset;
+  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
+  grpc_iomgr_register_object(&req->iomgr_obj, name);
+  gpr_free(name);
   if (req->use_ssl) {
     req->host = gpr_strdup(request->host);
   }
@@ -259,6 +265,7 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req;
+  char *name;
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_response, user_data)) {
     return;
@@ -274,10 +281,14 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
   req->use_ssl = request->use_ssl;
   req->context = context;
   req->pollset = pollset;
+  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
+  grpc_iomgr_register_object(&req->iomgr_obj, name);
+  gpr_free(name);
   if (req->use_ssl) {
     req->host = gpr_strdup(request->host);
   }
 
+  grpc_pollset_set_add_pollset(&req->context->pollset_set, req->pollset);
   grpc_resolve_address(request->host, req->use_ssl ? "https" : "http",
                        on_resolved, req);
 }
