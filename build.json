@@ -2095,10 +2095,29 @@
     },
     {
       "name": "qps_test",
-      "build": "benchmark",
+      "build": "test",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc++_benchmark_config",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "qps_test_openloop",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_test_openloop.cc"
       ],
       "deps": [
         "qps",
