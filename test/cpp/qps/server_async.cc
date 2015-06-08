@@ -101,10 +101,11 @@ class AsyncQpsServerTest : public Server {
           ServerRpcContext *ctx = detag(got_tag);
           // The tag is a pointer to an RPC context to invoke
           bool still_going = ctx->RunNextState(ok);
-          std::lock_guard<std::mutex> g(shutdown_mutex_);
+          std::unique_lock<std::mutex> g(shutdown_mutex_);
           if (!shutdown_) {
             // this RPC context is done, so refresh it
             if (!still_going) {
+              g.unlock();
               ctx->Reset();
             }
           } else {
