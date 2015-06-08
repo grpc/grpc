@@ -32,6 +32,7 @@
  */
 
 #include <cassert>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -57,6 +58,7 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/histogram.h"
+#include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 
 namespace grpc {
@@ -68,11 +70,19 @@ class SynchronousClient : public Client {
     num_threads_ =
         config.outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads_);
+    SetupLoadTest(config, num_threads_);
   }
 
   virtual ~SynchronousClient(){};
 
  protected:
+  void WaitToIssue(int thread_idx) {
+    grpc_time next_time;
+    if (NextIssueTime(thread_idx, &next_time)) {
+      std::this_thread::sleep_until(next_time);
+    }
+  }
+
   size_t num_threads_;
   std::vector<SimpleResponse> responses_;
 };
@@ -86,6 +96,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   ~SynchronousUnaryClient() { EndThreads(); }
 
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
+    WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = Timer::Now();
     grpc::ClientContext context;
@@ -119,6 +130,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   }
 
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
+    WaitToIssue(thread_idx);
     double start = Timer::Now();
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
