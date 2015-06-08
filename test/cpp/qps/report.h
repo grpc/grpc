@@ -114,8 +114,7 @@ class UserDatabaseReporter : public Reporter {
   std::string access_token_;
   std::string test_name_;
   void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result,
-                        const ServerConfig& config) const GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result) const GRPC_OVERRIDE;
   void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
   void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
   void Flush() const;
