@@ -41,4 +41,4 @@ export LDFLAGS=-L`pwd`/libs/$CONFIG
 
 cd src/node
 
-npm install
+npm install --unsafe-perm

@@ -179,10 +179,9 @@ class AsyncClient : public Client {
     int t = 0;
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
       for (int ch = 0; ch < channel_count_; ch++) {
-        auto& channel = channels_[ch];
         auto* cq = cli_cqs_[t].get();
         t = (t + 1) % cli_cqs_.size();
-        auto ctx = setup_ctx(ch, channel.get_stub(), request_);
+        auto ctx = setup_ctx(ch, channels_[ch].get_stub(), request_);
         if (closed_loop_) {
           ctx->Start(cq);
         } else {
@@ -237,9 +236,9 @@ class AsyncClient : public Client {
     }
     if ((closed_loop_ || !rpc_deadlines_[thread_idx].empty()) &&
         grpc_time_source::now() > deadline) {
-      // we have missed some 1-second deadline, which is too much
-      gpr_log(GPR_INFO, "Missed an RPC deadline, giving up");
-      return false;
+      // we have missed some 1-second deadline, which is worth noting
+      gpr_log(GPR_INFO, "Missed an RPC deadline");
+      // Don't give up, as there might be some truly heavy tails
     }
     if (got_event) {
       ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
