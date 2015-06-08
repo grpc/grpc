@@ -361,7 +361,8 @@ grpc_completion_queue *grpc_completion_queue_create(void);
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached. 
 
-    Returns NULL on timeout, otherwise the event that occurred.
+    Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
+    otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
@@ -371,7 +372,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
 /** Blocks until an event with tag 'tag' is available, the completion queue is
     being shutdown or deadline is reached. 
 
-    Returns NULL on timeout, or a pointer to the event that occurred.
+    Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
+    otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
