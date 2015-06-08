@@ -347,6 +347,7 @@ cc_library(
     "include/grpc/grpc_security.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
+    "include/grpc/compression.h",
     "include/grpc/grpc.h",
     "include/grpc/status.h",
     "include/grpc/census.h",
@@ -545,6 +546,7 @@ cc_library(
   hdrs = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
+    "include/grpc/compression.h",
     "include/grpc/grpc.h",
     "include/grpc/status.h",
     "include/grpc/census.h",

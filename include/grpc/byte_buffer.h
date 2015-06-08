@@ -34,45 +34,44 @@
 #ifndef GRPC_BYTE_BUFFER_H
 #define GRPC_BYTE_BUFFER_H
 
+#include <grpc/compression.h>
 #include <grpc/support/slice_buffer.h>
 
-typedef enum {
-  GRPC_BB_SLICE_BUFFER,
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-  /* Keep the GRPC_BB_COMPRESSED_* entries in the same order as the
-   * grpc_compression_algorithm enum entries. */
-  GRPC_BB_COMPRESSED_NONE, /* for overriding otherwise compressed channels */
-  GRPC_BB_COMPRESSED_DEFLATE,
-  GRPC_BB_COMPRESSED_GZIP
+typedef enum {
+  GRPC_BB_RAW
+  /* Future types may include GRPC_BB_PROTOBUF, etc. */
 } grpc_byte_buffer_type;
 
-/* byte buffers are containers for messages passed in from the public api's */
 struct grpc_byte_buffer {
   grpc_byte_buffer_type type;
   union {
-    gpr_slice_buffer slice_buffer;
+    struct {
+      grpc_compression_algorithm compression;
+      gpr_slice_buffer slice_buffer;
+    } raw;
   } data;
 };
 typedef struct grpc_byte_buffer grpc_byte_buffer;
 
-/** Returns the grpc_compression_algorithm enum value for a
- * grpc_byte_buffer_type GRPC_BB_COMPRESSED_* value. */
-#define GRPC_COMPRESS_ALGORITHM_FROM_BB_TYPE(bb_type) \
-  (bb_type - GRPC_BB_COMPRESSED_NONE)
+/** Returns a RAW byte buffer instance over the given slices (up to \a nslices).
+ *
+ * Increases the reference count for all \a slices processed. The user is
+ * responsible for invoking grpc_byte_buffer_destroy on the returned instance.*/
+grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+                                              size_t nslices);
 
-/** Returns a byte buffer instance over the given slices (up to \a nslices) of
- * \a type type.
+/** Returns a *compressed* RAW byte buffer instance over the given slices (up to
+ * \a nslices). The \a compression argument defines the compression algorithm
+ * used to generate the data in \a slices.
  *
- * Increases the reference count for all \a slices processed.
- *
- * The user is responsible for invoking grpc_byte_buffer_destroy on
- * the returned instance. */
-grpc_byte_buffer *grpc_byte_buffer_typed_create(gpr_slice *slices,
-                                                size_t nslices,
-                                                grpc_byte_buffer_type type);
-/** Convenience method for creating GRPC_BB_SLICE_BUFFER byte buffers. \sa
- * grpc_byte_buffer_typed_create */
-grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices);
+ * Increases the reference count for all \a slices processed. The user is
+ * responsible for invoking grpc_byte_buffer_destroy on the returned instance.*/
+grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
+    gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression);
 
 /** Copies input byte buffer \a bb.
  *
@@ -103,5 +102,9 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
  * gpr_slice_unref on the result. */
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* GRPC_BYTE_BUFFER_H */

@@ -37,6 +37,10 @@
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct grpc_byte_buffer_reader {
   grpc_byte_buffer *buffer_in;
   grpc_byte_buffer *buffer_out;
@@ -46,5 +50,9 @@ struct grpc_byte_buffer_reader {
     unsigned index;
   } current;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* GRPC_BYTE_BUFFER_READER_H */

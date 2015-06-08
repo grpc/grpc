@@ -57,7 +57,7 @@ static void test_read_one_slice(void) {
 
   LOG_TEST("test_read_one_slice");
   slice = gpr_slice_from_copied_string("test");
-  buffer = grpc_byte_buffer_create(&slice, 1);
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
   grpc_byte_buffer_reader_init(&reader, buffer);
   first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
@@ -79,7 +79,7 @@ static void test_read_one_slice_malloc(void) {
   LOG_TEST("test_read_one_slice_malloc");
   slice = gpr_slice_malloc(4);
   memcpy(GPR_SLICE_START_PTR(slice), "test", 4);
-  buffer = grpc_byte_buffer_create(&slice, 1);
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
   grpc_byte_buffer_reader_init(&reader, buffer);
   first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
@@ -100,7 +100,7 @@ static void test_read_none_compressed_slice(void) {
 
   LOG_TEST("test_read_none_compressed_slice");
   slice = gpr_slice_from_copied_string("test");
-  buffer = grpc_byte_buffer_typed_create(&slice, 1, GRPC_BB_COMPRESSED_NONE);
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
   grpc_byte_buffer_reader_init(&reader, buffer);
   first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
@@ -130,8 +130,8 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   gpr_slice_buffer_add(&sliceb_in, input_slice);  /* takes ownership */
   GPR_ASSERT(grpc_msg_compress(algorithm, &sliceb_in, &sliceb_out));
 
-  buffer = grpc_byte_buffer_typed_create(sliceb_out.slices, sliceb_out.count,
-                                         GRPC_BB_COMPRESSED_NONE + algorithm);
+  buffer = grpc_raw_compressed_byte_buffer_create(
+      sliceb_out.slices, sliceb_out.count, algorithm);
   grpc_byte_buffer_reader_init(&reader, buffer);
 
   while (grpc_byte_buffer_reader_next(&reader, &read_slice)) {
