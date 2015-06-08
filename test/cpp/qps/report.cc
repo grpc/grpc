@@ -130,19 +130,8 @@ void UserDatabaseReporter::ReportQPS(const ScenarioResult& result) const {
               average(result.client_resources,
                       [](ResourceUsage u) { return u.wall_time; });
 
-  userDataClient.setAccessToken(access_token_);
   userDataClient.setQPS(qps);
-  
-  int userDataState = userDataClient.sendDataIfReady();
-
-  switch(userDataState) {
-    case 1:
-      gpr_log(GPR_INFO, "Data sent to user database successfully");
-      break;
-    case -1:
-      gpr_log(GPR_INFO, "Data could not be sent to user database");
-      break;
-  }
+  userDataClient.setConfigs(result.client_config, result.server_config);
 }
 
 void UserDatabaseReporter::ReportQPSPerCore(const ScenarioResult& result,
@@ -153,40 +142,17 @@ void UserDatabaseReporter::ReportQPSPerCore(const ScenarioResult& result,
 
   double qpsPerCore = qps / server_config.threads();
 
-  userDataClient.setAccessToken(access_token_);
-  //TBD
   userDataClient.setQPSPerCore(qpsPerCore);
-
-  int userDataState = userDataClient.sendDataIfReady();
-
-  switch(userDataState) {
-    case 1:
-      gpr_log(GPR_INFO, "Data sent to user database successfully");
-      break;
-    case -1:
-      gpr_log(GPR_INFO, "Data could not be sent to user database");
-      break;
-  }
+  userDataClient.setConfigs(result.client_config, result.server_config);
 }
 
 void UserDatabaseReporter::ReportLatency(const ScenarioResult& result) const {
-  userDataClient.setAccessToken(access_token_);
   userDataClient.setLatencies(result.latencies.Percentile(50) / 1000,
-                                 result.latencies.Percentile(90) / 1000,
-                                 result.latencies.Percentile(95) / 1000,
-                                 result.latencies.Percentile(99) / 1000,
-                                 result.latencies.Percentile(99.9) / 1000);
-  
-  int userDataState = userDataClient.sendDataIfReady();
-
-  switch(userDataState) {
-    case 1:
-      gpr_log(GPR_INFO, "Data sent to user database successfully");
-      break;
-    case -1:
-      gpr_log(GPR_INFO, "Data could not be sent to user database");
-      break;
-  }
+                              result.latencies.Percentile(90) / 1000,
+                              result.latencies.Percentile(95) / 1000,
+                              result.latencies.Percentile(99) / 1000,
+                              result.latencies.Percentile(99.9) / 1000);
+  userDataClient.setConfigs(result.client_config, result.server_config);
 }
 
 void UserDatabaseReporter::ReportTimes(const ScenarioResult& result) const {
@@ -207,11 +173,13 @@ void UserDatabaseReporter::ReportTimes(const ScenarioResult& result) const {
                     sum(result.client_resources,
                   [](ResourceUsage u) { return u.wall_time; });
 
-  userDataClient.setAccessToken(access_token_);
   userDataClient.setTimes(serverSystemTime, serverUserTime, 
     clientSystemTime, clientUserTime);
+  userDataClient.setConfigs(result.client_config, result.server_config);
+}
 
-  int userDataState = userDataClient.sendDataIfReady();
+void UserDatabaseReporter::Flush() const {
+  int userDataState = userDataClient.sendData(access_token_, test_name_);
 
   switch(userDataState) {
     case 1:
