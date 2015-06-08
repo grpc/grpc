@@ -230,7 +230,9 @@ struct transport {
   /* basic state management - what are we doing at the moment? */
   gpr_uint8 reading;
   gpr_uint8 writing;
+  /** are we calling back (via cb) with a channel-level event */
   gpr_uint8 calling_back_channel;
+  /** are we calling back any grpc_transport_op completion events */
   gpr_uint8 calling_back_ops;
   gpr_uint8 destroying;
   gpr_uint8 closed;
