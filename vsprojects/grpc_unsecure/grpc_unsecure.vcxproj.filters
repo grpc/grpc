@@ -335,9 +335,6 @@
     <ClInclude Include="..\..\src\core\channel\noop_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\compression\algorithm.h">
-      <Filter>src\core\compression</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
     </ClInclude>

@@ -116,7 +116,6 @@
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_server_filter.h",
         "src/core/channel/noop_filter.h",
-        "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
         "src/core/debug/trace.h",
         "src/core/iomgr/alarm.h",
