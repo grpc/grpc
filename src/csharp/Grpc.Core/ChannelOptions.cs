@@ -162,7 +162,6 @@ namespace Grpc.Core
                     {
                         throw new InvalidOperationException("Unknown option type");
                     }
-
                 }
                 return nativeArgs;
             }

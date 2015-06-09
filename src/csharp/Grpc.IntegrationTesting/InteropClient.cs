@@ -113,7 +113,8 @@ namespace Grpc.IntegrationTesting
             List<ChannelOption> channelOptions = null;
             if (!string.IsNullOrEmpty(options.serverHostOverride))
             {
-                channelOptions = new List<ChannelOption> {
+                channelOptions = new List<ChannelOption>
+                {
                     new ChannelOption(ChannelOptions.SslTargetNameOverride, options.serverHostOverride)
                 };
             }

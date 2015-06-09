@@ -50,7 +50,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(ChannelOption.OptionType.Integer, option.Type);
             Assert.AreEqual("somename", option.Name);
             Assert.AreEqual(1, option.IntValue);
-            Assert.Throws(typeof(InvalidOperationException), () => {var s = option.StringValue; });
+            Assert.Throws(typeof(InvalidOperationException), () => { var s = option.StringValue; });
         }
 
         [Test]
@@ -61,7 +61,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(ChannelOption.OptionType.String, option.Type);
             Assert.AreEqual("somename", option.Name);
             Assert.AreEqual("ABCDEF", option.StringValue);
-            Assert.Throws(typeof(InvalidOperationException), () => {var s = option.IntValue; });
+            Assert.Throws(typeof(InvalidOperationException), () => { var s = option.IntValue; });
         }
 
         [Test]
