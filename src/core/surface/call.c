@@ -820,7 +820,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
   grpc_ioreq_data data;
   grpc_metadata_batch mdb;
   size_t i;
-  char status_str[GPR_LTOA_MIN_BUFSIZE];
   GPR_ASSERT(op->send_ops == NULL);
 
   switch (call->write_state) {
@@ -865,13 +864,10 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
-          gpr_ltoa(data.send_status.code, status_str);
           grpc_metadata_batch_add_tail(
               &mdb, &call->status_link,
-              grpc_mdelem_from_metadata_strings(
-                  call->metadata_context,
-                  grpc_mdstr_ref(grpc_channel_get_status_string(call->channel)),
-                  grpc_mdstr_from_string(call->metadata_context, status_str)));
+              grpc_channel_get_reffed_status_elem(call->channel,
+                                                  data.send_status.code));
           if (data.send_status.details) {
             grpc_metadata_batch_add_tail(
                 &mdb, &call->details_link,
