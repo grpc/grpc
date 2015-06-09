@@ -65,7 +65,7 @@ $ pod install
 
 Finally, open the XCode workspace created by Cocoapods, and run the app. You can check the calling code in `ViewControllers.m` and see the results in XCode's log console.
 
-The next sections guide you step-by-step through the creation of this proto service, the client library generated from it, and the app that uses that library.
+The next sections guide you step-by-step through how this proto service is defined, how to generate a client library from it, and how to create an app that uses that library.
 
 
 <a name="proto"></a>
