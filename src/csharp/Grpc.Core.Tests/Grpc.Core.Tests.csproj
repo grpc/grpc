@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{86EC5CB4-4EA2-40A2-8057-86542A0353BB}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -46,6 +46,8 @@
     <Compile Include="TimespecTest.cs" />
     <Compile Include="PInvokeTest.cs" />
     <Compile Include="Internal\MetadataArraySafeHandleTest.cs" />
+    <Compile Include="Internal\CompletionQueueSafeHandleTest.cs" />
+    <Compile Include="Internal\CompletionQueueEventTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

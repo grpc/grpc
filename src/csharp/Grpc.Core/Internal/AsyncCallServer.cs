@@ -47,12 +47,10 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>
     {
-        readonly CompletionCallbackDelegate finishedServersideHandler;
         readonly TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
 
         public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer) : base(serializer, deserializer)
         {
-            this.finishedServersideHandler = CreateBatchCompletionCallback(HandleFinishedServerside);
         }
 
         public void Initialize(CallSafeHandle call)
@@ -72,7 +70,7 @@ namespace Grpc.Core.Internal
 
                 started = true;
 
-                call.StartServerSide(finishedServersideHandler);
+                call.StartServerSide(HandleFinishedServerside);
                 return finishedServersideTcs.Task;
             }
         }
@@ -107,7 +105,7 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendStatusFromServer(status, halfclosedHandler);
+                call.StartSendStatusFromServer(status, HandleHalfclosed);
                 halfcloseRequested = true;
                 sendCompletionDelegate = completionDelegate;
             }
@@ -121,7 +119,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles the server side close completion.
         /// </summary>
-        private void HandleFinishedServerside(bool success, BatchContextSafeHandleNotOwned ctx)
+        private void HandleFinishedServerside(bool success, BatchContextSafeHandle ctx)
         {
             bool cancelled = ctx.GetReceivedCloseOnServerCancelled();
 
