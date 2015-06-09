@@ -132,6 +132,9 @@ static void QpsDriver() {
       pareto->set_alpha(FLAGS_load_param_2);
       break;
     }
+    default:
+      GPR_ASSERT(false);
+      break;
   }
 
   ServerConfig server_config;
@@ -153,7 +156,7 @@ static void QpsDriver() {
       FLAGS_warmup_seconds, FLAGS_benchmark_seconds, FLAGS_local_workers);
 
   GetReporter()->ReportQPS(*result);
-  GetReporter()->ReportQPSPerCore(*result, server_config);
+  GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);
   GetReporter()->ReportTimes(*result);
 }

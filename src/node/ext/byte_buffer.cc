@@ -57,7 +57,7 @@ grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
   char *data = ::node::Buffer::Data(buffer);
   gpr_slice slice = gpr_slice_malloc(length);
   memcpy(GPR_SLICE_START_PTR(slice), data, length);
-  grpc_byte_buffer *byte_buffer(grpc_byte_buffer_create(&slice, 1));
+  grpc_byte_buffer *byte_buffer(grpc_raw_byte_buffer_create(&slice, 1));
   gpr_slice_unref(slice);
   return byte_buffer;
 }

@@ -61,7 +61,7 @@ static void RunQPS() {
   client_config.set_load_type(POISSON);
   client_config.mutable_load_params()->
     mutable_poisson()->set_offered_load(10000.0);
-  
+
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
   server_config.set_enable_ssl(false);
@@ -70,7 +70,7 @@ static void RunQPS() {
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  GetReporter()->ReportQPSPerCore(*result, server_config);
+  GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);
 }
 

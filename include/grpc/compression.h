@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H
-#define GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H
+#ifndef GRPC_COMPRESSION_H
+#define GRPC_COMPRESSION_H
 
 /* The various compression algorithms supported by GRPC */
 typedef enum {
@@ -46,4 +46,4 @@ typedef enum {
 const char *grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm);
 
-#endif  /* GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H */
+#endif  /* GRPC_COMPRESSION_H */

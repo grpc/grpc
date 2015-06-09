@@ -60,7 +60,7 @@ namespace math.Tests
             server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
             int port = server.AddListeningPort(host, Server.PickUnusedPort);
             server.Start();
-            channel = new Channel(host + ":" + port);
+            channel = new Channel(host, port);
 
             // TODO(jtattermusch): get rid of the custom header here once we have dedicated tests
             // for header support.

@@ -636,7 +636,7 @@ static void call_on_done_send(void *pc, int success) {
 
 static void finish_message(grpc_call *call) {
   /* TODO(ctiller): this could be a lot faster if coded directly */
-  grpc_byte_buffer *byte_buffer = grpc_byte_buffer_create(
+  grpc_byte_buffer *byte_buffer = grpc_raw_byte_buffer_create(
       call->incoming_message.slices, call->incoming_message.count);
   gpr_slice_buffer_reset_and_unref(&call->incoming_message);
 
@@ -806,9 +806,9 @@ static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
   size_t i;
 
   switch (byte_buffer->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      for (i = 0; i < byte_buffer->data.slice_buffer.count; i++) {
-        gpr_slice slice = byte_buffer->data.slice_buffer.slices[i];
+    case GRPC_BB_RAW:
+      for (i = 0; i < byte_buffer->data.raw.slice_buffer.count; i++) {
+        gpr_slice slice = byte_buffer->data.raw.slice_buffer.slices[i];
         gpr_slice_ref(slice);
         grpc_sopb_add_slice(sopb, slice);
       }

@@ -73,7 +73,6 @@
     <Compile Include="Marshaller.cs" />
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
-    <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Internal\CredentialsSafeHandle.cs" />
@@ -101,6 +100,9 @@
     <Compile Include="Internal\AtomicCounter.cs" />
     <Compile Include="Internal\DebugStats.cs" />
     <Compile Include="ServerCallContext.cs" />
+    <Compile Include="Internal\CompletionQueueEvent.cs" />
+    <Compile Include="Internal\CompletionRegistry.cs" />
+    <Compile Include="Internal\BatchContextSafeHandle.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

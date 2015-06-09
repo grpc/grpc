@@ -35,6 +35,7 @@
 #define GRPCXX_BYTE_BUFFER_H
 
 #include <grpc/grpc.h>
+#include <grpc/byte_buffer.h>
 #include <grpc/support/log.h>
 #include <grpc++/config.h>
 #include <grpc++/slice.h>
