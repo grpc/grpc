@@ -759,7 +759,7 @@ static void call_on_done_recv(void *pc, int success) {
   unlock(call);
 
   GRPC_CALL_INTERNAL_UNREF(call, "receiving", 0);
-  GRPC_TIMER_BEGIN(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
+  GRPC_TIMER_END(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
 }
 
 static int prepare_application_metadata(grpc_call *call, size_t count,
