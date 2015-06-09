@@ -44,6 +44,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+/** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
+ *  Avoids needing to take a metadata context lock for sending status
+ *  if the status code is <= NUM_CACHED_STATUS_ELEMS.
+ *  Sized to allow the most commonly used codes to fit in
+ *  (OK, Cancelled, Unknown). */
 #define NUM_CACHED_STATUS_ELEMS 3
 
 typedef struct registered_call {
@@ -95,9 +100,8 @@ grpc_channel *grpc_channel_create_from_filters(
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
-    char buf[2];
-    buf[0] = '0' + i;
-    buf[1] = 0;
+    char buf[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(i, buf);
     channel->grpc_status_elem[i] = grpc_mdelem_from_metadata_strings(
         mdctx, grpc_mdstr_ref(channel->grpc_status_string),
         grpc_mdstr_from_string(mdctx, buf));
