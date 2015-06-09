@@ -71,7 +71,7 @@ The next sections guide you step-by-step through the creation of this proto serv
 <a name="proto"></a>
 ## Defining the service
 
-Our first step (as you'll know from [Getting started](https://github.com/grpc/grpc-common)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
+Our first step is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -81,15 +81,15 @@ service RouteGuide {
 }
 ```
 
-Then you define `rpc` methods inside your service definition, specifying their request and response types. gRPC lets you define four kinds of service method, all of which are used in the `RouteGuide` service:
+Then you define `rpc` methods inside your service definition, specifying their request and response types. Protocol buffers let you define four kinds of service method, all of which are used in the `RouteGuide` service:
 
-- A *simple RPC* where the client sends a request to the server using the stub and waits for a response to come back, just like a normal function call.
+- A *simple RPC* where the client sends a request to the server and receives a response later, just like a normal remote procedure call.
 ```protobuf
    // Obtains the feature at a given position.
    rpc GetFeature(Point) returns (Feature) {}
 ```
 
-- A *server-side streaming RPC* where the client sends a request to the server and gets a stream to read a sequence of messages back. The client reads from the returned stream until there are no more messages. As you can see in our example, you specify a server-side streaming method by placing the `stream` keyword before the *response* type.
+- A *response-streaming RPC* where the client sends a request to the server and gets back a stream of response messages. You specify a response-streaming method by placing the `stream` keyword before the *response* type.
 ```protobuf
   // Obtains the Features available within the given Rectangle.  Results are
   // streamed rather than returned at once (e.g. in a response message with a
@@ -98,14 +98,14 @@ Then you define `rpc` methods inside your service definition, specifying their r
   rpc ListFeatures(Rectangle) returns (stream Feature) {}
 ```
 
-- A *client-side streaming RPC* where the client writes a sequence of messages and sends them to the server, again using a provided stream. Once the client has finished writing the messages, it waits for the server to read them all and return its response. You specify a client-side streaming method by placing the `stream` keyword before the *request* type.
+- A *request-streaming RPC* where the client sends a sequence of messages to the server. Once the client has finished writing the messages, it waits for the server to read them all and return its response. You specify a request-streaming method by placing the `stream` keyword before the *request* type.
 ```protobuf
   // Accepts a stream of Points on a route being traversed, returning a
   // RouteSummary when traversal is completed.
   rpc RecordRoute(stream Point) returns (RouteSummary) {}
 ```
 
-- A *bidirectional streaming RPC* where both sides send a sequence of messages using a read-write stream. The two streams operate independently, so clients and servers can read and write in whatever order they like: for example, the server could wait to receive all the client messages before writing its responses, or it could alternately read a message then write a message, or some other combination of reads and writes. The order of messages in each stream is preserved. You specify this type of method by placing the `stream` keyword before both the request and the response.
+- A *bidirectional streaming RPC* where both sides send a sequence of messages to the other. The two streams operate independently, so clients and servers can read and write in whatever order they like: for example, the server could wait to receive all the client messages before writing its responses, or it could alternately read a message then write a message, or some other combination of reads and writes. The order of messages in each stream is preserved. You specify this type of method by placing the `stream` keyword before both the request and the response.
 ```protobuf
   // Accepts a stream of RouteNotes sent while a route is being traversed,
   // while receiving other RouteNotes (e.g. from other users).
@@ -124,10 +124,16 @@ message Point {
 }
 ```
 
+You can specify a prefix to be used for your generated classes by adding the `objc_class_prefix` option at the top of the file. For example:
+```protobuf
+option objc_class_prefix = "RTG";
+```
+
+
 <a name="protoc"></a>
 ## Generating client code
 
-Next we need to generate the gRPC client interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC Objective-C plugin.
+Next we need to generate the gRPC client interfaces from our .proto service definition. We do this using the protocol buffer compiler (`protoc`) with a special gRPC Objective-C plugin.
 
 For simplicity, we've provided a [Podspec file](https://github.com/grpc/grpc-common/blob/master/objective-c/route_guide/RouteGuide.podspec) that runs `protoc` for you with the appropriate plugin, input, and output, and describes how to compile the generated files. You just need to run in this directory:
 
@@ -142,14 +148,16 @@ $ protoc -I ../../protos --objc_out=Pods/RouteGuide --objcgrpc_out=Pods/RouteGui
 ```
 
 Running this command generates the following files in under `Pods/RouteGuide/`:
-- `RouteGuide.pbobjc.h`, the header which declares your generated message classes
-- `RouteGuide.pbobjc.m`, which contains the implementation of your message classes
-- `RouteGuide.pbrpc.h`, the header which declares your generated service classes
-- `RouteGuide.pbrpc.m`, which contains the implementation of your service classes
+- `RouteGuide.pbobjc.h`, the header which declares your generated message classes.
+- `RouteGuide.pbobjc.m`, which contains the implementation of your message classes.
+- `RouteGuide.pbrpc.h`, the header which declares your generated service classes.
+- `RouteGuide.pbrpc.m`, which contains the implementation of your service classes.
 
 These contain:
-- All the protocol buffer code to populate, serialize, and retrieve our request and response message types
+- All the protocol buffer code to populate, serialize, and retrieve our request and response message types.
 - A class called `RTGRouteGuide` that for clients to call with the methods defined in the `RouteGuide` service.
+
+The provided Podspec file works for any proto library you define; you just need to replace the name (matching the file name), version, and other metadata.
 
 
 <a name="client"></a>
@@ -157,7 +165,7 @@ These contain:
 
 In this section, we'll look at creating an Objective-C client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/objective-c/route_guide/ViewControllers.m](https://github.com/grpc/grpc-common/blob/master/objective-c/route_guide/ViewControllers.m). (Note: In your apps, for maintainability and readability reasons, you shouldn't put all of your view controllers in a single file; it's done here only to simplify the learning process).
 
-### Creating a client object
+### Constructing a client object
 
 To call service methods, we first need to create a client object, an instance of the generated `RTGRouteGuide` class. The designated initializer of the class expects a `NSString *` with the server address and port we want to connect to:
 
@@ -171,7 +179,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 ```
 
-Notice that we've specified the HTTP scheme in the host address. This is because the server we will be using to test our client doesn't use [TLS](http://en.wikipedia.org/wiki/Transport_Layer_Security). This is fine because it will be running locally on our development machine. The most common case, though, is connecting with a gRPC server on the internet, running gRPC over TLS. For that case, the HTTPS scheme can be specified (or no scheme at all, as HTTPS is the default value).
+Notice that we've specified the HTTP scheme in the host address. This is because the server we will be using to test our client doesn't use [TLS](http://en.wikipedia.org/wiki/Transport_Layer_Security). This is fine because it will be running locally on our development machine. The most common case, though, is connecting with a gRPC server on the internet, running gRPC over TLS. For that case, the HTTPS scheme can be specified (or no scheme at all, as HTTPS is the default value). The default value of the port is that of the scheme selected: 443 for HTTPS and 80 for HTTP.
 
 
 ### Calling service methods
