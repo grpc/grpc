@@ -37,6 +37,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/slice_buffer.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum { GRPC_BB_SLICE_BUFFER } grpc_byte_buffer_type;
 
 /* byte buffers are containers for messages passed in from the public api's */
@@ -46,5 +50,9 @@ struct grpc_byte_buffer {
     gpr_slice_buffer slice_buffer;
   } data;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* GRPC_BYTE_BUFFER_H */
