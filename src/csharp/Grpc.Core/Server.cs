@@ -108,7 +108,7 @@ namespace Grpc.Core
         /// </summary>
         /// <returns>The port on which server will be listening.</returns>
         /// <param name="host">the host</param>
-        /// <param name="port">the port. If zero, , an unused port is chosen automatically.</param>
+        /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
         public int AddListeningPort(string host, int port, ServerCredentials credentials)
         {
             Preconditions.CheckNotNull(credentials);
