@@ -93,7 +93,7 @@ struct grpc_fd {
 
   struct grpc_fd *freelist_next;
 
-  grpc_iomgr_closure on_done_closure;
+  grpc_iomgr_closure *on_done_closure;
   grpc_iomgr_closure *shutdown_closures[2];
 
   grpc_iomgr_object iomgr_object;
@@ -109,7 +109,8 @@ grpc_fd *grpc_fd_create(int fd, const char *name);
    If on_done is NULL, no callback will be made.
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write. */
-void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data);
+void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
+                    const char *reason);
 
 /* Begin polling on an fd.
    Registers that the given pollset is interested in this fd - so that if read
@@ -159,8 +160,17 @@ void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback);
 void grpc_fd_become_writable(grpc_fd *fd, int allow_synchronous_callback);
 
 /* Reference counting for fds */
+#ifdef GRPC_FD_REF_COUNT_DEBUG
+void grpc_fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
+void grpc_fd_unref(grpc_fd *fd, const char *reason, const char *file, int line);
+#define GRPC_FD_REF(fd, reason) grpc_fd_ref(fd, reason, __FILE__, __LINE__)
+#define GRPC_FD_UNREF(fd, reason) grpc_fd_unref(fd, reason, __FILE__, __LINE__)
+#else
 void grpc_fd_ref(grpc_fd *fd);
 void grpc_fd_unref(grpc_fd *fd);
+#define GRPC_FD_REF(fd, reason) grpc_fd_ref(fd)
+#define GRPC_FD_UNREF(fd, reason) grpc_fd_unref(fd)
+#endif
 
 void grpc_fd_global_init(void);
 void grpc_fd_global_shutdown(void);

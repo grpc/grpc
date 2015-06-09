@@ -51,7 +51,7 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpBuffer {
   }
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
-  bool CheckCancelled(CompletionQueue* cq);
+  bool CheckCancelled(Poller* cq);
 
   void Unref();
 
@@ -70,7 +70,7 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
+bool ServerContext::CompletionOp::CheckCancelled(Poller* cq) {
   cq->TryPluck(this);
   grpc::lock_guard<grpc::mutex> g(mu_);
   return finalized_ ? cancelled_ : false;

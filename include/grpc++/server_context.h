@@ -63,7 +63,7 @@ class ServerReaderWriter;
 
 class Call;
 class CallOpBuffer;
-class CompletionQueue;
+class Poller;
 class Server;
 
 // Interface of server side rpc context.
@@ -121,7 +121,7 @@ class ServerContext {
 
   gpr_timespec deadline_;
   grpc_call* call_;
-  CompletionQueue* cq_;
+  Poller* cq_;
   bool sent_initial_metadata_;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;

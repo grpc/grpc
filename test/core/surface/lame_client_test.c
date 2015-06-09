@@ -43,7 +43,7 @@ static void *tag(gpr_intptr x) { return (void *)x; }
 int main(int argc, char **argv) {
   grpc_channel *chan;
   grpc_call *call;
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 
   chan = grpc_lame_client_channel_create();
   GPR_ASSERT(chan);
-  cq = grpc_completion_queue_create();
+  cq = grpc_poller_create();
   call = grpc_channel_create_call(chan, cq, "/Foo", "anywhere",
                                   GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100));
   GPR_ASSERT(call);
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   grpc_call_destroy(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
-  grpc_completion_queue_destroy(cq);
+  grpc_poller_destroy(cq);
 
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_free(details);

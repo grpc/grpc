@@ -31,44 +31,37 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H
+#ifndef GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H
+#define GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H
 
-#include <grpc/support/port_platform.h>
+/* Internal API for completion channels */
 
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_kick_posix.h"
+#include "src/core/iomgr/pollset.h"
+#include <grpc/grpc.h>
+
+#ifdef GRPC_CQ_REF_COUNT_DEBUG
+void grpc_poller_internal_ref(grpc_poller *cc, const char *reason);
+void grpc_poller_internal_unref(grpc_poller *cc, const char *reason);
+#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_poller_internal_ref(cc, reason)
+#define GRPC_CQ_INTERNAL_UNREF(cc, reason) \
+  grpc_poller_internal_unref(cc, reason)
+#else
+void grpc_poller_internal_ref(grpc_poller *cc);
+void grpc_poller_internal_unref(grpc_poller *cc);
+#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_poller_internal_ref(cc)
+#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_poller_internal_unref(cc)
 #endif
 
-#ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_kick_windows.h"
-#endif
+/* Flag that an operation is beginning: the completion channel will not finish
+   shutdown until a corrensponding grpc_poller_end_* call is made */
+void grpc_poller_begin_op(grpc_poller *cc, grpc_call *call);
 
-/* This is an abstraction around the typical pipe mechanism for waking up a
-   thread sitting in a poll() style call. */
+/* Queue a GRPC_OP_COMPLETED operation */
+void grpc_poller_end_op(grpc_poller *cc, void *tag, grpc_call *call,
+                        int success);
 
-void grpc_pollset_kick_global_init(void);
-void grpc_pollset_kick_global_destroy(void);
+grpc_pollset *grpc_poller_pollset(grpc_poller *cc);
 
-void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state);
-void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
+void grpc_poller_hack_spin_pollset(grpc_poller *cc);
 
-/* Guarantees a pure posix implementation rather than a specialized one, if
- * applicable. Intended for testing. */
-void grpc_pollset_kick_global_init_fallback_fd(void);
-
-/* Must be called before entering poll(). If return value is -1, this consumed
-   an existing kick. Otherwise the return value is an FD to add to the poll set.
- */
-int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state);
-
-/* Consume an existing kick. Must be called after poll returns that the fd was
-   readable, and before calling kick_post_poll. */
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state);
-
-/* Must be called after pre_poll, and after consume if applicable */
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state);
-
-void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
-
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H */
+#endif /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */

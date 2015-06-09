@@ -37,7 +37,7 @@ end
 
 describe GRPC::Core::Channel do
   let(:fake_host) { 'localhost:0' }
-  let(:cq) { GRPC::Core::CompletionQueue.new }
+  let(:cq) { GRPC::Core::Poller.new }
 
   def create_test_cert
     GRPC::Core::Credentials.new(load_test_certs[0])

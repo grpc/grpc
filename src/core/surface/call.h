@@ -84,19 +84,21 @@ typedef struct {
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
                                            void *user_data);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
+grpc_call *grpc_call_create(grpc_channel *channel, grpc_poller *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline);
 
-void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
+void grpc_call_set_poller(grpc_call *call, grpc_poller *cq);
+grpc_poller *grpc_call_get_poller(grpc_call *call);
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
-void grpc_call_internal_unref(grpc_call *call, const char *reason, int allow_immediate_deletion);
-#define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call, reason)
+void grpc_call_internal_unref(grpc_call *call, const char *reason,
+                              int allow_immediate_deletion);
+#define GRPC_CALL_INTERNAL_REF(call, reason) \
+  grpc_call_internal_ref(call, reason)
 #define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) \
   grpc_call_internal_unref(call, reason, allow_immediate_deletion)
 #else
@@ -124,26 +126,28 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
 
 void grpc_server_log_request_call(char *file, int line,
                                   gpr_log_severity severity,
-                                  grpc_server *server,
-                                  grpc_call **call,
+                                  grpc_server *server, grpc_call **call,
                                   grpc_call_details *details,
                                   grpc_metadata_array *initial_metadata,
-                                  grpc_completion_queue *cq_bound_to_call,
-                                  grpc_completion_queue *cq_for_notification,
-                                  void *tag);
+                                  grpc_poller *cq_bound_to_call,
+                                  grpc_poller *cq_for_notification, void *tag);
 
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
-void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
-                           void (*destroy)(void *value));
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
+                           void *value, void (*destroy)(void *value));
 /* Get a context pointer. */
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
 
-#define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notifications, tag) \
-  if (grpc_trace_batch) grpc_server_log_request_call(sev, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notifications, tag)
+#define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details,             \
+                                     initial_metadata, cq_bound_to_call,     \
+                                     cq_for_notifications, tag)              \
+  if (grpc_trace_batch)                                                      \
+  grpc_server_log_request_call(sev, server, call, details, initial_metadata, \
+                               cq_bound_to_call, cq_for_notifications, tag)
 
 gpr_uint8 grpc_call_is_client(grpc_call *call);
 

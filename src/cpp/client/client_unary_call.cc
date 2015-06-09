@@ -35,7 +35,7 @@
 #include <grpc++/impl/call.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
 
@@ -46,7 +46,7 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                          ClientContext* context,
                          const grpc::protobuf::Message& request,
                          grpc::protobuf::Message* result) {
-  CompletionQueue cq;
+  Poller cq;
   Call call(channel->CreateCall(method, context, &cq));
   CallOpBuffer buf;
   Status status;

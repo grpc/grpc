@@ -51,7 +51,7 @@
 #include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
 
-#include "completion_queue.h"
+#include "poller.h"
 #include "server.h"
 #include "channel.h"
 #include "server_credentials.h"
@@ -63,7 +63,8 @@ zend_class_entry *grpc_ce_server;
 void free_wrapped_grpc_server(void *object TSRMLS_DC) {
   wrapped_grpc_server *server = (wrapped_grpc_server *)object;
   if (server->wrapped != NULL) {
-    grpc_server_shutdown(server->wrapped);
+    grpc_server_shutdown_and_notify(server->wrapped, poller, NULL);
+    grpc_poller_pluck(poller, NULL, gpr_inf_future);
     grpc_server_destroy(server->wrapped);
   }
   efree(server);
@@ -112,7 +113,7 @@ PHP_METHOD(Server, __construct) {
     server->wrapped = grpc_server_create(&args);
     efree(args.args);
   }
-  grpc_server_register_completion_queue(server->wrapped, completion_queue);
+  grpc_server_register_poller(server->wrapped, poller);
 }
 
 /**
@@ -134,15 +135,14 @@ PHP_METHOD(Server, requestCall) {
   object_init(result);
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
-  error_code =
-      grpc_server_request_call(server->wrapped, &call, &details, &metadata,
-                               completion_queue, completion_queue, NULL);
+  error_code = grpc_server_request_call(server->wrapped, &call, &details,
+                                        &metadata, poller, poller, NULL);
   if (error_code != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException, "request_call failed",
                          (long)error_code TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(completion_queue, NULL, gpr_inf_future);
+  event = grpc_poller_pluck(poller, NULL, gpr_inf_future);
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "Failed to request a call for some reason",

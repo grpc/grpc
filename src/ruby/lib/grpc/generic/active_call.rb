@@ -73,12 +73,12 @@ module GRPC
     # if a keyword value is a list, multiple metadata for it's key are sent
     #
     # @param call [Call] a call on which to start and invocation
-    # @param q [CompletionQueue] the completion queue
+    # @param q [Poller] the completion queue
     # @param deadline [Fixnum,TimeSpec] the deadline
     def self.client_invoke(call, q, _deadline, **kw)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
-      unless q.is_a? Core::CompletionQueue
-        fail(TypeError, '!Core::CompletionQueue')
+      unless q.is_a? Core::Poller
+        fail(TypeError, '!Core::Poller')
       end
       metadata_tag = Object.new
       call.run_batch(q, metadata_tag, INFINITE_FUTURE,
@@ -100,7 +100,7 @@ module GRPC
     # deadline is the absolute deadline for the call.
     #
     # @param call [Call] the call used by the ActiveCall
-    # @param q [CompletionQueue] the completion queue used to accept
+    # @param q [Poller] the completion queue used to accept
     #          the call
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
@@ -110,8 +110,8 @@ module GRPC
     def initialize(call, q, marshal, unmarshal, deadline, started: true,
                    metadata_tag: nil)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
-      unless q.is_a? Core::CompletionQueue
-        fail(TypeError, '!Core::CompletionQueue')
+      unless q.is_a? Core::Poller
+        fail(TypeError, '!Core::Poller')
       end
       @call = call
       @cq = q

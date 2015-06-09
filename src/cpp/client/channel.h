@@ -46,7 +46,7 @@ namespace grpc {
 class Call;
 class CallOpBuffer;
 class ChannelArguments;
-class CompletionQueue;
+class Poller;
 class Credentials;
 class StreamContextInterface;
 
@@ -58,7 +58,7 @@ class Channel GRPC_FINAL : public GrpcLibrary,
 
   virtual void *RegisterMethod(const char *method) GRPC_OVERRIDE;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                          CompletionQueue* cq) GRPC_OVERRIDE;
+                          Poller* cq) GRPC_OVERRIDE;
   virtual void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
 
  private:

@@ -38,7 +38,7 @@
 
 namespace grpc {
 
-/* If you are trying to use CompletionQueue::AsyncNext with a time class that
+/* If you are trying to use Poller::AsyncNext with a time class that
    isn't either gpr_timespec or std::chrono::system_clock::time_point, you
    will most likely be looking at this comment as your compiler will have
    fired an error below. In order to fix this issue, you have two potential

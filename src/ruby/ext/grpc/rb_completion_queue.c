@@ -31,7 +31,7 @@
  *
  */
 
-#include "rb_completion_queue.h"
+#include "rb_poller.h"
 
 #include <ruby/ruby.h>
 #include <ruby/thread.h>
@@ -40,31 +40,30 @@
 #include <grpc/support/time.h>
 #include "rb_grpc.h"
 
-/* grpc_rb_cCompletionQueue is the ruby class that proxies
- * grpc_completion_queue. */
-static VALUE grpc_rb_cCompletionQueue = Qnil;
+/* grpc_rb_cPoller is the ruby class that proxies
+ * grpc_poller. */
+static VALUE grpc_rb_cPoller = Qnil;
 
-/* Used to allow grpc_completion_queue_next call to release the GIL */
+/* Used to allow grpc_poller_next call to release the GIL */
 typedef struct next_call_stack {
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   grpc_event event;
   gpr_timespec timeout;
   void *tag;
 } next_call_stack;
 
-/* Calls grpc_completion_queue_next without holding the ruby GIL */
-static void *grpc_rb_completion_queue_next_no_gil(void *param) {
+/* Calls grpc_poller_next without holding the ruby GIL */
+static void *grpc_rb_poller_next_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
-  next_call->event =
-      grpc_completion_queue_next(next_call->cq, next_call->timeout);
+  next_call->event = grpc_poller_next(next_call->cq, next_call->timeout);
   return NULL;
 }
 
-/* Calls grpc_completion_queue_pluck without holding the ruby GIL */
-static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
+/* Calls grpc_poller_pluck without holding the ruby GIL */
+static void *grpc_rb_poller_pluck_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
-  next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
-                                                 next_call->timeout);
+  next_call->event =
+      grpc_poller_pluck(next_call->cq, next_call->tag, next_call->timeout);
   return NULL;
 }
 
@@ -72,13 +71,13 @@ static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
  *
  * This is done when the ruby completion queue object is about to be GCed.
  */
-static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
+static void grpc_rb_poller_shutdown_drain(grpc_poller *cq) {
   next_call_stack next_call;
   grpc_completion_type type;
   int drained = 0;
   MEMZERO(&next_call, next_call_stack, 1);
 
-  grpc_completion_queue_shutdown(cq);
+  grpc_poller_shutdown(cq);
   next_call.cq = cq;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
   /* TODO: the timeout should be a module level constant that defaults
@@ -93,8 +92,8 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
    */
   next_call.timeout = gpr_time_add(gpr_now(), gpr_time_from_micros(5e3));
   do {
-    rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
-                               (void *)&next_call, NULL, NULL);
+    rb_thread_call_without_gvl(grpc_rb_poller_next_no_gil, (void *)&next_call,
+                               NULL, NULL);
     type = next_call.event.type;
     if (type == GRPC_QUEUE_TIMEOUT) break;
     if (type != GRPC_QUEUE_SHUTDOWN) {
@@ -105,66 +104,63 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
 }
 
 /* Helper function to free a completion queue. */
-static void grpc_rb_completion_queue_destroy(void *p) {
-  grpc_completion_queue *cq = NULL;
+static void grpc_rb_poller_destroy(void *p) {
+  grpc_poller *cq = NULL;
   if (p == NULL) {
     return;
   }
-  cq = (grpc_completion_queue *)p;
-  grpc_rb_completion_queue_shutdown_drain(cq);
-  grpc_completion_queue_destroy(cq);
+  cq = (grpc_poller *)p;
+  grpc_rb_poller_shutdown_drain(cq);
+  grpc_poller_destroy(cq);
 }
 
-static rb_data_type_t grpc_rb_completion_queue_data_type = {
-    "grpc_completion_queue",
-    {GRPC_RB_GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
+static rb_data_type_t grpc_rb_poller_data_type = {
+    "grpc_poller",
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_poller_destroy,
      GRPC_RB_MEMSIZE_UNAVAILABLE},
-    NULL, NULL,
-    /* cannot immediately free because grpc_rb_completion_queue_shutdown_drain
+    NULL,
+    NULL,
+    /* cannot immediately free because grpc_rb_poller_shutdown_drain
      * calls rb_thread_call_without_gvl. */
-    0
-};
+    0};
 
 /* Allocates a completion queue. */
-static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
-  grpc_completion_queue *cq = grpc_completion_queue_create();
+static VALUE grpc_rb_poller_alloc(VALUE cls) {
+  grpc_poller *cq = grpc_poller_create();
   if (cq == NULL) {
     rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
   }
-  return TypedData_Wrap_Struct(cls, &grpc_rb_completion_queue_data_type, cq);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_poller_data_type, cq);
 }
 
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
-grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
-                                                VALUE timeout) {
+grpc_event grpc_rb_poller_pluck_event(VALUE self, VALUE tag, VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
-  TypedData_Get_Struct(self, grpc_completion_queue,
-                       &grpc_rb_completion_queue_data_type, next_call.cq);
+  TypedData_Get_Struct(self, grpc_poller, &grpc_rb_poller_data_type,
+                       next_call.cq);
   next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   next_call.tag = ROBJECT(tag);
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
-  rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                             (void *)&next_call, NULL, NULL);
+  rb_thread_call_without_gvl(grpc_rb_poller_pluck_no_gil, (void *)&next_call,
+                             NULL, NULL);
   return next_call.event;
 }
 
-void Init_grpc_completion_queue() {
-  grpc_rb_cCompletionQueue =
-      rb_define_class_under(grpc_rb_mGrpcCore, "CompletionQueue", rb_cObject);
+void Init_grpc_poller() {
+  grpc_rb_cPoller =
+      rb_define_class_under(grpc_rb_mGrpcCore, "Poller", rb_cObject);
 
   /* constructor: uses an alloc func without an initializer. Using a simple
      alloc func works here as the grpc header does not specify any args for
      this func, so no separate initialization step is necessary. */
-  rb_define_alloc_func(grpc_rb_cCompletionQueue,
-                       grpc_rb_completion_queue_alloc);
+  rb_define_alloc_func(grpc_rb_cPoller, grpc_rb_poller_alloc);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */
-grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v) {
-  grpc_completion_queue *cq = NULL;
-  TypedData_Get_Struct(v, grpc_completion_queue,
-                       &grpc_rb_completion_queue_data_type, cq);
+grpc_poller *grpc_rb_get_wrapped_poller(VALUE v) {
+  grpc_poller *cq = NULL;
+  TypedData_Get_Struct(v, grpc_poller, &grpc_rb_poller_data_type, cq);
   return cq;
 }

@@ -31,20 +31,25 @@
  *
  */
 
-#ifndef GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
-#define GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 
-#include <php.h>
+#include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/pollset_posix.h"
 
-#include <grpc/grpc.h>
+typedef struct grpc_pollset_set {
+  gpr_mu mu;
 
-/* The global completion queue for all operations */
-extern grpc_poller *poller;
+  size_t pollset_count;
+  size_t pollset_capacity;
+  grpc_pollset **pollsets;
 
-/* Initializes the completion queue */
-void grpc_php_init_poller(TSRMLS_D);
+  size_t fd_count;
+  size_t fd_capacity;
+  grpc_fd **fds;
+} grpc_pollset_set;
 
-/* Shut down the completion queue */
-void grpc_php_shutdown_poller(TSRMLS_D);
+void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-#endif /* GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

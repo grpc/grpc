@@ -57,7 +57,7 @@ describe 'ClientStub' do
     @method = 'an_rpc_method'
     @pass = OK
     @fail = INTERNAL
-    @cq = GRPC::Core::CompletionQueue.new
+    @cq = GRPC::Core::Poller.new
   end
 
   after(:each) do
@@ -475,7 +475,7 @@ describe 'ClientStub' do
   end
 
   def create_test_server
-    @server_queue = GRPC::Core::CompletionQueue.new
+    @server_queue = GRPC::Core::Poller.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
     @server.add_http2_port('0.0.0.0:0')
   end

@@ -65,16 +65,19 @@ static gpr_timespec n_seconds_time(int n) {
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
-static void drain_cq(grpc_completion_queue *cq) {
+static void drain_cq(grpc_poller *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_poller_next(cq, five_seconds_time());
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown(f->server);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  GPR_ASSERT(
+      grpc_poller_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+          .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -89,12 +92,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->server_cq);
-  drain_cq(f->server_cq);
-  grpc_completion_queue_destroy(f->server_cq);
-  grpc_completion_queue_shutdown(f->client_cq);
-  drain_cq(f->client_cq);
-  grpc_completion_queue_destroy(f->client_cq);
+  grpc_poller_shutdown(f->cq);
+  drain_cq(f->cq);
+  grpc_poller_destroy(f->cq);
 }
 
 /* Client pings and server pongs. Repeat messages rounds before finishing. */
@@ -104,8 +104,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -124,7 +123,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
                                "foo.test.google.fr:1234", deadline);
   GPR_ASSERT(c);
 
@@ -150,10 +149,10 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.server_cq,
-                                      f.server_cq, tag(100)));
-  cq_expect_completion(v_server, tag(100), 1);
-  cq_verify(v_server);
+                                      &request_metadata_recv, f.cq,
+                                      f.cq, tag(100)));
+  cq_expect_completion(cqv, tag(100), 1);
+  cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -183,8 +182,8 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     op++;
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(102)));
-    cq_expect_completion(v_server, tag(102), 1);
-    cq_verify(v_server);
+    cq_expect_completion(cqv, tag(102), 1);
+    cq_verify(cqv);
 
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
@@ -192,11 +191,9 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     op++;
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(103)));
-    cq_expect_completion(v_server, tag(103), 1);
-    cq_verify(v_server);
-
-    cq_expect_completion(v_client, tag(2), 1);
-    cq_verify(v_client);
+    cq_expect_completion(cqv, tag(103), 1);
+    cq_expect_completion(cqv, tag(2), 1);
+    cq_verify(cqv);
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload);
@@ -220,19 +217,16 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(104)));
 
-  cq_expect_completion(v_client, tag(1), 1);
-  cq_expect_completion(v_client, tag(3), 1);
-  cq_verify(v_client);
-
-  cq_expect_completion(v_server, tag(101), 1);
-  cq_expect_completion(v_server, tag(104), 1);
-  cq_verify(v_server);
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_expect_completion(cqv, tag(3), 1);
+  cq_expect_completion(cqv, tag(101), 1);
+  cq_expect_completion(cqv, tag(104), 1);
+  cq_verify(cqv);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

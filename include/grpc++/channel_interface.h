@@ -45,7 +45,7 @@ namespace grpc {
 class Call;
 class CallOpBuffer;
 class ClientContext;
-class CompletionQueue;
+class Poller;
 class RpcMethod;
 class CallInterface;
 
@@ -56,7 +56,7 @@ class ChannelInterface : public CallHook,
 
   virtual void* RegisterMethod(const char* method_name) = 0;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                          CompletionQueue* cq) = 0;
+                          Poller* cq) = 0;
 };
 
 }  // namespace grpc

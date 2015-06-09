@@ -123,13 +123,11 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
 
 void grpc_server_log_request_call(char *file, int line,
                                   gpr_log_severity severity,
-                                  grpc_server *server,
-                                  grpc_call **call,
+                                  grpc_server *server, grpc_call **call,
                                   grpc_call_details *details,
                                   grpc_metadata_array *initial_metadata,
-                                  grpc_completion_queue *cq_bound_to_call,
-                                  grpc_completion_queue *cq_for_notification,
-                                  void *tag) {
+                                  grpc_poller *cq_bound_to_call,
+                                  grpc_poller *cq_for_notification, void *tag) {
   gpr_log(file, line, severity,
           "grpc_server_request_call(server=%p, call=%p, details=%p, "
           "initial_metadata=%p, cq_bound_to_call=%p, cq_for_notification=%p, "

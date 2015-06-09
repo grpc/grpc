@@ -37,8 +37,8 @@
 #include <grpc/grpc.h>
 #include "test/core/util/test_config.h"
 
-typedef void (*grpc_bad_client_server_side_validator)(
-    grpc_server *server, grpc_completion_queue *cq);
+typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
+                                                      grpc_poller *cq);
 
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 

@@ -93,7 +93,7 @@ module GRPC
     # amend metadata values.
     #
     # @param host [String] the host the stub connects to
-    # @param q [Core::CompletionQueue] used to wait for events
+    # @param q [Core::Poller] used to wait for events
     # @param channel_override [Core::Channel] a pre-created channel
     # @param timeout [Number] the default timeout to use in requests
     # @param creds [Core::Credentials] the channel
@@ -105,7 +105,7 @@ module GRPC
                    creds: nil,
                    update_metadata: nil,
                    **kw)
-      fail(TypeError, '!CompletionQueue') unless q.is_a?(Core::CompletionQueue)
+      fail(TypeError, '!Poller') unless q.is_a?(Core::Poller)
       @queue = q
       @ch = ClientStub.setup_channel(channel_override, host, creds, **kw)
       @update_metadata = ClientStub.check_update_metadata(update_metadata)

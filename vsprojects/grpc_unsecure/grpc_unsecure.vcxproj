@@ -177,10 +177,10 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\resolve_address.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr.h" />
@@ -206,9 +206,9 @@
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
     <ClInclude Include="..\..\src\core\surface\client.h" />
-    <ClInclude Include="..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\src\core\surface\event_string.h" />
     <ClInclude Include="..\..\src\core\surface\init.h" />
+    <ClInclude Include="..\..\src\core\surface\poller.h" />
     <ClInclude Include="..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\src\core\surface\surface_trace.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\alpn.h" />
@@ -285,13 +285,17 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
     </ClCompile>
@@ -361,8 +365,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\client.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\completion_queue.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\event_string.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\init.c">
@@ -370,6 +372,8 @@
     <ClCompile Include="..\..\src\core\surface\lame_client.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\metadata_array.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\poller.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server.c">
     </ClCompile>

@@ -87,7 +87,7 @@ PyTypeObject pygrpc_Call_type = {
     0                                         /* tp_new */
 };
 
-Call *pygrpc_Call_new_empty(CompletionQueue *cq) {
+Call *pygrpc_Call_new_empty(Poller *cq) {
   Call *call = (Call *)pygrpc_Call_type.tp_alloc(&pygrpc_Call_type, 0);
   call->c_call = NULL;
   call->cq = cq;

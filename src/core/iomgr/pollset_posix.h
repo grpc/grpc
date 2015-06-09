@@ -36,7 +36,7 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/pollset_kick_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
@@ -52,7 +52,6 @@ typedef struct grpc_pollset {
      few fds, and an epoll() based implementation for many fds */
   const grpc_pollset_vtable *vtable;
   gpr_mu mu;
-  gpr_cv cv;
   grpc_pollset_kick_state kick_state;
   int counter;
   int in_flight_cbs;
@@ -71,11 +70,11 @@ struct grpc_pollset_vtable {
   int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
                     gpr_timespec now, int allow_synchronous_callback);
   void (*kick)(grpc_pollset *pollset);
+  void (*finish_shutdown)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-#define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
@@ -93,12 +92,6 @@ void grpc_pollset_force_kick(grpc_pollset *pollset);
 int grpc_kick_read_fd(grpc_pollset *p);
 /* Call after polling has been kicked to leave the kicked state */
 void grpc_kick_drain(grpc_pollset *p);
-
-/* All fds get added to a backup pollset to ensure that progress is made
-   regardless of applications listening to events. Relying on this is slow
-   however (the backup pollset only listens every 100ms or so) - so it's not
-   to be relied on. */
-grpc_pollset *grpc_backup_pollset(void);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_pollset *pollset,

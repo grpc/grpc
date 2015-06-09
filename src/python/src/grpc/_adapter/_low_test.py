@@ -37,10 +37,10 @@ from grpc._adapter import _low
 class InsecureServerInsecureClient(unittest.TestCase):
 
   def setUp(self):
-    self.server_completion_queue = _low.CompletionQueue()
+    self.server_completion_queue = _low.Poller()
     self.server = _low.Server(self.server_completion_queue, [])
     self.port = self.server.add_http2_port('[::]:0')
-    self.client_completion_queue = _low.CompletionQueue()
+    self.client_completion_queue = _low.Poller()
     self.client_channel = _low.Channel('localhost:%d'%self.port, [])
 
     self.server.start()

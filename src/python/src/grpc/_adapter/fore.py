@@ -282,7 +282,7 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
     with self._condition:
       address = '[::]:%d' % (
           0 if self._requested_port is None else self._requested_port)
-      self._completion_queue = _low.CompletionQueue()
+      self._completion_queue = _low.Poller()
       if self._root_certificates is None and not self._key_chain_pairs:
         self._server = _low.Server(self._completion_queue)
         self._port = self._server.add_http2_addr(address)

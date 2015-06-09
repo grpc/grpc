@@ -43,7 +43,7 @@ describe Server do
   end
 
   before(:each) do
-    @cq = GRPC::Core::CompletionQueue.new
+    @cq = GRPC::Core::Poller.new
   end
 
   describe '#start' do

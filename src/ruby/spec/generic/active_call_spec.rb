@@ -41,8 +41,8 @@ describe GRPC::ActiveCall do
     @server_tag = Object.new
     @tag = Object.new
 
-    @client_queue = GRPC::Core::CompletionQueue.new
-    @server_queue = GRPC::Core::CompletionQueue.new
+    @client_queue = GRPC::Core::Poller.new
+    @server_queue = GRPC::Core::Poller.new
     host = '0.0.0.0:0'
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(host)

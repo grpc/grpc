@@ -40,31 +40,31 @@
 namespace grpc {
 namespace node {
 
-/* A worker that asynchronously calls completion_queue_next, and queues onto the
+/* A worker that asynchronously calls poller_next, and queues onto the
    node event loop a call to the function stored in the event's tag. */
-class CompletionQueueAsyncWorker : public NanAsyncWorker {
+class PollerAsyncWorker : public NanAsyncWorker {
  public:
-  CompletionQueueAsyncWorker();
+  PollerAsyncWorker();
 
-  ~CompletionQueueAsyncWorker();
-  /* Calls completion_queue_next with the provided deadline, and stores the
+  ~PollerAsyncWorker();
+  /* Calls poller_next with the provided deadline, and stores the
      event if there was one or sets an error message if there was not */
   void Execute();
 
   /* Returns the completion queue attached to this class */
-  static grpc_completion_queue *GetQueue();
+  static grpc_poller *GetQueue();
 
   /* Convenience function to create a worker with the given arguments and queue
      it to run asynchronously */
   static void Next();
 
-  /* Initialize the CompletionQueueAsyncWorker class */
+  /* Initialize the PollerAsyncWorker class */
   static void Init(v8::Handle<v8::Object> exports);
 
  protected:
   /* Called when Execute has succeeded (completed without setting an error
      message). Calls the saved callback with the event that came from
-     completion_queue_next */
+     poller_next */
   void HandleOKCallback();
 
   void HandleErrorCallback();
@@ -72,11 +72,11 @@ class CompletionQueueAsyncWorker : public NanAsyncWorker {
  private:
   grpc_event result;
 
-  static grpc_completion_queue *queue;
+  static grpc_poller *queue;
 
-  // Number of grpc_completion_queue_next calls in the thread pool
+  // Number of grpc_poller_next calls in the thread pool
   static int current_threads;
-  // Number of grpc_completion_queue_next calls waiting to enter the thread pool
+  // Number of grpc_poller_next calls waiting to enter the thread pool
   static int waiting_next_calls;
 };
 

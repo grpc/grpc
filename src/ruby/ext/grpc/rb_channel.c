@@ -40,7 +40,7 @@
 #include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
-#include "rb_completion_queue.h"
+#include "rb_poller.h"
 #include "rb_credentials.h"
 #include "rb_server.h"
 
@@ -199,11 +199,11 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
   grpc_rb_channel *wrapper = NULL;
   grpc_call *call = NULL;
   grpc_channel *ch = NULL;
-  grpc_completion_queue *cq = NULL;
+  grpc_poller *cq = NULL;
   char *method_chars = StringValueCStr(method);
   char *host_chars = StringValueCStr(host);
 
-  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+  cq = grpc_rb_get_wrapped_poller(cqueue);
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   ch = wrapper->wrapped;
   if (ch == NULL) {

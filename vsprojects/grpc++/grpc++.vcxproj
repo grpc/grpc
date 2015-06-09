@@ -152,7 +152,6 @@
     <ClInclude Include="..\..\include\grpc++\channel_arguments.h" />
     <ClInclude Include="..\..\include\grpc++\channel_interface.h" />
     <ClInclude Include="..\..\include\grpc++\client_context.h" />
-    <ClInclude Include="..\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="..\..\include\grpc++\config.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\credentials.h" />
@@ -170,6 +169,7 @@
     <ClInclude Include="..\..\include\grpc++\impl\thd.h" />
     <ClInclude Include="..\..\include\grpc++\impl\thd_cxx11.h" />
     <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h" />
+    <ClInclude Include="..\..\include\grpc++\poller.h" />
     <ClInclude Include="..\..\include\grpc++\server.h" />
     <ClInclude Include="..\..\include\grpc++\server_builder.h" />
     <ClInclude Include="..\..\include\grpc++\server_context.h" />
@@ -213,7 +213,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\common\call.cc">
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\common\completion_queue.cc">
+    <ClCompile Include="..\..\src\cpp\common\poller.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\common\rpc_method.cc">
     </ClCompile>

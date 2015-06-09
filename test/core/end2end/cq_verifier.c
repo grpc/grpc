@@ -69,12 +69,12 @@ typedef struct expectation {
 /* the verifier itself */
 struct cq_verifier {
   /* bound completion queue */
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   /* the root/sentinal expectation */
   expectation expect;
 };
 
-cq_verifier *cq_verifier_create(grpc_completion_queue *cq) {
+cq_verifier *cq_verifier_create(grpc_poller *cq) {
   cq_verifier *v = gpr_malloc(sizeof(cq_verifier));
   v->expect.type = ROOT_EXPECTATION;
   v->expect.tag = NULL;
@@ -166,6 +166,9 @@ static void verify_matches(expectation *e, grpc_event *ev) {
 static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   char *tmp;
 
+  gpr_asprintf(&tmp, "%p ", e->tag);
+  gpr_strvec_add(buf, tmp);
+
   switch (e->type) {
     case GRPC_OP_COMPLETE:
       gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->success);
@@ -211,7 +214,7 @@ void cq_verify(cq_verifier *v) {
   gpr_strvec_init(&have_tags);
 
   while (v->expect.next != &v->expect) {
-    ev = grpc_completion_queue_next(v->cq, deadline);
+    ev = grpc_poller_next(v->cq, deadline);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
@@ -249,7 +252,7 @@ void cq_verify_empty(cq_verifier *v) {
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
 
-  ev = grpc_completion_queue_next(v->cq, deadline);
+  ev = grpc_poller_next(v->cq, deadline);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     char *s = grpc_event_string(&ev);
     gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);

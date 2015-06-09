@@ -29,14 +29,14 @@
 
 require 'grpc'
 
-describe GRPC::Core::CompletionQueue do
+describe GRPC::Core::Poller do
   before(:example) do
-    @cq = GRPC::Core::CompletionQueue.new
+    @cq = GRPC::Core::Poller.new
   end
 
   describe '#new' do
     it 'is constructed successufully' do
-      expect { GRPC::Core::CompletionQueue.new }.not_to raise_error
+      expect { GRPC::Core::Poller.new }.not_to raise_error
     end
   end
 end

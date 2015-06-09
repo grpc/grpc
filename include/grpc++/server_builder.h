@@ -43,10 +43,10 @@ namespace grpc {
 
 class AsyncGenericService;
 class AsynchronousService;
-class CompletionQueue;
+class Poller;
 class RpcService;
 class Server;
-class ServerCompletionQueue;
+class ServerPoller;
 class ServerCredentials;
 class SynchronousService;
 class ThreadPoolInterface;
@@ -86,7 +86,7 @@ class ServerBuilder {
   // Add a completion queue for handling asynchronous services
   // Caller is required to keep this completion queue live until calling
   // BuildAndStart()
-  std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
+  std::unique_ptr<ServerPoller> AddPoller();
 
   // Return a running server which is ready for processing rpcs.
   std::unique_ptr<Server> BuildAndStart();
@@ -102,7 +102,7 @@ class ServerBuilder {
   std::vector<RpcService*> services_;
   std::vector<AsynchronousService*> async_services_;
   std::vector<Port> ports_;
-  std::vector<ServerCompletionQueue*> cqs_;
+  std::vector<ServerPoller*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
   AsyncGenericService* generic_service_;
   ThreadPoolInterface* thread_pool_;

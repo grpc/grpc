@@ -31,15 +31,15 @@
  *
  */
 
-#ifndef GRPCXX_COMPLETION_QUEUE_H
-#define GRPCXX_COMPLETION_QUEUE_H
+#ifndef GRPCXX_POLLER_H
+#define GRPCXX_POLLER_H
 
 #include <grpc/support/time.h>
 #include <grpc++/impl/client_unary_call.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/time.h>
 
-struct grpc_completion_queue;
+struct grpc_poller;
 
 namespace grpc {
 
@@ -56,14 +56,14 @@ class ServerWriter;
 template <class R, class W>
 class ServerReaderWriter;
 
-class CompletionQueue;
+class Poller;
 class Server;
 class ServerBuilder;
 class ServerContext;
 
-class CompletionQueueTag {
+class PollerTag {
  public:
-  virtual ~CompletionQueueTag() {}
+  virtual ~PollerTag() {}
   // Called prior to returning from Next(), return value
   // is the status of the operation (return status is the default thing
   // to do)
@@ -72,19 +72,19 @@ class CompletionQueueTag {
   virtual bool FinalizeResult(void** tag, bool* status) = 0;
 };
 
-// grpc_completion_queue wrapper class
-class CompletionQueue : public GrpcLibrary {
+// grpc_poller wrapper class
+class Poller : public GrpcLibrary {
  public:
-  CompletionQueue();
-  explicit CompletionQueue(grpc_completion_queue* take);
-  ~CompletionQueue() GRPC_OVERRIDE;
+  Poller();
+  explicit Poller(grpc_poller* take);
+  ~Poller() GRPC_OVERRIDE;
 
   // Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT
   enum NextStatus { SHUTDOWN, GOT_EVENT, TIMEOUT };
 
   // Nonblocking (until deadline) read from queue.
   // Cannot rely on result of tag or ok if return is TIMEOUT
-  template<typename T>
+  template <typename T>
   NextStatus AsyncNext(void** tag, bool* ok, const T& deadline) {
     TimePoint<T> deadline_tp(deadline);
     return AsyncNextInternal(tag, ok, deadline_tp.raw_time());
@@ -97,11 +97,11 @@ class CompletionQueue : public GrpcLibrary {
     return (AsyncNextInternal(tag, ok, gpr_inf_future) != SHUTDOWN);
   }
 
-  // Shutdown has to be called, and the CompletionQueue can only be
+  // Shutdown has to be called, and the Poller can only be
   // destructed when false is returned from Next().
   void Shutdown();
 
-  grpc_completion_queue* cq() { return cq_; }
+  grpc_poller* cq() { return cq_; }
 
  private:
   // Friend synchronous wrappers so that they can access Pluck(), which is
@@ -128,22 +128,22 @@ class CompletionQueue : public GrpcLibrary {
 
   NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
-  // Wraps grpc_completion_queue_pluck.
+  // Wraps grpc_poller_pluck.
   // Cannot be mixed with calls to Next().
-  bool Pluck(CompletionQueueTag* tag);
+  bool Pluck(PollerTag* tag);
 
   // Does a single polling pluck on tag
-  void TryPluck(CompletionQueueTag* tag);
+  void TryPluck(PollerTag* tag);
 
-  grpc_completion_queue* cq_;  // owned
+  grpc_poller* cq_;  // owned
 };
 
-class ServerCompletionQueue : public CompletionQueue {
+class ServerPoller : public Poller {
  private:
   friend class ServerBuilder;
-  ServerCompletionQueue() {}
+  ServerPoller() {}
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_COMPLETION_QUEUE_H
+#endif  // GRPCXX_POLLER_H

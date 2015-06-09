@@ -37,7 +37,7 @@
 #include "grpc/grpc.h"
 #include "grpc/support/log.h"
 #include "grpc/support/time.h"
-#include "completion_queue_async_worker.h"
+#include "poller_async_worker.h"
 #include "call.h"
 
 namespace grpc {
@@ -51,47 +51,46 @@ using v8::Object;
 using v8::Persistent;
 using v8::Value;
 
-grpc_completion_queue *CompletionQueueAsyncWorker::queue;
+grpc_poller *PollerAsyncWorker::queue;
 
-int CompletionQueueAsyncWorker::current_threads;
-int CompletionQueueAsyncWorker::waiting_next_calls;
+int PollerAsyncWorker::current_threads;
+int PollerAsyncWorker::waiting_next_calls;
 
-CompletionQueueAsyncWorker::CompletionQueueAsyncWorker()
-    : NanAsyncWorker(NULL) {}
+PollerAsyncWorker::PollerAsyncWorker() : NanAsyncWorker(NULL) {}
 
-CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {}
+PollerAsyncWorker::~PollerAsyncWorker() {}
 
-void CompletionQueueAsyncWorker::Execute() {
-  result = grpc_completion_queue_next(queue, gpr_inf_future);
+void PollerAsyncWorker::Execute() {
+  result = grpc_poller_next(queue, gpr_inf_future);
   if (!result.success) {
     SetErrorMessage("The batch encountered an error");
   }
 }
 
-grpc_completion_queue *CompletionQueueAsyncWorker::GetQueue() { return queue; }
+grpc_poller *PollerAsyncWorker::GetQueue() { return queue; }
 
-void CompletionQueueAsyncWorker::Next() {
+void PollerAsyncWorker::Next() {
   NanScope();
   if (current_threads < max_queue_threads) {
-    CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
+    PollerAsyncWorker *worker = new PollerAsyncWorker();
     NanAsyncQueueWorker(worker);
   } else {
     waiting_next_calls += 1;
   }
 }
 
-void CompletionQueueAsyncWorker::Init(Handle<Object> exports) {
+void PollerAsyncWorker::Init(Handle<Object> exports) {
   NanScope();
   current_threads = 0;
   waiting_next_calls = 0;
-  queue = grpc_completion_queue_create();
+  queue = grpc_poller_create();
 }
 
-void CompletionQueueAsyncWorker::HandleOKCallback() {
+void PollerAsyncWorker::HandleOKCallback() {
   NanScope();
   if (waiting_next_calls > 0) {
     waiting_next_calls -= 1;
-    CompletionQueueAsyncWorker *worker = new CompletionQueueAsyncWorker();
+    PollerAsyncWorker *worker = new PollerAsyncWorker();
     NanAsyncQueueWorker(worker);
   } else {
     current_threads -= 1;
@@ -103,7 +102,7 @@ void CompletionQueueAsyncWorker::HandleOKCallback() {
   DestroyTag(result.tag);
 }
 
-void CompletionQueueAsyncWorker::HandleErrorCallback() {
+void PollerAsyncWorker::HandleErrorCallback() {
   NanScope();
   NanCallback *callback = GetTagCallback(result.tag);
   Handle<Value> argv[] = {NanError(ErrorMessage())};

@@ -123,7 +123,7 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
-  void (*get_request_metadata)(grpc_credentials *c,
+  void (*get_request_metadata)(grpc_credentials *c, grpc_pollset *pollset,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
@@ -131,7 +131,6 @@ typedef struct {
       grpc_credentials *c, const char *target, const grpc_channel_args *args,
       grpc_credentials *request_metadata_creds,
       grpc_channel_security_connector **sc, grpc_channel_args **new_args);
-
 } grpc_credentials_vtable;
 
 struct grpc_credentials {
@@ -145,6 +144,7 @@ void grpc_credentials_unref(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           grpc_pollset *pollset,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
@@ -200,4 +200,4 @@ struct grpc_server_credentials {
 grpc_security_status grpc_server_credentials_create_security_connector(
     grpc_server_credentials *creds, grpc_security_connector **sc);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */

@@ -65,8 +65,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.client_cq = grpc_completion_queue_create();
-  f.server_cq = grpc_completion_queue_create();
+  f.cq = grpc_poller_create();
 
   return f;
 }
@@ -84,7 +83,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args);
-  grpc_server_register_completion_queue(f->server, f->server_cq);
+  grpc_server_register_poller(f->server, f->cq);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }

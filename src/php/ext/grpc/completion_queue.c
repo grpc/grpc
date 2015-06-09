@@ -31,20 +31,17 @@
  *
  */
 
-#include "completion_queue.h"
+#include "poller.h"
 
 #include <php.h>
 
-grpc_completion_queue *completion_queue;
+grpc_poller *poller;
 
-void grpc_php_init_completion_queue(TSRMLS_D) {
-  completion_queue = grpc_completion_queue_create();
-}
+void grpc_php_init_poller(TSRMLS_D) { poller = grpc_poller_create(); }
 
-void grpc_php_shutdown_completion_queue(TSRMLS_D) {
-  grpc_completion_queue_shutdown(completion_queue);
-  while (grpc_completion_queue_next(completion_queue, gpr_inf_future).type !=
-         GRPC_QUEUE_SHUTDOWN)
+void grpc_php_shutdown_poller(TSRMLS_D) {
+  grpc_poller_shutdown(poller);
+  while (grpc_poller_next(poller, gpr_inf_future).type != GRPC_QUEUE_SHUTDOWN)
     ;
-  grpc_completion_queue_destroy(completion_queue);
+  grpc_poller_destroy(poller);
 }

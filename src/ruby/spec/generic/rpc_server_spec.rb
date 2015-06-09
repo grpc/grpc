@@ -128,7 +128,7 @@ describe GRPC::RpcServer do
     @fail = 1
     @noop = proc { |x| x }
 
-    @server_queue = GRPC::Core::CompletionQueue.new
+    @server_queue = GRPC::Core::Poller.new
     server_host = '0.0.0.0:0'
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host)
@@ -354,7 +354,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         blk = proc do
-          cq = GRPC::Core::CompletionQueue.new
+          cq = GRPC::Core::Poller.new
           stub = GRPC::ClientStub.new(@host, cq, **client_opts)
           stub.request_response('/unknown', req, marshal, unmarshal)
         end

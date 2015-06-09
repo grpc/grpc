@@ -43,7 +43,7 @@
 typedef struct cq_verifier cq_verifier;
 
 /* construct/destroy a cq_verifier */
-cq_verifier *cq_verifier_create(grpc_completion_queue *cq);
+cq_verifier *cq_verifier_create(grpc_poller *cq);
 void cq_verifier_destroy(cq_verifier *v);
 
 /* ensure all expected events (and only those events) are present on the

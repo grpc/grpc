@@ -43,7 +43,7 @@
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
 #include "call.h"
-#include "completion_queue_async_worker.h"
+#include "poller_async_worker.h"
 #include "server_credentials.h"
 #include "timeval.h"
 
@@ -112,9 +112,17 @@ class NewCallOp : public Op {
   }
 };
 
-Server::Server(grpc_server *server) : wrapped_server(server) {}
+Server::Server(grpc_server *server) : wrapped_server(server) {
+  shutdown_queue = grpc_poller_create();
+  grpc_server_register_poller(server, shutdown_queue);
+}
 
-Server::~Server() { grpc_server_destroy(wrapped_server); }
+Server::~Server() {
+  this->ShutdownServer();
+  grpc_poller_shutdown(this->shutdown_queue);
+  grpc_server_destroy(wrapped_server);
+  grpc_poller_destroy(this->shutdown_queue);
+}
 
 void Server::Init(Handle<Object> exports) {
   NanScope();
@@ -148,6 +156,16 @@ bool Server::HasInstance(Handle<Value> val) {
   return NanHasInstance(fun_tpl, val);
 }
 
+void Server::ShutdownServer() {
+  if (this->wrapped_server != NULL) {
+    grpc_server_shutdown_and_notify(this->wrapped_server,
+                                    this->shutdown_queue,
+                                    NULL);
+    grpc_poller_pluck(this->shutdown_queue, NULL, gpr_inf_future);
+    this->wrapped_server = NULL;
+  }
+}
+
 NAN_METHOD(Server::New) {
   NanScope();
 
@@ -159,7 +177,7 @@ NAN_METHOD(Server::New) {
     NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
   }
   grpc_server *wrapped_server;
-  grpc_completion_queue *queue = CompletionQueueAsyncWorker::GetQueue();
+  grpc_poller *queue = PollerAsyncWorker::GetQueue();
   if (args[0]->IsUndefined()) {
     wrapped_server = grpc_server_create(NULL);
   } else if (args[0]->IsObject()) {
@@ -195,7 +213,7 @@ NAN_METHOD(Server::New) {
   } else {
     return NanThrowTypeError("Server expects an object");
   }
-  grpc_server_register_completion_queue(wrapped_server, queue);
+  grpc_server_register_poller(wrapped_server, queue);
   Server *server = new Server(wrapped_server);
   server->Wrap(args.This());
   NanReturnValue(args.This());
@@ -207,19 +225,21 @@ NAN_METHOD(Server::RequestCall) {
     return NanThrowTypeError("requestCall can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
+  if (server->wrapped_server == NULL) {
+    return NanThrowError("requestCall cannot be called on a shut down Server");
+  }
   NewCallOp *op = new NewCallOp();
   unique_ptr<OpVec> ops(new OpVec());
   ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
-      CompletionQueueAsyncWorker::GetQueue(),
-      CompletionQueueAsyncWorker::GetQueue(),
+      PollerAsyncWorker::GetQueue(), PollerAsyncWorker::GetQueue(),
       new struct tag(new NanCallback(args[0].As<Function>()), ops.release(),
                      shared_ptr<Resources>(nullptr)));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("requestCall failed", error);
   }
-  CompletionQueueAsyncWorker::Next();
+  PollerAsyncWorker::Next();
   NanReturnUndefined();
 }
 
@@ -232,6 +252,9 @@ NAN_METHOD(Server::AddHttp2Port) {
     return NanThrowTypeError("addHttp2Port's argument must be a String");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
+  if (server->wrapped_server == NULL) {
+    return NanThrowError("addHttp2Port cannot be called on a shut down Server");
+  }
   NanReturnValue(NanNew<Number>(grpc_server_add_http2_port(
       server->wrapped_server, *NanUtf8String(args[0]))));
 }
@@ -251,6 +274,10 @@ NAN_METHOD(Server::AddSecureHttp2Port) {
         "addSecureHttp2Port's second argument must be ServerCredentials");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
+  if (server->wrapped_server == NULL) {
+    return NanThrowError(
+        "addSecureHttp2Port cannot be called on a shut down Server");
+  }
   ServerCredentials *creds = ObjectWrap::Unwrap<ServerCredentials>(
       args[1]->ToObject());
   NanReturnValue(NanNew<Number>(grpc_server_add_secure_http2_port(
@@ -264,7 +291,14 @@ NAN_METHOD(Server::Start) {
     return NanThrowTypeError("start can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
+  if (server->wrapped_server == NULL) {
+    return NanThrowError("start cannot be called on a shut down Server");
+  }
   grpc_server_start(server->wrapped_server);
+  NanReturnUndefined();
+}
+
+NAN_METHOD(ShutdownCallback) {
   NanReturnUndefined();
 }
 
@@ -274,7 +308,7 @@ NAN_METHOD(Server::Shutdown) {
     return NanThrowTypeError("shutdown can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  grpc_server_shutdown(server->wrapped_server);
+  server->ShutdownServer();
   NanReturnUndefined();
 }
 

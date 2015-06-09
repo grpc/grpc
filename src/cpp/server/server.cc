@@ -38,7 +38,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc++/completion_queue.h>
+#include <grpc++/poller.h>
 #include <grpc++/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
@@ -52,7 +52,15 @@
 
 namespace grpc {
 
-class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
+class Server::ShutdownRequest GRPC_FINAL : public PollerTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    delete this;
+    return false;
+  }
+};
+
+class Server::SyncRequest GRPC_FINAL : public PollerTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
       : method_(method),
@@ -71,7 +79,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     grpc_metadata_array_destroy(&request_metadata_);
   }
 
-  static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
+  static SyncRequest* Wait(Poller* cq, bool* ok) {
     void* tag = nullptr;
     *ok = false;
     if (!cq->Next(&tag, ok)) {
@@ -82,10 +90,10 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
-  void Request(grpc_server* server, grpc_completion_queue* notify_cq) {
+  void Request(grpc_server* server, grpc_poller* notify_cq) {
     GPR_ASSERT(!in_flight_);
     in_flight_ = true;
-    cq_ = grpc_completion_queue_create();
+    cq_ = grpc_poller_create();
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_registered_call(
                    server, tag_, &call_, &deadline_, &request_metadata_,
@@ -95,7 +103,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
     if (!*status) {
-      grpc_completion_queue_destroy(cq_);
+      grpc_poller_destroy(cq_);
     }
     return true;
   }
@@ -161,7 +169,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     }
 
    private:
-    CompletionQueue cq_;
+    Poller cq_;
     Call call_;
     ServerContext ctx_;
     const bool has_request_payload_;
@@ -180,7 +188,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
   grpc_byte_buffer* request_payload_;
-  grpc_completion_queue* cq_;
+  grpc_poller* cq_;
 };
 
 static grpc_server* CreateServer(int max_message_size) {
@@ -206,7 +214,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       server_(CreateServer(max_message_size)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
-  grpc_server_register_completion_queue(server_, cq_.cq());
+  grpc_server_register_poller(server_, cq_.cq());
 }
 
 Server::~Server() {
@@ -217,6 +225,9 @@ Server::~Server() {
       Shutdown();
     }
   }
+  void* got_tag;
+  bool ok;
+  GPR_ASSERT(!cq_.Next(&got_tag, &ok));
   grpc_server_destroy(server_);
   if (thread_pool_owned_) {
     delete thread_pool_;
@@ -290,7 +301,7 @@ void Server::Shutdown() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
-    grpc_server_shutdown(server_);
+    grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
 
     // Wait for running callbacks to finish.
@@ -316,12 +327,12 @@ void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
              grpc_call_start_batch(call->call(), ops, nops, buf));
 }
 
-class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
+class Server::AsyncRequest GRPC_FINAL : public PollerTag {
  public:
   AsyncRequest(Server* server, void* registered_method, ServerContext* ctx,
                grpc::protobuf::Message* request,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-               ServerCompletionQueue* notification_cq, void* tag)
+               ServerAsyncStreamingInterface* stream, Poller* call_cq,
+               ServerPoller* notification_cq, void* tag)
       : tag_(tag),
         request_(request),
         stream_(stream),
@@ -342,8 +353,8 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
   }
 
   AsyncRequest(Server* server, GenericServerContext* ctx,
-               ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-               ServerCompletionQueue* notification_cq, void* tag)
+               ServerAsyncStreamingInterface* stream, Poller* call_cq,
+               ServerPoller* notification_cq, void* tag)
       : tag_(tag),
         request_(nullptr),
         stream_(stream),
@@ -416,7 +427,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
   void* const tag_;
   grpc::protobuf::Message* const request_;
   ServerAsyncStreamingInterface* const stream_;
-  CompletionQueue* const call_cq_;
+  Poller* const call_cq_;
   ServerContext* const ctx_;
   GenericServerContext* const generic_ctx_;
   Server* const server_;
@@ -429,8 +440,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
 void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
                               grpc::protobuf::Message* request,
                               ServerAsyncStreamingInterface* stream,
-                              CompletionQueue* call_cq,
-                              ServerCompletionQueue* notification_cq,
+                              Poller* call_cq, ServerPoller* notification_cq,
                               void* tag) {
   new AsyncRequest(this, registered_method, context, request, stream, call_cq,
                    notification_cq, tag);
@@ -438,9 +448,8 @@ void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
 
 void Server::RequestAsyncGenericCall(GenericServerContext* context,
                                      ServerAsyncStreamingInterface* stream,
-                                     CompletionQueue* call_cq,
-                                     ServerCompletionQueue* notification_cq,
-                                     void* tag) {
+                                     Poller* call_cq,
+                                     ServerPoller* notification_cq, void* tag) {
   new AsyncRequest(this, context, stream, call_cq, notification_cq, tag);
 }
 

@@ -31,20 +31,17 @@
  *
  */
 
-#ifndef GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
-#define GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
+#include <grpc/support/port_platform.h>
 
-#include <php.h>
+#ifdef GPR_WINSOCK_SOCKET
 
-#include <grpc/grpc.h>
+#include "src/core/iomgr/pollset_set.h"
 
-/* The global completion queue for all operations */
-extern grpc_poller *poller;
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {}
 
-/* Initializes the completion queue */
-void grpc_php_init_poller(TSRMLS_D);
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {}
 
-/* Shut down the completion queue */
-void grpc_php_shutdown_poller(TSRMLS_D);
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {}
 
-#endif /* GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */
+#endif /* GPR_WINSOCK_SOCKET */

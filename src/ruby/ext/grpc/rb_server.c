@@ -39,7 +39,7 @@
 #include <grpc/grpc_security.h>
 #include "rb_call.h"
 #include "rb_channel_args.h"
-#include "rb_completion_queue.h"
+#include "rb_poller.h"
 #include "rb_server_credentials.h"
 #include "rb_grpc.h"
 
@@ -109,17 +109,17 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
 
 /*
   call-seq:
-    cq = CompletionQueue.new
+    cq = Poller.new
     server = Server.new(cq, {'arg1': 'value1'})
 
   Initializes server instances. */
 static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
-  grpc_completion_queue *cq = NULL;
+  grpc_poller *cq = NULL;
   grpc_rb_server *wrapper = NULL;
   grpc_server *srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
-  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+  cq = grpc_rb_get_wrapped_poller(cqueue);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
@@ -131,7 +131,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   if (srv == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a gRPC server, not sure why");
   }
-  grpc_server_register_completion_queue(srv, cq);
+  grpc_server_register_poller(srv, cq);
   wrapper->wrapped = srv;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
@@ -194,7 +194,7 @@ static void grpc_request_call_stack_cleanup(request_call_stack* st) {
 }
 
 /* call-seq:
-   cq = CompletionQueue.new
+   cq = Poller.new
    tag = Object.new
    timeout = 10
    server.request_call(cqueue, tag, timeout)
@@ -216,11 +216,10 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     grpc_request_call_stack_init(&st);
     /* call grpc_server_request_call, then wait for it to complete using
      * pluck_event */
-    err = grpc_server_request_call(
-        s->wrapped, &call, &st.details, &st.md_ary,
-        grpc_rb_get_wrapped_completion_queue(cqueue),
-        grpc_rb_get_wrapped_completion_queue(cqueue),
-        ROBJECT(tag_new));
+    err = grpc_server_request_call(s->wrapped, &call, &st.details, &st.md_ary,
+                                   grpc_rb_get_wrapped_poller(cqueue),
+                                   grpc_rb_get_wrapped_poller(cqueue),
+                                   ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
       grpc_request_call_stack_cleanup(&st);
       rb_raise(grpc_rb_eCallError,
@@ -228,7 +227,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
                grpc_call_error_detail_of(err), err);
       return Qnil;
     }
-    ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
+    ev = grpc_rb_poller_pluck_event(cqueue, tag_new, timeout);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_request_call_stack_cleanup(&st);
       return Qnil;

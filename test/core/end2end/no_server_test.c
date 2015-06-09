@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
   grpc_channel *chan;
   grpc_call *call;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
-  grpc_completion_queue *cq;
+  grpc_poller *cq;
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create();
+  cq = grpc_poller_create();
   cqv = cq_verifier_create(cq);
 
   /* create a call, channel to a non existant server */
@@ -82,11 +82,10 @@ int main(int argc, char **argv) {
 
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
-  grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(cq, gpr_inf_future).type !=
-         GRPC_QUEUE_SHUTDOWN)
+  grpc_poller_shutdown(cq);
+  while (grpc_poller_next(cq, gpr_inf_future).type != GRPC_QUEUE_SHUTDOWN)
     ;
-  grpc_completion_queue_destroy(cq);
+  grpc_poller_destroy(cq);
   grpc_call_destroy(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);

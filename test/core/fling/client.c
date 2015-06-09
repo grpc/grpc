@@ -47,7 +47,7 @@
 static gpr_histogram *histogram;
 static grpc_byte_buffer *the_buffer;
 static grpc_channel *channel;
-static grpc_completion_queue *cq;
+static grpc_poller *cq;
 static grpc_call *call;
 static grpc_op ops[6];
 static grpc_op stream_init_op;
@@ -93,7 +93,7 @@ static void step_ping_pong_request(void) {
                                   "localhost", gpr_inf_future);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, ops, op - ops, (void *)1));
-  grpc_completion_queue_next(cq, gpr_inf_future);
+  grpc_poller_next(cq, gpr_inf_future);
   grpc_call_destroy(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
@@ -106,7 +106,7 @@ static void init_ping_pong_stream(void) {
   stream_init_op.data.send_initial_metadata.count = 0;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, &stream_init_op, 1, (void *)1));
-  grpc_completion_queue_next(cq, gpr_inf_future);
+  grpc_poller_next(cq, gpr_inf_future);
 
   grpc_metadata_array_init(&initial_metadata_recv);
 
@@ -119,7 +119,7 @@ static void init_ping_pong_stream(void) {
 static void step_ping_pong_stream(void) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, stream_step_ops, 2, (void *)1));
-  grpc_completion_queue_next(cq, gpr_inf_future);
+  grpc_poller_next(cq, gpr_inf_future);
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
   }
 
   channel = grpc_channel_create(target, NULL);
-  cq = grpc_completion_queue_create();
+  cq = grpc_poller_create();
   the_buffer = grpc_byte_buffer_create(&slice, payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 
@@ -207,11 +207,10 @@ int main(int argc, char **argv) {
   }
 
   grpc_channel_destroy(channel);
-  grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(cq, gpr_inf_future).type !=
-         GRPC_QUEUE_SHUTDOWN)
+  grpc_poller_shutdown(cq);
+  while (grpc_poller_next(cq, gpr_inf_future).type != GRPC_QUEUE_SHUTDOWN)
     ;
-  grpc_completion_queue_destroy(cq);
+  grpc_poller_destroy(cq);
   grpc_byte_buffer_destroy(the_buffer);
   gpr_slice_unref(slice);
 
