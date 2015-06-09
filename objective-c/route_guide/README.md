@@ -71,7 +71,7 @@ The next sections guide you step-by-step through the creation of this proto serv
 <a name="proto"></a>
 ## Defining the service
 
-Our first step is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
+First let's look at how the service we're using is defined. A gRPC *service* and its method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file for our example in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -135,7 +135,7 @@ option objc_class_prefix = "RTG";
 
 Next we need to generate the gRPC client interfaces from our .proto service definition. We do this using the protocol buffer compiler (`protoc`) with a special gRPC Objective-C plugin.
 
-For simplicity, we've provided a [Podspec file](https://github.com/grpc/grpc-common/blob/master/objective-c/route_guide/RouteGuide.podspec) that runs `protoc` for you with the appropriate plugin, input, and output, and describes how to compile the generated files. You just need to run in this directory:
+For simplicity, we've provided a [Podspec file](https://github.com/grpc/grpc-common/blob/master/objective-c/route_guide/RouteGuide.podspec) that runs `protoc` for you with the appropriate plugin, input, and output, and describes how to compile the generated files. You just need to run in this directory (`grpc-common/objective-c/route_guide`):
 
 ```shell
 $ pod install
@@ -147,7 +147,7 @@ which, before installing the generated library in the XCode project of this samp
 $ protoc -I ../../protos --objc_out=Pods/RouteGuide --objcgrpc_out=Pods/RouteGuide ../../protos/route_guide.proto
 ```
 
-Running this command generates the following files in under `Pods/RouteGuide/`:
+Running this command generates the following files under `Pods/RouteGuide/`:
 - `RouteGuide.pbobjc.h`, the header which declares your generated message classes.
 - `RouteGuide.pbobjc.m`, which contains the implementation of your message classes.
 - `RouteGuide.pbrpc.h`, the header which declares your generated service classes.
@@ -155,9 +155,9 @@ Running this command generates the following files in under `Pods/RouteGuide/`:
 
 These contain:
 - All the protocol buffer code to populate, serialize, and retrieve our request and response message types.
-- A class called `RTGRouteGuide` that for clients to call with the methods defined in the `RouteGuide` service.
+- A class called `RTGRouteGuide` that lets clients call the methods defined in the `RouteGuide` service.
 
-The provided Podspec file works for any proto library you define; you just need to replace the name (matching the file name), version, and other metadata.
+You can also use the provided Podspec file to generate client code from any other proto service definition; just replace the name (matching the file name), version, and other metadata.
 
 
 <a name="client"></a>
@@ -188,7 +188,7 @@ Now let's look at how we call our service methods. As you will see, all these me
 
 #### Simple RPC
 
-Calling the simple RPC `GetFeature` is nearly as straightforward as calling any other aynschronous method on Cocoa.
+Calling the simple RPC `GetFeature` is nearly as straightforward as calling any other asynchronous method on Cocoa.
 
 ```objective-c
 RTGPoint *point = [RTGPoint message];
@@ -204,7 +204,7 @@ point.longitude = -74E7;
 }];
 ```
 
-As you can see, we create and populate a request protocol buffer object (in our case `RTGPoint`). Then, we call the method on the client object, passing it the request, and a block to handle the response (or any RPC error). If the RPC finished successfully, the handler block is called with a `nil` error argument, and we can read the response information from the server from the response argument. If, instead, some RPC error happened, the handler block is called with a `nil` response argument, and we can read the details of the problem from the error argument.
+As you can see, we create and populate a request protocol buffer object (in our case `RTGPoint`). Then, we call the method on the client object, passing it the request, and a block to handle the response (or any RPC error). If the RPC finishes successfully, the handler block is called with a `nil` error argument, and we can read the response information from the server from the response argument. If, instead, some RPC error happens, the handler block is called with a `nil` response argument, and we can read the details of the problem from the error argument.
 
 ```objective-c
 NSLog(@"Found feature called %@ at %@.", response.name, response.location);
@@ -227,7 +227,7 @@ Now let's look at our streaming methods. Here's where we call the response-strea
 }];
 ```
 
-Notice how the signature of the handler block now includes a `BOOL done` parameter. The block will be called any number of times; only on the last call will the `done` argument be `YES`. If an error occurs, the RPC will be finished and the handler will be called with arguments `(YES, nil, error)`.
+Notice how the signature of the handler block now includes a `BOOL done` parameter. The handler block can be called any number of times; only on the last call is the `done` argument value set to `YES`. If an error occurs, the RPC finishes and the handler is called with the arguments `(YES, nil, error)`.
 
 The request-streaming method `RecordRoute` expects a stream of `RTGPoint`s from the cient. This stream is passed to the method as an object that conforms to the `GRXWriter` protocol. The simplest way to create one is to initialize one from a `NSArray` object:
 
