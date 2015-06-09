@@ -155,9 +155,9 @@ message ClientArgs {
 
 message ClientStats {
   HistogramData latencies = 1;
-  double time_elapsed = 3;
-  double time_user = 4;
-  double time_system = 5;
+  double time_elapsed = 2;
+  double time_user = 3;
+  double time_system = 4;
 }
 
 message ClientStatus {
