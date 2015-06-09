@@ -42,6 +42,10 @@ grpc_channel *grpc_channel_create_from_filters(
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
+/** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
+    status_code.
+
+    The returned elem is owned by the caller. */
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel,
                                                  int status_code);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
