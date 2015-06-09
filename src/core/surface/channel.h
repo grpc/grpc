@@ -40,8 +40,12 @@ grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t count,
     const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client);
 
+/** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
+
+/** Get a (borrowed) pointer to the channel wide metadata context */
 grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
+
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.
 
