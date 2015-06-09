@@ -150,6 +150,7 @@
     <ClInclude Include="..\..\include\grpc\grpc_security.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
+    <ClInclude Include="..\..\include\grpc\compression.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
     <ClInclude Include="..\..\include\grpc\census.h" />

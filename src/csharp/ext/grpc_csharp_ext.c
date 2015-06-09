@@ -60,7 +60,7 @@
 
 grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
   gpr_slice slice = gpr_slice_from_copied_buffer(buffer, len);
-  grpc_byte_buffer *bb = grpc_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer *bb = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
   return bb;
 }

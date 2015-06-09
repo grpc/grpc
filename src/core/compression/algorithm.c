@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/compression/algorithm.h"
+#include <grpc/compression.h>
 
 const char *grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm) {

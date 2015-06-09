@@ -101,6 +101,7 @@
       "public_headers": [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
+        "include/grpc/compression.h",
         "include/grpc/grpc.h",
         "include/grpc/status.h"
       ],

@@ -37,6 +37,7 @@
 #include <grpc/status.h>
 
 #include <stddef.h>
+#include <grpc/byte_buffer.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
@@ -154,34 +155,6 @@ typedef enum grpc_call_error {
 /* Force compression to be disabled for a particular write
    (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
-
-/* A buffer of bytes */
-struct grpc_byte_buffer;
-typedef struct grpc_byte_buffer grpc_byte_buffer;
-
-/* Sample helpers to obtain byte buffers (these will certainly move
-   someplace else) */
-grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices);
-grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb);
-size_t grpc_byte_buffer_length(grpc_byte_buffer *bb);
-void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
-
-/* Reader for byte buffers. Iterates over slices in the byte buffer */
-struct grpc_byte_buffer_reader;
-typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
-
-/** Initialize \a reader to read over \a buffer */
-void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                  grpc_byte_buffer *buffer);
-
-/** Cleanup and destroy \a reader */
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
-
-/* At the end of the stream, returns 0. Otherwise, returns 1 and sets slice to
-   be the returned slice. Caller is responsible for calling gpr_slice_unref on
-   the result. */
-int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                 gpr_slice *slice);
 
 /* A single metadata element */
 typedef struct grpc_metadata {

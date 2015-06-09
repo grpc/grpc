@@ -42,7 +42,8 @@ extern "C" {
 #endif
 
 struct grpc_byte_buffer_reader {
-  grpc_byte_buffer *buffer;
+  grpc_byte_buffer *buffer_in;
+  grpc_byte_buffer *buffer_out;
   /* Different current objects correspond to different types of byte buffers */
   union {
     /* Index into a slice buffer's array of slices */

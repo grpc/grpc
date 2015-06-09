@@ -156,9 +156,9 @@ static void request_response_with_payload_and_call_creds(
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
-      grpc_byte_buffer_create(&response_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
 
   grpc_end2end_test_fixture f = begin_test(config, test_name, NULL, NULL);
