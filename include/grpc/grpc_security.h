@@ -34,8 +34,8 @@
 #ifndef GRPC_GRPC_SECURITY_H
 #define GRPC_GRPC_SECURITY_H
 
-#include "grpc.h"
-#include "status.h"
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #ifdef __cplusplus
 extern "C" {
