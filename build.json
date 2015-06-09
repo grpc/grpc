@@ -702,6 +702,7 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/interarrival.h",
         "test/cpp/qps/qps_worker.h",
         "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
@@ -2075,11 +2076,48 @@
       ]
     },
     {
+      "name": "qps_interarrival_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_interarrival_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "qps_test",
-      "build": "benchmark",
+      "build": "test",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc++_benchmark_config",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "qps_test_openloop",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_test_openloop.cc"
       ],
       "deps": [
         "qps",
