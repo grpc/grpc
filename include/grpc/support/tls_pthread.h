@@ -49,7 +49,13 @@ struct gpr_pthread_thread_local {
 
 #define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
 #define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)
-gpr_intptr gpr_tls_set(struct gpr_pthread_thread_local *tls, gpr_intptr value);
 #define gpr_tls_get(tls) ((gpr_intptr)pthread_getspecific((tls)->key))
+#ifdef __cplusplus
+extern "C" {
+#endif
+gpr_intptr gpr_tls_set(struct gpr_pthread_thread_local *tls, gpr_intptr value);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
