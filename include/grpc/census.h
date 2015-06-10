@@ -40,6 +40,10 @@
 
 #include <grpc/grpc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Identify census functionality that can be enabled via census_initialize(). */
 enum census_functions {
   CENSUS_NONE = 0,    /* Do not enable census. */
@@ -91,5 +95,9 @@ int census_context_deserialize(const char *buffer, census_context **context);
 /* The given context is destroyed. Once destroyed, using the context in
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CENSUS_CENSUS_H */

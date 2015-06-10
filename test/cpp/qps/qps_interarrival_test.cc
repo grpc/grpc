@@ -31,38 +31,46 @@
  *
  */
 
-#include "rb_byte_buffer.h"
+#include "test/cpp/qps/interarrival.h"
+#include <chrono>
+#include <iostream>
 
-#include <ruby/ruby.h>
+// Use the C histogram rather than C++ to avoid depending on proto
+#include <grpc/support/histogram.h>
+#include <grpc++/config.h>
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/slice.h>
-#include "rb_grpc.h"
+using grpc::testing::RandomDist;
+using grpc::testing::InterarrivalTimer;
 
-grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
-  grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
-  return buffer;
+void RunTest(RandomDist&& r, int threads, std::string title) {
+  InterarrivalTimer timer;
+  timer.init(r, threads);
+  gpr_histogram *h(gpr_histogram_create(0.01, 60e9));
+
+  for (int i = 0; i < 10000000; i++) {
+    for (int j = 0; j < threads; j++) {
+      gpr_histogram_add(h, timer(j).count());
+    }
+  }
+
+  std::cout << title << " Distribution" << std::endl;
+  std::cout << "Value, Percentile" << std::endl;
+  for (double pct = 0.0; pct < 100.0; pct += 1.0) {
+    std::cout << gpr_histogram_percentile(h, pct) << "," << pct << std::endl;
+  }
+
+  gpr_histogram_destroy(h);
 }
 
-VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
-  size_t length = 0;
-  char *string = NULL;
-  size_t offset = 0;
-  grpc_byte_buffer_reader reader;
-  gpr_slice next;
-  if (buffer == NULL) {
-    return Qnil;
+using grpc::testing::ExpDist;
+using grpc::testing::DetDist;
+using grpc::testing::UniformDist;
+using grpc::testing::ParetoDist;
 
-  }
-  length = grpc_byte_buffer_length(buffer);
-  string = xmalloc(length + 1);
-  grpc_byte_buffer_reader_init(&reader, buffer);
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-  }
-  return rb_str_new(string, length);
+int main(int argc, char **argv) {
+  RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));
+  RunTest(DetDist(5.0), 5, std::string("Det(5)"));
+  RunTest(UniformDist(0.0, 10.0), 5, std::string("Uniform(1,10)"));
+  RunTest(ParetoDist(1.0, 1.0), 5, std::string("Pareto(1,1)"));
+  return 0;
 }

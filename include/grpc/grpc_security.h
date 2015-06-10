@@ -34,8 +34,8 @@
 #ifndef GRPC_GRPC_SECURITY_H
 #define GRPC_GRPC_SECURITY_H
 
-#include "grpc.h"
-#include "status.h"
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,7 +117,7 @@ grpc_credentials *grpc_service_account_credentials_create(
 grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
                                               gpr_timespec token_lifetime);
 
-/* Creates an Oauth2 Refresh Token crednetials object. May return NULL if the
+/* Creates an Oauth2 Refresh Token credentials object. May return NULL if the
    input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak.

@@ -65,7 +65,7 @@ namespace Grpc.IntegrationTesting
             var channelArgs = ChannelArgs.CreateBuilder()
                 .AddString(ChannelArgs.SslTargetNameOverrideKey, TestCredentials.DefaultHostOverride).Build();
 
-            channel = new Channel(host + ":" + port, TestCredentials.CreateTestClientCredentials(true), channelArgs);
+            channel = new Channel(host, port, TestCredentials.CreateTestClientCredentials(true), channelArgs);
             client = TestService.NewStub(channel);
         }
 

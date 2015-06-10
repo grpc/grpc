@@ -109,9 +109,9 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
-      grpc_byte_buffer_create(&response_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = n_seconds_time(30);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);

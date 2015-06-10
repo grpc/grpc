@@ -31,19 +31,57 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H
-#define GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H
+#include <set>
 
-/* The various compression algorithms supported by GRPC */
-typedef enum {
-  GRPC_COMPRESS_NONE = 0,
-  GRPC_COMPRESS_DEFLATE,
-  GRPC_COMPRESS_GZIP,
-  /* TODO(ctiller): snappy */
-  GRPC_COMPRESS_ALGORITHMS_COUNT
-} grpc_compression_algorithm;
+#include <grpc/support/log.h>
 
-const char *grpc_compression_algorithm_name(
-    grpc_compression_algorithm algorithm);
+#include <signal.h>
 
-#endif  /* GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H */
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
+
+namespace grpc {
+namespace testing {
+
+static const int WARMUP = 5;
+static const int BENCHMARK = 10;
+
+static void RunQPS() {
+  gpr_log(GPR_INFO, "Running QPS test, open-loop");
+
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_enable_ssl(false);
+  client_config.set_outstanding_rpcs_per_channel(1000);
+  client_config.set_client_channels(8);
+  client_config.set_payload_size(1);
+  client_config.set_async_client_threads(8);
+  client_config.set_rpc_type(UNARY);
+  client_config.set_load_type(POISSON);
+  client_config.mutable_load_params()->
+    mutable_poisson()->set_offered_load(10000.0);
+
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_enable_ssl(false);
+  server_config.set_threads(4);
+
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+
+  GetReporter()->ReportQPSPerCore(*result);
+  GetReporter()->ReportLatency(*result);
+}
+
+}  // namespace testing
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::RunQPS();
+
+  return 0;
+}
