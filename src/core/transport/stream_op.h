@@ -58,7 +58,7 @@ typedef enum grpc_stream_op_code {
   GRPC_OP_SLICE
 } grpc_stream_op_code;
 
-/* Arguments for GRPC_OP_BEGIN */
+/* Arguments for GRPC_OP_BEGIN_MESSAGE */
 typedef struct grpc_begin_message {
   /* How many bytes of data will this message contain */
   gpr_uint32 length;
