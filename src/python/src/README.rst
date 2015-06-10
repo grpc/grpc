@@ -13,7 +13,7 @@ Run the following command to install gRPC Python.
 
   $ curl -fsSL https://goo.gl/getgrpc | bash -s python
 
-This will download and run the [gRPC install script][] to install the grpc core, then uses pip to install this package.  It also installs the Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for python.
+This will download and run the [gRPC install script][] to install grpc core. The script then uses pip to install this package.  It also installs the Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for python.
 
 Otherwise, `install from source`_
 
