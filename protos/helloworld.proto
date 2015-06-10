@@ -30,6 +30,7 @@
 syntax = "proto3";
 
 option java_package = "io.grpc.examples";
+option objc_class_prefix = "HLW";
 
 package helloworld;
 
