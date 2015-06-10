@@ -66,11 +66,13 @@ void UserDataClient::setTimes(double serverSystemTime, double serverUserTime,
   clientUserTime_ = clientUserTime;
 }
 
-int UserDataClient::sendData(std::string access_token, std::string test_name) {
+int UserDataClient::sendData(std::string access_token, std::string test_name, std::string sys_info) {
 
   SingleUserRecordRequest singleUserRecordRequest;
   singleUserRecordRequest.set_access_token(access_token);
   singleUserRecordRequest.set_test_name(test_name);
+  singleUserRecordRequest.set_sys_info(sys_info);
+
   *(singleUserRecordRequest.mutable_client_config()) = clientConfig_;
   *(singleUserRecordRequest.mutable_server_config()) = serverConfig_;
   
@@ -98,17 +100,5 @@ int UserDataClient::sendData(std::string access_token, std::string test_name) {
     return -1;
   }
 }
-
-// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-const std::string currentDateTime() {
-  time_t     now = time(0);
-  struct tm  tstruct;
-  char       buf[80];
-  tstruct = *localtime(&now);
-
-  strftime(buf, sizeof(buf), "%Y/%m/%d, %X", &tstruct);
-  return buf;
-}
-
-}
-}
+}  //testing
+}  //grpc

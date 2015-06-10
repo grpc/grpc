@@ -41,6 +41,8 @@ DEFINE_string(access_token, "", "Authorizing JSON string for leaderboard");
 
 DEFINE_string(test_name, "", "Name of the test being executed");
 
+DEFINE_string(sys_info, "", "System information");
+
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
 namespace google {}
@@ -63,7 +65,7 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   }
   if(!FLAGS_access_token.empty())
     composite_reporter->add(
-      std::unique_ptr<Reporter>(new UserDatabaseReporter("UserDataReporter", FLAGS_access_token, FLAGS_test_name)));
+      std::unique_ptr<Reporter>(new UserDatabaseReporter("UserDataReporter", FLAGS_access_token, FLAGS_test_name, FLAGS_sys_info)));
 
   return std::shared_ptr<Reporter>(composite_reporter);
 }

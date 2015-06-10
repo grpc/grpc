@@ -68,7 +68,7 @@ public:
   void setTimes(double serverSystemTime, double serverUserTime, 
     double clientSystemTime, double clientUserTime);
 
-  int sendData(std::string access_token, std::string test_name);
+  int sendData(std::string access_token, std::string test_name, std::string sys_info);
 
 private:
   std::unique_ptr<UserDataTransfer::Stub> stub_;

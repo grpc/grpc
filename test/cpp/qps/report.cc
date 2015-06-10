@@ -175,8 +175,8 @@ void UserDatabaseReporter::ReportTimes(const ScenarioResult& result) const {
   userDataClient.setConfigs(result.client_config, result.server_config);
 }
 
-void UserDatabaseReporter::Flush() const {
-  int userDataState = userDataClient.sendData(access_token_, test_name_);
+void UserDatabaseReporter::SendData() const {
+  int userDataState = userDataClient.sendData(access_token_, test_name_, sys_info_);
 
   switch(userDataState) {
     case 1:

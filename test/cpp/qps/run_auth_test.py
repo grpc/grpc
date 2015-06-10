@@ -129,7 +129,11 @@ def main():
     accessToken = reauthenticate()
 
   testName = sys.argv[1].split('/')[-1]
-  subprocess.call([sys.argv[1], '--access_token='+accessToken, '--test_name='+testName])
+  sysInfo = os.popen('lscpu').readlines()
 
+  try:
+    subprocess.call([sys.argv[1], '--access_token='+accessToken, '--test_name='+testName, '--sys_info='+str(sysInfo).strip('[]')])
+  except OSError:
+    print 'Could not execute the test, please check test path'
 if __name__ == "__main__":
   main()

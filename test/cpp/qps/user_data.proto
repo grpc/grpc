@@ -61,9 +61,10 @@ message Metrics {
 message DataDetails {
   optional string timestamp = 1;
   optional string test_name = 2;
-  optional Metrics metrics = 3;
-  optional ClientConfig client_config = 4;
-  optional ServerConfig server_config = 5;
+  optional string sys_info = 3;
+  optional Metrics metrics = 4;
+  optional ClientConfig client_config = 5;
+  optional ServerConfig server_config = 6;
 }
 
 //User details
@@ -91,9 +92,10 @@ message SingleUserDetails {
 message SingleUserRecordRequest {
   optional string access_token = 1;
   optional string test_name = 2;
-  optional Metrics metrics = 3;
-  optional ClientConfig client_config = 4;
-  optional ServerConfig server_config = 5;
+  optional string sys_info = 3;
+  optional Metrics metrics = 4;
+  optional ClientConfig client_config = 5;
+  optional ServerConfig server_config = 6;
 }
 
 //Reply to request for storing single user's data
