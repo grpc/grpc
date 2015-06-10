@@ -126,10 +126,8 @@ typedef struct grpc_stream_op {
   } data;
 } grpc_stream_op;
 
-/* A stream op buffer is a wrapper around stream operations that is dynamically
-   extendable.
-   TODO(ctiller): inline a few elements into the struct, to avoid common case
-                  per-call allocations. */
+/** A stream op buffer is a wrapper around stream operations that is
+ * dynamically extendable. */
 typedef struct grpc_stream_op_buffer {
   grpc_stream_op *ops;
   size_t nops;
