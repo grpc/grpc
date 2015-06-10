@@ -32,8 +32,6 @@
  *
  */
 
-require 'DrSlump/Protobuf.php';
-\DrSlump\Protobuf::autoload();
 require 'vendor/autoload.php';
 require 'helloworld.php';
 

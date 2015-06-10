@@ -1,9 +1,16 @@
 {
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/stanley-cheung/Protobuf-PHP"
+    }
+  ],
   "name": "grpc/grpc-demo",
   "description": "gRPC example for PHP",
   "minimum-stability": "dev",
   "require": {
     "php": ">=5.5.0",
+    "datto/protobuf-php": "dev-master",
     "grpc/grpc": "dev-master"
   }
 }
