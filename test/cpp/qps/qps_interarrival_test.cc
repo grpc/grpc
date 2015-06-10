@@ -31,54 +31,46 @@
  *
  */
 
-#include <set>
+#include "test/cpp/qps/interarrival.h"
+#include <chrono>
+#include <iostream>
 
-#include <grpc/support/log.h>
+// Use the C histogram rather than C++ to avoid depending on proto
+#include <grpc/support/histogram.h>
+#include <grpc++/config.h>
 
-#include <signal.h>
+using grpc::testing::RandomDist;
+using grpc::testing::InterarrivalTimer;
 
-#include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/report.h"
-#include "test/cpp/util/benchmark_config.h"
+void RunTest(RandomDist&& r, int threads, std::string title) {
+  InterarrivalTimer timer;
+  timer.init(r, threads);
+  gpr_histogram *h(gpr_histogram_create(0.01, 60e9));
 
-namespace grpc {
-namespace testing {
+  for (int i = 0; i < 10000000; i++) {
+    for (int j = 0; j < threads; j++) {
+      gpr_histogram_add(h, timer(j).count());
+    }
+  }
 
-static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+  std::cout << title << " Distribution" << std::endl;
+  std::cout << "Value, Percentile" << std::endl;
+  for (double pct = 0.0; pct < 100.0; pct += 1.0) {
+    std::cout << gpr_histogram_percentile(h, pct) << "," << pct << std::endl;
+  }
 
-static void RunQPS() {
-  gpr_log(GPR_INFO, "Running QPS test");
-
-  ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
-  client_config.set_outstanding_rpcs_per_channel(1000);
-  client_config.set_client_channels(8);
-  client_config.set_payload_size(1);
-  client_config.set_async_client_threads(8);
-  client_config.set_rpc_type(UNARY);
-
-  ServerConfig server_config;
-  server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(4);
-
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
-
-  GetReporter()->ReportQPSPerCore(*result);
-  GetReporter()->ReportLatency(*result);
+  gpr_histogram_destroy(h);
 }
 
-}  // namespace testing
-}  // namespace grpc
+using grpc::testing::ExpDist;
+using grpc::testing::DetDist;
+using grpc::testing::UniformDist;
+using grpc::testing::ParetoDist;
 
-int main(int argc, char** argv) {
-  grpc::testing::InitBenchmark(&argc, &argv, true);
-
-  signal(SIGPIPE, SIG_IGN);
-  grpc::testing::RunQPS();
-
+int main(int argc, char **argv) {
+  RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));
+  RunTest(DetDist(5.0), 5, std::string("Det(5)"));
+  RunTest(UniformDist(0.0, 10.0), 5, std::string("Uniform(1,10)"));
+  RunTest(ParetoDist(1.0, 1.0), 5, std::string("Pareto(1,1)"));
   return 0;
 }

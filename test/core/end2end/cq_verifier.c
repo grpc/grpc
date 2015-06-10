@@ -133,7 +133,8 @@ static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
 
   if (!bb) return 0;
 
-  a = merge_slices(bb->data.slice_buffer.slices, bb->data.slice_buffer.count);
+  a = merge_slices(bb->data.raw.slice_buffer.slices,
+                   bb->data.raw.slice_buffer.count);
   ok = GPR_SLICE_LENGTH(a) == GPR_SLICE_LENGTH(b) &&
        0 == memcmp(GPR_SLICE_START_PTR(a), GPR_SLICE_START_PTR(b),
                    GPR_SLICE_LENGTH(a));

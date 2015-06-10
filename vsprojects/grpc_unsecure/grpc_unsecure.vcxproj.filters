@@ -291,6 +291,9 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\compression.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -331,9 +334,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\noop_filter.h">
       <Filter>src\core\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\compression\algorithm.h">
-      <Filter>src\core\compression</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>

@@ -45,9 +45,6 @@ namespace Grpc.Core.Internal
     internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid
     {
         [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
         static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
 
         [DllImport("grpc_csharp_ext.dll")]
@@ -60,10 +57,13 @@ namespace Grpc.Core.Internal
         static extern void grpcsharp_server_start(ServerSafeHandle server);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+        static extern GRPCCallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_destroy(IntPtr server);
@@ -91,15 +91,19 @@ namespace Grpc.Core.Internal
         {
             grpcsharp_server_start(this);
         }
-
-        public void ShutdownAndNotify(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
+            
+        public void ShutdownAndNotify(CompletionQueueSafeHandle cq, BatchCompletionDelegate callback)
         {
-            grpcsharp_server_shutdown_and_notify_callback(this, cq, callback);
+            var ctx = BatchContextSafeHandle.Create();
+            GrpcEnvironment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            grpcsharp_server_shutdown_and_notify_callback(this, cq, ctx);
         }
 
-        public void RequestCall(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
+        public void RequestCall(CompletionQueueSafeHandle cq, BatchCompletionDelegate callback)
         {
-            AssertCallOk(grpcsharp_server_request_call(this, cq, callback));
+            var ctx = BatchContextSafeHandle.Create();
+            GrpcEnvironment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            grpcsharp_server_request_call(this, cq, ctx).CheckOk();
         }
 
         protected override bool ReleaseHandle()
@@ -112,11 +116,6 @@ namespace Grpc.Core.Internal
         public void CancelAllCalls()
         {
             grpcsharp_server_cancel_all_calls(this);
-        }
-
-        private static void AssertCallOk(GRPCCallError callError)
-        {
-            Preconditions.CheckState(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
         }
     }
 }

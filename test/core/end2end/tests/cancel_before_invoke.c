@@ -117,7 +117,7 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   grpc_byte_buffer *response_payload_recv = NULL;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
                                "foo.test.google.fr", deadline);

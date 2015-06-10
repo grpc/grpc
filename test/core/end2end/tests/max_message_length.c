@@ -110,7 +110,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_op *op;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;

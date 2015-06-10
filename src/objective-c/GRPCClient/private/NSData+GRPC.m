@@ -55,7 +55,7 @@ static void CopyByteBufferToCharArray(grpc_byte_buffer *buffer, char *array) {
 static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
                                                       size_t length) {
   gpr_slice slice = gpr_slice_from_copied_buffer(array, length);
-  grpc_byte_buffer *buffer = grpc_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
   return buffer;
 }
@@ -85,7 +85,7 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
   // The following implementation is thus not optimal, sometimes requiring two
   // copies (one by self.bytes and another by gpr_slice_from_copied_buffer).
   // If it turns out to be an issue, we can use enumerateByteRangesUsingblock:
-  // to create an array of gpr_slice objects to pass to grpc_byte_buffer_create.
+  // to create an array of gpr_slice objects to pass to grpc_raw_byte_buffer_create.
   // That would make it do exactly one copy, always.
   return CopyCharArrayToNewByteBuffer((const char *)self.bytes, (size_t)self.length);
 }
