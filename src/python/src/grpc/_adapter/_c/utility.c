@@ -179,7 +179,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     PyString_AsStringAndSize(
         PyTuple_GET_ITEM(op, MESSAGE_INDEX), &message, &message_size);
     message_slice = gpr_slice_from_copied_buffer(message, message_size);
-    c_op.data.send_message = grpc_byte_buffer_create(&message_slice, 1);
+    c_op.data.send_message = grpc_raw_byte_buffer_create(&message_slice, 1);
     gpr_slice_unref(message_slice);
     break;
   case GRPC_OP_SEND_CLOSE_FROM_CLIENT:

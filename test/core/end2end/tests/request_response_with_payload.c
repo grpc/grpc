@@ -101,9 +101,9 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
-      grpc_byte_buffer_create(&response_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];

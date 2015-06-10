@@ -32,62 +32,58 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    /// <summary>
-    /// grpc_call_error from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCCallError
-    {
-        /* everything went ok */
-        OK = 0,
-        /* something failed, we don't know what */
-        Error,
-        /* this method is not available on the server */
-        NotOnServer,
-        /* this method is not available on the client */
-        NotOnClient,
-        /* this method must be called before server_accept */
-        AlreadyAccepted,
-        /* this method must be called before invoke */
-        AlreadyInvoked,
-        /* this method must be called after invoke */
-        NotInvoked,
-        /* this call is already finished
-     (writes_done or write_status has already been called) */
-        AlreadyFinished,
-        /* there is already an outstanding read/write operation on the call */
-        TooManyOperations,
-        /* the flags value was illegal for this call */
-        InvalidFlags
-    }
+    internal delegate void OpCompletionDelegate(bool success);
 
-    internal static class CallErrorExtensions
+    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx);
+
+    internal class CompletionRegistry
     {
-        /// <summary>
-        /// Checks the call API invocation's result is OK.
-        /// </summary>
-        public static void CheckOk(this GRPCCallError callError)
+        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();  
+
+        public void Register(IntPtr key, OpCompletionDelegate callback)
         {
-            Preconditions.CheckState(callError == GRPCCallError.OK, "Call error: " + callError);
+            DebugStats.PendingBatchCompletions.Increment();
+            Preconditions.CheckState(dict.TryAdd(key, callback));
         }
-    }
 
-    /// <summary>
-    /// grpc_completion_type from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCCompletionType
-    {
-        /* Shutting down */
-        Shutdown, 
+        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
+        {
+            OpCompletionDelegate opCallback = ((success) => HandleBatchCompletion(success, ctx, callback));
+            Register(ctx.Handle, opCallback);
+        }
 
-        /* No event before timeout */
-        Timeout,  
+        public OpCompletionDelegate Extract(IntPtr key)
+        {
+            OpCompletionDelegate value;
+            Preconditions.CheckState(dict.TryRemove(key, out value));
+            DebugStats.PendingBatchCompletions.Decrement();
+            return value;
+        }
 
-        /* operation completion */
-        OpComplete
+        private static void HandleBatchCompletion(bool success, BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
+        {
+            try
+            {
+                callback(success, ctx);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+            }
+            finally
+            {
+                if (ctx != null)
+                {
+                    ctx.Dispose();
+                }
+            }
+        }
     }
 }
