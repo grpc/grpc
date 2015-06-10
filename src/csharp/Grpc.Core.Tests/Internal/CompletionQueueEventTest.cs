@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,37 +28,25 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace math
+namespace Grpc.Core.Internal.Tests
 {
-    class MathClient
+    public class CompletionQueueEventTest
     {
-        public static void Main(string[] args)
+        [Test]
+        public void CreateAndDestroy()
         {
-            GrpcEnvironment.Initialize();
-
-            using (Channel channel = new Channel("127.0.0.1", 23456))
-            {
-                Math.IMathClient stub = new Math.MathClient(channel);
-                MathExamples.DivExample(stub);
-
-                MathExamples.DivAsyncExample(stub).Wait();
-
-                MathExamples.FibExample(stub).Wait();
-
-                MathExamples.SumExample(stub).Wait();
-
-                MathExamples.DivManyExample(stub).Wait();
-
-                MathExamples.DependendRequestsExample(stub).Wait();
-            }
-
-            GrpcEnvironment.Shutdown();
+            Assert.AreEqual(CompletionQueueEvent.NativeSize, Marshal.SizeOf(typeof(CompletionQueueEvent)));
         }
     }
 }

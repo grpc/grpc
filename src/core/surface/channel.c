@@ -37,11 +37,19 @@
 #include <string.h>
 
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/client.h"
 #include "src/core/surface/init.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+/** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
+ *  Avoids needing to take a metadata context lock for sending status
+ *  if the status code is <= NUM_CACHED_STATUS_ELEMS.
+ *  Sized to allow the most commonly used codes to fit in
+ *  (OK, Cancelled, Unknown). */
+#define NUM_CACHED_STATUS_ELEMS 3
 
 typedef struct registered_call {
   grpc_mdelem *path;
@@ -54,10 +62,13 @@ struct grpc_channel {
   gpr_refcount refs;
   gpr_uint32 max_message_length;
   grpc_mdctx *metadata_context;
+  /** mdstr for the grpc-status key */
   grpc_mdstr *grpc_status_string;
   grpc_mdstr *grpc_message_string;
   grpc_mdstr *path_string;
   grpc_mdstr *authority_string;
+  /** mdelem for grpc-status: 0 thru grpc-status: 2 */
+  grpc_mdelem *grpc_status_elem[NUM_CACHED_STATUS_ELEMS];
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
@@ -88,6 +99,13 @@ grpc_channel *grpc_channel_create_from_filters(
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
+  for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
+    char buf[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(i, buf);
+    channel->grpc_status_elem[i] = grpc_mdelem_from_metadata_strings(
+        mdctx, grpc_mdstr_ref(channel->grpc_status_string),
+        grpc_mdstr_from_string(mdctx, buf));
+  }
   channel->path_string = grpc_mdstr_from_string(mdctx, ":path");
   channel->authority_string = grpc_mdstr_from_string(mdctx, ":authority");
   grpc_channel_stack_init(filters, num_filters, args, channel->metadata_context,
@@ -175,7 +193,11 @@ void grpc_channel_internal_ref(grpc_channel *channel) {
 
 static void destroy_channel(void *p, int ok) {
   grpc_channel *channel = p;
+  size_t i;
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
+  for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
+    grpc_mdelem_unref(channel->grpc_status_elem[i]);
+  }
   grpc_mdstr_unref(channel->grpc_status_string);
   grpc_mdstr_unref(channel->grpc_message_string);
   grpc_mdstr_unref(channel->path_string);
@@ -233,6 +255,18 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel) {
 
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel) {
   return channel->grpc_status_string;
+}
+
+grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
+  if (i >= 0 && i < NUM_CACHED_STATUS_ELEMS) {
+    return grpc_mdelem_ref(channel->grpc_status_elem[i]);
+  } else {
+    char tmp[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(i, tmp);
+    return grpc_mdelem_from_metadata_strings(
+        channel->metadata_context, grpc_mdstr_ref(channel->grpc_status_string),
+        grpc_mdstr_from_string(channel->metadata_context, tmp));
+  }
 }
 
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel) {

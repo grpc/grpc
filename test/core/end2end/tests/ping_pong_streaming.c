@@ -166,8 +166,8 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(101)));
 
   for (i = 0; i < messages; i++) {
-    request_payload = grpc_byte_buffer_create(&request_payload_slice, 1);
-    response_payload = grpc_byte_buffer_create(&response_payload_slice, 1);
+    request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+    response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;

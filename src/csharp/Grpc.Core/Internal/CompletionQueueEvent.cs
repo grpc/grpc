@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,37 +28,33 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
-using Grpc.Core;
 
-namespace math
+namespace Grpc.Core.Internal
 {
-    class MathClient
+    /// <summary>
+    /// grpc_event from grpc/grpc.h
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct CompletionQueueEvent
     {
-        public static void Main(string[] args)
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern int grpcsharp_sizeof_grpc_event();
+
+        public GRPCCompletionType type;
+        public int success;
+        public IntPtr tag;
+
+        internal static int NativeSize
         {
-            GrpcEnvironment.Initialize();
-
-            using (Channel channel = new Channel("127.0.0.1", 23456))
+            get
             {
-                Math.IMathClient stub = new Math.MathClient(channel);
-                MathExamples.DivExample(stub);
-
-                MathExamples.DivAsyncExample(stub).Wait();
-
-                MathExamples.FibExample(stub).Wait();
-
-                MathExamples.SumExample(stub).Wait();
-
-                MathExamples.DivManyExample(stub).Wait();
-
-                MathExamples.DependendRequestsExample(stub).Wait();
+                return grpcsharp_sizeof_grpc_event();
             }
-
-            GrpcEnvironment.Shutdown();
         }
     }
 }

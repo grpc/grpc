@@ -71,6 +71,8 @@ std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateAsyncUnaryClient(config)
                  : CreateAsyncStreamingClient(config);
+    default:
+      abort();
   }
   abort();
 }
@@ -82,6 +84,8 @@ std::unique_ptr<Server> CreateServer(const ServerConfig& config,
       return CreateSynchronousServer(config, server_port);
     case ServerType::ASYNC_SERVER:
       return CreateAsyncServer(config, server_port);
+    default:
+      abort();
   }
   abort();
 }

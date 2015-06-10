@@ -104,7 +104,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_call *s;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta;
   grpc_end2end_test_fixture f = begin_test(config, "test_request_with_large_metadata", NULL, NULL);

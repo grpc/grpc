@@ -42,6 +42,7 @@ using std::chrono::duration_cast;
 using std::chrono::nanoseconds;
 using std::chrono::seconds;
 using std::chrono::system_clock;
+using std::chrono::high_resolution_clock;
 
 namespace grpc {
 
@@ -50,6 +51,20 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   system_clock::duration deadline = from.time_since_epoch();
   seconds secs = duration_cast<seconds>(deadline);
   if (from == system_clock::time_point::max() ||
+      secs.count() >= gpr_inf_future.tv_sec || secs.count() < 0) {
+    *to = gpr_inf_future;
+    return;
+  }
+  nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
+  to->tv_sec = secs.count();
+  to->tv_nsec = nsecs.count();
+}
+
+void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
+                          gpr_timespec* to) {
+  high_resolution_clock::duration deadline = from.time_since_epoch();
+  seconds secs = duration_cast<seconds>(deadline);
+  if (from == high_resolution_clock::time_point::max() ||
       secs.count() >= gpr_inf_future.tv_sec || secs.count() < 0) {
     *to = gpr_inf_future;
     return;

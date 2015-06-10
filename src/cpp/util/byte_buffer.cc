@@ -42,7 +42,7 @@ ByteBuffer::ByteBuffer(Slice* slices, size_t nslices) {
   for (size_t i = 0; i < nslices; i++) {
     c_slices[i] = slices[i].slice_;
   }
-  buffer_ = grpc_byte_buffer_create(c_slices.data(), nslices);
+  buffer_ = grpc_raw_byte_buffer_create(c_slices.data(), nslices);
 }
 
 void ByteBuffer::Clear() {
