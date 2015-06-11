@@ -38,5 +38,5 @@ rm -rf python2.7_virtual_environment
 virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
 source python2.7_virtual_environment/bin/activate
 pip install -r src/python/requirements.txt
-CFLAGS=-I$root/include LDFLAGS=-L$root/libs/$CONFIG pip install src/python/src
+CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG pip install src/python/src
 pip install src/python/interop
