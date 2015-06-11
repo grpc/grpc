@@ -979,7 +979,7 @@ void grpc_server_destroy(grpc_server *server) {
   call_data *calld;
 
   gpr_mu_lock(&server->mu);
-  GPR_ASSERT(server->shutdown);
+  GPR_ASSERT(server->shutdown || !server->listeners);
   GPR_ASSERT(server->listeners_destroyed == num_listeners(server));
 
   while (server->listeners) {
