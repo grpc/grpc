@@ -72,7 +72,7 @@ typedef union {
   grpc_byte_buffer *send_message;
   struct {
     grpc_status_code code;
-    const char *details;
+    grpc_mdstr *details;
   } send_status;
 } grpc_ioreq_data;
 

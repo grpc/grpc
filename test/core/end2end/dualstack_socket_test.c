@@ -177,7 +177,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(0 == strcmp(details, "xyz"));
     GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
     GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-    GPR_ASSERT(was_cancelled == 0);
+    GPR_ASSERT(was_cancelled == 1);
 
     grpc_call_destroy(s);
   } else {
