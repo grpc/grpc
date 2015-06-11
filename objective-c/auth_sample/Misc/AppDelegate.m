@@ -33,5 +33,29 @@
 
 #import "AppDelegate.h"
 
+#import <Google/SignIn.h>
+
 @implementation AppDelegate
+
+// As instructed in https://developers.google.com/identity/sign-in/ios/sign-in
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  NSError* configureError;
+  [GGLContext.sharedInstance configureWithError: &configureError];
+  NSAssert(!configureError, @"Error configuring Google services: %@", configureError);
+
+  return YES;
+}
+
+// As instructed in https://developers.google.com/identity/sign-in/ios/sign-in
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication
+         annotation:(id)annotation {
+  // This will properly handle the URL that the application receives at the end of the
+  // authentication process.
+  return [GIDSignIn.sharedInstance handleURL:url
+                           sourceApplication:sourceApplication
+                                  annotation:annotation];
+}
+
 @end

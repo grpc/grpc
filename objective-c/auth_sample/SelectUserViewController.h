@@ -31,8 +31,12 @@
  *
  */
 
+#import <Google/SignIn.h>
 #import <UIKit/UIKit.h>
 
-@interface FirstViewController : UIViewController
-
+@interface SelectUserViewController : UIViewController <GIDSignInDelegate, GIDSignInUIDelegate>
+@property(weak, nonatomic) IBOutlet GIDSignInButton *signInButton;
+@property(weak, nonatomic) IBOutlet UIButton *signOutButton;
+@property(weak, nonatomic) IBOutlet UILabel *mainLabel;
+@property(weak, nonatomic) IBOutlet UILabel *subLabel;
 @end

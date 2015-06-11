@@ -31,13 +31,46 @@
  *
  */
 
-#import "FirstViewController.h"
+#import "SelectUserViewController.h"
 
-@implementation FirstViewController
+@implementation SelectUserViewController
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  // Do any additional setup after loading the view, typically from a nib.
+
+  self.signOutButton.layer.cornerRadius = 5;
+  self.signOutButton.hidden = YES;
+
+  // As instructed in https://developers.google.com/identity/sign-in/ios/sign-in
+  GIDSignIn.sharedInstance.delegate = self;
+  GIDSignIn.sharedInstance.uiDelegate = self;
+
+  [GIDSignIn.sharedInstance signInSilently];
+}
+
+- (void)signIn:(GIDSignIn *)signIn
+didSignInForUser:(GIDGoogleUser *)user
+     withError:(NSError *)error {
+  if (error) {
+    // The user probably cancelled the sign-in flow.
+    return;
+  }
+
+  self.mainLabel.text = [NSString stringWithFormat:@"User: %@", user.profile.email];
+  NSString *scopes = [user.accessibleScopes componentsJoinedByString:@", "];
+  scopes = scopes.length ? scopes : @"(none)";
+  self.subLabel.text = [NSString stringWithFormat:@"Scopes: %@", scopes];
+
+  self.signInButton.hidden = YES;
+  self.signOutButton.hidden = NO;
+}
+
+- (IBAction)didTapSignOut {
+  [GIDSignIn.sharedInstance signOut];
+  self.mainLabel.text = @"Please sign in.";
+  self.subLabel.text = @"";
+  self.signInButton.hidden = NO;
+  self.signOutButton.hidden = YES;
 }
 
 @end
