@@ -94,14 +94,6 @@ class EchoTest(unittest.TestCase):
 
   def tearDown(self):
     self.server.stop()
-    # NOTE(nathaniel): Yep, this is weird; it's a consequence of
-    # grpc_server_destroy's being what has the effect of telling the server's
-    # completion queue to pump out all pending events/tags immediately rather
-    # than gracefully completing all outstanding RPCs while accepting no new
-    # ones.
-    # TODO(nathaniel): Deallocation of a Python object shouldn't have this kind
-    # of observable side effect let alone such an important one.
-    del self.server
     self.server_completion_queue.stop()
     self.client_completion_queue.stop()
     while True:
@@ -114,6 +106,7 @@ class EchoTest(unittest.TestCase):
         break
     self.server_completion_queue = None
     self.client_completion_queue = None
+    del self.server
 
   def _perform_echo_test(self, test_data):
     method = 'test method'
@@ -316,7 +309,6 @@ class CancellationTest(unittest.TestCase):
 
   def tearDown(self):
     self.server.stop()
-    del self.server
     self.server_completion_queue.stop()
     self.client_completion_queue.stop()
     while True:
@@ -327,6 +319,7 @@ class CancellationTest(unittest.TestCase):
       event = self.client_completion_queue.get(0)
       if event is not None and event.kind is _low.Event.Kind.STOP:
         break
+    del self.server
 
   def testCancellation(self):
     method = 'test method'
