@@ -99,6 +99,8 @@ typedef enum {
   /* Status came from 'the wire' - or somewhere below the surface
      layer */
   STATUS_FROM_WIRE,
+  /* Status came from the server sending status */
+  STATUS_FROM_SERVER_STATUS,
   STATUS_SOURCE_COUNT
 } status_source;
 
@@ -581,10 +583,18 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
             call->write_state = WRITE_STATE_WRITE_CLOSED;
           }
           break;
+        case GRPC_IOREQ_SEND_STATUS:
+          if (call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details !=
+              NULL) {
+            grpc_mdstr_unref(
+                call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details);
+            call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
+                NULL;
+          }
+          break;
         case GRPC_IOREQ_RECV_CLOSE:
         case GRPC_IOREQ_SEND_INITIAL_METADATA:
         case GRPC_IOREQ_SEND_TRAILING_METADATA:
-        case GRPC_IOREQ_SEND_STATUS:
         case GRPC_IOREQ_SEND_CLOSE:
           break;
         case GRPC_IOREQ_RECV_STATUS:
@@ -907,8 +917,9 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
                     call->metadata_context,
                     grpc_mdstr_ref(
                         grpc_channel_get_message_string(call->channel)),
-                    grpc_mdstr_from_string(call->metadata_context,
-                                           data.send_status.details)));
+                    data.send_status.details));
+            call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
+                NULL;
           }
           grpc_sopb_add_metadata(&call->send_ops, mdb);
         }
@@ -1006,6 +1017,14 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                         data.send_metadata.metadata)) {
         return start_ioreq_error(call, have_ops,
                                  GRPC_CALL_ERROR_INVALID_METADATA);
+      }
+    }
+    if (op == GRPC_IOREQ_SEND_STATUS) {
+      set_status_code(call, STATUS_FROM_SERVER_STATUS,
+                      reqs[i].data.send_status.code);
+      if (reqs[i].data.send_status.details) {
+        set_status_details(call, STATUS_FROM_SERVER_STATUS,
+                           grpc_mdstr_ref(reqs[i].data.send_status.details));
       }
     }
     have_ops |= 1u << op;
@@ -1283,7 +1302,11 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->op = GRPC_IOREQ_SEND_STATUS;
         req->data.send_status.code = op->data.send_status_from_server.status;
         req->data.send_status.details =
-            op->data.send_status_from_server.status_details;
+            op->data.send_status_from_server.status_details != NULL
+                ? grpc_mdstr_from_string(
+                      call->metadata_context,
+                      op->data.send_status_from_server.status_details)
+                : NULL;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_CLOSE;
         break;
