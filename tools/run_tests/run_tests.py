@@ -313,7 +313,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
@@ -449,6 +449,7 @@ class TestCache(object):
   def __init__(self, use_cache_results):
     self._last_successful_run = {}
     self._use_cache_results = use_cache_results
+    self._last_save = time.time()
 
   def should_run(self, cmdline, bin_hash):
     if cmdline not in self._last_successful_run:
@@ -461,7 +462,8 @@ class TestCache(object):
 
   def finished(self, cmdline, bin_hash):
     self._last_successful_run[cmdline] = bin_hash
-    self.save()
+    if time.time() - self._last_save > 1:
+      self.save()
 
   def dump(self):
     return [{'cmdline': k, 'hash': v}
@@ -473,6 +475,7 @@ class TestCache(object):
   def save(self):
     with open('.run_tests_cache', 'w') as f:
       f.write(json.dumps(self.dump()))
+    self._last_save = time.time()
 
   def maybe_load(self):
     if os.path.exists('.run_tests_cache'):
@@ -514,6 +517,8 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
   finally:
     for antagonist in antagonists:
       antagonist.kill()
+
+  if cache: cache.save()
 
   return 0
 
