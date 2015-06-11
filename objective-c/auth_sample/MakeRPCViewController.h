@@ -35,5 +35,6 @@
 
 extern NSString * const kTestScope;
 
-@interface SecondViewController : UIViewController
+@interface MakeRPCViewController : UIViewController
+@property(weak, nonatomic) IBOutlet UILabel *mainLabel;
 @end
