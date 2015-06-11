@@ -99,6 +99,7 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   grpc_pollset_kick_init(&pollset->kick_state);
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
+  pollset->called_shutdown = 0;
   become_basic_pollset(pollset, NULL);
 }
 
@@ -141,7 +142,8 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (pollset->shutting_down) {
     if (pollset->counter > 0) {
       grpc_pollset_kick(pollset);
-    } else if (pollset->in_flight_cbs == 0) {
+    } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
+      pollset->called_shutdown = 1;
       gpr_mu_unlock(&pollset->mu);
       finish_shutdown(pollset);
       /* Continuing to access pollset here is safe -- it is the caller's
@@ -157,21 +159,22 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
 void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
                            void *shutdown_done_arg) {
-  int in_flight_cbs;
-  int counter;
+  int call_shutdown = 0;
   gpr_mu_lock(&pollset->mu);
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = 1;
-  in_flight_cbs = pollset->in_flight_cbs;
-  counter = pollset->counter;
+  if (!pollset->called_shutdown && pollset->in_flight_cbs == 0 && pollset->counter == 0) {
+    pollset->called_shutdown = 1;
+    call_shutdown = 1;
+  }
   pollset->shutdown_done_cb = shutdown_done;
   pollset->shutdown_done_arg = shutdown_done_arg;
-  if (counter > 0) {
+  if (pollset->counter > 0) {
     grpc_pollset_kick(pollset);
   }
   gpr_mu_unlock(&pollset->mu);
 
-  if (in_flight_cbs == 0 && counter == 0) {
+  if (call_shutdown) {
     finish_shutdown(pollset);
   }
 }
