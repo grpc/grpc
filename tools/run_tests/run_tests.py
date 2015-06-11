@@ -97,7 +97,7 @@ class ValgrindConfig(object):
   def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
-                          shortname='valgrind %s' % binary,
+                          shortname='valgrind %s' % cmdline[0],
                           hash_targets=None)
 
 
@@ -313,7 +313,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
@@ -385,9 +385,9 @@ argp.add_argument('--newline_on_success',
                   action='store_const',
                   const=True)
 argp.add_argument('-l', '--language',
-                  choices=sorted(_LANGUAGES.keys()),
+                  choices=['all'] + sorted(_LANGUAGES.keys()),
                   nargs='+',
-                  default=sorted(_LANGUAGES.keys()))
+                  default=['all'])
 argp.add_argument('-S', '--stop_on_failure',
                   default=False,
                   action='store_const',
@@ -403,7 +403,10 @@ run_configs = set(_CONFIGS[cfg]
 build_configs = set(cfg.build_config for cfg in run_configs)
 
 make_targets = []
-languages = set(_LANGUAGES[l] for l in args.language)
+languages = set(_LANGUAGES[l]
+                for l in itertools.chain.from_iterable(
+                      _LANGUAGES.iterkeys() if x == 'all' else [x]
+                      for x in args.language))
 
 if len(build_configs) > 1:
   for language in languages:
@@ -435,8 +438,8 @@ build_steps.extend(set(
 one_run = set(
     spec
     for config in run_configs
-    for language in args.language
-    for spec in _LANGUAGES[language].test_specs(config, args.travis)
+    for language in languages
+    for spec in language.test_specs(config, args.travis)
     if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test
@@ -449,6 +452,7 @@ class TestCache(object):
   def __init__(self, use_cache_results):
     self._last_successful_run = {}
     self._use_cache_results = use_cache_results
+    self._last_save = time.time()
 
   def should_run(self, cmdline, bin_hash):
     if cmdline not in self._last_successful_run:
@@ -461,7 +465,8 @@ class TestCache(object):
 
   def finished(self, cmdline, bin_hash):
     self._last_successful_run[cmdline] = bin_hash
-    self.save()
+    if time.time() - self._last_save > 1:
+      self.save()
 
   def dump(self):
     return [{'cmdline': k, 'hash': v}
@@ -473,6 +478,7 @@ class TestCache(object):
   def save(self):
     with open('.run_tests_cache', 'w') as f:
       f.write(json.dumps(self.dump()))
+    self._last_save = time.time()
 
   def maybe_load(self):
     if os.path.exists('.run_tests_cache'):
@@ -514,6 +520,8 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
   finally:
     for antagonist in antagonists:
       antagonist.kill()
+
+  if cache: cache.save()
 
   return 0
 

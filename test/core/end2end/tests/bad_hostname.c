@@ -76,7 +76,8 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown(f->server);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -91,18 +92,15 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->server_cq);
-  drain_cq(f->server_cq);
-  grpc_completion_queue_destroy(f->server_cq);
-  grpc_completion_queue_shutdown(f->client_cq);
-  drain_cq(f->client_cq);
-  grpc_completion_queue_destroy(f->client_cq);
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
+  grpc_completion_queue_destroy(f->cq);
 }
 
 static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call *c;
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
+  cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -113,7 +111,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
                                "slartibartfast.local", deadline);
   GPR_ASSERT(c);
 
@@ -139,8 +137,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  cq_expect_completion(v_client, tag(1), 1);
-  cq_verify(v_client);
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
 
@@ -152,7 +150,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
 
   grpc_call_destroy(c);
 
-  cq_verifier_destroy(v_client);
+  cq_verifier_destroy(cqv);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config) {

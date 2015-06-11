@@ -245,8 +245,6 @@ static void test_threading(int producers, int consumers) {
   gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading", producers,
           consumers);
 
-  grpc_completion_queue_dont_poll_test_only(cc);
-
   /* start all threads: they will wait for phase1 */
   for (i = 0; i < producers + consumers; i++) {
     gpr_thd_id id;

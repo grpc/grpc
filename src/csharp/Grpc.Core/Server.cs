@@ -52,9 +52,6 @@ namespace Grpc.Core
         /// </summary>
         public const int PickUnusedPort = 0;
 
-        //readonly OpCompletionDelegate serverShutdownHandler;
-        //readonly OpCompletionDelegate newServerRpcHandler;
-
         readonly ServerSafeHandle handle;
         readonly object myLock = new object();
 
@@ -67,8 +64,6 @@ namespace Grpc.Core
         public Server()
         {
             this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), IntPtr.Zero);
-            //this.newServerRpcHandler = HandleNewServerRpc;
-            //this.serverShutdownHandler = HandleServerShutdown;
         }
 
         /// <summary>
@@ -142,8 +137,7 @@ namespace Grpc.Core
                 shutdownRequested = true;
             }
 
-            var ctx = BatchContextSafeHandle.Create();
-            handle.ShutdownAndNotify(HandleServerShutdown);
+            handle.ShutdownAndNotify(GetCompletionQueue(), HandleServerShutdown);
             await shutdownTcs.Task;
             handle.Dispose();
         }
@@ -159,8 +153,22 @@ namespace Grpc.Core
             }
         }
 
-        public void Kill()
+        /// <summary>
+        /// Requests server shutdown while cancelling all the in-progress calls.
+        /// The returned task finishes when shutdown procedure is complete.
+        /// </summary>
+        public async Task KillAsync()
         {
+            lock (myLock)
+            {
+                Preconditions.CheckState(startRequested);
+                Preconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+
+            handle.ShutdownAndNotify(GetCompletionQueue(), HandleServerShutdown);
+            handle.CancelAllCalls();
+            await shutdownTcs.Task;
             handle.Dispose();
         }
 
