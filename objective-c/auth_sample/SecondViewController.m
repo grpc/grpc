@@ -33,6 +33,10 @@
 
 #import "SecondViewController.h"
 
+#import <Google/SignIn.h>
+
+NSString * const kTestScope = @"https://www.googleapis.com/auth/xapi.zoo";
+
 @implementation SecondViewController
 
 - (void)viewDidLoad {

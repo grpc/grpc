@@ -33,6 +33,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface SecondViewController : UIViewController
+extern NSString * const kTestScope;
 
+@interface SecondViewController : UIViewController
 @end

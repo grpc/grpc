@@ -33,6 +33,8 @@
 
 #import "SelectUserViewController.h"
 
+#import "SecondViewController.h"
+
 @implementation SelectUserViewController
 
 - (void)viewDidLoad {
@@ -42,10 +44,16 @@
   self.signOutButton.hidden = YES;
 
   // As instructed in https://developers.google.com/identity/sign-in/ios/sign-in
-  GIDSignIn.sharedInstance.delegate = self;
-  GIDSignIn.sharedInstance.uiDelegate = self;
+  GIDSignIn *signIn = GIDSignIn.sharedInstance;
+  signIn.delegate = self;
+  signIn.uiDelegate = self;
 
-  [GIDSignIn.sharedInstance signInSilently];
+  // As instructed in https://developers.google.com/identity/sign-in/ios/additional-scopes
+  if (![signIn.scopes containsObject:kTestScope]) {
+    signIn.scopes = [signIn.scopes arrayByAddingObject:kTestScope];
+  }
+
+  [signIn signInSilently];
 }
 
 - (void)signIn:(GIDSignIn *)signIn
@@ -67,8 +75,10 @@ didSignInForUser:(GIDGoogleUser *)user
 
 - (IBAction)didTapSignOut {
   [GIDSignIn.sharedInstance signOut];
+
   self.mainLabel.text = @"Please sign in.";
   self.subLabel.text = @"";
+
   self.signInButton.hidden = NO;
   self.signOutButton.hidden = YES;
 }
