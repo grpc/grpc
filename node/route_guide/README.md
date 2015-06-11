@@ -358,5 +358,5 @@ $ node ./route_guide_server.js --db_path=route_guide_db.json
 ```
 Run the client (in a different terminal):
 ```shell
-$ node ./route_guide_client.js
+$ node ./route_guide_client.js --db_path=route_guide_db.json
 ```
