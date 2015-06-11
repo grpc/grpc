@@ -32,8 +32,8 @@
  *
  */
 
-require 'vendor/autoload.php';
-require 'helloworld.php';
+require dirname(__FILE__) . '/vendor/autoload.php';
+require dirname(__FILE__) . '/helloworld.php';
 
 function greet($name) {
   $client = new helloworld\GreeterClient(
