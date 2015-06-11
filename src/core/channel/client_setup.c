@@ -125,8 +125,6 @@ static void setup_add_interested_party(grpc_transport_setup *sp,
 
   gpr_mu_lock(&s->mu);
 
-  gpr_log(GPR_DEBUG, "addip: %p %p", sp, pollset);
-
   grpc_pollset_set_add_pollset(&s->interested_parties, pollset);
 
   gpr_mu_unlock(&s->mu);
@@ -137,8 +135,6 @@ static void setup_del_interested_party(grpc_transport_setup *sp,
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-
-  gpr_log(GPR_DEBUG, "delip: %p %p", sp, pollset);
 
   grpc_pollset_set_del_pollset(&s->interested_parties, pollset);
 
