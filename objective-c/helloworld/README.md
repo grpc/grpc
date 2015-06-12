@@ -17,10 +17,10 @@ following command:
 $ git clone https://github.com/grpc/grpc-common.git
 ```
 
-Change your current directory to `grpc-common/objective-c/HelloWorld`
+Change your current directory to `grpc-common/objective-c/helloworld`
 
 ```sh
-$ cd grpc-common/objective-c/HelloWorld
+$ cd grpc-common/objective-c/helloworld
 ```
 
 ### Try it!
@@ -41,7 +41,7 @@ $ pod install
 
 This might have to compile OpenSSL, which takes around 15 minutes if Cocoapods doesn't have it yet on your computer's cache).
 
-Finally, open the XCode workspace created by Cocoapods, and run the app. You can check the calling code in `Supporting Files/main.m` and see the results in XCode's log console.
+Finally, open the XCode workspace created by Cocoapods, and run the app. You can check the calling code in `main.m` and see the results in XCode's log console.
 
 The code sends a `HLWHelloRequest` containing the string "Objective-C" to a local server. The server responds with a `HLWHelloResponse`, which contains a string that is then output to the log.
 
