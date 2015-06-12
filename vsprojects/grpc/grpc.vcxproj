@@ -242,6 +242,7 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\hpack_table.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\http2_errors.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\internal.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\status_conversion.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_encoder.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_map.h" />

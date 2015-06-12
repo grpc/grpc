@@ -521,6 +521,9 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\internal.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\status_conversion.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>

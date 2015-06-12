@@ -176,6 +176,7 @@
         "src/core/transport/chttp2/hpack_table.h",
         "src/core/transport/chttp2/http2_errors.h",
         "src/core/transport/chttp2/huffsyms.h",
+        "src/core/transport/chttp2/internal.h",
         "src/core/transport/chttp2/status_conversion.h",
         "src/core/transport/chttp2/stream_encoder.h",
         "src/core/transport/chttp2/stream_map.h",
