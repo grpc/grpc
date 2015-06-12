@@ -34,12 +34,25 @@ retries are done with exponential backoff, channels that fail to connect will
 start out spending very little time in this state but as the attempts fail
 repeatedly, the channel will spend increasingly large amounts of time in this
 state. For many non-fatal failures (e.g., TCP connection attempts timing out
-because the server is not yet available), the channel may be stuck in this
-state for an indefinitely large amount of time.
+because the server is not yet available), the channel may spend increasingly
+large amounts of time in this state.
 
-IDLE: This is the state where the channel is not even trying to create a connection because of a lack of new or pending RPCs. New channels MAY be created in this state. Any attempt to start an RPC on the channel will push the channel out of this state to connecting. When there has been no RPC activity on a channel for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this period, channels that are READY or CONNECTING switch to IDLE. Additionaly, channels that receive a GO_AWAY when there are no active or pending RPCs should also switch to IDLE to avoid connection overload at servers that are attempting to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).
+IDLE: This is the state where the channel is not even trying to create a
+connection because of a lack of new or pending RPCs. New channels MAY be created
+in this state. Any attempt to start an RPC on the channel will push the channel
+out of this state to connecting. When there has been no RPC activity on a channel
+for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this
+period, channels that are READY or CONNECTING switch to IDLE. Additionaly,
+channels that receive a GO_AWAY when there are no active or pending RPCs should
+also switch to IDLE to avoid connection overload at servers that are attempting
+to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).
 
-SHUTDOWN: This channel has started shutting down. Any new RPCs should fail immediately. Pending RPCs may continue running till the application cancels them. Channels may enter this state either because the application explicitly requested a shutdown or if a non-recoverable error has happened during attempts to connect communicate . (As of 6/12/2015, there are no known errors (while connecting or communicating) that are classified as non-recoverable) 
+SHUTDOWN: This channel has started shutting down. Any new RPCs should fail
+immediately. Pending RPCs may continue running till the application cancels them.
+Channels may enter this state either because the application explicitly requested
+a shutdown or if a non-recoverable error has happened during attempts to connect
+communicate . (As of 6/12/2015, there are no known errors (while connecting or
+communicating) that are classified as non-recoverable) 
 Channels that enter this state never leave this state. 
 
 The following table lists the legal transitions from one state to another and
