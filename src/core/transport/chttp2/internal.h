@@ -35,6 +35,16 @@
 #define GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 
 #include "src/core/transport/transport_impl.h"
+#include "src/core/iomgr/endpoint.h"
+#include "src/core/transport/chttp2/frame_data.h"
+#include "src/core/transport/chttp2/frame_goaway.h"
+#include "src/core/transport/chttp2/frame_ping.h"
+#include "src/core/transport/chttp2/frame_rst_stream.h"
+#include "src/core/transport/chttp2/frame_settings.h"
+#include "src/core/transport/chttp2/frame_window_update.h"
+#include "src/core/transport/chttp2/stream_map.h"
+#include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/transport/chttp2/stream_encoder.h"
 
 typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;
@@ -335,5 +345,9 @@ struct grpc_chttp2_stream {
   grpc_stream_state callback_state;
   grpc_stream_op_buffer callback_sopb;
 };
+
+/** Someone is unlocking the transport mutex: check to see if writes
+    are required, and schedule them if so */
+void grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global, grpc_chttp2_transport_writing *writing);
 
 #endif
