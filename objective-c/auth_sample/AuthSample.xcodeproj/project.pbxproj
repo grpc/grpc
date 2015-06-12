@@ -89,7 +89,6 @@
 				63E1E9871B28CB2100EF0978 /* SelectUserViewController.m */,
 				63E1E9891B28CB2100EF0978 /* MakeRPCViewController.h */,
 				63E1E98A1B28CB2100EF0978 /* MakeRPCViewController.m */,
-				63F5DE471B28F5C100CDD07E /* GoogleService-Info.plist */,
 				63E1E97F1B28CB2100EF0978 /* Supporting Files */,
 			);
 			name = AuthSample;
@@ -99,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				63E1E98C1B28CB2100EF0978 /* Main.storyboard */,
+				63F5DE471B28F5C100CDD07E /* GoogleService-Info.plist */,
 				63E1E98F1B28CB2100EF0978 /* Images.xcassets */,
 				63E1E9801B28CB2100EF0978 /* Info.plist */,
 				63E1E9831B28CB2100EF0978 /* AppDelegate.h */,
