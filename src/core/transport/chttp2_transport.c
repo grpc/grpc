@@ -745,11 +745,9 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
  * LIST MANAGEMENT
  */
 
-#if 0
 static int stream_list_empty(transport *t, stream_list_id id) {
   return t->lists[id].head == NULL;
 }
-#endif
 
 static stream *stream_list_remove_head(transport *t, stream_list_id id) {
   stream *s = t->lists[id].head;
@@ -1049,9 +1047,10 @@ static void unlock_check_writes(transport *t) {
     }
   }
 
-  if (t->writing.outbuf.length > 0) {
+  if (t->writing.outbuf.length > 0 || !stream_list_empty(t, WRITING)) {
     t->writing.executing = 1;
     ref_transport(t);
+    gpr_log(GPR_DEBUG, "schedule write");
     schedule_cb(t, &t->writing.action, 1);
   }
 }
@@ -1114,6 +1113,8 @@ static void writing_finish_write_cb(void *tp, grpc_endpoint_cb_status error) {
 static void writing_action(void *gt, int iomgr_success_ignored) {
   transport *t = gt;
 
+  gpr_log(GPR_DEBUG, "writing_action");
+
   writing_finalize_outbuf(t);
 
   GPR_ASSERT(t->writing.outbuf.count > 0);
@@ -1129,12 +1130,6 @@ static void writing_action(void *gt, int iomgr_success_ignored) {
     case GRPC_ENDPOINT_WRITE_PENDING:
       break;
   }
-
-  lock(t);
-  t->writing.executing = 0;
-  unlock(t);
-
-  unref_transport(t);
 }
 
 static void add_goaway(transport *t, gpr_uint32 goaway_error,
@@ -2055,7 +2050,7 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
         gpr_mu_unlock(&t->mu);
         for (i = 0; i < nslices && process_read(t, slices[i]); i++)
           ;
-        gpr_mu_unlock(&t->mu);
+        gpr_mu_lock(&t->mu);
       }
       t->parsing.executing = 0;
       while ((s = stream_list_remove_head(t, MAYBE_FINISH_READ_AFTER_PARSE))) {
