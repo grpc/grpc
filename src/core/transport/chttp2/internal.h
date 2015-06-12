@@ -3,8 +3,8 @@
 
 #include "src/core/transport/transport_impl.h"
 
-typedef struct transport transport;
-typedef struct stream stream;
+typedef struct grpc_chttp2_transport grpc_chttp2_transport;
+typedef struct grpc_chttp2_stream grpc_chttp2_stream;
 
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
@@ -31,7 +31,7 @@ typedef enum {
   OTHER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
   NEW_OUTGOING_WINDOW,
   STREAM_LIST_COUNT /* must be last */
-} stream_list_id;
+} grpc_chttp2_stream_list_id;
 
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
@@ -74,35 +74,35 @@ typedef enum {
   DTS_FH_8,
   /* inside a http2 frame */
   DTS_FRAME
-} deframe_transport_state;
+} grpc_chttp2_deframe_transport_state;
 
 typedef enum {
   WRITE_STATE_OPEN,
   WRITE_STATE_QUEUED_CLOSE,
   WRITE_STATE_SENT_CLOSE
-} write_state;
+} grpc_chttp2_write_state;
 
 typedef enum {
   DONT_SEND_CLOSED = 0,
   SEND_CLOSED,
   SEND_CLOSED_WITH_RST_STREAM
-} send_closed;
+} grpc_chttp2_send_closed;
 
 typedef struct {
-  stream *head;
-  stream *tail;
-} stream_list;
+  grpc_chttp2_stream *head;
+  grpc_chttp2_stream *tail;
+} grpc_chttp2_stream_list;
 
 typedef struct {
-  stream *next;
-  stream *prev;
-} stream_link;
+  grpc_chttp2_stream *next;
+  grpc_chttp2_stream *prev;
+} grpc_chttp2_stream_link;
 
 typedef enum {
   ERROR_STATE_NONE,
   ERROR_STATE_SEEN,
   ERROR_STATE_NOTIFIED
-} error_state;
+} grpc_chttp2_error_state;
 
 /* We keep several sets of connection wide parameters */
 typedef enum {
@@ -115,21 +115,21 @@ typedef enum {
   /* The settings the peer has acked */
   ACKED_SETTINGS,
   NUM_SETTING_SETS
-} setting_set;
+} grpc_chttp2_setting_set;
 
 /* Outstanding ping request data */
 typedef struct {
   gpr_uint8 id[8];
   void (*cb)(void *user_data);
   void *user_data;
-} outstanding_ping;
+} grpc_chttp2_outstanding_ping;
 
 typedef struct {
   grpc_status_code status;
   gpr_slice debug;
-} pending_goaway;
+} grpc_chttp2_pending_goaway;
 
-struct transport {
+struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   grpc_endpoint *ep;
   grpc_mdctx *metadata_context;
@@ -145,7 +145,7 @@ struct transport {
   gpr_uint8 calling_back_ops;
   gpr_uint8 destroying;
   gpr_uint8 closed;
-  error_state error_state;
+  grpc_chttp2_error_state error_state;
 
   /* stream indexing */
   gpr_uint32 next_stream_id;
@@ -164,7 +164,7 @@ struct transport {
   gpr_uint32 connection_window_target;
 
   /* deframing */
-  deframe_transport_state deframe_state;
+  grpc_chttp2_deframe_transport_state deframe_state;
   gpr_uint8 incoming_frame_type;
   gpr_uint8 incoming_frame_flags;
   gpr_uint8 header_eof;
@@ -173,7 +173,7 @@ struct transport {
   gpr_uint32 incoming_stream_id;
 
   /* goaway */
-  pending_goaway *pending_goaways;
+  grpc_chttp2_pending_goaway *pending_goaways;
   size_t num_pending_goaways;
   size_t cap_pending_goaways;
 
@@ -185,16 +185,16 @@ struct transport {
 
   /* active parser */
   void *parser_data;
-  stream *incoming_stream;
+  grpc_chttp2_stream *incoming_stream;
   grpc_chttp2_parse_error (*parser)(void *parser_user_data,
                                     grpc_chttp2_parse_state *state,
                                     gpr_slice slice, int is_last);
 
-  stream_list lists[STREAM_LIST_COUNT];
+  grpc_chttp2_stream_list lists[STREAM_LIST_COUNT];
   grpc_chttp2_stream_map stream_map;
 
   /* pings */
-  outstanding_ping *pings;
+  grpc_chttp2_outstanding_ping *pings;
   size_t ping_count;
   size_t ping_capacity;
   gpr_int64 ping_counter;
@@ -252,7 +252,7 @@ struct transport {
   } channel_callback;
 };
 
-struct stream {
+struct grpc_chttp2_stream {
   struct {
     grpc_iomgr_closure *send_done_closure;
     grpc_iomgr_closure *recv_done_closure;
@@ -262,7 +262,7 @@ struct stream {
     /* sops that have passed flow control to be written */
     grpc_stream_op_buffer sopb;
     /* how strongly should we indicate closure with the next write */
-    send_closed send_closed;
+    grpc_chttp2_send_closed send_closed;
   } writing;
 
   struct {
@@ -277,11 +277,11 @@ struct stream {
   /* when the application requests writes be closed, the write_closed is
      'queued'; when the close is flow controlled into the send path, we are
      'sending' it; when the write has been performed it is 'sent' */
-  write_state write_state;
+  grpc_chttp2_write_state write_state;
   gpr_uint8 read_closed;
   gpr_uint8 cancelled;
 
-  stream_link links[STREAM_LIST_COUNT];
+  grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
   gpr_uint8 included[STREAM_LIST_COUNT];
 
   /* incoming metadata */
