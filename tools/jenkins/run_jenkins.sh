@@ -44,7 +44,7 @@ then
   if [ "$ghprbPullId" != "" ]
   then
     # if we are building a pull request, grab corresponding refs.
-    FETCH_PULL_REQUEST_CMD="&& git fetch $GIT_URL +refs/pull/$ghprbPullId:refs/remotes/origin/pr/$ghprbPullId"
+    FETCH_PULL_REQUEST_CMD="&& git fetch $GIT_URL refs/pull/$ghprbPullId/merge refs/pull/$ghprbPullId/head"
   fi
 
   # Run tests inside docker
