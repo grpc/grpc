@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{86EC5CB4-4EA2-40A2-8057-86542A0353BB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Grpc.Core.Tests</RootNamespace>
@@ -48,6 +46,8 @@
     <Compile Include="Internal\MetadataArraySafeHandleTest.cs" />
     <Compile Include="Internal\CompletionQueueSafeHandleTest.cs" />
     <Compile Include="Internal\CompletionQueueEventTest.cs" />
+    <Compile Include="Internal\ChannelArgsSafeHandleTest.cs" />
+    <Compile Include="ChannelOptionsTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
