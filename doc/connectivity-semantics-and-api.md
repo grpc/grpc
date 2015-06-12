@@ -20,7 +20,7 @@ channel, we use a state machine with four states, defined below:
 
 CONNECTING: The channel is trying to establish a connection and is waiting to
 make progress on one of the steps involved in name resolution, TCP connection
-establishment or TLS handshake. This is the initial state for all channels upon
+establishment or TLS handshake. This may be used as the initial state for channels upon
 creation.
 
 READY: The channel has successfully established a connection all the way
@@ -37,11 +37,10 @@ state. For many non-fatal failures (e.g., TCP connection attempts timing out
 because the server is not yet available), the channel may be stuck in this
 state for an indefinitely large amount of time.
 
-FATAL_FAILURE: There has been a fatal failure and the channel will never
-attempt to establish a connection again.  (e.g., a server presenting an invalid
-TLS certificate)
+IDLE: This is the state where the channel is not even trying to create a connection because of a lack of new or pending RPCs. New channels MAY be created in this state. Any attempt to start an RPC on the channel will push the channel out of this state to connecting. When there has been no RPC activity on a channel for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this period, channels that are READY or CONNECTING switch to IDLE. Additionaly, channels that receive a GO_AWAY when there are no active or pending RPCs should also switch to IDLE to avoid connection overload at servers that are attempting to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).
 
-Channels that enter this state never leave this state.
+SHUTDOWN: This channel has started shutting down. Any new RPCs should fail immediately. Pending RPCs may continue running till the application cancels them. Channels may enter this state either because the application explicitly requested a shutdown or if a non-recoverable error has happened during attempts to connect communicate . (As of 6/12/2015, there are no known errors (while connecting or communicating) that are classified as non-recoverable) 
+Channels that enter this state never leave this state. 
 
 The following table lists the legal transitions from one state to another and
 corresponding reasons. Empty cells denote disallowed transitions.
@@ -52,14 +51,16 @@ corresponding reasons. Empty cells denote disallowed transitions.
     <th>CONNECTING</th>
     <th>READY</th>
     <th>TRANSIENT_FAILURE</th>
-    <th>FATAL_FAILURE</th>
+    <th>IDLE</th>
+    <th>SHUTDOWN</th>
   </tr>
   <tr>
     <th>CONNECTING</th>
     <td>Incremental progress during connection establishment</td>
     <td>All steps needed to establish a connection succeeded</td>
     <td>Any failure in any of the steps needed to establish connection</td>
-    <td>Fatal failure encountered while attempting a connection.</td>
+    <td>No RPC activity on channel for IDLE_TIMEOUT</td>
+    <td>Shutdown triggered by application.</td>
   </tr>
   <tr>
     <th>READY</th>
@@ -67,7 +68,8 @@ corresponding reasons. Empty cells denote disallowed transitions.
     <td>Incremental successful communication on established channel.</td>
     <td>Any failure encountered while expecting successful communication on
         established channel.</td>
-    <td></td>
+    <td>No RPC activity on channel for IDLE_TIMEOUT <br>OR<br>upon receiving a GO_AWAY while there are no pending RPCs.</td>
+    <td>Shutdown triggered by application.</td>
   </tr>
   <tr>
     <th>TRANSIENT_FAILURE</th>
@@ -75,9 +77,19 @@ corresponding reasons. Empty cells denote disallowed transitions.
     <td></td>
     <td></td>
     <td></td>
+    <td>Shutdown triggered by application.</td>
+  </tr>
+  <tr>
+    <th>IDLE</th>
+    <td>Any new RPC activity on the channel</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>Shutdown triggered by application.</td>
   </tr>
   <tr>
     <th>FATAL_FAILURE</th>
+    <td></td>
     <td></td>
     <td></td>
     <td></td>
