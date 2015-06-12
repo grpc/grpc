@@ -1649,14 +1649,14 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
     case GRPC_ENDPOINT_CB_OK:
       lock(t);
       GPR_ASSERT(!t->parsing.executing);
-      t->parsing.executing = 1;
       if (t->error_state == ERROR_STATE_NONE) {
+        t->parsing.executing = 1;
         gpr_mu_unlock(&t->mu);
         for (i = 0; i < nslices && process_read(t, slices[i]); i++)
           ;
+        t->parsing.executing = 0;
         gpr_mu_lock(&t->mu);
       }
-      t->parsing.executing = 0;
       while ((s = stream_list_remove_head(t, MAYBE_FINISH_READ_AFTER_PARSE))) {
         maybe_finish_read(t, s, 0);
       }
