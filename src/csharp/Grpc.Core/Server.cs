@@ -52,9 +52,6 @@ namespace Grpc.Core
         /// </summary>
         public const int PickUnusedPort = 0;
 
-        //readonly OpCompletionDelegate serverShutdownHandler;
-        //readonly OpCompletionDelegate newServerRpcHandler;
-
         readonly ServerSafeHandle handle;
         readonly object myLock = new object();
 
@@ -64,11 +61,16 @@ namespace Grpc.Core
         bool startRequested;
         bool shutdownRequested;
 
-        public Server()
+        /// <summary>
+        /// Create a new server.
+        /// </summary>
+        /// <param name="options">Channel options.</param>
+        public Server(IEnumerable<ChannelOption> options = null)
         {
-            this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), IntPtr.Zero);
-            //this.newServerRpcHandler = HandleNewServerRpc;
-            //this.serverShutdownHandler = HandleServerShutdown;
+            using (var channelArgs = ChannelOptions.CreateChannelArgs(options))
+            {
+                this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), channelArgs);
+            }
         }
 
         /// <summary>
@@ -141,8 +143,6 @@ namespace Grpc.Core
                 Preconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
-
-            var ctx = BatchContextSafeHandle.Create();
             handle.ShutdownAndNotify(HandleServerShutdown);
             await shutdownTcs.Task;
             handle.Dispose();

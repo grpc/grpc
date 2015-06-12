@@ -355,6 +355,16 @@ grpcsharp_channel_args_set_string(grpc_channel_args *args, size_t index,
 }
 
 GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_channel_args_set_integer(grpc_channel_args *args, size_t index,
+                                  const char *key, int value) {
+  GPR_ASSERT(args);
+  GPR_ASSERT(index < args->num_args);
+  args->args[index].type = GRPC_ARG_INTEGER;
+  args->args[index].key = gpr_strdup(key);
+  args->args[index].value.integer = value;
+}
+
+GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_channel_args_destroy(grpc_channel_args *args) {
   size_t i;
   if (args) {

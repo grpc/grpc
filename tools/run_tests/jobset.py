@@ -223,6 +223,7 @@ class Jobset(object):
     self._travis = travis
     self._cache = cache
     self._stop_on_failure = stop_on_failure
+    self._hashes = {}
 
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
@@ -231,11 +232,15 @@ class Jobset(object):
       self.reap()
     if self.cancelled(): return False
     if spec.hash_targets:
-      bin_hash = hashlib.sha1()
-      for fn in spec.hash_targets:
-        with open(which(fn)) as f:
-          bin_hash.update(f.read())
-      bin_hash = bin_hash.hexdigest()
+      if spec.identity() in self._hashes:
+        bin_hash = self._hashes[spec.identity()]
+      else:
+        bin_hash = hashlib.sha1()
+        for fn in spec.hash_targets:
+          with open(which(fn)) as f:
+            bin_hash.update(f.read())
+        bin_hash = bin_hash.hexdigest()
+        self._hashes[spec.identity()] = bin_hash
       should_run = self._cache.should_run(spec.identity(), bin_hash)
     else:
       bin_hash = None
@@ -266,6 +271,7 @@ class Jobset(object):
             for job in self._running:
               job.kill()
         dead.add(job)
+        break
       for job in dead:
         self._completed += 1
         self._running.remove(job)
