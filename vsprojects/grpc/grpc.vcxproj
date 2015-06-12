@@ -468,6 +468,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\status_conversion.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_encoder.c">
@@ -477,6 +479,8 @@
     <ClCompile Include="..\..\src\core\transport\chttp2\timeout_encoding.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\writing.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
     </ClCompile>

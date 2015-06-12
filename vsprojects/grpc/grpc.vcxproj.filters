@@ -319,6 +319,9 @@
     <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\status_conversion.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
@@ -332,6 +335,9 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\writing.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
