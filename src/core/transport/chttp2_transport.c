@@ -282,14 +282,16 @@ struct transport {
   stream_list lists[STREAM_LIST_COUNT];
   grpc_chttp2_stream_map stream_map;
 
-  /* metadata object cache */
-  grpc_mdstr *str_grpc_timeout;
-
   /* pings */
   outstanding_ping *pings;
   size_t ping_count;
   size_t ping_capacity;
   gpr_int64 ping_counter;
+
+  struct {
+    /* metadata object cache */
+    grpc_mdstr *str_grpc_timeout;
+  } constants;
 
   struct {
     /** data to write next write */
@@ -452,7 +454,7 @@ static void destruct_transport(transport *t) {
   grpc_chttp2_hpack_parser_destroy(&t->hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->goaway_parser);
 
-  grpc_mdstr_unref(t->str_grpc_timeout);
+  grpc_mdstr_unref(t->constants.str_grpc_timeout);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
     GPR_ASSERT(t->lists[i].head == NULL);
@@ -513,7 +515,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   gpr_cv_init(&t->cv);
   grpc_mdctx_ref(mdctx);
   t->metadata_context = mdctx;
-  t->str_grpc_timeout =
+  t->constants.str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
   t->reading = 1;
   t->error_state = ERROR_STATE_NONE;
@@ -843,109 +845,6 @@ static void unlock(transport *t) {
     run_closures->cb(run_closures->cb_arg, run_closures->success);
     run_closures = next;
   }
-
-#if 0  
-  int start_write = 0;
-  int perform_callbacks = 0;
-  int call_closed = 0;
-  int num_goaways = 0;
-  int i;
-  pending_goaway *goaways = NULL;
-  grpc_endpoint *ep = t->ep;
-  grpc_stream_op_buffer nuke_now;
-  const grpc_transport_callbacks *cb = t->channel_callback.cb;
-
-  GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_UNLOCK, 0);
-
-  grpc_sopb_init(&nuke_now);
-  if (t->nuke_later_sopb.nops) {
-    grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
-  }
-
-  /* see if we need to trigger a write - and if so, get the data ready */
-  if (ep && !t->writing.executing) {
-    t->writing.executing = start_write = prepare_write(t);
-    if (start_write) {
-      ref_transport(t);
-    }
-  }
-
-  if (!t->writing.executing) {
-    finalize_cancellations(t);
-  }
-
-  if (!t->parsing.executing) {
-    finish_reads(t);
-  }
-
-  /* gather any callbacks that need to be made */
-  if (!t->calling_back_ops) {
-    t->calling_back_ops = perform_callbacks = prepare_callbacks(t);
-    if (perform_callbacks) ref_transport(t);
-  }
-
-  if (!t->channel_callback.executing && cb) {
-    if (t->error_state == ERROR_STATE_SEEN && !t->writing.executing) {
-      call_closed = 1;
-      t->calling_back_channel = 1;
-      t->cb = NULL; /* no more callbacks */
-      t->error_state = ERROR_STATE_NOTIFIED;
-    }
-    if (!t->parsing && t->num_pending_goaways) {
-      goaways = t->pending_goaways;
-      num_goaways = t->num_pending_goaways;
-      t->pending_goaways = NULL;
-      t->num_pending_goaways = 0;
-      t->cap_pending_goaways = 0;
-      t->calling_back_channel = 1;
-    }
-    if (call_closed || num_goaways) {
-      ref_transport(t);
-    }
-  }
-
-  /* finally unlock */
-  gpr_mu_unlock(&t->mu);
-
-  GRPC_TIMER_MARK(GRPC_PTAG_HTTP2_UNLOCK_CLEANUP, 0);
-
-  /* perform some callbacks if necessary */
-  for (i = 0; i < num_goaways; i++) {
-    cb->goaway(t->cb_user_data, &t->base, goaways[i].status, goaways[i].debug);
-  }
-
-  if (perform_callbacks) {
-    run_callbacks(t);
-    lock(t);
-    t->calling_back_ops = 0;
-    unlock(t);
-    unref_transport(t);
-  }
-
-  if (call_closed) {
-    call_cb_closed(t, cb);
-  }
-
-  /* write some bytes if necessary */
-  if (start_write) {
-    /* ultimately calls unref_transport(t); and clears t->writing */
-    perform_write(t, ep);
-  }
-
-  if (call_closed || num_goaways) {
-    lock(t);
-    t->calling_back_channel = 0;
-    if (t->destroying) gpr_cv_signal(&t->cv);
-    unlock(t);
-    unref_transport(t);
-  }
-
-  grpc_sopb_destroy(&nuke_now);
-
-  gpr_free(goaways);
-
-  GRPC_TIMER_END(GRPC_PTAG_HTTP2_UNLOCK, 0);
-#endif  
 }
 
 /*
@@ -1523,7 +1422,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
       GPR_INFO, "HTTP:%d:%s:HDR: %s: %s", s->id, t->is_client ? "CLI" : "SVR",
       grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
-  if (md->key == t->str_grpc_timeout) {
+  if (md->key == t->constants.str_grpc_timeout) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
     if (!cached_timeout) {
       /* not already parsed: parse it now, and store the result away */
