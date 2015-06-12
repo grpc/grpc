@@ -53,18 +53,6 @@ namespace Grpc.Core.Tests
         [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
 
-        [TestFixtureSetUp]
-        public void Init()
-        {
-            GrpcEnvironment.Initialize();
-        }
-
-        [TestFixtureTearDown]
-        public void Cleanup()
-        {
-            GrpcEnvironment.Shutdown();
-        }
-
         /// <summary>
         /// (~1.26us .NET Windows)
         /// </summary>

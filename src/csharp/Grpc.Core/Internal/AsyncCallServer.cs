@@ -48,14 +48,17 @@ namespace Grpc.Core.Internal
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>
     {
         readonly TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
+        readonly GrpcEnvironment environment;
 
-        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer) : base(serializer, deserializer)
+        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, GrpcEnvironment environment) : base(serializer, deserializer)
         {
+            this.environment = Preconditions.CheckNotNull(environment);
         }
 
         public void Initialize(CallSafeHandle call)
         {
-            DebugStats.ActiveServerCalls.Increment();
+            call.SetCompletionRegistry(environment.CompletionRegistry);
+            environment.DebugStats.ActiveServerCalls.Increment();
             InitializeInternal(call);
         }
 
@@ -114,7 +117,7 @@ namespace Grpc.Core.Internal
 
         protected override void OnReleaseResources()
         {
-            DebugStats.ActiveServerCalls.Decrement();
+            environment.DebugStats.ActiveServerCalls.Decrement();
         }
 
         /// <summary>
