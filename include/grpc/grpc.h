@@ -366,9 +366,8 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
    drained and no threads are executing grpc_completion_queue_next */
 void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
-/* Create a call given a grpc_channel, in order to call 'method'. The request
-   is not sent until grpc_call_invoke is called. All completions are sent to
-   'completion_queue'. */
+/* Create a call given a grpc_channel, in order to call 'method'. All 
+   completions are sent to 'completion_queue'. */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
@@ -387,7 +386,8 @@ grpc_call *grpc_channel_create_registered_call(
    completion of type 'tag' to the completion queue bound to the call.
    The order of ops specified in the batch has no significance.
    Only one operation of each type can be active at once in any given
-   batch. */
+   batch. 
+   THREAD SAFETY: grpc_call_start_batch is thread-compatible */
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                                       size_t nops, void *tag);
 
@@ -404,17 +404,6 @@ grpc_channel *grpc_lame_client_channel_create(void);
 /* Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);
 
-/* THREAD-SAFETY for grpc_call
-   The following functions are thread-compatible for any given call:
-     grpc_call_add_metadata
-     grpc_call_invoke
-     grpc_call_start_write
-     grpc_call_writes_done
-     grpc_call_start_read
-     grpc_call_destroy
-   The function grpc_call_cancel is thread-safe, and can be called at any
-   point before grpc_call_destroy is called. */
-
 /* Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.
@@ -422,7 +411,10 @@ void grpc_channel_destroy(grpc_channel *channel);
    has been made. */
 
 /* Called by clients to cancel an RPC on the server.
-   Can be called multiple times, from any thread. */
+   Can be called multiple times, from any thread. 
+   THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
+   are thread-safe, and can be called at any point before grpc_call_destroy
+   is called.*/
 grpc_call_error grpc_call_cancel(grpc_call *call);
 
 /* Called by clients to cancel an RPC on the server.
@@ -435,7 +427,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                              grpc_status_code status,
                                              const char *description);
 
-/* Destroy a call. */
+/* Destroy a call. 
+   THREAD SAFETY: grpc_call_destroy is thread-compatible */
 void grpc_call_destroy(grpc_call *call);
 
 /* Request notification of a new call */
