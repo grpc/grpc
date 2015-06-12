@@ -45,7 +45,7 @@ namespace Grpc.Core.Internal
     internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid
     {
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
+        static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern int grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
@@ -72,7 +72,7 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, IntPtr args)
+        public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args)
         {
             return grpcsharp_server_create(cq, args);
         }

@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,58 +28,48 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core.Internal.Tests
 {
-    /// <summary>
-    /// grpc_channel_args from <grpc/grpc.h>
-    /// </summary>
-    internal class ChannelArgsSafeHandle : SafeHandleZeroIsInvalid
+    public class ChannelArgsSafeHandleTest
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
-
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
-
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_channel_args_destroy(IntPtr args);
-
-        private ChannelArgsSafeHandle()
+        [Test]
+        public void CreateEmptyAndDestroy()
         {
+            var channelArgs = ChannelArgsSafeHandle.Create(0);
+            channelArgs.Dispose();
         }
 
-        public static ChannelArgsSafeHandle CreateNull()
+        [Test]
+        public void CreateNonEmptyAndDestroy()
         {
-            return new ChannelArgsSafeHandle();
+            var channelArgs = ChannelArgsSafeHandle.Create(5);
+            channelArgs.Dispose();
         }
 
-        public static ChannelArgsSafeHandle Create(int size)
+        [Test]
+        public void CreateNullAndDestroy()
         {
-            return grpcsharp_channel_args_create(new UIntPtr((uint)size));
+            var channelArgs = ChannelArgsSafeHandle.CreateNull();
+            channelArgs.Dispose();
         }
 
-        public void SetString(int index, string key, string value)
+        [Test]
+        public void CreateFillAndDestroy()
         {
-            grpcsharp_channel_args_set_string(this, new UIntPtr((uint)index), key, value);
-        }
-
-        public void SetInteger(int index, string key, int value)
-        {
-            grpcsharp_channel_args_set_integer(this, new UIntPtr((uint)index), key, value);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            grpcsharp_channel_args_destroy(handle);
-            return true;
+            var channelArgs = ChannelArgsSafeHandle.Create(3);
+            channelArgs.SetInteger(0, "somekey", 12345);
+            channelArgs.SetString(1, "somekey", "abcdefghijkl");
+            channelArgs.SetString(2, "somekey", "XYZ");
+            channelArgs.Dispose();
         }
     }
 }
