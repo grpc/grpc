@@ -43,7 +43,9 @@ then
 
   # Run tests inside docker
   docker run grpc/grpc_jenkins_slave bash -c -l "git clone --recursive $GIT_URL /var/local/git/grpc \
-    && cd /var/local/git/grpc && git checkout -f $GIT_COMMIT \
+    && cd /var/local/git/grpc \
+    && git fetch $GIT_URL +refs/pull/*:refs/remotes/origin/pr/* \
+    && git checkout -f $GIT_COMMIT \
     && git submodule update \
     && nvm use 0.12 \
     && rvm use ruby-2.1 \
