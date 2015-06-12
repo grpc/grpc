@@ -65,7 +65,7 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser *p);
 grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
     grpc_chttp2_goaway_parser *parser, gpr_uint32 length, gpr_uint8 flags);
 grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
 void grpc_chttp2_goaway_append(gpr_uint32 last_stream_id, gpr_uint32 error_code,
                                gpr_slice debug_data,

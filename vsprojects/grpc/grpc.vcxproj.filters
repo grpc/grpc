@@ -611,9 +611,6 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\transport\chttp2\frame.h">
-      <Filter>src\core\transport\chttp2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_data.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>

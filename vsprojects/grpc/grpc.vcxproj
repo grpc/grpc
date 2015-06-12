@@ -231,7 +231,6 @@
     <ClInclude Include="..\..\src\core\surface\surface_trace.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\alpn.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h" />
-    <ClInclude Include="..\..\src\core\transport\chttp2\frame.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_data.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_goaway.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_ping.h" />

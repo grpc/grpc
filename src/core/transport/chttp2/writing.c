@@ -32,93 +32,145 @@
  */
 
 #include "src/core/transport/chttp2/internal.h"
+#include "src/core/transport/chttp2/http2_errors.h"
 
 #include <grpc/support/log.h>
 
-static void grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport *t) {
-  grpc_chttp2_stream *s;
+static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing);
+static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status);
+
+int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_constants *transport_constants, grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing) {
+  grpc_chttp2_stream_global *stream_global;
+  grpc_chttp2_stream_writing *stream_writing;
   gpr_uint32 window_delta;
 
-  /* don't do anything if we are already writing */
-  if (t->writing.executing) {
-    return;
-  }
-
   /* simple writes are queued to qbuf, and flushed here */
-  gpr_slice_buffer_swap(&t->global.qbuf, &t->writing.outbuf);
-  GPR_ASSERT(t->global.qbuf.count == 0);
+  gpr_slice_buffer_swap(&transport_global->qbuf, &transport_writing->outbuf);
+  GPR_ASSERT(transport_global->qbuf.count == 0);
 
-  if (t->dirtied_local_settings && !t->sent_local_settings) {
+  if (transport_global->dirtied_local_settings && !transport_global->sent_local_settings) {
     gpr_slice_buffer_add(
-        &t->writing.outbuf, grpc_chttp2_settings_create(
-                        t->settings[SENT_SETTINGS], t->settings[LOCAL_SETTINGS],
-                        t->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
-    t->force_send_settings = 0;
-    t->dirtied_local_settings = 0;
-    t->sent_local_settings = 1;
+        &transport_writing->outbuf, grpc_chttp2_settings_create(
+                        transport_global->settings[SENT_SETTINGS], transport_global->settings[LOCAL_SETTINGS],
+                        transport_global->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
+    transport_global->force_send_settings = 0;
+    transport_global->dirtied_local_settings = 0;
+    transport_global->sent_local_settings = 1;
   }
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data (according to
      available window sizes) and add to the output buffer */
-  while (t->outgoing_window && (s = stream_list_remove_head(t, WRITABLE)) &&
-         s->outgoing_window > 0) {
+  while (transport_global->outgoing_window && 
+    grpc_chttp2_list_pop_writable_stream(transport_global, transport_writing, &stream_global, &stream_writing) &&
+         stream_global->outgoing_window > 0) {
+    stream_writing->id = stream_global->id;
     window_delta = grpc_chttp2_preencode(
-        s->outgoing_sopb->ops, &s->outgoing_sopb->nops,
-        GPR_MIN(t->outgoing_window, s->outgoing_window), &s->writing.sopb);
-    FLOWCTL_TRACE(t, t, outgoing, 0, -(gpr_int64)window_delta);
-    FLOWCTL_TRACE(t, s, outgoing, s->id, -(gpr_int64)window_delta);
-    t->outgoing_window -= window_delta;
-    s->outgoing_window -= window_delta;
+        stream_global->outgoing_sopb->ops, &stream_global->outgoing_sopb->nops,
+        GPR_MIN(transport_global->outgoing_window, stream_global->outgoing_window), 
+        &stream_writing->sopb);
+    GRPC_CHTTP2_FLOW_CTL_TRACE(t, t, outgoing, 0, -(gpr_int64)window_delta);
+    GRPC_CHTTP2_FLOW_CTL_TRACE(t, s, outgoing, s->id, -(gpr_int64)window_delta);
+    transport_global->outgoing_window -= window_delta;
+    stream_global->outgoing_window -= window_delta;
 
-    if (s->write_state == WRITE_STATE_QUEUED_CLOSE &&
-        s->outgoing_sopb->nops == 0) {
-      if (!t->is_client && !s->read_closed) {
-        s->writing.send_closed = SEND_CLOSED_WITH_RST_STREAM;
+    if (stream_global->write_state == WRITE_STATE_QUEUED_CLOSE &&
+        stream_global->outgoing_sopb->nops == 0) {
+      if (!transport_constants->is_client && !stream_global->read_closed) {
+        stream_writing->send_closed = SEND_CLOSED_WITH_RST_STREAM;
       } else {
-        s->writing.send_closed = SEND_CLOSED;
+        stream_writing->send_closed = SEND_CLOSED;
       }
     }
-    if (s->writing.sopb.nops > 0 || s->writing.send_closed) {
-      stream_list_join(t, s, WRITING);
+    if (stream_writing->sopb.nops > 0 || stream_writing->send_closed != DONT_SEND_CLOSED) {
+      grpc_chttp2_list_add_writing_stream(transport_writing, stream_writing);
     }
 
     /* we should either exhaust window or have no ops left, but not both */
-    if (s->outgoing_sopb->nops == 0) {
-      s->outgoing_sopb = NULL;
-      schedule_cb(t, s->global.send_done_closure, 1);
-    } else if (s->outgoing_window) {
-      stream_list_add_tail(t, s, WRITABLE);
+    if (stream_global->outgoing_sopb->nops == 0) {
+      stream_global->outgoing_sopb = NULL;
+      grpc_chttp2_schedule_closure(transport_global, stream_global->send_done_closure, 1);
+    } else if (stream_global->outgoing_window) {
+      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
   }
 
-  if (!t->parsing.executing) {
-    /* for each grpc_chttp2_stream that wants to update its window, add that window here */
-    while ((s = stream_list_remove_head(t, WINDOW_UPDATE))) {
-      window_delta =
-          t->settings[LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
-          s->incoming_window;
-      if (!s->read_closed && window_delta) {
-        gpr_slice_buffer_add(
-            &t->writing.outbuf, grpc_chttp2_window_update_create(s->id, window_delta));
-        FLOWCTL_TRACE(t, s, incoming, s->id, window_delta);
-        s->incoming_window += window_delta;
+  /* for each grpc_chttp2_stream that wants to update its window, add that window here */
+  while (grpc_chttp2_list_pop_writable_window_update_stream(transport_global, &stream_global)) {
+    window_delta =
+        transport_global->settings[LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
+        stream_global->incoming_window;
+    if (!stream_global->read_closed && window_delta > 0) {
+      gpr_slice_buffer_add(
+          &transport_writing->outbuf, grpc_chttp2_window_update_create(stream_global->id, window_delta));
+      GRPC_CHTTP2_FLOW_CTL_TRACE(t, s, incoming, s->id, window_delta);
+      stream_global->incoming_window += window_delta;
+    }
+  }
+
+  /* if the grpc_chttp2_transport is ready to send a window update, do so here also */
+  if (transport_global->incoming_window < transport_global->connection_window_target * 3 / 4) {
+    window_delta = transport_global->connection_window_target - transport_global->incoming_window;
+    gpr_slice_buffer_add(&transport_writing->outbuf,
+                         grpc_chttp2_window_update_create(0, window_delta));
+    GRPC_CHTTP2_FLOW_CTL_TRACE(t, t, incoming, 0, window_delta);
+    transport_global->incoming_window += window_delta;
+  }
+
+  return transport_writing->outbuf.length > 0 || grpc_chttp2_list_have_writing_streams(transport_writing);
+}
+
+void grpc_chttp2_perform_writes(grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint) {
+  finalize_outbuf(transport_writing);
+
+  GPR_ASSERT(transport_writing->outbuf.count > 0);
+
+  switch (grpc_endpoint_write(endpoint, transport_writing->outbuf.slices, transport_writing->outbuf.count,
+                              finish_write_cb, transport_writing)) {
+    case GRPC_ENDPOINT_WRITE_DONE:
+      grpc_chttp2_terminate_writing(transport_writing, 1);
+      break;
+    case GRPC_ENDPOINT_WRITE_ERROR:
+      grpc_chttp2_terminate_writing(transport_writing, 0);
+      break;
+    case GRPC_ENDPOINT_WRITE_PENDING:
+      break;
+  }
+}
+
+static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
+  grpc_chttp2_stream_writing *stream_writing;
+
+  while (grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
+    grpc_chttp2_encode(stream_writing->sopb.ops, stream_writing->sopb.nops,
+                       stream_writing->send_closed != DONT_SEND_CLOSED, stream_writing->id,
+                       &transport_writing->hpack_compressor, &transport_writing->outbuf);
+    stream_writing->sopb.nops = 0;
+    if (stream_writing->send_closed == SEND_CLOSED_WITH_RST_STREAM) {
+      gpr_slice_buffer_add(&transport_writing->outbuf, grpc_chttp2_rst_stream_create(
+                                           stream_writing->id, GRPC_CHTTP2_NO_ERROR));
+    }
+    grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
+  }
+}
+
+static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status) {
+  grpc_chttp2_transport_writing *transport_writing = tw;
+  grpc_chttp2_terminate_writing(transport_writing, write_status == GRPC_ENDPOINT_CB_OK);
+}
+
+void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_constants *transport_constants, grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing) {
+  grpc_chttp2_stream_writing *stream_writing;
+  grpc_chttp2_stream_global *stream_global;
+
+  while (grpc_chttp2_list_pop_written_stream(transport_global, transport_writing, &stream_global, &stream_writing)) {
+    if (stream_writing->send_closed != DONT_SEND_CLOSED) {
+      stream_global->write_state = WRITE_STATE_SENT_CLOSE;
+      if (!transport_constants->is_client) {
+        stream_global->read_closed = 1;
       }
-    }
-
-    /* if the grpc_chttp2_transport is ready to send a window update, do so here also */
-    if (t->incoming_window < t->connection_window_target * 3 / 4) {
-      window_delta = t->connection_window_target - t->incoming_window;
-      gpr_slice_buffer_add(&t->writing.outbuf,
-                           grpc_chttp2_window_update_create(0, window_delta));
-      FLOWCTL_TRACE(t, t, incoming, 0, window_delta);
-      t->incoming_window += window_delta;
+      grpc_chttp2_read_write_state_changed(transport_global, stream_global);
     }
   }
-
-  if (t->writing.outbuf.length > 0 || !stream_list_empty(t, WRITING)) {
-    t->writing.executing = 1;
-    ref_transport(t);
-    gpr_log(GPR_DEBUG, "schedule write");
-    schedule_cb(t, &t->writing.action, 1);
-  }
+  transport_writing->outbuf.count = 0;
+  transport_writing->outbuf.length = 0;
 }
