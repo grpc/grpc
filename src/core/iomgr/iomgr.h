@@ -73,4 +73,6 @@ void grpc_iomgr_shutdown(void);
  * Can be called from within a callback or from anywhere else */
 void grpc_iomgr_add_callback(grpc_iomgr_closure *closure);
 
+void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
+
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

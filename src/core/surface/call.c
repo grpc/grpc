@@ -237,6 +237,9 @@ struct grpc_call {
   gpr_slice_buffer incoming_message;
   gpr_uint32 incoming_message_length;
   grpc_iomgr_closure destroy_closure;
+  grpc_iomgr_closure on_done_recv;
+  grpc_iomgr_closure on_done_send;
+  grpc_iomgr_closure on_done_bind;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -255,6 +258,7 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
                                           const char *description);
+static void finished_loose_op(void *call, int success);
 
 static void lock(grpc_call *call);
 static void unlock(grpc_call *call);
@@ -298,6 +302,9 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   grpc_sopb_init(&call->send_ops);
   grpc_sopb_init(&call->recv_ops);
   gpr_slice_buffer_init(&call->incoming_message);
+  grpc_iomgr_closure_init(&call->on_done_recv, call_on_done_recv, call);
+  grpc_iomgr_closure_init(&call->on_done_send, call_on_done_send, call);
+  grpc_iomgr_closure_init(&call->on_done_bind, finished_loose_op, call);
   /* dropped in destroy and when READ_STATE_STREAM_CLOSED received */
   gpr_ref_init(&call->internal_refcount, 2);
   /* server hack: start reads immediately so we can get initial metadata.
@@ -306,8 +313,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
     memset(&initial_op, 0, sizeof(initial_op));
     initial_op.recv_ops = &call->recv_ops;
     initial_op.recv_state = &call->recv_state;
-    initial_op.on_done_recv = call_on_done_recv;
-    initial_op.recv_user_data = call;
+    initial_op.on_done_recv = &call->on_done_recv;
     initial_op.context = call->context;
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
@@ -460,8 +466,7 @@ static void unlock(grpc_call *call) {
   if (!call->receiving && need_more_data(call)) {
     op.recv_ops = &call->recv_ops;
     op.recv_state = &call->recv_state;
-    op.on_done_recv = call_on_done_recv;
-    op.recv_user_data = call;
+    op.on_done_recv = &call->on_done_recv;
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
     start_op = 1;
@@ -929,8 +934,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
       break;
   }
   if (op->send_ops) {
-    op->on_done_send = call_on_done_send;
-    op->send_user_data = call;
+    op->on_done_send = &call->on_done_send;
   }
   return op->send_ops != NULL;
 }
@@ -1105,14 +1109,31 @@ static void finished_loose_op(void *call, int success_ignored) {
   GRPC_CALL_INTERNAL_UNREF(call, "loose-op", 0);
 }
 
+typedef struct {
+  grpc_call *call;
+  grpc_iomgr_closure closure;
+} finished_loose_op_allocated_args;
+
+static void finished_loose_op_allocated(void *alloc, int success) {
+  finished_loose_op_allocated_args *args = alloc;
+  finished_loose_op(args->call, success);
+  gpr_free(args);
+}
+
 static void execute_op(grpc_call *call, grpc_transport_op *op) {
   grpc_call_element *elem;
 
   GPR_ASSERT(op->on_consumed == NULL);
   if (op->cancel_with_status != GRPC_STATUS_OK || op->bind_pollset) {
     GRPC_CALL_INTERNAL_REF(call, "loose-op");
-    op->on_consumed = finished_loose_op;
-    op->on_consumed_user_data = call;
+    if (op->bind_pollset) {
+      op->on_consumed = &call->on_done_bind;
+    } else {
+      finished_loose_op_allocated_args *args = gpr_malloc(sizeof(*args));
+      args->call = call;
+      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated, args);
+      op->on_consumed = &args->closure;
+    }
   }
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
