@@ -115,7 +115,11 @@ def main():
   if not os.path.exists(ACCESS_TOKENS_DIR):
     os.makedirs(ACCESS_TOKENS_DIR)
 
-  email = sys.argv[2]
+  if len(sys.argv) > 2:
+    email = sys.argv[2]
+  else:
+    email = raw_input('Enter your e-mail id: ')
+  
   email = email.split('@')[0].lower()
   userId = re.sub('[.]', '', email)
 
