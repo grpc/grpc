@@ -31,13 +31,6 @@
  *
  */
 
-#import <Foundation/Foundation.h>
-#import <gRPC/GRXWriter.h>
-
-@class GRPCMethodName;
-
-@class GRPCCall;
-
 // The gRPC protocol is an RPC protocol on top of HTTP2.
 //
 // While the most common type of RPC receives only one request message and returns only one response
@@ -51,6 +44,16 @@
 //
 // Each RPC uses a different HTTP2 stream, and thus multiple simultaneous RPCs can be multiplexed
 // transparently on the same TCP connection.
+
+#import <Foundation/Foundation.h>
+#import <gRPC/GRXWriter.h>
+
+@class GRPCMethodName;
+
+// Key used in |NSError|'s |userInfo| dictionary to store the response metadata sent by the server.
+extern id const kGRPCStatusMetadataKey;
+
+// Represents a single gRPC remote call.
 @interface GRPCCall : NSObject<GRXWriter>
 
 // These HTTP headers will be passed to the server as part of this call. Each HTTP header is a

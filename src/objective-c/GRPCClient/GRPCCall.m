@@ -46,9 +46,9 @@
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
 
+NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
+
 @interface GRPCCall () <GRXWriteable>
-// Makes it readwrite.
-@property(atomic, strong) NSDictionary *responseMetadata;
 @end
 
 // The following methods of a C gRPC call object aren't reentrant, and thus
@@ -84,6 +84,7 @@
   id<GRXWriter> _requestWriter;
 
   NSMutableDictionary *_requestMetadata;
+  NSMutableDictionary *_responseMetadata;
 }
 
 @synthesize state = _state;
@@ -120,6 +121,7 @@
     _requestWriter = requestWriter;
 
     _requestMetadata = [NSMutableDictionary dictionary];
+    _responseMetadata = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -132,6 +134,10 @@
 
 - (void)setRequestMetadata:(NSDictionary *)requestMetadata {
   _requestMetadata = [NSMutableDictionary dictionaryWithDictionary:requestMetadata];
+}
+
+- (NSDictionary *)responseMetadata {
+  return _responseMetadata;
 }
 
 #pragma mark Finish
@@ -291,7 +297,7 @@
 // The first one (metadataHandler), when the response headers are received.
 // The second one (completionHandler), whenever the RPC finishes for any reason.
 - (void)invokeCallWithMetadataHandler:(void(^)(NSDictionary *))metadataHandler
-                    completionHandler:(void(^)(NSError *))completionHandler {
+                    completionHandler:(void(^)(NSError *, NSDictionary *))completionHandler {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMetadata alloc]
                                             initWithHandler:metadataHandler]]];
@@ -301,16 +307,23 @@
 
 - (void)invokeCall {
   __weak GRPCCall *weakSelf = self;
-  [self invokeCallWithMetadataHandler:^(NSDictionary *metadata) {
-    // Response metadata received.
+  [self invokeCallWithMetadataHandler:^(NSDictionary *headers) {
+    // Response headers received.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      strongSelf.responseMetadata = metadata;
+      [strongSelf->_responseMetadata addEntriesFromDictionary:headers];
       [strongSelf startNextRead];
     }
-  } completionHandler:^(NSError *error) {
-    // TODO(jcanizales): Merge HTTP2 trailers into response metadata.
-    [weakSelf finishWithError:error];
+  } completionHandler:^(NSError *error, NSDictionary *trailers) {
+    GRPCCall *strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf->_responseMetadata addEntriesFromDictionary:trailers];
+
+      NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithDictionary:error.userInfo];
+      userInfo[kGRPCStatusMetadataKey] = strongSelf->_responseMetadata;
+      error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+      [strongSelf finishWithError:error];
+    }
   }];
   // Now that the RPC has been initiated, request writes can start.
   [_requestWriter startWithWriteable:self];
