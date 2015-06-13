@@ -156,8 +156,7 @@ static GRPCMethodName *kUnaryCallMethod;
                                            method:kUnaryCallMethod
                                    requestsWriter:requestsWriter];
 
-  call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
-      @{@"Authorization": @"Bearer bogusToken"}];
+  call.requestMetadata[@"Authorization"] = @"Bearer bogusToken";
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTFail(@"Received unexpected response: %@", value);

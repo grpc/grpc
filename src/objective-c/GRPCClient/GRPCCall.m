@@ -82,6 +82,8 @@
   // correct ordering.
   GRPCDelegateWrapper *_responseWriteable;
   id<GRXWriter> _requestWriter;
+
+  NSMutableDictionary *_requestMetadata;
 }
 
 @synthesize state = _state;
@@ -116,8 +118,20 @@
     _callQueue = dispatch_queue_create("org.grpc.call", NULL);
 
     _requestWriter = requestWriter;
+
+    _requestMetadata = [NSMutableDictionary dictionary];
   }
   return self;
+}
+
+#pragma mark Metadata
+
+- (NSMutableDictionary *)requestMetadata {
+  return _requestMetadata;
+}
+
+- (void)setRequestMetadata:(NSDictionary *)requestMetadata {
+  _requestMetadata = [NSMutableDictionary dictionaryWithDictionary:requestMetadata];
 }
 
 #pragma mark Finish
