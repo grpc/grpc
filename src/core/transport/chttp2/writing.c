@@ -39,7 +39,7 @@
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing);
 static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status);
 
-int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_constants *transport_constants, grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing) {
+int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_writing *stream_writing;
   gpr_uint32 window_delta;
@@ -75,7 +75,7 @@ int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_constants *transpor
 
     if (stream_global->write_state == WRITE_STATE_QUEUED_CLOSE &&
         stream_global->outgoing_sopb->nops == 0) {
-      if (!transport_constants->is_client && !stream_global->read_closed) {
+      if (!transport_global->is_client && !stream_global->read_closed) {
         stream_writing->send_closed = SEND_CLOSED_WITH_RST_STREAM;
       } else {
         stream_writing->send_closed = SEND_CLOSED;
@@ -158,14 +158,14 @@ static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status) {
   grpc_chttp2_terminate_writing(transport_writing, write_status == GRPC_ENDPOINT_CB_OK);
 }
 
-void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_constants *transport_constants, grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing) {
+void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
 
   while (grpc_chttp2_list_pop_written_stream(transport_global, transport_writing, &stream_global, &stream_writing)) {
     if (stream_writing->send_closed != DONT_SEND_CLOSED) {
       stream_global->write_state = WRITE_STATE_SENT_CLOSE;
-      if (!transport_constants->is_client) {
+      if (!transport_global->is_client) {
         stream_global->read_closed = 1;
       }
       grpc_chttp2_read_write_state_changed(transport_global, stream_global);

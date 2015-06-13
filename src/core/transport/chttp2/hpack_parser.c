@@ -32,6 +32,7 @@
  */
 
 #include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/transport/chttp2/internal.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -1369,7 +1370,7 @@ int grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser *p,
 }
 
 grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
-    void *hpack_parser, grpc_chttp2_parse_state *state, gpr_slice slice,
+    void *hpack_parser, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice,
     int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   if (!grpc_chttp2_hpack_parser_parse(parser, GPR_SLICE_START_PTR(slice),
@@ -1382,9 +1383,12 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
               "end of header frame not aligned with a hpack record boundary");
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
-    state->metadata_boundary = parser->is_boundary;
-    state->end_of_stream = parser->is_eof;
-    state->need_flush_reads = parser->is_eof;
+    if (parser->is_boundary) {
+      grpc_chttp2_parsing_add_metadata_batch(transport_parsing, stream_parsing);
+    }
+    if (parser->is_eof) {
+      stream_parsing->received_close = 1;
+    }
     parser->on_header = on_header_not_set;
     parser->on_header_user_data = NULL;
     parser->is_boundary = 0xde;

@@ -32,6 +32,7 @@
  */
 
 #include "src/core/transport/chttp2/frame_rst_stream.h"
+#include "src/core/transport/chttp2/internal.h"
 
 #include <grpc/support/log.h>
 
@@ -69,7 +70,7 @@ grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice,
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice,
     int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
@@ -84,8 +85,9 @@ grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
 
   if (p->byte == 4) {
     GPR_ASSERT(is_last);
-    state->rst_stream = 1;
-    state->rst_stream_reason = 
+    stream_parsing->received_close = 1;
+    stream_parsing->saw_rst_stream = 1;
+    stream_parsing->rst_stream_reason = 
       (((gpr_uint32)p->reason_bytes[0]) << 24) |
       (((gpr_uint32)p->reason_bytes[1]) << 16) |
       (((gpr_uint32)p->reason_bytes[2]) << 8) |

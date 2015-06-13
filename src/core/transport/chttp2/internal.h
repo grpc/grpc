@@ -162,10 +162,11 @@ typedef enum {
 } grpc_chttp2_setting_set;
 
 /* Outstanding ping request data */
-typedef struct {
+typedef struct grpc_chttp2_outstanding_ping {
   gpr_uint8 id[8];
-  void (*cb)(void *user_data);
-  void *user_data;
+  grpc_iomgr_closure *on_recv;
+  struct grpc_chttp2_outstanding_ping *next;
+  struct grpc_chttp2_outstanding_ping *prev;
 } grpc_chttp2_outstanding_ping;
 
 typedef struct {
@@ -181,10 +182,13 @@ typedef struct {
 
   /** window available for us to send to peer */
   gpr_uint32 outgoing_window;
+  /** window available for peer to send to us - updated after parse */
+  gpr_uint32 incoming_window;
   /** how much window would we like to have for incoming_window */
   gpr_uint32 connection_window_target;
 
-
+  /** is this transport a client? */
+  gpr_uint8 is_client;
   /** are the local settings dirty and need to be sent? */
   gpr_uint8 dirtied_local_settings;
   /** have local settings been sent? */
@@ -196,6 +200,9 @@ typedef struct {
 
   /** last received stream id */
   gpr_uint32 last_incoming_stream_id;
+
+  /** pings awaiting responses */
+  grpc_chttp2_outstanding_ping pings;
 } grpc_chttp2_transport_global;
 
 typedef struct {
@@ -215,6 +222,9 @@ struct grpc_chttp2_transport_parsing {
   gpr_uint8 settings_ack_received;
   /** was a goaway frame received? */
   gpr_uint8 goaway_received;
+
+  /** initial window change */
+  gpr_int64 initial_window_update;
 
   /** data to write later - after parsing */
   gpr_slice_buffer qbuf;
@@ -262,6 +272,11 @@ struct grpc_chttp2_transport_parsing {
   grpc_status_code goaway_error;
   gpr_uint32 goaway_last_stream_index;
   gpr_slice goaway_text;
+
+  gpr_uint64 outgoing_window_update;
+
+  /** pings awaiting responses */
+  grpc_chttp2_outstanding_ping pings;
 };
 
 
@@ -306,9 +321,6 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream_map stream_map;
 
   /* pings */
-  grpc_chttp2_outstanding_ping *pings;
-  size_t ping_count;
-  size_t ping_capacity;
   gpr_int64 ping_counter;
 
   grpc_chttp2_transport_global global;
@@ -339,6 +351,8 @@ typedef struct {
 
   /** window available for us to send to peer */
   gpr_int64 outgoing_window;
+  /** window available for peer to send to us - updated after parse */
+  gpr_uint32 incoming_window;
   /** stream ops the transport user would like to send */
   grpc_stream_op_buffer *outgoing_sopb;
   /** when the application requests writes be closed, the write_closed is
@@ -367,10 +381,16 @@ struct grpc_chttp2_stream_parsing {
   gpr_uint8 incoming_window_changed;
   /** saw an error on this stream during parsing (it should be cancelled) */
   gpr_uint8 saw_error;
+  /** saw a rst_stream */
+  gpr_uint8 saw_rst_stream;
   /** window available for peer to send to us */
   gpr_uint32 incoming_window;
   /** parsing state for data frames */
   grpc_chttp2_data_parser data_parser;
+  /** reason give to rst_stream */
+  gpr_uint32 rst_stream_reason;
+  /* amount of window given */
+  gpr_uint64 outgoing_window_update;
 
   /* incoming metadata */
   grpc_linked_mdelem *incoming_metadata;
@@ -439,6 +459,8 @@ void grpc_chttp2_read_write_state_changed(grpc_chttp2_transport_global *transpor
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
+
+void grpc_chttp2_parsing_add_metadata_batch(grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing);
 
 #define GRPC_CHTTP2_FLOW_CTL_TRACE(a,b,c,d,e) do {} while (0)
 
