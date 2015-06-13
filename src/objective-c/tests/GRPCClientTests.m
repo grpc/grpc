@@ -165,7 +165,7 @@ static GRPCMethodName *kUnaryCallMethod;
     XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
     XCTAssertEqualObjects(call.responseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
                           @"Metadata in the NSError object and call object differ.");
-    NSString *challengeHeader = call.responseMetadata[@"www-authenticate"][0];
+    NSString *challengeHeader = call.responseMetadata[@"www-authenticate"];
     XCTAssertGreaterThan(challengeHeader.length, 0,
                          @"No challenge in response headers %@", call.responseMetadata);
     [expectation fulfill];

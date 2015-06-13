@@ -108,8 +108,8 @@
     // TODO(jcanizales): Verify in a C library test that it's converting header names to lower case
     // automatically.
     NSString *name = [NSString stringWithCString:entry->key encoding:NSASCIIStringEncoding];
-    if (!name) {
-      // log?
+    if (!name || metadata[name]) {
+      // Log if name is nil?
       continue;
     }
     id value;
@@ -119,10 +119,7 @@
     } else {
       value = [NSString grpc_stringFromMetadataValue:entry];
     }
-    if (!metadata[name]) {
-      metadata[name] = [NSMutableArray array];
-    }
-    [metadata[name] addObject:value];
+    metadata[name] = value;
   }
   return metadata;
 }
