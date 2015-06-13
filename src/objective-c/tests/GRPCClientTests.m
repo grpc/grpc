@@ -144,4 +144,35 @@ static GRPCMethodName *kUnaryCallMethod;
   [self waitForExpectationsWithTimeout:2. handler:nil];
 }
 
+- (void)testMetadata {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                           method:kUnaryCallMethod
+                                   requestsWriter:requestsWriter];
+
+  call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
+      @{@"Authorization": @"Bearer bogusToken"}];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTFail(@"Received unexpected response: %@", value);
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNotNil(errorOrNil, @"Finished without error!");
+    XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
+    NSString *challengeHeader = call.responseMetadata[@"www-authenticate"][0];
+    XCTAssertGreaterThan(challengeHeader.length, 0,
+                         @"No challenge in response headers %@", call.responseMetadata);
+    [expectation fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2. handler:nil];
+}
+
 @end
