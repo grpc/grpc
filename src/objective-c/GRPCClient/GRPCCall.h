@@ -74,7 +74,8 @@ extern id const kGRPCStatusMetadataKey;
 - (void)setRequestMetadata:(NSDictionary *)requestMetadata; // nonatomic, copy
 
 // This dictionary is populated with the HTTP headers received from the server. When the RPC ends,
-// the HTTP trailers received are added to the dictionary too.
+// the HTTP trailers received are added to the dictionary too. It has the same structure as the
+// request metadata dictionary.
 //
 // The first time this object calls |writeValue| on the writeable passed to |startWithWriteable|,
 // the |responseMetadata| dictionary already contains the response headers. When it calls
