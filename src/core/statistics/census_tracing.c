@@ -42,6 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 void census_trace_obj_destroy(census_trace_obj* obj) {
