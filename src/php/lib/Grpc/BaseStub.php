@@ -83,6 +83,21 @@ class BaseStub {
     return "https://" . $this->hostname . $service_name;
   }
 
+  /**
+   * extract $timeout from $metadata
+   * @param $metadata The metadata map
+   * @return list($metadata_copy, $timeout)
+   */
+  private function _extract_timeout_from_metadata($metadata) {
+    $timeout = false;
+    $metadata_copy = $metadata;
+    if (isset($metadata['timeout'])) {
+      $timeout = $metadata['timeout'];
+      unset($metadata_copy['timeout']);
+    }
+    return array($metadata_copy, $timeout);
+  }
+
   /* This class is intended to be subclassed by generated code, so all functions
      begin with "_" to avoid name collisions. */
 
@@ -99,8 +114,8 @@ class BaseStub {
                                  $argument,
                                  callable $deserialize,
                                  $metadata = array()) {
-    $call = new UnaryCall($this->channel, $method, $deserialize);
-    $actual_metadata = $metadata;
+    list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
+    $call = new UnaryCall($this->channel, $method, $deserialize, $timeout);
     $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
@@ -126,8 +141,8 @@ class BaseStub {
                                        $arguments,
                                        callable $deserialize,
                                        $metadata = array()) {
-    $call = new ClientStreamingCall($this->channel, $method, $deserialize);
-    $actual_metadata = $metadata;
+    list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
+    $call = new ClientStreamingCall($this->channel, $method, $deserialize, $timeout);
     $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
@@ -152,8 +167,8 @@ class BaseStub {
                                        $argument,
                                        callable $deserialize,
                                        $metadata = array()) {
-    $call = new ServerStreamingCall($this->channel, $method, $deserialize);
-    $actual_metadata = $metadata;
+    list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
+    $call = new ServerStreamingCall($this->channel, $method, $deserialize, $timeout);
     $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
@@ -175,8 +190,8 @@ class BaseStub {
   public function _bidiRequest($method,
                                callable $deserialize,
                                $metadata = array()) {
-    $call = new BidiStreamingCall($this->channel, $method, $deserialize);
-    $actual_metadata = $metadata;
+    list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
+    $call = new BidiStreamingCall($this->channel, $method, $deserialize, $timeout);
     $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
     if (is_callable($this->update_metadata)) {
       $actual_metadata = call_user_func($this->update_metadata,
