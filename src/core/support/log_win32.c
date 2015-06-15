@@ -42,6 +42,7 @@
 #include <grpc/support/log_win32.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/support/string.h"
 #include "src/core/support/string_win32.h"
@@ -106,7 +107,7 @@ char *gpr_format_message(DWORD messageid) {
                                NULL, messageid,
                                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                (LPTSTR)(&tmessage), 0, NULL);
-  if (status == 0) return gpr_strdup("Unable to retreive error string");
+  if (status == 0) return gpr_strdup("Unable to retrieve error string");
   message = gpr_tchar_to_char(tmessage);
   LocalFree(tmessage);
   return message;
