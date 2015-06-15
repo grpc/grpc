@@ -65,8 +65,6 @@ grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
   return bb;
 }
 
-typedef void(GPR_CALLTYPE *callback_funcptr)(gpr_int32 success, void *batch_context);
-
 /*
  * Helper to maintain lifetime of batch op inputs and store batch op outputs.
  */
@@ -352,6 +350,16 @@ grpcsharp_channel_args_set_string(grpc_channel_args *args, size_t index,
   args->args[index].type = GRPC_ARG_STRING;
   args->args[index].key = gpr_strdup(key);
   args->args[index].value.string = gpr_strdup(value);
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_channel_args_set_integer(grpc_channel_args *args, size_t index,
+                                  const char *key, int value) {
+  GPR_ASSERT(args);
+  GPR_ASSERT(index < args->num_args);
+  args->args[index].type = GRPC_ARG_INTEGER;
+  args->args[index].key = gpr_strdup(key);
+  args->args[index].value.integer = value;
 }
 
 GPR_EXPORT void GPR_CALLTYPE
@@ -722,10 +730,12 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
   gpr_set_log_function(grpcsharp_log_handler);
 }
 
+typedef void(GPR_CALLTYPE *test_callback_funcptr)(gpr_int32 success);
+
 /* For testing */
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_test_callback(callback_funcptr callback) {
-  callback(1, NULL);
+grpcsharp_test_callback(test_callback_funcptr callback) {
+  callback(1);
 }
 
 /* For testing */

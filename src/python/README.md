@@ -20,6 +20,10 @@ $ curl -fsSL https://goo.gl/getgrpc | bash -s python
 ```
 This will download and run the [gRPC install script][], then install the latest version of the gRPC Python package.  It also installs the Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for python.
 
+EXAMPLES
+--------
+Please read our online documentation for a [Quick Start][] and a [detailed example][]
+
 BUILDING FROM SOURCE
 ---------------------
 - Clone this repository
@@ -58,3 +62,5 @@ $ ../../tools/distrib/python/submit.py
 [homebrew]:http://brew.sh
 [linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+[Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
+[detailed example]:http://www.grpc.io/docs/installation/python.html
