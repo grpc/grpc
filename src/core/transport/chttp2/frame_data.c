@@ -70,8 +70,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice,
-    int is_last) {
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
@@ -105,28 +105,28 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_1:
-      p->frame_size = ((gpr_uint32) * cur) << 24;
+      p->frame_size = ((gpr_uint32)*cur) << 24;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_2;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_2:
-      p->frame_size |= ((gpr_uint32) * cur) << 16;
+      p->frame_size |= ((gpr_uint32)*cur) << 16;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_3;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_3:
-      p->frame_size |= ((gpr_uint32) * cur) << 8;
+      p->frame_size |= ((gpr_uint32)*cur) << 8;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_4;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_4:
-      p->frame_size |= ((gpr_uint32) * cur);
+      p->frame_size |= ((gpr_uint32)*cur);
       p->state = GRPC_CHTTP2_DATA_FRAME;
       ++cur;
       grpc_sopb_add_begin_message(&p->incoming_sopb, p->frame_size, 0);

@@ -164,11 +164,8 @@ void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
 
 /* Send a ping on a transport
 
-   Calls cb with user data when a response is received.
-   cb *MAY* be called with arbitrary transport level locks held. It is not safe
-   to call into the transport during cb. */
-void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
-                         void *user_data);
+   Calls cb with user data when a response is received. */
+void grpc_transport_ping(grpc_transport *transport, grpc_iomgr_closure *cb);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,

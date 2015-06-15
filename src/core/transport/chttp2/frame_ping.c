@@ -69,14 +69,13 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice,
-    int is_last) {
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_ping_parser *p = parser;
   grpc_chttp2_outstanding_ping *ping;
-
 
   while (p->byte != 8 && cur != end) {
     p->opaque_8bytes[p->byte] = *cur;
@@ -87,7 +86,8 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      for (ping = transport_parsing->pings.next; ping != &transport_parsing->pings; ping = ping->next) {
+      for (ping = transport_parsing->pings.next;
+           ping != &transport_parsing->pings; ping = ping->next) {
         if (0 == memcmp(p->opaque_8bytes, ping->id, 8)) {
           grpc_iomgr_add_delayed_callback(ping->on_recv, 1);
         }
@@ -96,9 +96,8 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
         gpr_free(ping);
       }
     } else {
-      gpr_slice_buffer_add(
-          &transport_parsing->qbuf,
-          grpc_chttp2_ping_create(1, p->opaque_8bytes));
+      gpr_slice_buffer_add(&transport_parsing->qbuf,
+                           grpc_chttp2_ping_create(1, p->opaque_8bytes));
     }
   }
 

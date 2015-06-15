@@ -138,7 +138,8 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
-    void *p, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
+    void *p, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_settings_parser *parser = p;
   const gpr_uint8 *cur = GPR_SLICE_START_PTR(slice);
   const gpr_uint8 *end = GPR_SLICE_END_PTR(slice);
@@ -155,7 +156,8 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           if (is_last) {
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(gpr_uint32));
-            gpr_slice_buffer_add(&transport_parsing->qbuf, grpc_chttp2_settings_ack_create());
+            gpr_slice_buffer_add(&transport_parsing->qbuf,
+                                 grpc_chttp2_settings_ack_create());
           }
           return GRPC_CHTTP2_PARSE_OK;
         }

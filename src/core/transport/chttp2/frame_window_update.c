@@ -74,15 +74,15 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice,
-    int is_last) {
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_window_update_parser *p = parser;
 
   while (p->byte != 4 && cur != end) {
-    p->amount |= ((gpr_uint32) * cur) << (8 * (3 - p->byte));
+    p->amount |= ((gpr_uint32)*cur) << (8 * (3 - p->byte));
     cur++;
     p->byte++;
   }
@@ -97,7 +97,7 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     if (transport_parsing->incoming_stream_id) {
       if (stream_parsing) {
         stream_parsing->outgoing_window_update += p->amount;
-      }      
+      }
     } else {
       transport_parsing->outgoing_window_update += p->amount;
     }

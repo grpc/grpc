@@ -170,11 +170,6 @@ typedef struct grpc_chttp2_outstanding_ping {
 } grpc_chttp2_outstanding_ping;
 
 typedef struct {
-  grpc_status_code status;
-  gpr_slice debug;
-} grpc_chttp2_pending_goaway;
-
-typedef struct {
   /** data to write next write */
   gpr_slice_buffer qbuf;
   /** queued callbacks */
@@ -194,7 +189,7 @@ typedef struct {
   /** have local settings been sent? */
   gpr_uint8 sent_local_settings;
   /** bitmask of setting indexes to send out */
-  gpr_uint32 force_send_settings;   
+  gpr_uint32 force_send_settings;
   /** settings values */
   gpr_uint32 settings[NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
 
@@ -218,8 +213,8 @@ typedef struct {
       so this is a strict over-estimation on the client */
   gpr_uint32 concurrent_stream_count;
 
-  /** is there a goaway available? */
-  gpr_uint8 have_goaway;
+  /** is there a goaway available? (boolean) */
+  grpc_chttp2_error_state goaway_state;
   /** what is the debug text of the goaway? */
   gpr_slice goaway_text;
   /** what is the status code of the goaway? */
@@ -282,9 +277,9 @@ struct grpc_chttp2_transport_parsing {
   /* active parser */
   void *parser_data;
   grpc_chttp2_stream_parsing *incoming_stream;
-  grpc_chttp2_parse_error (*parser)(void *parser_user_data,
-                                    grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing,
-                                    gpr_slice slice, int is_last);
+  grpc_chttp2_parse_error (*parser)(
+      void *parser_user_data, grpc_chttp2_transport_parsing *transport_parsing,
+      grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
   /* received settings */
   gpr_uint32 settings[GRPC_CHTTP2_NUM_SETTINGS];
@@ -345,7 +340,7 @@ struct grpc_chttp2_transport {
   /** closure to execute writing */
   grpc_iomgr_closure writing_action;
 
-  /** address to place a newly accepted stream - set and unset by 
+  /** address to place a newly accepted stream - set and unset by
       grpc_chttp2_parsing_accept_stream; used by init_stream to
       publish the accepted server stream */
   grpc_chttp2_stream **accepting_stream;
@@ -473,55 +468,106 @@ struct grpc_chttp2_stream {
 };
 
 /** Transport writing call flow:
-    chttp2_transport.c calls grpc_chttp2_unlocking_check_writes to see if writes are required;
-    if they are, chttp2_transport.c calls grpc_chttp2_perform_writes to do the writes.
-    Once writes have been completed (meaning another write could potentially be started),
-    grpc_chttp2_terminate_writing is called. This will call grpc_chttp2_cleanup_writing, at which
+    chttp2_transport.c calls grpc_chttp2_unlocking_check_writes to see if writes
+   are required;
+    if they are, chttp2_transport.c calls grpc_chttp2_perform_writes to do the
+   writes.
+    Once writes have been completed (meaning another write could potentially be
+   started),
+    grpc_chttp2_terminate_writing is called. This will call
+   grpc_chttp2_cleanup_writing, at which
     point the write phase is complete. */
 
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
-int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global, grpc_chttp2_transport_writing *writing);
-void grpc_chttp2_perform_writes(grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint);
-void grpc_chttp2_terminate_writing(grpc_chttp2_transport_writing *transport_writing, int success);
-void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *global, grpc_chttp2_transport_writing *writing);
+int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global,
+                                       grpc_chttp2_transport_writing *writing);
+void grpc_chttp2_perform_writes(
+    grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint);
+void grpc_chttp2_terminate_writing(
+    grpc_chttp2_transport_writing *transport_writing, int success);
+void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *global,
+                                 grpc_chttp2_transport_writing *writing);
 
 /** Process one slice of incoming data */
-void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global, grpc_chttp2_transport_parsing *parsing);
-int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing, gpr_slice slice);
-void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global, grpc_chttp2_transport_parsing *parsing);
+void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
+                                 grpc_chttp2_transport_parsing *parsing);
+int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
+                             gpr_slice slice);
+void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global,
+                               grpc_chttp2_transport_parsing *parsing);
 
 /** Get a writable stream
     \return non-zero if there was a stream available */
-void grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global);
-int grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_global **stream_global, grpc_chttp2_stream_writing **stream_writing);
+void grpc_chttp2_list_add_writable_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_writable_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_global **stream_global,
+    grpc_chttp2_stream_writing **stream_writing);
 
-void grpc_chttp2_list_add_writing_stream(grpc_chttp2_transport_writing *transport_writing, grpc_chttp2_stream_writing *stream_writing);
-int grpc_chttp2_list_have_writing_streams(grpc_chttp2_transport_writing *transport_writing);
-int grpc_chttp2_list_pop_writing_stream(grpc_chttp2_transport_writing *transport_writing, grpc_chttp2_stream_writing **stream_writing);
+void grpc_chttp2_list_add_writing_stream(
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_writing *stream_writing);
+int grpc_chttp2_list_have_writing_streams(
+    grpc_chttp2_transport_writing *transport_writing);
+int grpc_chttp2_list_pop_writing_stream(
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_writing **stream_writing);
 
-void grpc_chttp2_list_add_written_stream(grpc_chttp2_transport_writing *transport_writing, grpc_chttp2_stream_writing *stream_writing);
-int grpc_chttp2_list_pop_written_stream(grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_writing *transport_writing, grpc_chttp2_stream_global **stream_global, grpc_chttp2_stream_writing **stream_writing);
+void grpc_chttp2_list_add_written_stream(
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_writing *stream_writing);
+int grpc_chttp2_list_pop_written_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_global **stream_global,
+    grpc_chttp2_stream_writing **stream_writing);
 
-void grpc_chttp2_list_add_writable_window_update_stream(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global);
-int grpc_chttp2_list_pop_writable_window_update_stream(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global **stream_global);
+void grpc_chttp2_list_add_writable_window_update_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_writable_window_update_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
 
-void grpc_chttp2_list_add_parsing_seen_stream(grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing);
-int grpc_chttp2_list_pop_parsing_seen_stream(grpc_chttp2_transport_global *transport_global, grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_global **stream_global, grpc_chttp2_stream_parsing **stream_parsing);
+void grpc_chttp2_list_add_parsing_seen_stream(
+    grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing);
+int grpc_chttp2_list_pop_parsing_seen_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_global **stream_global,
+    grpc_chttp2_stream_parsing **stream_parsing);
 
-void grpc_chttp2_schedule_closure(grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure, int success);
-void grpc_chttp2_read_write_state_changed(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global);
+void grpc_chttp2_schedule_closure(
+    grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
+    int success);
+void grpc_chttp2_read_write_state_changed(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
-grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
-grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
+grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
+    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
+grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
+    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
 
-void grpc_chttp2_parsing_add_metadata_batch(grpc_chttp2_transport_parsing *transport_parsing, grpc_chttp2_stream_parsing *stream_parsing);
+void grpc_chttp2_parsing_add_metadata_batch(
+    grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing);
 
-#define GRPC_CHTTP2_FLOW_CTL_TRACE(a,b,c,d,e) do {} while (0)
+void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
+                       gpr_slice goaway_text);
+
+#define GRPC_CHTTP2_FLOW_CTL_TRACE(a, b, c, d, e) \
+  do {                                            \
+  } while (0)
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING)-1)
+#define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
+  (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 extern int grpc_http_trace;
 

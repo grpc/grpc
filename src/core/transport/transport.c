@@ -73,9 +73,8 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
   transport->vtable->destroy_stream(transport, stream);
 }
 
-void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
-                         void *user_data) {
-  transport->vtable->ping(transport, cb, user_data);
+void grpc_transport_ping(grpc_transport *transport, grpc_iomgr_closure *cb) {
+  transport->vtable->ping(transport, cb);
 }
 
 void grpc_transport_setup_cancel(grpc_transport_setup *setup) {
