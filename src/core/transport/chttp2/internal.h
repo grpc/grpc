@@ -426,6 +426,7 @@ typedef struct {
 
   /** incoming metadata */
   grpc_chttp2_incoming_metadata_buffer incoming_metadata;
+  grpc_chttp2_incoming_metadata_live_op_buffer outstanding_metadata;
 } grpc_chttp2_stream_global;
 
 typedef struct {

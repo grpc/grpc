@@ -139,12 +139,6 @@ static void maybe_join_window_updates(grpc_chttp2_transport *t,
 static void add_metadata_batch(grpc_chttp2_transport *t, grpc_chttp2_stream *s);
 #endif
 
-static void flowctl_trace(grpc_chttp2_transport *t, const char *flow,
-                          gpr_int32 window, gpr_uint32 id, gpr_int32 delta) {
-  gpr_log(GPR_DEBUG, "HTTP:FLOW:%p:%d:%s: %d + %d = %d", t, id, flow, window,
-          delta, window + delta);
-}
-
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -609,9 +603,7 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global, gr
     stream_global->recv_done_closure = op->on_done_recv;
     stream_global->incoming_sopb = op->recv_ops;
     stream_global->incoming_sopb->nops = 0;
-    stream_global->publish_state = op->recv_state;
-    gpr_free(stream_global->old_incoming_metadata);
-    stream_global->old_incoming_metadata = NULL;
+    grpc_chttp2_incoming_metadata_live_op_buffer_end(&stream_global->outstanding_metadata);
     grpc_chttp2_read_write_state_changed(transport_global, stream_global);
     grpc_chttp2_incoming_window_state_changed(transport_global, stream_global);
   }
@@ -689,6 +681,20 @@ static void unlock_check_cancellations(grpc_chttp2_transport *t) {
     grpc_chttp2_read_write_state_changed(&t->global, &s->global);
   }
 #endif
+}
+
+static void cancel_from_api(
+    grpc_chttp2_transport_global *transport_global, 
+    grpc_chttp2_stream_global *stream_global,
+    grpc_status_code status) {
+  stream_global->cancelled = 1;
+  if (stream_global->in_stream_map) {
+    gpr_slice_buffer_add(&transport_global->qbuf,
+                         grpc_chttp2_rst_stream_create(stream_global->id, 
+                          grpc_chttp2_grpc_status_to_http2_status(status)));
+  } else {
+    grpc_chttp2_read_write_state_changed(transport_global, stream_global);
+  }
 }
 
 #if 0
@@ -908,6 +914,7 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
  * CALLBACK LOOP
  */
 
+#if 0
 static grpc_stream_state compute_state(gpr_uint8 write_closed,
                                        gpr_uint8 read_closed) {
   if (write_closed && read_closed) return GRPC_STREAM_CLOSED;
@@ -915,6 +922,7 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
   if (read_closed) return GRPC_STREAM_RECV_CLOSED;
   return GRPC_STREAM_OPEN;
 }
+#endif
 
 typedef struct {
   grpc_chttp2_transport *t;
