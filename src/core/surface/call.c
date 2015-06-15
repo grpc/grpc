@@ -1226,7 +1226,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_INITIAL_METADATA;
         req->data.send_metadata.count = op->data.send_initial_metadata.count;
@@ -1245,7 +1245,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         if (!call->is_client) {
           return GRPC_CALL_ERROR_NOT_ON_SERVER;
         }
@@ -1255,7 +1255,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         if (call->is_client) {
           return GRPC_CALL_ERROR_NOT_ON_CLIENT;
         }
@@ -1276,7 +1276,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         if (!call->is_client) {
           return GRPC_CALL_ERROR_NOT_ON_SERVER;
         }
@@ -1287,7 +1287,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         break;
       case GRPC_OP_RECV_MESSAGE:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_RECV_MESSAGE;
         req->data.recv_message = op->data.recv_message;
@@ -1295,7 +1295,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         if (!call->is_client) {
           return GRPC_CALL_ERROR_NOT_ON_SERVER;
         }
@@ -1320,7 +1320,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         /* Flag validation: currently allow no flags */
-        if (op->flags) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_RECV_STATUS;
         req->flags = op->flags;
