@@ -116,8 +116,9 @@ static int multipoll_with_poll_pollset_maybe_work(
   if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
     timeout = -1;
   } else {
-    timeout = gpr_time_to_millis(gpr_time_sub(deadline, now));
-    if (timeout <= 0) {
+    timeout = gpr_time_to_millis(
+        gpr_time_add(gpr_time_sub(deadline, now), gpr_time_from_micros(500)));
+    if (timeout < 0) {
       return 1;
     }
   }
