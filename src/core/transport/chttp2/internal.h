@@ -43,9 +43,10 @@
 #include "src/core/transport/chttp2/frame_rst_stream.h"
 #include "src/core/transport/chttp2/frame_settings.h"
 #include "src/core/transport/chttp2/frame_window_update.h"
-#include "src/core/transport/chttp2/stream_map.h"
 #include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/transport/chttp2/incoming_metadata.h"
 #include "src/core/transport/chttp2/stream_encoder.h"
+#include "src/core/transport/chttp2/stream_map.h"
 
 typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;
@@ -53,6 +54,12 @@ typedef struct grpc_chttp2_stream grpc_chttp2_stream;
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
+  GRPC_CHTTP2_LIST_ALL_STREAMS,
+  GRPC_CHTTP2_LIST_WRITABLE,
+  /** streams that are waiting to start because there are too many concurrent
+      streams on the connection */
+  GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
+#if 0
   /* streams that have pending writes */
   WRITABLE = 0,
   /* streams that have been selected to be written */
@@ -74,6 +81,7 @@ typedef enum {
   PARSER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
   OTHER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
   NEW_OUTGOING_WINDOW,
+#endif  
   STREAM_LIST_COUNT /* must be last */
 } grpc_chttp2_stream_list_id;
 
@@ -404,6 +412,10 @@ typedef struct {
   grpc_chttp2_write_state write_state;
   /** is this stream closed (boolean) */
   gpr_uint8 read_closed;
+  /** has this stream been cancelled? (boolean) */
+  gpr_uint8 cancelled;
+  /** is this stream in the stream map? (boolean) */
+  gpr_uint8 in_stream_map;
 
   /** stream state already published to the upper layer */
   grpc_stream_state published_state;
@@ -411,6 +423,9 @@ typedef struct {
   grpc_stream_state *publish_state;
   /** pointer to sop buffer to fill in with new stream ops */
   grpc_stream_op_buffer *incoming_sopb;
+
+  /** incoming metadata */
+  grpc_chttp2_incoming_metadata_buffer incoming_metadata;
 } grpc_chttp2_stream_global;
 
 typedef struct {
@@ -427,8 +442,6 @@ struct grpc_chttp2_stream_parsing {
   gpr_uint32 id;
   /** has this stream received a close */
   gpr_uint8 received_close;
-  /** saw an error on this stream during parsing (it should be cancelled) */
-  gpr_uint8 saw_error;
   /** saw a rst_stream */
   gpr_uint8 saw_rst_stream;
   /** incoming_window has been reduced by this much during parsing */
@@ -442,12 +455,16 @@ struct grpc_chttp2_stream_parsing {
   /* amount of window given */
   gpr_uint64 outgoing_window_update;
 
-  /* incoming metadata */
+  /** incoming metadata */
+  grpc_chttp2_incoming_metadata_buffer incoming_metadata;
+
+/*  
   grpc_linked_mdelem *incoming_metadata;
   size_t incoming_metadata_count;
   size_t incoming_metadata_capacity;
   grpc_linked_mdelem *old_incoming_metadata;
   gpr_timespec incoming_deadline;
+*/
 };
 
 struct grpc_chttp2_stream {
@@ -542,10 +559,27 @@ int grpc_chttp2_list_pop_parsing_seen_stream(
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_parsing **stream_parsing);
 
+void grpc_chttp2_list_add_waiting_for_concurrency(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_waiting_for_concurrency(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
+
+void grpc_chttp2_list_add_cancelled_waiting_for_parsing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_cancelled_waiting_for_parsing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
+
 void grpc_chttp2_schedule_closure(
     grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
     int success);
 void grpc_chttp2_read_write_state_changed(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+void grpc_chttp2_incoming_window_state_changed(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 
@@ -554,16 +588,15 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
     grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
 
-void grpc_chttp2_parsing_add_metadata_batch(
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing);
-
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
                        gpr_slice goaway_text);
 
-#define GRPC_CHTTP2_FLOW_CTL_TRACE(a, b, c, d, e) \
-  do {                                            \
-  } while (0)
+void grpc_chttp2_remove_from_stream_map(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global);
+
+void grpc_chttp2_for_all_streams(grpc_chttp2_transport_global *transport_global, void *user_data, void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data, grpc_chttp2_stream_global *stream_global));
+
+void grpc_chttp2_flowctl_trace(grpc_chttp2_transport *t, const char *flow,
+                          gpr_int32 window, gpr_uint32 id, gpr_int32 delta);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \

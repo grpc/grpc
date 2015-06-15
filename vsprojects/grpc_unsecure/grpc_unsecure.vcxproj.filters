@@ -253,6 +253,9 @@
     <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\incoming_metadata.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
@@ -494,6 +497,9 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_data.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
@@ -522,6 +528,9 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\incoming_metadata.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\internal.h">

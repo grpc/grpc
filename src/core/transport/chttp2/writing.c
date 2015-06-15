@@ -77,8 +77,6 @@ int grpc_chttp2_unlocking_check_writes(
         GPR_MIN(transport_global->outgoing_window,
                 stream_global->outgoing_window),
         &stream_writing->sopb);
-    GRPC_CHTTP2_FLOW_CTL_TRACE(t, t, outgoing, 0, -(gpr_int64)window_delta);
-    GRPC_CHTTP2_FLOW_CTL_TRACE(t, s, outgoing, s->id, -(gpr_int64)window_delta);
     transport_global->outgoing_window -= window_delta;
     stream_global->outgoing_window -= window_delta;
 
@@ -117,7 +115,6 @@ int grpc_chttp2_unlocking_check_writes(
       gpr_slice_buffer_add(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_global->id, window_delta));
-      GRPC_CHTTP2_FLOW_CTL_TRACE(t, s, incoming, s->id, window_delta);
       stream_global->incoming_window += window_delta;
     }
   }
@@ -130,7 +127,6 @@ int grpc_chttp2_unlocking_check_writes(
                    transport_global->incoming_window;
     gpr_slice_buffer_add(&transport_writing->outbuf,
                          grpc_chttp2_window_update_create(0, window_delta));
-    GRPC_CHTTP2_FLOW_CTL_TRACE(t, t, incoming, 0, window_delta);
     transport_global->incoming_window += window_delta;
   }
 

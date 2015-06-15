@@ -1392,7 +1392,8 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
     if (parser->is_boundary) {
-      grpc_chttp2_parsing_add_metadata_batch(transport_parsing, stream_parsing);
+      grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
+        &stream_parsing->incoming_metadata, &stream_parsing->data_parser.incoming_sopb);
     }
     if (parser->is_eof) {
       stream_parsing->received_close = 1;

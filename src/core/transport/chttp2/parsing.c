@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include "src/core/transport/chttp2/http2_errors.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
 
 #include <grpc/support/alloc.h>
@@ -154,6 +155,16 @@ void grpc_chttp2_publish_reads(
       if (was_zero && !is_zero) {
         grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
       }
+    }
+
+    /* updating closed status */
+    if (stream_parsing->received_close) {
+      stream_global->read_closed = 1;
+      grpc_chttp2_read_write_state_changed(transport_global, stream_global);
+    }
+    if (stream_parsing->saw_rst_stream) {
+      stream_global->cancelled = 1;
+      grpc_chttp2_read_write_state_changed(transport_global, stream_global);
     }
   }
 }
@@ -437,11 +448,6 @@ static grpc_chttp2_parse_error update_incoming_window(
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
 
-  GRPC_CHTTP2_FLOW_CTL_TRACE(
-      t, t, incoming, 0, -(gpr_int64)transport_parsing->incoming_frame_size);
-  GRPC_CHTTP2_FLOW_CTL_TRACE(
-      t, s, incoming, s->global.id,
-      -(gpr_int64)transport_parsing->incoming_frame_size);
   transport_parsing->incoming_window -= transport_parsing->incoming_frame_size;
   stream_parsing->incoming_window -= transport_parsing->incoming_frame_size;
   stream_parsing->incoming_window_delta +=
@@ -474,7 +480,12 @@ static int init_data_frame_parser(
       return 1;
     case GRPC_CHTTP2_STREAM_ERROR:
       stream_parsing->received_close = 1;
-      stream_parsing->saw_error = 1;
+      stream_parsing->saw_rst_stream = 1;
+      stream_parsing->rst_stream_reason = GRPC_CHTTP2_PROTOCOL_ERROR;
+      gpr_slice_buffer_add(&transport_parsing->qbuf,
+                           grpc_chttp2_rst_stream_create(
+                            transport_parsing->incoming_stream_id, 
+                            GRPC_CHTTP2_PROTOCOL_ERROR));
       return init_skip_frame_parser(transport_parsing, 0);
     case GRPC_CHTTP2_CONNECTION_ERROR:
       return 0;
@@ -485,21 +496,6 @@ static int init_data_frame_parser(
 }
 
 static void free_timeout(void *p) { gpr_free(p); }
-
-static void add_incoming_metadata(grpc_chttp2_stream_parsing *stream_parsing,
-                                  grpc_mdelem *elem) {
-  if (stream_parsing->incoming_metadata_capacity ==
-      stream_parsing->incoming_metadata_count) {
-    stream_parsing->incoming_metadata_capacity =
-        GPR_MAX(8, 2 * stream_parsing->incoming_metadata_capacity);
-    stream_parsing->incoming_metadata =
-        gpr_realloc(stream_parsing->incoming_metadata,
-                    sizeof(*stream_parsing->incoming_metadata) *
-                        stream_parsing->incoming_metadata_capacity);
-  }
-  stream_parsing->incoming_metadata[stream_parsing->incoming_metadata_count++]
-      .md = elem;
-}
 
 static void on_header(void *tp, grpc_mdelem *md) {
   grpc_chttp2_transport_parsing *transport_parsing = tp;
@@ -526,11 +522,10 @@ static void on_header(void *tp, grpc_mdelem *md) {
       }
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }
-    stream_parsing->incoming_deadline =
-        gpr_time_add(gpr_now(), *cached_timeout);
+    grpc_chttp2_incoming_metadata_buffer_set_deadline(&stream_parsing->incoming_metadata, gpr_time_add(gpr_now(), *cached_timeout));
     grpc_mdelem_unref(md);
   } else {
-    add_incoming_metadata(stream_parsing, md);
+    grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata, md);
   }
 
   grpc_chttp2_list_add_parsing_seen_stream(transport_parsing, stream_parsing);
@@ -694,83 +689,6 @@ static int is_window_update_legal(gpr_int64 window_update, gpr_int64 window) {
 }
 */
 
-void grpc_chttp2_parsing_add_metadata_batch(
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing) {
-  grpc_metadata_batch b;
-
-  b.list.head = NULL;
-  /* Store away the last element of the list, so that in patch_metadata_ops
-     we can reconstitute the list.
-     We can't do list building here as later incoming metadata may reallocate
-     the underlying array. */
-  b.list.tail = (void *)(gpr_intptr)stream_parsing->incoming_metadata_count;
-  b.garbage.head = b.garbage.tail = NULL;
-  b.deadline = stream_parsing->incoming_deadline;
-  stream_parsing->incoming_deadline = gpr_inf_future;
-
-  grpc_sopb_add_metadata(&stream_parsing->data_parser.incoming_sopb, b);
-}
-
-static void patch_metadata_ops(grpc_chttp2_stream_global *stream_global,
-                               grpc_chttp2_stream_parsing *stream_parsing) {
-  grpc_stream_op *ops = stream_global->incoming_sopb->ops;
-  size_t nops = stream_global->incoming_sopb->nops;
-  size_t i;
-  size_t j;
-  size_t mdidx = 0;
-  size_t last_mdidx;
-  int found_metadata = 0;
-
-  /* rework the array of metadata into a linked list, making use
-     of the breadcrumbs we left in metadata batches during
-     add_metadata_batch */
-  for (i = 0; i < nops; i++) {
-    grpc_stream_op *op = &ops[i];
-    if (op->type != GRPC_OP_METADATA) continue;
-    found_metadata = 1;
-    /* we left a breadcrumb indicating where the end of this list is,
-       and since we add sequentially, we know from the end of the last
-       segment where this segment begins */
-    last_mdidx = (size_t)(gpr_intptr)(op->data.metadata.list.tail);
-    GPR_ASSERT(last_mdidx > mdidx);
-    GPR_ASSERT(last_mdidx <= stream_parsing->incoming_metadata_count);
-    /* turn the array into a doubly linked list */
-    op->data.metadata.list.head = &stream_parsing->incoming_metadata[mdidx];
-    op->data.metadata.list.tail =
-        &stream_parsing->incoming_metadata[last_mdidx - 1];
-    for (j = mdidx + 1; j < last_mdidx; j++) {
-      stream_parsing->incoming_metadata[j].prev =
-          &stream_parsing->incoming_metadata[j - 1];
-      stream_parsing->incoming_metadata[j - 1].next =
-          &stream_parsing->incoming_metadata[j];
-    }
-    stream_parsing->incoming_metadata[mdidx].prev = NULL;
-    stream_parsing->incoming_metadata[last_mdidx - 1].next = NULL;
-    /* track where we're up to */
-    mdidx = last_mdidx;
-  }
-  if (found_metadata) {
-    stream_parsing->old_incoming_metadata = stream_parsing->incoming_metadata;
-    if (mdidx != stream_parsing->incoming_metadata_count) {
-      /* we have a partially read metadata batch still in incoming_metadata */
-      size_t new_count = stream_parsing->incoming_metadata_count - mdidx;
-      size_t copy_bytes =
-          sizeof(*stream_parsing->incoming_metadata) * new_count;
-      GPR_ASSERT(mdidx < stream_parsing->incoming_metadata_count);
-      stream_parsing->incoming_metadata = gpr_malloc(copy_bytes);
-      memcpy(stream_parsing->old_incoming_metadata + mdidx,
-             stream_parsing->incoming_metadata, copy_bytes);
-      stream_parsing->incoming_metadata_count =
-          stream_parsing->incoming_metadata_capacity = new_count;
-    } else {
-      stream_parsing->incoming_metadata = NULL;
-      stream_parsing->incoming_metadata_count = 0;
-      stream_parsing->incoming_metadata_capacity = 0;
-    }
-  }
-}
-
 static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice, int is_last) {
   grpc_chttp2_stream_parsing *stream_parsing =
@@ -787,7 +705,12 @@ static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
     case GRPC_CHTTP2_STREAM_ERROR:
       become_skip_parser(transport_parsing);
       if (stream_parsing) {
-        stream_parsing->saw_error = 1;
+        stream_parsing->saw_rst_stream = 1;
+        stream_parsing->rst_stream_reason = GRPC_CHTTP2_PROTOCOL_ERROR;
+        gpr_slice_buffer_add(&transport_parsing->qbuf,
+                             grpc_chttp2_rst_stream_create(
+                              transport_parsing->incoming_stream_id, 
+                              GRPC_CHTTP2_PROTOCOL_ERROR));
       }
       return 1;
     case GRPC_CHTTP2_CONNECTION_ERROR:

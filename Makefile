@@ -3029,6 +3029,7 @@ LIBGRPC_SRC = \
     src/core/transport/chttp2/hpack_parser.c \
     src/core/transport/chttp2/hpack_table.c \
     src/core/transport/chttp2/huffsyms.c \
+    src/core/transport/chttp2/incoming_metadata.c \
     src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
@@ -3277,6 +3278,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/chttp2/hpack_parser.c \
     src/core/transport/chttp2/hpack_table.c \
     src/core/transport/chttp2/huffsyms.c \
+    src/core/transport/chttp2/incoming_metadata.c \
     src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
