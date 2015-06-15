@@ -709,6 +709,7 @@ void grpc_server_register_completion_queue(grpc_server *server,
     if (server->cqs[i] == cq) return;
   }
   GRPC_CQ_INTERNAL_REF(cq, "server");
+  grpc_cq_mark_server_cq(cq);
   n = server->cq_count++;
   server->cqs = gpr_realloc(server->cqs,
                             server->cq_count * sizeof(grpc_completion_queue *));
@@ -1081,6 +1082,9 @@ grpc_call_error grpc_server_request_call(
   GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
                                initial_metadata, cq_bound_to_call,
                                cq_for_notification, tag);
+  if (!grpc_cq_is_server_cq(cq_for_notification)) {
+    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
+  }
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
@@ -1099,6 +1103,9 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_completion_queue *cq_for_notification, void *tag) {
   requested_call rc;
   registered_method *registered_method = rm;
+  if (!grpc_cq_is_server_cq(cq_for_notification)) {
+    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
+  }
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
