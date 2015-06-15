@@ -3046,6 +3046,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_security.h \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
+    include/grpc/compression.h \
     include/grpc/grpc.h \
     include/grpc/status.h \
     include/grpc/census.h \
@@ -3290,6 +3291,7 @@ LIBGRPC_UNSECURE_SRC = \
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
+    include/grpc/compression.h \
     include/grpc/grpc.h \
     include/grpc/status.h \
     include/grpc/census.h \

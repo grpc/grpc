@@ -40,6 +40,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 
 #include "grpc/_adapter/_c/types.h"
 
@@ -122,7 +124,8 @@ PyObject *pygrpc_consume_event(grpc_event event) {
           event.success ? Py_True : Py_False);
     } else {
       result = Py_BuildValue("iOOONO", GRPC_OP_COMPLETE, tag->user_tag,
-          tag->call, Py_None, pygrpc_consume_ops(tag->ops, tag->nops),
+          tag->call ? tag->call : Py_None, Py_None,
+          pygrpc_consume_ops(tag->ops, tag->nops),
           event.success ? Py_True : Py_False);
     }
     break;
@@ -156,9 +159,10 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     return 0;
   }
   if (PyTuple_Size(op) != OP_TUPLE_SIZE) {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "expected tuple op of length %d", OP_TUPLE_SIZE);
+    char *buf;
+    gpr_asprintf(&buf, "expected tuple op of length %d", OP_TUPLE_SIZE);
     PyErr_SetString(PyExc_ValueError, buf);
+    gpr_free(buf);
     return 0;
   }
   type = PyInt_AsLong(PyTuple_GET_ITEM(op, TYPE_INDEX));
@@ -179,7 +183,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     PyString_AsStringAndSize(
         PyTuple_GET_ITEM(op, MESSAGE_INDEX), &message, &message_size);
     message_slice = gpr_slice_from_copied_buffer(message, message_size);
-    c_op.data.send_message = grpc_byte_buffer_create(&message_slice, 1);
+    c_op.data.send_message = grpc_raw_byte_buffer_create(&message_slice, 1);
     gpr_slice_unref(message_slice);
     break;
   case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
@@ -353,9 +357,14 @@ double pygrpc_cast_gpr_timespec_to_double(gpr_timespec timespec) {
   return timespec.tv_sec + 1e-9*timespec.tv_nsec;
 }
 
+/* Because C89 doesn't have a way to check for infinity... */
+static int pygrpc_isinf(double x) {
+  return x * 0 != 0;
+}
+
 gpr_timespec pygrpc_cast_double_to_gpr_timespec(double seconds) {
   gpr_timespec result;
-  if isinf(seconds) {
+  if (pygrpc_isinf(seconds)) {
     result = seconds > 0.0 ? gpr_inf_future : gpr_inf_past;
   } else {
     result.tv_sec = (time_t)seconds;

@@ -50,6 +50,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
 
+_FORCE_ENVIRON_FOR_WRAPPERS = {}
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
@@ -146,7 +149,7 @@ class NodeLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -165,7 +168,7 @@ class PhpLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -190,13 +193,13 @@ class PythonLanguage(object):
     modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
                                 test['module']],
                                None,
-                               environ={'GRPC_TRACE': 'surface,batch'},
+                               environ=_FORCE_ENVIRON_FOR_WRAPPERS,
                                shortname=test['module'])
                for test in self._tests if 'module' in test]
     files = [config.job_spec(['tools/run_tests/run_python.sh',
                               test['file']],
                              None,
-                             environ={'GRPC_TRACE': 'surface,batch'},
+                             environ=_FORCE_ENVIRON_FOR_WRAPPERS,
                              shortname=test['file'])
             for test in self._tests if 'file' in test]
     return files + modules
@@ -218,7 +221,7 @@ class RubyLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['run_dep_checks']
@@ -251,7 +254,7 @@ class CSharpLanguage(object):
       cmd = 'tools/run_tests/run_csharp.sh'
     return [config.job_spec([cmd, assembly],
             None, shortname=assembly,
-            environ={'GRPC_TRACE': 'surface,batch'})
+            environ=_FORCE_ENVIRON_FOR_WRAPPERS)
             for assembly in assemblies ]
 
   def make_targets(self):
@@ -313,7 +316,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
@@ -402,6 +405,9 @@ run_configs = set(_CONFIGS[cfg]
                       for x in args.config))
 build_configs = set(cfg.build_config for cfg in run_configs)
 
+if args.travis:
+  _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
+
 make_targets = []
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
@@ -452,6 +458,7 @@ class TestCache(object):
   def __init__(self, use_cache_results):
     self._last_successful_run = {}
     self._use_cache_results = use_cache_results
+    self._last_save = time.time()
 
   def should_run(self, cmdline, bin_hash):
     if cmdline not in self._last_successful_run:
@@ -464,7 +471,8 @@ class TestCache(object):
 
   def finished(self, cmdline, bin_hash):
     self._last_successful_run[cmdline] = bin_hash
-    self.save()
+    if time.time() - self._last_save > 1:
+      self.save()
 
   def dump(self):
     return [{'cmdline': k, 'hash': v}
@@ -476,6 +484,7 @@ class TestCache(object):
   def save(self):
     with open('.run_tests_cache', 'w') as f:
       f.write(json.dumps(self.dump()))
+    self._last_save = time.time()
 
   def maybe_load(self):
     if os.path.exists('.run_tests_cache'):
@@ -517,6 +526,8 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
   finally:
     for antagonist in antagonists:
       antagonist.kill()
+
+  if cache: cache.save()
 
   return 0
 

@@ -173,7 +173,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

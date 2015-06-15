@@ -99,6 +99,8 @@ typedef enum {
   /* Status came from 'the wire' - or somewhere below the surface
      layer */
   STATUS_FROM_WIRE,
+  /* Status came from the server sending status */
+  STATUS_FROM_SERVER_STATUS,
   STATUS_SOURCE_COUNT
 } status_source;
 
@@ -578,10 +580,18 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
             call->write_state = WRITE_STATE_WRITE_CLOSED;
           }
           break;
+        case GRPC_IOREQ_SEND_STATUS:
+          if (call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details !=
+              NULL) {
+            grpc_mdstr_unref(
+                call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details);
+            call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
+                NULL;
+          }
+          break;
         case GRPC_IOREQ_RECV_CLOSE:
         case GRPC_IOREQ_SEND_INITIAL_METADATA:
         case GRPC_IOREQ_SEND_TRAILING_METADATA:
-        case GRPC_IOREQ_SEND_STATUS:
         case GRPC_IOREQ_SEND_CLOSE:
           break;
         case GRPC_IOREQ_RECV_STATUS:
@@ -665,7 +675,7 @@ static void call_on_done_send(void *pc, int success) {
 
 static void finish_message(grpc_call *call) {
   /* TODO(ctiller): this could be a lot faster if coded directly */
-  grpc_byte_buffer *byte_buffer = grpc_byte_buffer_create(
+  grpc_byte_buffer *byte_buffer = grpc_raw_byte_buffer_create(
       call->incoming_message.slices, call->incoming_message.count);
   gpr_slice_buffer_reset_and_unref(&call->incoming_message);
 
@@ -788,7 +798,7 @@ static void call_on_done_recv(void *pc, int success) {
   unlock(call);
 
   GRPC_CALL_INTERNAL_UNREF(call, "receiving", 0);
-  GRPC_TIMER_BEGIN(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
+  GRPC_TIMER_END(GRPC_PTAG_CALL_ON_DONE_RECV, 0);
 }
 
 static int prepare_application_metadata(grpc_call *call, size_t count,
@@ -835,9 +845,9 @@ static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
   size_t i;
 
   switch (byte_buffer->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      for (i = 0; i < byte_buffer->data.slice_buffer.count; i++) {
-        gpr_slice slice = byte_buffer->data.slice_buffer.slices[i];
+    case GRPC_BB_RAW:
+      for (i = 0; i < byte_buffer->data.raw.slice_buffer.count; i++) {
+        gpr_slice slice = byte_buffer->data.raw.slice_buffer.slices[i];
         gpr_slice_ref(slice);
         grpc_sopb_add_slice(sopb, slice);
       }
@@ -849,7 +859,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
   grpc_ioreq_data data;
   grpc_metadata_batch mdb;
   size_t i;
-  char status_str[GPR_LTOA_MIN_BUFSIZE];
   GPR_ASSERT(op->send_ops == NULL);
 
   switch (call->write_state) {
@@ -893,13 +902,10 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
-          gpr_ltoa(data.send_status.code, status_str);
           grpc_metadata_batch_add_tail(
               &mdb, &call->status_link,
-              grpc_mdelem_from_metadata_strings(
-                  call->metadata_context,
-                  grpc_mdstr_ref(grpc_channel_get_status_string(call->channel)),
-                  grpc_mdstr_from_string(call->metadata_context, status_str)));
+              grpc_channel_get_reffed_status_elem(call->channel,
+                                                  data.send_status.code));
           if (data.send_status.details) {
             grpc_metadata_batch_add_tail(
                 &mdb, &call->details_link,
@@ -907,8 +913,9 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
                     call->metadata_context,
                     grpc_mdstr_ref(
                         grpc_channel_get_message_string(call->channel)),
-                    grpc_mdstr_from_string(call->metadata_context,
-                                           data.send_status.details)));
+                    data.send_status.details));
+            call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
+                NULL;
           }
           grpc_sopb_add_metadata(&call->send_ops, mdb);
         }
@@ -1006,6 +1013,14 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                         data.send_metadata.metadata)) {
         return start_ioreq_error(call, have_ops,
                                  GRPC_CALL_ERROR_INVALID_METADATA);
+      }
+    }
+    if (op == GRPC_IOREQ_SEND_STATUS) {
+      set_status_code(call, STATUS_FROM_SERVER_STATUS,
+                      reqs[i].data.send_status.code);
+      if (reqs[i].data.send_status.details) {
+        set_status_details(call, STATUS_FROM_SERVER_STATUS,
+                           grpc_mdstr_ref(reqs[i].data.send_status.details));
       }
     }
     have_ops |= 1u << op;
@@ -1281,7 +1296,11 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->op = GRPC_IOREQ_SEND_STATUS;
         req->data.send_status.code = op->data.send_status_from_server.status;
         req->data.send_status.details =
-            op->data.send_status_from_server.status_details;
+            op->data.send_status_from_server.status_details != NULL
+                ? grpc_mdstr_from_string(
+                      call->metadata_context,
+                      op->data.send_status_from_server.status_details)
+                : NULL;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_CLOSE;
         break;

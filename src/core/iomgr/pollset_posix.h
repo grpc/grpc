@@ -56,6 +56,7 @@ typedef struct grpc_pollset {
   int counter;
   int in_flight_cbs;
   int shutting_down;
+  int called_shutdown;
   void (*shutdown_done_cb)(void *arg);
   void *shutdown_done_arg;
   union {

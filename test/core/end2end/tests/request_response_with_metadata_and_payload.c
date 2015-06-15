@@ -103,9 +103,9 @@ static void test_request_response_with_metadata_and_payload(
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
-      grpc_byte_buffer_create(&response_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta_c[2] = {{"key1", "val1", 4, {{NULL, NULL, NULL}}},
                              {"key2", "val2", 4, {{NULL, NULL, NULL}}}};

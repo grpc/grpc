@@ -29,6 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,39 +46,55 @@ namespace Grpc.Core
         readonly string target;
 
         /// <summary>
-        /// Creates a channel.
+        /// Creates a channel that connects to a specific host.
+        /// Port will default to 80 for an unsecure channel and to 443 a secure channel.
         /// </summary>
-        public Channel(string target, Credentials credentials = null, ChannelArgs channelArgs = null)
+        /// <param name="host">The DNS name of IP address of the host.</param>
+        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="options">Channel options.</param>
+        public Channel(string host, Credentials credentials = null, IEnumerable<ChannelOption> options = null)
         {
-            using (ChannelArgsSafeHandle nativeChannelArgs = CreateNativeChannelArgs(channelArgs))
+            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(options))
             {
                 if (credentials != null)
                 {
                     using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
                     {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
+                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
                     }
                 }
                 else
                 {
-                    this.handle = ChannelSafeHandle.Create(target, nativeChannelArgs);
+                    this.handle = ChannelSafeHandle.Create(host, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(target, channelArgs);
+            this.target = GetOverridenTarget(host, options);
         }
 
-        public string Target
+        /// <summary>
+        /// Creates a channel that connects to a specific host and port.
+        /// </summary>
+        /// <param name="host">DNS name or IP address</param>
+        /// <param name="port">the port</param>
+        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="options">Channel options.</param>
+        public Channel(string host, int port, Credentials credentials = null, IEnumerable<ChannelOption> options = null) :
+            this(string.Format("{0}:{1}", host, port), credentials, options)
         {
-            get
-            {
-                return this.target;
-            }
         }
 
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        internal string Target
+        {
+            get
+            {
+                return target;
+            }
         }
 
         internal ChannelSafeHandle Handle
@@ -96,22 +113,25 @@ namespace Grpc.Core
             }
         }
 
-        private static string GetOverridenTarget(string target, ChannelArgs args)
+        /// <summary>
+        /// Look for SslTargetNameOverride option and return its value instead of originalTarget
+        /// if found.
+        /// </summary>
+        private static string GetOverridenTarget(string originalTarget, IEnumerable<ChannelOption> options)
         {
-            if (args != null && !string.IsNullOrEmpty(args.GetSslTargetNameOverride()))
+            if (options == null)
             {
-                return args.GetSslTargetNameOverride();
+                return originalTarget;
             }
-            return target;
-        }
-
-        private static ChannelArgsSafeHandle CreateNativeChannelArgs(ChannelArgs args)
-        {
-            if (args == null)
+            foreach (var option in options)
             {
-                return ChannelArgsSafeHandle.CreateNull();
+                if (option.Type == ChannelOption.OptionType.String
+                    && option.Name == ChannelOptions.SslTargetNameOverride)
+                {
+                    return option.StringValue;
+                }
             }
-            return args.ToNativeChannelArgs();
+            return originalTarget;
         }
     }
 }
