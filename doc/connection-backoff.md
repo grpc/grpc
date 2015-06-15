@@ -14,7 +14,7 @@ We have several parameters:
 ## Proposed Backoff Algorithm
 
 Exponentially back off the start time of connection attempts up to a limit of
-MAX_BACKOFF.
+MAX_BACKOFF, with jitter.
 
 ```
 ConnectWithBackoff()
@@ -24,8 +24,24 @@ ConnectWithBackoff()
          != SUCCESS)
     SleepUntil(current_deadline)
     current_backoff = Min(current_backoff * MULTIPLIER, MAX_BACKOFF)
-    current_deadline = now() + current_backoff
+    current_deadline = now() + current_backoff +
+      UniformRandom(-JITTER * backoff, JITTER * backoff)
+
 ```
+
+With specific parameters of
+INITIAL_BACKOFF = 20 seconds
+MULTIPLIER = 1.6
+MAX_BACKOFF = 120 seconds
+JITTER = 0.2
+
+Implementations with pressing concerns (such as minimizing the number of wakeups
+on a mobile phone) may wish to use a different algorithm, and in particular
+different jitter logic.
+
+Alternate implementations must ensure that connection backoffs started at the
+same time disperse, and must not attempt connections substantially more often
+than the above algorithm.
 
 ## Historical Algorithm in Stubby
 
