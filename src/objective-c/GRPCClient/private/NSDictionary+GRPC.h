@@ -35,6 +35,7 @@
 #include <grpc/grpc.h>
 
 @interface NSDictionary (GRPC)
-+ (instancetype)grpc_dictionaryFromMetadata:(struct grpc_metadata *)entries count:(size_t)count;
++ (instancetype)grpc_dictionaryFromMetadataArray:(grpc_metadata_array)array;
++ (instancetype)grpc_dictionaryFromMetadata:(grpc_metadata *)entries count:(size_t)count;
 - (grpc_metadata *)grpc_metadataArray;
 @end
