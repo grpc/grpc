@@ -25,7 +25,7 @@ Pod::Spec.new do |s|
   s.subspec 'C-Core' do |cs|
     cs.source_files = \
 % for lib in libs:
-% if lib.build in ("all"):
+% if lib.name in ("grpc", "gpr"):
 % for hdr in lib.get("headers", []):
 '${hdr}', \
 % endfor
@@ -40,7 +40,7 @@ Pod::Spec.new do |s|
 
     cs.private_header_files = \
 % for lib in libs:
-% if lib.build in ("all"):
+% if lib.name in ("grpc", "gpr"):
 % for hdr in lib.get("headers", []):
 '${hdr}', \
 % endfor
