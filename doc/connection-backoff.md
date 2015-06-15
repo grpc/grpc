@@ -25,7 +25,7 @@ ConnectWithBackoff()
     SleepUntil(current_deadline)
     current_backoff = Min(current_backoff * MULTIPLIER, MAX_BACKOFF)
     current_deadline = now() + current_backoff +
-      UniformRandom(-JITTER * backoff, JITTER * backoff)
+      UniformRandom(-JITTER * current_backoff, JITTER * current_backoff)
 
 ```
 
