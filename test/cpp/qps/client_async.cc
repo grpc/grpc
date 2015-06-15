@@ -62,7 +62,7 @@ typedef std::list<grpc_time> deadline_list;
 
 class ClientRpcContext {
  public:
-  ClientRpcContext(int ch) : channel_id_(ch) {}
+  explicit ClientRpcContext(int ch) : channel_id_(ch) {}
   virtual ~ClientRpcContext() {}
   // next state, return false if done. Collect stats when appropriate
   virtual bool RunNextState(bool, Histogram* hist) = 0;

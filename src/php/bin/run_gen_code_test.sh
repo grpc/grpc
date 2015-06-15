@@ -30,8 +30,8 @@
 
 cd $(dirname $0)
 GRPC_TEST_HOST=localhost:50051 php -d extension_dir=../ext/grpc/modules/ \
-  -d extension=grpc.so /usr/local/bin/phpunit -v --debug --strict \
+  -d extension=grpc.so `which phpunit` -v --debug --strict \
   ../tests/generated_code/GeneratedCodeTest.php
 GRPC_TEST_HOST=localhost:50051 php -d extension_dir=../ext/grpc/modules/ \
-  -d extension=grpc.so /usr/local/bin/phpunit -v --debug --strict \
+  -d extension=grpc.so `which phpunit` -v --debug --strict \
   ../tests/generated_code/GeneratedCodeWithCallbackTest.php
