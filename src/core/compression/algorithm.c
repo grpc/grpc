@@ -58,9 +58,8 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
       return GRPC_COMPRESS_NONE;
     case GRPC_COMPRESS_LEVEL_LOW:
     case GRPC_COMPRESS_LEVEL_MED:
-      return GRPC_COMPRESS_DEFLATE;
     case GRPC_COMPRESS_LEVEL_HIGH:
-      return GRPC_COMPRESS_GZIP;
+      return GRPC_COMPRESS_DEFLATE;
     default:
       /* we shouldn't be making it here */
       abort();
