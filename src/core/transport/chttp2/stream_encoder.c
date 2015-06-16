@@ -497,7 +497,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
            through - this lets us reuse the slice framing code below */
         slice = gpr_slice_malloc(5);
         p = GPR_SLICE_START_PTR(slice);
-        p[0] = 0;
+        p[0] = !!(op->data.begin_message.flags & GRPC_WRITE_INTERNAL_COMPRESS);
         p[1] = op->data.begin_message.length >> 24;
         p[2] = op->data.begin_message.length >> 16;
         p[3] = op->data.begin_message.length >> 8;

@@ -160,6 +160,7 @@
     <ClInclude Include="..\..\src\core\channel\child_channel.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
     <ClInclude Include="..\..\src\core\channel\client_setup.h" />
+    <ClInclude Include="..\..\src\core\channel\compress_filter.h" />
     <ClInclude Include="..\..\src\core\channel\connected_channel.h" />
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h" />
@@ -250,6 +251,8 @@
     <ClCompile Include="..\..\src\core\channel\client_channel.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\client_setup.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\compress_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
     </ClCompile>

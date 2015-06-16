@@ -31,51 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
+#define GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
 
-/* Parser for GRPC streams embedded in DATA frames */
+#include "src/core/channel/channel_stack.h"
 
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
-#include "src/core/transport/stream_op.h"
-#include "src/core/transport/chttp2/frame.h"
+/* XXX */
+extern const grpc_channel_filter grpc_compress_filter;
 
-typedef enum {
-  GRPC_CHTTP2_DATA_FH_0,
-  GRPC_CHTTP2_DATA_FH_1,
-  GRPC_CHTTP2_DATA_FH_2,
-  GRPC_CHTTP2_DATA_FH_3,
-  GRPC_CHTTP2_DATA_FH_4,
-  GRPC_CHTTP2_DATA_FRAME
-} grpc_chttp2_stream_state;
-
-typedef struct {
-  grpc_chttp2_stream_state state;
-  gpr_uint8 is_last_frame;
-  gpr_uint8 frame_type;
-  gpr_uint32 frame_size;
-
-  int is_frame_compressed;
-  grpc_stream_op_buffer incoming_sopb;
-} grpc_chttp2_data_parser;
-
-/* initialize per-stream state for data frame parsing */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_init(
-    grpc_chttp2_data_parser *parser);
-
-void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser *parser);
-
-/* start processing a new data frame */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
-    grpc_chttp2_data_parser *parser, gpr_uint8 flags);
-
-/* handle a slice of a data frame - is_last indicates the last slice of a
-   frame */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
-
-/* create a slice with an empty data frame and is_last set */
-gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id);
-
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */
