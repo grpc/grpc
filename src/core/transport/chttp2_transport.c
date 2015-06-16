@@ -361,6 +361,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
         t->global
             .settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
+    grpc_chttp2_list_add_incoming_window_updated(&t->global, &s->global);
     grpc_chttp2_stream_map_add(&t->new_stream_map, s->global.id, s);
   }
 
@@ -397,7 +398,7 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
   grpc_chttp2_transport *t = TRANSPORT_FROM_PARSING(transport_parsing);
   grpc_chttp2_stream *s =
       grpc_chttp2_stream_map_find(&t->parsing_stream_map, id);
-  return &s->parsing;
+  return s ? &s->parsing : NULL;
 }
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
@@ -558,6 +559,7 @@ static void maybe_start_some_streams(
         &TRANSPORT_FROM_GLOBAL(transport_global)->new_stream_map,
         stream_global->id, STREAM_FROM_GLOBAL(stream_global));
     transport_global->concurrent_stream_count++;
+    grpc_chttp2_list_add_incoming_window_updated(transport_global, stream_global);
     grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
   }
   /* cancel out streams that will never be started */

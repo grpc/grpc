@@ -60,8 +60,18 @@ static int init_skip_frame_parser(
 static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice, int is_last);
 
-void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
-                                 grpc_chttp2_transport_parsing *parsing) {}
+void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *transport_global,
+                                 grpc_chttp2_transport_parsing *transport_parsing) {
+  grpc_chttp2_stream_global *stream_global;
+  grpc_chttp2_stream_parsing *stream_parsing;
+
+  /* update the parsing view of incoming window */
+  transport_parsing->incoming_window = transport_global->incoming_window;
+  while (grpc_chttp2_list_pop_incoming_window_updated(
+      transport_global, transport_parsing, &stream_global, &stream_parsing)) {
+    stream_parsing->incoming_window = transport_parsing->incoming_window;
+  }
+}
 
 void grpc_chttp2_publish_reads(
     grpc_chttp2_transport_global *transport_global,

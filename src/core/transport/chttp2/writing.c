@@ -116,6 +116,7 @@ int grpc_chttp2_unlocking_check_writes(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_global->id, window_delta));
       stream_global->incoming_window += window_delta;
+      grpc_chttp2_list_add_incoming_window_updated(transport_global, stream_global);
     }
   }
 
