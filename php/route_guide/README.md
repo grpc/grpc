@@ -3,18 +3,28 @@
 This tutorial provides a basic PHP programmer's introduction to working with gRPC. By walking through this example you'll learn how to:
 
 - Define a service in a .proto file.
+- Generate client code using the protocol buffer compiler.
 - Use the PHP gRPC API to write a simple client for your service.
 
-It assumes that you have read the [Getting started](https://github.com/grpc/grpc-common) guide and are familiar with [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview).
+It assumes a passing familiarity with [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). Note that the example in this tutorial uses the proto2 version of the protocol buffers language.
 
 This isn't a comprehensive guide to using gRPC in PHP: more reference documentation is coming soon.
 
+- [Why use gRPC?](#why-grpc)
+- [Example code and setup](#setup)
+- [Defining the service](#proto)
+- [Generating client code](#protoc)
+- [Creating the client](#client)
+- [Try it out!](#try)
+
+
+<a name="why-grpc"></a>
 ## Why use gRPC?
 
-Our example is a simple route mapping application that lets clients get information about features on their route, create a summary of their route, and exchange route information such as traffic updates with the server and other clients.
+With gRPC you can define your service once in a .proto file and implement clients and servers in any of gRPC's supported languages, which in turn can be run in environments ranging from servers inside Google to your own tablet - all the complexity of communication between different languages and environments is handled for you by gRPC. You also get all the advantages of working with protocol buffers, including efficient serialization, a simple IDL, and easy interface updating.
 
-With gRPC we can define our service once in a .proto file and implement clients and servers in any of gRPC's supported languages, which in turn can be run in environments ranging from servers inside Google to your own tablet - all the complexity of communication between different languages and environments is handled for you by gRPC. We also get all the advantages of working with protocol buffers, including efficient serialization, a simple IDL, and easy interface updating.
 
+<a name="setup"></a>
 ## Example code and setup
 
 The example code for our tutorial is in [grpc/grpc-common/php/route_guide](https://github.com/grpc/grpc-common/tree/master/php/route_guide). To download the example, clone the `grpc-common` repository by running the following command:
@@ -27,14 +37,17 @@ Then change your current directory to `grpc-common/php/route_guide`:
 $ cd grpc-common/php/route_guide
 ```
 
-You also should have the relevant tools installed to generate the client interface code - if you don't already, follow the setup instructions in [the PHP quick start guide](https://github.com/grpc/grpc-common/tree/master/php).
+Our example is a simple route mapping application that lets clients get information about features on their route, create a summary of their route, and exchange route information such as traffic updates with the server and other clients.
 
-Please note that currently we only support gRPC clients implemented in PHP. See the tutorials for our other supported languages (e.g. [Node.js](https://github.com/grpc/grpc-common/tree/master/node/route_guide)) to see how gRPC servers are implemented.
+You also should have the relevant tools installed to generate the client interface code (and a server in another language, for testing). You can obtain the latter by following [these setup instructions](https://github.com/grpc/homebrew-grpc).
+
+The next sections guide you step-by-step through how this proto service is defined, how to generate a client library from it, and how to create a client stub that uses that library.
 
 
+<a name="proto"></a>
 ## Defining the service
 
-Our first step (as you'll know from [Getting started](https://github.com/grpc/grpc-common)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
+First let's look at how the service we're using is defined. A gRPC *service* and its method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file for our example in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -44,15 +57,15 @@ service RouteGuide {
 }
 ```
 
-Then you define `rpc` methods inside your service definition, specifying their request and response types. gRPC lets you define four kinds of service method, all of which are used in the `RouteGuide` service:
+Then you define `rpc` methods inside your service definition, specifying their request and response types. Protocol buffers let you define four kinds of service method, all of which are used in the `RouteGuide` service:
 
-- A *simple RPC* where the client sends a request to the server using the stub and waits for a response to come back, just like a normal function call.
+- A *simple RPC* where the client sends a request to the server and receives a response later, just like a normal remote procedure call.
 ```protobuf
    // Obtains the feature at a given position.
    rpc GetFeature(Point) returns (Feature) {}
 ```
 
-- A *server-side streaming RPC* where the client sends a request to the server and gets a stream to read a sequence of messages back. The client reads from the returned stream until there are no more messages. As you can see in our example, you specify a server-side streaming method by placing the `stream` keyword before the *response* type.
+- A *response-streaming RPC* where the client sends a request to the server and gets back a stream of response messages. You specify a response-streaming method by placing the `stream` keyword before the *response* type.
 ```protobuf
   // Obtains the Features available within the given Rectangle.  Results are
   // streamed rather than returned at once (e.g. in a response message with a
@@ -61,14 +74,14 @@ Then you define `rpc` methods inside your service definition, specifying their r
   rpc ListFeatures(Rectangle) returns (stream Feature) {}
 ```
 
-- A *client-side streaming RPC* where the client writes a sequence of messages and sends them to the server, again using a provided stream. Once the client has finished writing the messages, it waits for the server to read them all and return its response. You specify a server-side streaming method by placing the `stream` keyword before the *request* type.
+- A *request-streaming RPC* where the client sends a sequence of messages to the server. Once the client has finished writing the messages, it waits for the server to read them all and return its response. You specify a request-streaming method by placing the `stream` keyword before the *request* type.
 ```protobuf
   // Accepts a stream of Points on a route being traversed, returning a
   // RouteSummary when traversal is completed.
   rpc RecordRoute(stream Point) returns (RouteSummary) {}
 ```
 
-- A *bidirectional streaming RPC* where both sides send a sequence of messages using a read-write stream. The two streams operate independently, so clients and servers can read and write in whatever order they like: for example, the server could wait to receive all the client messages before writing its responses, or it could alternately read a message then write a message, or some other combination of reads and writes. The order of messages in each stream is preserved. You specify this type of method by placing the `stream` keyword before both the request and the response.
+- A *bidirectional streaming RPC* where both sides send a sequence of messages to the other. The two streams operate independently, so clients and servers can read and write in whatever order they like: for example, the server could wait to receive all the client messages before writing its responses, or it could alternately read a message then write a message, or some other combination of reads and writes. The order of messages in each stream is preserved. You specify this type of method by placing the `stream` keyword before both the request and the response.
 ```protobuf
   // Accepts a stream of RouteNotes sent while a route is being traversed,
   // while receiving other RouteNotes (e.g. from other users).
@@ -88,9 +101,10 @@ message Point {
 ```
 
 
-## Generating client stub from proto files
+<a name="protoc"></a>
+## Generating client code
 
-The PHP client stub implementation of the proto files can be generated by the [`protoc-gen-php`](https://github.com/datto/protobuf-php) tool.
+The PHP client stub implementation of the proto files can be generated by the [`protoc-gen-php`](https://github.com/datto/protobuf-php) tool. To install the tool:
 
 ```sh
 $ cd grpc-common/php
@@ -116,17 +130,19 @@ To load the generated client stub file, simply `require` it in your PHP applicat
 require dirname(__FILE__) . '/route_guide.php';
 ```
 
-Once you've done this, the client classes are in the `examples\` namespace (e.g. `examples\RouteGuideClient`).
+The file contains:
+- All the protocol buffer code to populate, serialize, and retrieve our request and response message types.
+- A class called `examples\RouteGuideClient` that lets clients call the methods defined in the `RouteGuide` service.
 
 
 <a name="client"></a>
 ## Creating the client
 
-In this section, we'll look at creating a PHP client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/php/route_guide/route_guide_client.php](https://github.com/grpc/grpc-common/blob/master/php/route_guide/route_guide_client.php). Again, please consult other languages (e.g. [Node.js](https://github.com/grpc/grpc-common/blob/master/node/route_guide/) to see how to start the route guide example server.
+In this section, we'll look at creating a PHP client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/php/route_guide/route_guide_client.php](https://github.com/grpc/grpc-common/blob/master/php/route_guide/route_guide_client.php).
 
-### Creating a stub
+### Constructing a client object
 
-To call service methods, we first need to create a *stub*. To do this, we just need to call the RouteGuide stub constructor, specifying the server address and port.
+To call service methods, we first need to create a client object, an instance of the generated `RouteGuideClient` class. The constructor of the class expects the server address and port we want to connect to:
 
 ```php
 $client = new examples\RouteGuideClient(new Grpc\BaseStub('localhost:50051', []));
@@ -141,10 +157,10 @@ Now let's look at how we call our service methods.
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local asynchronous method.
 
 ```php
-$point = new examples\Point();
-$point->setLatitude(409146138);
-$point->setLongitude(-746188906);
-list($feature, $status) = $client->GetFeature($point)->wait();
+  $point = new examples\Point();
+  $point->setLatitude(409146138);
+  $point->setLongitude(-746188906);
+  list($feature, $status) = $client->GetFeature($point)->wait();
 ```
 
 As you can see, we create and populate a request object, i.e. an `examples\Point` object. Then, we call the method on the stub, passing it the request object. If there is no error, then we can read the response information from the server from our response object, i.e. an `examples\Feature` object.
@@ -198,7 +214,7 @@ The client-side streaming method `RecordRoute` is similar, except there we pass 
     $client->RecordRoute($points_iter($db))->wait();
 ```
 
-Finally, let's look at our bidirectional streaming RPC `routeChat()`. In this case, we just pass a context to the method and get back a `Duplex` stream object, which we can use to both write and read messages.
+Finally, let's look at our bidirectional streaming RPC `routeChat()`. In this case, we just pass a context to the method and get back a `BidiStreamingCall` stream object, which we can use to both write and read messages.
 
 ```php
 $call = $client->RouteChat();
@@ -224,9 +240,20 @@ To read messages from the server:
 
 Each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
 
+<a name="try"></a>
 ## Try it out!
 
-Run the client (in a different terminal):
+To try the sample app, we need a gRPC server running locally. Let's compile and run, for example, the Node.js server in this repository:
+
+```shell
+$ cd ../../node
+$ npm install
+$ cd route_guide
+$ nodejs ./route_guide_server.js --db_path=route_guide_db.json
+```
+
+Run the PHP client (in a different terminal):
+
 ```shell
 $ ./run_route_guide_client.sh
 ```
