@@ -168,6 +168,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     return 0;
   }
   c_op.op = type;
+  c_op.flags = 0;
   switch (type) {
   case GRPC_OP_SEND_INITIAL_METADATA:
     if (!pygrpc_cast_pylist_to_send_metadata(
