@@ -353,7 +353,6 @@
     "language": "c", 
     "name": "httpcli_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 

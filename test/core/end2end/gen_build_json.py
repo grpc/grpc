@@ -101,7 +101,7 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
               'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {
