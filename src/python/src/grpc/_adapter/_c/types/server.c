@@ -105,6 +105,7 @@ Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) 
   }
   self = (Server *)type->tp_alloc(type, 0);
   self->c_serv = grpc_server_create(&c_args);
+  grpc_server_register_completion_queue(self->c_serv, cq->c_cq);
   pygrpc_discard_channel_args(c_args);
   self->cq = cq;
   Py_INCREF(self->cq);
@@ -167,17 +168,13 @@ PyObject *pygrpc_Server_start(Server *self, PyObject *ignored) {
 
 PyObject *pygrpc_Server_shutdown(
     Server *self, PyObject *args, PyObject *kwargs) {
-  PyObject *user_tag = NULL;
+  PyObject *user_tag;
   pygrpc_tag *tag;
   static char *keywords[] = {"tag", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O", keywords, &user_tag)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", keywords, &user_tag)) {
     return NULL;
   }
-  if (user_tag) {
-    tag = pygrpc_produce_server_shutdown_tag(user_tag);
-    grpc_server_shutdown_and_notify(self->c_serv, tag);
-  } else {
-    grpc_server_shutdown(self->c_serv);
-  }
+  tag = pygrpc_produce_server_shutdown_tag(user_tag);
+  grpc_server_shutdown_and_notify(self->c_serv, self->cq->c_cq, tag);
   Py_RETURN_NONE;
 }

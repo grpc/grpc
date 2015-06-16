@@ -31,39 +31,60 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H
-#define GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H
+#include <set>
 
-/* Internal API for completion channels */
+#include <grpc/support/log.h>
 
-#include "src/core/iomgr/pollset.h"
-#include <grpc/grpc.h>
+#include <signal.h>
 
-#ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason);
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason);
-#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc, reason)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc, reason)
-#else
-void grpc_cq_internal_ref(grpc_completion_queue *cc);
-void grpc_cq_internal_unref(grpc_completion_queue *cc);
-#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc)
-#endif
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
 
-/* Flag that an operation is beginning: the completion channel will not finish
-   shutdown until a corrensponding grpc_cq_end_* call is made */
-void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
+extern "C" {
+#include "src/core/iomgr/pollset_posix.h"
+}
 
-/* Queue a GRPC_OP_COMPLETED operation */
-void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                    int success);
+namespace grpc {
+namespace testing {
 
-grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
+static const int WARMUP = 5;
+static const int BENCHMARK = 5;
 
-void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc);
+static void RunQPS() {
+  gpr_log(GPR_INFO, "Running QPS test");
 
-void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
-int grpc_cq_is_server_cq(grpc_completion_queue *cc);
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_enable_ssl(false);
+  client_config.set_outstanding_rpcs_per_channel(1000);
+  client_config.set_client_channels(8);
+  client_config.set_payload_size(1);
+  client_config.set_async_client_threads(8);
+  client_config.set_rpc_type(UNARY);
 
-#endif /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_enable_ssl(false);
+  server_config.set_threads(4);
+
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+
+  GetReporter()->ReportQPSPerCore(*result);
+  GetReporter()->ReportLatency(*result);
+}
+
+}  // namespace testing
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  grpc_platform_become_multipoller = grpc_poll_become_multipoller;
+
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::RunQPS();
+
+  return 0;
+}

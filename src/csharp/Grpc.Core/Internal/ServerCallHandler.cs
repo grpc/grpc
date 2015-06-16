@@ -267,8 +267,6 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
 
             await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, "No such method."));
-            // TODO(jtattermusch): if we don't read what client has sent, the server call never gets disposed.
-            await requestStream.ToList();
             await finishedTask;
         }
     }

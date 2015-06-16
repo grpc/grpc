@@ -110,14 +110,16 @@ namespace Grpc.IntegrationTesting
                 credentials = TestCredentials.CreateTestClientCredentials(options.useTestCa);
             }
 
-            ChannelArgs channelArgs = null;
+            List<ChannelOption> channelOptions = null;
             if (!string.IsNullOrEmpty(options.serverHostOverride))
             {
-                channelArgs = ChannelArgs.CreateBuilder()
-                    .AddString(ChannelArgs.SslTargetNameOverrideKey, options.serverHostOverride).Build();
+                channelOptions = new List<ChannelOption>
+                {
+                    new ChannelOption(ChannelOptions.SslTargetNameOverride, options.serverHostOverride)
+                };
             }
 
-            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelArgs))
+            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions))
             {
                 var stubConfig = StubConfiguration.Default;
                 if (options.testCase == "service_account_creds" || options.testCase == "compute_engine_creds")

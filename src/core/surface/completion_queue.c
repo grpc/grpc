@@ -73,6 +73,7 @@ struct grpc_completion_queue {
   event *queue;
   /* Fixed size chained hash table of events for pluck() */
   event *buckets[NUM_TAG_BUCKETS];
+  int is_server_cq;
 };
 
 grpc_completion_queue *grpc_completion_queue_create(void) {
@@ -323,3 +324,7 @@ void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
                     gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
+
+void grpc_cq_mark_server_cq(grpc_completion_queue *cc) { cc->is_server_cq = 1; }
+
+int grpc_cq_is_server_cq(grpc_completion_queue *cc) { return cc->is_server_cq; }
