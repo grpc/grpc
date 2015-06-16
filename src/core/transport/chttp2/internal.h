@@ -595,6 +595,9 @@ int grpc_chttp2_list_pop_cancelled_waiting_for_parsing(
 void grpc_chttp2_list_add_read_write_state_changed(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_read_write_state_changed(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
 
 void grpc_chttp2_list_add_incoming_window_state_changed(
     grpc_chttp2_transport_global *transport_global,

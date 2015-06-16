@@ -164,7 +164,6 @@ void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
 }
 
 void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst) {
-  size_t i;
   if (src->nops == 0) {
     return;
   }
@@ -173,7 +172,7 @@ void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst) {
     return;
   }
   grpc_sopb_append(dst, src->ops, src->nops);
-  src->ops = 0;
+  src->nops = 0;
 }
 
 static void assert_valid_list(grpc_mdelem_list *list) {

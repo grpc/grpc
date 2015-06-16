@@ -80,6 +80,7 @@ static void unlock(grpc_chttp2_transport *t);
 
 static void unlock_check_cancellations(grpc_chttp2_transport *t);
 static void unlock_check_channel_callbacks(grpc_chttp2_transport *t);
+static void unlock_check_reads(grpc_chttp2_transport *t);
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void writing_action(void *t, int iomgr_success_ignored);
@@ -345,6 +346,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
   grpc_chttp2_incoming_metadata_buffer_init(&s->parsing.incoming_metadata);
   grpc_chttp2_incoming_metadata_buffer_init(&s->global.incoming_metadata);
   grpc_sopb_init(&s->writing.sopb);
+  grpc_sopb_init(&s->global.incoming_sopb);
   grpc_chttp2_data_parser_init(&s->parsing.data_parser);
 
   ref_transport(t);
@@ -446,6 +448,7 @@ static void unlock(grpc_chttp2_transport *t) {
     grpc_chttp2_schedule_closure(&t->global, &t->writing_action, 1);
   }
   unlock_check_cancellations(t);
+  unlock_check_reads(t);
   /* unlock_check_parser(t); */
   unlock_check_channel_callbacks(t);
 
@@ -695,6 +698,27 @@ static void unlock_check_cancellations(grpc_chttp2_transport *t) {
 #endif
 }
 
+static grpc_stream_state compute_state(gpr_uint8 write_closed,
+                                       gpr_uint8 read_closed) {
+  if (write_closed && read_closed) return GRPC_STREAM_CLOSED;
+  if (write_closed) return GRPC_STREAM_SEND_CLOSED;
+  if (read_closed) return GRPC_STREAM_RECV_CLOSED;
+  return GRPC_STREAM_OPEN;
+}
+
+static void unlock_check_reads(grpc_chttp2_transport *t) {
+  grpc_chttp2_stream_global *stream_global;
+
+  while (grpc_chttp2_pop_read_write_state_changed(&t->global, &stream_global)) {
+    if (!stream_global->publish_sopb) {
+      continue;
+    }
+    grpc_sopb_swap(stream_global->publish_sopb, &stream_global->incoming_sopb);
+    /* TODO(ctiller): we need to not publish closed until !writing, or define a new STREAM_DELETABLE state */
+    stream_global->published_state = *stream_global->publish_state = compute_state(stream_global->write_closed, stream_global->read_closed && !stream_global->in_stream_map);
+  }
+}
+
 static void cancel_from_api(grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
                             grpc_status_code status) {
@@ -927,16 +951,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
 /*
  * CALLBACK LOOP
  */
-
-#if 0
-static grpc_stream_state compute_state(gpr_uint8 write_closed,
-                                       gpr_uint8 read_closed) {
-  if (write_closed && read_closed) return GRPC_STREAM_CLOSED;
-  if (write_closed) return GRPC_STREAM_SEND_CLOSED;
-  if (read_closed) return GRPC_STREAM_RECV_CLOSED;
-  return GRPC_STREAM_OPEN;
-}
-#endif
 
 typedef struct {
   grpc_chttp2_transport *t;
