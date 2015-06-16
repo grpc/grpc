@@ -54,24 +54,24 @@ END2END_FIXTURES = {
     'chttp2_socket_pair_with_grpc_trace': default_unsecure_fixture_options,
 }
 
-TestOptions = collections.namedtuple('TestOptions', 'flaky secure')
-default_test_options = TestOptions(False, False)
+TestOptions = collections.namedtuple('TestOptions', 'flaky secure platforms')
+default_test_options = TestOptions(False, False, ['windows', 'posix'])
 
 # maps test names to options
 END2END_TESTS = {
     'bad_hostname': default_test_options,
-    'cancel_after_accept': TestOptions(flaky=True, secure=False),
+    'cancel_after_accept': TestOptions(flaky=True, secure=False, platforms=['windows','posix']),
     'cancel_after_accept_and_writes_closed': default_test_options,
     'cancel_after_invoke': default_test_options,
     'cancel_before_invoke': default_test_options,
     'cancel_in_a_vacuum': default_test_options,
     'census_simple_request': default_test_options,
     'disappearing_server': default_test_options,
-    'early_server_shutdown_finishes_inflight_calls': default_test_options,
+    'early_server_shutdown_finishes_inflight_calls': TestOptions(flaky=False, secure=False, platforms=['posix']),
     'early_server_shutdown_finishes_tags': default_test_options,
     'empty_batch': default_test_options,
     'graceful_server_shutdown': default_test_options,
-    'invoke_large_request': TestOptions(flaky=True, secure=False),
+    'invoke_large_request': TestOptions(flaky=True, secure=False, platforms=['windows','posix']),
     'max_concurrent_streams': default_test_options,
     'max_message_length': default_test_options,
     'no_op': default_test_options,
@@ -81,7 +81,7 @@ END2END_TESTS = {
     'request_response_with_trailing_metadata_and_payload': default_test_options,
     'request_response_with_metadata_and_payload': default_test_options,
     'request_response_with_payload': default_test_options,
-    'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
+    'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True, platforms=['windows','posix']),
     'request_with_large_metadata': default_test_options,
     'request_with_payload': default_test_options,
     'server_finishes_request': default_test_options,
@@ -110,7 +110,8 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_TESTS[t].secure else 'no',
               'src': ['test/core/end2end/tests/%s.c' % t],
-              'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
+              'headers': ['test/core/end2end/tests/cancel_test_helpers.h'],
+              'platforms': END2END_TESTS[t].platforms,
           }
           for t in sorted(END2END_TESTS.keys())] + [
           {
@@ -131,7 +132,7 @@ def main():
               'language': 'c',
               'src': [],
               'flaky': END2END_TESTS[t].flaky,
-              'platforms': END2END_FIXTURES[f].platforms,
+              'platforms': list(set(END2END_FIXTURES[f].platforms).intersection(END2END_TESTS[t].platforms)),
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -151,7 +152,7 @@ def main():
               'secure': 'no',
               'src': [],
               'flaky': 'invoke_large_request' in t,
-              'platforms': END2END_FIXTURES[f].platforms,
+              'platforms': list(set(END2END_FIXTURES[f].platforms).intersection(END2END_TESTS[t].platforms)),
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
