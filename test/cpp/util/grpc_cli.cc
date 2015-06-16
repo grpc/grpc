@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
                 "Received initial metadata from server:");
   PrintMetadata(server_trailing_metadata,
                 "Received trailing metadata from server:");
-  if (s.IsOk()) {
+  if (s.ok()) {
     std::cout << "Rpc succeeded with OK status" << std::endl;
     if (!response.empty()) {
       std::ofstream output_file(FLAGS_output_binary_file,
@@ -177,8 +177,8 @@ int main(int argc, char** argv) {
       output_file << response;
     }
   } else {
-    std::cout << "Rpc failed with status code " << s.code() << " error message "
-              << s.details() << std::endl;
+    std::cout << "Rpc failed with status code " << s.error_code()
+              << " error message " << s.error_message() << std::endl;
   }
 
   return 0;

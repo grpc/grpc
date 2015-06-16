@@ -61,4 +61,26 @@ class TimevalTest extends PHPUnit_Framework_TestCase{
     $this->assertLessThan(0, Grpc\Timeval::compare($zero, $now));
     $this->assertLessThan(0, Grpc\Timeval::compare($now, $future));
   }
+
+  public function testNowAndAdd() {
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(1000);
+    $deadline = $now->add($delta);
+    $this->assertGreaterThan(0, Grpc\Timeval::compare($deadline, $now));
+  }
+
+  public function testNowAndSubtract() {
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(1000);
+    $deadline = $now->subtract($delta);
+    $this->assertLessThan(0, Grpc\Timeval::compare($deadline, $now));
+  }
+
+  public function testAddAndSubtract() {
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(1000);
+    $deadline = $now->add($delta);
+    $back_to_now = $deadline->subtract($delta);
+    $this->assertSame(0, Grpc\Timeval::compare($back_to_now, $now));
+  }
 }

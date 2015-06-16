@@ -1111,6 +1111,7 @@ static void begin_call(grpc_server *server, call_data *calld,
       rc->data.batch.details->deadline = calld->deadline;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
       r->data.recv_metadata = rc->data.batch.initial_metadata;
+      r->flags = 0;
       r++;
       publish = publish_registered_or_batch;
       break;
@@ -1118,10 +1119,12 @@ static void begin_call(grpc_server *server, call_data *calld,
       *rc->data.registered.deadline = calld->deadline;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
       r->data.recv_metadata = rc->data.registered.initial_metadata;
+      r->flags = 0;
       r++;
       if (rc->data.registered.optional_payload) {
         r->op = GRPC_IOREQ_RECV_MESSAGE;
         r->data.recv_message = rc->data.registered.optional_payload;
+        r->flags = 0;
         r++;
       }
       publish = publish_registered_or_batch;

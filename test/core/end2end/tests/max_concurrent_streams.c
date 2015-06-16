@@ -126,17 +126,21 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
@@ -150,14 +154,17 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   op->data.send_status_from_server.status_details = "xyz";
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
@@ -257,8 +264,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(c1, ops, op - ops, tag(301)));
@@ -269,9 +278,11 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.status = &status1;
   op->data.recv_status_on_client.status_details = &details1;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity1;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv1;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(c1, ops, op - ops, tag(302)));
@@ -279,8 +290,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(c2, ops, op - ops, tag(401)));
@@ -291,9 +304,11 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.status = &status2;
   op->data.recv_status_on_client.status_details = &details2;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity2;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv1;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(c2, ops, op - ops, tag(402)));
@@ -314,14 +329,17 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   op->data.send_status_from_server.status_details = "xyz";
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(s1, ops, op - ops, tag(102)));
@@ -345,14 +363,17 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   op->data.send_status_from_server.status_details = "xyz";
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(s2, ops, op - ops, tag(202)));

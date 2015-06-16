@@ -95,7 +95,7 @@ Status CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
   cq.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 
-  if (status.IsOk()) {
+  if (status.ok()) {
     std::vector<grpc::Slice> slices;
     recv_buffer.Dump(&slices);
 
