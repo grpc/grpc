@@ -108,7 +108,7 @@ TEST_F(CliCallTest, SimpleRpc) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.IsOk());
+  EXPECT_TRUE(s.ok());
 
   const grpc::string kMethod("/grpc.cpp.test.util.TestService/Echo");
   grpc::string request_bin, response_bin, expected_response_bin;
