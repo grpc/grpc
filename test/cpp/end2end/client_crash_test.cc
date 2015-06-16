@@ -119,7 +119,7 @@ TEST_F(CrashTest, KillAfterWrite) {
 
   EXPECT_FALSE(stream->Read(&response));
 
-  EXPECT_FALSE(stream->Finish().IsOk());
+  EXPECT_FALSE(stream->Finish().ok());
 }
 
 TEST_F(CrashTest, KillBeforeWrite) {
@@ -142,7 +142,7 @@ TEST_F(CrashTest, KillBeforeWrite) {
   EXPECT_FALSE(stream->Write(request));
   EXPECT_FALSE(stream->Read(&response));
 
-  EXPECT_FALSE(stream->Finish().IsOk());
+  EXPECT_FALSE(stream->Finish().ok());
 }
 
 }  // namespace
