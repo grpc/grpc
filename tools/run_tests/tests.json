@@ -441,7 +441,6 @@
     "language": "c", 
     "name": "secure_endpoint_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
