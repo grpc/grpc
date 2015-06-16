@@ -788,7 +788,6 @@
     "language": "c", 
     "name": "chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -1049,7 +1048,6 @@
     "language": "c", 
     "name": "chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -1774,7 +1772,6 @@
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -2267,7 +2264,6 @@
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -2528,7 +2524,6 @@
     "language": "c", 
     "name": "chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -2789,7 +2784,6 @@
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -3050,7 +3044,6 @@
     "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_early_server_shutdown_finishes_inflight_calls_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -3311,7 +3304,6 @@
     "language": "c", 
     "name": "chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -4011,7 +4003,6 @@
     "language": "c", 
     "name": "chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -4263,7 +4254,6 @@
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -4515,7 +4505,6 @@
     "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
