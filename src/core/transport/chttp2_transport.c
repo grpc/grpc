@@ -62,6 +62,10 @@ int grpc_flowctl_trace = 0;
   ((grpc_chttp2_transport *)((char *)(tw)-offsetof(grpc_chttp2_transport, \
                                                    writing)))
 
+#define TRANSPORT_FROM_PARSING(tw)                                        \
+  ((grpc_chttp2_transport *)((char *)(tw)-offsetof(grpc_chttp2_transport, \
+                                                   parsing)))
+
 #define TRANSPORT_FROM_GLOBAL(tg) \
   ((grpc_chttp2_transport *)((char *)(tg)-offsetof(grpc_chttp2_transport, \
                                                    global)))
@@ -418,6 +422,13 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->global.incoming_metadata);
 
   unref_transport(t);
+}
+
+grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
+    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id) {
+  grpc_chttp2_transport *t = TRANSPORT_FROM_PARSING(transport_parsing);
+  grpc_chttp2_stream *s = grpc_chttp2_stream_map_find(&t->parsing_stream_map, id);
+  return &s->parsing;
 }
 
 #if 0
