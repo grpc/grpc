@@ -223,7 +223,7 @@ typedef enum {
   GRPC_OP_SEND_INITIAL_METADATA = 0,
   /* Send a message: 0 or more of these operations can occur for each call */
   GRPC_OP_SEND_MESSAGE,
-  /* Send a close from the server: one and only one instance MUST be sent from
+  /* Send a close from the client: one and only one instance MUST be sent from
      the client,
      unless the call was cancelled - in which case this can be skipped */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
@@ -242,7 +242,7 @@ typedef enum {
      the status will indicate some failure.
      */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
-  /* Receive status on the server: one and only one must be made on the server
+  /* Receive close on the server: one and only one must be made on the server
      */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;

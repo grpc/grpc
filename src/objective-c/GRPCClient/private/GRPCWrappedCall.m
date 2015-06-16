@@ -165,9 +165,7 @@
 }
 
 - (void)finish {
-  NSDictionary *metadata = [NSDictionary
-                            grpc_dictionaryFromMetadata:_recvInitialMetadata.metadata
-                            count:_recvInitialMetadata.count];
+  NSDictionary *metadata = [NSDictionary grpc_dictionaryFromMetadataArray:_recvInitialMetadata];
   if (_handler) {
     _handler(metadata);
   }
@@ -209,41 +207,44 @@
 @end
 
 @implementation GRPCOpRecvStatus{
-  void(^_handler)(NSError *);
+  void(^_handler)(NSError *, NSDictionary *);
+  grpc_status_code _statusCode;
+  char *_details;
   size_t _detailsCapacity;
-  grpc_status _status;
+  grpc_metadata_array _metadata;
 }
 
 - (instancetype) init {
   return [self initWithHandler:nil];
 }
 
-- (instancetype) initWithHandler:(void (^)(NSError *))handler {
+- (instancetype) initWithHandler:(void (^)(NSError *, NSDictionary *))handler {
   if (self = [super init]) {
     _handler = handler;
-    grpc_metadata_array_init(&_status.metadata);
+    grpc_metadata_array_init(&_metadata);
   }
   return self;
 }
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.status = &_status.status;
-  op->data.recv_status_on_client.status_details = &_status.details;
+  op->data.recv_status_on_client.status = &_statusCode;
+  op->data.recv_status_on_client.status_details = &_details;
   op->data.recv_status_on_client.status_details_capacity = &_detailsCapacity;
-  op->data.recv_status_on_client.trailing_metadata = &_status.metadata;
+  op->data.recv_status_on_client.trailing_metadata = &_metadata;
 }
 
 - (void)finish {
   if (_handler) {
-    NSError *error = [NSError grpc_errorFromStatus:&_status];
-    _handler(error);
+    NSError *error = [NSError grpc_errorFromStatusCode:_statusCode details:_details];
+    NSDictionary *trailers = [NSDictionary grpc_dictionaryFromMetadataArray:_metadata];
+    _handler(error, trailers);
   }
 }
 
 - (void)dealloc {
-  grpc_metadata_array_destroy(&_status.metadata);
-  gpr_free(_status.details);
+  grpc_metadata_array_destroy(&_metadata);
+  gpr_free(_details);
 }
 
 @end
