@@ -34,11 +34,16 @@
 #include <grpc++/channel_arguments.h>
 
 #include <grpc/grpc_security.h>
+#include "src/core/channel/channel_args.h"
 
 namespace grpc {
 
 void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
   SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
+}
+
+void ChannelArguments::SetCompressionLevel(grpc_compression_level level) {
+  SetInt(GRPC_COMPRESSION_LEVEL_ARG, level);
 }
 
 grpc::string ChannelArguments::GetSslTargetNameOverride() const {
