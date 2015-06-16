@@ -160,11 +160,11 @@ void grpc_chttp2_publish_reads(
     /* updating closed status */
     if (stream_parsing->received_close) {
       stream_global->read_closed = 1;
-      grpc_chttp2_read_write_state_changed(transport_global, stream_global);
+      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
     }
     if (stream_parsing->saw_rst_stream) {
       stream_global->cancelled = 1;
-      grpc_chttp2_read_write_state_changed(transport_global, stream_global);
+      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
     }
   }
 }

@@ -3033,6 +3033,7 @@ LIBGRPC_SRC = \
     src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_lists.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
     src/core/transport/chttp2/varint.c \
@@ -3282,6 +3283,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_lists.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
     src/core/transport/chttp2/varint.c \

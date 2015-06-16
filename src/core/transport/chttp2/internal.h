@@ -55,7 +55,14 @@ typedef struct grpc_chttp2_stream grpc_chttp2_stream;
    happen to them... this enum labels each list */
 typedef enum {
   GRPC_CHTTP2_LIST_ALL_STREAMS,
+  GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED,
+  GRPC_CHTTP2_LIST_INCOMING_WINDOW_STATE_CHANGED,
   GRPC_CHTTP2_LIST_WRITABLE,
+  GRPC_CHTTP2_LIST_WRITING,
+  GRPC_CHTTP2_LIST_WRITTEN,
+  GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE,
+  GRPC_CHTTP2_LIST_PARSING_SEEN,
+  GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_PARSING,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
@@ -574,15 +581,17 @@ int grpc_chttp2_list_pop_cancelled_waiting_for_parsing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
 
+void grpc_chttp2_list_add_read_write_state_changed(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+
+void grpc_chttp2_list_add_incoming_window_state_changed(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+
 void grpc_chttp2_schedule_closure(
     grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
     int success);
-void grpc_chttp2_read_write_state_changed(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
-void grpc_chttp2_incoming_window_state_changed(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
@@ -594,10 +603,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport_global *transport_glo
 
 void grpc_chttp2_remove_from_stream_map(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global);
 
+void grpc_chttp2_register_stream(grpc_chttp2_transport *t, grpc_chttp2_stream *s);
+void grpc_chttp2_unregister_stream(grpc_chttp2_transport *t, grpc_chttp2_stream *s);
 void grpc_chttp2_for_all_streams(grpc_chttp2_transport_global *transport_global, void *user_data, void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data, grpc_chttp2_stream_global *stream_global));
-
-void grpc_chttp2_flowctl_trace(grpc_chttp2_transport *t, const char *flow,
-                          gpr_int32 window, gpr_uint32 id, gpr_int32 delta);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \

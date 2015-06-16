@@ -378,6 +378,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
   ref_transport(t);
 
   lock(t);
+  grpc_chttp2_register_stream(t, s);
   if (server_data) {
     GPR_ASSERT(t->parsing_active);
     s->global.id = (gpr_uint32)(gpr_uintptr)server_data;
@@ -405,6 +406,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
 
   GPR_ASSERT(s->global.published_state == GRPC_STREAM_CLOSED ||
              s->global.id == 0);
+  grpc_chttp2_unregister_stream(t, s);
 
   gpr_mu_unlock(&t->mu);
 
@@ -604,8 +606,8 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global, gr
     stream_global->incoming_sopb = op->recv_ops;
     stream_global->incoming_sopb->nops = 0;
     grpc_chttp2_incoming_metadata_live_op_buffer_end(&stream_global->outstanding_metadata);
-    grpc_chttp2_read_write_state_changed(transport_global, stream_global);
-    grpc_chttp2_incoming_window_state_changed(transport_global, stream_global);
+    grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
+    grpc_chttp2_list_add_incoming_window_state_changed(transport_global, stream_global);
   }
 
   if (op->bind_pollset) {
@@ -664,7 +666,7 @@ static void unlock_check_cancellations(grpc_chttp2_transport *t) {
       GPR_ASSERT(stream_global->in_stream_map);
       grpc_chttp2_stream_map_delete(&t->parsing_stream_map, stream_global->id);
       stream_global->in_stream_map = 0;
-      grpc_chttp2_read_write_state_changed(transport_global, stream_global);
+      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
     }
   }
 
@@ -678,7 +680,7 @@ static void unlock_check_cancellations(grpc_chttp2_transport *t) {
   while ((s = stream_list_remove_head(t, CANCELLED))) {
     s->global.read_closed = 1;
     s->global.write_state = WRITE_STATE_SENT_CLOSE;
-    grpc_chttp2_read_write_state_changed(&t->global, &s->global);
+    grpc_chttp2_list_add_read_write_state_changed(&t->global, &s->global);
   }
 #endif
 }
@@ -693,7 +695,7 @@ static void cancel_from_api(
                          grpc_chttp2_rst_stream_create(stream_global->id, 
                           grpc_chttp2_grpc_status_to_http2_status(status)));
   } else {
-    grpc_chttp2_read_write_state_changed(transport_global, stream_global);
+    grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
   }
 }
 

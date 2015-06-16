@@ -331,6 +331,9 @@
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_encoder.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_lists.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_map.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
