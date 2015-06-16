@@ -64,6 +64,11 @@ typedef struct json_reader_userdata {
 static void json_writer_output_char(void* userdata, char c) {
   json_writer_userdata* state = userdata;
   int cmp = fgetc(state->cmp);
+
+  /* treat CRLF as LF */
+  if (cmp == '\r' && c == '\n') {
+	  cmp = fgetc(state->cmp);
+  }
   GPR_ASSERT(cmp == c);
 }
 
