@@ -29,7 +29,7 @@ $ cd grpc-common/php/route_guide
 
 You also should have the relevant tools installed to generate the client interface code - if you don't already, follow the setup instructions in [the PHP quick start guide](https://github.com/grpc/grpc-common/tree/master/php).
 
-Please note that currently we only support gRPC clients implemented in PHP. Please see other supported languages (e.g. [Node.js](https://github.com/grpc/grpc-common/tree/master/node/route_guide)) to see how gRPC servers are implemented.
+Please note that currently we only support gRPC clients implemented in PHP. See the tutorials for our other supported languages (e.g. [Node.js](https://github.com/grpc/grpc-common/tree/master/node/route_guide)) to see how gRPC servers are implemented.
 
 
 ## Defining the service
