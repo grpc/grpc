@@ -96,7 +96,8 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, gpr_uint32 key,
   map->count = count + 1;
 }
 
-void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src, grpc_chttp2_stream_map *dst) {
+void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
+                                      grpc_chttp2_stream_map *dst) {
   /* if src is empty we dont need to do anything */
   if (src->count == src->free) {
     return;
@@ -115,7 +116,8 @@ void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src, grpc_chttp2_s
   /* the first element of src must be greater than the last of dst */
   GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);
   memcpy(dst->keys + dst->count, src->keys, src->count * sizeof(gpr_uint32));
-  memcpy(dst->values + dst->count, src->values, src->count * sizeof(gpr_uint32));
+  memcpy(dst->values + dst->count, src->values,
+         src->count * sizeof(gpr_uint32));
   dst->count += src->count;
   dst->free += src->free;
   src->count = 0;

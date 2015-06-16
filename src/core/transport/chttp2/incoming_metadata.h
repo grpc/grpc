@@ -48,21 +48,29 @@ typedef struct {
 } grpc_chttp2_incoming_metadata_live_op_buffer;
 
 /** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_destroy(grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_reset(grpc_chttp2_incoming_metadata_buffer *buffer);
+void grpc_chttp2_incoming_metadata_buffer_init(
+    grpc_chttp2_incoming_metadata_buffer *buffer);
+void grpc_chttp2_incoming_metadata_buffer_destroy(
+    grpc_chttp2_incoming_metadata_buffer *buffer);
+void grpc_chttp2_incoming_metadata_buffer_reset(
+    grpc_chttp2_incoming_metadata_buffer *buffer);
 
-void grpc_chttp2_incoming_metadata_buffer_add(grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem);
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
+void grpc_chttp2_incoming_metadata_buffer_add(
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem);
+void grpc_chttp2_incoming_metadata_buffer_set_deadline(
+    grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline);
 
 /** extend sopb with a metadata batch; this must be post-processed by
     grpc_chttp2_incoming_metadata_buffer_postprocess_sopb before being handed
     out of the transport */
-void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb);
+void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb);
 
 void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
-  grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb, grpc_chttp2_incoming_metadata_live_op_buffer *live_op_buffer);
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb,
+    grpc_chttp2_incoming_metadata_live_op_buffer *live_op_buffer);
 
-void grpc_chttp2_incoming_metadata_live_op_buffer_end(grpc_chttp2_incoming_metadata_live_op_buffer *live_op_buffer);
+void grpc_chttp2_incoming_metadata_live_op_buffer_end(
+    grpc_chttp2_incoming_metadata_live_op_buffer *live_op_buffer);
 
 #endif /* GRPC_INTERNAL_CORE_CHTTP2_INCOMING_METADATA_H */

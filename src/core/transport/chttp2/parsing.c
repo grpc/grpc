@@ -61,8 +61,7 @@ static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice, int is_last);
 
 void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
-                                 grpc_chttp2_transport_parsing *parsing) {
-}
+                                 grpc_chttp2_transport_parsing *parsing) {}
 
 void grpc_chttp2_publish_reads(
     grpc_chttp2_transport_global *transport_global,
@@ -134,7 +133,9 @@ void grpc_chttp2_publish_reads(
   /* move goaway to the global state if we received one (it will be
      published later */
   if (transport_parsing->goaway_received) {
-    grpc_chttp2_add_incoming_goaway(transport_global, transport_parsing->goaway_error, transport_parsing->goaway_text);
+    grpc_chttp2_add_incoming_goaway(transport_global,
+                                    transport_parsing->goaway_error,
+                                    transport_parsing->goaway_text);
     transport_parsing->goaway_received = 0;
   }
 
@@ -164,11 +165,13 @@ void grpc_chttp2_publish_reads(
     /* updating closed status */
     if (stream_parsing->received_close) {
       stream_global->read_closed = 1;
-      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
+      grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                    stream_global);
     }
     if (stream_parsing->saw_rst_stream) {
       stream_global->cancelled = 1;
-      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
+      grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                    stream_global);
     }
   }
 }
@@ -486,10 +489,10 @@ static int init_data_frame_parser(
       stream_parsing->received_close = 1;
       stream_parsing->saw_rst_stream = 1;
       stream_parsing->rst_stream_reason = GRPC_CHTTP2_PROTOCOL_ERROR;
-      gpr_slice_buffer_add(&transport_parsing->qbuf,
-                           grpc_chttp2_rst_stream_create(
-                            transport_parsing->incoming_stream_id, 
-                            GRPC_CHTTP2_PROTOCOL_ERROR));
+      gpr_slice_buffer_add(
+          &transport_parsing->qbuf,
+          grpc_chttp2_rst_stream_create(transport_parsing->incoming_stream_id,
+                                        GRPC_CHTTP2_PROTOCOL_ERROR));
       return init_skip_frame_parser(transport_parsing, 0);
     case GRPC_CHTTP2_CONNECTION_ERROR:
       return 0;
@@ -526,10 +529,13 @@ static void on_header(void *tp, grpc_mdelem *md) {
       }
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }
-    grpc_chttp2_incoming_metadata_buffer_set_deadline(&stream_parsing->incoming_metadata, gpr_time_add(gpr_now(), *cached_timeout));
+    grpc_chttp2_incoming_metadata_buffer_set_deadline(
+        &stream_parsing->incoming_metadata,
+        gpr_time_add(gpr_now(), *cached_timeout));
     grpc_mdelem_unref(md);
   } else {
-    grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata, md);
+    grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata,
+                                             md);
   }
 
   grpc_chttp2_list_add_parsing_seen_stream(transport_parsing, stream_parsing);
@@ -711,10 +717,10 @@ static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
       if (stream_parsing) {
         stream_parsing->saw_rst_stream = 1;
         stream_parsing->rst_stream_reason = GRPC_CHTTP2_PROTOCOL_ERROR;
-        gpr_slice_buffer_add(&transport_parsing->qbuf,
-                             grpc_chttp2_rst_stream_create(
-                              transport_parsing->incoming_stream_id, 
-                              GRPC_CHTTP2_PROTOCOL_ERROR));
+        gpr_slice_buffer_add(
+            &transport_parsing->qbuf,
+            grpc_chttp2_rst_stream_create(transport_parsing->incoming_stream_id,
+                                          GRPC_CHTTP2_PROTOCOL_ERROR));
       }
       return 1;
     case GRPC_CHTTP2_CONNECTION_ERROR:

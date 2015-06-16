@@ -88,7 +88,7 @@ typedef enum {
   PARSER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
   OTHER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
   NEW_OUTGOING_WINDOW,
-#endif  
+#endif
   STREAM_LIST_COUNT /* must be last */
 } grpc_chttp2_stream_list_id;
 
@@ -466,13 +466,13 @@ struct grpc_chttp2_stream_parsing {
   /** incoming metadata */
   grpc_chttp2_incoming_metadata_buffer incoming_metadata;
 
-/*  
-  grpc_linked_mdelem *incoming_metadata;
-  size_t incoming_metadata_count;
-  size_t incoming_metadata_capacity;
-  grpc_linked_mdelem *old_incoming_metadata;
-  gpr_timespec incoming_deadline;
-*/
+  /*
+    grpc_linked_mdelem *incoming_metadata;
+    size_t incoming_metadata_count;
+    size_t incoming_metadata_capacity;
+    grpc_linked_mdelem *old_incoming_metadata;
+    gpr_timespec incoming_deadline;
+  */
 };
 
 struct grpc_chttp2_stream {
@@ -599,14 +599,22 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
     grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
 
-void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
-                       gpr_slice goaway_text);
+void grpc_chttp2_add_incoming_goaway(
+    grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
+    gpr_slice goaway_text);
 
-void grpc_chttp2_remove_from_stream_map(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global);
+void grpc_chttp2_remove_from_stream_map(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
-void grpc_chttp2_register_stream(grpc_chttp2_transport *t, grpc_chttp2_stream *s);
-void grpc_chttp2_unregister_stream(grpc_chttp2_transport *t, grpc_chttp2_stream *s);
-void grpc_chttp2_for_all_streams(grpc_chttp2_transport_global *transport_global, void *user_data, void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data, grpc_chttp2_stream_global *stream_global));
+void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
+                                 grpc_chttp2_stream *s);
+void grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
+                                   grpc_chttp2_stream *s);
+void grpc_chttp2_for_all_streams(
+    grpc_chttp2_transport_global *transport_global, void *user_data,
+    void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
+               grpc_chttp2_stream_global *stream_global));
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
