@@ -44,6 +44,10 @@ void grpc_chttp2_incoming_metadata_buffer_init(grpc_chttp2_incoming_metadata_buf
   buffer->deadline = gpr_inf_future;
 }
 
+void grpc_chttp2_incoming_metadata_buffer_destroy(grpc_chttp2_incoming_metadata_buffer *buffer) {
+  gpr_free(buffer->elems);
+}
+
 void grpc_chttp2_incoming_metadata_buffer_add(grpc_chttp2_incoming_metadata_buffer *buffer,
                                   grpc_mdelem *elem) {
   if (buffer->capacity == buffer->count) {

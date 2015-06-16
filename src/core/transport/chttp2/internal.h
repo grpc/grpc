@@ -514,9 +514,9 @@ void grpc_chttp2_terminate_writing(
 void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_writing *writing);
 
-/** Process one slice of incoming data */
 void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_parsing *parsing);
+/** Process one slice of incoming data */
 int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice);
 void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global,
@@ -589,6 +589,7 @@ void grpc_chttp2_list_add_incoming_window_state_changed(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 
+/** schedule a closure to run without the transport lock taken */
 void grpc_chttp2_schedule_closure(
     grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
     int success);

@@ -60,6 +60,10 @@ static int init_skip_frame_parser(
 static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice, int is_last);
 
+void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
+                                 grpc_chttp2_transport_parsing *parsing) {
+}
+
 void grpc_chttp2_publish_reads(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_parsing *transport_parsing) {

@@ -97,11 +97,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
 /** Start disconnection chain */
 static void drop_connection(grpc_chttp2_transport *t);
 
-/** Schedule a closure to be called outside of the transport lock after the next
-    unlock() operation */
-static void schedule_cb(grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
-                        int success);
-
 /** Perform a transport_op */
 static void perform_op_locked(grpc_chttp2_transport_global *transport_global, grpc_chttp2_stream_global *stream_global, grpc_transport_op *op);
 
@@ -114,34 +109,6 @@ static void cancel_from_api(
 /** Add endpoint from this transport to pollset */
 static void add_to_pollset_locked(grpc_chttp2_transport *t,
                                   grpc_pollset *pollset);
-
-#if 0
-
-static void unlock_check_parser(grpc_chttp2_transport *t);
-
-static void end_all_the_calls(grpc_chttp2_transport *t);
-
-static void cancel_stream_id(grpc_chttp2_transport *t, gpr_uint32 id,
-                             grpc_status_code local_status,
-                             grpc_chttp2_error_code error_code, int send_rst);
-static void cancel_stream(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                          grpc_status_code local_status,
-                          grpc_chttp2_error_code error_code,
-                          grpc_mdstr *optional_message, int send_rst);
-static grpc_chttp2_stream *lookup_stream(grpc_chttp2_transport *t,
-                                         gpr_uint32 id);
-static void remove_from_stream_map(grpc_chttp2_transport *t,
-                                   grpc_chttp2_stream *s);
-static void maybe_start_some_streams(grpc_chttp2_transport *t);
-
-static void parsing_become_skip_parser(grpc_chttp2_transport *t);
-
-static void maybe_finish_read(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                              int is_parser);
-static void maybe_join_window_updates(grpc_chttp2_transport *t,
-                                      grpc_chttp2_stream *s);
-static void add_metadata_batch(grpc_chttp2_transport *t, grpc_chttp2_stream *s);
-#endif
 
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -431,6 +398,17 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
   return &s->parsing;
 }
 
+grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
+    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id) {
+  grpc_chttp2_stream *accepting;
+  grpc_chttp2_transport *t = TRANSPORT_FROM_PARSING(transport_parsing);
+  GPR_ASSERT(t->accepting_stream == NULL);
+  t->accepting_stream = &accepting;
+  t->channel_callback.cb->accept_stream(t->channel_callback.cb_user_data, &t->base, (void *)(gpr_uintptr)id);
+  t->accepting_stream = NULL;
+  return &accepting->parsing;
+}
+
 #if 0
 static void remove_from_stream_map(grpc_chttp2_transport *t, grpc_chttp2_stream *s) {
   if (s->global.id == 0) return;
@@ -461,7 +439,7 @@ static void unlock(grpc_chttp2_transport *t) {
       grpc_chttp2_unlocking_check_writes(&t->global, &t->writing)) {
     t->writing_active = 1;
     ref_transport(t);
-    schedule_cb(&t->global, &t->writing_action, 1);
+    grpc_chttp2_schedule_closure(&t->global, &t->writing_action, 1);
   }
   unlock_check_cancellations(t);
   /* unlock_check_parser(t); */
@@ -606,7 +584,7 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global, gr
       }
     } else {
       grpc_sopb_reset(op->send_ops);
-      schedule_cb(transport_global, stream_global->send_done_closure, 0);
+      grpc_chttp2_schedule_closure(transport_global, stream_global->send_done_closure, 0);
     }
   }
 
@@ -626,7 +604,7 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global, gr
   }
 
   if (op->on_consumed) {
-    schedule_cb(transport_global, op->on_consumed, 1);
+    grpc_chttp2_schedule_closure(transport_global, op->on_consumed, 1);
   }
 }
 
@@ -728,7 +706,7 @@ static void cancel_stream_inner(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
         schedule_nuke_sopb(t, s->global.outgoing_sopb);
         s->global.outgoing_sopb = NULL;
         stream_list_remove(t, s, WRITABLE);
-        schedule_cb(t, s->global.send_done_closure, 0);
+        grpc_chttp2_schedule_closure(t, s->global.send_done_closure, 0);
       }
     }
     if (s->cancelled) {
@@ -985,7 +963,7 @@ static void unlock_check_channel_callbacks(grpc_chttp2_transport *t) {
       t->channel_callback.executing = 1;
       grpc_iomgr_closure_init(&a->closure, notify_goaways, a);
       ref_transport(t);
-      schedule_cb(&t->global, &a->closure, 1);
+      grpc_chttp2_schedule_closure(&t->global, &a->closure, 1);
       return;
     } else if (t->global.goaway_state != GRPC_CHTTP2_ERROR_STATE_NOTIFIED) {
       return;
@@ -995,11 +973,11 @@ static void unlock_check_channel_callbacks(grpc_chttp2_transport *t) {
     t->global.error_state = GRPC_CHTTP2_ERROR_STATE_NOTIFIED;
     t->channel_callback.executing = 1;
     ref_transport(t);
-    schedule_cb(&t->global, &t->channel_callback.notify_closed, 1);
+    grpc_chttp2_schedule_closure(&t->global, &t->channel_callback.notify_closed, 1);
   }
 }
 
-static void schedule_cb(grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
+void grpc_chttp2_schedule_closure(grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
                         int success) {
   closure->success = success;
   closure->next = transport_global->pending_closures;
