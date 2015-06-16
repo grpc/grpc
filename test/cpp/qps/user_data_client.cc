@@ -36,19 +36,23 @@
 namespace grpc {
 namespace testing {
 
+//sets the client and server config information
 void UserDataClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) {
   clientConfig_ = clientConfig;
   serverConfig_ = serverConfig;
 }
 
+//sets the QPS
 void UserDataClient::setQPS(double QPS) {
   QPS_ = QPS;
 }
 
+//sets the QPS per core
 void UserDataClient::setQPSPerCore(double QPSPerCore) {
   QPSPerCore_ = QPSPerCore;
 }
 
+//sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
 void UserDataClient::setLatencies(double percentileLatency50, double percentileLatency90,
     double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) {
   percentileLatency50_ = percentileLatency50;
@@ -58,6 +62,7 @@ void UserDataClient::setLatencies(double percentileLatency50, double percentileL
   percentileLatency99Point9_ = percentileLatency99Point9;
 }
 
+//sets the server and client, user and system times
 void UserDataClient::setTimes(double serverSystemTime, double serverUserTime, 
     double clientSystemTime, double clientUserTime) {
   serverSystemTime_ = serverSystemTime;
@@ -66,18 +71,23 @@ void UserDataClient::setTimes(double serverSystemTime, double serverUserTime,
   clientUserTime_ = clientUserTime;
 }
 
+//sends the data to the performancew database server
 int UserDataClient::sendData(std::string access_token, std::string test_name, std::string sys_info) {
-
+  //Data record request object
   SingleUserRecordRequest singleUserRecordRequest;
+
+  //setting access token, name of the test and the system information
   singleUserRecordRequest.set_access_token(access_token);
   singleUserRecordRequest.set_test_name(test_name);
   singleUserRecordRequest.set_sys_info(sys_info);
 
+  //setting configs
   *(singleUserRecordRequest.mutable_client_config()) = clientConfig_;
   *(singleUserRecordRequest.mutable_server_config()) = serverConfig_;
   
   Metrics* metrics = singleUserRecordRequest.mutable_metrics();
 
+  //setting metrcs in data record request
   if(QPS_ != DBL_MIN) metrics->set_qps(QPS_);
   if(QPSPerCore_ != DBL_MIN) metrics->set_qps_per_core(QPSPerCore_);
   if(percentileLatency50_ != DBL_MIN) metrics->set_perc_lat_50(percentileLatency50_);
@@ -95,9 +105,9 @@ int UserDataClient::sendData(std::string access_token, std::string test_name, st
 
   Status status = stub_->RecordSingleClientData(&context, singleUserRecordRequest, &singleUserRecordReply);
   if (status.IsOk()) {
-    return 1;
+    return 1;  //data sent to database successfully
   } else {
-    return -1;
+    return -1;  //error in data sending
   }
 }
 }  //testing

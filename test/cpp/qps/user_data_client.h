@@ -49,6 +49,7 @@
 namespace grpc{
 namespace testing {
 
+//Manages data sending to performance database server
 class UserDataClient {
 public:
   UserDataClient(std::shared_ptr<ChannelInterface> channel)
@@ -56,18 +57,24 @@ public:
   
   ~UserDataClient() {}
 
+  //sets the client and server config information
   void setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig);
   
+  //sets the QPS
   void setQPS(double QPS);
 
+  //sets the QPS per core
   void setQPSPerCore(double QPSPerCore);
 
+  //sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
   void setLatencies(double percentileLatency50, double percentileLatency90,
      double percentileLatency95, double percentileLatency99, double percentileLatency99Point9);
 
+  //sets the server and client, user and system times
   void setTimes(double serverSystemTime, double serverUserTime, 
     double clientSystemTime, double clientUserTime);
 
+  //sends the data to the performancew database server
   int sendData(std::string access_token, std::string test_name, std::string sys_info);
 
 private:

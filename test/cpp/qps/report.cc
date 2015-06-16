@@ -176,8 +176,10 @@ void UserDatabaseReporter::ReportTimes(const ScenarioResult& result) const {
 }
 
 void UserDatabaseReporter::SendData() const {
+  //send data to performance database
   int userDataState = userDataClient.sendData(access_token_, test_name_, sys_info_);
 
+  //check state of data sending
   switch(userDataState) {
     case 1:
       gpr_log(GPR_INFO, "Data sent to user database successfully");
