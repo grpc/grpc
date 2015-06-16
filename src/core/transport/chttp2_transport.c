@@ -227,10 +227,11 @@ static void init_transport(grpc_chttp2_transport *t,
   grpc_chttp2_stream_map_init(&t->new_stream_map, 8);
 
   /* copy in initial settings to all setting sets */
-  for (i = 0; i < NUM_SETTING_SETS; i++) {
-    for (j = 0; j < GRPC_CHTTP2_NUM_SETTINGS; j++) {
-      t->global.settings[i][j] =
-          grpc_chttp2_settings_parameters[j].default_value;
+  for (i = 0; i < GRPC_CHTTP2_NUM_SETTINGS; i++) {
+    t->parsing.settings[i] = grpc_chttp2_settings_parameters[i].default_value;
+    for (j = 0; j < NUM_SETTING_SETS; j++) {
+      t->global.settings[j][i] =
+          grpc_chttp2_settings_parameters[i].default_value;
     }
   }
   t->global.dirtied_local_settings = 1;

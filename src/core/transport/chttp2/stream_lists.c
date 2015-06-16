@@ -158,8 +158,8 @@ void grpc_chttp2_list_add_writing_stream(
 
 int grpc_chttp2_list_have_writing_streams(
     grpc_chttp2_transport_writing *transport_writing) {
-  return stream_list_empty(TRANSPORT_FROM_WRITING(transport_writing),
-                           GRPC_CHTTP2_LIST_WRITING);
+  return !stream_list_empty(TRANSPORT_FROM_WRITING(transport_writing),
+                            GRPC_CHTTP2_LIST_WRITING);
 }
 
 int grpc_chttp2_list_pop_writing_stream(

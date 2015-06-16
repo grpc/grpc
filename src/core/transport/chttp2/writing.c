@@ -130,12 +130,14 @@ int grpc_chttp2_unlocking_check_writes(
     transport_global->incoming_window += window_delta;
   }
 
-  return transport_writing->outbuf.length > 0 ||
+  return transport_writing->outbuf.count > 0 ||
          grpc_chttp2_list_have_writing_streams(transport_writing);
 }
 
 void grpc_chttp2_perform_writes(
     grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint) {
+  GPR_ASSERT(transport_writing->outbuf.count > 0 || grpc_chttp2_list_have_writing_streams(transport_writing));
+
   finalize_outbuf(transport_writing);
 
   GPR_ASSERT(transport_writing->outbuf.count > 0);
