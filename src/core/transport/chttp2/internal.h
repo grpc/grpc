@@ -430,7 +430,8 @@ typedef struct {
   /** address to publish next stream state to */
   grpc_stream_state *publish_state;
   /** pointer to sop buffer to fill in with new stream ops */
-  grpc_stream_op_buffer *incoming_sopb;
+  grpc_stream_op_buffer *publish_sopb;
+  grpc_stream_op_buffer incoming_sopb;
 
   /** incoming metadata */
   grpc_chttp2_incoming_metadata_buffer incoming_metadata;

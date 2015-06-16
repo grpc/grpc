@@ -384,7 +384,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   gpr_mu_unlock(&t->mu);
 
   GPR_ASSERT(s->global.outgoing_sopb == NULL);
-  GPR_ASSERT(s->global.incoming_sopb == NULL);
+  GPR_ASSERT(s->global.publish_sopb == NULL);
   grpc_sopb_destroy(&s->writing.sopb);
   grpc_chttp2_data_parser_destroy(&s->parsing.data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.incoming_metadata);
@@ -604,11 +604,11 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global,
   }
 
   if (op->recv_ops) {
-    GPR_ASSERT(stream_global->incoming_sopb == NULL);
+    GPR_ASSERT(stream_global->publish_sopb == NULL);
     GPR_ASSERT(stream_global->published_state != GRPC_STREAM_CLOSED);
     stream_global->recv_done_closure = op->on_done_recv;
-    stream_global->incoming_sopb = op->recv_ops;
-    stream_global->incoming_sopb->nops = 0;
+    stream_global->publish_sopb = op->recv_ops;
+    stream_global->publish_sopb->nops = 0;
     grpc_chttp2_incoming_metadata_live_op_buffer_end(
         &stream_global->outstanding_metadata);
     grpc_chttp2_list_add_read_write_state_changed(transport_global,

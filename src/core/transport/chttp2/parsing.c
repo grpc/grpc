@@ -183,6 +183,8 @@ void grpc_chttp2_publish_reads(
       grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                     stream_global);
     }
+
+    /* publish incoming stream ops */
   }
 }
 
