@@ -1,3 +1,13 @@
+<%!
+bad_header_names = ('time.h', 'string.h')
+def fix_header_name(name):
+  split_name = name.split('/')
+  if split_name[-1] in bad_header_names:
+    return '/'.join(split_name[:-1] + ['grpc_' + split_name[-1]])
+  else:
+    return name
+%>
+
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
   s.version  = '0.6.0'
@@ -27,10 +37,10 @@ Pod::Spec.new do |s|
 % for lib in libs:
 % if lib.name in ("grpc", "gpr"):
 % for hdr in lib.get("headers", []):
-'${hdr}', \
+'${fix_header_name(hdr)}', \
 % endfor
 % for hdr in lib.get("public_headers", []):
-'${hdr}', \
+'${fix_header_name(hdr)}', \
 % endfor
 % for src in lib.src:
 '${src}', \
