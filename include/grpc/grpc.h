@@ -158,6 +158,8 @@ typedef enum grpc_call_error {
 /* Force compression to be disabled for a particular write
    (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
+/* Mask of all valid flags. */
+#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
 /* A single metadata element */
 typedef struct grpc_metadata {
@@ -253,6 +255,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
+  gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
   union {
     struct {
       size_t count;

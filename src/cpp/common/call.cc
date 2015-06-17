@@ -214,8 +214,8 @@ void CallOpBuffer::AddServerSendStatus(
     trailing_metadata_count_ = 0;
   }
   send_status_available_ = true;
-  send_status_code_ = static_cast<grpc_status_code>(status.code());
-  send_status_details_ = status.details();
+  send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+  send_status_details_ = status.error_message();
 }
 
 void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
@@ -224,11 +224,13 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
     ops[*nops].op = GRPC_OP_SEND_INITIAL_METADATA;
     ops[*nops].data.send_initial_metadata.count = initial_metadata_count_;
     ops[*nops].data.send_initial_metadata.metadata = initial_metadata_;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (recv_initial_metadata_) {
     ops[*nops].op = GRPC_OP_RECV_INITIAL_METADATA;
     ops[*nops].data.recv_initial_metadata = &recv_initial_metadata_arr_;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (send_message_ || send_message_buffer_) {
@@ -245,15 +247,18 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
     }
     ops[*nops].op = GRPC_OP_SEND_MESSAGE;
     ops[*nops].data.send_message = send_buf_;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (recv_message_ || recv_message_buffer_) {
     ops[*nops].op = GRPC_OP_RECV_MESSAGE;
     ops[*nops].data.recv_message = &recv_buf_;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (client_send_close_) {
     ops[*nops].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (recv_status_) {
@@ -264,6 +269,7 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
     ops[*nops].data.recv_status_on_client.status_details = &status_details_;
     ops[*nops].data.recv_status_on_client.status_details_capacity =
         &status_details_capacity_;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (send_status_available_) {
@@ -275,11 +281,13 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
     ops[*nops].data.send_status_from_server.status = send_status_code_;
     ops[*nops].data.send_status_from_server.status_details =
         send_status_details_.empty() ? nullptr : send_status_details_.c_str();
+    ops[*nops].flags = 0;
     (*nops)++;
   }
   if (recv_closed_) {
     ops[*nops].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     ops[*nops].data.recv_close_on_server.cancelled = &cancelled_buf_;
+    ops[*nops].flags = 0;
     (*nops)++;
   }
 }

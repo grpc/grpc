@@ -86,7 +86,7 @@ void CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
   cq.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 
-  if (status.IsOk()) {
+  if (status.ok()) {
     std::cout << "RPC finished with OK status." << std::endl;
     std::vector<grpc::Slice> slices;
     recv_buffer.Dump(&slices);
@@ -97,8 +97,8 @@ void CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
                        slices[i].size());
     }
   } else {
-    std::cout << "RPC finished with status code " << status.code()
-              << " details: " << status.details() << std::endl;
+    std::cout << "RPC finished with status code " << status.error_code()
+              << " details: " << status.error_message() << std::endl;
   }
 }
 

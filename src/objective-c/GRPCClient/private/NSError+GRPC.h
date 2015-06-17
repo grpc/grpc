@@ -32,6 +32,7 @@
  */
 
 #import <Foundation/Foundation.h>
+#include <grpc/grpc.h>
 
 // TODO(jcanizales): Make the domain string public.
 extern NSString *const kGRPCErrorDomain;
@@ -56,17 +57,8 @@ typedef NS_ENUM(NSInteger, GRPCErrorCode) {
   GRPCErrorCodeDataLoss = 15
 };
 
-// TODO(jcanizales): This is conflating trailing metadata with Status details. Fix it once there's
-// a decision on how to codify Status.
-#include <grpc/grpc.h>
-typedef struct grpc_status {
-    grpc_status_code status;
-    char *details;
-    grpc_metadata_array metadata;
-} grpc_status;
-
 @interface NSError (GRPC)
-// Returns nil if the status is OK. Otherwise, a NSError whose code is one of
-// GRPCErrorCode and whose domain is kGRPCErrorDomain.
-+ (instancetype)grpc_errorFromStatus:(struct grpc_status *)status;
+// Returns nil if the status code is OK. Otherwise, a NSError whose code is one of |GRPCErrorCode|
+// and whose domain is |kGRPCErrorDomain|.
++ (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode details:(char *)details;
 @end
