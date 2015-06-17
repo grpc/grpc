@@ -601,6 +601,8 @@ void grpc_chttp2_for_all_streams(
     void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
                grpc_chttp2_stream_global *stream_global));
 
+void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport_parsing *transport_parsing);
+
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)

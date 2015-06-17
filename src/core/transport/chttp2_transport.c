@@ -702,6 +702,10 @@ static void remove_stream(grpc_chttp2_transport *t, gpr_uint32 id) {
   grpc_chttp2_stream *s = grpc_chttp2_stream_map_delete(&t->parsing_stream_map, id);
   GPR_ASSERT(s);
   s->global.in_stream_map = 0;
+  if (t->parsing.incoming_stream == &s->parsing) {
+    t->parsing.incoming_stream = NULL;
+    grpc_chttp2_parsing_become_skip_parser(&t->parsing);
+  }
   grpc_chttp2_list_remove_incoming_window_updated(&t->global, &s->global);
 }
 

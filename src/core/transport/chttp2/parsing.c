@@ -327,6 +327,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
         if (!parse_frame_slice(transport_parsing, gpr_empty_slice(), 1)) {
           return 0;
         }
+        transport_parsing->incoming_stream = NULL;
         if (++cur == end) {
           transport_parsing->deframe_state = DTS_FH_0;
           return 1;
@@ -346,6 +347,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
           return 0;
         }
         transport_parsing->deframe_state = DTS_FH_0;
+        transport_parsing->incoming_stream = NULL;
         return 1;
       } else if ((gpr_uint32)(end - cur) >
                  transport_parsing->incoming_frame_size) {
@@ -358,6 +360,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
           return 0;
         }
         cur += transport_parsing->incoming_frame_size;
+        transport_parsing->incoming_stream = NULL;
         goto dts_fh_0; /* loop */
       } else {
         if (!parse_frame_slice(
@@ -447,7 +450,7 @@ static int init_skip_frame_parser(
   return 1;
 }
 
-static void become_skip_parser(
+void grpc_chttp2_parsing_become_skip_parser(
     grpc_chttp2_transport_parsing *transport_parsing) {
   init_skip_frame_parser(
       transport_parsing,
@@ -736,7 +739,7 @@ static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
       }
       return 1;
     case GRPC_CHTTP2_STREAM_ERROR:
-      become_skip_parser(transport_parsing);
+      grpc_chttp2_parsing_become_skip_parser(transport_parsing);
       if (stream_parsing) {
         stream_parsing->saw_rst_stream = 1;
         stream_parsing->rst_stream_reason = GRPC_CHTTP2_PROTOCOL_ERROR;
