@@ -78,9 +78,8 @@ static const grpc_transport_vtable vtable;
 static void lock(grpc_chttp2_transport *t);
 static void unlock(grpc_chttp2_transport *t);
 
-static void unlock_check_cancellations(grpc_chttp2_transport *t);
 static void unlock_check_channel_callbacks(grpc_chttp2_transport *t);
-static void unlock_check_reads(grpc_chttp2_transport *t);
+static void unlock_check_read_write_state(grpc_chttp2_transport *t);
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void writing_action(void *t, int iomgr_success_ignored);
@@ -198,6 +197,7 @@ static void init_transport(grpc_chttp2_transport *t,
   t->global.incoming_window = DEFAULT_WINDOW;
   t->global.connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->global.ping_counter = 1;
+  t->global.pings.next = t->global.pings.prev = &t->global.pings;
   t->parsing.is_client = is_client;
   t->parsing.str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
@@ -382,6 +382,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
 
   GPR_ASSERT(s->global.published_state == GRPC_STREAM_CLOSED ||
              s->global.id == 0);
+  GPR_ASSERT(!s->global.in_stream_map);
   grpc_chttp2_unregister_stream(t, s);
 
   gpr_mu_unlock(&t->mu);
@@ -402,6 +403,12 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
   grpc_chttp2_stream *s =
       grpc_chttp2_stream_map_find(&t->parsing_stream_map, id);
   return s ? &s->parsing : NULL;
+}
+
+void grpc_chttp2_parsing_remove_stream(
+    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id) {
+  grpc_chttp2_transport *t = TRANSPORT_FROM_PARSING(transport_parsing);
+  grpc_chttp2_stream_map_delete(&t->parsing_stream_map, id);
 }
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
@@ -448,8 +455,7 @@ static void unlock(grpc_chttp2_transport *t) {
     ref_transport(t);
     grpc_chttp2_schedule_closure(&t->global, &t->writing_action, 1);
   }
-  unlock_check_cancellations(t);
-  unlock_check_reads(t);
+  unlock_check_read_write_state(t);
   /* unlock_check_parser(t); */
   unlock_check_channel_callbacks(t);
 
@@ -668,39 +674,6 @@ static void send_ping(grpc_transport *gt, grpc_iomgr_closure *on_recv) {
  * INPUT PROCESSING
  */
 
-static void unlock_check_cancellations(grpc_chttp2_transport *t) {
-  grpc_chttp2_transport_global *transport_global = &t->global;
-  grpc_chttp2_stream_global *stream_global;
-
-  /* if a stream is in the stream map, and gets cancelled, we need to ensure
-     we are not parsing before continuing the cancellation to keep things in
-     a sane state */
-  if (!t->parsing_active) {
-    while (grpc_chttp2_list_pop_cancelled_waiting_for_parsing(transport_global,
-                                                              &stream_global)) {
-      GPR_ASSERT(stream_global->in_stream_map);
-      grpc_chttp2_stream_map_delete(&t->parsing_stream_map, stream_global->id);
-      stream_global->in_stream_map = 0;
-      grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                    stream_global);
-    }
-  }
-
-#if 0  
-  grpc_chttp2_stream *s;
-
-  if (t->writing_active) {
-    return;
-  }
-
-  while ((s = stream_list_remove_head(t, CANCELLED))) {
-    s->global.read_closed = 1;
-    s->global.write_state = WRITE_STATE_SENT_CLOSE;
-    grpc_chttp2_list_add_read_write_state_changed(&t->global, &s->global);
-  }
-#endif
-}
-
 static grpc_stream_state compute_state(gpr_uint8 write_closed,
                                        gpr_uint8 read_closed) {
   if (write_closed && read_closed) return GRPC_STREAM_CLOSED;
@@ -709,23 +682,48 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
   return GRPC_STREAM_OPEN;
 }
 
-static void unlock_check_reads(grpc_chttp2_transport *t) {
+static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
+  grpc_chttp2_transport_global *transport_global = &t->global;
   grpc_chttp2_stream_global *stream_global;
   grpc_stream_state state;
 
-  while (grpc_chttp2_list_pop_read_write_state_changed(&t->global, &stream_global)) {
+  /* if a stream is in the stream map, and gets cancelled, we need to ensure
+     we are not parsing before continuing the cancellation to keep things in
+     a sane state */
+  if (!t->parsing_active) {
+    while (grpc_chttp2_list_pop_closed_waiting_for_parsing(transport_global,
+                                                           &stream_global)) {
+      GPR_ASSERT(stream_global->in_stream_map);
+      GPR_ASSERT(stream_global->write_state != WRITE_STATE_OPEN);
+      GPR_ASSERT(stream_global->read_closed);
+      grpc_chttp2_stream_map_delete(&t->parsing_stream_map, stream_global->id);
+      stream_global->in_stream_map = 0;
+      grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                    stream_global);
+    }
+  }
+
+  while (grpc_chttp2_list_pop_read_write_state_changed(transport_global, &stream_global)) {
     if (!stream_global->publish_sopb) {
       continue;
     }
+    if (stream_global->write_state != WRITE_STATE_OPEN && stream_global->read_closed && stream_global->in_stream_map) {
+      if (t->parsing_active) {
+        grpc_chttp2_list_add_closed_waiting_for_parsing(transport_global, stream_global);
+      } else {
+        grpc_chttp2_stream_map_delete(&t->parsing_stream_map, stream_global->id);
+        stream_global->in_stream_map = 0;
+      }
+    }
     state = compute_state(stream_global->write_state == WRITE_STATE_SENT_CLOSE, stream_global->read_closed && !stream_global->in_stream_map);
-    gpr_log(GPR_DEBUG, "ws:%d rc:%d ism:%d => st:%d", stream_global->write_state, stream_global->read_closed, stream_global->in_stream_map, state);
+    gpr_log(GPR_DEBUG, "cl:%d id:%d ws:%d rc:%d ism:%d => st:%d", t->global.is_client, stream_global->id, stream_global->write_state, stream_global->read_closed, stream_global->in_stream_map, state);
     if (stream_global->incoming_sopb.nops == 0 && state == stream_global->published_state) {
       continue;
     }
     grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(&stream_global->incoming_metadata, &stream_global->incoming_sopb, &stream_global->outstanding_metadata);
     grpc_sopb_swap(stream_global->publish_sopb, &stream_global->incoming_sopb);
     stream_global->published_state = *stream_global->publish_state = state;
-    grpc_chttp2_schedule_closure(&t->global, stream_global->recv_done_closure, 1);
+    grpc_chttp2_schedule_closure(transport_global, stream_global->recv_done_closure, 1);
     stream_global->recv_done_closure = NULL;
     stream_global->publish_sopb = NULL;
     stream_global->publish_state = NULL;

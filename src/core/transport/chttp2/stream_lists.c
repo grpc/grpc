@@ -250,20 +250,20 @@ int grpc_chttp2_list_pop_waiting_for_concurrency(
   return r;
 }
 
-void grpc_chttp2_list_add_cancelled_waiting_for_parsing(
+void grpc_chttp2_list_add_closed_waiting_for_parsing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {
   stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
                   STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_PARSING);
+                  GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING);
 }
 
-int grpc_chttp2_list_pop_cancelled_waiting_for_parsing(
+int grpc_chttp2_list_pop_closed_waiting_for_parsing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global) {
   grpc_chttp2_stream *stream;
   int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_PARSING);
+                          GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING);
   *stream_global = &stream->global;
   return r;
 }
