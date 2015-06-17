@@ -72,13 +72,6 @@ static void drain_cq(grpc_completion_queue *cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
-  if (!f->server) return;
-  grpc_server_shutdown(f->server);
-  grpc_server_destroy(f->server);
-  f->server = NULL;
-}
-
 static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
@@ -86,7 +79,6 @@ static void shutdown_client(grpc_end2end_test_fixture *f) {
 }
 
 static void end_test(grpc_end2end_test_fixture *f) {
-  shutdown_server(f);
   shutdown_client(f);
 
   grpc_completion_queue_shutdown(f->server_cq);
@@ -129,17 +121,21 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->data.send_initial_metadata.metadata = NULL;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
@@ -153,14 +149,19 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   /* shutdown and destroy the server */
-  shutdown_server(&f);
+  grpc_server_shutdown_and_notify(f.server, f.server_cq, tag(1000));
+  grpc_server_cancel_all_calls(f.server);
 
   cq_expect_completion(v_server, tag(102), 1);
+  cq_expect_completion(v_server, tag(1000), 1);
   cq_verify(v_server);
+
+  grpc_server_destroy(f.server);
 
   cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);

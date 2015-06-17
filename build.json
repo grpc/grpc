@@ -6,8 +6,8 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 9,
-      "micro": 1,
+      "minor": 10,
+      "micro": 0,
       "build": 0
     }
   },
@@ -1365,6 +1365,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {

@@ -174,8 +174,6 @@ void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
   gpr_timespec now = gpr_now();
-  /* FIXME(ctiller): see below */
-  gpr_timespec maximum_deadline = gpr_time_add(now, gpr_time_from_seconds(1));
   int r;
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0;
@@ -186,14 +184,25 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     return 1;
   }
-  /* FIXME(ctiller): we should not clamp deadline, however we have some
-     stuck at shutdown bugs that this resolves */
-  if (gpr_time_cmp(deadline, maximum_deadline) > 0) {
-    deadline = maximum_deadline;
+  if (pollset->shutting_down) {
+    return 1;
   }
   gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
   r = pollset->vtable->maybe_work(pollset, deadline, now, 1);
   gpr_tls_set(&g_current_thread_poller, 0);
+  if (pollset->shutting_down) {
+    if (pollset->counter > 0) {
+      grpc_pollset_kick(pollset);
+    } else if (pollset->in_flight_cbs == 0) {
+      gpr_mu_unlock(&pollset->mu);
+      pollset->shutdown_done_cb(pollset->shutdown_done_arg);
+      /* Continuing to access pollset here is safe -- it is the caller's
+       * responsibility to not destroy when it has outstanding calls to
+       * grpc_pollset_work.
+       * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
+      gpr_mu_lock(&pollset->mu);
+    }
+  }
   return r;
 }
 
@@ -201,13 +210,19 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
                            void *shutdown_done_arg) {
   int in_flight_cbs;
+  int counter;
   gpr_mu_lock(&pollset->mu);
   pollset->shutting_down = 1;
   in_flight_cbs = pollset->in_flight_cbs;
+  counter = pollset->counter;
   pollset->shutdown_done_cb = shutdown_done;
   pollset->shutdown_done_arg = shutdown_done_arg;
+  if (counter > 0) {
+    grpc_pollset_kick(pollset);
+  }
   gpr_mu_unlock(&pollset->mu);
-  if (in_flight_cbs == 0) {
+
+  if (in_flight_cbs == 0 && counter == 0) {
     shutdown_done(shutdown_done_arg);
   }
 }
@@ -294,7 +309,7 @@ static void unary_poll_do_promote(void *args, int success) {
   pollset->in_flight_cbs--;
   if (pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
-    if (pollset->in_flight_cbs == 0) {
+    if (pollset->in_flight_cbs == 0 && pollset->counter == 0) {
       do_shutdown_cb = 1;
     }
   } else if (grpc_fd_is_orphaned(fd)) {

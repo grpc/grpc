@@ -42,11 +42,8 @@ shared_context 'setup: tags' do
   let(:sent_message) { 'sent message' }
   let(:reply_text) { 'the reply' }
   before(:example) do
-    @server_finished_tag = Object.new
-    @client_finished_tag = Object.new
-    @client_metadata_tag = Object.new
+    @client_tag = Object.new
     @server_tag = Object.new
-    @tag = Object.new
   end
 
   def deadline
@@ -351,7 +348,7 @@ describe 'the http client/server' do
 
   after(:example) do
     @ch.close
-    @server.close
+    @server.close(@server_queue, deadline)
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
@@ -377,7 +374,7 @@ describe 'the secure http client/server' do
   end
 
   after(:example) do
-    @server.close
+    @server.close(@server_queue, deadline)
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
