@@ -83,9 +83,7 @@ static void destroy_setup(grpc_client_setup *s) {
   gpr_free(s);
 }
 
-static void destroy_request(grpc_client_setup_request *r) {
-  gpr_free(r);
-}
+static void destroy_request(grpc_client_setup_request *r) { gpr_free(r); }
 
 /* initiate handshaking */
 static void setup_initiate(grpc_transport_setup *sp) {

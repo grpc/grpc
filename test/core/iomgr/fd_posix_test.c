@@ -270,7 +270,7 @@ typedef struct {
      notify_on_write to schedule another write. */
   int client_write_cnt;
 
-  int done;       /* set to 1 when a client finishes sending */
+  int done; /* set to 1 when a client finishes sending */
   grpc_iomgr_closure write_closure;
 } client;
 
@@ -383,12 +383,9 @@ typedef struct fd_change_data {
   void (*cb_that_ran)(void *, int success);
 } fd_change_data;
 
-void init_change_data(fd_change_data *fdc) {
-  fdc->cb_that_ran = NULL;
-}
+void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
 
-void destroy_change_data(fd_change_data *fdc) {
-}
+void destroy_change_data(fd_change_data *fdc) {}
 
 static void first_read_callback(void *arg /* fd_change_data */, int success) {
   fd_change_data *fdc = arg;
@@ -478,9 +475,7 @@ static void test_grpc_fd_change(void) {
   close(sv[1]);
 }
 
-static void destroy_pollset(void *p) {
-  grpc_pollset_destroy(p);
-}
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

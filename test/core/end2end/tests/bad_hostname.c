@@ -77,7 +77,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -111,8 +113,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo",
-                               "slartibartfast.local", deadline);
+  c = grpc_channel_create_call(f.client, f.cq, "/foo", "slartibartfast.local",
+                               deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

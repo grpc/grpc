@@ -127,10 +127,10 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f->server, &s, &call_details,
-                                      &request_metadata_recv, f->cq,
-                                      f->cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f->server, &s,
+                                                      &call_details,
+                                                      &request_metadata_recv,
+                                                      f->cq, f->cq, tag(101)));
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 

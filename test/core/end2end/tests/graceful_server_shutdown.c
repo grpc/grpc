@@ -98,7 +98,8 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
-  grpc_end2end_test_fixture f = begin_test(config, "test_early_server_shutdown_finishes_inflight_calls", NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_early_server_shutdown_finishes_inflight_calls", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -111,8 +112,8 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo",
-                               "foo.test.google.fr", deadline);
+  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
+                               deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -142,10 +143,9 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq,
-                                      f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 

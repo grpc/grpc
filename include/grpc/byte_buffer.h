@@ -85,7 +85,6 @@ size_t grpc_byte_buffer_length(grpc_byte_buffer *bb);
 /** Destroys \a byte_buffer deallocating all its memory. */
 void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
 
-
 /** Reader for byte buffers. Iterates over slices in the byte buffer */
 struct grpc_byte_buffer_reader;
 typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
@@ -107,4 +106,4 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
 }
 #endif
 
-#endif  /* GRPC_BYTE_BUFFER_H */
+#endif /* GRPC_BYTE_BUFFER_H */
