@@ -74,7 +74,7 @@ then
     docker rm $DOCKER_CID
   else
     echo "Docker exited with failure, keeping container $DOCKER_CID."
-    echo "You can SSH to the worker and use 'docker start CID' and 'docker exec -i -t CID bash' to debug the problem."
+    echo "You can SSH to the worker and use 'docker commit CID YOUR_IMAGE_NAME' and 'docker run -i -t YOUR_IMAGE_NAME bash' to debug the problem."
     exit 1
   fi
 
