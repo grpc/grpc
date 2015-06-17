@@ -129,7 +129,7 @@ TEST_F(CliCallTest, SimpleRpc) {
   Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
                             client_metadata, &server_initial_metadata,
                             &server_trailing_metadata);
-  EXPECT_TRUE(s2.IsOk());
+  EXPECT_TRUE(s2.ok());
 
   EXPECT_EQ(expected_response_bin, response_bin);
   EXPECT_EQ(context.GetServerInitialMetadata(), server_initial_metadata);
