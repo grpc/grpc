@@ -218,6 +218,8 @@ typedef struct {
   gpr_slice_buffer outbuf;
   /** hpack encoding */
   grpc_chttp2_hpack_compressor hpack_compressor;
+  /** is this a client? */
+  gpr_uint8 is_client;
 } grpc_chttp2_transport_writing;
 
 struct grpc_chttp2_transport_parsing {
@@ -252,6 +254,7 @@ struct grpc_chttp2_transport_parsing {
 
   /** window available for peer to send to us */
   gpr_uint32 incoming_window;
+  gpr_uint32 incoming_window_delta;
 
   /** next stream id available at the time of beginning parsing */
   gpr_uint32 next_stream_id;
@@ -601,18 +604,41 @@ void grpc_chttp2_for_all_streams(
     void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
                grpc_chttp2_stream_global *stream_global));
 
-void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport_parsing *transport_parsing);
+void grpc_chttp2_parsing_become_skip_parser(
+    grpc_chttp2_transport_parsing *transport_parsing);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 extern int grpc_http_trace;
+extern int grpc_flowctl_trace;
 
 #define IF_TRACING(stmt)  \
   if (!(grpc_http_trace)) \
     ;                     \
   else                    \
   stmt
+
+#define GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(reason, transport, context, var,      \
+                                         delta)                                \
+  if (!(grpc_flowctl_trace)) {                                                 \
+  } else {                                                                     \
+    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,      \
+                              transport->is_client, context->id, context->var, \
+                              delta);                                          \
+  }
+
+#define GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(reason, context, var, delta)   \
+  if (!(grpc_flowctl_trace)) {                                             \
+  } else {                                                                 \
+    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,  \
+                              context->is_client, 0, context->var, delta); \
+  }
+
+void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,
+                               const char *context, const char *var,
+                               int is_client, gpr_uint32 stream_id,
+                               gpr_int64 current_value, gpr_int64 delta);
 
 #endif

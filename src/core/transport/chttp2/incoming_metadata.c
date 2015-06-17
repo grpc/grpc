@@ -71,7 +71,8 @@ void grpc_chttp2_incoming_metadata_live_op_buffer_end(
   buffer->elems = NULL;
 }
 
-void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb) {
+void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
+    grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb) {
   grpc_metadata_batch b;
 
   b.list.head = NULL;
@@ -79,7 +80,7 @@ void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(grpc_chttp2_
      we can reconstitute the list.
      We can't do list building here as later incoming metadata may reallocate
      the underlying array. */
-  b.list.tail = (void*)(gpr_intptr)buffer->count;
+  b.list.tail = (void *)(gpr_intptr)buffer->count;
   b.garbage.head = b.garbage.tail = NULL;
   b.deadline = buffer->deadline;
   buffer->deadline = gpr_inf_future;
@@ -87,14 +88,15 @@ void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(grpc_chttp2_
   grpc_sopb_add_metadata(sopb, b);
 }
 
-void grpc_chttp2_incoming_metadata_buffer_swap(grpc_chttp2_incoming_metadata_buffer *a, grpc_chttp2_incoming_metadata_buffer *b) {
+void grpc_chttp2_incoming_metadata_buffer_swap(
+    grpc_chttp2_incoming_metadata_buffer *a,
+    grpc_chttp2_incoming_metadata_buffer *b) {
   GPR_SWAP(grpc_chttp2_incoming_metadata_buffer, *a, *b);
 }
 
 void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
-    grpc_chttp2_incoming_metadata_buffer *src, 
-    grpc_chttp2_incoming_metadata_buffer *dst,
-    grpc_stream_op_buffer *sopb) {
+    grpc_chttp2_incoming_metadata_buffer *src,
+    grpc_chttp2_incoming_metadata_buffer *dst, grpc_stream_op_buffer *sopb) {
   size_t delta;
   size_t i;
   if (gpr_time_cmp(dst->deadline, gpr_inf_future) == 0) {
@@ -119,7 +121,8 @@ void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
   dst->count += src->count;
   for (i = 0; i < sopb->nops; i++) {
     if (sopb->ops[i].type != GRPC_OP_METADATA) continue;
-    sopb->ops[i].data.metadata.list.tail = (void*)(delta + (gpr_intptr)sopb->ops[i].data.metadata.list.tail);
+    sopb->ops[i].data.metadata.list.tail =
+        (void *)(delta + (gpr_intptr)sopb->ops[i].data.metadata.list.tail);
   }
 }
 

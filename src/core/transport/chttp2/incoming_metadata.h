@@ -67,9 +67,8 @@ void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb);
 
 void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
-	grpc_chttp2_incoming_metadata_buffer *src, 
-	grpc_chttp2_incoming_metadata_buffer *dst,
-	grpc_stream_op_buffer *sopb);
+    grpc_chttp2_incoming_metadata_buffer *src,
+    grpc_chttp2_incoming_metadata_buffer *dst, grpc_stream_op_buffer *sopb);
 
 void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb,

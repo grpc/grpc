@@ -1395,6 +1395,8 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
       grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
           &stream_parsing->incoming_metadata,
           &stream_parsing->data_parser.incoming_sopb);
+      grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
+                                               stream_parsing);
     }
     if (parser->is_eof) {
       stream_parsing->received_close = 1;

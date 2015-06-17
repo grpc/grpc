@@ -47,6 +47,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 /* #define REFCOUNTING_DEBUG */
@@ -166,15 +167,19 @@ static void destruct_transport(grpc_chttp2_transport *t) {
 #ifdef REFCOUNTING_DEBUG
 #define REF_TRANSPORT(t, r) ref_transport(t, r, __FILE__, __LINE__)
 #define UNREF_TRANSPORT(t, r) unref_transport(t, r, __FILE__, __LINE__)
-static void unref_transport(grpc_chttp2_transport *t, const char *reason, const char *file, int line) {
-  gpr_log(GPR_DEBUG, "chttp2:unref:%p %d->%d %s [%s:%d]", t, t->refs.count, t->refs.count-1, reason, file, line);
+static void unref_transport(grpc_chttp2_transport *t, const char *reason,
+                            const char *file, int line) {
+  gpr_log(GPR_DEBUG, "chttp2:unref:%p %d->%d %s [%s:%d]", t, t->refs.count,
+          t->refs.count - 1, reason, file, line);
   if (!gpr_unref(&t->refs)) return;
   destruct_transport(t);
 }
 
-static void ref_transport(grpc_chttp2_transport *t, const char *reason, const char *file, int line) { 
-  gpr_log(GPR_DEBUG, "chttp2:  ref:%p %d->%d %s [%s:%d]", t, t->refs.count, t->refs.count+1, reason, file, line);
-  gpr_ref(&t->refs); 
+static void ref_transport(grpc_chttp2_transport *t, const char *reason,
+                          const char *file, int line) {
+  gpr_log(GPR_DEBUG, "chttp2:  ref:%p %d->%d %s [%s:%d]", t, t->refs.count,
+          t->refs.count + 1, reason, file, line);
+  gpr_ref(&t->refs);
 }
 #else
 #define REF_TRANSPORT(t, r) ref_transport(t)
@@ -221,6 +226,7 @@ static void init_transport(grpc_chttp2_transport *t,
   t->parsing.str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
   t->parsing.deframe_state = is_client ? DTS_FH_0 : DTS_CLIENT_PREFIX_0;
+  t->writing.is_client = is_client;
 
   gpr_slice_buffer_init(&t->global.qbuf);
 
@@ -378,12 +384,11 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     s->global.outgoing_window =
         t->global
             .settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-    s->global.incoming_window =
+    s->parsing.incoming_window = s->global.incoming_window =
         t->global
             .settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
-    grpc_chttp2_list_add_incoming_window_updated(&t->global, &s->global);
-    grpc_chttp2_stream_map_add(&t->new_stream_map, s->global.id, s);
+    grpc_chttp2_stream_map_add(&t->parsing_stream_map, s->global.id, s);
     s->global.in_stream_map = 1;
   }
 
@@ -404,7 +409,8 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   GPR_ASSERT(!s->global.in_stream_map);
   grpc_chttp2_unregister_stream(t, s);
   if (!t->parsing_active && s->global.id) {
-    GPR_ASSERT(grpc_chttp2_stream_map_find(&t->parsing_stream_map, s->global.id) == NULL);
+    GPR_ASSERT(grpc_chttp2_stream_map_find(&t->parsing_stream_map,
+                                           s->global.id) == NULL);
   }
 
   gpr_mu_unlock(&t->mu);
@@ -525,7 +531,8 @@ void grpc_chttp2_terminate_writing(
   if (t->ep && !t->endpoint_reading) {
     grpc_endpoint_destroy(t->ep);
     t->ep = NULL;
-    UNREF_TRANSPORT(t, "disconnect"); /* safe because we'll still have the ref for write */
+    UNREF_TRANSPORT(
+        t, "disconnect"); /* safe because we'll still have the ref for write */
   }
 
   unlock(t);
@@ -586,7 +593,8 @@ static void maybe_start_some_streams(
         stream_global->id, STREAM_FROM_GLOBAL(stream_global));
     stream_global->in_stream_map = 1;
     transport_global->concurrent_stream_count++;
-    grpc_chttp2_list_add_incoming_window_updated(transport_global, stream_global);
+    grpc_chttp2_list_add_incoming_window_updated(transport_global,
+                                                 stream_global);
     grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
   }
   /* cancel out streams that will never be started */
@@ -699,7 +707,8 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
 }
 
 static void remove_stream(grpc_chttp2_transport *t, gpr_uint32 id) {
-  grpc_chttp2_stream *s = grpc_chttp2_stream_map_delete(&t->parsing_stream_map, id);
+  grpc_chttp2_stream *s =
+      grpc_chttp2_stream_map_delete(&t->parsing_stream_map, id);
   GPR_ASSERT(s);
   s->global.in_stream_map = 0;
   if (t->parsing.incoming_stream == &s->parsing) {
@@ -729,25 +738,44 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
     }
   }
 
-  while (grpc_chttp2_list_pop_read_write_state_changed(transport_global, &stream_global)) {
+  while (grpc_chttp2_list_pop_read_write_state_changed(transport_global,
+                                                       &stream_global)) {
     if (!stream_global->publish_sopb) {
+      gpr_log(GPR_DEBUG, "%s %d: skip rw update: no publish target",
+              transport_global->is_client ? "CLI" : "SVR", stream_global->id);
       continue;
     }
-    if (stream_global->write_state != WRITE_STATE_OPEN && stream_global->read_closed && stream_global->in_stream_map) {
+    if (stream_global->write_state == WRITE_STATE_SENT_CLOSE &&
+        stream_global->read_closed && stream_global->in_stream_map) {
       if (t->parsing_active) {
-        grpc_chttp2_list_add_closed_waiting_for_parsing(transport_global, stream_global);
+        gpr_log(GPR_DEBUG, "%s %d: queue wait for close",
+                transport_global->is_client ? "CLI" : "SVR", stream_global->id);
+        grpc_chttp2_list_add_closed_waiting_for_parsing(transport_global,
+                                                        stream_global);
       } else {
+        gpr_log(GPR_DEBUG, "%s %d: late removal from map",
+                transport_global->is_client ? "CLI" : "SVR", stream_global->id);
         remove_stream(t, stream_global->id);
       }
     }
-    state = compute_state(stream_global->write_state == WRITE_STATE_SENT_CLOSE, stream_global->read_closed && !stream_global->in_stream_map);
-    if (stream_global->incoming_sopb.nops == 0 && state == stream_global->published_state) {
+    state = compute_state(
+        stream_global->write_state == WRITE_STATE_SENT_CLOSE,
+        stream_global->read_closed && !stream_global->in_stream_map);
+    gpr_log(GPR_DEBUG, "%s %d: state=%d->%d; nops=%d",
+            transport_global->is_client ? "CLI" : "SVR", stream_global->id,
+            stream_global->published_state, state,
+            stream_global->incoming_sopb.nops);
+    if (stream_global->incoming_sopb.nops == 0 &&
+        state == stream_global->published_state) {
       continue;
     }
-    grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(&stream_global->incoming_metadata, &stream_global->incoming_sopb, &stream_global->outstanding_metadata);
+    grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
+        &stream_global->incoming_metadata, &stream_global->incoming_sopb,
+        &stream_global->outstanding_metadata);
     grpc_sopb_swap(stream_global->publish_sopb, &stream_global->incoming_sopb);
     stream_global->published_state = *stream_global->publish_state = state;
-    grpc_chttp2_schedule_closure(transport_global, stream_global->recv_done_closure, 1);
+    grpc_chttp2_schedule_closure(transport_global,
+                                 stream_global->recv_done_closure, 1);
     stream_global->recv_done_closure = NULL;
     stream_global->publish_sopb = NULL;
     stream_global->publish_state = NULL;
@@ -917,7 +945,8 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
       if (!t->writing_active && t->ep) {
         grpc_endpoint_destroy(t->ep);
         t->ep = NULL;
-        UNREF_TRANSPORT(t, "disconnect"); /* safe as we still have a ref for read */
+        UNREF_TRANSPORT(
+            t, "disconnect"); /* safe as we still have a ref for read */
       }
       unlock(t);
       UNREF_TRANSPORT(t, "recv_data");
@@ -951,32 +980,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
             grpc_chttp2_stream_map_size(&t->parsing_stream_map);
         t->parsing_active = 0;
       }
-#if 0
-      while ((s = stream_list_remove_head(t, MAYBE_FINISH_READ_AFTER_PARSE))) {
-        maybe_finish_read(t, s, 0);
-      }
-      while ((s = stream_list_remove_head(t, PARSER_CHECK_WINDOW_UPDATES_AFTER_PARSE))) {
-        maybe_join_window_updates(t, s);
-      }
-      while ((s = stream_list_remove_head(t, OTHER_CHECK_WINDOW_UPDATES_AFTER_PARSE))) {
-        maybe_join_window_updates(t, s);
-      }
-      while ((s = stream_list_remove_head(t, NEW_OUTGOING_WINDOW))) {
-        int was_window_empty = s->global.outgoing_window <= 0;
-        FLOWCTL_TRACE(t, s, outgoing, s->global.id, s->global.outgoing_window_update);
-        s->global.outgoing_window += s->global.outgoing_window_update;
-        s->global.outgoing_window_update = 0;
-        /* if this window update makes outgoing ops writable again,
-           flag that */
-        if (was_window_empty && s->global.outgoing_sopb &&
-            s->global.outgoing_sopb->nops > 0) {
-          stream_list_join(t, s, WRITABLE);
-        }
-      }
-      t->global.outgoing_window += t->global.outgoing_window_update;
-      t->global.outgoing_window_update = 0;
-      maybe_start_some_streams(t);
-#endif
       if (i == nslices) {
         grpc_endpoint_notify_on_read(t->ep, recv_data, t);
       }
@@ -1077,6 +1080,37 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
   lock(t);
   add_to_pollset_locked(t, pollset);
   unlock(t);
+}
+
+/*
+ * TRACING
+ */
+
+void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,
+                               const char *context, const char *var,
+                               int is_client, gpr_uint32 stream_id,
+                               gpr_int64 current_value, gpr_int64 delta) {
+  char *identifier;
+  char *context_scope;
+  char *context_thread;
+  char *underscore_pos = strchr(context, '_');
+  GPR_ASSERT(underscore_pos);
+  context_thread = gpr_strdup(underscore_pos + 1);
+  context_scope = gpr_strdup(context);
+  context_scope[underscore_pos - context] = 0;
+  if (stream_id) {
+    gpr_asprintf(&identifier, "%s[%d]", context_scope, stream_id);
+  } else {
+    identifier = gpr_strdup(context_scope);
+  }
+  gpr_log(GPR_DEBUG,
+          "FLOWCTL: %s %-10s %8s %-23s %8lld %c %8lld = %8lld %-10s [%s:%d]",
+          is_client ? "client" : "server", identifier, context_thread, var,
+          current_value, delta < 0 ? '-' : '+', delta < 0 ? -delta : delta,
+          current_value + delta, reason, file, line);
+  gpr_free(identifier);
+  gpr_free(context_thread);
+  gpr_free(context_scope);
 }
 
 /*

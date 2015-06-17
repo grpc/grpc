@@ -77,8 +77,17 @@ int grpc_chttp2_unlocking_check_writes(
         GPR_MIN(transport_global->outgoing_window,
                 stream_global->outgoing_window),
         &stream_writing->sopb);
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+        "write", transport_global, outgoing_window, -(gpr_int64)window_delta);
+    GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("write", transport_global, stream_global,
+                                     outgoing_window, -(gpr_int64)window_delta);
     transport_global->outgoing_window -= window_delta;
     stream_global->outgoing_window -= window_delta;
+
+    gpr_log(GPR_DEBUG, "%s ws:%d nops:%d rc:%d",
+            transport_global->is_client ? "CLI" : "SVR",
+            stream_global->write_state, stream_global->outgoing_sopb->nops,
+            stream_global->read_closed);
 
     if (stream_global->write_state == WRITE_STATE_QUEUED_CLOSE &&
         stream_global->outgoing_sopb->nops == 0) {
@@ -115,8 +124,11 @@ int grpc_chttp2_unlocking_check_writes(
       gpr_slice_buffer_add(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_global->id, window_delta));
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("write", transport_global, stream_global,
+                                       incoming_window, window_delta);
       stream_global->incoming_window += window_delta;
-      grpc_chttp2_list_add_incoming_window_updated(transport_global, stream_global);
+      grpc_chttp2_list_add_incoming_window_updated(transport_global,
+                                                   stream_global);
     }
   }
 
@@ -128,6 +140,8 @@ int grpc_chttp2_unlocking_check_writes(
                    transport_global->incoming_window;
     gpr_slice_buffer_add(&transport_writing->outbuf,
                          grpc_chttp2_window_update_create(0, window_delta));
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT("write", transport_global,
+                                        incoming_window, window_delta);
     transport_global->incoming_window += window_delta;
   }
 
@@ -137,7 +151,8 @@ int grpc_chttp2_unlocking_check_writes(
 
 void grpc_chttp2_perform_writes(
     grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint) {
-  GPR_ASSERT(transport_writing->outbuf.count > 0 || grpc_chttp2_list_have_writing_streams(transport_writing));
+  GPR_ASSERT(transport_writing->outbuf.count > 0 ||
+             grpc_chttp2_list_have_writing_streams(transport_writing));
 
   finalize_outbuf(transport_writing);
 
@@ -167,6 +182,9 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
 
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
+    gpr_log(GPR_DEBUG, "%s write %d: sc=%d",
+            transport_writing->is_client ? "CLI" : "SVR", stream_writing->id,
+            stream_writing->send_closed);
     grpc_chttp2_encode(stream_writing->sopb.ops, stream_writing->sopb.nops,
                        stream_writing->send_closed != DONT_SEND_CLOSED,
                        stream_writing->id, &transport_writing->hpack_compressor,

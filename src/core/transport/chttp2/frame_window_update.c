@@ -96,9 +96,16 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
 
     if (transport_parsing->incoming_stream_id) {
       if (stream_parsing) {
+        GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("update", transport_parsing,
+                                         stream_parsing, outgoing_window_update,
+                                         p->amount);
         stream_parsing->outgoing_window_update += p->amount;
+        grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
+                                                 stream_parsing);
       }
     } else {
+      GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT("update", transport_parsing,
+                                          outgoing_window_update, p->amount);
       transport_parsing->outgoing_window_update += p->amount;
     }
   }

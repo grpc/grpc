@@ -60,16 +60,30 @@ static int init_skip_frame_parser(
 static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice, int is_last);
 
-void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *transport_global,
-                                 grpc_chttp2_transport_parsing *transport_parsing) {
+void grpc_chttp2_prepare_to_read(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_transport_parsing *transport_parsing) {
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_parsing *stream_parsing;
 
   /* update the parsing view of incoming window */
-  transport_parsing->incoming_window = transport_global->incoming_window;
+  if (transport_parsing->incoming_window != transport_global->incoming_window) {
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+        "parse", transport_parsing, incoming_window,
+        (gpr_int64)transport_global->incoming_window -
+            (gpr_int64)transport_parsing->incoming_window);
+    transport_parsing->incoming_window = transport_global->incoming_window;
+  }
   while (grpc_chttp2_list_pop_incoming_window_updated(
       transport_global, transport_parsing, &stream_global, &stream_parsing)) {
-    stream_parsing->incoming_window = transport_parsing->incoming_window;
+    stream_parsing->id = stream_global->id;
+    if (stream_parsing->incoming_window != stream_global->incoming_window) {
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "parse", transport_parsing, stream_parsing, incoming_window,
+          (gpr_int64)stream_global->incoming_window -
+              (gpr_int64)stream_parsing->incoming_window);
+      stream_parsing->incoming_window = stream_global->incoming_window;
+    }
   }
 }
 
@@ -94,33 +108,6 @@ void grpc_chttp2_publish_reads(
 
   /* TODO(ctiller): re-implement */
   GPR_ASSERT(transport_parsing->initial_window_update == 0);
-
-#if 0
-  while ((s = stream_list_remove_head(t, FINISHED_READ_OP)) != NULL) {
-    int publish = 0;
-    GPR_ASSERT(s->incoming_sopb);
-    *s->publish_state =
-        compute_state(s->write_state == WRITE_STATE_SENT_CLOSE, s->read_closed);
-    if (*s->publish_state != s->published_state) {
-      s->published_state = *s->publish_state;
-      publish = 1;
-      if (s->published_state == GRPC_STREAM_CLOSED) {
-        remove_from_stream_map(t, s);
-      }
-    }
-    if (s->parser.incoming_sopb.nops > 0) {
-      grpc_sopb_swap(s->incoming_sopb, &s->parser.incoming_sopb);
-      publish = 1;
-    }
-    if (publish) {
-      if (s->incoming_metadata_count > 0) {
-        patch_metadata_ops(s);
-      }
-      s->incoming_sopb = NULL;
-      schedule_cb(t, s->global.recv_done_closure, 1);
-    }
-  }
-#endif
 
   /* copy parsing qbuf to global qbuf */
   gpr_slice_buffer_move_into(&transport_parsing->qbuf, &transport_global->qbuf);
@@ -149,11 +136,42 @@ void grpc_chttp2_publish_reads(
     transport_parsing->goaway_received = 0;
   }
 
+  /* propagate flow control tokens to global state */
+  if (transport_parsing->outgoing_window_update) {
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+        "parsed", transport_global, outgoing_window,
+        transport_parsing->outgoing_window_update);
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+        "parsed", transport_parsing, outgoing_window_update,
+        -(gpr_int64)transport_parsing->outgoing_window_update);
+    transport_global->outgoing_window +=
+        transport_parsing->outgoing_window_update;
+    transport_parsing->outgoing_window_update = 0;
+  }
+
+  if (transport_parsing->incoming_window_delta) {
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+        "parsed", transport_global, incoming_window,
+        -(gpr_int64)transport_parsing->incoming_window_delta);
+    GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+        "parsed", transport_parsing, incoming_window_delta,
+        -(gpr_int64)transport_parsing->incoming_window_delta);
+    transport_global->incoming_window -=
+        transport_parsing->incoming_window_delta;
+    transport_parsing->incoming_window_delta = 0;
+  }
+
   /* for each stream that saw an update, fixup global state */
   while (grpc_chttp2_list_pop_parsing_seen_stream(
       transport_global, transport_parsing, &stream_global, &stream_parsing)) {
     /* update incoming flow control window */
     if (stream_parsing->incoming_window_delta) {
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "parsed", transport_parsing, stream_global, incoming_window,
+          -(gpr_int64)stream_parsing->incoming_window_delta);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "parsed", transport_parsing, stream_parsing, incoming_window_delta,
+          -(gpr_int64)stream_parsing->incoming_window_delta);
       stream_global->incoming_window -= stream_parsing->incoming_window_delta;
       stream_parsing->incoming_window_delta = 0;
       grpc_chttp2_list_add_writable_window_update_stream(transport_global,
@@ -164,9 +182,16 @@ void grpc_chttp2_publish_reads(
     if (stream_parsing->outgoing_window_update) {
       int was_zero = stream_global->outgoing_window <= 0;
       int is_zero;
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("parsed", transport_parsing,
+                                       stream_global, outgoing_window,
+                                       stream_parsing->outgoing_window_update);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "parsed", transport_parsing, stream_parsing, outgoing_window_update,
+          -(gpr_int64)stream_parsing->outgoing_window_update);
       stream_global->outgoing_window += stream_parsing->outgoing_window_update;
       stream_parsing->outgoing_window_update = 0;
       is_zero = stream_global->outgoing_window <= 0;
+      gpr_log(GPR_DEBUG, "was=%d is=%d", was_zero, is_zero);
       if (was_zero && !is_zero) {
         grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
       }
@@ -186,8 +211,11 @@ void grpc_chttp2_publish_reads(
 
     /* publish incoming stream ops */
     if (stream_parsing->data_parser.incoming_sopb.nops > 0) {
-      grpc_incoming_metadata_buffer_move_to_referencing_sopb(&stream_parsing->incoming_metadata, &stream_global->incoming_metadata, &stream_parsing->data_parser.incoming_sopb);
-      grpc_sopb_move_to(&stream_parsing->data_parser.incoming_sopb, &stream_global->incoming_sopb);
+      grpc_incoming_metadata_buffer_move_to_referencing_sopb(
+          &stream_parsing->incoming_metadata, &stream_global->incoming_metadata,
+          &stream_parsing->data_parser.incoming_sopb);
+      grpc_sopb_move_to(&stream_parsing->data_parser.incoming_sopb,
+                        &stream_global->incoming_sopb);
       grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                     stream_global);
     }
@@ -476,7 +504,22 @@ static grpc_chttp2_parse_error update_incoming_window(
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
 
+  GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
+      "data", transport_parsing, incoming_window,
+      -(gpr_int64)transport_parsing->incoming_frame_size);
+  GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT("data", transport_parsing,
+                                      incoming_window_delta,
+                                      transport_parsing->incoming_frame_size);
+  GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+      "data", transport_parsing, stream_parsing, incoming_window,
+      -(gpr_int64)transport_parsing->incoming_frame_size);
+  GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("data", transport_parsing, stream_parsing,
+                                   incoming_window_delta,
+                                   transport_parsing->incoming_frame_size);
+
   transport_parsing->incoming_window -= transport_parsing->incoming_frame_size;
+  transport_parsing->incoming_window_delta +=
+      transport_parsing->incoming_frame_size;
   stream_parsing->incoming_window -= transport_parsing->incoming_frame_size;
   stream_parsing->incoming_window_delta +=
       transport_parsing->incoming_frame_size;
@@ -649,6 +692,10 @@ static int init_window_update_frame_parser(
                                        &transport_parsing->simple.window_update,
                                        transport_parsing->incoming_frame_size,
                                        transport_parsing->incoming_frame_flags);
+  if (transport_parsing->incoming_stream_id) {
+    transport_parsing->incoming_stream = grpc_chttp2_parsing_lookup_stream(
+        transport_parsing, transport_parsing->incoming_stream_id);
+  }
   transport_parsing->parser = grpc_chttp2_window_update_parser_parse;
   transport_parsing->parser_data = &transport_parsing->simple.window_update;
   return ok;
@@ -670,8 +717,8 @@ static int init_rst_stream_parser(
                                        &transport_parsing->simple.rst_stream,
                                        transport_parsing->incoming_frame_size,
                                        transport_parsing->incoming_frame_flags);
-  transport_parsing->incoming_stream = grpc_chttp2_parsing_lookup_stream(transport_parsing,
-                                  transport_parsing->incoming_stream_id);
+  transport_parsing->incoming_stream = grpc_chttp2_parsing_lookup_stream(
+      transport_parsing, transport_parsing->incoming_stream_id);
   if (!transport_parsing->incoming_stream) {
     return init_skip_frame_parser(transport_parsing, 0);
   }
