@@ -154,7 +154,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_verify(v_server);
 
   /* shutdown and destroy the server */
-  grpc_server_shutdown_and_notify(f.server, tag(0xdead));
+  grpc_server_shutdown_and_notify(f.server, f.server_cq, tag(0xdead));
   cq_verify_empty(v_server);
 
   op = ops;
@@ -175,11 +175,10 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
   cq_expect_completion(v_server, tag(102), 1);
+  cq_expect_completion(v_server, tag(0xdead), 1);
   cq_verify(v_server);
 
   grpc_call_destroy(s);
-  cq_expect_completion(v_server, tag(0xdead), 1);
-  cq_verify(v_server);
 
   cq_expect_completion(v_client, tag(1), 1);
   cq_verify(v_client);

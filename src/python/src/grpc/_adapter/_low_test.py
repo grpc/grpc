@@ -48,7 +48,6 @@ class InsecureServerInsecureClient(unittest.TestCase):
   def tearDown(self):
     self.server.shutdown()
     del self.client_channel
-    del self.server
 
     self.client_completion_queue.shutdown()
     while self.client_completion_queue.next().type != _types.EventType.QUEUE_SHUTDOWN:
@@ -59,6 +58,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
 
     del self.client_completion_queue
     del self.server_completion_queue
+    del self.server
 
   def testEcho(self):
     DEADLINE = time.time()+5

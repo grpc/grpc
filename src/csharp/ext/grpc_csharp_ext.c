@@ -648,14 +648,15 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {
   grpc_server_start(server);
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_shutdown(grpc_server *server) {
-  grpc_server_shutdown(server);
-}
-
 GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_server_shutdown_and_notify_callback(grpc_server *server,
+                                              grpc_completion_queue *cq,
                                               grpcsharp_batch_context *ctx) {
-  grpc_server_shutdown_and_notify(server, ctx);
+  grpc_server_shutdown_and_notify(server, cq, ctx);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_cancel_all_calls(grpc_server *server) {
+  grpc_server_cancel_all_calls(server);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_destroy(grpc_server *server) {
