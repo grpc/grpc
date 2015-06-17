@@ -79,7 +79,7 @@ typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
 @interface GRPCOpRecvStatus : NSObject <GRPCOp>
 
-- (instancetype)initWithHandler:(void(^)(NSError *))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void(^)(NSError *, NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 

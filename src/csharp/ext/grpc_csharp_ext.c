@@ -65,8 +65,6 @@ grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
   return bb;
 }
 
-typedef void(GPR_CALLTYPE *callback_funcptr)(gpr_int32 success, void *batch_context);
-
 /*
  * Helper to maintain lifetime of batch op inputs and store batch op outputs.
  */
@@ -419,18 +417,23 @@ grpcsharp_call_start_unary(grpc_call *call, grpcsharp_batch_context *ctx,
   ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
   ops[0].data.send_initial_metadata.metadata =
       ctx->send_initial_metadata.metadata;
+  ops[0].flags = 0;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
   ops[1].data.send_message = ctx->send_message;
+  ops[1].flags = 0;
 
   ops[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  ops[2].flags = 0;
 
   ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[3].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+  ops[3].flags = 0;
 
   ops[4].op = GRPC_OP_RECV_MESSAGE;
   ops[4].data.recv_message = &(ctx->recv_message);
+  ops[4].flags = 0;
 
   ops[5].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   ops[5].data.recv_status_on_client.trailing_metadata =
@@ -442,6 +445,7 @@ grpcsharp_call_start_unary(grpc_call *call, grpcsharp_batch_context *ctx,
       &(ctx->recv_status_on_client.status_details);
   ops[5].data.recv_status_on_client.status_details_capacity =
       &(ctx->recv_status_on_client.status_details_capacity);
+  ops[5].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -458,12 +462,15 @@ grpcsharp_call_start_client_streaming(grpc_call *call,
   ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
   ops[0].data.send_initial_metadata.metadata =
       ctx->send_initial_metadata.metadata;
+  ops[0].flags = 0;
 
   ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[1].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+  ops[1].flags = 0;
 
   ops[2].op = GRPC_OP_RECV_MESSAGE;
   ops[2].data.recv_message = &(ctx->recv_message);
+  ops[2].flags = 0;
 
   ops[3].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   ops[3].data.recv_status_on_client.trailing_metadata =
@@ -475,6 +482,7 @@ grpcsharp_call_start_client_streaming(grpc_call *call,
       &(ctx->recv_status_on_client.status_details);
   ops[3].data.recv_status_on_client.status_details_capacity =
       &(ctx->recv_status_on_client.status_details_capacity);
+  ops[3].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -490,15 +498,19 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
   ops[0].data.send_initial_metadata.metadata =
       ctx->send_initial_metadata.metadata;
+  ops[0].flags = 0;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
   ops[1].data.send_message = ctx->send_message;
+  ops[1].flags = 0;
 
   ops[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  ops[2].flags = 0;
 
   ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[3].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+  ops[3].flags = 0;
 
   ops[4].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   ops[4].data.recv_status_on_client.trailing_metadata =
@@ -510,6 +522,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
       &(ctx->recv_status_on_client.status_details);
   ops[4].data.recv_status_on_client.status_details_capacity =
       &(ctx->recv_status_on_client.status_details_capacity);
+  ops[4].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -526,9 +539,11 @@ grpcsharp_call_start_duplex_streaming(grpc_call *call,
   ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
   ops[0].data.send_initial_metadata.metadata =
       ctx->send_initial_metadata.metadata;
+  ops[0].flags = 0;
 
   ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[1].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+  ops[1].flags = 0;
 
   ops[2].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   ops[2].data.recv_status_on_client.trailing_metadata =
@@ -540,6 +555,7 @@ grpcsharp_call_start_duplex_streaming(grpc_call *call,
       &(ctx->recv_status_on_client.status_details);
   ops[2].data.recv_status_on_client.status_details_capacity =
       &(ctx->recv_status_on_client.status_details_capacity);
+  ops[2].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -552,6 +568,7 @@ grpcsharp_call_send_message(grpc_call *call, grpcsharp_batch_context *ctx,
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
   ops[0].data.send_message = ctx->send_message;
+  ops[0].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -562,6 +579,7 @@ grpcsharp_call_send_close_from_client(grpc_call *call,
   /* TODO: don't use magic number */
   grpc_op ops[1];
   ops[0].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  ops[0].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -579,6 +597,7 @@ grpcsharp_call_send_status_from_server(grpc_call *call,
       gpr_strdup(status_details);
   ops[0].data.send_status_from_server.trailing_metadata = NULL;
   ops[0].data.send_status_from_server.trailing_metadata_count = 0;
+  ops[0].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -589,6 +608,7 @@ grpcsharp_call_recv_message(grpc_call *call, grpcsharp_batch_context *ctx) {
   grpc_op ops[1];
   ops[0].op = GRPC_OP_RECV_MESSAGE;
   ops[0].data.recv_message = &(ctx->recv_message);
+  ops[0].flags = 0;
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
 
@@ -599,10 +619,12 @@ grpcsharp_call_start_serverside(grpc_call *call, grpcsharp_batch_context *ctx) {
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   ops[0].data.send_initial_metadata.count = 0;
   ops[0].data.send_initial_metadata.metadata = NULL;
+  ops[0].flags = 0;
 
   ops[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops[1].data.recv_close_on_server.cancelled =
       (&ctx->recv_close_on_server_cancelled);
+  ops[1].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
@@ -732,10 +754,12 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
   gpr_set_log_function(grpcsharp_log_handler);
 }
 
+typedef void(GPR_CALLTYPE *test_callback_funcptr)(gpr_int32 success);
+
 /* For testing */
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_test_callback(callback_funcptr callback) {
-  callback(1, NULL);
+grpcsharp_test_callback(test_callback_funcptr callback) {
+  callback(1);
 }
 
 /* For testing */
