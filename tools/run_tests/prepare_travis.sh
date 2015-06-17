@@ -32,17 +32,17 @@ cd `dirname $0`/../..
 grpc_dir=`pwd`
 
 distrib=`md5sum /etc/issue | cut -f1 -d\ `
-echo "Configuring for disbribution $distrib"
+echo "Configuring for distribution $distrib"
 git submodule | while read sha path extra ; do
   cd /tmp
   name=`basename $path`
   file=$name-$sha-$CONFIG-prebuilt-$distrib.tar.gz
-  echo -n "$file ..."
+  echo -n "Looking for $file ..."
   url=http://storage.googleapis.com/grpc-prebuilt-packages/$file
   wget -q $url && (
     echo " Found."
     tar xfz $file
-  ) || true
+  ) || echo " Not found."
 done
 
 mkdir -p bins/$CONFIG/protobuf
