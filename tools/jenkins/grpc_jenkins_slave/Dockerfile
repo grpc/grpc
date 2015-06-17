@@ -83,6 +83,7 @@ ENV NUGET mono /var/local/NuGet.exe
 # Node dependencies
 
 # Install nvm
+RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 RUN /bin/bash -l -c "nvm install 0.12"
 
