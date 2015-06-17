@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,27 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from grpc._cython._cygrpc cimport grpc
+from grpc._cython._cygrpc cimport completion_queue
 
-# change to grpc repo root
-cd $(dirname $0)/../..
 
-root=`pwd`
+cdef class Server:
 
-if [ ! -d 'python2.7_virtual_environment' ]
-then
-  # Build the entire virtual environment
-  virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-  source python2.7_virtual_environment/bin/activate
-  pip install -r src/python/requirements.txt
-else
-  source python2.7_virtual_environment/bin/activate
-  # Uninstall and re-install the packages we care about. Don't use
-  # --force-reinstall or --ignore-installed to avoid propagating this
-  # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-  # dependency upgrades.
-  (yes | pip uninstall grpcio) || true
-  (yes | pip uninstall interop) || true
-fi
-CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/src
-pip install src/python/interop
+  cdef grpc.grpc_server *c_server
+  cdef bint is_started  # start has been called
+  cdef bint is_shutting_down  # shutdown has been called
+  cdef bint is_shutdown  # notification of complete shutdown received
+  # used at dealloc when user forgets to shutdown
+  cdef completion_queue.CompletionQueue backup_shutdown_queue
+  cdef list references
+  cdef list registered_completion_queues
+
+  cdef notify_shutdown_complete(self)

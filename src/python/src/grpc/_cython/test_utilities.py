@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,27 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import threading
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from grpc._cython._cygrpc import completion_queue
 
-root=`pwd`
 
-if [ ! -d 'python2.7_virtual_environment' ]
-then
-  # Build the entire virtual environment
-  virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-  source python2.7_virtual_environment/bin/activate
-  pip install -r src/python/requirements.txt
-else
-  source python2.7_virtual_environment/bin/activate
-  # Uninstall and re-install the packages we care about. Don't use
-  # --force-reinstall or --ignore-installed to avoid propagating this
-  # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-  # dependency upgrades.
-  (yes | pip uninstall grpcio) || true
-  (yes | pip uninstall interop) || true
-fi
-CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/src
-pip install src/python/interop
+class CompletionQueuePollFuture:
+
+  def __init__(self, completion_queue, deadline):
+    def poller_function():
+      self._event_result = completion_queue.poll(deadline)
+    self._event_result = None
+    self._thread = threading.Thread(target=poller_function)
+    self._thread.start()
+
+  def result(self):
+    self._thread.join()
+    return self._event_result
