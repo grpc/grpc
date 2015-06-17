@@ -667,6 +667,11 @@ static int init_rst_stream_parser(
                                        &transport_parsing->simple.rst_stream,
                                        transport_parsing->incoming_frame_size,
                                        transport_parsing->incoming_frame_flags);
+  transport_parsing->incoming_stream = grpc_chttp2_parsing_lookup_stream(transport_parsing,
+                                  transport_parsing->incoming_stream_id);
+  if (!transport_parsing->incoming_stream) {
+    return init_skip_frame_parser(transport_parsing, 0);
+  }
   transport_parsing->parser = grpc_chttp2_rst_stream_parser_parse;
   transport_parsing->parser_data = &transport_parsing->simple.rst_stream;
   return ok;

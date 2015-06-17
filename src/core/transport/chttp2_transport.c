@@ -522,7 +522,7 @@ void grpc_chttp2_terminate_writing(
   /* leave the writing flag up on shutdown to prevent further writes in unlock()
      from starting */
   t->writing_active = 0;
-  if (!t->endpoint_reading) {
+  if (t->ep && !t->endpoint_reading) {
     grpc_endpoint_destroy(t->ep);
     t->ep = NULL;
     UNREF_TRANSPORT(t, "disconnect"); /* safe because we'll still have the ref for write */
