@@ -105,6 +105,7 @@ Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) 
   }
   self = (Server *)type->tp_alloc(type, 0);
   self->c_serv = grpc_server_create(&c_args);
+  grpc_server_register_completion_queue(self->c_serv, cq->c_cq);
   pygrpc_discard_channel_args(c_args);
   self->cq = cq;
   Py_INCREF(self->cq);
