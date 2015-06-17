@@ -196,10 +196,11 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
       return 0;
     }
     if (!PyTuple_Check(PyTuple_GET_ITEM(op, STATUS_INDEX))) {
-      char buf[64];
-      snprintf(buf, sizeof(buf), "expected tuple status in op of length %d",
-               STATUS_TUPLE_SIZE);
-      PyErr_SetString(PyExc_TypeError, buf);
+      char *buf;
+      gpr_asprintf(&buf, "expected tuple status in op of length %d",
+                   STATUS_TUPLE_SIZE);
+      PyErr_SetString(PyExc_ValueError, buf);
+      gpr_free(buf);
       return 0;
     }
     c_op.data.send_status_from_server.status = PyInt_AsLong(
