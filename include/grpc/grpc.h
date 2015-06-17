@@ -158,6 +158,8 @@ typedef enum grpc_call_error {
 /* Force compression to be disabled for a particular write
    (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
+/* Mask of all valid flags. */
+#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
 /* A single metadata element */
 typedef struct grpc_metadata {
@@ -224,7 +226,7 @@ typedef enum {
   GRPC_OP_SEND_INITIAL_METADATA = 0,
   /* Send a message: 0 or more of these operations can occur for each call */
   GRPC_OP_SEND_MESSAGE,
-  /* Send a close from the server: one and only one instance MUST be sent from
+  /* Send a close from the client: one and only one instance MUST be sent from
      the client,
      unless the call was cancelled - in which case this can be skipped */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
@@ -243,7 +245,7 @@ typedef enum {
      the status will indicate some failure.
      */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
-  /* Receive status on the server: one and only one must be made on the server
+  /* Receive close on the server: one and only one must be made on the server
      */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
@@ -253,6 +255,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
+  gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
   union {
     struct {
       size_t count;

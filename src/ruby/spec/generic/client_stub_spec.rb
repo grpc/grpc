@@ -54,6 +54,7 @@ describe 'ClientStub' do
   before(:each) do
     Thread.abort_on_exception = true
     @server = nil
+    @server_queue = nil
     @method = 'an_rpc_method'
     @pass = OK
     @fail = INTERNAL
@@ -61,7 +62,7 @@ describe 'ClientStub' do
   end
 
   after(:each) do
-    @server.close unless @server.nil?
+    @server.close(@server_queue) unless @server_queue.nil?
   end
 
   describe '#new' do
