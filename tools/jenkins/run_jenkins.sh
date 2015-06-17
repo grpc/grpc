@@ -41,13 +41,38 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
+  if [ "$ghprbPullId" != "" ]
+  then
+    # if we are building a pull request, grab corresponding refs.
+    FETCH_PULL_REQUEST_CMD="&& git fetch $GIT_URL refs/pull/$ghprbPullId/merge refs/pull/$ghprbPullId/head"
+  fi
+
+  # Make sure the CID file is gone.
+  rm -f docker.cid
+
   # Run tests inside docker
-  docker run grpc/grpc_jenkins_slave bash -c -l "git clone --recursive $GIT_URL /var/local/git/grpc \
-    && cd /var/local/git/grpc && git checkout -f $GIT_COMMIT \
+  docker run --cidfile=docker.cid grpc/grpc_jenkins_slave bash -c -l "git clone --recursive $GIT_URL /var/local/git/grpc \
+    && cd /var/local/git/grpc \
+    $FETCH_PULL_REQUEST_CMD \
+    && git checkout -f $GIT_COMMIT \
     && git submodule update \
+    && pip install simplejson mako \
     && nvm use 0.12 \
     && rvm use ruby-2.1 \
-    && tools/run_tests/run_tests.py -t -l $language"
+    && CONFIG=$config tools/run_tests/prepare_travis.sh \
+    && CPPFLAGS=-I/tmp/prebuilt/include tools/run_tests/run_tests.py -t -c $config -l $language" || DOCKER_FAILED="true"
+
+  DOCKER_CID=`cat docker.cid`
+  if [ "$DOCKER_FAILED" == "" ]
+  then
+    echo "Docker finished successfully, deleting the container $DOCKER_CID"
+    docker rm $DOCKER_CID
+  else
+    echo "Docker exited with failure, keeping container $DOCKER_CID."
+    echo "You can SSH to the worker and use 'docker start CID' and 'docker exec -i -t CID bash' to debug the problem."
+    exit 1
+  fi
+
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"

@@ -43,9 +43,19 @@ abstract class AbstractCall {
    * Create a new Call wrapper object.
    * @param Channel $channel The channel to communicate on
    * @param string $method The method to call on the remote server
+   * @param callback $deserialize A callback function to deserialize
+   * the response
+   * @param (optional) long $timeout Timeout in microseconds
    */
-  public function __construct(Channel $channel, $method, $deserialize) {
-    $this->call = new Call($channel, $method, Timeval::infFuture());
+  public function __construct(Channel $channel, $method, $deserialize, $timeout = false) {
+    if ($timeout) {
+      $now = Timeval::now();
+      $delta = new Timeval($timeout);
+      $deadline = $now->add($delta);
+    } else {
+      $deadline = Timeval::infFuture();
+    }
+    $this->call = new Call($channel, $method, $deadline);
     $this->deserialize = $deserialize;
     $this->metadata = null;
   }

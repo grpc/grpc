@@ -41,7 +41,6 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/log.h>
 
 #include "grpc/_adapter/_c/types.h"
 
@@ -124,7 +123,7 @@ PyObject *pygrpc_consume_event(grpc_event event) {
           event.success ? Py_True : Py_False);
     } else {
       result = Py_BuildValue("iOOONO", GRPC_OP_COMPLETE, tag->user_tag,
-          tag->call ? tag->call : Py_None, Py_None,
+          tag->call ? (PyObject*)tag->call : Py_None, Py_None,
           pygrpc_consume_ops(tag->ops, tag->nops),
           event.success ? Py_True : Py_False);
     }
@@ -170,6 +169,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     return 0;
   }
   c_op.op = type;
+  c_op.flags = 0;
   switch (type) {
   case GRPC_OP_SEND_INITIAL_METADATA:
     if (!pygrpc_cast_pylist_to_send_metadata(
@@ -197,10 +197,11 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
       return 0;
     }
     if (!PyTuple_Check(PyTuple_GET_ITEM(op, STATUS_INDEX))) {
-      char buf[64];
-      snprintf(buf, sizeof(buf), "expected tuple status in op of length %d",
-               STATUS_TUPLE_SIZE);
-      PyErr_SetString(PyExc_TypeError, buf);
+      char *buf;
+      gpr_asprintf(&buf, "expected tuple status in op of length %d",
+                   STATUS_TUPLE_SIZE);
+      PyErr_SetString(PyExc_ValueError, buf);
+      gpr_free(buf);
       return 0;
     }
     c_op.data.send_status_from_server.status = PyInt_AsLong(

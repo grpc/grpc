@@ -270,6 +270,24 @@ function cancelAfterFirstResponse($stub) {
              'Call status was not CANCELLED');
 }
 
+function timeoutOnSleepingServer($stub) {
+  $call = $stub->FullDuplexCall(array('timeout' => 500000));
+  $request = new grpc\testing\StreamingOutputCallRequest();
+  $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+  $response_parameters = new grpc\testing\ResponseParameters();
+  $response_parameters->setSize(8);
+  $request->addResponseParameters($response_parameters);
+  $payload = new grpc\testing\Payload();
+  $payload->setBody(str_repeat("\0", 9));
+  $request->setPayload($payload);
+
+  $call->write($request);
+  $response = $call->read();
+
+  hardAssert($call->getStatus()->code === Grpc\STATUS_DEADLINE_EXCEEDED,
+             'Call status was not DEADLINE_EXCEEDED');
+}
+
 $args = getopt('', array('server_host:', 'server_port:', 'test_case:',
                          'server_host_override:', 'oauth_scope:',
                          'default_service_account:'));
@@ -340,6 +358,9 @@ switch ($args['test_case']) {
     break;
   case 'cancel_after_first_response':
     cancelAfterFirstResponse($stub);
+    break;
+  case 'timeout_on_sleeping_server':
+    timeoutOnSleepingServer($stub);
     break;
   case 'service_account_creds':
     serviceAccountCreds($stub, $args);
