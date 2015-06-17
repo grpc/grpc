@@ -54,7 +54,7 @@ describe Server do
 
     it 'fails if the server is closed' do
       s = Server.new(@cq, nil)
-      s.close
+      s.close(@cq)
       expect { s.start }.to raise_error(RuntimeError)
     end
   end
@@ -62,19 +62,19 @@ describe Server do
   describe '#destroy' do
     it 'destroys a server ok' do
       s = start_a_server
-      blk = proc { s.destroy }
+      blk = proc { s.destroy(@cq) }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
       begin
-        blk = proc { s.destroy }
+        blk = proc { s.destroy(@cq) }
         expect(&blk).to_not raise_error
         blk.call
         expect(&blk).to_not raise_error
       ensure
-        s.close
+        s.close(@cq)
       end
     end
   end
@@ -83,16 +83,16 @@ describe Server do
     it 'closes a server ok' do
       s = start_a_server
       begin
-        blk = proc { s.close }
+        blk = proc { s.close(@cq) }
         expect(&blk).to_not raise_error
       ensure
-        s.close
+        s.close(@cq)
       end
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
-      blk = proc { s.close }
+      blk = proc { s.close(@cq) }
       expect(&blk).to_not raise_error
       blk.call
       expect(&blk).to_not raise_error
@@ -105,14 +105,14 @@ describe Server do
         blk = proc do
           s = Server.new(@cq, nil)
           s.add_http2_port('localhost:0')
-          s.close
+          s.close(@cq)
         end
         expect(&blk).to_not raise_error
       end
 
       it 'fails if the server is closed' do
         s = Server.new(@cq, nil)
-        s.close
+        s.close(@cq)
         expect { s.add_http2_port('localhost:0') }.to raise_error(RuntimeError)
       end
     end
@@ -123,14 +123,14 @@ describe Server do
         blk = proc do
           s = Server.new(@cq, nil)
           s.add_http2_port('localhost:0', cert)
-          s.close
+          s.close(@cq)
         end
         expect(&blk).to_not raise_error
       end
 
       it 'fails if the server is closed' do
         s = Server.new(@cq, nil)
-        s.close
+        s.close(@cq)
         blk = proc { s.add_http2_port('localhost:0', cert) }
         expect(&blk).to raise_error(RuntimeError)
       end

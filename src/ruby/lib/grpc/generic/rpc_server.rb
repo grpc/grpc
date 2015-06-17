@@ -278,7 +278,9 @@ module GRPC
         @stopped = true
       end
       @pool.stop
-      @server.close
+      deadline = from_relative_time(@poll_period)
+
+      @server.close(@cq, deadline)
     end
 
     # determines if the server has been stopped
@@ -410,17 +412,18 @@ module GRPC
     # handles calls to the server
     def loop_handle_server_calls
       fail 'not running' unless @running
-      request_call_tag = Object.new
+      loop_tag = Object.new
       until stopped?
         deadline = from_relative_time(@poll_period)
         begin
-          an_rpc = @server.request_call(@cq, request_call_tag, deadline)
+          an_rpc = @server.request_call(@cq, loop_tag, deadline)
+          c = new_active_server_call(an_rpc)
         rescue Core::CallError, RuntimeError => e
-          # can happen during server shutdown
+          # these might happen for various reasonse.  The correct behaviour of
+          # the server is to log them and continue.
           GRPC.logger.warn("server call failed: #{e}")
           next
         end
-        c = new_active_server_call(an_rpc)
         unless c.nil?
           mth = an_rpc.method.to_sym
           @pool.schedule(c) do |call|
