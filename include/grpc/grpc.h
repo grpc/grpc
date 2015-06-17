@@ -155,6 +155,8 @@ typedef enum grpc_call_error {
 /* Force compression to be disabled for a particular write
    (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
+/* Mask of all valid flags. */
+#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
 /* A single metadata element */
 typedef struct grpc_metadata {
@@ -173,11 +175,11 @@ typedef struct grpc_metadata {
 /** The type of completion (for grpc_event) */
 typedef enum grpc_completion_type {
   /** Shutting down */
-  GRPC_QUEUE_SHUTDOWN, 
+  GRPC_QUEUE_SHUTDOWN,
   /** No event before timeout */
-  GRPC_QUEUE_TIMEOUT,  
+  GRPC_QUEUE_TIMEOUT,
   /** Operation completion */
-  GRPC_OP_COMPLETE     
+  GRPC_OP_COMPLETE
 } grpc_completion_type;
 
 /** The result of an operation.
@@ -186,7 +188,7 @@ typedef enum grpc_completion_type {
 typedef struct grpc_event {
   /** The type of the completion. */
   grpc_completion_type type;
-  /** non-zero if the operation was successful, 0 upon failure. 
+  /** non-zero if the operation was successful, 0 upon failure.
       Only GRPC_OP_COMPLETE can succeed or fail. */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
@@ -250,6 +252,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
+  gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
   union {
     struct {
       size_t count;

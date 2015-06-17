@@ -123,7 +123,7 @@ class CLanguage(object):
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
-        binary = 'vsprojects\\test_bin\\%s.exe' % (target['name'])
+        binary = 'vsprojects/test_bin/%s.exe' % (target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       out.append(config.job_spec([binary], [binary]))

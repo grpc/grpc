@@ -137,20 +137,26 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &response_payload_recv;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, test_ops, tag(1)));
 

@@ -84,6 +84,7 @@ END2END_TESTS = {
     'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
     'request_with_large_metadata': default_test_options,
     'request_with_payload': default_test_options,
+    'request_with_flags': default_test_options,
     'server_finishes_request': default_test_options,
     'simple_delayed_request': default_test_options,
     'simple_request': default_test_options,
@@ -101,7 +102,7 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
               'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {

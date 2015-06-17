@@ -103,7 +103,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     histogram->Add((Timer::Now() - start) * 1e9);
-    return s.IsOk();
+    return s.ok();
   }
 };
 
@@ -124,7 +124,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     for (auto stream = stream_.begin(); stream != stream_.end(); stream++) {
       if (*stream) {
         (*stream)->WritesDone();
-        EXPECT_TRUE((*stream)->Finish().IsOk());
+        EXPECT_TRUE((*stream)->Finish().ok());
       }
     }
   }
