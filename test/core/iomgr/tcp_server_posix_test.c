@@ -134,7 +134,8 @@ static void test_connect(int n) {
     GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, addr_len) == 0);
 
     gpr_log(GPR_DEBUG, "wait");
-    while (g_nconnects == nconnects_before && gpr_time_cmp(deadline, gpr_now()) > 0) {
+    while (g_nconnects == nconnects_before &&
+           gpr_time_cmp(deadline, gpr_now()) > 0) {
       grpc_pollset_work(&g_pollset, deadline);
     }
     gpr_log(GPR_DEBUG, "wait done");
@@ -148,9 +149,7 @@ static void test_connect(int n) {
   grpc_tcp_server_destroy(s, NULL, NULL);
 }
 
-static void destroy_pollset(void *p) {
-  grpc_pollset_destroy(p);
-}
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

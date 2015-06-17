@@ -1288,7 +1288,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->flags = op->flags;
         break;
       case GRPC_OP_SEND_MESSAGE:
-        if (!are_write_flags_valid(op->flags)){
+        if (!are_write_flags_valid(op->flags)) {
           return GRPC_CALL_ERROR_INVALID_FLAGS;
         }
         req = &reqs[out++];

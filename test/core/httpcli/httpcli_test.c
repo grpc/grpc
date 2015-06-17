@@ -54,7 +54,7 @@ static gpr_timespec n_seconds_time(int seconds) {
 }
 
 static void on_finish(void *arg, const grpc_httpcli_response *response) {
-  const char *expect = 
+  const char *expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   GPR_ASSERT(arg == (void *)42);
@@ -70,7 +70,7 @@ static void on_finish(void *arg, const grpc_httpcli_response *response) {
 
 static void test_get(int use_ssl, int port) {
   grpc_httpcli_request req;
-  char* host;
+  char *host;
 
   g_done = 0;
   gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_get", use_ssl);
@@ -95,7 +95,7 @@ static void test_get(int use_ssl, int port) {
 
 static void test_post(int use_ssl, int port) {
   grpc_httpcli_request req;
-  char* host;
+  char *host;
 
   g_done = 0;
   gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_post", (int)use_ssl);
@@ -108,8 +108,8 @@ static void test_post(int use_ssl, int port) {
   req.path = "/post";
   req.use_ssl = use_ssl;
 
-  grpc_httpcli_post(&g_context, &g_pollset, &req, "hello", 5, n_seconds_time(15), on_finish,
-                    (void *)42);
+  grpc_httpcli_post(&g_context, &g_pollset, &req, "hello", 5,
+                    n_seconds_time(15), on_finish, (void *)42);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
     grpc_pollset_work(&g_pollset, n_seconds_time(20));
@@ -118,15 +118,13 @@ static void test_post(int use_ssl, int port) {
   gpr_free(host);
 }
 
-static void destroy_pollset(void* ignored) {
-  grpc_pollset_destroy(&g_pollset);
-}
+static void destroy_pollset(void *ignored) { grpc_pollset_destroy(&g_pollset); }
 
 int main(int argc, char **argv) {
-  gpr_subprocess* server;
+  gpr_subprocess *server;
   char *me = argv[0];
   char *lslash = strrchr(me, '/');
-  char* args[4];
+  char *args[4];
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
 
@@ -142,7 +140,7 @@ int main(int argc, char **argv) {
   gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
   args[1] = "--port";
   gpr_asprintf(&args[2], "%d", port);
-  server = gpr_subprocess_create(3, (const char**)args);
+  server = gpr_subprocess_create(3, (const char **)args);
   GPR_ASSERT(server);
   gpr_free(args[0]);
   gpr_free(args[2]);

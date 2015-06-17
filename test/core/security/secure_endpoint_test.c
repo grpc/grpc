@@ -194,9 +194,7 @@ static void test_destroy_ep_early(grpc_endpoint_test_config config,
   clean_up();
 }
 
-static void destroy_pollset(void *p) {
-  grpc_pollset_destroy(p);
-}
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

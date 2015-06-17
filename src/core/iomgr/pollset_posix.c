@@ -163,7 +163,8 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
   gpr_mu_lock(&pollset->mu);
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = 1;
-  if (!pollset->called_shutdown && pollset->in_flight_cbs == 0 && pollset->counter == 0) {
+  if (!pollset->called_shutdown && pollset->in_flight_cbs == 0 &&
+      pollset->counter == 0) {
     pollset->called_shutdown = 1;
     call_shutdown = 1;
   }

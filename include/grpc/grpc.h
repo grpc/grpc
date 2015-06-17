@@ -255,7 +255,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
-  gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
+  gpr_uint32 flags; /**< Write flags bitset for grpc_begin_messages */
   union {
     struct {
       size_t count;
@@ -511,9 +511,9 @@ void grpc_server_destroy(grpc_server *server);
 
     Tracers (usually controlled by the environment variable GRPC_TRACE)
     allow printf-style debugging on GRPC internals, and are useful for
-    tracking down problems in the field. 
+    tracking down problems in the field.
 
-    Use of this function is not strictly thread-safe, but the 
+    Use of this function is not strictly thread-safe, but the
     thread-safety issues raised by it should not be of concern. */
 int grpc_tracer_set_enabled(const char *name, int enabled);
 

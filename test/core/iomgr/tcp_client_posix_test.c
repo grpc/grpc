@@ -94,8 +94,8 @@ void test_succeeds(void) {
 
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
-  grpc_tcp_client_connect(must_succeed, NULL, &g_pollset_set, (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future);
+  grpc_tcp_client_connect(must_succeed, NULL, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, gpr_inf_future);
 
   /* await the connection */
   do {
@@ -127,8 +127,8 @@ void test_fails(void) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
   /* connect to a broken address */
-  grpc_tcp_client_connect(must_fail, NULL, &g_pollset_set, (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future);
+  grpc_tcp_client_connect(must_fail, NULL, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, gpr_inf_future);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
@@ -181,17 +181,21 @@ void test_times_out(void) {
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_tcp_client_connect(must_fail, NULL, &g_pollset_set, (struct sockaddr *)&addr, addr_len,
-                          connect_deadline);
+  grpc_tcp_client_connect(must_fail, NULL, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, connect_deadline);
 
   /* Make sure the event doesn't trigger early */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  while (gpr_time_cmp(gpr_time_add(connect_deadline, gpr_time_from_seconds(2)), gpr_now()) > 0) {
+  while (gpr_time_cmp(gpr_time_add(connect_deadline, gpr_time_from_seconds(2)),
+                      gpr_now()) > 0) {
     int is_after_deadline = gpr_time_cmp(connect_deadline, gpr_now()) <= 0;
-    if (is_after_deadline && gpr_time_cmp(gpr_time_add(connect_deadline, gpr_time_from_seconds(1)), gpr_now()) > 0) {
+    if (is_after_deadline &&
+        gpr_time_cmp(gpr_time_add(connect_deadline, gpr_time_from_seconds(1)),
+                     gpr_now()) > 0) {
       /* allow some slack before insisting that things be done */
     } else {
-      GPR_ASSERT(g_connections_complete == connections_complete_before + is_after_deadline);
+      GPR_ASSERT(g_connections_complete ==
+                 connections_complete_before + is_after_deadline);
     }
     grpc_pollset_work(&g_pollset, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
   }
@@ -203,9 +207,7 @@ void test_times_out(void) {
   }
 }
 
-static void destroy_pollset(void *p) {
-  grpc_pollset_destroy(p);
-}
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

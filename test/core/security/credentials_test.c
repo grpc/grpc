@@ -210,8 +210,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_httpcli_response response =
       http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                 &response, &token_md, &token_lifetime) ==
-             GRPC_CREDENTIALS_OK);
+                 &response, &token_md, &token_lifetime) == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(token_lifetime.tv_sec == 3599);
   GPR_ASSERT(token_lifetime.tv_nsec == 0);
   GPR_ASSERT(token_md->num_entries == 1);
@@ -354,8 +353,8 @@ static void test_ssl_oauth2_composite_creds(void) {
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_credentials_unref(ssl_creds);
   grpc_credentials_unref(oauth2_creds);
-  GPR_ASSERT(strcmp(composite_creds->type,
-                    GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0);
+  GPR_ASSERT(strcmp(composite_creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) ==
+             0);
   GPR_ASSERT(grpc_credentials_has_request_metadata(composite_creds));
   GPR_ASSERT(!grpc_credentials_has_request_metadata_only(composite_creds));
   creds_array = grpc_composite_credentials_get_credentials(composite_creds);
@@ -370,8 +369,7 @@ static void test_ssl_oauth2_composite_creds(void) {
 }
 
 void test_ssl_fake_transport_security_composite_creds_failure(void) {
-  grpc_credentials *ssl_creds =
-      grpc_ssl_credentials_create(NULL, NULL);
+  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
   grpc_credentials *fake_transport_security_creds =
       grpc_fake_transport_security_credentials_create();
 
@@ -412,8 +410,8 @@ static void test_ssl_oauth2_iam_composite_creds(void) {
   grpc_credentials_unref(oauth2_creds);
   grpc_credentials_unref(aux_creds);
   grpc_credentials_unref(iam_creds);
-  GPR_ASSERT(strcmp(composite_creds->type,
-                    GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0);
+  GPR_ASSERT(strcmp(composite_creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) ==
+             0);
   GPR_ASSERT(grpc_credentials_has_request_metadata(composite_creds));
   GPR_ASSERT(!grpc_credentials_has_request_metadata_only(composite_creds));
   creds_array = grpc_composite_credentials_get_credentials(composite_creds);
@@ -455,9 +453,10 @@ static void validate_compute_engine_http_request(
     const grpc_httpcli_request *request) {
   GPR_ASSERT(!request->use_ssl);
   GPR_ASSERT(strcmp(request->host, "metadata") == 0);
-  GPR_ASSERT(strcmp(request->path,
-             "/computeMetadata/v1/instance/service-accounts/default/token")
-             == 0);
+  GPR_ASSERT(
+      strcmp(request->path,
+             "/computeMetadata/v1/instance/service-accounts/default/token") ==
+      0);
   GPR_ASSERT(request->hdr_count == 1);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Metadata-Flavor") == 0);
   GPR_ASSERT(strcmp(request->hdrs[0].value, "Google") == 0);
@@ -553,8 +552,8 @@ static void validate_refresh_token_http_request(
   GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
   GPR_ASSERT(request->hdr_count == 1);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[0].value,
-                    "application/x-www-form-urlencoded") == 0);
+  GPR_ASSERT(
+      strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
 }
 
 static int refresh_token_httpcli_post_success(
@@ -667,8 +666,8 @@ static void validate_service_account_http_request(
   char *expected_body = NULL;
   GPR_ASSERT(body != NULL);
   GPR_ASSERT(body_size != 0);
-  gpr_asprintf(&expected_body, "%s%s",
-               GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, test_signed_jwt);
+  gpr_asprintf(&expected_body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX,
+               test_signed_jwt);
   GPR_ASSERT(strlen(expected_body) == body_size);
   GPR_ASSERT(memcmp(expected_body, body, body_size) == 0);
   gpr_free(expected_body);
@@ -677,8 +676,8 @@ static void validate_service_account_http_request(
   GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
   GPR_ASSERT(request->hdr_count == 1);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[0].value,
-                    "application/x-www-form-urlencoded") == 0);
+  GPR_ASSERT(
+      strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
 }
 
 static int service_account_httpcli_post_success(
