@@ -37,7 +37,6 @@
 #include <windows.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/pollset_kick.h"
 #include "src/core/iomgr/socket_windows.h"
 
 /* There isn't really any such thing as a pollset under Windows, due to the

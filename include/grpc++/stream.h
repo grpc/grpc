@@ -101,7 +101,7 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
               CallOpClientSendClose> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(ops.SendMessage(request).IsOk());
+    GPR_ASSERT(ops.SendMessage(request).ok());
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
@@ -170,7 +170,7 @@ class ClientWriter : public ClientWriterInterface<W> {
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
-    if (!ops.SendMessage(msg).IsOk()) {
+    if (!ops.SendMessage(msg).ok()) {
       return false;
     }
     call_.PerformOps(&ops);
@@ -248,7 +248,7 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendMessage> ops;
-    if (!ops.SendMessage(msg).IsOk()) return false;
+    if (!ops.SendMessage(msg).ok()) return false;
     call_.PerformOps(&ops);
     return cq_.Pluck(&ops);
   }
@@ -319,7 +319,7 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
-    if (!ops.SendMessage(msg).IsOk()) {
+    if (!ops.SendMessage(msg).ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
@@ -361,7 +361,7 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
 
   bool Write(const W& msg) GRPC_OVERRIDE {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> ops;
-    if (!ops.SendMessage(msg).IsOk()) {
+    if (!ops.SendMessage(msg).ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
@@ -422,7 +422,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(init_ops_.SendMessage(request).IsOk());
+    GPR_ASSERT(init_ops_.SendMessage(request).ok());
     init_ops_.ClientSendClose();
     call_.PerformOps(&init_ops_);
   }
@@ -496,7 +496,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).IsOk());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -568,7 +568,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).IsOk());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -627,7 +627,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
-    if (status.IsOk()) {
+    if (status.ok()) {
       finish_ops_.ServerSendStatus(
           ctx_->trailing_metadata_,
           finish_ops_.SendMessage(msg));
@@ -638,7 +638,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
   }
 
   void FinishWithError(const Status& status, void* tag) {
-    GPR_ASSERT(!status.IsOk());
+    GPR_ASSERT(!status.ok());
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_);
@@ -682,7 +682,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).IsOk());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -737,7 +737,7 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // TODO(ctiller): don't assert
-    GPR_ASSERT(write_ops_.SendMessage(msg).IsOk());
+    GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
 

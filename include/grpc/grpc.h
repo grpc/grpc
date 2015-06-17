@@ -37,6 +37,7 @@
 #include <grpc/status.h>
 
 #include <stddef.h>
+#include <grpc/byte_buffer.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
@@ -143,7 +144,10 @@ typedef enum grpc_call_error {
   /* the flags value was illegal for this call */
   GRPC_CALL_ERROR_INVALID_FLAGS,
   /* invalid metadata was passed to this call */
-  GRPC_CALL_ERROR_INVALID_METADATA
+  GRPC_CALL_ERROR_INVALID_METADATA,
+  /* completion queue for notification has not been registered with the server
+     */
+  GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
 } grpc_call_error;
 
 /* Write Flags: */
@@ -154,34 +158,8 @@ typedef enum grpc_call_error {
 /* Force compression to be disabled for a particular write
    (start_write/add_metadata). Illegal on invoke/accept. */
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
-
-/* A buffer of bytes */
-struct grpc_byte_buffer;
-typedef struct grpc_byte_buffer grpc_byte_buffer;
-
-/* Sample helpers to obtain byte buffers (these will certainly move
-   someplace else) */
-grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices);
-grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb);
-size_t grpc_byte_buffer_length(grpc_byte_buffer *bb);
-void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
-
-/* Reader for byte buffers. Iterates over slices in the byte buffer */
-struct grpc_byte_buffer_reader;
-typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
-
-/** Initialize \a reader to read over \a buffer */
-void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                  grpc_byte_buffer *buffer);
-
-/** Cleanup and destroy \a reader */
-void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
-
-/* At the end of the stream, returns 0. Otherwise, returns 1 and sets slice to
-   be the returned slice. Caller is responsible for calling gpr_slice_unref on
-   the result. */
-int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                 gpr_slice *slice);
+/* Mask of all valid flags. */
+#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
 
 /* A single metadata element */
 typedef struct grpc_metadata {
@@ -248,7 +226,7 @@ typedef enum {
   GRPC_OP_SEND_INITIAL_METADATA = 0,
   /* Send a message: 0 or more of these operations can occur for each call */
   GRPC_OP_SEND_MESSAGE,
-  /* Send a close from the server: one and only one instance MUST be sent from
+  /* Send a close from the client: one and only one instance MUST be sent from
      the client,
      unless the call was cancelled - in which case this can be skipped */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
@@ -267,7 +245,7 @@ typedef enum {
      the status will indicate some failure.
      */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
-  /* Receive status on the server: one and only one must be made on the server
+  /* Receive close on the server: one and only one must be made on the server
      */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
@@ -277,6 +255,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
+  gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
   union {
     struct {
       size_t count;
@@ -361,7 +340,8 @@ grpc_completion_queue *grpc_completion_queue_create(void);
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached.
 
-    Returns NULL on timeout, otherwise the event that occurred.
+    Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
+    otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
@@ -371,7 +351,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
 /** Blocks until an event with tag 'tag' is available, the completion queue is
     being shutdown or deadline is reached.
 
-    Returns NULL on timeout, or a pointer to the event that occurred.
+    Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
+    otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */

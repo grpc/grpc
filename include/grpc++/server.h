@@ -163,7 +163,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
           *status && payload_ &&
           SerializationTraits<Message>::Deserialize(payload_, request_,
                                                     server_->max_message_size_)
-              .IsOk();
+              .ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
       *status = serialization_status && *status;
       return ret;

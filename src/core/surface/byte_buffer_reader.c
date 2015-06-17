@@ -33,41 +33,73 @@
 
 #include <grpc/byte_buffer_reader.h>
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/byte_buffer.h>
 
+#include "src/core/compression/message_compress.h"
+
+static int is_compressed(grpc_byte_buffer *buffer) {
+  switch (buffer->type) {
+    case GRPC_BB_RAW:
+      if (buffer->data.raw.compression == GRPC_COMPRESS_NONE) {
+        return 0 /* GPR_FALSE */;
+      }
+      break;
+  }
+  return 1 /* GPR_TRUE */;
+}
+
 void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                   grpc_byte_buffer *buffer) {
-  reader->buffer = buffer;
-  switch (buffer->type) {
-    case GRPC_BB_SLICE_BUFFER:
+  gpr_slice_buffer decompressed_slices_buffer;
+  reader->buffer_in = buffer;
+  switch (reader->buffer_in->type) {
+    case GRPC_BB_RAW:
+      gpr_slice_buffer_init(&decompressed_slices_buffer);
+      if (is_compressed(reader->buffer_in)) {
+        grpc_msg_decompress(reader->buffer_in->data.raw.compression,
+                            &reader->buffer_in->data.raw.slice_buffer,
+                            &decompressed_slices_buffer);
+        reader->buffer_out = grpc_raw_byte_buffer_create(
+            decompressed_slices_buffer.slices,
+            decompressed_slices_buffer.count);
+        gpr_slice_buffer_destroy(&decompressed_slices_buffer);
+      } else {  /* not compressed, use the input buffer as output */
+        reader->buffer_out = reader->buffer_in;
+      }
       reader->current.index = 0;
+      break;
   }
 }
 
 void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) {
-  /* no-op: the user is responsible for memory deallocation.
-   * Other cleanup operations would go here if needed. */
+  switch (reader->buffer_in->type) {
+    case GRPC_BB_RAW:
+      /* keeping the same if-else structure as in the init function */
+      if (is_compressed(reader->buffer_in)) {
+        grpc_byte_buffer_destroy(reader->buffer_out);
+      }
+      break;
+  }
 }
 
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                  gpr_slice *slice) {
-  grpc_byte_buffer *buffer = reader->buffer;
-  gpr_slice_buffer *slice_buffer;
-  switch (buffer->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      slice_buffer = &buffer->data.slice_buffer;
+  switch (reader->buffer_in->type) {
+    case GRPC_BB_RAW: {
+      gpr_slice_buffer *slice_buffer;
+      slice_buffer = &reader->buffer_out->data.raw.slice_buffer;
       if (reader->current.index < slice_buffer->count) {
         *slice = gpr_slice_ref(slice_buffer->slices[reader->current.index]);
         reader->current.index += 1;
         return 1;
-      } else {
-        return 0;
       }
       break;
+    }
   }
   return 0;
 }

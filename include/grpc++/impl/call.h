@@ -151,7 +151,7 @@ class CallOpRecvMessage {
         got_message = true;
         *status = SerializationTraits<R>::Deserialize(recv_buf_, message_,
                                                       max_message_size)
-                      .IsOk();
+                      .ok();
       } else {
         got_message = false;
         grpc_byte_buffer_destroy(recv_buf_);
@@ -196,7 +196,7 @@ class CallOpGenericRecvMessage {
     if (recv_buf_) {
       if (*status) {
         got_message = true;
-        *status = deserialize_(recv_buf_, max_message_size).IsOk();
+        *status = deserialize_(recv_buf_, max_message_size).ok();
       } else {
         got_message = false;
         grpc_byte_buffer_destroy(recv_buf_);
@@ -241,8 +241,8 @@ class CallOpServerSendStatus {
     trailing_metadata_count_ = trailing_metadata.size();
     trailing_metadata_ = FillMetadataArray(trailing_metadata);
     send_status_available_ = true;
-    send_status_code_ = static_cast<grpc_status_code>(status.code());
-    send_status_details_ = status.details();
+    send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+    send_status_details_ = status.error_message();
   }
 
  protected:

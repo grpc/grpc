@@ -120,7 +120,7 @@ static void unlock(grpc_mdctx *ctx) {
   if (ctx->refs == 0) {
     /* uncomment if you're having trouble diagnosing an mdelem leak to make
        things clearer (slows down destruction a lot, however) */
-    gc_mdtab(ctx);
+    /* gc_mdtab(ctx); */
     if (ctx->mdtab_count && ctx->mdtab_count == ctx->mdtab_free) {
       discard_metadata(ctx);
     }

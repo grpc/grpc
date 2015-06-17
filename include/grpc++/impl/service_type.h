@@ -37,6 +37,7 @@
 #include <grpc++/config.h>
 #include <grpc++/impl/serialization_traits.h>
 #include <grpc++/server.h>
+#include <grpc++/status.h>
 
 namespace grpc {
 
@@ -46,7 +47,6 @@ class RpcService;
 class Server;
 class ServerCompletionQueue;
 class ServerContext;
-class Status;
 
 class SynchronousService {
  public:

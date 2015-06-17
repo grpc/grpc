@@ -101,6 +101,7 @@
       "public_headers": [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
+        "include/grpc/compression.h",
         "include/grpc/grpc.h",
         "include/grpc/status.h"
       ],
@@ -115,7 +116,6 @@
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_server_filter.h",
         "src/core/channel/noop_filter.h",
-        "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
         "src/core/debug/trace.h",
         "src/core/iomgr/alarm.h",
@@ -703,6 +703,7 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/interarrival.h",
         "test/cpp/qps/qps_worker.h",
         "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
@@ -1362,6 +1363,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2076,11 +2080,48 @@
       ]
     },
     {
+      "name": "qps_interarrival_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_interarrival_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "qps_test",
-      "build": "benchmark",
+      "build": "test",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc++_benchmark_config",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "qps_test_openloop",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_test_openloop.cc"
       ],
       "deps": [
         "qps",

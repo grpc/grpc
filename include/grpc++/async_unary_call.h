@@ -64,7 +64,7 @@ class ClientAsyncResponseReader GRPC_FINAL
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.SendInitialMetadata(context->send_initial_metadata_);
     // TODO(ctiller): don't assert
-    GPR_ASSERT(init_buf_.SendMessage(request).IsOk());
+    GPR_ASSERT(init_buf_.SendMessage(request).ok());
     init_buf_.ClientSendClose();
     call_.PerformOps(&init_buf_);
   }
@@ -120,7 +120,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
-    if (status.IsOk()) {
+    if (status.ok()) {
       finish_buf_.ServerSendStatus(
           ctx_->trailing_metadata_, finish_buf_.SendMessage(msg));
     } else {
@@ -130,7 +130,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
   }
 
   void FinishWithError(const Status& status, void* tag) {
-    GPR_ASSERT(!status.IsOk());
+    GPR_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);

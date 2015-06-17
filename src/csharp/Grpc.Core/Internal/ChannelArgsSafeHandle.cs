@@ -45,6 +45,9 @@ namespace Grpc.Core.Internal
         [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
         static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
 
+        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
+        static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
+
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_channel_args_destroy(IntPtr args);
 
@@ -65,6 +68,11 @@ namespace Grpc.Core.Internal
         public void SetString(int index, string key, string value)
         {
             grpcsharp_channel_args_set_string(this, new UIntPtr((uint)index), key, value);
+        }
+
+        public void SetInteger(int index, string key, int value)
+        {
+            grpcsharp_channel_args_set_integer(this, new UIntPtr((uint)index), key, value);
         }
 
         protected override bool ReleaseHandle()

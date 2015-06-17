@@ -107,9 +107,9 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
-      grpc_byte_buffer_create(&response_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = n_seconds_time(30);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
@@ -198,7 +198,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

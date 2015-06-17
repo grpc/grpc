@@ -85,7 +85,7 @@ class RpcMethodHandler : public MethodHandler {
     Status status = SerializationTraits<RequestType>::Deserialize(
         param.request, &req, param.max_message_size);
     ResponseType rsp;
-    if (status.IsOk()) {
+    if (status.ok()) {
       status = func_(service_, param.server_context, &req, &rsp);
     }
 
@@ -93,7 +93,7 @@ class RpcMethodHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
-    if (status.IsOk()) {
+    if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
@@ -128,7 +128,7 @@ class ClientStreamingHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus> ops;
     ops.SendInitialMetadata(param.server_context->initial_metadata_);
-    if (status.IsOk()) {
+    if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
     ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
@@ -157,7 +157,7 @@ class ServerStreamingHandler : public MethodHandler {
     Status status = SerializationTraits<RequestType>::Deserialize(
         param.request, &req, param.max_message_size);
 
-    if (status.IsOk()) {
+    if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
       status = func_(service_, param.server_context, &req, &writer);
     }

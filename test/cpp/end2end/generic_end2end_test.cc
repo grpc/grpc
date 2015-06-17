@@ -190,7 +190,7 @@ class GenericEnd2endTest : public ::testing::Test {
       client_ok(9);
 
       EXPECT_EQ(send_response.message(), recv_response.message());
-      EXPECT_TRUE(recv_status.IsOk());
+      EXPECT_TRUE(recv_status.ok());
     }
   }
 
@@ -273,7 +273,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   client_ok(10);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 }  // namespace

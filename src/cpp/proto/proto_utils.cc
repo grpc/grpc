@@ -49,8 +49,8 @@ class GrpcBufferWriter GRPC_FINAL
   explicit GrpcBufferWriter(grpc_byte_buffer** bp,
                             int block_size = kMaxBufferLength)
       : block_size_(block_size), byte_count_(0), have_backup_(false) {
-    *bp = grpc_byte_buffer_create(NULL, 0);
-    slice_buffer_ = &(*bp)->data.slice_buffer;
+    *bp = grpc_raw_byte_buffer_create(NULL, 0);
+    slice_buffer_ = &(*bp)->data.raw.slice_buffer;
   }
 
   ~GrpcBufferWriter() GRPC_OVERRIDE {

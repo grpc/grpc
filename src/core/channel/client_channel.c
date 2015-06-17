@@ -102,10 +102,17 @@ struct call_data {
 static int prepare_activate(grpc_call_element *elem,
                             grpc_child_channel *on_child) {
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   if (calld->state == CALL_CANCELLED) return 0;
 
   /* no more access to calld->s.waiting allowed */
   GPR_ASSERT(calld->state == CALL_WAITING);
+
+  if (calld->s.waiting_op.bind_pollset) {
+    grpc_transport_setup_del_interested_party(chand->transport_setup,
+                                              calld->s.waiting_op.bind_pollset);
+  }
+
   calld->state = CALL_ACTIVE;
 
   /* create a child call */
@@ -199,6 +206,7 @@ static void cc_start_transport_op(grpc_call_element *elem,
         handle_op_after_cancellation(elem, op);
       } else {
         calld->state = CALL_WAITING;
+        calld->s.waiting_op.bind_pollset = NULL;
         if (chand->active_child) {
           /* channel is connected - use the connected stack */
           if (prepare_activate(elem, chand->active_child)) {
@@ -230,14 +238,14 @@ static void cc_start_transport_op(grpc_call_element *elem,
           }
           calld->s.waiting_op = *op;
           chand->waiting_children[chand->waiting_child_count++] = calld;
+          grpc_transport_setup_add_interested_party(chand->transport_setup,
+                                                    op->bind_pollset);
           gpr_mu_unlock(&chand->mu);
 
           /* finally initiate transport setup if needed */
           if (initiate_transport_setup) {
             grpc_transport_setup_initiate(chand->transport_setup);
           }
-          grpc_transport_setup_add_interested_party(chand->transport_setup,
-                                                    op->bind_pollset);
         }
       }
       break;

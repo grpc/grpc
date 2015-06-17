@@ -56,12 +56,12 @@ struct grpc_client_setup {
   gpr_cv cv;
   grpc_client_setup_request *active_request;
   int refs;
+  grpc_pollset_set interested_parties;
 };
 
 struct grpc_client_setup_request {
   /* pointer back to the setup object */
   grpc_client_setup *setup;
-  grpc_pollset_set interested_parties;
   gpr_timespec deadline;
 };
 
@@ -71,7 +71,7 @@ gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r) {
 
 grpc_pollset_set *grpc_client_setup_get_interested_parties(
     grpc_client_setup_request *r) {
-  return &r->interested_parties;
+  return &r->setup->interested_parties;
 }
 
 static void destroy_setup(grpc_client_setup *s) {
@@ -79,11 +79,11 @@ static void destroy_setup(grpc_client_setup *s) {
   gpr_cv_destroy(&s->cv);
   s->done(s->user_data);
   grpc_channel_args_destroy(s->args);
+  grpc_pollset_set_destroy(&s->interested_parties);
   gpr_free(s);
 }
 
 static void destroy_request(grpc_client_setup_request *r) {
-  grpc_pollset_set_destroy(&r->interested_parties);
   gpr_free(r);
 }
 
@@ -94,7 +94,6 @@ static void setup_initiate(grpc_transport_setup *sp) {
   int in_alarm = 0;
 
   r->setup = s;
-  grpc_pollset_set_init(&r->interested_parties);
   /* TODO(klempner): Actually set a deadline */
   r->deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(60));
 
@@ -125,12 +124,8 @@ static void setup_add_interested_party(grpc_transport_setup *sp,
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-  if (!s->active_request) {
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
 
-  grpc_pollset_set_add_pollset(&s->active_request->interested_parties, pollset);
+  grpc_pollset_set_add_pollset(&s->interested_parties, pollset);
 
   gpr_mu_unlock(&s->mu);
 }
@@ -140,12 +135,8 @@ static void setup_del_interested_party(grpc_transport_setup *sp,
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-  if (!s->active_request) {
-    gpr_mu_unlock(&s->mu);
-    return;
-  }
 
-  grpc_pollset_set_del_pollset(&s->active_request->interested_parties, pollset);
+  grpc_pollset_set_del_pollset(&s->interested_parties, pollset);
 
   gpr_mu_unlock(&s->mu);
 }
@@ -225,6 +216,7 @@ void grpc_client_setup_create_and_attach(
   s->in_alarm = 0;
   s->in_cb = 0;
   s->cancelled = 0;
+  grpc_pollset_set_init(&s->interested_parties);
 
   grpc_client_channel_set_transport_setup(newly_minted_channel, &s->base);
 }

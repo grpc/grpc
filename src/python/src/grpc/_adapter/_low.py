@@ -101,11 +101,8 @@ class Server(_types.Server):
   def start(self):
     return self.server.start()
 
-  def shutdown(self, tag=_NO_TAG):
-    if tag is _NO_TAG:
-      return self.server.shutdown()
-    else:
-      return self.server.shutdown(tag)
+  def shutdown(self, tag=None):
+    return self.server.shutdown(tag)
 
   def request_call(self, completion_queue, tag):
     return self.server.request_call(completion_queue.completion_queue, tag)

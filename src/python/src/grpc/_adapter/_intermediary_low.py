@@ -100,7 +100,7 @@ class _TagAdapter(collections.namedtuple('_TagAdapter', [
 
 class Call(object):
   """Adapter from old _low.Call interface to new _low.Call."""
-  
+
   def __init__(self, channel, completion_queue, method, host, deadline):
     self._internal = channel._internal.create_call(
         completion_queue._internal, method, host, deadline)
@@ -207,7 +207,7 @@ class CompletionQueue(object):
       complete_accepted = ev.success if kind == Event.Kind.COMPLETE_ACCEPTED else None
       service_acceptance = ServiceAcceptance(Call._from_internal(ev.call), ev.call_details.method, ev.call_details.host, ev.call_details.deadline) if kind == Event.Kind.SERVICE_ACCEPTED else None
       message_bytes = ev.results[0].message if kind == Event.Kind.READ_ACCEPTED else None
-      status = Status(ev.results[0].status.code, ev.results[0].status.details) if (kind == Event.Kind.FINISH and ev.results[0].status) else Status(_types.StatusCode.CANCELLED if ev.results[0].cancelled else _types.StatusCode.OK, '') if ev.results[0].cancelled is not None else None
+      status = Status(ev.results[0].status.code, ev.results[0].status.details) if (kind == Event.Kind.FINISH and ev.results[0].status) else Status(_types.StatusCode.CANCELLED if ev.results[0].cancelled else _types.StatusCode.OK, '') if len(ev.results) > 0 and ev.results[0].cancelled is not None else None
       metadata = ev.results[0].initial_metadata if (kind in [Event.Kind.SERVICE_ACCEPTED, Event.Kind.METADATA_ACCEPTED]) else (ev.results[0].trailing_metadata if kind == Event.Kind.FINISH else None)
     else:
       raise RuntimeError('unknown event')
@@ -241,7 +241,7 @@ class Server(object):
     return self._internal.request_call(self._internal_cq, _TagAdapter(tag, Event.Kind.SERVICE_ACCEPTED))
 
   def stop(self):
-    return self._internal.shutdown()
+    return self._internal.shutdown(_TagAdapter(None, Event.Kind.STOP))
 
 
 class ClientCredentials(object):
@@ -253,6 +253,6 @@ class ClientCredentials(object):
 
 class ServerCredentials(object):
   """Adapter from old _low.ServerCredentials interface to new _low.ServerCredentials."""
-  
+
   def __init__(self, root_credentials, pair_sequence):
     self._internal = _low.ServerCredentials.ssl(root_credentials, list(pair_sequence))
