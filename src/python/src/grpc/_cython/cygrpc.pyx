@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,27 +27,57 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+cimport cpython
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from grpc._cython._cygrpc cimport grpc
+from grpc._cython._cygrpc cimport call
+from grpc._cython._cygrpc cimport channel
+from grpc._cython._cygrpc cimport credentials
+from grpc._cython._cygrpc cimport completion_queue
+from grpc._cython._cygrpc cimport records
+from grpc._cython._cygrpc cimport server
 
-root=`pwd`
+from grpc._cython._cygrpc import call
+from grpc._cython._cygrpc import channel
+from grpc._cython._cygrpc import credentials
+from grpc._cython._cygrpc import completion_queue
+from grpc._cython._cygrpc import records
+from grpc._cython._cygrpc import server
 
-if [ ! -d 'python2.7_virtual_environment' ]
-then
-  # Build the entire virtual environment
-  virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-  source python2.7_virtual_environment/bin/activate
-  pip install -r src/python/requirements.txt
-else
-  source python2.7_virtual_environment/bin/activate
-  # Uninstall and re-install the packages we care about. Don't use
-  # --force-reinstall or --ignore-installed to avoid propagating this
-  # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-  # dependency upgrades.
-  (yes | pip uninstall grpcio) || true
-  (yes | pip uninstall interop) || true
-fi
-CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/src
-pip install src/python/interop
+StatusCode = records.StatusCode
+CallError = records.CallError
+Timespec = records.Timespec
+CallDetails = records.CallDetails
+Event = records.Event
+ByteBuffer = records.ByteBuffer
+SslPemKeyCertPair = records.SslPemKeyCertPair
+ChannelArg = records.ChannelArg
+ChannelArgs = records.ChannelArgs
+Metadatum = records.Metadatum
+Metadata = records.Metadata
+Operation = records.Operation
+Operations = records.Operations
+
+ClientCredentials = credentials.ClientCredentials
+ServerCredentials = credentials.ServerCredentials
+
+CompletionQueue = completion_queue.CompletionQueue
+Channel = channel.Channel
+Server = server.Server
+Call = call.Call
+
+
+#
+# Global state
+#
+
+cdef class _ModuleState:
+
+  def __cinit__(self):
+    grpc.grpc_init()
+
+  def __dealloc__(self):
+    grpc.grpc_shutdown()
+
+_module_state = _ModuleState()
+

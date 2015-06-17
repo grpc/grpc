@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,27 +27,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from grpc._cython._cygrpc cimport grpc
 
-# change to grpc repo root
-cd $(dirname $0)/../..
 
-root=`pwd`
+cdef class ClientCredentials:
+  cdef grpc.grpc_credentials *c_credentials
+  cdef grpc.grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
+  cdef list references
 
-if [ ! -d 'python2.7_virtual_environment' ]
-then
-  # Build the entire virtual environment
-  virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-  source python2.7_virtual_environment/bin/activate
-  pip install -r src/python/requirements.txt
-else
-  source python2.7_virtual_environment/bin/activate
-  # Uninstall and re-install the packages we care about. Don't use
-  # --force-reinstall or --ignore-installed to avoid propagating this
-  # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-  # dependency upgrades.
-  (yes | pip uninstall grpcio) || true
-  (yes | pip uninstall interop) || true
-fi
-CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/src
-pip install src/python/interop
+
+cdef class ServerCredentials:
+  cdef grpc.grpc_server_credentials *c_credentials
+  cdef grpc.grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references
