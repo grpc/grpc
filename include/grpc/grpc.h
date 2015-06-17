@@ -99,7 +99,8 @@ typedef struct {
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
     by arbitrary parties.
-    All evaluation is performed at channel creation time. */
+    All evaluation is performed at channel creation time (i.e. the values in
+    this structure need only live through the creation invocation). */
 typedef struct {
   size_t num_args;
   grpc_arg *args;
@@ -271,6 +272,8 @@ typedef struct grpc_op {
        After the operation completes, call grpc_metadata_array_destroy on this
        value, or reuse it in a future op. */
     grpc_metadata_array *recv_initial_metadata;
+    /* ownership of the byte buffer is moved to the caller; the caller must call
+       grpc_byte_buffer_destroy on this value, or reuse it in a future op. */
     grpc_byte_buffer **recv_message;
     struct {
       /* ownership of the array is with the caller, but ownership of the
@@ -316,7 +319,7 @@ typedef struct grpc_op {
 } grpc_op;
 
 /** Initialize the grpc library.
-    
+
     It is not safe to call any other grpc functions before calling this.
     (To avoid overhead, little checking is done, and some things may work. We
     do not warrant that they will continue to do so in future revisions of this
@@ -324,7 +327,7 @@ typedef struct grpc_op {
 void grpc_init(void);
 
 /** Shut down the grpc library.
-    
+
     No memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.
     Prior to calling, all application owned grpc objects must have been
@@ -371,7 +374,8 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
 /* Create a call given a grpc_channel, in order to call 'method'. The request
    is not sent until grpc_call_invoke is called. All completions are sent to
-   'completion_queue'. */
+   'completion_queue'. 'method' and 'host' need only live through the invocation
+   of this function. */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
@@ -396,8 +400,9 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 
 /* Create a client channel to 'target'. Additional channel level configuration
    MAY be provided by grpc_channel_args, though the expectation is that most
-   clients will want to simply pass NULL. See grpc_channel_args definition
-   for more on this. */
+   clients will want to simply pass NULL. See grpc_channel_args definition for
+   more on this. The data in 'args' need only live through the invocation of
+   this function. */
 grpc_channel *grpc_channel_create(const char *target,
                                   const grpc_channel_args *args);
 
@@ -468,7 +473,8 @@ grpc_call_error grpc_server_request_registered_call(
 
 /* Create a server. Additional configuration for each incoming channel can
    be specified with args. If no additional configuration is needed, args can
-   be NULL. See grpc_channel_args for more. */
+   be NULL. See grpc_channel_args for more. The data in 'args' need only live
+   through the invocation of this function. */
 grpc_server *grpc_server_create(const grpc_channel_args *args);
 
 /* Register a completion queue with the server. Must be done for any completion
@@ -494,7 +500,7 @@ void grpc_server_start(grpc_server *server);
 void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag);
 
-/* Cancel all in-progress calls. 
+/* Cancel all in-progress calls.
    Only usable after shutdown. */
 void grpc_server_cancel_all_calls(grpc_server *server);
 
