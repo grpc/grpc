@@ -112,7 +112,6 @@ int grpc_chttp2_unlocking_check_writes(
                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
         stream_global->incoming_window;
     if (!stream_global->read_closed && window_delta > 0) {
-      GPR_ASSERT(stream_global->in_stream_map);
       gpr_slice_buffer_add(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_global->id, window_delta));
