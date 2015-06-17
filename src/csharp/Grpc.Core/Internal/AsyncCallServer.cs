@@ -107,6 +107,7 @@ namespace Grpc.Core.Internal
 
                 call.StartSendStatusFromServer(status, HandleHalfclosed);
                 halfcloseRequested = true;
+                readingDone = true;
                 sendCompletionDelegate = completionDelegate;
             }
         }

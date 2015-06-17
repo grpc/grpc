@@ -57,6 +57,8 @@
 
 */
 
+static grpc_pollset *g_pollset;
+
 size_t count_and_unref_slices(gpr_slice *slices, size_t nslices,
                               int *current_data) {
   size_t num_bytes = 0;
@@ -111,8 +113,6 @@ static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
 struct read_and_write_test_state {
   grpc_endpoint *read_ep;
   grpc_endpoint *write_ep;
-  gpr_mu mu;
-  gpr_cv cv;
   size_t target_bytes;
   size_t bytes_read;
   size_t current_write_size;
@@ -130,10 +130,10 @@ static void read_and_write_test_read_handler(void *data, gpr_slice *slices,
   GPR_ASSERT(error != GRPC_ENDPOINT_CB_ERROR);
   if (error == GRPC_ENDPOINT_CB_SHUTDOWN) {
     gpr_log(GPR_INFO, "Read handler shutdown");
-    gpr_mu_lock(&state->mu);
+    gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
     state->read_done = 1;
-    gpr_cv_signal(&state->cv);
-    gpr_mu_unlock(&state->mu);
+    grpc_pollset_kick(g_pollset);
+    gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
     return;
   }
 
@@ -141,10 +141,10 @@ static void read_and_write_test_read_handler(void *data, gpr_slice *slices,
       count_and_unref_slices(slices, nslices, &state->current_read_data);
   if (state->bytes_read == state->target_bytes) {
     gpr_log(GPR_INFO, "Read handler done");
-    gpr_mu_lock(&state->mu);
+    gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
     state->read_done = 1;
-    gpr_cv_signal(&state->cv);
-    gpr_mu_unlock(&state->mu);
+    grpc_pollset_kick(g_pollset);
+    gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
   } else {
     grpc_endpoint_notify_on_read(state->read_ep,
                                  read_and_write_test_read_handler, data);
@@ -164,10 +164,10 @@ static void read_and_write_test_write_handler(void *data,
 
   if (error == GRPC_ENDPOINT_CB_SHUTDOWN) {
     gpr_log(GPR_INFO, "Write handler shutdown");
-    gpr_mu_lock(&state->mu);
+    gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
     state->write_done = 1;
-    gpr_cv_signal(&state->cv);
-    gpr_mu_unlock(&state->mu);
+    grpc_pollset_kick(g_pollset);
+    gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
     return;
   }
 
@@ -198,10 +198,10 @@ static void read_and_write_test_write_handler(void *data,
   GPR_ASSERT(state->bytes_written == state->target_bytes);
 
   gpr_log(GPR_INFO, "Write handler done");
-  gpr_mu_lock(&state->mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
   state->write_done = 1;
-  gpr_cv_signal(&state->cv);
-  gpr_mu_unlock(&state->mu);
+  grpc_pollset_kick(g_pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
 }
 
 /* Do both reading and writing using the grpc_endpoint API.
@@ -221,9 +221,6 @@ static void read_and_write_test(grpc_endpoint_test_config config,
     gpr_log(GPR_INFO, "Start read and write test with %d bytes, slice size %d",
             num_bytes, slice_size);
   }
-
-  gpr_mu_init(&state.mu);
-  gpr_cv_init(&state.cv);
 
   state.read_ep = f.client_ep;
   state.write_ep = f.server_ep;
@@ -253,29 +250,24 @@ static void read_and_write_test(grpc_endpoint_test_config config,
     grpc_endpoint_shutdown(state.write_ep);
   }
 
-  gpr_mu_lock(&state.mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
   while (!state.read_done || !state.write_done) {
-    if (gpr_cv_wait(&state.cv, &state.mu, deadline)) {
-      gpr_log(GPR_ERROR, "timeout: read_done=%d, write_done=%d",
-              state.read_done, state.write_done);
-      abort();
-    }
+    GPR_ASSERT(gpr_time_cmp(gpr_now(), deadline) < 0);
+    grpc_pollset_work(g_pollset, deadline);
   }
-  gpr_mu_unlock(&state.mu);
+  gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
 
   grpc_endpoint_destroy(state.read_ep);
   grpc_endpoint_destroy(state.write_ep);
-  gpr_mu_destroy(&state.mu);
-  gpr_cv_destroy(&state.cv);
   end_test(config);
 }
 
 struct timeout_test_state {
-  gpr_event io_done;
+  int io_done;
 };
 
 typedef struct {
-  gpr_event ev;
+  int done;
   grpc_endpoint *ep;
 } shutdown_during_write_test_state;
 
@@ -291,7 +283,10 @@ static void shutdown_during_write_test_read_handler(
 
   if (error != GRPC_ENDPOINT_CB_OK) {
     grpc_endpoint_destroy(st->ep);
-    gpr_event_set(&st->ev, (void *)(gpr_intptr) error);
+    gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+    st->done = error;
+    grpc_pollset_kick(g_pollset);
+    gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
   } else {
     grpc_endpoint_notify_on_read(
         st->ep, shutdown_during_write_test_read_handler, user_data);
@@ -310,7 +305,10 @@ static void shutdown_during_write_test_write_handler(
     gpr_log(GPR_ERROR,
             "shutdown_during_write_test_write_handler completed unexpectedly");
   }
-  gpr_event_set(&st->ev, (void *)(gpr_intptr) 1);
+  gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+  st->done = 1;
+  grpc_pollset_kick(g_pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
 }
 
 static void shutdown_during_write_test(grpc_endpoint_test_config config,
@@ -329,8 +327,8 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
 
   read_st.ep = f.client_ep;
   write_st.ep = f.server_ep;
-  gpr_event_init(&read_st.ev);
-  gpr_event_init(&write_st.ev);
+  read_st.done = 0;
+  write_st.done = 0;
 
   grpc_endpoint_notify_on_read(
       read_st.ep, shutdown_during_write_test_read_handler, &read_st);
@@ -347,9 +345,19 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
       case GRPC_ENDPOINT_WRITE_PENDING:
         grpc_endpoint_shutdown(write_st.ep);
         deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-        GPR_ASSERT(gpr_event_wait(&write_st.ev, deadline));
+        gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+        while (!write_st.done) {
+          GPR_ASSERT(gpr_time_cmp(gpr_now(), deadline) < 0);
+          grpc_pollset_work(g_pollset, deadline);
+        }
+        gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
         grpc_endpoint_destroy(write_st.ep);
-        GPR_ASSERT(gpr_event_wait(&read_st.ev, deadline));
+        gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
+        while (!read_st.done) {
+          GPR_ASSERT(gpr_time_cmp(gpr_now(), deadline) < 0);
+          grpc_pollset_work(g_pollset, deadline);
+        }
+        gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
         gpr_free(slices);
         end_test(config);
         return;
@@ -361,9 +369,11 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
   abort();
 }
 
-void grpc_endpoint_tests(grpc_endpoint_test_config config) {
+void grpc_endpoint_tests(grpc_endpoint_test_config config, grpc_pollset *pollset) {
+  g_pollset = pollset;
   read_and_write_test(config, 10000000, 100000, 8192, 0);
   read_and_write_test(config, 1000000, 100000, 1, 0);
   read_and_write_test(config, 100000000, 100000, 1, 1);
   shutdown_during_write_test(config, 1000);
+  g_pollset = NULL;
 }

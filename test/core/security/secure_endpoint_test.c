@@ -44,6 +44,8 @@
 #include "test/core/util/test_config.h"
 #include "src/core/tsi/fake_transport_security.h"
 
+static grpc_pollset g_pollset;
+
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
   tsi_frame_protector *fake_read_protector = tsi_create_fake_protector(NULL);
@@ -52,6 +54,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_pair tcp;
 
   tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
+  grpc_endpoint_add_to_pollset(tcp.client, &g_pollset);
+  grpc_endpoint_add_to_pollset(tcp.server, &g_pollset);
 
   if (leftover_nslices == 0) {
     f.client_ep =
@@ -190,13 +194,19 @@ static void test_destroy_ep_early(grpc_endpoint_test_config config,
   clean_up();
 }
 
+static void destroy_pollset(void *p) {
+  grpc_pollset_destroy(p);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_iomgr_init();
-  grpc_endpoint_tests(configs[0]);
+  grpc_pollset_init(&g_pollset);
+  grpc_endpoint_tests(configs[0], &g_pollset);
   test_leftover(configs[1], 1);
   test_destroy_ep_early(configs[1], 1);
+  grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
   grpc_iomgr_shutdown();
 
   return 0;

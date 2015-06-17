@@ -31,52 +31,60 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_SERVER_H_
-#define NET_GRPC_NODE_SERVER_H_
+#include <set>
 
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
+#include <grpc/support/log.h>
+
+#include <signal.h>
+
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
+
+extern "C" {
+#include "src/core/iomgr/pollset_posix.h"
+}
 
 namespace grpc {
-namespace node {
+namespace testing {
 
-/* Wraps grpc_server as a JavaScript object. Provides a constructor
-   and wrapper methods for grpc_server_create, grpc_server_request_call,
-   grpc_server_add_http2_port, and grpc_server_start. */
-class Server : public ::node::ObjectWrap {
- public:
-  /* Initializes the Server class and exposes the constructor and
-     wrapper methods to JavaScript */
-  static void Init(v8::Handle<v8::Object> exports);
-  /* Tests whether the given value was constructed by this class's
-     JavaScript constructor */
-  static bool HasInstance(v8::Handle<v8::Value> val);
+static const int WARMUP = 5;
+static const int BENCHMARK = 5;
 
- private:
-  explicit Server(grpc_server *server);
-  ~Server();
+static void RunQPS() {
+  gpr_log(GPR_INFO, "Running QPS test");
 
-  // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_enable_ssl(false);
+  client_config.set_outstanding_rpcs_per_channel(1000);
+  client_config.set_client_channels(8);
+  client_config.set_payload_size(1);
+  client_config.set_async_client_threads(8);
+  client_config.set_rpc_type(UNARY);
 
-  void ShutdownServer();
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_enable_ssl(false);
+  server_config.set_threads(4);
 
-  static NAN_METHOD(New);
-  static NAN_METHOD(RequestCall);
-  static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(AddSecureHttp2Port);
-  static NAN_METHOD(Start);
-  static NAN_METHOD(Shutdown);
-  static NanCallback *constructor;
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
-};
+  GetReporter()->ReportQPSPerCore(*result);
+  GetReporter()->ReportLatency(*result);
+}
 
-}  // namespace node
+}  // namespace testing
 }  // namespace grpc
 
-#endif  // NET_GRPC_NODE_SERVER_H_
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  grpc_platform_become_multipoller = grpc_poll_become_multipoller;
+
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::RunQPS();
+
+  return 0;
+}

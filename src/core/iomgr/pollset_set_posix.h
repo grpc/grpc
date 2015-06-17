@@ -31,52 +31,25 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_SERVER_H_
-#define NET_GRPC_NODE_SERVER_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_POSIX_H
 
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
+#include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/pollset_posix.h"
 
-namespace grpc {
-namespace node {
+typedef struct grpc_pollset_set {
+  gpr_mu mu;
 
-/* Wraps grpc_server as a JavaScript object. Provides a constructor
-   and wrapper methods for grpc_server_create, grpc_server_request_call,
-   grpc_server_add_http2_port, and grpc_server_start. */
-class Server : public ::node::ObjectWrap {
- public:
-  /* Initializes the Server class and exposes the constructor and
-     wrapper methods to JavaScript */
-  static void Init(v8::Handle<v8::Object> exports);
-  /* Tests whether the given value was constructed by this class's
-     JavaScript constructor */
-  static bool HasInstance(v8::Handle<v8::Value> val);
+  size_t pollset_count;
+  size_t pollset_capacity;
+  grpc_pollset **pollsets;
 
- private:
-  explicit Server(grpc_server *server);
-  ~Server();
+  size_t fd_count;
+  size_t fd_capacity;
+  grpc_fd **fds;
+} grpc_pollset_set;
 
-  // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
+void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-  void ShutdownServer();
-
-  static NAN_METHOD(New);
-  static NAN_METHOD(RequestCall);
-  static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(AddSecureHttp2Port);
-  static NAN_METHOD(Start);
-  static NAN_METHOD(Shutdown);
-  static NanCallback *constructor;
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
-
-  grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
-};
-
-}  // namespace node
-}  // namespace grpc
-
-#endif  // NET_GRPC_NODE_SERVER_H_
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

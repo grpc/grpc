@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
 
 #include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/pollset_set.h"
 #include "src/core/iomgr/sockaddr.h"
 #include <grpc/support/time.h>
 
@@ -42,7 +43,8 @@
    cb with arg and the completed connection when done (or call cb with arg and
    NULL on failure) */
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, const struct sockaddr *addr,
-                             int addr_len, gpr_timespec deadline);
+                             void *arg, grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */

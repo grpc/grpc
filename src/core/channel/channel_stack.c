@@ -211,9 +211,3 @@ void grpc_call_element_send_cancel(grpc_call_element *cur_elem) {
   op.cancel_with_status = GRPC_STATUS_CANCELLED;
   grpc_call_next_op(cur_elem, &op);
 }
-
-void grpc_call_element_recv_status(grpc_call_element *cur_elem,
-                                   grpc_status_code status,
-                                   const char *message) {
-  abort();
-}

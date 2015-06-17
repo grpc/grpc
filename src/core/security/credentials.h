@@ -108,7 +108,6 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
     grpc_credentials_md_store *store);
 void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
 
-
 /* --- grpc_credentials. --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
@@ -123,7 +122,7 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
-  void (*get_request_metadata)(grpc_credentials *c,
+  void (*get_request_metadata)(grpc_credentials *c, grpc_pollset *pollset,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
@@ -131,7 +130,6 @@ typedef struct {
       grpc_credentials *c, const char *target, const grpc_channel_args *args,
       grpc_credentials *request_metadata_creds,
       grpc_channel_security_connector **sc, grpc_channel_args **new_args);
-
 } grpc_credentials_vtable;
 
 struct grpc_credentials {
@@ -145,6 +143,7 @@ void grpc_credentials_unref(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           grpc_pollset *pollset,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
@@ -177,8 +176,8 @@ grpc_credentials *grpc_credentials_contains_type(
 /* Exposed for testing only. */
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_httpcli_response *response, grpc_credentials_md_store **token_md,
-    gpr_timespec *token_lifetime);
+    const struct grpc_httpcli_response *response,
+    grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(
@@ -200,4 +199,4 @@ struct grpc_server_credentials {
 grpc_security_status grpc_server_credentials_create_security_connector(
     grpc_server_credentials *creds, grpc_security_connector **sc);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */
