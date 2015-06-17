@@ -190,6 +190,7 @@ void grpc_chttp2_cleanup_writing(
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
+    gpr_log(GPR_DEBUG, "sc:%d ws:%d", (int)stream_writing->send_closed, stream_global->write_state);
     if (stream_writing->send_closed != DONT_SEND_CLOSED) {
       stream_global->write_state = WRITE_STATE_SENT_CLOSE;
       if (!transport_global->is_client) {

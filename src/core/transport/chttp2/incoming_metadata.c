@@ -87,6 +87,42 @@ void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(grpc_chttp2_
   grpc_sopb_add_metadata(sopb, b);
 }
 
+void grpc_chttp2_incoming_metadata_buffer_swap(grpc_chttp2_incoming_metadata_buffer *a, grpc_chttp2_incoming_metadata_buffer *b) {
+  GPR_SWAP(grpc_chttp2_incoming_metadata_buffer, *a, *b);
+}
+
+void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
+    grpc_chttp2_incoming_metadata_buffer *src, 
+    grpc_chttp2_incoming_metadata_buffer *dst,
+    grpc_stream_op_buffer *sopb) {
+  size_t delta;
+  size_t i;
+  if (gpr_time_cmp(dst->deadline, gpr_inf_future) == 0) {
+    dst->deadline = src->deadline;
+  } else if (gpr_time_cmp(src->deadline, gpr_inf_future) != 0) {
+    dst->deadline = gpr_time_min(src->deadline, dst->deadline);
+  }
+
+  if (src->count == 0) {
+    return;
+  }
+  if (dst->count == 0) {
+    grpc_chttp2_incoming_metadata_buffer_swap(src, dst);
+    return;
+  }
+  delta = dst->count;
+  if (dst->capacity < src->count + dst->count) {
+    dst->capacity = GPR_MAX(dst->capacity * 2, src->count + dst->count);
+    dst->elems = gpr_realloc(dst->elems, dst->capacity * sizeof(*dst->elems));
+  }
+  memcpy(dst->elems + dst->count, src->elems, src->count * sizeof(*src->elems));
+  dst->count += src->count;
+  for (i = 0; i < sopb->nops; i++) {
+    if (sopb->ops[i].type != GRPC_OP_METADATA) continue;
+    sopb->ops[i].data.metadata.list.tail = (void*)(delta + (gpr_intptr)sopb->ops[i].data.metadata.list.tail);
+  }
+}
+
 void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_stream_op_buffer *sopb,
     grpc_chttp2_incoming_metadata_live_op_buffer *live_op_buffer) {

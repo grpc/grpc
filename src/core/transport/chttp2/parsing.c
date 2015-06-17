@@ -186,6 +186,7 @@ void grpc_chttp2_publish_reads(
 
     /* publish incoming stream ops */
     if (stream_parsing->data_parser.incoming_sopb.nops > 0) {
+      grpc_incoming_metadata_buffer_move_to_referencing_sopb(&stream_parsing->incoming_metadata, &stream_global->incoming_metadata, &stream_parsing->data_parser.incoming_sopb);
       grpc_sopb_move_to(&stream_parsing->data_parser.incoming_sopb, &stream_global->incoming_sopb);
       grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                     stream_global);

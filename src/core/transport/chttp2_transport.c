@@ -365,6 +365,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     *t->accepting_stream = s;
     grpc_chttp2_list_add_incoming_window_updated(&t->global, &s->global);
     grpc_chttp2_stream_map_add(&t->new_stream_map, s->global.id, s);
+    s->global.in_stream_map = 1;
   }
 
   if (initial_op) perform_op_locked(&t->global, &s->global, initial_op);
@@ -561,6 +562,7 @@ static void maybe_start_some_streams(
     grpc_chttp2_stream_map_add(
         &TRANSPORT_FROM_GLOBAL(transport_global)->new_stream_map,
         stream_global->id, STREAM_FROM_GLOBAL(stream_global));
+    stream_global->in_stream_map = 1;
     transport_global->concurrent_stream_count++;
     grpc_chttp2_list_add_incoming_window_updated(transport_global, stream_global);
     grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
@@ -612,6 +614,7 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global,
     stream_global->recv_done_closure = op->on_done_recv;
     stream_global->publish_sopb = op->recv_ops;
     stream_global->publish_sopb->nops = 0;
+    stream_global->publish_state = op->recv_state;
     grpc_chttp2_incoming_metadata_live_op_buffer_end(
         &stream_global->outstanding_metadata);
     grpc_chttp2_list_add_read_write_state_changed(transport_global,
@@ -708,14 +711,24 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
 
 static void unlock_check_reads(grpc_chttp2_transport *t) {
   grpc_chttp2_stream_global *stream_global;
+  grpc_stream_state state;
 
-  while (grpc_chttp2_pop_read_write_state_changed(&t->global, &stream_global)) {
+  while (grpc_chttp2_list_pop_read_write_state_changed(&t->global, &stream_global)) {
     if (!stream_global->publish_sopb) {
       continue;
     }
+    state = compute_state(stream_global->write_state == WRITE_STATE_SENT_CLOSE, stream_global->read_closed && !stream_global->in_stream_map);
+    gpr_log(GPR_DEBUG, "ws:%d rc:%d ism:%d => st:%d", stream_global->write_state, stream_global->read_closed, stream_global->in_stream_map, state);
+    if (stream_global->incoming_sopb.nops == 0 && state == stream_global->published_state) {
+      continue;
+    }
+    grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(&stream_global->incoming_metadata, &stream_global->incoming_sopb, &stream_global->outstanding_metadata);
     grpc_sopb_swap(stream_global->publish_sopb, &stream_global->incoming_sopb);
-    /* TODO(ctiller): we need to not publish closed until !writing, or define a new STREAM_DELETABLE state */
-    stream_global->published_state = *stream_global->publish_state = compute_state(stream_global->write_closed, stream_global->read_closed && !stream_global->in_stream_map);
+    stream_global->published_state = *stream_global->publish_state = state;
+    grpc_chttp2_schedule_closure(&t->global, stream_global->recv_done_closure, 1);
+    stream_global->recv_done_closure = NULL;
+    stream_global->publish_sopb = NULL;
+    stream_global->publish_state = NULL;
   }
 }
 
