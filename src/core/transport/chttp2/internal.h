@@ -56,7 +56,6 @@ typedef struct grpc_chttp2_stream grpc_chttp2_stream;
 typedef enum {
   GRPC_CHTTP2_LIST_ALL_STREAMS,
   GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED,
-  GRPC_CHTTP2_LIST_INCOMING_WINDOW_STATE_CHANGED,
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_WRITTEN,
@@ -67,29 +66,6 @@ typedef enum {
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
-#if 0
-  /* streams that have pending writes */
-  WRITABLE = 0,
-  /* streams that have been selected to be written */
-  WRITING,
-  /* streams that have just been written, and included a close */
-  WRITTEN_CLOSED,
-  /* streams that have been cancelled and have some pending state updates
-     to perform */
-  CANCELLED,
-  /* streams that want to send window updates */
-  WINDOW_UPDATE,
-  /* streams that are waiting to start because there are too many concurrent
-     streams on the connection */
-  WAITING_FOR_CONCURRENCY,
-  /* streams that have finished reading: we wait until unlock to coalesce
-     all changes into one callback */
-  FINISHED_READ_OP,
-  MAYBE_FINISH_READ_AFTER_PARSE,
-  PARSER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
-  OTHER_CHECK_WINDOW_UPDATES_AFTER_PARSE,
-  NEW_OUTGOING_WINDOW,
-#endif
   STREAM_LIST_COUNT /* must be last */
 } grpc_chttp2_stream_list_id;
 
@@ -543,6 +519,9 @@ int grpc_chttp2_list_pop_incoming_window_updated(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_parsing **stream_parsing);
+void grpc_chttp2_list_remove_incoming_window_updated(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_writing_stream(
     grpc_chttp2_transport_writing *transport_writing,
@@ -599,10 +578,6 @@ int grpc_chttp2_list_pop_read_write_state_changed(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
 
-void grpc_chttp2_list_add_incoming_window_state_changed(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
-
 /** schedule a closure to run without the transport lock taken */
 void grpc_chttp2_schedule_closure(
     grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
@@ -610,18 +585,12 @@ void grpc_chttp2_schedule_closure(
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
-void grpc_chttp2_parsing_remove_stream(
-    grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
     grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);
 
 void grpc_chttp2_add_incoming_goaway(
     grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
     gpr_slice goaway_text);
-
-void grpc_chttp2_remove_from_stream_map(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
                                  grpc_chttp2_stream *s);

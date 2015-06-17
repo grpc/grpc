@@ -100,6 +100,13 @@ static void stream_list_remove(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
   }
 }
 
+static void stream_list_maybe_remove(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
+                               grpc_chttp2_stream_list_id id) {
+  if (s->included[id]) {
+    stream_list_remove(t, s, id);
+  }
+}
+
 static void stream_list_add_tail(grpc_chttp2_transport *t,
                                  grpc_chttp2_stream *s,
                                  grpc_chttp2_stream_list_id id) {
@@ -273,7 +280,7 @@ void grpc_chttp2_list_add_incoming_window_updated(
     grpc_chttp2_stream_global *stream_global) {
   stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
                   STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_INCOMING_WINDOW_STATE_CHANGED);
+                  GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
 }
 
 int grpc_chttp2_list_pop_incoming_window_updated(
@@ -283,10 +290,16 @@ int grpc_chttp2_list_pop_incoming_window_updated(
     grpc_chttp2_stream_parsing **stream_parsing) {
   grpc_chttp2_stream *stream;
   int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_INCOMING_WINDOW_STATE_CHANGED);
+                          GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
   *stream_global = &stream->global;
   *stream_parsing = &stream->parsing;
   return r;
+}
+
+void grpc_chttp2_list_remove_incoming_window_updated(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global) {
+  stream_list_maybe_remove(TRANSPORT_FROM_GLOBAL(transport_global), STREAM_FROM_GLOBAL(stream_global), GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
 }
 
 void grpc_chttp2_list_add_read_write_state_changed(
@@ -304,14 +317,6 @@ int grpc_chttp2_list_pop_read_write_state_changed(
   int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream, GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED);
   *stream_global = &stream->global;
   return r;
-}
-
-void grpc_chttp2_list_add_incoming_window_state_changed(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_INCOMING_WINDOW_STATE_CHANGED);
 }
 
 void grpc_chttp2_register_stream(grpc_chttp2_transport *t,

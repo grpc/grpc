@@ -98,7 +98,7 @@ int grpc_chttp2_unlocking_check_writes(
       stream_global->outgoing_sopb = NULL;
       grpc_chttp2_schedule_closure(transport_global,
                                    stream_global->send_done_closure, 1);
-    } else if (stream_global->outgoing_window) {
+    } else if (stream_global->outgoing_window > 0) {
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
   }
@@ -112,6 +112,7 @@ int grpc_chttp2_unlocking_check_writes(
                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
         stream_global->incoming_window;
     if (!stream_global->read_closed && window_delta > 0) {
+      GPR_ASSERT(stream_global->in_stream_map);
       gpr_slice_buffer_add(
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_global->id, window_delta));
@@ -190,7 +191,6 @@ void grpc_chttp2_cleanup_writing(
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
-    gpr_log(GPR_DEBUG, "sc:%d ws:%d", (int)stream_writing->send_closed, stream_global->write_state);
     if (stream_writing->send_closed != DONT_SEND_CLOSED) {
       stream_global->write_state = WRITE_STATE_SENT_CLOSE;
       if (!transport_global->is_client) {

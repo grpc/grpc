@@ -175,10 +175,6 @@ void grpc_chttp2_publish_reads(
     /* updating closed status */
     if (stream_parsing->received_close) {
       stream_global->read_closed = 1;
-      if (stream_global->write_state != WRITE_STATE_OPEN) {
-        stream_global->in_stream_map = 0;
-        grpc_chttp2_parsing_remove_stream(transport_parsing, stream_parsing->id);
-      }
       grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                     stream_global);
     }
