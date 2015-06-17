@@ -141,8 +141,15 @@ struct grpc_server {
   grpc_pollset **pollsets;
   size_t cq_count;
 
-  gpr_mu mu_global;
-  gpr_mu mu_call;
+  /* The two following mutexes control access to server-state
+     mu_global controls access to non-call-related state (e.g., channel state)
+     mu_call controls access to call-related state (e.g., the call lists)
+
+     If they are ever required to be nested, you must lock mu_global
+     before mu_call. This is currently used in shutdown processing
+     (grpc_server_shutdown_and_notify and maybe_finish_shutdown) */
+  gpr_mu mu_global; /* mutex for server and channel state */
+  gpr_mu mu_call; /* mutex for call-specific state */
 
   registered_method *registered_methods;
   requested_call_array requested_calls;
