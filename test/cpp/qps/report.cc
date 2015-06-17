@@ -139,6 +139,7 @@ void UserDatabaseReporter::ReportQPSPerCore(const ScenarioResult& result) const 
 
   auto qpsPerCore = qps / result.server_config.threads();
 
+  userDataClient.setQPS(qps);
   userDataClient.setQPSPerCore(qpsPerCore);
   userDataClient.setConfigs(result.client_config, result.server_config);
 }

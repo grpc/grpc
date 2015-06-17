@@ -37,6 +37,8 @@
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
 
+DEFINE_bool(report_metrics_db, false, "True if metrics to be reported to performance database");
+
 DEFINE_string(access_token, "", "Authorizing JSON string for leaderboard");
 
 DEFINE_string(test_name, "", "Name of the test being executed");
@@ -63,9 +65,10 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
     composite_reporter->add(
         std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
   }
-  if(!FLAGS_access_token.empty())
+  if(FLAGS_report_metrics_db) {
     composite_reporter->add(
       std::unique_ptr<Reporter>(new UserDatabaseReporter("UserDataReporter", FLAGS_access_token, FLAGS_test_name, FLAGS_sys_info)));
+  }
 
   return std::shared_ptr<Reporter>(composite_reporter);
 }

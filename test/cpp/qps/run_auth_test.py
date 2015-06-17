@@ -59,7 +59,7 @@ def fetchJSON(url, paramDict):
   try:
     response = urllib2.urlopen(req)
     result = response.read()
-    
+
   except urllib2.HTTPError, error:
     result = error.read()
 
@@ -71,7 +71,7 @@ def getUserInfo(accessToken):
   paramDict = {}
   JSONBody = fetchJSON(url, paramDict)
   data = json.loads(JSONBody)
-  
+
   return data
 
 # Returns true if stored access token is valid
@@ -197,10 +197,43 @@ def findTestPath(test):
 
   # Search for test
   for root, dirnames, filenames in os.walk('../../../'):
-      for fileName in fnmatch.filter(filenames, '*'+testName):
-        testPath = os.path.join(root, fileName)
+    for fileName in fnmatch.filter(filenames, testName):
+      testPath = os.path.join(root, fileName)
 
   return testPath
+
+def getSysInfo():
+  # Fetch system information
+  sysInfo = os.popen('lscpu').readlines()
+
+  NICs = os.popen('ifconfig | cut -c1-8 | sed \'/^\s*$/d\' | sort -u').readlines()
+  nicAddrs = os.popen('ifconfig | grep -oE "inet addr:([0-9]{1,3}\.){3}[0-9]{1,3}"').readlines()
+
+  nicInfo = []
+
+  for i in range(0, len(NICs)):
+    NIC = NICs[i]
+    NIC = re.sub(r'[^\w]', '', NIC)
+
+    ethtoolProcess = subprocess.Popen(["ethtool",NIC], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ethtoolResult = ethtoolProcess.communicate()[0]
+
+    ethtoolResultList = ethtoolResult.split('\n\t')
+    for ethtoolString in ethtoolResultList:
+      if ethtoolString.startswith('Speed'):
+        ethtoolString = ethtoolString.split(':')[1]
+        ethtoolString = ethtoolString.replace('Mb/s',' Mbps')
+        nicInfo.append(NIC + ' speed: ' + ethtoolString + '\n')
+        nicInfo.append(NIC + ' inet address: ' + nicAddrs[i].split(':')[1])
+
+  print 'Obtaining network info....'
+  tcp_rr_rate = str(os.popen('netperf -t TCP_RR -v 0').readlines()[1])
+  print 'Network info obtained'
+  
+  nicInfo.append('TCP RR Transmission Rate per sec: ' + tcp_rr_rate + '\n')
+  sysInfo = sysInfo + nicInfo
+
+  return sysInfo
 
 def main():
   # If tokens directory does not exist, creates it
@@ -227,11 +260,11 @@ def main():
     testPath = findTestPath(test) # Get path to test
     testName = testPath.split('/')[-1] # Get test name
 
-    # Fetch system information
-    sysInfo = os.popen('lscpu').readlines()
+    sysInfo = getSysInfo()
 
+    print '\nBeginning test:\n'
     # Run the test
-    subprocess.call([testPath, '--access_token='+accessToken, '--test_name='+testName, '--sys_info='+str(sysInfo).strip('[]')])
+    subprocess.call([testPath, '--report_metrics_db=true', '--access_token='+accessToken, '--test_name='+testName, '--sys_info='+str(sysInfo).strip('[]')])
   except OSError:
     print 'Could not execute the test, please check test name'
 
