@@ -65,7 +65,7 @@ void grpc_sopb_swap(grpc_stream_op_buffer *a, grpc_stream_op_buffer *b) {
   if (a->ops == a->inlined_ops) {
     if (b->ops == b->inlined_ops) {
       /* swap contents of inlined buffer */
-      gpr_slice temp[GRPC_SOPB_INLINE_ELEMENTS];
+      grpc_stream_op temp[GRPC_SOPB_INLINE_ELEMENTS];
       memcpy(temp, a->ops, b->nops * sizeof(grpc_stream_op));
       memcpy(a->ops, b->ops, a->nops * sizeof(grpc_stream_op));
       memcpy(b->ops, temp, b->nops * sizeof(grpc_stream_op));
