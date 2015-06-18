@@ -446,7 +446,9 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 /* Destroy a call. */
 void grpc_call_destroy(grpc_call *call);
 
-/* Request notification of a new call */
+/* Request notification of a new call. 'cq_for_notification' must
+   have been registered to the server via grpc_server_register_completion_queue.
+   */
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
@@ -463,7 +465,9 @@ grpc_call_error grpc_server_request_call(
 void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host);
 
-/* Request notification of a new pre-registered call */
+/* Request notification of a new pre-registered call. 'cq_for_notification' must
+   have been registered to the server via grpc_server_register_completion_queue.
+   */
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *request_metadata,
@@ -477,9 +481,10 @@ grpc_call_error grpc_server_request_registered_call(
    through the invocation of this function. */
 grpc_server *grpc_server_create(const grpc_channel_args *args);
 
-/* Register a completion queue with the server. Must be done for any completion
-   queue that is passed to grpc_server_request_* call. Must be performed prior
-   to grpc_server_start. */
+/* Register a completion queue with the server. Must be done for any
+   notification completion queue that is passed to grpc_server_request_*_call
+   and to grpc_server_shutdown_and_notify. Must be performed prior to
+   grpc_server_start. */
 void grpc_server_register_completion_queue(grpc_server *server,
                                            grpc_completion_queue *cq);
 
@@ -496,7 +501,8 @@ void grpc_server_start(grpc_server *server);
    Existing calls will be allowed to complete.
    Send a GRPC_OP_COMPLETE event when there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
-   grpc_server_shutdown_and_notify calls are made. */
+   grpc_server_shutdown_and_notify calls are made. 'cq' must have been
+   registered to this server via grpc_server_register_completion_queue. */
 void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag);
 
