@@ -43,55 +43,56 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/status.h>
-#include "test/cpp/qps/user_data.grpc.pb.h"
+#include "test/cpp/qps/perf_db.grpc.pb.h"
 
 
 namespace grpc{
 namespace testing {
 
 //Manages data sending to performance database server
-class UserDataClient {
+class PerfDbClient {
 public:
-  UserDataClient(std::shared_ptr<ChannelInterface> channel)
-    : stub_(UserDataTransfer::NewStub(channel)) {}
+  PerfDbClient() {}
   
-  ~UserDataClient() {}
+  void init(std::shared_ptr<ChannelInterface> channel) { stub_ = PerfDbTransfer::NewStub(channel); }
+
+  ~PerfDbClient() {}
 
   //sets the client and server config information
-  void setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig);
+  void setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) const;
   
   //sets the QPS
-  void setQPS(double QPS);
+  void setQPS(double QPS) const;
 
   //sets the QPS per core
-  void setQPSPerCore(double QPSPerCore);
+  void setQPSPerCore(double QPSPerCore) const;
 
   //sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
   void setLatencies(double percentileLatency50, double percentileLatency90,
-     double percentileLatency95, double percentileLatency99, double percentileLatency99Point9);
+     double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) const;
 
   //sets the server and client, user and system times
   void setTimes(double serverSystemTime, double serverUserTime, 
-    double clientSystemTime, double clientUserTime);
+    double clientSystemTime, double clientUserTime) const;
 
   //sends the data to the performancew database server
-  int sendData(std::string access_token, std::string test_name, std::string sys_info);
+  int sendData(std::string access_token, std::string test_name, std::string sys_info) const;
 
 private:
-  std::unique_ptr<UserDataTransfer::Stub> stub_;
-  ClientConfig clientConfig_;
-  ServerConfig serverConfig_;
-  double QPS_ = DBL_MIN;
-  double QPSPerCore_ = DBL_MIN;
-  double percentileLatency50_ = DBL_MIN;
-  double percentileLatency90_ = DBL_MIN;
-  double percentileLatency95_ = DBL_MIN;
-  double percentileLatency99_ = DBL_MIN;
-  double percentileLatency99Point9_ = DBL_MIN;
-  double serverSystemTime_ = DBL_MIN;
-  double serverUserTime_ = DBL_MIN;
-  double clientSystemTime_ = DBL_MIN;
-  double clientUserTime_ = DBL_MIN;
+  std::unique_ptr<PerfDbTransfer::Stub> stub_;
+  mutable ClientConfig clientConfig_;
+  mutable ServerConfig serverConfig_;
+  mutable double QPS_ = DBL_MIN;
+  mutable double QPSPerCore_ = DBL_MIN;
+  mutable double percentileLatency50_ = DBL_MIN;
+  mutable double percentileLatency90_ = DBL_MIN;
+  mutable double percentileLatency95_ = DBL_MIN;
+  mutable double percentileLatency99_ = DBL_MIN;
+  mutable double percentileLatency99Point9_ = DBL_MIN;
+  mutable double serverSystemTime_ = DBL_MIN;
+  mutable double serverUserTime_ = DBL_MIN;
+  mutable double clientSystemTime_ = DBL_MIN;
+  mutable double clientUserTime_ = DBL_MIN;
 };
 
 } //namespace testing

@@ -33,7 +33,7 @@ import "test/cpp/qps/qpstest.proto";
 
 package grpc.testing;
 
-service UserDataTransfer {
+service PerfDbTransfer {
   // Sends client info
   rpc RecordSingleClientData (SingleUserRecordRequest) returns (SingleUserRecordReply) {}
 

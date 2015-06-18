@@ -257,6 +257,8 @@ def main():
   except Exception, e:
     print 'Error in authentication'
 
+  serverAddress = 'sidrakesh.mtv.google.corp.com:50052'
+
   try:
     testPath = findTestPath(test) # Get path to test
     testName = testPath.split('/')[-1] # Get test name
@@ -265,7 +267,7 @@ def main():
 
     print '\nBeginning test:\n'
     # Run the test
-    subprocess.call([testPath, '--report_metrics_db=true', '--access_token='+accessToken, '--test_name='+testName, '--sys_info='+str(sysInfo).strip('[]')])
+    subprocess.call([testPath, '--report_metrics_db=true', '--access_token='+accessToken, '--test_name='+testName, '--sys_info='+str(sysInfo).strip('[]'), '--server_address='+serverAddress])
   except OSError:
     print 'Could not execute the test, please check test name'
 

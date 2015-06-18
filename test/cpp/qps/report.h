@@ -41,6 +41,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
+#include "perf_db_client.h"
 
 namespace grpc {
 namespace testing {
@@ -104,13 +105,16 @@ class GprLogReporter : public Reporter {
 };
 
 /** Reporter for client leaderboard. */
-class UserDatabaseReporter : public Reporter {
+class PerfDbReporter : public Reporter {
  public:
-  UserDatabaseReporter(const string& name, const string& access_token, const string& test_name, const string& sys_info)
-   : Reporter(name), access_token_(access_token), test_name_(test_name), sys_info_(sys_info) {}
-  ~UserDatabaseReporter() { SendData(); };
+  PerfDbReporter(const string& name, const string& access_token, const string& test_name, const string& sys_info, const string& server_address)
+   : Reporter(name), access_token_(access_token), test_name_(test_name), sys_info_(sys_info) {
+    perfDbClient.init(grpc::CreateChannel(server_address, grpc::InsecureCredentials(), ChannelArguments()));
+  }
+  ~PerfDbReporter() { SendData(); };
 
  private:
+  PerfDbClient perfDbClient;
   std::string access_token_;
   std::string test_name_;
   std::string sys_info_;

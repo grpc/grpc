@@ -31,30 +31,30 @@
  *
  */
 
-#include "user_data_client.h"
+#include "perf_db_client.h"
 
 namespace grpc {
 namespace testing {
 
 //sets the client and server config information
-void UserDataClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) {
+void PerfDbClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) const {
   clientConfig_ = clientConfig;
   serverConfig_ = serverConfig;
 }
 
 //sets the QPS
-void UserDataClient::setQPS(double QPS) {
+void PerfDbClient::setQPS(double QPS) const {
   QPS_ = QPS;
 }
 
 //sets the QPS per core
-void UserDataClient::setQPSPerCore(double QPSPerCore) {
+void PerfDbClient::setQPSPerCore(double QPSPerCore) const {
   QPSPerCore_ = QPSPerCore;
 }
 
 //sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
-void UserDataClient::setLatencies(double percentileLatency50, double percentileLatency90,
-    double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) {
+void PerfDbClient::setLatencies(double percentileLatency50, double percentileLatency90,
+    double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) const {
   percentileLatency50_ = percentileLatency50;
   percentileLatency90_ = percentileLatency90;
   percentileLatency95_ = percentileLatency95;
@@ -63,8 +63,8 @@ void UserDataClient::setLatencies(double percentileLatency50, double percentileL
 }
 
 //sets the server and client, user and system times
-void UserDataClient::setTimes(double serverSystemTime, double serverUserTime, 
-    double clientSystemTime, double clientUserTime) {
+void PerfDbClient::setTimes(double serverSystemTime, double serverUserTime, 
+    double clientSystemTime, double clientUserTime) const {
   serverSystemTime_ = serverSystemTime;
   serverUserTime_ = serverUserTime;
   clientSystemTime_ = clientSystemTime;
@@ -72,7 +72,7 @@ void UserDataClient::setTimes(double serverSystemTime, double serverUserTime,
 }
 
 //sends the data to the performancew database server
-int UserDataClient::sendData(std::string access_token, std::string test_name, std::string sys_info) {
+int PerfDbClient::sendData(std::string access_token, std::string test_name, std::string sys_info) const {
   //Data record request object
   SingleUserRecordRequest singleUserRecordRequest;
 
@@ -104,7 +104,7 @@ int UserDataClient::sendData(std::string access_token, std::string test_name, st
   ClientContext context;
 
   Status status = stub_->RecordSingleClientData(&context, singleUserRecordRequest, &singleUserRecordReply);
-  if (status.IsOk()) {
+  if (status.ok()) {
     return 1;  //data sent to database successfully
   } else {
     return -1;  //error in data sending

@@ -541,9 +541,9 @@
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/user_data.proto",
+        "test/cpp/qps/perf_db.proto",
+        "test/cpp/qps/perf_db_client.cc",
         "test/cpp/qps/report.cc",
-        "test/cpp/qps/user_data_client.cc",
         "test/cpp/util/benchmark_config.cc"
       ]
     },
@@ -714,15 +714,15 @@
       ],
       "src": [
         "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/user_data.proto",
+        "test/cpp/qps/perf_db.proto",
         "test/cpp/qps/client_async.cc",
         "test/cpp/qps/client_sync.cc",
         "test/cpp/qps/driver.cc",
+        "test/cpp/qps/perf_db_client.cc",
         "test/cpp/qps/qps_worker.cc",
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
-        "test/cpp/qps/timer.cc",
-        "test/cpp/qps/user_data_client.cc"
+        "test/cpp/qps/timer.cc"
       ],
       "deps": [
         "grpc_test_util",
