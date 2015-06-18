@@ -36,7 +36,6 @@ Pod::Spec.new do |s|
     # details of Cocoapods, and have changed in the past, breaking this podspec.
     cs.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
                                              '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
-    cs.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
 
     cs.requires_arc = false
     cs.libraries = 'z'
