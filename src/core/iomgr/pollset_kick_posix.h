@@ -37,6 +37,11 @@
 #include "src/core/iomgr/wakeup_fd_posix.h"
 #include <grpc/support/sync.h>
 
+/* pollset kicking allows breaking a thread out of polling work for
+   a given pollset.
+   writing a byte to a pipe is used as a posix-ly portable base
+   mechanism, and eventfds are utilized on Linux for better performance. */
+
 typedef struct grpc_kick_fd_info {
   grpc_wakeup_fd_info wakeup_fd;
   /* used for polling list and free list */
@@ -67,7 +72,7 @@ void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
  * applicable. Intended for testing. */
 void grpc_pollset_kick_global_init_fallback_fd(void);
 
-/* Must be called before entering poll(). If return value is -1, this consumed
+/* Must be called before entering poll(). If return value is NULL, this consumed
    an existing kick. Otherwise the return value is an FD to add to the poll set.
  */
 grpc_kick_fd_info *grpc_pollset_kick_pre_poll(
@@ -82,6 +87,7 @@ void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state,
 void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state,
                                  grpc_kick_fd_info *fd_info);
 
+/* Actually kick */
 void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_POSIX_H */

@@ -60,6 +60,14 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
+    if (!context->client_metadata().empty()) {
+      for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
+               context->client_metadata().begin();
+           iter != context->client_metadata().end(); ++iter) {
+        context->AddInitialMetadata(iter->first, iter->second);
+      }
+    }
+    context->AddTrailingMetadata("trailing_key", "trailing_value");
     response->set_message(request->message());
     return Status::OK;
   }
@@ -106,6 +114,7 @@ TEST_F(CliCallTest, SimpleRpc) {
   request.set_message("Hello");
 
   ClientContext context;
+  context.AddMetadata("key1", "val1");
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
@@ -114,8 +123,17 @@ TEST_F(CliCallTest, SimpleRpc) {
   grpc::string request_bin, response_bin, expected_response_bin;
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));
-  CliCall::Call(channel_, kMethod, request_bin, &response_bin);
+  std::multimap<grpc::string, grpc::string> client_metadata,
+      server_initial_metadata, server_trailing_metadata;
+  client_metadata.insert(std::pair<grpc::string, grpc::string>("key1", "val1"));
+  Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
+                            client_metadata, &server_initial_metadata,
+                            &server_trailing_metadata);
+  EXPECT_TRUE(s2.ok());
+
   EXPECT_EQ(expected_response_bin, response_bin);
+  EXPECT_EQ(context.GetServerInitialMetadata(), server_initial_metadata);
+  EXPECT_EQ(context.GetServerTrailingMetadata(), server_trailing_metadata);
 }
 
 }  // namespace testing

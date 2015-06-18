@@ -53,6 +53,10 @@ typedef struct {
   grpc_credentials *creds;
   grpc_mdstr *host;
   grpc_mdstr *method;
+  /* pollset bound to this call; if we need to make external
+     network requests, they should be done under this pollset
+     so that work can progress when this call wants work to
+     progress */
   grpc_pollset *pollset;
   grpc_transport_op op;
   size_t op_md_idx;

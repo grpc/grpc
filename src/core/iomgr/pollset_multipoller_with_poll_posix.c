@@ -113,15 +113,7 @@ static int multipoll_with_poll_pollset_maybe_work(
   grpc_kick_fd_info *kfd;
 
   h = pollset->data.ptr;
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
-    timeout = -1;
-  } else {
-    timeout = gpr_time_to_millis(
-        gpr_time_add(gpr_time_sub(deadline, now), gpr_time_from_micros(500)));
-    if (timeout < 0) {
-      return 1;
-    }
-  }
+  timeout = grpc_poll_deadline_to_millis_timeout(deadline, now);
   if (h->pfd_capacity < h->fd_count + 1) {
     h->pfd_capacity = GPR_MAX(h->pfd_capacity * 3 / 2, h->fd_count + 1);
     gpr_free(h->pfds);

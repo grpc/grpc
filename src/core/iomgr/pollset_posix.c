@@ -188,6 +188,22 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
+int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now) {
+  gpr_timespec timeout;
+  static const int max_spin_polling_us = 10;
+  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
+    return -1;
+  }
+  if (gpr_time_cmp(
+        deadline, 
+        gpr_time_add(now, gpr_time_from_micros(max_spin_polling_us))) <= 0) {
+    return 0;
+  }
+  timeout = gpr_time_sub(deadline, now);
+  return gpr_time_to_millis(
+      gpr_time_add(timeout, gpr_time_from_nanos(GPR_NS_PER_SEC - 1)));
+}
+
 /*
  * basic_pollset - a vtable that provides polling for zero or one file
  *                 descriptor via poll()
@@ -344,15 +360,7 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
     GRPC_FD_UNREF(fd, "basicpoll");
     fd = pollset->data.ptr = NULL;
   }
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
-    timeout = -1;
-  } else {
-    timeout = gpr_time_to_millis(
-        gpr_time_add(gpr_time_sub(deadline, now), gpr_time_from_micros(500)));
-    if (timeout < 0) {
-      return 1;
-    }
-  }
+  timeout = grpc_poll_deadline_to_millis_timeout(deadline, now);
   kfd = grpc_pollset_kick_pre_poll(&pollset->kick_state);
   if (kfd == NULL) {
     /* Already kicked */
