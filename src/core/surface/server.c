@@ -656,11 +656,11 @@ static void destroy_call_elem(grpc_call_element *elem) {
     removed[i] = call_list_remove(elem->call_data, i);
   }
   gpr_mu_unlock(&chand->server->mu_call);
-  gpr_mu_lock(&chand->server->mu_global);
   if (removed[ALL_CALLS]) {
+    gpr_mu_lock(&chand->server->mu_global);
     decrement_call_count(chand);
+    gpr_mu_unlock(&chand->server->mu_global);
   }
-  gpr_mu_unlock(&chand->server->mu_global);
 
   if (calld->host) {
     grpc_mdstr_unref(calld->host);
