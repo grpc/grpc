@@ -33,7 +33,7 @@
 
 'use strict';
 
-var _ = require('underscore');
+var _ = require('lodash');
 
 var grpc = require('bindings')('grpc.node');
 
@@ -123,10 +123,6 @@ function _read(size) {
     if (err) {
       // Something has gone wrong. Stop reading and wait for status
       self.finished = true;
-      return;
-    }
-    if (self.finished) {
-      self.push(null);
       return;
     }
     var data = event.read;

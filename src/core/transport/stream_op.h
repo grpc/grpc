@@ -58,11 +58,18 @@ typedef enum grpc_stream_op_code {
   GRPC_OP_SLICE
 } grpc_stream_op_code;
 
-/* Arguments for GRPC_OP_BEGIN */
+/** Internal bit flag for grpc_begin_message's \a flags signaling the use of
+ * compression for the message */
+#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
+/** Mask of all valid internal flags. */
+#define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
+
+/* Arguments for GRPC_OP_BEGIN_MESSAGE */
 typedef struct grpc_begin_message {
   /* How many bytes of data will this message contain */
   gpr_uint32 length;
-  /* Write flags for the message: see grpc.h GRPC_WRITE_xxx */
+  /* Write flags for the message: see grpc.h GRPC_WRITE_* for the public bits,
+   * GRPC_WRITE_INTERNAL_* for the internal ones. */
   gpr_uint32 flags;
 } grpc_begin_message;
 
@@ -126,10 +133,8 @@ typedef struct grpc_stream_op {
   } data;
 } grpc_stream_op;
 
-/* A stream op buffer is a wrapper around stream operations that is dynamically
-   extendable.
-   TODO(ctiller): inline a few elements into the struct, to avoid common case
-                  per-call allocations. */
+/** A stream op buffer is a wrapper around stream operations that is
+ * dynamically extendable. */
 typedef struct grpc_stream_op_buffer {
   grpc_stream_op *ops;
   size_t nops;

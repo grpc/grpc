@@ -63,7 +63,8 @@ zend_class_entry *grpc_ce_server;
 void free_wrapped_grpc_server(void *object TSRMLS_DC) {
   wrapped_grpc_server *server = (wrapped_grpc_server *)object;
   if (server->wrapped != NULL) {
-    grpc_server_shutdown(server->wrapped);
+    grpc_server_shutdown_and_notify(server->wrapped, completion_queue, NULL);
+    grpc_completion_queue_pluck(completion_queue, NULL, gpr_inf_future);
     grpc_server_destroy(server->wrapped);
   }
   efree(server);

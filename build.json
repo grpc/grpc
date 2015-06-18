@@ -6,12 +6,25 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 9,
+      "minor": 10,
       "micro": 0,
       "build": 0
     }
   },
   "filegroups": [
+    {
+      "name": "census",
+      "public_headers": [
+        "include/grpc/census.h"
+      ],
+      "headers": [
+        "src/core/census/context.h"
+      ],
+      "src": [
+        "src/core/census/context.c",
+        "src/core/census/initialize.c"
+      ]
+    },
     {
       "name": "grpc++_base",
       "public_headers": [
@@ -70,6 +83,7 @@
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
         "src/cpp/server/async_generic_service.cc",
+        "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
@@ -87,11 +101,12 @@
       "public_headers": [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
+        "include/grpc/compression.h",
         "include/grpc/grpc.h",
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/channel/census_filter.h",
+        "src/core/census/grpc_context.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/child_channel.h",
@@ -101,7 +116,6 @@
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_server_filter.h",
         "src/core/channel/noop_filter.h",
-        "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
         "src/core/debug/trace.h",
         "src/core/iomgr/alarm.h",
@@ -140,12 +154,6 @@
         "src/core/json/json_writer.h",
         "src/core/profiling/timers.h",
         "src/core/profiling/timers_preciseclock.h",
-        "src/core/statistics/census_interface.h",
-        "src/core/statistics/census_log.h",
-        "src/core/statistics/census_rpc_stats.h",
-        "src/core/statistics/census_tracing.h",
-        "src/core/statistics/hash_table.h",
-        "src/core/statistics/window_stats.h",
         "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
@@ -180,7 +188,7 @@
         "src/core/transport/transport_impl.h"
       ],
       "src": [
-        "src/core/channel/census_filter.c",
+        "src/core/census/grpc_context.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/child_channel.c",
@@ -232,12 +240,6 @@
         "src/core/json/json_writer.c",
         "src/core/profiling/basic_timers.c",
         "src/core/profiling/stap_timers.c",
-        "src/core/statistics/census_init.c",
-        "src/core/statistics/census_log.c",
-        "src/core/statistics/census_rpc_stats.c",
-        "src/core/statistics/census_tracing.c",
-        "src/core/statistics/hash_table.c",
-        "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
         "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
@@ -284,7 +286,6 @@
       "src": [
         "test/core/end2end/cq_verifier.c",
         "test/core/iomgr/endpoint_tests.c",
-        "test/core/statistics/census_log_tests.c",
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
@@ -314,6 +315,7 @@
         "include/grpc/support/port_platform.h",
         "include/grpc/support/slice.h",
         "include/grpc/support/slice_buffer.h",
+        "include/grpc/support/string_util.h",
         "include/grpc/support/subprocess.h",
         "include/grpc/support/sync.h",
         "include/grpc/support/sync_generic.h",
@@ -405,7 +407,7 @@
         "src/core/httpcli/httpcli.h",
         "src/core/httpcli/httpcli_security_connector.h",
         "src/core/httpcli/parser.h",
-        "src/core/security/auth.h",
+        "src/core/security/auth_filters.h",
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
         "src/core/security/json_token.h",
@@ -423,9 +425,10 @@
         "src/core/httpcli/httpcli.c",
         "src/core/httpcli/httpcli_security_connector.c",
         "src/core/httpcli/parser.c",
-        "src/core/security/auth.c",
         "src/core/security/base64.c",
+        "src/core/security/client_auth_filter.c",
         "src/core/security/credentials.c",
+        "src/core/security/credentials_metadata.c",
         "src/core/security/credentials_posix.c",
         "src/core/security/credentials_win32.c",
         "src/core/security/google_default_credentials.c",
@@ -434,6 +437,7 @@
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_connector.c",
         "src/core/security/security_context.c",
+        "src/core/security/server_auth_filter.c",
         "src/core/security/server_secure_chttp2.c",
         "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
@@ -446,7 +450,8 @@
       ],
       "baselib": true,
       "filegroups": [
-        "grpc_base"
+        "grpc_base",
+        "census"
       ],
       "secure": "yes",
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
@@ -497,7 +502,8 @@
       ],
       "baselib": true,
       "filegroups": [
-        "grpc_base"
+        "grpc_base",
+        "census"
       ],
       "secure": "no",
       "vs_project_guid": "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
@@ -524,6 +530,16 @@
       ],
       "secure": "check",
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
+    },
+    {
+      "name": "grpc++_benchmark_config",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/report.cc",
+        "test/cpp/util/benchmark_config.cc"
+      ]
     },
     {
       "name": "grpc++_test_config",
@@ -589,7 +605,8 @@
         "src/compiler/ruby_generator.cc"
       ],
       "deps": [],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{B6E81D84-2ACB-41B8-8781-493A944C7817}"
     },
     {
       "name": "interop_client_helper",
@@ -684,6 +701,7 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/interarrival.h",
         "test/cpp/qps/qps_worker.h",
         "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
@@ -694,7 +712,6 @@
         "test/cpp/qps/client_sync.cc",
         "test/cpp/qps/driver.cc",
         "test/cpp/qps/qps_worker.cc",
-        "test/cpp/qps/report.cc",
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/timer.cc"
@@ -781,151 +798,6 @@
       "language": "c",
       "src": [
         "test/core/transport/chttp2/bin_encoder_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_hash_table_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/hash_table_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_multiple_writers_circular_buffer_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/multiple_writers_circular_buffer_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_multiple_writers_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/multiple_writers_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_performance_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/performance_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_quick_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/quick_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_statistics_small_log_test",
-      "flaky": true,
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/small_log_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_stats_store_test",
-      "build": "executable",
-      "language": "c",
-      "src": [
-        "test/core/statistics/rpc_stats_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_stub_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/census_stub_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_trace_store_test",
-      "build": "executable",
-      "language": "c",
-      "src": [
-        "test/core/statistics/trace_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "census_window_stats_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/statistics/window_stats_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1268,6 +1140,20 @@
       ]
     },
     {
+      "name": "grpc_auth_context_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/security/auth_context_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_base64_test",
       "build": "test",
       "language": "c",
@@ -1466,7 +1352,6 @@
     {
       "name": "httpcli_test",
       "build": "test",
-      "run": false,
       "language": "c",
       "src": [
         "test/core/httpcli/httpcli_test.c"
@@ -1476,6 +1361,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1821,6 +1709,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1838,6 +1727,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1995,7 +1885,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{7E51A25F-AC59-488F-906C-C60FAAE706AA}"
     },
     {
       "name": "grpc_csharp_plugin",
@@ -2007,7 +1898,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{3C813052-A49A-4662-B90A-1ADBEC7EE453}"
     },
     {
       "name": "grpc_objective_c_plugin",
@@ -2019,7 +1911,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{19564640-CEE6-4921-ABA5-676ED79A36F6}"
     },
     {
       "name": "grpc_python_plugin",
@@ -2031,7 +1924,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}"
     },
     {
       "name": "grpc_ruby_plugin",
@@ -2043,7 +1937,8 @@
       "deps": [
         "grpc_plugin_support"
       ],
-      "secure": "no"
+      "secure": "no",
+      "vs_project_guid": "{069E9D05-B78B-4751-9252-D21EBAE7DE8E}"
     },
     {
       "name": "interop_client",
@@ -2178,12 +2073,31 @@
         "grpc",
         "gpr_test_util",
         "gpr",
-        "grpc++_test_config"
+        "grpc++_test_config",
+        "grpc++_benchmark_config"
+      ]
+    },
+    {
+      "name": "qps_interarrival_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_interarrival_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
       ]
     },
     {
       "name": "qps_test",
-      "build": "benchmark",
+      "build": "test",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
@@ -2191,6 +2105,26 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "qps_test_openloop",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_test_openloop.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2279,6 +2213,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2296,6 +2231,7 @@
       "deps": [
         "qps",
         "grpc++_test_util",
+        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",

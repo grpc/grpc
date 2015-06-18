@@ -41,5 +41,7 @@ namespace Grpc.Core.Internal
         public static readonly AtomicCounter ActiveClientCalls = new AtomicCounter();
 
         public static readonly AtomicCounter ActiveServerCalls = new AtomicCounter();
+
+        public static readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
     }
 }

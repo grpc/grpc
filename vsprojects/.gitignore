@@ -3,7 +3,7 @@ Release
 *.suo
 *.user
 test_bin
-grpc.opensdf
-grpc.sdf
+*.opensdf
+*.sdf
 third_party/*.user
 /packages

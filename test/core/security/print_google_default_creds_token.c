@@ -49,7 +49,8 @@ typedef struct {
   int is_done;
 } synchronizer;
 
-static void on_metadata_response(void *user_data, grpc_mdelem **md_elems,
+static void on_metadata_response(void *user_data,
+                                 grpc_credentials_md *md_elems,
                                  size_t num_md,
                                  grpc_credentials_status status) {
   synchronizer *sync = user_data;
@@ -58,7 +59,7 @@ static void on_metadata_response(void *user_data, grpc_mdelem **md_elems,
   } else {
     GPR_ASSERT(num_md == 1);
     printf("\nGot token: %s\n\n",
-           (const char *)GPR_SLICE_START_PTR(md_elems[0]->value->slice));
+           (const char *)GPR_SLICE_START_PTR(md_elems[0].value));
   }
   gpr_mu_lock(&sync->mu);
   sync->is_done = 1;

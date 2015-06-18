@@ -31,6 +31,7 @@
  *
  */
 
+#include <mutex>
 #include <thread>
 
 #include "test/core/util/port.h"
@@ -98,13 +99,13 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
             gpr_now(),
             gpr_time_from_micros(request->param().client_cancel_after_us())));
       }
-      return Status::Cancelled;
+      return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(),
           gpr_time_from_micros(request->param().server_cancel_after_us())));
-      return Status::Cancelled;
+      return Status::CANCELLED;
     } else {
       EXPECT_FALSE(context->IsCancelled());
     }
@@ -218,7 +219,7 @@ static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
     ClientContext context;
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
-    EXPECT_TRUE(s.IsOk());
+    EXPECT_TRUE(s.ok());
   }
 }
 

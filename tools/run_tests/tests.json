@@ -49,78 +49,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_hash_table_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": true, 
-    "language": "c", 
-    "name": "census_statistics_multiple_writers_circular_buffer_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": true, 
-    "language": "c", 
-    "name": "census_statistics_multiple_writers_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": true, 
-    "language": "c", 
-    "name": "census_statistics_performance_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": true, 
-    "language": "c", 
-    "name": "census_statistics_quick_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": true, 
-    "language": "c", 
-    "name": "census_statistics_small_log_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "census_stub_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "census_window_stats_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "chttp2_status_conversion_test", 
     "platforms": [
       "windows", 
@@ -315,6 +243,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "grpc_auth_context_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "grpc_base64_test", 
     "platforms": [
       "windows", 
@@ -408,6 +345,14 @@
     "name": "httpcli_parser_test", 
     "platforms": [
       "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "httpcli_test", 
+    "platforms": [
       "posix"
     ]
   }, 
@@ -698,6 +643,24 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "qps_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "qps_test_openloop", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "server_crash_test", 
     "platforms": [
       "windows", 
@@ -951,6 +914,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fake_security_request_with_flags_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1220,6 +1192,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -1458,6 +1439,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_request_with_flags_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_posix_request_with_large_metadata_test", 
     "platforms": [
       "posix"
@@ -1499,6 +1488,246 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_simple_request_with_high_initial_sequence_number_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_bad_hostname_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": true, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_after_accept_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_after_invoke_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_before_invoke_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_census_simple_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_disappearing_server_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_empty_batch_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_graceful_server_shutdown_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": true, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_invoke_large_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_max_concurrent_streams_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_max_message_length_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_no_op_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_ping_pong_streaming_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_registered_call_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_payload_and_call_creds_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_flags_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_large_metadata_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_server_finishes_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_simple_delayed_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_simple_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_simple_request_with_high_initial_sequence_number_test", 
     "platforms": [
       "posix"
     ]
@@ -1713,6 +1942,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -1761,6 +1999,246 @@
     "name": "chttp2_simple_ssl_fullstack_simple_request_with_high_initial_sequence_number_test", 
     "platforms": [
       "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_bad_hostname_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": true, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_cancel_after_accept_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_cancel_after_invoke_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_cancel_before_invoke_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_census_simple_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_disappearing_server_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_empty_batch_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_graceful_server_shutdown_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": true, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_invoke_large_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_max_concurrent_streams_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_max_message_length_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_no_op_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_ping_pong_streaming_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_registered_call_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_response_with_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_response_with_payload_and_call_creds_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_with_flags_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_with_large_metadata_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_with_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_server_finishes_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_simple_delayed_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_simple_request_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_simple_request_with_high_initial_sequence_number_test", 
+    "platforms": [
       "posix"
     ]
   }, 
@@ -1966,6 +2444,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_flags_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2235,6 +2722,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -2488,6 +2984,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_flags_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2757,6 +3262,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_with_grpc_trace_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -3009,6 +3523,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_request_with_flags_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3239,6 +3762,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_request_with_flags_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_posix_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "posix"
@@ -3280,6 +3811,238 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_simple_request_with_high_initial_sequence_number_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_bad_hostname_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_after_accept_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_after_accept_and_writes_closed_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_after_invoke_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_before_invoke_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_cancel_in_a_vacuum_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_census_simple_request_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_disappearing_server_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_early_server_shutdown_finishes_inflight_calls_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_early_server_shutdown_finishes_tags_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_empty_batch_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_graceful_server_shutdown_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": true, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_invoke_large_request_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_max_concurrent_streams_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_max_message_length_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_no_op_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_ping_pong_streaming_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_registered_call_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_binary_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_response_with_trailing_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_flags_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_large_metadata_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_server_finishes_request_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_simple_delayed_request_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_simple_request_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_simple_request_with_high_initial_sequence_number_unsecure_test", 
     "platforms": [
       "posix"
     ]
@@ -3477,6 +4240,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_request_with_flags_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -3737,6 +4509,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_flags_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3989,6 +4770,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_with_grpc_trace_request_with_flags_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -4035,6 +4825,24 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_simple_request_with_high_initial_sequence_number_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "connection_prefix_bad_client_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "initial_settings_frame_bad_client_test", 
     "platforms": [
       "windows", 
       "posix"

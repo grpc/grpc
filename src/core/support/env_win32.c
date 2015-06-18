@@ -42,6 +42,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 char *gpr_getenv(const char *name) {
   size_t size;

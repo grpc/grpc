@@ -82,13 +82,40 @@ typedef enum {
 #define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
   "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
 
+/* --- grpc_credentials_md. --- */
+
+typedef struct {
+  gpr_slice key;
+  gpr_slice value;
+} grpc_credentials_md;
+
+typedef struct {
+  grpc_credentials_md *entries;
+  size_t num_entries;
+  size_t allocated;
+  gpr_refcount refcount;
+} grpc_credentials_md_store;
+
+grpc_credentials_md_store *grpc_credentials_md_store_create(
+    size_t initial_capacity);
+
+/* Will ref key and value. */
+void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
+                                   gpr_slice key, gpr_slice value);
+void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
+                                            const char *key, const char *value);
+grpc_credentials_md_store *grpc_credentials_md_store_ref(
+    grpc_credentials_md_store *store);
+void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
+
+
 /* --- grpc_credentials. --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
 char *grpc_get_well_known_google_credentials_file_path(void);
 
 typedef void (*grpc_credentials_metadata_cb)(void *user_data,
-                                             grpc_mdelem **md_elems,
+                                             grpc_credentials_md *md_elems,
                                              size_t num_md,
                                              grpc_credentials_status status);
 
@@ -96,7 +123,6 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
-  grpc_mdctx *(*get_metadata_context)(grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb,
@@ -122,11 +148,6 @@ void grpc_credentials_get_request_metadata(grpc_credentials *creds,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
-
-/* Gets the mdctx from the credentials and increase the refcount if it exists,
-   otherwise, create a new one. */
-grpc_mdctx *grpc_credentials_get_or_create_metadata_context(
-    grpc_credentials *creds);
 
 /* Creates a security connector for the channel. May also create new channel
    args for the channel to be used in place of the passed in const args if
@@ -155,9 +176,9 @@ grpc_credentials *grpc_credentials_contains_type(
 
 /* Exposed for testing only. */
 grpc_credentials_status
-    grpc_oauth2_token_fetcher_credentials_parse_server_response(
-        const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
-        grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
+grpc_oauth2_token_fetcher_credentials_parse_server_response(
+    const struct grpc_httpcli_response *response, grpc_credentials_md_store **token_md,
+    gpr_timespec *token_lifetime);
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(

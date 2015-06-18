@@ -34,8 +34,8 @@
 #ifndef GRPC_GRPC_SECURITY_H
 #define GRPC_GRPC_SECURITY_H
 
-#include "grpc.h"
-#include "status.h"
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,7 +117,7 @@ grpc_credentials *grpc_service_account_credentials_create(
 grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
                                               gpr_timespec token_lifetime);
 
-/* Creates an Oauth2 Refresh Token crednetials object. May return NULL if the
+/* Creates an Oauth2 Refresh Token credentials object. May return NULL if the
    input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak.
@@ -190,6 +190,62 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
    grpc_call_start_batch. */
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
                                           grpc_credentials *creds);
+
+/* --- Authentication Context. --- */
+
+/* TODO(jboeuf): Define some well-known property names. */
+
+#define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME \
+  "transport_security_type"
+#define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
+#define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
+
+#define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
+#define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
+
+typedef struct grpc_auth_context grpc_auth_context;
+
+typedef struct grpc_auth_property_iterator {
+  const grpc_auth_context *ctx;
+  size_t index;
+  const char *name;
+} grpc_auth_property_iterator;
+
+/* value, if not NULL, is guaranteed to be NULL terminated. */
+typedef struct grpc_auth_property {
+  char *name;
+  char *value;
+  size_t value_length;
+} grpc_auth_property;
+
+/* Returns NULL when the iterator is at the end. */
+const grpc_auth_property *grpc_auth_property_iterator_next(
+    grpc_auth_property_iterator *it);
+
+/* Iterates over the auth context. */
+grpc_auth_property_iterator grpc_auth_context_property_iterator(
+    const grpc_auth_context *ctx);
+
+/* Gets the peer identity. Returns an empty iterator (first _next will return
+   NULL) if the peer is not authenticated. */
+grpc_auth_property_iterator grpc_auth_context_peer_identity(
+    const grpc_auth_context *ctx);
+
+/* Finds a property in the context. May return an empty iterator (first _next
+   will return NULL) if no property with this name was found in the context. */
+grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
+    const grpc_auth_context *ctx, const char *name);
+
+/* Gets the name of the property that indicates the peer identity. Will return
+   NULL if the peer is not authenticated. */
+const char *grpc_auth_context_peer_identity_property_name(
+    const grpc_auth_context *ctx);
+
+/* Returns 1 if the peer is authenticated, 0 otherwise. */
+int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx);
+
+/* Gets the auth context from the call. */
+const grpc_auth_context *grpc_call_auth_context(grpc_call *call);
 
 #ifdef __cplusplus
 }

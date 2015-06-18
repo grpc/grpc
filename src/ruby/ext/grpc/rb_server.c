@@ -210,7 +210,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
   VALUE result;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
-    rb_raise(rb_eRuntimeError, "closed!");
+    rb_raise(rb_eRuntimeError, "destroyed!");
     return Qnil;
   } else {
     grpc_request_call_stack_init(&st);
@@ -259,21 +259,69 @@ static VALUE grpc_rb_server_start(VALUE self) {
   grpc_rb_server *s = NULL;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
-    rb_raise(rb_eRuntimeError, "closed!");
+    rb_raise(rb_eRuntimeError, "destroyed!");
   } else {
     grpc_server_start(s->wrapped);
   }
   return Qnil;
 }
 
-static VALUE grpc_rb_server_destroy(VALUE self) {
+/*
+  call-seq:
+    cq = CompletionQueue.new
+    server = Server.new(cq, {'arg1': 'value1'})
+    ... // do stuff with server
+    ...
+    ... // to shutdown the server
+    server.destroy(cq)
+
+    ... // to shutdown the server with a timeout
+    server.destroy(cq, timeout)
+
+  Destroys server instances. */
+static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
+  VALUE cqueue = Qnil;
+  VALUE timeout = Qnil;
+  grpc_completion_queue *cq = NULL;
+  grpc_event ev;
   grpc_rb_server *s = NULL;
+
+  /* "11" == 1 mandatory args, 1 (timeout) is optional */
+  rb_scan_args(argc, argv, "11", &cqueue, &timeout);
+  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
+
   if (s->wrapped != NULL) {
-    grpc_server_shutdown(s->wrapped);
+    grpc_server_shutdown_and_notify(s->wrapped, cq, NULL);
+    ev = grpc_rb_completion_queue_pluck_event(cqueue, Qnil, timeout);
+
+    if (!ev.success) {
+      rb_warn("server shutdown failed, there will be a LEAKED object warning");
+      return Qnil;
+      /*
+         TODO: renable the rb_raise below.
+
+         At the moment if the timeout is INFINITE_FUTURE as recommended, the
+         pluck blocks forever, even though
+
+         the outstanding server_request_calls correctly fail on the other
+         thread that they are running on.
+
+         it's almost as if calls that fail on the other thread do not get
+         cleaned up by shutdown request, even though it caused htem to
+         terminate.
+
+         rb_raise(rb_eRuntimeError, "grpc server shutdown did not succeed");
+         return Qnil;
+
+         The workaround is just to use a timeout and return without really
+         shutting down the server, and rely on the grpc core garbage collection
+         it down as a 'LEAKED OBJECT'.
+
+      */
+    }
     grpc_server_destroy(s->wrapped);
     s->wrapped = NULL;
-    s->mark = Qnil;
   }
   return Qnil;
 }
@@ -282,12 +330,12 @@ static VALUE grpc_rb_server_destroy(VALUE self) {
   call-seq:
     // insecure port
     insecure_server = Server.new(cq, {'arg1': 'value1'})
-    insecure_server.add_http2_port('mydomain:7575')
+    insecure_server.add_http2_port('mydomain:50051')
 
     // secure port
     server_creds = ...
     secure_server = Server.new(cq, {'arg1': 'value1'})
-    secure_server.add_http_port('mydomain:7575', server_creds)
+    secure_server.add_http_port('mydomain:50051', server_creds)
 
     Adds a http2 port to server */
 static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
@@ -302,7 +350,7 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
-    rb_raise(rb_eRuntimeError, "closed!");
+    rb_raise(rb_eRuntimeError, "destroyed!");
     return Qnil;
   } else if (rb_creds == Qnil) {
     recvd_port = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
@@ -315,7 +363,7 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
     creds = grpc_rb_get_wrapped_server_credentials(rb_creds);
     recvd_port =
         grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port),
-			                  creds);
+                                          creds);
     if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add secure port %s to server, not sure why",
@@ -341,7 +389,7 @@ void Init_grpc_server() {
   rb_define_method(grpc_rb_cServer, "request_call",
                    grpc_rb_server_request_call, 3);
   rb_define_method(grpc_rb_cServer, "start", grpc_rb_server_start, 0);
-  rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, 0);
+  rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, -1);
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
   rb_define_method(grpc_rb_cServer, "add_http2_port",
                    grpc_rb_server_add_http2_port,

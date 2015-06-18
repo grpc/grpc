@@ -276,6 +276,8 @@ LDFLAGS += -fPIC
 endif
 
 INCLUDES = . include $(GENDIR)
+LDFLAGS += -Llibs/$(CONFIG)
+
 ifeq ($(SYSTEM),Darwin)
 ifneq ($(wildcard /usr/local/ssl/include),)
 INCLUDES += /usr/local/ssl/include
@@ -663,7 +665,7 @@ else
 endif
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
-	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
+	$(Q)(unset CPPFLAGS; $(MAKE) -C third_party/openssl build_crypto build_ssl)
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
@@ -767,9 +769,20 @@ buildtests_cxx: privatelibs_cxx\
 
 test: test_c test_cxx
 
+flaky_test: flaky_test_c flaky_test_cxx
+
 test_c: buildtests_c
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++':
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+flaky_test_c: buildtests_c
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -778,7 +791,16 @@ test_c: buildtests_c
 
 test_cxx: buildtests_cxx
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++':
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+flaky_test_cxx: buildtests_cxx
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -1200,7 +1222,7 @@ endif
     mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
   if lib.get('secure', 'check') == 'yes':
-    common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     for src in lib.src:
       sources_that_need_openssl.add(src)
   else:

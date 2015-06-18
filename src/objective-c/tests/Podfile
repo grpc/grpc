@@ -1,0 +1,14 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+pod 'gRPC', :path => "../../.."
+pod 'RemoteTest', :path => "../generated_libraries/RemoteTestClient"
+pod 'RouteGuide', :path => "../generated_libraries/RouteGuideClient"
+
+link_with 'AllTests'
+
+target 'Tests' do
+end
+
+target 'AllTests' do
+end

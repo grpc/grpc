@@ -33,10 +33,7 @@
 
 'use strict';
 
-var _ = require('underscore');
-
-var capitalize = require('underscore.string/capitalize');
-var decapitalize = require('underscore.string/decapitalize');
+var _ = require('lodash');
 
 /**
  * Get a function that deserializes a specific type of protobuf.
@@ -50,7 +47,9 @@ function deserializeCls(cls) {
    * @return {cls} The resulting object
    */
   return function deserialize(arg_buf) {
-    return cls.decode(arg_buf).toRaw();
+    // Convert to a native object with binary fields as Buffers (first argument)
+    // and longs as strings (second argument)
+    return cls.decode(arg_buf).toRaw(false, true);
   };
 }
 
@@ -81,7 +80,7 @@ function fullyQualifiedName(value) {
   }
   var name = value.name;
   if (value.className === 'Service.RPCMethod') {
-    name = capitalize(name);
+    name = _.capitalize(name);
   }
   if (value.hasOwnProperty('parent')) {
     var parent_name = fullyQualifiedName(value.parent);
@@ -118,8 +117,8 @@ function wrapIgnoreNull(func) {
 function getProtobufServiceAttrs(service) {
   var prefix = '/' + fullyQualifiedName(service) + '/';
   return _.object(_.map(service.children, function(method) {
-    return [decapitalize(method.name), {
-      path: prefix + capitalize(method.name),
+    return [_.camelCase(method.name), {
+      path: prefix + _.capitalize(method.name),
       requestStream: method.requestStream,
       responseStream: method.responseStream,
       requestSerialize: serializeCls(method.resolvedRequestType.build()),

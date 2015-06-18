@@ -40,8 +40,18 @@
 
 namespace grpc_objective_c_generator {
 
-inline grpc::string MessageHeaderName(const grpc::protobuf::FileDescriptor *file) {
+using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::ServiceDescriptor;
+using ::grpc::string;
+
+inline string MessageHeaderName(const FileDescriptor *file) {
   return grpc_generator::FileNameInUpperCamel(file) + ".pbobjc.h";
+}
+
+inline string ServiceClassName(const ServiceDescriptor *service) {
+  const FileDescriptor *file = service->file();
+  string prefix = file->options().objc_class_prefix();
+  return prefix + service->name();
 }
 
 }

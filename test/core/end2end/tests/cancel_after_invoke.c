@@ -76,7 +76,8 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown(f->server);
+  grpc_server_shutdown_and_notify(f->server, f->server_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->server_cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -106,7 +107,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_op *op;
   grpc_call *c;
   grpc_end2end_test_fixture f =
-      begin_test(config, __FUNCTION__, mode, NULL, NULL);
+      begin_test(config, "test_cancel_after_invoke", mode, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   grpc_metadata_array initial_metadata_recv;
@@ -119,7 +120,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_byte_buffer *response_payload_recv = NULL;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
                                "foo.test.google.fr", deadline);
@@ -136,20 +137,26 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &response_payload_recv;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, test_ops, tag(1)));
 

@@ -60,8 +60,10 @@
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -281,6 +283,8 @@ static void on_read(void *arg, int success) {
   for (;;) {
     struct sockaddr_storage addr;
     socklen_t addrlen = sizeof(addr);
+    char *addr_str;
+    char *name;
     /* Note: If we ever decide to return this address to the user, remember to
              strip off the ::ffff:0.0.0.0/96 prefix first. */
     int fd = grpc_accept4(sp->fd, (struct sockaddr *)&addr, &addrlen, 1, 1);
@@ -299,9 +303,15 @@ static void on_read(void *arg, int success) {
 
     grpc_set_socket_no_sigpipe_if_possible(fd);
 
-    sp->server->cb(
-        sp->server->cb_arg,
-        grpc_tcp_create(grpc_fd_create(fd), GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
+    gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
+
+    sp->server->cb(sp->server->cb_arg,
+                   grpc_tcp_create(grpc_fd_create(fd, name),
+                                   GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+
+    gpr_free(addr_str);
+    gpr_free(name);
   }
 
   abort();
@@ -318,9 +328,13 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
                                 const struct sockaddr *addr, int addr_len) {
   server_port *sp;
   int port;
+  char *addr_str;
+  char *name;
 
   port = prepare_socket(fd, addr, addr_len);
   if (port >= 0) {
+    grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
+    gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
     gpr_mu_lock(&s->mu);
     GPR_ASSERT(!s->cb && "must add ports before starting server");
     /* append it to the list under a lock */
@@ -331,11 +345,13 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     sp = &s->ports[s->nports++];
     sp->server = s;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd);
+    sp->emfd = grpc_fd_create(fd, name);
     memcpy(sp->addr.untyped, addr, addr_len);
     sp->addr_len = addr_len;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
+    gpr_free(addr_str);
+    gpr_free(name);
   }
 
   return port;
