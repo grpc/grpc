@@ -157,11 +157,7 @@ void grpc_chttp2_perform_writes(
   finalize_outbuf(transport_writing);
 
   GPR_ASSERT(transport_writing->outbuf.count > 0);
-
-  if (!endpoint) {
-    grpc_chttp2_terminate_writing(transport_writing, 0);
-    return;
-  }
+  GPR_ASSERT(endpoint);
 
   switch (grpc_endpoint_write(endpoint, transport_writing->outbuf.slices,
                               transport_writing->outbuf.count, finish_write_cb,

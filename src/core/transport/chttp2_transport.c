@@ -401,6 +401,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
 static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
+  int i;
 
   gpr_mu_lock(&t->mu);
 
@@ -413,7 +414,14 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
                                            s->global.id) == NULL);
   }
 
+  grpc_chttp2_list_remove_incoming_window_updated(&t->global, &s->global);
+
   gpr_mu_unlock(&t->mu);
+
+  for (i = 0; i < STREAM_LIST_COUNT; i++) {
+    GPR_ASSERT(s->links[i].next == NULL);
+    GPR_ASSERT(s->links[i].prev == NULL);
+  }
 
   GPR_ASSERT(s->global.outgoing_sopb == NULL);
   GPR_ASSERT(s->global.publish_sopb == NULL);
@@ -709,13 +717,15 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
 static void remove_stream(grpc_chttp2_transport *t, gpr_uint32 id) {
   grpc_chttp2_stream *s =
       grpc_chttp2_stream_map_delete(&t->parsing_stream_map, id);
+  if (!s) {
+    s = grpc_chttp2_stream_map_delete(&t->new_stream_map, id);
+  }
   GPR_ASSERT(s);
   s->global.in_stream_map = 0;
   if (t->parsing.incoming_stream == &s->parsing) {
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(&t->parsing);
   }
-  grpc_chttp2_list_remove_incoming_window_updated(&t->global, &s->global);
 }
 
 static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
