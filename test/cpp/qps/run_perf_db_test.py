@@ -43,7 +43,7 @@ import fnmatch
 CLIENT_ID = '1018396037782-tv81fshn76nemr24uuhuginceb9hni2m.apps.googleusercontent.com'
 CLIENT_SECRET = '_HGHXg4DAA59r4w4x8p6ARzD'
 GRANT_TYPE = 'http://oauth.net/grant_type/device/1.0'
-ACCESS_TOKENS_DIR = '/tmp/auth_lead_access_tokens'
+ACCESS_TOKENS_DIR = '/usr/local/auth_access_tokens'
 AUTH_TOKEN_LINK = 'https://www.googleapis.com/oauth2/v3/token'
 GOOGLE_ACCOUNTS_LINK = 'https://accounts.google.com/o/oauth2/device/code'
 USER_INFO_LINK = 'https://www.googleapis.com/oauth2/v1/userinfo'
@@ -223,7 +223,7 @@ def getSysInfo():
       if ethtoolString.startswith('Speed'):
         ethtoolString = ethtoolString.split(':')[1]
         ethtoolString = ethtoolString.replace('Mb/s',' Mbps')
-        nicInfo.append(NIC + ' speed: ' + ethtoolString + '\n')
+        nicInfo.append('NIC ' + NIC + ' speed: ' + ethtoolString + '\n')
         nicInfo.append(NIC + ' inet address: ' + nicAddrs[i].split(':')[1])
 
   print 'Obtaining network info....'
@@ -238,7 +238,8 @@ def getSysInfo():
 def main():
   # If tokens directory does not exist, creates it
   if not os.path.exists(ACCESS_TOKENS_DIR):
-    os.makedirs(ACCESS_TOKENS_DIR)
+    subprocess.call(['sudo', 'mkdir', ACCESS_TOKENS_DIR])
+    subprocess.call(['sudo', 'chmod', '777', ACCESS_TOKENS_DIR])
 
   if len(sys.argv) > 1:
     test = sys.argv[1]
