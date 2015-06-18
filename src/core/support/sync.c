@@ -118,7 +118,9 @@ void gpr_refn(gpr_refcount *r, int n) {
 }
 
 int gpr_unref(gpr_refcount *r) {
-  return gpr_atm_full_fetch_add(&r->count, -1) == 1;
+  gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
+  GPR_ASSERT(prior > 0);
+  return prior == 1;
 }
 
 void gpr_stats_init(gpr_stats_counter *c, gpr_intptr n) {

@@ -77,6 +77,7 @@ class Server GRPC_FINAL : public GrpcLibrary,
 
   class SyncRequest;
   class AsyncRequest;
+  class ShutdownRequest;
 
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,

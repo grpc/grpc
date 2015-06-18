@@ -213,7 +213,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_completion_queue_destroy(client_cq);
 
   /* Destroy server. */
-  grpc_server_shutdown(server);
+  grpc_server_shutdown_and_notify(server, server_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(server_cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(server_cq);
   drain_cq(server_cq);

@@ -32,14 +32,15 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     internal delegate void OpCompletionDelegate(bool success);
+
     internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx);
 
     internal class CompletionRegistry

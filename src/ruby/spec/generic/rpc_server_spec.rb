@@ -136,10 +136,6 @@ describe GRPC::RpcServer do
     @ch = GRPC::Core::Channel.new(@host, nil)
   end
 
-  after(:each) do
-    @server.close
-  end
-
   describe '#new' do
     it 'can be created with just some args' do
       opts = { a_channel_arg: 'an_arg' }
@@ -344,10 +340,6 @@ describe GRPC::RpcServer do
         @srv = RpcServer.new(**server_opts)
       end
 
-      after(:each) do
-        @srv.stop
-      end
-
       it 'should return NOT_FOUND status on unknown methods', server: true do
         @srv.handle(EchoService)
         t = Thread.new { @srv.run }
@@ -525,10 +517,6 @@ describe GRPC::RpcServer do
           connect_md_proc: test_md_proc
         }
         @srv = RpcServer.new(**server_opts)
-      end
-
-      after(:each) do
-        @srv.stop
       end
 
       it 'should send connect metadata to the client', server: true do

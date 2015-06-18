@@ -214,8 +214,8 @@ void CallOpBuffer::AddServerSendStatus(
     trailing_metadata_count_ = 0;
   }
   send_status_available_ = true;
-  send_status_code_ = static_cast<grpc_status_code>(status.code());
-  send_status_details_ = status.details();
+  send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+  send_status_details_ = status.error_message();
 }
 
 void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
