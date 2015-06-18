@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "src/core/transport/chttp2/http2_errors.h"
+#include "src/core/transport/chttp2/status_conversion.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
 
 #include <grpc/support/alloc.h>
@@ -65,6 +66,8 @@ void grpc_chttp2_prepare_to_read(
     grpc_chttp2_transport_parsing *transport_parsing) {
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_parsing *stream_parsing;
+
+  transport_parsing->next_stream_id = transport_global->next_stream_id;
 
   /* update the parsing view of incoming window */
   if (transport_parsing->incoming_window != transport_global->incoming_window) {
@@ -205,6 +208,10 @@ void grpc_chttp2_publish_reads(
     }
     if (stream_parsing->saw_rst_stream) {
       stream_global->cancelled = 1;
+      stream_global->cancelled_status = grpc_chttp2_http2_error_to_grpc_status(stream_parsing->rst_stream_reason);
+      if (stream_parsing->rst_stream_reason == GRPC_CHTTP2_NO_ERROR) {
+        stream_global->published_cancelled = 1;
+      }
       grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                     stream_global);
     }
@@ -803,62 +810,3 @@ static int parse_frame_slice(grpc_chttp2_transport_parsing *transport_parsing,
   abort();
   return 0;
 }
-
-#if 0
-      if (st.end_of_stream) {
-        transport_parsing->incoming_stream->read_closed = 1;
-        maybe_finish_read(t, transport_parsing->incoming_stream, 1);
-      }
-      if (st.need_flush_reads) {
-        maybe_finish_read(t, transport_parsing->incoming_stream, 1);
-      }
-      if (st.metadata_boundary) {
-        add_metadata_batch(t, transport_parsing->incoming_stream);
-        maybe_finish_read(t, transport_parsing->incoming_stream, 1);
-      }
-      if (st.ack_settings) {
-      }
-      if (st.send_ping_ack) {
-      }
-      if (st.goaway) {
-        add_goaway(t, st.goaway_error, st.goaway_text);
-      }
-      if (st.rst_stream) {
-        cancel_stream_id(
-            t, transport_parsing->incoming_stream_id,
-            grpc_chttp2_http2_error_to_grpc_status(st.rst_stream_reason),
-            st.rst_stream_reason, 0);
-      }
-      if (st.process_ping_reply) {
-        for (i = 0; i < transport_parsing->ping_count; i++) {
-          if (0 ==
-              memcmp(transport_parsing->pings[i].id, transport_parsing->simple.ping.opaque_8bytes, 8)) {
-            transport_parsing->pings[i].cb(transport_parsing->pings[i].user_data);
-            memmove(&transport_parsing->pings[i], &transport_parsing->pings[i + 1],
-                    (transport_parsing->ping_count - i - 1) * sizeof(grpc_chttp2_outstanding_ping));
-            transport_parsing->ping_count--;
-            break;
-          }
-        }
-      }
-      if (st.initial_window_update) {
-        for (i = 0; i < transport_parsing->stream_map.count; i++) {
-          grpc_chttp2_stream *s = (grpc_chttp2_stream *)(transport_parsing->stream_map.values[i]);
-          s->global.outgoing_window_update += st.initial_window_update;
-          stream_list_join(t, s, NEW_OUTGOING_WINDOW);
-        }
-      }
-      if (st.window_update) {
-        if (transport_parsing->incoming_stream_id) {
-          /* if there was a grpc_chttp2_stream id, this is for some grpc_chttp2_stream */
-          grpc_chttp2_stream *s = lookup_stream(t, transport_parsing->incoming_stream_id);
-          if (s) {
-            s->global.outgoing_window_update += st.window_update;
-            stream_list_join(t, s, NEW_OUTGOING_WINDOW);
-          }
-        } else {
-          /* grpc_chttp2_transport level window update */
-            transport_parsing->global.outgoing_window_update += st.window_update;
-        }
-      }
-#endif

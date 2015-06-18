@@ -740,10 +740,19 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
 
   while (grpc_chttp2_list_pop_read_write_state_changed(transport_global,
                                                        &stream_global)) {
-    if (!stream_global->publish_sopb) {
-      gpr_log(GPR_DEBUG, "%s %d: skip rw update: no publish target",
-              transport_global->is_client ? "CLI" : "SVR", stream_global->id);
-      continue;
+    if (stream_global->cancelled) {
+      stream_global->write_state = WRITE_STATE_SENT_CLOSE;
+      stream_global->read_closed = 1;
+      if (!stream_global->published_cancelled) {
+        char buffer[GPR_LTOA_MIN_BUFSIZE];
+        gpr_ltoa(stream_global->cancelled_status, buffer);
+        grpc_chttp2_incoming_metadata_buffer_add(&stream_global->incoming_metadata,
+          grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
+        grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
+          &stream_global->incoming_metadata,
+          &stream_global->incoming_sopb);
+        stream_global->published_cancelled = 1;
+      }
     }
     if (stream_global->write_state == WRITE_STATE_SENT_CLOSE &&
         stream_global->read_closed && stream_global->in_stream_map) {
@@ -757,6 +766,11 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
                 transport_global->is_client ? "CLI" : "SVR", stream_global->id);
         remove_stream(t, stream_global->id);
       }
+    }
+    if (!stream_global->publish_sopb) {
+      gpr_log(GPR_DEBUG, "%s %d: skip rw update: no publish target",
+              transport_global->is_client ? "CLI" : "SVR", stream_global->id);
+      continue;
     }
     state = compute_state(
         stream_global->write_state == WRITE_STATE_SENT_CLOSE,
@@ -786,15 +800,15 @@ static void cancel_from_api(grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
                             grpc_status_code status) {
   stream_global->cancelled = 1;
-  if (stream_global->in_stream_map) {
+  stream_global->cancelled_status = status;
+  if (stream_global->id != 0) {
     gpr_slice_buffer_add(&transport_global->qbuf,
                          grpc_chttp2_rst_stream_create(
                              stream_global->id,
-                             grpc_chttp2_grpc_status_to_http2_status(status)));
-  } else {
-    grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                  stream_global);
+                             grpc_chttp2_grpc_status_to_http2_error(status)));
   }
+  grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                stream_global);
 }
 
 #if 0

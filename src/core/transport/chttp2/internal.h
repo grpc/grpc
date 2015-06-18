@@ -401,6 +401,9 @@ typedef struct {
   gpr_uint8 read_closed;
   /** has this stream been cancelled? (boolean) */
   gpr_uint8 cancelled;
+  grpc_status_code cancelled_status;
+  /** have we told the upper layer that this stream is cancelled? */
+  gpr_uint8 published_cancelled;
   /** is this stream in the stream map? (boolean) */
   gpr_uint8 in_stream_map;
 
