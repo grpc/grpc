@@ -34,6 +34,9 @@
 #ifndef GRPC_COMPRESSION_H
 #define GRPC_COMPRESSION_H
 
+/** To be used in channel arguments */
+#define GRPC_COMPRESSION_LEVEL_ARG "grpc.compression_level"
+
 /* The various compression algorithms supported by GRPC */
 typedef enum {
   GRPC_COMPRESS_NONE = 0,
@@ -43,7 +46,17 @@ typedef enum {
   GRPC_COMPRESS_ALGORITHMS_COUNT
 } grpc_compression_algorithm;
 
+typedef enum {
+  GRPC_COMPRESS_LEVEL_NONE = 0,
+  GRPC_COMPRESS_LEVEL_LOW,
+  GRPC_COMPRESS_LEVEL_MED,
+  GRPC_COMPRESS_LEVEL_HIGH
+} grpc_compression_level;
+
 const char *grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm);
+
+grpc_compression_algorithm grpc_compression_algorithm_for_level(
+    grpc_compression_level level);
 
 #endif /* GRPC_COMPRESSION_H */
