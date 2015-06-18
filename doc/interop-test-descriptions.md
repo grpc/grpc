@@ -392,22 +392,24 @@ Asserts:
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
-### Metadata (TODO: fix name)
+### custom_metadata
 
-Status: Not yet implementable
+Status: Ready for implementation, beta requirement.
 
 This test verifies that custom metadata in either binary or ascii format can be
-sent in header and trailer.
+sent as initial-metadata by the client and as both initial- and trailing-metadata
+by the server.
 
 Server features:
 * [UnaryCall][]
+* [FullDuplexCall][]
 * [Compressable Payload][]
 * Ability to receive custom metadata from client in header and send custom data
-  back to client in both header and trailer. (TODO: this is not defined)
+  back to client in both header and trailer. 
 
 Procedure:
  1. While sending custom metadata (ascii + binary) in the header, client calls
- UnaryCall with:
+ UnaryCall  with:
 
     ```
     {
@@ -418,21 +420,31 @@ Procedure:
       }
     }
     ```
+The client attaches custom metadat with the following keys:
+    ```
+    "x-grpc-test-echo-initial"
+    or
+    "x-grpc-test-echo-trailing"
+    ```
+ 2. Client repeats step 1. with FullDuplexCall instead of UnaryCall.
 
 Asserts:
 * call was successful
-* custom metadata is echoed back in the response header.
-* custom metadata is echoed back in the response trailer.
+* metadata with key `"x-grpc-test-echo-initial"` is received in the initial metadata.
+* metadata with key `"x-grpc-test-echo-trailing"` is received in the trailing metadata.
+
+
 
 ### status_code_and_message
 
-Status: Not yet implementable
+Status: Ready for implementation, beta requirement.
 
 This test verifies unary calls succeed in sending messages, and propagates back
 status code and message sent along with the messages.
 
 Server features:
 * [UnaryCall][]
+* [FullDuplexCall][]
 
 Procedure:
  1. Client calls UnaryCall with:
@@ -445,6 +457,8 @@ Procedure:
       }
     }
     ```
+2. Client repeats step 1. with FullDuplexCall instead of UnaryCall.
+
 
 Asserts:
 * received status code is the same with sent code
@@ -452,10 +466,9 @@ Asserts:
 
 ### unimplemented_method
 
-Status: Not yet implementable
+Status: Ready for implementation. Blocking beta.
 
-This test verifies calling unimplemented RPC method returns unimplemented
-status.
+This test verifies calling unimplemented RPC method returns the UNIMPLEMENTED status code.
 
 Procedure:
 * Client calls UnimplementedCall with:
