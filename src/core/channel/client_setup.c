@@ -231,7 +231,8 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r,
   return result;
 }
 
-static void backoff_alarm_done(void *arg /* grpc_client_setup */, int success) {
+static void backoff_alarm_done(void *arg /* grpc_client_setup_request */, 
+                               int success) {
   grpc_client_setup_request *r = arg;
   grpc_client_setup *s = r->setup;
   /* Handle status cancelled? */
