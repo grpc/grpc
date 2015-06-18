@@ -27,31 +27,82 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A Python interface for GRPC C core structures and behaviors."""
-
-import atexit
-import gc
-
 from grpc._adapter import _c
-from grpc._adapter import _datatypes
+from grpc._adapter import _types
 
-def _shut_down():
-  # force garbage collection before shutting down grpc, to ensure all grpc
-  # objects are cleaned up
-  gc.collect()
-  _c.shut_down()
-
-_c.init()
-atexit.register(_shut_down)
-
-# pylint: disable=invalid-name
-Code = _datatypes.Code
-Status = _datatypes.Status
-Event = _datatypes.Event
-Call = _c.Call
-Channel = _c.Channel
-CompletionQueue = _c.CompletionQueue
-Server = _c.Server
 ClientCredentials = _c.ClientCredentials
 ServerCredentials = _c.ServerCredentials
-# pylint: enable=invalid-name
+
+
+class CompletionQueue(_types.CompletionQueue):
+
+  def __init__(self):
+    self.completion_queue = _c.CompletionQueue()
+
+  def next(self, deadline=float('+inf')):
+    raw_event = self.completion_queue.next(deadline)
+    if raw_event is None:
+      return None
+    event = _types.Event(*raw_event)
+    if event.call is not None:
+      event = event._replace(call=Call(event.call))
+    if event.call_details is not None:
+      event = event._replace(call_details=_types.CallDetails(*event.call_details))
+    if event.results is not None:
+      new_results = [_types.OpResult(*r) for r in event.results]
+      new_results = [r if r.status is None else r._replace(status=_types.Status(_types.StatusCode(r.status[0]), r.status[1])) for r in new_results]
+      event = event._replace(results=new_results)
+    return event
+
+  def shutdown(self):
+    self.completion_queue.shutdown()
+
+
+class Call(_types.Call):
+
+  def __init__(self, call):
+    self.call = call
+
+  def start_batch(self, ops, tag):
+    return self.call.start_batch(ops, tag)
+
+  def cancel(self, code=None, details=None):
+    if code is None and details is None:
+      return self.call.cancel()
+    else:
+      return self.call.cancel(code, details)
+
+
+class Channel(_types.Channel):
+
+  def __init__(self, target, args, creds=None):
+    if creds is None:
+      self.channel = _c.Channel(target, args)
+    else:
+      self.channel = _c.Channel(target, args, creds)
+
+  def create_call(self, completion_queue, method, host, deadline=None):
+    return Call(self.channel.create_call(completion_queue.completion_queue, method, host, deadline))
+
+
+_NO_TAG = object()
+
+class Server(_types.Server):
+
+  def __init__(self, completion_queue, args):
+    self.server = _c.Server(completion_queue.completion_queue, args)
+
+  def add_http2_port(self, addr, creds=None):
+    if creds is None:
+      return self.server.add_http2_port(addr)
+    else:
+      return self.server.add_http2_port(addr, creds)
+
+  def start(self):
+    return self.server.start()
+
+  def shutdown(self, tag=None):
+    return self.server.shutdown(tag)
+
+  def request_call(self, completion_queue, tag):
+    return self.server.request_call(completion_queue.completion_queue, tag)

@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_MULTIPOLL_WITH_POLL
+#ifdef GPR_POSIX_SOCKET
 
 #include "src/core/iomgr/pollset_posix.h"
 
@@ -98,7 +98,8 @@ static void end_polling(grpc_pollset *pollset) {
   pollset_hdr *h;
   h = pollset->data.ptr;
   for (i = 1; i < h->pfd_count; i++) {
-    grpc_fd_end_poll(&h->watchers[i]);
+    grpc_fd_end_poll(&h->watchers[i], h->pfds[i].revents & POLLIN,
+                     h->pfds[i].revents & POLLOUT);
   }
 }
 
@@ -228,8 +229,8 @@ static const grpc_pollset_vtable multipoll_with_poll_pollset = {
     multipoll_with_poll_pollset_maybe_work, multipoll_with_poll_pollset_kick,
     multipoll_with_poll_pollset_destroy};
 
-void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
-                                      size_t nfds) {
+void grpc_poll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
+                                  size_t nfds) {
   size_t i;
   pollset_hdr *h = gpr_malloc(sizeof(pollset_hdr));
   pollset->vtable = &multipoll_with_poll_pollset;
@@ -250,4 +251,9 @@ void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
   }
 }
 
+#endif /* GPR_POSIX_SOCKET */
+
+#ifdef GPR_POSIX_MULTIPOLL_WITH_POLL
+grpc_platform_become_multipoller_type grpc_platform_become_multipoller =
+    grpc_poll_become_multipoller;
 #endif

@@ -274,6 +274,7 @@ class NamedTests
     op = @stub.streaming_input_call(reqs, return_op: true)
     op.cancel
     assert_raises(GRPC::Cancelled) { op.execute }
+    assert(op.cancelled, 'call operation should be CANCELLED')
     p 'OK: cancel_after_begin'
   end
 
@@ -282,7 +283,8 @@ class NamedTests
     ppp = PingPongPlayer.new(msg_sizes)
     op = @stub.full_duplex_call(ppp.each_item, return_op: true)
     ppp.canceller_op = op  # causes ppp to cancel after the 1st message
-    assert_raises(GRPC::Cancelled) { op.execute.each { |r| ppp.queue.push(r) } }
+    op.execute.each { |r| ppp.queue.push(r) }
+    assert(op.cancelled, 'call operation should be CANCELLED')
     p 'OK: cancel_after_first_response'
   end
 

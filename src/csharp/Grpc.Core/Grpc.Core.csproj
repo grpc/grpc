@@ -5,8 +5,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Grpc.Core</RootNamespace>
@@ -73,13 +71,11 @@
     <Compile Include="Marshaller.cs" />
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
-    <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Internal\CredentialsSafeHandle.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
-    <Compile Include="ChannelArgs.cs" />
     <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
@@ -101,6 +97,10 @@
     <Compile Include="Internal\AtomicCounter.cs" />
     <Compile Include="Internal\DebugStats.cs" />
     <Compile Include="ServerCallContext.cs" />
+    <Compile Include="Internal\CompletionQueueEvent.cs" />
+    <Compile Include="Internal\CompletionRegistry.cs" />
+    <Compile Include="Internal\BatchContextSafeHandle.cs" />
+    <Compile Include="ChannelOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

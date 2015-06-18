@@ -54,6 +54,7 @@ static void thd_body(void *arg) {
     gpr_tls_set(&test_var, i);
     GPR_ASSERT(gpr_tls_get(&test_var) == i);
   }
+  gpr_tls_set(&test_var, 0);
 }
 
 /* ------------------------------------------------- */

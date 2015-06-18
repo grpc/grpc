@@ -184,9 +184,25 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     return 1;
   }
+  if (pollset->shutting_down) {
+    return 1;
+  }
   gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
   r = pollset->vtable->maybe_work(pollset, deadline, now, 1);
   gpr_tls_set(&g_current_thread_poller, 0);
+  if (pollset->shutting_down) {
+    if (pollset->counter > 0) {
+      grpc_pollset_kick(pollset);
+    } else if (pollset->in_flight_cbs == 0) {
+      gpr_mu_unlock(&pollset->mu);
+      pollset->shutdown_done_cb(pollset->shutdown_done_arg);
+      /* Continuing to access pollset here is safe -- it is the caller's
+       * responsibility to not destroy when it has outstanding calls to
+       * grpc_pollset_work.
+       * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
+      gpr_mu_lock(&pollset->mu);
+    }
+  }
   return r;
 }
 
@@ -194,13 +210,19 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
                            void *shutdown_done_arg) {
   int in_flight_cbs;
+  int counter;
   gpr_mu_lock(&pollset->mu);
   pollset->shutting_down = 1;
   in_flight_cbs = pollset->in_flight_cbs;
+  counter = pollset->counter;
   pollset->shutdown_done_cb = shutdown_done;
   pollset->shutdown_done_arg = shutdown_done_arg;
+  if (counter > 0) {
+    grpc_pollset_kick(pollset);
+  }
   gpr_mu_unlock(&pollset->mu);
-  if (in_flight_cbs == 0) {
+
+  if (in_flight_cbs == 0 && counter == 0) {
     shutdown_done(shutdown_done_arg);
   }
 }
@@ -250,6 +272,7 @@ typedef struct grpc_unary_promote_args {
   const grpc_pollset_vtable *original_vtable;
   grpc_pollset *pollset;
   grpc_fd *fd;
+  grpc_iomgr_closure promotion_closure;
 } grpc_unary_promote_args;
 
 static void unary_poll_do_promote(void *args, int success) {
@@ -272,7 +295,7 @@ static void unary_poll_do_promote(void *args, int success) {
   /* First we need to ensure that nobody is polling concurrently */
   while (pollset->counter != 0) {
     grpc_pollset_kick(pollset);
-    grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+    grpc_iomgr_add_callback(&up_args->promotion_closure);
     gpr_mu_unlock(&pollset->mu);
     return;
   }
@@ -286,7 +309,7 @@ static void unary_poll_do_promote(void *args, int success) {
   pollset->in_flight_cbs--;
   if (pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
-    if (pollset->in_flight_cbs == 0) {
+    if (pollset->in_flight_cbs == 0 && pollset->counter == 0) {
       do_shutdown_cb = 1;
     }
   } else if (grpc_fd_is_orphaned(fd)) {
@@ -356,7 +379,9 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   up_args->pollset = pollset;
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
-  grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+  up_args->promotion_closure.cb = unary_poll_do_promote;
+  up_args->promotion_closure.cb_arg = up_args;
+  grpc_iomgr_add_callback(&up_args->promotion_closure);
 
   grpc_pollset_kick(pollset);
 }
@@ -413,10 +438,12 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
 
   pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
 
-  r = poll(pfd, GPR_ARRAY_SIZE(pfd), timeout);
+  /* poll fd count (argument 2) is shortened by one if we have no events
+     to poll on - such that it only includes the kicker */
+  r = poll(pfd, GPR_ARRAY_SIZE(pfd) - (pfd[1].events == 0), timeout);
   GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
 
-  grpc_fd_end_poll(&fd_watcher);
+  grpc_fd_end_poll(&fd_watcher, pfd[1].revents & POLLIN, pfd[1].revents & POLLOUT);
 
   if (r < 0) {
     if (errno != EINTR) {

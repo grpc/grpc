@@ -35,6 +35,7 @@
 
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 int grpc_trace_batch = 0;
 
@@ -118,4 +119,20 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
     gpr_log(file, line, severity, "ops[%d]: %s", i, tmp);
     gpr_free(tmp);
   }
+}
+
+void grpc_server_log_request_call(char *file, int line,
+                                  gpr_log_severity severity,
+                                  grpc_server *server,
+                                  grpc_call **call,
+                                  grpc_call_details *details,
+                                  grpc_metadata_array *initial_metadata,
+                                  grpc_completion_queue *cq_bound_to_call,
+                                  grpc_completion_queue *cq_for_notification,
+                                  void *tag) {
+  gpr_log(file, line, severity,
+          "grpc_server_request_call(server=%p, call=%p, details=%p, "
+          "initial_metadata=%p, cq_bound_to_call=%p, cq_for_notification=%p, "
+          "tag=%p)", server, call, details, initial_metadata,
+          cq_bound_to_call, cq_for_notification, tag);
 }

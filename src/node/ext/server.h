@@ -61,6 +61,8 @@ class Server : public ::node::ObjectWrap {
   Server(const Server &);
   Server &operator=(const Server &);
 
+  void ShutdownServer();
+
   static NAN_METHOD(New);
   static NAN_METHOD(RequestCall);
   static NAN_METHOD(AddHttp2Port);
@@ -71,6 +73,7 @@ class Server : public ::node::ObjectWrap {
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_server *wrapped_server;
+  grpc_completion_queue *shutdown_queue;
 };
 
 }  // namespace node

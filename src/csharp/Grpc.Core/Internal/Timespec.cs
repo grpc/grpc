@@ -51,7 +51,7 @@ namespace Grpc.Core.Internal
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern int gprsharp_sizeof_timespec();
-        // TODO: revisit this.
+
         // NOTE: on linux 64bit  sizeof(gpr_timespec) = 16, on windows 32bit sizeof(gpr_timespec) = 8
         // so IntPtr seems to have the right size to work on both.
         public System.IntPtr tv_sec;

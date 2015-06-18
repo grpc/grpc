@@ -76,7 +76,8 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown(f->server);
+  grpc_server_shutdown_and_notify(f->server, f->server_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->server_cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -121,7 +122,7 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
 static void test_invoke_empty_body(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, __FUNCTION__, NULL, NULL);
+  f = begin_test(config, "test_invoke_empty_body", NULL, NULL);
   empty_batch_body(f);
   end_test(&f);
   config.tear_down_data(&f);

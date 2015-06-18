@@ -38,13 +38,17 @@
 @implementation GRPCSecureChannel
 
 - (instancetype)initWithHost:(NSString *)host {
-  // TODO(jcanizales): Load certs only once.
-  NSURL *certsURL = [[NSBundle mainBundle] URLForResource:@"gRPC.bundle/roots" withExtension:@"pem"];
-  NSData *certsData = [NSData dataWithContentsOfURL:certsURL];
-  NSString *certsString = [[NSString alloc] initWithData:certsData encoding:NSUTF8StringEncoding];
-
-  grpc_credentials *credentials = grpc_ssl_credentials_create(certsString.UTF8String, NULL);
-  return (self = [super initWithChannel:grpc_secure_channel_create(credentials,
+  static const grpc_credentials *kCredentials;
+  static dispatch_once_t loading;
+  dispatch_once(&loading, ^{
+    // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
+    NSBundle *bundle = [NSBundle bundleForClass:self.class];
+    NSString *certsPath = [bundle pathForResource:@"gRPC.bundle/roots" ofType:@"pem"];
+    NSData *certsData = [NSData dataWithContentsOfFile:certsPath];
+    NSString *certsString = [[NSString alloc] initWithData:certsData encoding:NSUTF8StringEncoding];
+    kCredentials = grpc_ssl_credentials_create(certsString.UTF8String, NULL);
+  });
+  return (self = [super initWithChannel:grpc_secure_channel_create(kCredentials,
                                                                    host.UTF8String,
                                                                    NULL)]);
 }

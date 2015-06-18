@@ -57,19 +57,19 @@ const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
 const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
-const int kLargeRequestSize = 314159;
-const int kLargeResponseSize = 271812;
+const int kLargeRequestSize = 271828;
+const int kLargeResponseSize = 314159;
 }  // namespace
 
 InteropClient::InteropClient(std::shared_ptr<ChannelInterface> channel)
     : channel_(channel) {}
 
 void InteropClient::AssertOkOrPrintErrorStatus(const Status& s) {
-  if (s.IsOk()) {
+  if (s.ok()) {
     return;
   }
-  gpr_log(GPR_INFO, "Error status code: %d, message: %s", s.code(),
-          s.details().c_str());
+  gpr_log(GPR_INFO, "Error status code: %d, message: %s", s.error_code(),
+          s.error_message().c_str());
   GPR_ASSERT(0);
 }
 
@@ -321,7 +321,7 @@ void InteropClient::DoCancelAfterBegin() {
   gpr_log(GPR_INFO, "Trying to cancel...");
   context.TryCancel();
   Status s = stream->Finish();
-  GPR_ASSERT(s.code() == StatusCode::CANCELLED);
+  GPR_ASSERT(s.error_code() == StatusCode::CANCELLED);
   gpr_log(GPR_INFO, "Canceling streaming done.");
 }
 

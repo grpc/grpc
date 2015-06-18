@@ -34,17 +34,77 @@
 #ifndef GRPC_BYTE_BUFFER_H
 #define GRPC_BYTE_BUFFER_H
 
-#include <grpc/grpc.h>
+#include <grpc/compression.h>
 #include <grpc/support/slice_buffer.h>
 
-typedef enum { GRPC_BB_SLICE_BUFFER } grpc_byte_buffer_type;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* byte buffers are containers for messages passed in from the public api's */
+typedef enum {
+  GRPC_BB_RAW
+  /* Future types may include GRPC_BB_PROTOBUF, etc. */
+} grpc_byte_buffer_type;
+
 struct grpc_byte_buffer {
   grpc_byte_buffer_type type;
   union {
-    gpr_slice_buffer slice_buffer;
+    struct {
+      grpc_compression_algorithm compression;
+      gpr_slice_buffer slice_buffer;
+    } raw;
   } data;
 };
+typedef struct grpc_byte_buffer grpc_byte_buffer;
+
+/** Returns a RAW byte buffer instance over the given slices (up to \a nslices).
+ *
+ * Increases the reference count for all \a slices processed. The user is
+ * responsible for invoking grpc_byte_buffer_destroy on the returned instance.*/
+grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+                                              size_t nslices);
+
+/** Returns a *compressed* RAW byte buffer instance over the given slices (up to
+ * \a nslices). The \a compression argument defines the compression algorithm
+ * used to generate the data in \a slices.
+ *
+ * Increases the reference count for all \a slices processed. The user is
+ * responsible for invoking grpc_byte_buffer_destroy on the returned instance.*/
+grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
+    gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression);
+
+/** Copies input byte buffer \a bb.
+ *
+ * Increases the reference count of all the source slices. The user is
+ * responsible for calling grpc_byte_buffer_destroy over the returned copy. */
+grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb);
+
+/** Returns the size of the given byte buffer, in bytes. */
+size_t grpc_byte_buffer_length(grpc_byte_buffer *bb);
+
+/** Destroys \a byte_buffer deallocating all its memory. */
+void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
+
+
+/** Reader for byte buffers. Iterates over slices in the byte buffer */
+struct grpc_byte_buffer_reader;
+typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
+
+/** Initialize \a reader to read over \a buffer */
+void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                  grpc_byte_buffer *buffer);
+
+/** Cleanup and destroy \a reader */
+void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
+
+/** Updates \a slice with the next piece of data from from \a reader and returns
+ * 1. Returns 0 at the end of the stream. Caller is responsible for calling
+ * gpr_slice_unref on the result. */
+int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
+                                 gpr_slice *slice);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* GRPC_BYTE_BUFFER_H */

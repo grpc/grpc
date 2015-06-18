@@ -35,13 +35,13 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 /* test creation & destruction */
 static void test_no_op(void) {
   grpc_chttp2_stream_map map;
 
-  LOG_TEST();
+  LOG_TEST("test_no_op");
 
   grpc_chttp2_stream_map_init(&map, 8);
   grpc_chttp2_stream_map_destroy(&map);
@@ -51,7 +51,7 @@ static void test_no_op(void) {
 static void test_empty_find(void) {
   grpc_chttp2_stream_map map;
 
-  LOG_TEST();
+  LOG_TEST("test_empty_find");
 
   grpc_chttp2_stream_map_init(&map, 8);
   GPR_ASSERT(NULL == grpc_chttp2_stream_map_find(&map, 39128));
@@ -62,7 +62,7 @@ static void test_empty_find(void) {
 static void test_double_deletion(void) {
   grpc_chttp2_stream_map map;
 
-  LOG_TEST();
+  LOG_TEST("test_double_deletion");
 
   grpc_chttp2_stream_map_init(&map, 8);
   GPR_ASSERT(0 == grpc_chttp2_stream_map_size(&map));
@@ -87,7 +87,7 @@ static void test_basic_add_find(size_t n) {
   size_t i;
   size_t got;
 
-  LOG_TEST();
+  LOG_TEST("test_basic_add_find");
   gpr_log(GPR_INFO, "n = %d", n);
 
   grpc_chttp2_stream_map_init(&map, 8);
@@ -143,7 +143,7 @@ static void test_delete_evens_sweep(size_t n) {
   grpc_chttp2_stream_map map;
   size_t i;
 
-  LOG_TEST();
+  LOG_TEST("test_delete_evens_sweep");
   gpr_log(GPR_INFO, "n = %d", n);
 
   grpc_chttp2_stream_map_init(&map, 8);
@@ -165,7 +165,7 @@ static void test_delete_evens_incremental(size_t n) {
   grpc_chttp2_stream_map map;
   size_t i;
 
-  LOG_TEST();
+  LOG_TEST("test_delete_evens_incremental");
   gpr_log(GPR_INFO, "n = %d", n);
 
   grpc_chttp2_stream_map_init(&map, 8);
@@ -186,7 +186,7 @@ static void test_periodic_compaction(size_t n) {
   size_t i;
   size_t del;
 
-  LOG_TEST();
+  LOG_TEST("test_periodic_compaction");
   gpr_log(GPR_INFO, "n = %d", n);
 
   grpc_chttp2_stream_map_init(&map, 16);

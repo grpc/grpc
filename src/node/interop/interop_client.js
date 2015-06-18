@@ -35,7 +35,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var _ = require('underscore');
+var _ = require('lodash');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
 var GoogleAuth = require('google-auth-library');
@@ -154,12 +154,14 @@ function serverStreaming(client, done) {
                        arg.response_parameters[resp_index].size);
     resp_index += 1;
   });
-  call.on('status', function(status) {
-    assert.strictEqual(status.code, grpc.status.OK);
+  call.on('end', function() {
     assert.strictEqual(resp_index, 4);
     if (done) {
       done();
     }
+  });
+  call.on('status', function(status) {
+    assert.strictEqual(status.code, grpc.status.OK);
   });
 }
 

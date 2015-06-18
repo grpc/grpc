@@ -44,8 +44,10 @@ default_secure_fixture_options = FixtureOptions(True, ['windows', 'posix'])
 END2END_FIXTURES = {
     'chttp2_fake_security': default_secure_fixture_options,
     'chttp2_fullstack': default_unsecure_fixture_options,
+    'chttp2_fullstack_with_poll': FixtureOptions(False, ['posix']),
     'chttp2_fullstack_uds_posix': FixtureOptions(False, ['posix']),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
+    'chttp2_simple_ssl_fullstack_with_poll': FixtureOptions(True, ['posix']),
     'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
     'chttp2_socket_pair': default_unsecure_fixture_options,
     'chttp2_socket_pair_one_byte_at_a_time': default_unsecure_fixture_options,
@@ -82,6 +84,7 @@ END2END_TESTS = {
     'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
     'request_with_large_metadata': default_test_options,
     'request_with_payload': default_test_options,
+    'request_with_flags': default_test_options,
     'server_finishes_request': default_test_options,
     'simple_delayed_request': default_test_options,
     'simple_request': default_test_options,
@@ -99,7 +102,7 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
               'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {

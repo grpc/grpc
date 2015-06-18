@@ -148,4 +148,4 @@ class LaterTest(unittest.TestCase):
       self.assertEqual(return_value, future_passed_to_callback_cell[0].result())
 
 if __name__ == '__main__':
-  unittest.main()
+  unittest.main(verbosity=2)

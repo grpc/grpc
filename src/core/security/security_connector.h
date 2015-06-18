@@ -77,6 +77,7 @@ struct grpc_security_connector {
   gpr_refcount refcount;
   int is_client_side;
   const char *url_scheme;
+  grpc_auth_context *auth_context; /* Populated after the peer is checked. */
 };
 
 /* Increments the refcount. */

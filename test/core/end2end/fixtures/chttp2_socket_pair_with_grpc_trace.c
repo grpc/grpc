@@ -63,7 +63,8 @@ static grpc_transport_setup_result server_setup_transport(
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   return grpc_server_setup_transport(f->server, transport, extra_filters,
-                                     GPR_ARRAY_SIZE(extra_filters), mdctx);
+                                     GPR_ARRAY_SIZE(extra_filters), mdctx,
+                                     grpc_server_get_channel_args(f->server));
 }
 
 typedef struct {
@@ -98,7 +99,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   f.client_cq = grpc_completion_queue_create();
   f.server_cq = grpc_completion_queue_create();
 
-  *sfd = grpc_iomgr_create_endpoint_pair(65536);
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
   return f;
 }
@@ -145,6 +146,10 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
+
+  GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
+  GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));
+  GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(configs[i]);
