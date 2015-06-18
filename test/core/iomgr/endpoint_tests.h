@@ -52,6 +52,7 @@ struct grpc_endpoint_test_config {
   void (*clean_up)();
 };
 
-void grpc_endpoint_tests(grpc_endpoint_test_config config);
+void grpc_endpoint_tests(grpc_endpoint_test_config config,
+                         grpc_pollset *pollset);
 
-#endif  /* GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H */
+#endif /* GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H */

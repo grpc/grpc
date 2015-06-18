@@ -64,11 +64,11 @@ void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
         grpc_msg_decompress(reader->buffer_in->data.raw.compression,
                             &reader->buffer_in->data.raw.slice_buffer,
                             &decompressed_slices_buffer);
-        reader->buffer_out = grpc_raw_byte_buffer_create(
-            decompressed_slices_buffer.slices,
-            decompressed_slices_buffer.count);
+        reader->buffer_out =
+            grpc_raw_byte_buffer_create(decompressed_slices_buffer.slices,
+                                        decompressed_slices_buffer.count);
         gpr_slice_buffer_destroy(&decompressed_slices_buffer);
-      } else {  /* not compressed, use the input buffer as output */
+      } else { /* not compressed, use the input buffer as output */
         reader->buffer_out = reader->buffer_in;
       }
       reader->current.index = 0;

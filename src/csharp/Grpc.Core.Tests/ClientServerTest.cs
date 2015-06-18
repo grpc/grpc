@@ -204,23 +204,21 @@ namespace Grpc.Core.Tests
             BenchmarkUtil.RunBenchmark(100, 100,
                                        () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
         }
-
-//        TODO(jtattermusch): temporarily commented out for #1731
-//                            to be uncommented along with PR #1577
-//        [Test]
-//        public void UnknownMethodHandler()
-//        {
-//            var call = new Call<string, string>(ServiceName, NonexistentMethod, channel, Metadata.Empty);
-//            try
-//            {
-//                Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
-//                Assert.Fail();
-//            }
-//            catch (RpcException e)
-//            {
-//                Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
-//            }
-//        }
+            
+        [Test]
+        public void UnknownMethodHandler()
+        {
+            var call = new Call<string, string>(ServiceName, NonexistentMethod, channel, Metadata.Empty);
+            try
+            {
+                Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
+            }
+        }
 
         private static async Task<string> EchoHandler(ServerCallContext context, string request)
         {

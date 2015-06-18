@@ -31,22 +31,20 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
-#define GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
+#include <grpc/support/port_platform.h>
 
-#include "src/core/iomgr/endpoint.h"
+#ifdef GPR_WINSOCK_SOCKET
+
 #include "src/core/iomgr/pollset_set.h"
-#include "src/core/iomgr/sockaddr.h"
-#include <grpc/support/time.h>
 
-/* Asynchronously connect to an address (specified as (addr, len)), and call
-   cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure). 
-   interested_parties points to a set of pollsets that would be interested
-   in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, int addr_len,
-                             gpr_timespec deadline);
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {}
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {}
+
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {}
+
+void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset) {}
+
+#endif /* GPR_WINSOCK_SOCKET */

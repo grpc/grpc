@@ -59,4 +59,4 @@ const char *grpc_compression_algorithm_name(
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
     grpc_compression_level level);
 
-#endif  /* GRPC_COMPRESSION_H */
+#endif /* GRPC_COMPRESSION_H */
