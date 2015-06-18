@@ -117,25 +117,23 @@ static void setup_initiate(grpc_transport_setup *sp) {
   }
 }
 
+/** implementation of add_interested_party for setup vtable */
 static void setup_add_interested_party(grpc_transport_setup *sp,
                                        grpc_pollset *pollset) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-
   grpc_pollset_set_add_pollset(&s->interested_parties, pollset);
-
   gpr_mu_unlock(&s->mu);
 }
 
+/** implementation of del_interested_party for setup vtable */
 static void setup_del_interested_party(grpc_transport_setup *sp,
                                        grpc_pollset *pollset) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-
   grpc_pollset_set_del_pollset(&s->interested_parties, pollset);
-
   gpr_mu_unlock(&s->mu);
 }
 
