@@ -194,7 +194,6 @@ void grpc_chttp2_publish_reads(
       stream_global->outgoing_window += stream_parsing->outgoing_window_update;
       stream_parsing->outgoing_window_update = 0;
       is_zero = stream_global->outgoing_window <= 0;
-      gpr_log(GPR_DEBUG, "was=%d is=%d", was_zero, is_zero);
       if (was_zero && !is_zero) {
         grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
       }
@@ -765,8 +764,6 @@ static int init_settings_frame_parser(
   }
   if (transport_parsing->incoming_frame_flags & GRPC_CHTTP2_FLAG_ACK) {
     transport_parsing->settings_ack_received = 1;
-  } else {
-    transport_parsing->settings_updated = 1;
   }
   transport_parsing->parser = grpc_chttp2_settings_parser_parse;
   transport_parsing->parser_data = &transport_parsing->simple.settings;

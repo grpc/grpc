@@ -111,7 +111,7 @@ void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
   if (dst->count + src->count > dst->capacity) {
     dst->capacity = GPR_MAX(dst->capacity * 3 / 2, dst->count + src->count);
     dst->keys = gpr_realloc(dst->keys, dst->capacity * sizeof(gpr_uint32));
-    dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(gpr_uint32));
+    dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(void *));
   }
   /* the first element of src must be greater than the last of dst */
   GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);

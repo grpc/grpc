@@ -84,11 +84,6 @@ int grpc_chttp2_unlocking_check_writes(
     transport_global->outgoing_window -= window_delta;
     stream_global->outgoing_window -= window_delta;
 
-    gpr_log(GPR_DEBUG, "%s ws:%d nops:%d rc:%d",
-            transport_global->is_client ? "CLI" : "SVR",
-            stream_global->write_state, stream_global->outgoing_sopb->nops,
-            stream_global->read_closed);
-
     if (stream_global->write_state == WRITE_STATE_QUEUED_CLOSE &&
         stream_global->outgoing_sopb->nops == 0) {
       if (!transport_global->is_client && !stream_global->read_closed) {
@@ -178,9 +173,6 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
 
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
-    gpr_log(GPR_DEBUG, "%s write %d: sc=%d",
-            transport_writing->is_client ? "CLI" : "SVR", stream_writing->id,
-            stream_writing->send_closed);
     grpc_chttp2_encode(stream_writing->sopb.ops, stream_writing->sopb.nops,
                        stream_writing->send_closed != DONT_SEND_CLOSED,
                        stream_writing->id, &transport_writing->hpack_compressor,

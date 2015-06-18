@@ -154,6 +154,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_ID0;
           if (is_last) {
+            transport_parsing->settings_updated = 1;
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(gpr_uint32));
             gpr_slice_buffer_add(&transport_parsing->qbuf,
@@ -231,7 +232,8 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           }
           parser->incoming_settings[parser->id] = parser->value;
           if (grpc_http_trace) {
-            gpr_log(GPR_DEBUG, "CHTTP2: got setting %d = %d", parser->id,
+            gpr_log(GPR_DEBUG, "CHTTP2:%s: got setting %d = %d",
+                    transport_parsing->is_client ? "CLI" : "SVR", parser->id,
                     parser->value);
           }
         } else {
