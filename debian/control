@@ -2,7 +2,7 @@ Source: grpc
 Priority: optional
 Maintainer: Andrew Pollock <apollock@debian.org>
 Uploaders: Laszlo Boszormenyi (GCS) <gcs@debian.org>
-Build-Depends: debhelper (>= 9), zlib1g-dev, libssl-dev, libprotobuf-dev, protobuf-compiler, libgflags-dev, libgtest-dev, libgoogle-perftools-dev
+Build-Depends: debhelper (>= 9), zlib1g-dev, libssl-dev, libprotobuf-dev, protobuf-compiler, libgflags-dev, libgtest-dev, libgoogle-perftools-dev, python
 Standards-Version: 3.9.6
 Section: libs
 Homepage: http://www.grpc.io/
