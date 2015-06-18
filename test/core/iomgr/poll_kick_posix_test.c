@@ -93,7 +93,7 @@ static void test_over_free(void) {
   /* Check high watermark pipe free logic */
   int i;
   grpc_kick_fd_info **kfds =
-      gpr_malloc(sizeof(grpc_kick_fd_info*) * GRPC_MAX_CACHED_PIPES);
+      gpr_malloc(sizeof(grpc_kick_fd_info *) * GRPC_MAX_CACHED_PIPES);
   grpc_pollset_kick_state state;
   grpc_pollset_kick_init(&state);
   for (i = 0; i < GRPC_MAX_CACHED_PIPES; ++i) {

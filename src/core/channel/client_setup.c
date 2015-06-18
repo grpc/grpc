@@ -56,6 +56,8 @@ struct grpc_client_setup {
   gpr_cv cv;
   grpc_client_setup_request *active_request;
   int refs;
+  /** The set of pollsets that are currently interested in this
+      connection being established */
   grpc_pollset_set interested_parties;
 };
 
@@ -83,9 +85,7 @@ static void destroy_setup(grpc_client_setup *s) {
   gpr_free(s);
 }
 
-static void destroy_request(grpc_client_setup_request *r) {
-  gpr_free(r);
-}
+static void destroy_request(grpc_client_setup_request *r) { gpr_free(r); }
 
 /* initiate handshaking */
 static void setup_initiate(grpc_transport_setup *sp) {
@@ -94,7 +94,6 @@ static void setup_initiate(grpc_transport_setup *sp) {
   int in_alarm = 0;
 
   r->setup = s;
-  /* TODO(klempner): Actually set a deadline */
   r->deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(60));
 
   gpr_mu_lock(&s->mu);
@@ -119,25 +118,23 @@ static void setup_initiate(grpc_transport_setup *sp) {
   }
 }
 
+/** implementation of add_interested_party for setup vtable */
 static void setup_add_interested_party(grpc_transport_setup *sp,
                                        grpc_pollset *pollset) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-
   grpc_pollset_set_add_pollset(&s->interested_parties, pollset);
-
   gpr_mu_unlock(&s->mu);
 }
 
+/** implementation of del_interested_party for setup vtable */
 static void setup_del_interested_party(grpc_transport_setup *sp,
                                        grpc_pollset *pollset) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
 
   gpr_mu_lock(&s->mu);
-
   grpc_pollset_set_del_pollset(&s->interested_parties, pollset);
-
   gpr_mu_unlock(&s->mu);
 }
 
@@ -234,7 +231,8 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r,
   return result;
 }
 
-static void backoff_alarm_done(void *arg /* grpc_client_setup */, int success) {
+static void backoff_alarm_done(void *arg /* grpc_client_setup_request */, 
+                               int success) {
   grpc_client_setup_request *r = arg;
   grpc_client_setup *s = r->setup;
   /* Handle status cancelled? */

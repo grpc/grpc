@@ -77,7 +77,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -143,10 +145,9 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq,
-                                      f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
@@ -189,7 +190,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verifier_destroy(cqv);
 }
 
-static void test_invoke_10_simple_requests(grpc_end2end_test_config config, int initial_sequence_number) {
+static void test_invoke_10_simple_requests(grpc_end2end_test_config config,
+                                           int initial_sequence_number) {
   int i;
   grpc_end2end_test_fixture f;
   grpc_arg client_arg;

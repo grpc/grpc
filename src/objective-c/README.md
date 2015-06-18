@@ -163,7 +163,7 @@ files:
 
 * [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime
 library. This can be tedious to configure manually.
-* [Podspec](https://github.com/jcanizales/protobuf/blob/add-podspec/Protobuf.podspec) for the
+* [Podspec](https://github.com/google/protobuf/blob/master/Protobuf.podspec) for the
 Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/

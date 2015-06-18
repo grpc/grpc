@@ -75,7 +75,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -98,7 +100,8 @@ static void end_test(grpc_end2end_test_fixture *f) {
 /* Client pings and server pongs. Repeat messages rounds before finishing. */
 static void test_pingpong_streaming(grpc_end2end_test_config config,
                                     int messages) {
-  grpc_end2end_test_fixture f = begin_test(config, "test_pingpong_streaming", NULL, NULL);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_pingpong_streaming", NULL, NULL);
   grpc_call *c;
   grpc_call *s;
   gpr_timespec deadline = five_seconds_time();
@@ -148,10 +151,9 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq,
-                                      f.cq, tag(100)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(100)));
   cq_expect_completion(cqv, tag(100), 1);
   cq_verify(cqv);
 
