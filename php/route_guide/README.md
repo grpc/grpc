@@ -8,14 +8,16 @@ This tutorial provides a basic PHP programmer's introduction to working with gRP
 
 It assumes a passing familiarity with [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). Note that the example in this tutorial uses the proto2 version of the protocol buffers language.
 
+Also note that currently you can only create clients in PHP for gRPC services - you can find out how to create gRPC servers in our other tutorials, e.g. [Node.js](https://github.com/grpc/grpc-common/tree/master/node/route_guide).
+
 This isn't a comprehensive guide to using gRPC in PHP: more reference documentation is coming soon.
 
 - [Why use gRPC?](#why-grpc)
 - [Example code and setup](#setup)
+- [Try it out!](#try)
 - [Defining the service](#proto)
 - [Generating client code](#protoc)
 - [Creating the client](#client)
-- [Try it out!](#try)
 
 
 <a name="why-grpc"></a>
@@ -40,6 +42,25 @@ $ cd grpc-common/php/route_guide
 Our example is a simple route mapping application that lets clients get information about features on their route, create a summary of their route, and exchange route information such as traffic updates with the server and other clients.
 
 You also should have the relevant tools installed to generate the client interface code (and a server in another language, for testing). You can obtain the latter by following [these setup instructions](https://github.com/grpc/homebrew-grpc).
+
+
+<a name="try"></a>
+## Try it out!
+
+To try the sample app, we need a gRPC server running locally. Let's compile and run, for example, the Node.js server in this repository:
+
+```shell
+$ cd ../../node
+$ npm install
+$ cd route_guide
+$ nodejs ./route_guide_server.js --db_path=route_guide_db.json
+```
+
+Run the PHP client (in a different terminal):
+
+```shell
+$ ./run_route_guide_client.sh
+```
 
 The next sections guide you step-by-step through how this proto service is defined, how to generate a client library from it, and how to create a client stub that uses that library.
 
@@ -239,21 +260,3 @@ To read messages from the server:
 ```
 
 Each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
-
-<a name="try"></a>
-## Try it out!
-
-To try the sample app, we need a gRPC server running locally. Let's compile and run, for example, the Node.js server in this repository:
-
-```shell
-$ cd ../../node
-$ npm install
-$ cd route_guide
-$ nodejs ./route_guide_server.js --db_path=route_guide_db.json
-```
-
-Run the PHP client (in a different terminal):
-
-```shell
-$ ./run_route_guide_client.sh
-```
