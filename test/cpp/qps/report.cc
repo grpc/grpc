@@ -122,7 +122,7 @@ void GprLogReporter::ReportTimes(const ScenarioResult& result) const {
 UserDataClient userDataClient(grpc::CreateChannel("localhost:50052", grpc::InsecureCredentials(),
                           ChannelArguments()));
 
-//Leaderboard Reported implementation.
+//Performance database reporter implementation.
 void UserDatabaseReporter::ReportQPS(const ScenarioResult& result) const {
   auto qps = result.latencies.Count() /
               average(result.client_resources,
