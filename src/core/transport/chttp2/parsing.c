@@ -136,6 +136,7 @@ void grpc_chttp2_publish_reads(
     grpc_chttp2_add_incoming_goaway(transport_global,
                                     transport_parsing->goaway_error,
                                     transport_parsing->goaway_text);
+    transport_parsing->goaway_text = gpr_empty_slice();
     transport_parsing->goaway_received = 0;
   }
 
