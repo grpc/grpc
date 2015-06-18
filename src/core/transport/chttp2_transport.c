@@ -782,7 +782,6 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
         stream_global->published_cancelled = 1;
       }
     }
-    gpr_log(GPR_DEBUG, "%s: id:%d ws:%d rc:%d ism:%d pa:%d ps:%p", transport_global->is_client?"CLI":"SVR", stream_global->id, stream_global->write_state, stream_global->read_closed, stream_global->in_stream_map, t->parsing_active, stream_global->publish_sopb);
     if (stream_global->write_state == WRITE_STATE_SENT_CLOSE &&
         stream_global->read_closed && stream_global->in_stream_map) {
       if (t->parsing_active) {
@@ -795,10 +794,15 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
     if (!stream_global->publish_sopb) {
       continue;
     }
+    /* FIXME(ctiller): we include in_stream_map in our computation of
+       whether the stream is write-closed. This is completely bogus,
+       but has the effect of delaying stream-closed until the stream
+       is indeed evicted from the stream map, making it safe to delete.
+       To fix this will require having an edge after stream-closed
+       indicating that the stream is closed AND safe to delete. */
     state = compute_state(
-        stream_global->write_state == WRITE_STATE_SENT_CLOSE,
+        stream_global->write_state == WRITE_STATE_SENT_CLOSE && !stream_global->in_stream_map,
         stream_global->read_closed);
-    gpr_log(GPR_DEBUG, "s=%d s'=%d nops=%d; rc:%d ism:%d", stream_global->published_state, state, stream_global->incoming_sopb.nops, stream_global->read_closed, stream_global->in_stream_map);
     if (stream_global->incoming_sopb.nops == 0 &&
         state == stream_global->published_state) {
       continue;
