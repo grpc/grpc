@@ -56,6 +56,8 @@ struct grpc_client_setup {
   gpr_cv cv;
   grpc_client_setup_request *active_request;
   int refs;
+  /** The set of pollsets that are currently interested in this
+      connection being established */
   grpc_pollset_set interested_parties;
 };
 
@@ -92,7 +94,6 @@ static void setup_initiate(grpc_transport_setup *sp) {
   int in_alarm = 0;
 
   r->setup = s;
-  /* TODO(klempner): Actually set a deadline */
   r->deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(60));
 
   gpr_mu_lock(&s->mu);
