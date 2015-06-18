@@ -219,6 +219,12 @@ int grpc_chttp2_list_pop_writable_window_update_stream(
   return r;
 }
 
+void grpc_chttp2_list_remove_writable_window_update_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global) {
+  stream_list_maybe_remove(TRANSPORT_FROM_GLOBAL(transport_global), STREAM_FROM_GLOBAL(stream_global), GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE);
+}
+
 void grpc_chttp2_list_add_parsing_seen_stream(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing) {

@@ -421,6 +421,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   }
 
   grpc_chttp2_list_remove_incoming_window_updated(&t->global, &s->global);
+  grpc_chttp2_list_remove_writable_window_update_stream(&t->global, &s->global);
 
   gpr_mu_unlock(&t->mu);
 
@@ -781,6 +782,7 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
         stream_global->published_cancelled = 1;
       }
     }
+    gpr_log(GPR_DEBUG, "%s: id:%d ws:%d rc:%d ism:%d pa:%d ps:%p", transport_global->is_client?"CLI":"SVR", stream_global->id, stream_global->write_state, stream_global->read_closed, stream_global->in_stream_map, t->parsing_active, stream_global->publish_sopb);
     if (stream_global->write_state == WRITE_STATE_SENT_CLOSE &&
         stream_global->read_closed && stream_global->in_stream_map) {
       if (t->parsing_active) {
@@ -795,7 +797,8 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
     }
     state = compute_state(
         stream_global->write_state == WRITE_STATE_SENT_CLOSE,
-        stream_global->read_closed && !stream_global->in_stream_map);
+        stream_global->read_closed);
+    gpr_log(GPR_DEBUG, "s=%d s'=%d nops=%d; rc:%d ism:%d", stream_global->published_state, state, stream_global->incoming_sopb.nops, stream_global->read_closed, stream_global->in_stream_map);
     if (stream_global->incoming_sopb.nops == 0 &&
         state == stream_global->published_state) {
       continue;

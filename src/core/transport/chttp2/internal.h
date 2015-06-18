@@ -555,6 +555,9 @@ void grpc_chttp2_list_add_writable_window_update_stream(
 int grpc_chttp2_list_pop_writable_window_update_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
+void grpc_chttp2_list_remove_writable_window_update_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_parsing_seen_stream(
     grpc_chttp2_transport_parsing *transport_parsing,

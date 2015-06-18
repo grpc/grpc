@@ -615,6 +615,7 @@ static int init_header_frame_parser(
     grpc_chttp2_transport_parsing *transport_parsing, int is_continuation) {
   int is_eoh = (transport_parsing->incoming_frame_flags &
                 GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0;
+  int via_accept = 0;
   grpc_chttp2_stream_parsing *stream_parsing;
 
   if (is_eoh) {
@@ -632,7 +633,7 @@ static int init_header_frame_parser(
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   stream_parsing = grpc_chttp2_parsing_lookup_stream(
       transport_parsing, transport_parsing->incoming_stream_id);
-  if (!stream_parsing) {
+  if (stream_parsing == NULL) {
     if (is_continuation) {
       gpr_log(GPR_ERROR,
               "grpc_chttp2_stream disbanded before CONTINUATION received");
@@ -666,13 +667,15 @@ static int init_header_frame_parser(
     stream_parsing = transport_parsing->incoming_stream =
         grpc_chttp2_parsing_accept_stream(
             transport_parsing, transport_parsing->incoming_stream_id);
-    if (!stream_parsing) {
+    if (stream_parsing == NULL) {
       gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted");
       return init_skip_frame_parser(transport_parsing, 1);
     }
+    via_accept = 1;
   } else {
     transport_parsing->incoming_stream = stream_parsing;
   }
+  GPR_ASSERT(stream_parsing != NULL && (via_accept == 0 || via_accept == 1));
   if (stream_parsing->received_close) {
     gpr_log(GPR_ERROR, "skipping already closed grpc_chttp2_stream header");
     transport_parsing->incoming_stream = NULL;

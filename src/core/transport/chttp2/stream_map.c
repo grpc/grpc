@@ -107,17 +107,24 @@ void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
     GPR_SWAP(grpc_chttp2_stream_map, *src, *dst);
     return;
   }
+  /* the first element of src must be greater than the last of dst...
+   * however the maps may need compacting for this property to hold */
+  if (src->keys[0] <= dst->keys[dst->count - 1]) {
+    src->count = compact(src->keys, src->values, src->count);
+    src->free = 0;
+    dst->count = compact(dst->keys, dst->values, dst->count);
+    dst->free = 0;
+  }
+  GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);
   /* if dst doesn't have capacity, resize */
   if (dst->count + src->count > dst->capacity) {
     dst->capacity = GPR_MAX(dst->capacity * 3 / 2, dst->count + src->count);
     dst->keys = gpr_realloc(dst->keys, dst->capacity * sizeof(gpr_uint32));
     dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(void *));
   }
-  /* the first element of src must be greater than the last of dst */
-  GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);
   memcpy(dst->keys + dst->count, src->keys, src->count * sizeof(gpr_uint32));
   memcpy(dst->values + dst->count, src->values,
-         src->count * sizeof(gpr_uint32));
+         src->count * sizeof(void*));
   dst->count += src->count;
   dst->free += src->free;
   src->count = 0;
@@ -159,6 +166,11 @@ void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map,
     out = *pvalue;
     *pvalue = NULL;
     map->free += (out != NULL);
+    /* recognize complete emptyness and ensure we can skip
+     * defragmentation later */
+    if (map->free == map->count) {
+      map->free = map->count = 0;
+    }
   }
   return out;
 }
