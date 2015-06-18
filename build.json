@@ -1280,6 +1280,20 @@
       ]
     },
     {
+      "name": "grpc_security_connector_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/security/security_connector_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_stream_op_test",
       "build": "test",
       "language": "c",
