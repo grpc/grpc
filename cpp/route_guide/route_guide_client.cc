@@ -124,7 +124,7 @@ class RouteGuideClient {
                 << feature.location().longitude()/kCoordFactor_ << std::endl;
     }
     Status status = reader->Finish();
-    if (status.IsOk()) {
+    if (status.ok()) {
       std::cout << "ListFeatures rpc succeeded." << std::endl;
     } else {
       std::cout << "ListFeatures rpc failed." << std::endl;
@@ -160,7 +160,7 @@ class RouteGuideClient {
     }
     writer->WritesDone();
     Status status = writer->Finish();
-    if (status.IsOk()) {
+    if (status.ok()) {
       std::cout << "Finished trip with " << stats.point_count() << " points\n"
                 << "Passed " << stats.feature_count() << " features\n"
                 << "Travelled " << stats.distance() << " meters\n"
@@ -200,7 +200,7 @@ class RouteGuideClient {
     }
     writer.join();
     Status status = stream->Finish();
-    if (!status.IsOk()) {
+    if (!status.ok()) {
       std::cout << "RouteChat rpc failed." << std::endl;
     }
   }
@@ -210,7 +210,7 @@ class RouteGuideClient {
   bool GetOneFeature(const Point& point, Feature* feature) {
     ClientContext context;
     Status status = stub_->GetFeature(&context, point, feature);
-    if (!status.IsOk()) {
+    if (!status.ok()) {
       std::cout << "GetFeature rpc failed." << std::endl;
       return false;
     }
