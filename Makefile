@@ -1216,7 +1216,7 @@ else
 endif
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
-	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
+	$(Q)(unset CPPFLAGS; $(MAKE) -C third_party/openssl build_crypto build_ssl)
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
