@@ -39,22 +39,20 @@ import json
 import time
 import subprocess
 import fnmatch
-import gflags
+import argparse
 
 CLIENT_ID = '1018396037782-tv81fshn76nemr24uuhuginceb9hni2m.apps.googleusercontent.com'
 CLIENT_SECRET = '_HGHXg4DAA59r4w4x8p6ARzD'
 GRANT_TYPE = 'http://oauth.net/grant_type/device/1.0'
-DEFAULT_ACCESS_TOKENS_DIR = '/usr/local/auth_access_tokens'
 AUTH_TOKEN_LINK = 'https://www.googleapis.com/oauth2/v3/token'
 GOOGLE_ACCOUNTS_LINK = 'https://accounts.google.com/o/oauth2/device/code'
 USER_INFO_LINK = 'https://www.googleapis.com/oauth2/v1/userinfo'
 
-FLAGS = gflags.FLAGS
-
-gflags.DEFINE_string('test', None, 'Name of the test')
-gflags.DEFINE_string('email', None, 'gmail id')
-gflags.DEFINE_string('server_address', 'localhost:50052', 'Address of the performance database server')
-gflags.DEFINE_string('tokens_dir', DEFAULT_ACCESS_TOKENS_DIR, 'Location of the access tokens')
+parser = argparse.ArgumentParser(description='Report metrics to performance database')
+parser.add_argument('--test', type=str, help='Name of the test to be executed')
+parser.add_argument('--email', type=str, help='Gmail address of the user')
+parser.add_argument('--server_address', type=str, default='localhost:50052', help='Address of the performance database server')
+parser.add_argument('--tokens_dir', type=str, default=os.path.expanduser('~')+'/.grpc/access_tokens', help='Path to the access tokens directory')
 
 # Fetches JSON reply object, given a url and parameters
 def fetchJSON(url, paramDict):
@@ -145,6 +143,11 @@ def refreshAccessToken(refreshToken, userTokFile):
     return data['access_token']
 
 def reauthenticate(tokensDir):
+  # Create folder if not created already
+  if not os.path.exists(tokensDir):
+    os.makedirs(tokensDir)
+    os.chmod(tokensDir, 0700)
+
   # Request parameters
   paramDict = {'client_id':CLIENT_ID, 'scope':'email profile'}
   JSONBody = fetchJSON(GOOGLE_ACCOUNTS_LINK, paramDict)
@@ -170,6 +173,7 @@ def reauthenticate(tokensDir):
 
   # Write tokens to file
   with open(newUserTokFile, "w") as data_file:
+    os.chmod(newUserTokFile, 0600)
     json.dump(authData, data_file)
 
   # return working access token
@@ -244,34 +248,26 @@ def getSysInfo():
   return sysInfo
 
 def main(argv):
-  try:
-    argv = FLAGS(argv)
-  except Exception, e:
-    print '%s\\nUsage: %s ARGS\\n%s' % (e, sys.argv[0], FLAGS)
-    sys.exit(1)
+  args = parser.parse_args()
 
-  tokensDir = FLAGS.tokens_dir
-
-  # If tokens directory does not exist, creates it
-  if not os.path.exists(tokensDir):
-    os.makedirs(tokensDir)
+  tokensDir = args.tokens_dir
 
   try:
     # Fetch working access token
-    accessToken = getAccessToken(FLAGS.email, tokensDir)
+    accessToken = getAccessToken(args.email, tokensDir)
   except AttributeError:
     print '\nError: Please provide email address as an argument\n'
     sys.exit(1)
-  except:
-    print '\nError in authentication\n'
+  except Exception, e:
+    print e, ' \nError in authentication\n'
     sys.exit(1)
 
   # Address of the performance database server
-  serverAddress = FLAGS.server_address
+  serverAddress = args.server_address
 
   # Get path to test
   try:
-    testPath = findTestPath(FLAGS.test)
+    testPath = findTestPath(args.test)
   except TypeError:
     print '\nError: Please provide test name/path as argument\n'
     sys.exit(1)
