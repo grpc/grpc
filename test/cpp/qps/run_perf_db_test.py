@@ -39,14 +39,22 @@ import json
 import time
 import subprocess
 import fnmatch
+import gflags
 
 CLIENT_ID = '1018396037782-tv81fshn76nemr24uuhuginceb9hni2m.apps.googleusercontent.com'
 CLIENT_SECRET = '_HGHXg4DAA59r4w4x8p6ARzD'
 GRANT_TYPE = 'http://oauth.net/grant_type/device/1.0'
-ACCESS_TOKENS_DIR = '/usr/local/auth_access_tokens'
+DEFAULT_ACCESS_TOKENS_DIR = '/usr/local/auth_access_tokens'
 AUTH_TOKEN_LINK = 'https://www.googleapis.com/oauth2/v3/token'
 GOOGLE_ACCOUNTS_LINK = 'https://accounts.google.com/o/oauth2/device/code'
 USER_INFO_LINK = 'https://www.googleapis.com/oauth2/v1/userinfo'
+
+FLAGS = gflags.FLAGS
+
+gflags.DEFINE_string('test', None, 'Name of the test')
+gflags.DEFINE_string('email', None, 'gmail id')
+gflags.DEFINE_string('server_address', 'localhost:50052', 'Address of the performance database server')
+gflags.DEFINE_string('tokens_dir', DEFAULT_ACCESS_TOKENS_DIR, 'Location of the access tokens')
 
 # Fetches JSON reply object, given a url and parameters
 def fetchJSON(url, paramDict):
@@ -136,7 +144,7 @@ def refreshAccessToken(refreshToken, userTokFile):
     # return fresh access token
     return data['access_token']
 
-def reauthenticate():
+def reauthenticate(tokensDir):
   # Request parameters
   paramDict = {'client_id':CLIENT_ID, 'scope':'email profile'}
   JSONBody = fetchJSON(GOOGLE_ACCOUNTS_LINK, paramDict)
@@ -158,7 +166,7 @@ def reauthenticate():
     time.sleep(data['interval'])
 
   # File to write tokens
-  newUserTokFile = ACCESS_TOKENS_DIR + '/' + getUserId(authData['access_token'])
+  newUserTokFile = tokensDir + '/' + getUserId(authData['access_token'])
 
   # Write tokens to file
   with open(newUserTokFile, "w") as data_file:
@@ -168,12 +176,12 @@ def reauthenticate():
   return authData['access_token']
 
 # Fetch a working access token given user entered email id; authntication may be required
-def getAccessToken(email):
+def getAccessToken(email, tokensDir):
   # Get unique user id from email address
   userId = getUserIdFromEmail(email)
 
   # Token file
-  userTokFile = ACCESS_TOKENS_DIR + '/' + userId
+  userTokFile = tokensDir + '/' + userId
 
   accessToken = ''
 
@@ -182,7 +190,7 @@ def getAccessToken(email):
     accessToken = useAccessToken(userTokFile)
   else:
     # User authentication required
-    accessToken = reauthenticate()
+    accessToken = reauthenticate(tokensDir)
 
   return accessToken
 
@@ -235,42 +243,51 @@ def getSysInfo():
 
   return sysInfo
 
-def main():
+def main(argv):
+  try:
+    argv = FLAGS(argv)
+  except Exception, e:
+    print '%s\\nUsage: %s ARGS\\n%s' % (e, sys.argv[0], FLAGS)
+    sys.exit(1)
+
+  tokensDir = FLAGS.tokens_dir
+
   # If tokens directory does not exist, creates it
-  if not os.path.exists(ACCESS_TOKENS_DIR):
-    subprocess.call(['sudo', 'mkdir', ACCESS_TOKENS_DIR])
-    subprocess.call(['sudo', 'chmod', '777', ACCESS_TOKENS_DIR])
-
-  if len(sys.argv) > 1:
-    test = sys.argv[1]
-  else:
-    test = raw_input('Enter the test path/name: ')
-
-  if len(sys.argv) > 2:
-    email = sys.argv[2]
-  else:
-    email = raw_input('Enter your e-mail id: ')
+  if not os.path.exists(tokensDir):
+    os.makedirs(tokensDir)
 
   try:
     # Fetch working access token
-    accessToken = getAccessToken(email)
-  except Exception, e:
-    print 'Error in authentication'
+    accessToken = getAccessToken(FLAGS.email, tokensDir)
+  except AttributeError:
+    print '\nError: Please provide email address as an argument\n'
+    sys.exit(1)
+  except:
+    print '\nError in authentication\n'
+    sys.exit(1)
 
   # Address of the performance database server
-  serverAddress = 'sidrakesh.mtv.google.corp.com:50052'
+  serverAddress = FLAGS.server_address
+
+  # Get path to test
+  try:
+    testPath = findTestPath(FLAGS.test)
+  except TypeError:
+    print '\nError: Please provide test name/path as argument\n'
+    sys.exit(1)
+
+  # Get name of the test
+  testName = testPath.split('/')[-1]
+
+  # Get the system information
+  sysInfo = getSysInfo()
 
   try:
-    testPath = findTestPath(test) # Get path to test
-    testName = testPath.split('/')[-1] # Get test name
-
-    sysInfo = getSysInfo() # get the system information
-
     print '\nBeginning test:\n'
     # Run the test
     subprocess.call([testPath, '--report_metrics_db=true', '--access_token='+accessToken, '--test_name='+testName, '--sys_info='+str(sysInfo).strip('[]'), '--server_address='+serverAddress])
   except OSError:
-    print 'Could not execute the test, please check test name'
+    print 'Could not execute the test'
 
 if __name__ == "__main__":
-  main()
+  main(sys.argv)
