@@ -37,4 +37,4 @@ export CONFIG=${CONFIG:-opt}
 cd $(dirname $0)/../../src/ruby
 
 bundle install
-rake compile:grpc
+rake compile:grpc || cat tmp/*/*/*/mkmf.log
