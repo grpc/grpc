@@ -409,7 +409,7 @@ Server features:
 
 Procedure:
  1. While sending custom metadata (ascii + binary) in the header, client calls
- UnaryCall  with:
+ UnaryCall with:
 
     ```
     {
@@ -420,7 +420,7 @@ Procedure:
       }
     }
     ```
-The client attaches custom metadat with the following keys:
+The client attaches custom metadata with the following keys:
     ```
     "x-grpc-test-echo-initial"
     or
@@ -445,6 +445,7 @@ status code and message sent along with the messages.
 Server features:
 * [UnaryCall][]
 * [FullDuplexCall][]
+* [Echo Status][]
 
 Procedure:
  1. Client calls UnaryCall with:
@@ -693,6 +694,14 @@ responses, it closes with OK.
 When the client requests COMPRESSABLE payload, the response includes a payload
 of the size requested containing all zeros and the payload type is
 COMPRESSABLE.
+
+### Echo Status
+[Echo Status]: #echo-status
+When the client sends a response_status in the request payload, the server returns
+exactly the status code and messsage contained within said response_status. This
+can be used by clients to verify correct handling of different status codes and
+associated status messages end-to-end.
+
 
 ### Observe ResponseParameters.interval_us
 [Observe ResponseParameters.interval_us]: #observe-responseparametersinterval_us
