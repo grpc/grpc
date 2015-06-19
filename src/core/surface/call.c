@@ -1295,7 +1295,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_MESSAGE;
         req->data.send_message = op->data.send_message;
-        req->flags = ops->flags;
+        req->flags = op->flags;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         /* Flag validation: currently allow no flags */

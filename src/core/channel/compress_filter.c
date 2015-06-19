@@ -43,7 +43,7 @@
 typedef struct call_data {
   gpr_slice_buffer slices;
   int remaining_slice_bytes;
-  int no_compress;  /**< whether skip compression for this specific call */
+  int no_compress;  /**< whether to skip compression for this specific call */
 
   grpc_linked_mdelem compression_algorithm;
 } call_data;
@@ -113,8 +113,9 @@ static void process_send_ops(grpc_call_element *elem,
     }
   }
 
-  GPR_ASSERT(metadata_op_index >= 0);
-  GPR_ASSERT(begin_message_index >= 0);
+  if (metadata_op_index < 0 || begin_message_index < 0) { /* bail out */
+    return;
+  }
 
   /* update both the metadata and the begin_message's flags */
   if (calld->no_compress) {
@@ -211,9 +212,6 @@ static void init_channel_elem(grpc_channel_element *elem,
   const grpc_compression_level clevel =
       grpc_channel_args_get_compression_level(args);
   const grpc_compression_algorithm none_alg = GRPC_COMPRESS_NONE;
-
-  /*We shouldn't be in this filter if compression is disabled. */
-  GPR_ASSERT(clevel != GRPC_COMPRESS_LEVEL_NONE);
 
   channeld->compress_algorithm_md = grpc_mdelem_from_string_and_buffer(
       mdctx, "grpc-compression-level", (gpr_uint8*)&clevel, sizeof(clevel));

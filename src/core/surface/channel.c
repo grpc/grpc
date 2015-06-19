@@ -265,7 +265,6 @@ grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel) {
   return channel->grpc_compression_level_string;
 }
 
-
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
   if (i >= 0 && i < NUM_CACHED_STATUS_ELEMS) {
     return grpc_mdelem_ref(channel->grpc_status_elem[i]);

@@ -42,6 +42,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/client_setup.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/iomgr/resolve_address.h"
@@ -239,6 +240,10 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
     } */
+  if (grpc_channel_args_get_compression_level(args) >
+      GRPC_COMPRESS_LEVEL_NONE) {
+    filters[n++] = &grpc_compress_filter;
+  }
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
   channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);

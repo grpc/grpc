@@ -103,9 +103,11 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->client_cq);
 }
 
-/* Client sends a request with payload, server reads then returns status. */
-static void test_invoke_request_with_compressed_payload(
-    grpc_end2end_test_config config) {
+static void request_with_payload_template(
+    grpc_end2end_test_config config, const char *test_name,
+    gpr_uint32 send_flags_bitmask,
+    grpc_compression_level requested_compression_level,
+    grpc_compression_algorithm expected_compression_algorithm) {
   grpc_call *c;
   grpc_call *s;
   gpr_slice request_payload_slice;
@@ -132,16 +134,14 @@ static void test_invoke_request_with_compressed_payload(
   request_payload_slice = gpr_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  client_args =
-      grpc_channel_args_set_compression_level(NULL, GRPC_COMPRESS_LEVEL_HIGH);
-  server_args =
-      grpc_channel_args_set_compression_level(NULL, GRPC_COMPRESS_LEVEL_HIGH);
+  client_args = grpc_channel_args_set_compression_level(
+      NULL, requested_compression_level);
+  server_args = grpc_channel_args_set_compression_level(
+      NULL, requested_compression_level);
 
-  f = begin_test(config, "test_invoke_request_with_compressed_payload",
-                 client_args, server_args);
+  f = begin_test(config, test_name, client_args, server_args);
   v_client = cq_verifier_create(f.client_cq);
   v_server = cq_verifier_create(f.server_cq);
-
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
                                "foo.test.google.fr", deadline);
@@ -159,7 +159,7 @@ static void test_invoke_request_with_compressed_payload(
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
-  op->flags = 0;
+  op->flags = send_flags_bitmask;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
@@ -222,6 +222,11 @@ static void test_invoke_request_with_compressed_payload(
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 0);
+
+  GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
+  GPR_ASSERT(request_payload_recv->data.raw.compression ==
+             expected_compression_algorithm);
+
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, str));
 
   gpr_free(details);
@@ -246,6 +251,32 @@ static void test_invoke_request_with_compressed_payload(
   config.tear_down_data(&f);
 }
 
+static void test_invoke_request_with_excepcionally_uncompressed_payload(
+    grpc_end2end_test_config config) {
+  request_with_payload_template(
+      config, "test_invoke_request_with_excepcionally_uncompressed_payload",
+      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_LEVEL_HIGH, GRPC_COMPRESS_NONE);
+}
+
+static void test_invoke_request_with_compressed_payload(
+    grpc_end2end_test_config config) {
+  request_with_payload_template(
+      config, "test_invoke_request_with_compressed_payload", 0,
+      GRPC_COMPRESS_LEVEL_HIGH,
+      grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_HIGH));
+}
+
+static void test_invoke_request_with_uncompressed_payload(
+    grpc_end2end_test_config config) {
+  request_with_payload_template(
+      config, "test_invoke_request_with_uncompressed_payload", 0,
+      GRPC_COMPRESS_LEVEL_NONE,
+      grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE));
+}
+
+
 void grpc_end2end_tests(grpc_end2end_test_config config) {
+  test_invoke_request_with_excepcionally_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
+  test_invoke_request_with_uncompressed_payload(config);
 }
