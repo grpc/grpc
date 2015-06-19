@@ -46,12 +46,28 @@ enum PayloadType {
   RANDOM = 2;
 }
 
+// Compression algorithms
+enum CompressionType {
+  // No compression
+  NONE = 0;
+  GZIP = 1;
+  DEFLATE = 2;
+}
+
 // A block of data, to simply increase gRPC message size.
 message Payload {
   // The type of data in body.
   optional PayloadType type = 1;
   // Primary contents of payload.
   optional bytes body = 2;
+}
+
+// A protobuf representation for grpc status. This is used by test
+// clients to specify a status that the server should attempt to return.
+message Status 
+{ 
+  optional int code = 1;
+  optional string message = 2;
 }
 
 // Unary request.
@@ -72,6 +88,12 @@ message SimpleRequest {
 
   // Whether SimpleResponse should include OAuth scope.
   optional bool fill_oauth_scope = 5;
+
+  // Compression algorithm to be used by the server for the response (stream)
+  optional CompressionType response_compression = 6;
+
+  // Whether server should return a given status
+  optional Status response_status = 7;
 }
 
 // Unary response, as configured by the request.
@@ -123,6 +145,12 @@ message StreamingOutputCallRequest {
 
   // Optional input payload sent along with the request.
   optional Payload payload = 3;
+
+  // Compression algorithm to be used by the server for the response (stream)
+  optional CompressionType response_compression = 6;
+
+  // Whether server should return a given status
+  optional Status response_status = 7;
 }
 
 // Server-streaming response, as configured by the request and parameters.

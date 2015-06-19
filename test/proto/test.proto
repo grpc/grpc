@@ -71,3 +71,11 @@ service TestService {
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
 }
+
+
+// A simple service NOT implemented at servers so clients can test for
+// that case.
+service UnImplementedService {
+  // A call that no server should implement
+  rpc UnimplementedCall(grpc.testing.Empty) returns(grpc.testing.Empty);  
+}
