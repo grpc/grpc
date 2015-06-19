@@ -75,7 +75,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -111,7 +113,8 @@ static void test_request_response_with_metadata_and_payload(
                              {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
   grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}},
                              {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
-  grpc_end2end_test_fixture f = begin_test(config, "test_request_response_with_metadata_and_payload", NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -126,8 +129,8 @@ static void test_request_response_with_metadata_and_payload(
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo",
-                               "foo.test.google.fr", deadline);
+  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
+                               deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -165,10 +168,9 @@ static void test_request_response_with_metadata_and_payload(
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq,
-                                      f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 

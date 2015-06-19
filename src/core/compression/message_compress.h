@@ -49,4 +49,4 @@ int grpc_msg_compress(grpc_compression_algorithm algorithm,
 int grpc_msg_decompress(grpc_compression_algorithm algorithm,
                         gpr_slice_buffer *input, gpr_slice_buffer *output);
 
-#endif  /* GRPC_INTERNAL_CORE_COMPRESSION_MESSAGE_COMPRESS_H */
+#endif /* GRPC_INTERNAL_CORE_COMPRESSION_MESSAGE_COMPRESS_H */

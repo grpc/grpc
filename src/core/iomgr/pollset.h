@@ -65,7 +65,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    May unlock GRPC_POLLSET_MU(pollset) during its execution. */
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
 
-/* Break a pollset out of polling work
+/* Break one polling thread out of polling work for this pollset.
    Requires GRPC_POLLSET_MU(pollset) locked. */
 void grpc_pollset_kick(grpc_pollset *pollset);
 

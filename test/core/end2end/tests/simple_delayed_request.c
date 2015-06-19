@@ -63,7 +63,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -105,8 +107,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
   config.init_client(f, client_args);
 
-  c = grpc_channel_create_call(f->client, f->cq, "/foo",
-                               "foo.test.google.fr", deadline);
+  c = grpc_channel_create_call(f->client, f->cq, "/foo", "foo.test.google.fr",
+                               deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -137,10 +139,10 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
   config.init_server(f, server_args);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f->server, &s, &call_details,
-                                      &request_metadata_recv, f->cq,
-                                      f->cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f->server, &s,
+                                                      &call_details,
+                                                      &request_metadata_recv,
+                                                      f->cq, f->cq, tag(101)));
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 

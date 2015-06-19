@@ -108,6 +108,7 @@ struct grpc_tcp_server {
   /* destroyed port count: how many ports are completely destroyed */
   size_t destroyed_ports;
 
+  /* is this server shutting down? (boolean) */
   int shutdown;
 
   /* all listening ports */
@@ -119,7 +120,9 @@ struct grpc_tcp_server {
   void (*shutdown_complete)(void *);
   void *shutdown_complete_arg;
 
+  /* all pollsets interested in new connections */
   grpc_pollset **pollsets;
+  /* number of pollsets in the pollsets array */
   size_t pollset_count;
 };
 
@@ -160,6 +163,9 @@ static void destroyed_port(void *server, int success) {
 
 static void dont_care_about_shutdown_completion(void *ignored) {}
 
+/* called when all listening endpoints have been shutdown, so no further
+   events will be received on them - at this point it's safe to destroy
+   things */
 static void deactivated_all_ports(grpc_tcp_server *s) {
   size_t i;
 

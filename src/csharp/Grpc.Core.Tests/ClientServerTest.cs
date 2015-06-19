@@ -204,7 +204,7 @@ namespace Grpc.Core.Tests
             BenchmarkUtil.RunBenchmark(100, 100,
                                        () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
         }
-
+            
         [Test]
         public void UnknownMethodHandler()
         {
