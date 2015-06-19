@@ -48,7 +48,7 @@
 
 gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
   const gpr_uint8 *data = (const gpr_uint8 *)key;
-  const int nblocks = len / 4;
+  const size_t nblocks = len / 4;
   int i;
 
   gpr_uint32 h1 = seed;
@@ -57,11 +57,11 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
   const gpr_uint32 c1 = 0xcc9e2d51;
   const gpr_uint32 c2 = 0x1b873593;
 
-  const gpr_uint32 *blocks = (const uint32_t *)(data + nblocks * 4);
-  const uint8_t *tail = (const uint8_t *)(data + nblocks * 4);
+  const gpr_uint32 *blocks = ((const gpr_uint32 *)key) + nblocks;
+  const gpr_uint8 *tail = (const gpr_uint8 *)(data + nblocks * 4);
 
   /* body */
-  for (i = -nblocks; i; i++) {
+  for (i = -(int)nblocks; i; i++) {
     k1 = GETBLOCK32(blocks, i);
 
     k1 *= c1;
@@ -78,9 +78,9 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
   /* tail */
   switch (len & 3) {
     case 3:
-      k1 ^= tail[2] << 16;
+      k1 ^= (gpr_uint32)(tail[2] << 16);
     case 2:
-      k1 ^= tail[1] << 8;
+      k1 ^= (gpr_uint32)(tail[1] << 8);
     case 1:
       k1 ^= tail[0];
       k1 *= c1;
@@ -90,7 +90,7 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
   };
 
   /* finalization */
-  h1 ^= len;
+  h1 ^= (gpr_uint32)len;
   FMIX32(h1);
   return h1;
 }
