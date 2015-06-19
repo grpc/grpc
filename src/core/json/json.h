@@ -60,7 +60,7 @@ typedef struct grpc_json {
  * strings in the tree. The input stream's UTF-8 isn't validated,
  * as in, what you input is what you get as an output.
  *
- * All the keys and values in the grpc_json_t objects will be strings
+ * All the keys and values in the grpc_json objects will be strings
  * pointing at your input buffer.
  *
  * Delete the allocated tree afterward using grpc_json_destroy().
