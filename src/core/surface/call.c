@@ -214,6 +214,9 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
+  /** Compression level for the call */
+  grpc_compression_level compression_level;
+
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
 
@@ -408,6 +411,11 @@ static void set_status_code(grpc_call *call, status_source source,
   if (status != GRPC_STATUS_OK && !grpc_bbq_empty(&call->incoming_queue)) {
     grpc_bbq_flush(&call->incoming_queue);
   }
+}
+
+static void set_decode_compression_level(grpc_call *call,
+                                         grpc_compression_level clevel) {
+  call->compression_level = clevel;
 }
 
 static void set_status_details(grpc_call *call, status_source source,
@@ -1169,6 +1177,28 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   return status;
 }
 
+/* just as for status above, we need to offset: metadata userdata can't hold a
+ * zero (null), which in this case is used to signal no compression */
+#define COMPRESS_OFFSET 1
+static void destroy_compression(void *ignored) {}
+
+static gpr_uint32 decode_compression(grpc_mdelem *md) {
+  grpc_compression_level clevel;
+  void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
+  if (user_data) {
+    clevel = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+  } else {
+    if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
+                                   GPR_SLICE_LENGTH(md->value->slice),
+                                   &clevel)) {
+      clevel = GRPC_COMPRESS_LEVEL_NONE;  /* could not parse, no compression */
+    }
+    grpc_mdelem_set_user_data(md, destroy_compression,
+                              (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
+  }
+  return clevel;
+}
+
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
   grpc_linked_mdelem *l;
   grpc_metadata_array *dest;
@@ -1184,6 +1214,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
       set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
+    } else if (key == grpc_channel_get_compresssion_level_string(call->channel)) {
+      set_decode_compression_level(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {
