@@ -41,6 +41,12 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
+  # Use image name based on Dockerfile checksum
+  DOCKER_IMAGE_NAME=grpc_jenkins_slave_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+
+  # Make sure docker image has been built. Should be instantaneous if so.
+  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave
+
   if [ "$ghprbPullId" != "" ]
   then
     # if we are building a pull request, grab corresponding refs.
@@ -51,12 +57,11 @@ then
   rm -f docker.cid
 
   # Run tests inside docker
-  docker run --cidfile=docker.cid grpc/grpc_jenkins_slave bash -c -l "git clone --recursive $GIT_URL /var/local/git/grpc \
+  docker run --cidfile=docker.cid $DOCKER_IMAGE_NAME bash -c -l "git clone --recursive $GIT_URL /var/local/git/grpc \
     && cd /var/local/git/grpc \
     $FETCH_PULL_REQUEST_CMD \
     && git checkout -f $GIT_COMMIT \
     && git submodule update \
-    && pip install simplejson mako \
     && nvm use 0.12 \
     && rvm use ruby-2.1 \
     && CONFIG=$config tools/run_tests/prepare_travis.sh \
@@ -69,7 +74,7 @@ then
     docker rm $DOCKER_CID
   else
     echo "Docker exited with failure, keeping container $DOCKER_CID."
-    echo "You can SSH to the worker and use 'docker start CID' and 'docker exec -i -t CID bash' to debug the problem."
+    echo "You can SSH to the worker and use 'docker commit CID YOUR_IMAGE_NAME' and 'docker run -i -t YOUR_IMAGE_NAME bash' to debug the problem."
     exit 1
   fi
 
