@@ -230,7 +230,7 @@ def getSysInfo():
   tcp_rr_rate = str(os.popen('netperf -t TCP_RR -v 0').readlines()[1])
   print 'Network info obtained'
   
-  nicInfo.append('TCP RR Transmission Rate per sec: ' + tcp_rr_rate + '\n')
+  nicInfo.append('TCP RR transmission rate per sec: ' + tcp_rr_rate + '\n')
   sysInfo = sysInfo + nicInfo
 
   return sysInfo
@@ -257,13 +257,14 @@ def main():
   except Exception, e:
     print 'Error in authentication'
 
+  # Address of the performance database server
   serverAddress = 'sidrakesh.mtv.google.corp.com:50052'
 
   try:
     testPath = findTestPath(test) # Get path to test
     testName = testPath.split('/')[-1] # Get test name
 
-    sysInfo = getSysInfo()
+    sysInfo = getSysInfo() # get the system information
 
     print '\nBeginning test:\n'
     # Run the test
