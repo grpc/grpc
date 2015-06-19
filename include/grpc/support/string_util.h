@@ -31,19 +31,31 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H
-#define GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H
+#ifndef GRPC_SUPPORT_STRING_UTIL_H
+#define GRPC_SUPPORT_STRING_UTIL_H
 
-/* The various compression algorithms supported by GRPC */
-typedef enum {
-  GRPC_COMPRESS_NONE = 0,
-  GRPC_COMPRESS_DEFLATE,
-  GRPC_COMPRESS_GZIP,
-  /* TODO(ctiller): snappy */
-  GRPC_COMPRESS_ALGORITHMS_COUNT
-} grpc_compression_algorithm;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-const char *grpc_compression_algorithm_name(
-    grpc_compression_algorithm algorithm);
+/* String utility functions */
 
-#endif  /* GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_H */
+/* Returns a copy of src that can be passed to gpr_free().
+   If allocation fails or if src is NULL, returns NULL. */
+char *gpr_strdup(const char *src);
+
+/* printf to a newly-allocated string.  The set of supported formats may vary
+   between platforms.
+
+   On success, returns the number of bytes printed (excluding the final '\0'),
+   and *strp points to a string which must later be destroyed with gpr_free().
+
+   On error, returns -1 and sets *strp to NULL. If the format string is bad,
+   the result is undefined. */
+int gpr_asprintf(char **strp, const char *format, ...);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* GRPC_SUPPORT_STRING_UTIL_H */

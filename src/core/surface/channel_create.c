@@ -53,6 +53,7 @@
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
@@ -137,7 +138,8 @@ static void on_resolved(void *rp, grpc_resolved_addresses *resolved) {
   request *r = rp;
 
   /* if we're not still the active request, abort */
-  if (!grpc_client_setup_request_should_continue(r->cs_request, "on_resolved")) {
+  if (!grpc_client_setup_request_should_continue(r->cs_request,
+                                                 "on_resolved")) {
     if (resolved) {
       grpc_resolved_addresses_destroy(resolved);
     }

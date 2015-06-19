@@ -33,7 +33,6 @@ import hashlib
 import multiprocessing
 import os
 import platform
-import random
 import signal
 import subprocess
 import sys
@@ -57,40 +56,6 @@ else:
 
   signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
   signal.signal(signal.SIGALRM, alarm_handler)
-
-
-def shuffle_iteratable(it):
-  """Return an iterable that randomly walks it"""
-  # take a random sampling from the passed in iterable
-  # we take an element with probability 1/p and rapidly increase
-  # p as we take elements - this gives us a somewhat random set of values before
-  # we've seen all the values, but starts producing values without having to
-  # compute ALL of them at once, allowing tests to start a little earlier
-  LARGE_THRESHOLD = 1000
-  nextit = []
-  p = 1
-  for val in it:
-    if random.randint(0, p) == 0:
-      p = min(p*2, 100)
-      yield val
-    else:
-      nextit.append(val)
-      # if the input iterates over a large number of values (potentially
-      # infinite, we'd be in the loop for a while (again, potentially forever).
-      # We need to reset "nextit" every so often to, in the case of an infinite
-      # iterator, avoid growing "nextit" without ever freeing it.
-      if len(nextit) > LARGE_THRESHOLD:
-        random.shuffle(nextit)
-        for val in nextit:
-          yield val
-        nextit = []
-        p = 1
-
-  # after taking a random sampling, we shuffle the rest of the elements and
-  # yield them
-  random.shuffle(nextit)
-  for val in nextit:
-    yield val
 
 
 _SUCCESS = object()
@@ -258,6 +223,7 @@ class Jobset(object):
     self._travis = travis
     self._cache = cache
     self._stop_on_failure = stop_on_failure
+    self._hashes = {}
 
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
@@ -266,11 +232,15 @@ class Jobset(object):
       self.reap()
     if self.cancelled(): return False
     if spec.hash_targets:
-      bin_hash = hashlib.sha1()
-      for fn in spec.hash_targets:
-        with open(which(fn)) as f:
-          bin_hash.update(f.read())
-      bin_hash = bin_hash.hexdigest()
+      if spec.identity() in self._hashes:
+        bin_hash = self._hashes[spec.identity()]
+      else:
+        bin_hash = hashlib.sha1()
+        for fn in spec.hash_targets:
+          with open(which(fn)) as f:
+            bin_hash.update(f.read())
+        bin_hash = bin_hash.hexdigest()
+        self._hashes[spec.identity()] = bin_hash
       should_run = self._cache.should_run(spec.identity(), bin_hash)
     else:
       bin_hash = None
@@ -301,6 +271,7 @@ class Jobset(object):
             for job in self._running:
               job.kill()
         dead.add(job)
+        break
       for job in dead:
         self._completed += 1
         self._running.remove(job)
@@ -358,11 +329,6 @@ def run(cmdlines,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure,
               cache if cache is not None else NoCache())
-  # We can't sort an infinite sequence of runs.
-  if not travis or infinite_runs:
-    cmdlines = shuffle_iteratable(cmdlines)
-  else:
-    cmdlines = sorted(cmdlines, key=lambda x: x.shortname)
   for cmdline in cmdlines:
     if not js.start(cmdline):
       break

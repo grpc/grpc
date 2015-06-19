@@ -97,14 +97,7 @@ static int multipoll_with_epoll_pollset_maybe_work(
    * here.
    */
 
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
-    timeout_ms = -1;
-  } else {
-    timeout_ms = gpr_time_to_millis(gpr_time_sub(deadline, now));
-    if (timeout_ms <= 0) {
-      return 1;
-    }
-  }
+  timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
   pollset->counter += 1;
   gpr_mu_unlock(&pollset->mu);
 
@@ -143,7 +136,8 @@ static int multipoll_with_epoll_pollset_maybe_work(
   return 1;
 }
 
-static void multipoll_with_epoll_pollset_finish_shutdown(grpc_pollset *pollset) {}
+static void multipoll_with_epoll_pollset_finish_shutdown(
+    grpc_pollset *pollset) {}
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
@@ -158,9 +152,12 @@ static void epoll_kick(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
-    multipoll_with_epoll_pollset_add_fd, multipoll_with_epoll_pollset_del_fd,
-    multipoll_with_epoll_pollset_maybe_work, epoll_kick,
-    multipoll_with_epoll_pollset_finish_shutdown, multipoll_with_epoll_pollset_destroy};
+    multipoll_with_epoll_pollset_add_fd,
+    multipoll_with_epoll_pollset_del_fd,
+    multipoll_with_epoll_pollset_maybe_work,
+    epoll_kick,
+    multipoll_with_epoll_pollset_finish_shutdown,
+    multipoll_with_epoll_pollset_destroy};
 
 static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
                                      size_t nfds) {

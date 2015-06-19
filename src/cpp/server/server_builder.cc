@@ -87,9 +87,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     return nullptr;
   }
   if (!thread_pool_ && !services_.empty()) {
-    int cores = gpr_cpu_num_cores();
-    if (!cores) cores = 4;
-    thread_pool_ = new ThreadPool(cores);
+    thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
   std::unique_ptr<Server> server(

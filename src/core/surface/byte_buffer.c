@@ -35,25 +35,31 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices) {
+grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
+                                              size_t nslices) {
+  return grpc_raw_compressed_byte_buffer_create(slices, nslices,
+                                                GRPC_COMPRESS_NONE);
+}
+
+grpc_byte_buffer *grpc_raw_compressed_byte_buffer_create(
+    gpr_slice *slices, size_t nslices, grpc_compression_algorithm compression) {
   size_t i;
   grpc_byte_buffer *bb = malloc(sizeof(grpc_byte_buffer));
-
-  bb->type = GRPC_BB_SLICE_BUFFER;
-  gpr_slice_buffer_init(&bb->data.slice_buffer);
+  bb->type = GRPC_BB_RAW;
+  bb->data.raw.compression = compression;
+  gpr_slice_buffer_init(&bb->data.raw.slice_buffer);
   for (i = 0; i < nslices; i++) {
     gpr_slice_ref(slices[i]);
-    gpr_slice_buffer_add(&bb->data.slice_buffer, slices[i]);
+    gpr_slice_buffer_add(&bb->data.raw.slice_buffer, slices[i]);
   }
-
   return bb;
 }
 
 grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
   switch (bb->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      return grpc_byte_buffer_create(bb->data.slice_buffer.slices,
-                                     bb->data.slice_buffer.count);
+    case GRPC_BB_RAW:
+      return grpc_raw_byte_buffer_create(bb->data.raw.slice_buffer.slices,
+                                         bb->data.raw.slice_buffer.count);
   }
   gpr_log(GPR_INFO, "should never get here");
   abort();
@@ -63,8 +69,8 @@ grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
 void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
   if (!bb) return;
   switch (bb->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      gpr_slice_buffer_destroy(&bb->data.slice_buffer);
+    case GRPC_BB_RAW:
+      gpr_slice_buffer_destroy(&bb->data.raw.slice_buffer);
       break;
   }
   free(bb);
@@ -72,8 +78,8 @@ void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
 
 size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) {
   switch (bb->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      return bb->data.slice_buffer.length;
+    case GRPC_BB_RAW:
+      return bb->data.raw.slice_buffer.length;
   }
   gpr_log(GPR_ERROR, "should never reach here");
   abort();

@@ -40,7 +40,7 @@ from grpc.framework.base import interfaces
 from grpc.framework.foundation import logging_pool
 
 _IDENTITY = lambda x: x
-_TIMEOUT = 2
+_TIMEOUT = 32
 
 
 # TODO(nathaniel): End-to-end metadata testing.

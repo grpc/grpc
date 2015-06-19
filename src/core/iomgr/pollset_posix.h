@@ -56,6 +56,7 @@ typedef struct grpc_pollset {
   int counter;
   int in_flight_cbs;
   int shutting_down;
+  int called_shutdown;
   void (*shutdown_done_cb)(void *arg);
   void *shutdown_done_arg;
   union {
@@ -92,6 +93,15 @@ void grpc_pollset_force_kick(grpc_pollset *pollset);
 int grpc_kick_read_fd(grpc_pollset *p);
 /* Call after polling has been kicked to leave the kicked state */
 void grpc_kick_drain(grpc_pollset *p);
+
+/* Convert a timespec to milliseconds:
+   - very small or negative poll times are clamped to zero to do a 
+     non-blocking poll (which becomes spin polling)
+   - other small values are rounded up to one millisecond
+   - longer than a millisecond polls are rounded up to the next nearest 
+     millisecond to avoid spinning
+   - infinite timeouts are converted to -1 */
+int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_pollset *pollset,

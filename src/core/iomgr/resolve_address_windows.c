@@ -46,6 +46,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
@@ -134,9 +135,9 @@ static void do_request(void *rp) {
   grpc_resolve_cb cb = r->cb;
   gpr_free(r->name);
   gpr_free(r->default_port);
+  grpc_iomgr_unregister_object(&r->iomgr_object);
   gpr_free(r);
   cb(arg, resolved);
-  grpc_iomgr_unregister_object(&r->iomgr_object);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {

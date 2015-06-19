@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/log_win32.h>
 #include <grpc/support/slice_buffer.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/iomgr/alarm.h"
@@ -153,7 +154,7 @@ static void on_read(void *tcpp, int from_iocp) {
     status = GRPC_ENDPOINT_CB_ERROR;
   } else {
     if (info->bytes_transfered != 0) {
-      sub = gpr_slice_sub(tcp->read_slice, 0, info->bytes_transfered);
+      sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
       status = GRPC_ENDPOINT_CB_OK;
       slice = &sub;
       nslices = 1;

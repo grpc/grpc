@@ -46,6 +46,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -485,8 +486,8 @@ static int oauth2_token_fetcher_has_request_metadata_only(
 
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const grpc_httpcli_response *response,
-    grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime) {
+    const grpc_httpcli_response *response, grpc_credentials_md_store **token_md,
+    gpr_timespec *token_lifetime) {
   char *null_terminated_body = NULL;
   char *new_access_token = NULL;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
@@ -609,7 +610,8 @@ static void oauth2_token_fetcher_get_request_metadata(
     if (c->access_token_md != NULL &&
         (gpr_time_cmp(gpr_time_sub(c->token_expiration, gpr_now()),
                       refresh_threshold) > 0)) {
-      cached_access_token_md = grpc_credentials_md_store_ref(c->access_token_md);
+      cached_access_token_md =
+          grpc_credentials_md_store_ref(c->access_token_md);
     }
     gpr_mu_unlock(&c->mu);
   }
@@ -639,8 +641,7 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
 /* -- ComputeEngine credentials. -- */
 
 static grpc_credentials_vtable compute_engine_vtable = {
-    oauth2_token_fetcher_destroy,
-    oauth2_token_fetcher_has_request_metadata,
+    oauth2_token_fetcher_destroy, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
     oauth2_token_fetcher_get_request_metadata, NULL};
 
@@ -685,8 +686,7 @@ static void service_account_destroy(grpc_credentials *creds) {
 }
 
 static grpc_credentials_vtable service_account_vtable = {
-    service_account_destroy,
-    oauth2_token_fetcher_has_request_metadata,
+    service_account_destroy, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
     oauth2_token_fetcher_get_request_metadata, NULL};
 
@@ -759,8 +759,7 @@ static void refresh_token_destroy(grpc_credentials *creds) {
 }
 
 static grpc_credentials_vtable refresh_token_vtable = {
-    refresh_token_destroy,
-    oauth2_token_fetcher_has_request_metadata,
+    refresh_token_destroy, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
     oauth2_token_fetcher_get_request_metadata, NULL};
 
@@ -899,8 +898,7 @@ static int fake_transport_security_has_request_metadata_only(
   return 0;
 }
 
-static grpc_security_status
-fake_transport_security_create_security_connector(
+static grpc_security_status fake_transport_security_create_security_connector(
     grpc_credentials *c, const char *target, const grpc_channel_args *args,
     grpc_credentials *request_metadata_creds,
     grpc_channel_security_connector **sc, grpc_channel_args **new_args) {

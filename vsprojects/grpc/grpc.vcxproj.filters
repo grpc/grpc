@@ -366,6 +366,9 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\compression.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -428,6 +431,9 @@
     <ClInclude Include="..\..\src\core\census\grpc_context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\census_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -446,6 +452,9 @@
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\context.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -454,9 +463,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\noop_filter.h">
       <Filter>src\core\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\compression\algorithm.h">
-      <Filter>src\core\compression</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>

@@ -41,7 +41,7 @@ namespace math
         {
             GrpcEnvironment.Initialize();
 
-            using (Channel channel = new Channel("127.0.0.1:23456"))
+            using (Channel channel = new Channel("127.0.0.1", 23456))
             {
                 Math.IMathClient stub = new Math.MathClient(channel);
                 MathExamples.DivExample(stub);

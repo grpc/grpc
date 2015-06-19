@@ -76,7 +76,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -103,7 +105,8 @@ static void test_cancel_after_accept_and_writes_closed(
   grpc_op *op;
   grpc_call *c;
   grpc_call *s;
-  grpc_end2end_test_fixture f = begin_test(config, "test_cancel_after_accept_and_writes_closed", NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_cancel_after_accept_and_writes_closed", NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_metadata_array initial_metadata_recv;
@@ -118,13 +121,13 @@ static void test_cancel_after_accept_and_writes_closed(
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
   grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer *response_payload =
-      grpc_byte_buffer_create(&response_payload_slice, 1);
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo",
-                               "foo.test.google.fr", deadline);
+  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
+                               deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -138,42 +141,51 @@ static void test_cancel_after_accept_and_writes_closed(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &response_payload_recv;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq,
-                                      f.cq, tag(2)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(2)));
   cq_expect_completion(cqv, tag(2), 1);
   cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(3)));
 

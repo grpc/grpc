@@ -52,11 +52,20 @@ namespace {
 void* tag(int i) { return (void*)(gpr_intptr) i; }
 }  // namespace
 
-void CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
-                   const grpc::string& method, const grpc::string& request,
-                   grpc::string* response) {
+Status CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
+                     const grpc::string& method, const grpc::string& request,
+                     grpc::string* response, const MetadataContainer& metadata,
+                     MetadataContainer* server_initial_metadata,
+                     MetadataContainer* server_trailing_metadata) {
   std::unique_ptr<grpc::GenericStub> stub(new grpc::GenericStub(channel));
   grpc::ClientContext ctx;
+  if (!metadata.empty()) {
+    for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
+             metadata.begin();
+         iter != metadata.end(); ++iter) {
+      ctx.AddMetadata(iter->first, iter->second);
+    }
+  }
   grpc::CompletionQueue cq;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call(
       stub->Call(&ctx, method, &cq, tag(1)));
@@ -79,15 +88,14 @@ void CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
   cq.Next(&got_tag, &ok);
   if (!ok) {
     std::cout << "Failed to read response." << std::endl;
-    return;
+    return Status(StatusCode::INTERNAL, "Failed to read response");
   }
   grpc::Status status;
   call->Finish(&status, tag(5));
   cq.Next(&got_tag, &ok);
   GPR_ASSERT(ok);
 
-  if (status.IsOk()) {
-    std::cout << "RPC finished with OK status." << std::endl;
+  if (status.ok()) {
     std::vector<grpc::Slice> slices;
     recv_buffer.Dump(&slices);
 
@@ -96,10 +104,10 @@ void CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
       response->append(reinterpret_cast<const char*>(slices[i].begin()),
                        slices[i].size());
     }
-  } else {
-    std::cout << "RPC finished with status code " << status.code()
-              << " details: " << status.details() << std::endl;
   }
+  *server_initial_metadata = ctx.GetServerInitialMetadata();
+  *server_trailing_metadata = ctx.GetServerTrailingMetadata();
+  return status;
 }
 
 }  // namespace testing

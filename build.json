@@ -83,6 +83,7 @@
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
         "src/cpp/server/async_generic_service.cc",
+        "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
@@ -100,21 +101,23 @@
       "public_headers": [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
+        "include/grpc/compression.h",
         "include/grpc/grpc.h",
         "include/grpc/status.h"
       ],
       "headers": [
         "src/core/census/grpc_context.h",
+        "src/core/channel/census_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/child_channel.h",
         "src/core/channel/client_channel.h",
         "src/core/channel/client_setup.h",
         "src/core/channel/connected_channel.h",
+        "src/core/channel/context.h",
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_server_filter.h",
         "src/core/channel/noop_filter.h",
-        "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
         "src/core/debug/trace.h",
         "src/core/iomgr/alarm.h",
@@ -316,6 +319,7 @@
         "include/grpc/support/port_platform.h",
         "include/grpc/support/slice.h",
         "include/grpc/support/slice_buffer.h",
+        "include/grpc/support/string_util.h",
         "include/grpc/support/subprocess.h",
         "include/grpc/support/sync.h",
         "include/grpc/support/sync_generic.h",
@@ -701,6 +705,7 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/interarrival.h",
         "test/cpp/qps/qps_worker.h",
         "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
@@ -1351,7 +1356,6 @@
     {
       "name": "httpcli_test",
       "build": "test",
-      "run": false,
       "language": "c",
       "src": [
         "test/core/httpcli/httpcli_test.c"
@@ -1361,6 +1365,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2075,11 +2082,48 @@
       ]
     },
     {
+      "name": "qps_interarrival_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_interarrival_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "qps_test",
-      "build": "benchmark",
+      "build": "test",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_test.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc++_benchmark_config",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "qps_test_openloop",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_test_openloop.cc"
       ],
       "deps": [
         "qps",

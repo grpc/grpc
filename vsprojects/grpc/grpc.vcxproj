@@ -150,6 +150,7 @@
     <ClInclude Include="..\..\include\grpc\grpc_security.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
+    <ClInclude Include="..\..\include\grpc\compression.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
     <ClInclude Include="..\..\include\grpc\census.h" />
@@ -172,16 +173,17 @@
     <ClInclude Include="..\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h" />
     <ClInclude Include="..\..\src\core\census\grpc_context.h" />
+    <ClInclude Include="..\..\src\core\channel\census_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\child_channel.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
     <ClInclude Include="..\..\src\core\channel\client_setup.h" />
     <ClInclude Include="..\..\src\core\channel\connected_channel.h" />
+    <ClInclude Include="..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h" />
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
-    <ClInclude Include="..\..\src\core\compression\algorithm.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />

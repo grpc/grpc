@@ -113,14 +113,7 @@ static int multipoll_with_poll_pollset_maybe_work(
   grpc_kick_fd_info *kfd;
 
   h = pollset->data.ptr;
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
-    timeout = -1;
-  } else {
-    timeout = gpr_time_to_millis(gpr_time_sub(deadline, now));
-    if (timeout <= 0) {
-      return 1;
-    }
-  }
+  timeout = grpc_poll_deadline_to_millis_timeout(deadline, now);
   if (h->pfd_capacity < h->fd_count + 1) {
     h->pfd_capacity = GPR_MAX(h->pfd_capacity * 3 / 2, h->fd_count + 1);
     gpr_free(h->pfds);
@@ -231,9 +224,12 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_poll_pollset = {
-    multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
-    multipoll_with_poll_pollset_maybe_work, multipoll_with_poll_pollset_kick,
-    multipoll_with_poll_pollset_finish_shutdown, multipoll_with_poll_pollset_destroy};
+    multipoll_with_poll_pollset_add_fd,
+    multipoll_with_poll_pollset_del_fd,
+    multipoll_with_poll_pollset_maybe_work,
+    multipoll_with_poll_pollset_kick,
+    multipoll_with_poll_pollset_finish_shutdown,
+    multipoll_with_poll_pollset_destroy};
 
 void grpc_poll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
                                   size_t nfds) {

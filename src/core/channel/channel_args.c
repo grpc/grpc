@@ -36,6 +36,7 @@
 #include "src/core/support/string.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include <string.h>
 
@@ -113,4 +114,28 @@ int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
     }
   }
   return 0;
+}
+
+grpc_compression_level grpc_channel_args_get_compression_level(
+    const grpc_channel_args *a) {
+  size_t i;
+  if (a) {
+    for (i = 0; a && i < a->num_args; ++i) {
+      if (a->args[i].type == GRPC_ARG_INTEGER &&
+          !strcmp(GRPC_COMPRESSION_LEVEL_ARG, a->args[i].key)) {
+        return a->args[i].value.integer;
+        break;
+      }
+    }
+  }
+  return GRPC_COMPRESS_LEVEL_NONE;
+}
+
+void grpc_channel_args_set_compression_level(
+    grpc_channel_args **a, grpc_compression_level level) {
+  grpc_arg tmp;
+  tmp.type = GRPC_ARG_INTEGER;
+  tmp.key = GRPC_COMPRESSION_LEVEL_ARG;
+  tmp.value.integer = level;
+  *a = grpc_channel_args_copy_and_add(*a, &tmp);
 }

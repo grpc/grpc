@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/support/string.h"
 #include "src/core/channel/channel_stack.h"
@@ -52,6 +53,10 @@ typedef struct {
   grpc_credentials *creds;
   grpc_mdstr *host;
   grpc_mdstr *method;
+  /* pollset bound to this call; if we need to make external
+     network requests, they should be done under this pollset
+     so that work can progress when this call wants work to
+     progress */
   grpc_pollset *pollset;
   grpc_transport_op op;
   size_t op_md_idx;
@@ -302,13 +307,10 @@ static void init_channel_elem(grpc_channel_element *elem,
   chand->security_connector =
       (grpc_channel_security_connector *)grpc_security_connector_ref(sc);
   chand->md_ctx = metadata_context;
-  chand->authority_string =
-      grpc_mdstr_from_string(chand->md_ctx, ":authority");
+  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority");
   chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
-  chand->error_msg_key =
-      grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
-  chand->status_key =
-      grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
+  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
+  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
@@ -332,6 +334,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "client-auth"};
+    auth_start_transport_op, channel_op,           sizeof(call_data),
+    init_call_elem,          destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem,       destroy_channel_elem, "client-auth"};

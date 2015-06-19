@@ -159,6 +159,9 @@
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\string_util.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\subprocess.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>

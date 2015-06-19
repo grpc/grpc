@@ -48,6 +48,7 @@
 #include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 typedef enum { PENDING_START, ALL_CALLS, CALL_LIST_COUNT } call_list;
@@ -494,7 +495,6 @@ static void server_on_recv(void *ptr, int success) {
         calld->state = ZOMBIED;
         grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_iomgr_add_callback(&calld->kill_zombie_closure);
-
       }
       if (call_list_remove(calld, ALL_CALLS)) {
         decrement_call_count(chand);
@@ -590,7 +590,8 @@ static void finish_shutdown_channel(void *p, int success) {
   gpr_free(sca);
 }
 
-static void shutdown_channel(channel_data *chand, int send_goaway, int send_disconnect) {
+static void shutdown_channel(channel_data *chand, int send_goaway,
+                             int send_disconnect) {
   shutdown_channel_args *sca;
   GRPC_CHANNEL_INTERNAL_REF(chand->channel, "shutdown");
   sca = gpr_malloc(sizeof(shutdown_channel_args));
@@ -708,6 +709,7 @@ void grpc_server_register_completion_queue(grpc_server *server,
     if (server->cqs[i] == cq) return;
   }
   GRPC_CQ_INTERNAL_REF(cq, "server");
+  grpc_cq_mark_server_cq(cq);
   n = server->cq_count++;
   server->cqs = gpr_realloc(server->cqs,
                             server->cq_count * sizeof(grpc_completion_queue *));
@@ -1009,7 +1011,7 @@ void grpc_server_destroy(grpc_server *server) {
   listener *l;
 
   gpr_mu_lock(&server->mu);
-  GPR_ASSERT(server->shutdown);
+  GPR_ASSERT(server->shutdown || !server->listeners);
   GPR_ASSERT(server->listeners_destroyed == num_listeners(server));
 
   while (server->listeners) {
@@ -1080,6 +1082,9 @@ grpc_call_error grpc_server_request_call(
   GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
                                initial_metadata, cq_bound_to_call,
                                cq_for_notification, tag);
+  if (!grpc_cq_is_server_cq(cq_for_notification)) {
+    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
+  }
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = BATCH_CALL;
   rc.tag = tag;
@@ -1098,6 +1103,9 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_completion_queue *cq_for_notification, void *tag) {
   requested_call rc;
   registered_method *registered_method = rm;
+  if (!grpc_cq_is_server_cq(cq_for_notification)) {
+    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
+  }
   grpc_cq_begin_op(cq_for_notification, NULL);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
@@ -1152,6 +1160,7 @@ static void begin_call(grpc_server *server, call_data *calld,
       rc->data.batch.details->deadline = calld->deadline;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
       r->data.recv_metadata = rc->data.batch.initial_metadata;
+      r->flags = 0;
       r++;
       publish = publish_registered_or_batch;
       break;
@@ -1159,10 +1168,12 @@ static void begin_call(grpc_server *server, call_data *calld,
       *rc->data.registered.deadline = calld->deadline;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
       r->data.recv_metadata = rc->data.registered.initial_metadata;
+      r->flags = 0;
       r++;
       if (rc->data.registered.optional_payload) {
         r->op = GRPC_IOREQ_RECV_MESSAGE;
         r->data.recv_message = rc->data.registered.optional_payload;
+        r->flags = 0;
         r++;
       }
       publish = publish_registered_or_batch;

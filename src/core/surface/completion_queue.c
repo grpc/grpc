@@ -73,6 +73,7 @@ struct grpc_completion_queue {
   event *queue;
   /* Fixed size chained hash table of events for pluck() */
   event *buckets[NUM_TAG_BUCKETS];
+  int is_server_cq;
 };
 
 grpc_completion_queue *grpc_completion_queue_create(void) {
@@ -86,21 +87,10 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
   return cc;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason) {
-  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count + 1, reason);
+  gpr_log(GPR_DEBUG, "CQ:%p   ref %d -> %d %s", cc, (int)cc->owning_refs.count,
+          (int)cc->owning_refs.count + 1, reason);
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 #endif
@@ -114,7 +104,8 @@ static void on_pollset_destroy_done(void *arg) {
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason) {
-  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1, reason);
+  gpr_log(GPR_DEBUG, "CQ:%p unref %d -> %d %s", cc, (int)cc->owning_refs.count,
+          (int)cc->owning_refs.count - 1, reason);
 #else
 void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif
@@ -333,3 +324,7 @@ void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
                     gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
+
+void grpc_cq_mark_server_cq(grpc_completion_queue *cc) { cc->is_server_cq = 1; }
+
+int grpc_cq_is_server_cq(grpc_completion_queue *cc) { return cc->is_server_cq; }
