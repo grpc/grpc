@@ -53,3 +53,5 @@ RSpec.configure do |config|
   include RSpec::LoggingHelper
   config.capture_log_messages
 end
+
+RSpec::Expectations.configuration.warn_about_potential_false_positives = false

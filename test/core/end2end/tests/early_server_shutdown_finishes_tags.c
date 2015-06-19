@@ -72,13 +72,6 @@ static void drain_cq(grpc_completion_queue *cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
-  if (!f->server) return;
-  /* don't shutdown, just destroy, to tickle this code edge */
-  grpc_server_destroy(f->server);
-  f->server = NULL;
-}
-
 static void shutdown_client(grpc_end2end_test_fixture *f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
@@ -86,7 +79,6 @@ static void shutdown_client(grpc_end2end_test_fixture *f) {
 }
 
 static void end_test(grpc_end2end_test_fixture *f) {
-  shutdown_server(f);
   shutdown_client(f);
 
   grpc_completion_queue_shutdown(f->server_cq);
@@ -114,10 +106,13 @@ static void test_early_server_shutdown_finishes_tags(
              grpc_server_request_call(f.server, &s, &call_details,
                                       &request_metadata_recv, f.server_cq,
                                       f.server_cq, tag(101)));
-  grpc_server_shutdown(f.server);
+  grpc_server_shutdown_and_notify(f.server, f.server_cq, tag(1000));
   cq_expect_completion(v_server, tag(101), 0);
+  cq_expect_completion(v_server, tag(1000), 1);
   cq_verify(v_server);
   GPR_ASSERT(s == NULL);
+
+  grpc_server_destroy(f.server);
 
   end_test(&f);
   config.tear_down_data(&f);

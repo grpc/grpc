@@ -74,7 +74,8 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown(f->server);
+  grpc_server_shutdown_and_notify(f->server, f->server_cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->server_cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -136,15 +137,18 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
@@ -158,9 +162,11 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(101)));
 
@@ -171,15 +177,18 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message = request_payload;
+    op->flags = 0;
     op++;
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message = &response_payload_recv;
+    op->flags = 0;
     op++;
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(2)));
 
     op = ops;
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message = &request_payload_recv;
+    op->flags = 0;
     op++;
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(102)));
@@ -189,6 +198,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message = response_payload;
+    op->flags = 0;
     op++;
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(103)));
@@ -209,6 +219,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(3)));
 
@@ -217,6 +228,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   op->data.send_status_from_server.status_details = "xyz";
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(104)));
 

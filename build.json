@@ -6,8 +6,8 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 9,
-      "micro": 1,
+      "minor": 10,
+      "micro": 0,
       "build": 0
     }
   },
@@ -107,12 +107,14 @@
       ],
       "headers": [
         "src/core/census/grpc_context.h",
+        "src/core/channel/census_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/child_channel.h",
         "src/core/channel/client_channel.h",
         "src/core/channel/client_setup.h",
         "src/core/channel/connected_channel.h",
+        "src/core/channel/context.h",
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_server_filter.h",
         "src/core/channel/noop_filter.h",

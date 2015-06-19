@@ -507,6 +507,7 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack *st, VALUE ops_hash) {
                  NUM2INT(this_op));
     };
     st->ops[st->op_num].op = (grpc_op_type)NUM2INT(this_op);
+    st->ops[st->op_num].flags = 0;
     st->op_num++;
   }
 }
