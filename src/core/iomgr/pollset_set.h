@@ -31,44 +31,29 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
 
-#include <grpc/support/port_platform.h>
+#include "src/core/iomgr/pollset.h"
+
+/* A grpc_pollset_set is a set of pollsets that are interested in an
+   action. Adding a pollset to a pollset_set automatically adds any
+   fd's (etc) that have been registered with the set_set with that pollset.
+   Registering fd's automatically adds them to all current pollsets. */
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_kick_posix.h"
+#include "src/core/iomgr/pollset_set_posix.h"
 #endif
 
 #ifdef GPR_WIN32
-#include "src/core/iomgr/pollset_kick_windows.h"
+#include "src/core/iomgr/pollset_set_windows.h"
 #endif
 
-/* This is an abstraction around the typical pipe mechanism for waking up a
-   thread sitting in a poll() style call. */
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set);
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set);
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset);
+void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset);
 
-void grpc_pollset_kick_global_init(void);
-void grpc_pollset_kick_global_destroy(void);
-
-void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state);
-void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
-
-/* Guarantees a pure posix implementation rather than a specialized one, if
- * applicable. Intended for testing. */
-void grpc_pollset_kick_global_init_fallback_fd(void);
-
-/* Must be called before entering poll(). If return value is -1, this consumed
-   an existing kick. Otherwise the return value is an FD to add to the poll set.
- */
-int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state);
-
-/* Consume an existing kick. Must be called after poll returns that the fd was
-   readable, and before calling kick_post_poll. */
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state);
-
-/* Must be called after pre_poll, and after consume if applicable */
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state);
-
-void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
-
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

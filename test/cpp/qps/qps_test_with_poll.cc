@@ -31,18 +31,60 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H
+#include <set>
 
-#include <grpc/support/sync.h>
+#include <grpc/support/log.h>
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. */
+#include <signal.h>
 
-struct grpc_kick_fd_info;
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
 
-typedef struct grpc_pollset_kick_state {
-  int unused;
-} grpc_pollset_kick_state;
+extern "C" {
+#include "src/core/iomgr/pollset_posix.h"
+}
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H */
+namespace grpc {
+namespace testing {
+
+static const int WARMUP = 5;
+static const int BENCHMARK = 5;
+
+static void RunQPS() {
+  gpr_log(GPR_INFO, "Running QPS test");
+
+  ClientConfig client_config;
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_enable_ssl(false);
+  client_config.set_outstanding_rpcs_per_channel(1000);
+  client_config.set_client_channels(8);
+  client_config.set_payload_size(1);
+  client_config.set_async_client_threads(8);
+  client_config.set_rpc_type(UNARY);
+
+  ServerConfig server_config;
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_enable_ssl(false);
+  server_config.set_threads(4);
+
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+
+  GetReporter()->ReportQPSPerCore(*result);
+  GetReporter()->ReportLatency(*result);
+}
+
+}  // namespace testing
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  grpc_platform_become_multipoller = grpc_poll_become_multipoller;
+
+  signal(SIGPIPE, SIG_IGN);
+  grpc::testing::RunQPS();
+
+  return 0;
+}

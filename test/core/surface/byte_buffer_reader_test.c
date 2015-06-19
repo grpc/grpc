@@ -127,11 +127,11 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
 
   input_slice = gpr_slice_malloc(input_size);
   memset(GPR_SLICE_START_PTR(input_slice), 'a', input_size);
-  gpr_slice_buffer_add(&sliceb_in, input_slice);  /* takes ownership */
+  gpr_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
   GPR_ASSERT(grpc_msg_compress(algorithm, &sliceb_in, &sliceb_out));
 
-  buffer = grpc_raw_compressed_byte_buffer_create(
-      sliceb_out.slices, sliceb_out.count, algorithm);
+  buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
+                                                  sliceb_out.count, algorithm);
   grpc_byte_buffer_reader_init(&reader, buffer);
 
   while (grpc_byte_buffer_reader_next(&reader, &read_slice)) {
