@@ -35,12 +35,13 @@
 
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/support/string.h"
+#include "src/core/transport/stream_op.h"
 #include "src/core/transport/transport.h"
-#include "src/core/compression/message_compress.h"
 
 grpc_chttp2_parse_error grpc_chttp2_data_parser_init(
     grpc_chttp2_data_parser *parser) {
@@ -69,35 +70,6 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
   return GRPC_CHTTP2_PARSE_OK;
 }
 
-/** Performs any extra work needed after a frame has been assembled */
-grpc_chttp2_parse_error parse_postprocessing(grpc_chttp2_data_parser *p) {
-  if (p->is_frame_compressed) {  /* Decompress */
-    /* Reorganize the slices within p->incoming_sopb into a gpr_slice_buffer to
-     * be fed to the decompression function */
-    gpr_slice_buffer sb_in, sb_out;
-    grpc_stream_op_buffer *sopb = &p->incoming_sopb;
-    size_t i;
-    gpr_slice_buffer_init(&sb_in);
-    gpr_slice_buffer_init(&sb_out);
-    for (i = 0; i < sopb->nops; ++i) {
-      if (sopb->ops->type == GRPC_OP_SLICE) {
-        gpr_slice_buffer_add(&sb_in, sopb->ops->data.slice);
-      }
-    }
-    grpc_msg_decompress(GRPC_COMPRESS_GZIP /* XXX */, &sb_in, &sb_out);
-    /* copy uncompressed output back to p->incoming_sopb */
-    grpc_sopb_reset(sopb);
-    grpc_sopb_add_begin_message(sopb, sb_out.length, 0);
-    for (i = 0; i < sb_out.count; ++i) {
-      grpc_sopb_add_slice(sopb, sb_out.slices[i]);
-    }
-    gpr_slice_buffer_destroy(&sb_in);
-    gpr_slice_buffer_destroy(&sb_out);
-  }
-
-  return GRPC_CHTTP2_PARSE_OK;
-}
-
 grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
     void *parser, grpc_chttp2_parse_state *state, gpr_slice slice,
     int is_last) {
@@ -105,6 +77,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_data_parser *p = parser;
+  gpr_uint32 message_flags = 0;
 
   if (is_last && p->is_last_frame) {
     state->end_of_stream = 1;
@@ -160,17 +133,21 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       p->state = GRPC_CHTTP2_DATA_FRAME;
       ++cur;
       state->need_flush_reads = 1;
-      grpc_sopb_add_begin_message(&p->incoming_sopb, p->frame_size, 0);
+      if (p->is_frame_compressed) {
+        message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+      }
+      grpc_sopb_add_begin_message(&p->incoming_sopb, p->frame_size,
+                                  message_flags);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
       if (cur == end) {
-        return parse_postprocessing(p);
+        return GRPC_CHTTP2_PARSE_OK;
       } else if ((gpr_uint32)(end - cur) == p->frame_size) {
         state->need_flush_reads = 1;
         grpc_sopb_add_slice(&p->incoming_sopb,
                             gpr_slice_sub(slice, cur - beg, end - beg));
         p->state = GRPC_CHTTP2_DATA_FH_0;
-        return parse_postprocessing(p);
+        return GRPC_CHTTP2_PARSE_OK;
       } else if ((gpr_uint32)(end - cur) > p->frame_size) {
         state->need_flush_reads = 1;
         grpc_sopb_add_slice(
@@ -183,7 +160,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
         grpc_sopb_add_slice(&p->incoming_sopb,
                             gpr_slice_sub(slice, cur - beg, end - beg));
         p->frame_size -= (end - cur);
-        return parse_postprocessing(p);
+        return GRPC_CHTTP2_PARSE_OK;
       }
   }
 

@@ -54,7 +54,7 @@ const char *grpc_compression_algorithm_name(
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
     grpc_compression_level level) {
   switch (level) {
-    case GRPC_COMPRESS_NONE:
+    case GRPC_COMPRESS_LEVEL_NONE:
       return GRPC_COMPRESS_NONE;
     case GRPC_COMPRESS_LEVEL_LOW:
     case GRPC_COMPRESS_LEVEL_MED:

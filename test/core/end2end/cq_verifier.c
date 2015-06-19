@@ -40,6 +40,7 @@
 #include "src/core/surface/event_string.h"
 #include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -144,7 +145,17 @@ static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
 }
 
 int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
-  return byte_buffer_eq_slice(bb, gpr_slice_from_copied_string(str));
+  grpc_byte_buffer_reader reader;
+  grpc_byte_buffer* rbb;
+  int res;
+
+  grpc_byte_buffer_reader_init(&reader, bb);
+  rbb = grpc_raw_byte_buffer_from_reader(&reader);
+  res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
+  grpc_byte_buffer_reader_destroy(&reader);
+  grpc_byte_buffer_destroy(rbb);
+
+  return res;
 }
 
 static void verify_matches(expectation *e, grpc_event *ev) {
