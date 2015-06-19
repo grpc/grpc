@@ -189,7 +189,7 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
     gpr_slice_unref(result);
     return gpr_empty_slice();
   }
-  GPR_SLICE_SET_LENGTH(result, (gpr_uint8)result_size);
+  GPR_SLICE_SET_LENGTH(result, result_size);
   return result;
 
 fail:
