@@ -64,9 +64,8 @@ message Payload {
 
 // A protobuf representation for grpc status. This is used by test
 // clients to specify a status that the server should attempt to return.
-message Status 
-{ 
-  optional int code = 1;
+message Status { 
+  optional int32 code = 1;
   optional string message = 2;
 }
 
