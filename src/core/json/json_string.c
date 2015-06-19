@@ -83,7 +83,7 @@ static void json_writer_output_check(void* userdata, size_t needed) {
   if (state->free_space >= needed) return;
   needed -= state->free_space;
   /* Round up by 256 bytes. */
-  needed = (needed + 0xff) % 0x100;
+  needed = (needed + 0xff) & ~0xffU;
   state->output = gpr_realloc(state->output, state->allocated + needed);
   state->free_space += needed;
   state->allocated += needed;
