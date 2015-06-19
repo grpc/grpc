@@ -425,6 +425,9 @@
     <ClInclude Include="..\..\src\core\census\grpc_context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\census_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -441,6 +444,9 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\context.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h">

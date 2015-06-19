@@ -168,7 +168,7 @@ class FakeClient {
     request.set_message("hello world");
     Status s = stub_->Echo(&context, request, &response);
     EXPECT_EQ(request.message(), response.message());
-    EXPECT_TRUE(s.IsOk());
+    EXPECT_TRUE(s.ok());
   }
 
   void DoBidiStream() {
@@ -199,7 +199,7 @@ class FakeClient {
     EXPECT_FALSE(stream->Read(&response));
 
     Status s = stream->Finish();
-    EXPECT_TRUE(s.IsOk());
+    EXPECT_TRUE(s.ok());
   }
 
   void ResetStub(TestService::StubInterface* stub) { stub_ = stub; }

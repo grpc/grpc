@@ -100,7 +100,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       GRPC_OVERRIDE {
     InstanceGuard g(this);
     if (!g.Acquired()) {
-      return Status(RESOURCE_EXHAUSTED);
+      return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
     grpc_profiler_start("qps_client.prof");
@@ -114,7 +114,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       GRPC_OVERRIDE {
     InstanceGuard g(this);
     if (!g.Acquired()) {
-      return Status(RESOURCE_EXHAUSTED);
+      return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
     grpc_profiler_start("qps_server.prof");
@@ -159,22 +159,22 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
                      ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
-      return Status(INVALID_ARGUMENT);
+      return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     if (!args.has_setup()) {
-      return Status(INVALID_ARGUMENT);
+      return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     auto client = CreateClient(args.setup());
     if (!client) {
-      return Status(INVALID_ARGUMENT);
+      return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     ClientStatus status;
     if (!stream->Write(status)) {
-      return Status(UNKNOWN);
+      return Status(StatusCode::UNKNOWN, "");
     }
     while (stream->Read(&args)) {
       if (!args.has_mark()) {
-        return Status(INVALID_ARGUMENT);
+        return Status(StatusCode::INVALID_ARGUMENT, "");
       }
       *status.mutable_stats() = client->Mark();
       stream->Write(status);
@@ -187,23 +187,23 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
                        ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
     ServerArgs args;
     if (!stream->Read(&args)) {
-      return Status(INVALID_ARGUMENT);
+      return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     if (!args.has_setup()) {
-      return Status(INVALID_ARGUMENT);
+      return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     auto server = CreateServer(args.setup(), server_port_);
     if (!server) {
-      return Status(INVALID_ARGUMENT);
+      return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     ServerStatus status;
     status.set_port(server_port_);
     if (!stream->Write(status)) {
-      return Status(UNKNOWN);
+      return Status(StatusCode::UNKNOWN, "");
     }
     while (stream->Read(&args)) {
       if (!args.has_mark()) {
-        return Status(INVALID_ARGUMENT);
+        return Status(StatusCode::INVALID_ARGUMENT, "");
       }
       *status.mutable_stats() = server->Mark();
       stream->Write(status);
