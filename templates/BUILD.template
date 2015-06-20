@@ -63,6 +63,12 @@ ${cc_library(lib)}
 % endif
 % endfor
 
+% for lib in libs:
+% if lib.name in ("grpc_unsecure", "gpr"):
+${objc_library(lib)}
+% endif
+% endfor
+
 % for tgt in targets:
 % if tgt.build == 'protoc':
 ${cc_binary(tgt)}
@@ -92,6 +98,34 @@ cc_library(
   deps = [
 % for dep in get_deps(lib):
     "${dep}",
+% endfor
+  ],
+)
+</%def>
+
+<%def name="objc_library(lib)">
+objc_library(
+  name = "${lib.name}_objc",
+  srcs = [
+% for src in lib.src:
+    "${src}",
+% endfor
+  ],
+  hdrs = [
+% for hdr in lib.get("public_headers", []):
+    "${hdr}",
+% endfor
+% for hdr in lib.get("headers", []):
+    "${hdr}",
+% endfor
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+% for dep in lib.get("deps", []):
+    ":${dep}_objc",
 % endfor
   ],
 )
