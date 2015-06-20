@@ -118,10 +118,6 @@ void GprLogReporter::ReportTimes(const ScenarioResult& result) const {
                   [](ResourceUsage u) { return u.wall_time; }));
 }
 
-// perfDbClient perfDbClient(grpc::CreateChannel("localhost:50052", grpc::InsecureCredentials(),
-//                           ChannelArguments()));
-
-//Performance database reporter implementation.
 void PerfDbReporter::ReportQPS(const ScenarioResult& result) const {
   auto qps = result.latencies.Count() /
               average(result.client_resources,
