@@ -318,7 +318,8 @@
   
   if (error != GRPC_CALL_OK) {
     [NSException raise:NSInternalInconsistencyException
-                format:@"A precondition for calling grpc_call_start_batch wasn't met"];
+                format:@"A precondition for calling grpc_call_start_batch wasn't met. Error %i",
+     error];
   }
   gpr_free(ops_array);
 }
