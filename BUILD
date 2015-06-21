@@ -1233,3 +1233,22 @@ objc_library(
     srcs = glob([rx_library_path + "/private/*.m"]),
     visibility = ["//visibility:private"],
 )
+
+objc_client_path = objc_path + "/GRPCClient"
+
+objc_library(
+  name = "grpc_client",
+  hdrs = glob([
+    objc_client_path + "/*.h",
+    objc_client_path + "/private/*.h",
+  ]),
+  srcs = glob([
+    objc_client_path + "/*.m",
+    objc_client_path + "/private/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":grpc_objc",
+    ":rx_library",
+  ],
+)
