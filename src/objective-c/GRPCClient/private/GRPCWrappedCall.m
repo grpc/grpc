@@ -62,6 +62,7 @@
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->flags = 0;
   op->data.send_initial_metadata.count = _count;
   op->data.send_initial_metadata.metadata = _sendMetadata;
 }
@@ -100,6 +101,7 @@
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_SEND_MESSAGE;
+  op->flags = 0;
   op->data.send_message = _byteBuffer;
 }
 
@@ -132,6 +134,7 @@
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
 }
 
 - (void)finish {
@@ -161,6 +164,7 @@
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->flags = 0;
   op->data.recv_initial_metadata = &_recvInitialMetadata;
 }
 
@@ -195,6 +199,7 @@
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_MESSAGE;
+  op->flags = 0;
   op->data.recv_message = &_recvMessage;
 }
 
@@ -228,6 +233,7 @@
 
 - (void)getOp:(grpc_op *)op {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->flags = 0;
   op->data.recv_status_on_client.status = &_statusCode;
   op->data.recv_status_on_client.status_details = &_details;
   op->data.recv_status_on_client.status_details_capacity = &_detailsCapacity;
@@ -314,6 +320,7 @@
     [NSException raise:NSInternalInconsistencyException
                 format:@"A precondition for calling grpc_call_start_batch wasn't met"];
   }
+  gpr_free(ops_array);
 }
 
 - (void)cancel {
