@@ -120,7 +120,11 @@ char *grpc_base64_encode(const void *vdata, size_t data_size, int url_safe,
 }
 
 gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
-  size_t b64_len = strlen(b64);
+  return grpc_base64_decode_with_len(b64, strlen(b64), url_safe);
+}
+
+gpr_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
+                                      int url_safe) {
   gpr_slice result = gpr_slice_malloc(b64_len);
   unsigned char *current = GPR_SLICE_START_PTR(result);
   size_t result_size = 0;
