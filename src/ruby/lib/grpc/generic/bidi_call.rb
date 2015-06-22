@@ -66,6 +66,7 @@ module GRPC
       @cq = q
       @deadline = deadline
       @marshal = marshal
+      @op_notifier = nil  # signals completion on clients
       @readq = Queue.new
       @unmarshal = unmarshal
     end
@@ -76,8 +77,10 @@ module GRPC
     # block that can be invoked with each response.
     #
     # @param requests the Enumerable of requests to send
+    # @op_notifier a Notifier used to signal completion
     # @return an Enumerator of requests to yield
-    def run_on_client(requests, &blk)
+    def run_on_client(requests, op_notifier, &blk)
+      @op_notifier = op_notifier
       @enq_th = Thread.new { write_loop(requests) }
       @loop_th = start_read_loop
       each_queued_msg(&blk)
@@ -104,6 +107,13 @@ module GRPC
 
     END_OF_READS = :end_of_reads
     END_OF_WRITES = :end_of_writes
+
+    # signals that bidi operation is complete
+    def notify_done
+      return unless @op_notifier
+      GRPC.logger.debug("bidi-notify-done: notifying  #{@op_notifier}")
+      @op_notifier.notify(self)
+    end
 
     # each_queued_msg yields each message on this instances readq
     #
@@ -143,11 +153,13 @@ module GRPC
         @call.status = batch_result.status
         batch_result.check_status
         GRPC.logger.debug("bidi-write-loop: done status #{@call.status}")
+        notify_done
       end
       GRPC.logger.debug('bidi-write-loop: finished')
     rescue StandardError => e
       GRPC.logger.warn('bidi-write-loop: failed')
       GRPC.logger.warn(e)
+      notify_done
       raise e
     end
 
