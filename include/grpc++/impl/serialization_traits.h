@@ -34,8 +34,6 @@
 #ifndef GRPCXX_IMPL_SERIALIZATION_TRAITS_H
 #define GRPCXX_IMPL_SERIALIZATION_TRAITS_H
 
-struct grpc_byte_buffer;
-
 namespace grpc {
 
 /// Defines how to serialize and deserialize some type.

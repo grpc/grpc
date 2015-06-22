@@ -41,8 +41,6 @@
 #include <grpc++/config_protobuf.h>
 #include <grpc++/status.h>
 
-struct grpc_byte_buffer;
-
 namespace grpc {
 
 // Serialize the msg into a buffer created inside the function. The caller
