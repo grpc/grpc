@@ -31,53 +31,47 @@
  *
  */
 
-#ifndef GRPCXX_BYTE_BUFFER_H
-#define GRPCXX_BYTE_BUFFER_H
-
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/support/log.h>
-#include <grpc++/config.h>
 #include <grpc++/slice.h>
 
-#include <vector>
+#include <grpc/support/slice.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
+namespace {
 
-class ByteBuffer GRPC_FINAL {
- public:
-  ByteBuffer() : buffer_(nullptr) {}
-
-  ByteBuffer(const Slice* slices, size_t nslices);
-
-  ~ByteBuffer() {
-    if (buffer_) {
-      grpc_byte_buffer_destroy(buffer_);
-    }
+class SliceTest : public ::testing::Test {
+ protected:
+  void CheckSlice(const Slice& s, const grpc::string& content) {
+    EXPECT_EQ(content.size(), s.size());
+    EXPECT_EQ(content,
+              grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
 
-  void Dump(std::vector<Slice>* slices) const;
-
-  void Clear();
-  size_t Length() const;
-
- private:
-  friend class CallOpBuffer;
-
-  // takes ownership
-  void set_buffer(grpc_byte_buffer* buf) {
-    if (buffer_) {
-      gpr_log(GPR_ERROR, "Overriding existing buffer");
-      Clear();
-    }
-    buffer_ = buf;
-  }
-
-  grpc_byte_buffer* buffer() const { return buffer_; }
-
-  grpc_byte_buffer* buffer_;
+  const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 };
 
+TEST_F(SliceTest, Steal) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::STEAL_REF);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Add) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::ADD_REF);
+  gpr_slice_unref(s);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Empty) {
+  Slice empty_slice;
+  CheckSlice(empty_slice, "");
+}
+
+}  // namespace
 }  // namespace grpc
 
-#endif  // GRPCXX_BYTE_BUFFER_H
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
