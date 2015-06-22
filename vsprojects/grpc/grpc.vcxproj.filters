@@ -139,7 +139,7 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
@@ -149,6 +149,12 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
@@ -425,6 +431,9 @@
     <ClInclude Include="..\..\src\core\census\grpc_context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\census_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -441,6 +450,9 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\context.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h">
@@ -491,16 +503,16 @@
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_windows.h">
+    <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h">

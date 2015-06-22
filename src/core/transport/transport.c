@@ -86,12 +86,25 @@ void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
   setup->vtable->initiate(setup);
 }
 
+void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset) {
+  setup->vtable->add_interested_party(setup, pollset);
+}
+
+void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset) {
+  setup->vtable->del_interested_party(setup, pollset);
+}
+
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
   if (op->send_ops) {
     op->on_done_send(op->send_user_data, 0);
   }
   if (op->recv_ops) {
     op->on_done_recv(op->recv_user_data, 0);
+  }
+  if (op->on_consumed) {
+    op->on_consumed(op->on_consumed_user_data, 0);
   }
 }
 

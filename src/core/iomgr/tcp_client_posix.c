@@ -113,8 +113,6 @@ static void on_writable(void *acp, int success) {
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
 
-  grpc_alarm_cancel(&ac->alarm);
-
   if (success) {
     do {
       so_error_size = sizeof(so_error);
@@ -167,26 +165,30 @@ static void on_writable(void *acp, int success) {
 finish:
   gpr_mu_lock(&ac->mu);
   if (!ep) {
-    grpc_fd_orphan(ac->fd, NULL, NULL);
+    grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac);
+  } else {
+    grpc_alarm_cancel(&ac->alarm);
   }
   cb(cb_arg, ep);
 }
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
-                             void *arg, const struct sockaddr *addr,
-                             int addr_len, gpr_timespec deadline) {
+                             void *arg, grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
   async_connect *ac;
   struct sockaddr_in6 addr6_v4mapped;
   struct sockaddr_in addr4_copy;
+  grpc_fd *fdobj;
   char *name;
   char *addr_str;
 
@@ -218,31 +220,35 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   grpc_sockaddr_to_string(&addr_str, addr, 1);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
 
+  fdobj = grpc_fd_create(fd, name);
+
   if (err >= 0) {
-    gpr_log(GPR_DEBUG, "instant connect");
-    cb(arg, grpc_tcp_create(grpc_fd_create(fd, name),
-                            GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    cb(arg, grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
-    close(fd);
+    grpc_fd_orphan(fdobj, NULL, "tcp_client_connect_error");
     cb(arg, NULL);
     goto done;
   }
 
+  grpc_pollset_set_add_fd(interested_parties, fdobj);
+
   ac = gpr_malloc(sizeof(async_connect));
   ac->cb = cb;
   ac->cb_arg = arg;
-  ac->fd = grpc_fd_create(fd, name);
+  ac->fd = fdobj;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
 
+  gpr_mu_lock(&ac->mu);
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+  gpr_mu_unlock(&ac->mu);
 
 done:
   gpr_free(name);

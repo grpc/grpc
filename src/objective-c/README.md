@@ -52,11 +52,11 @@ Pod::Spec.new do |s|
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   # You can run this command manually if you later change your protos and need to regenerate.
-  s.prepare_command = "protoc --objc_out=. --objcgrpc_out=. *.proto **/*.proto"
+  s.prepare_command = "protoc --objc_out=. --objcgrpc_out=. *.proto"
 
   # The --objc_out plugin generates a pair of .pbobjc.h/.pbobjc.m files for each .proto file.
   s.subspec "Messages" do |ms|
-    ms.source_files = "*.pbobjc.{h,m}", "**/*.pbobjc.{h,m}"
+    ms.source_files = "*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
     ms.dependency "Protobuf", "~> 3.0.0-alpha-3"
@@ -65,7 +65,7 @@ Pod::Spec.new do |s|
   # The --objcgrpc_out plugin generates a pair of .pbrpc.h/.pbrpc.m files for each .proto file with
   # a service defined.
   s.subspec "Services" do |ss|
-    ss.source_files = "*.pbrpc.{h,m}", "**/*.pbrpc.{h,m}"
+    ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
     ss.dependency "gRPC", "~> 0.5"
@@ -74,9 +74,21 @@ Pod::Spec.new do |s|
 end
 ```
 
-The file should be named `<Podspec file name>.podspec`. Once your library has a Podspec, Cocoapods
-can install it into any XCode project. For that, go into your project's directory and create a
-Podfile by running:
+The file should be named `<Podspec file name>.podspec`.
+
+Note: If your proto files are in a directory hierarchy, you might want to adjust the _globs_ used in
+the sample Podspec above. For example, you could use:
+
+```ruby
+  s.prepare_command = "protoc --objc_out=. --objcgrpc_out=. *.proto **/*.proto"
+  ...
+    ms.source_files = "*.pbobjc.{h,m}", "**/*.pbobjc.{h,m}"
+  ...
+    ss.source_files = "*.pbrpc.{h,m}", "**/*.pbrpc.{h,m}"
+```
+
+Once your library has a Podspec, Cocoapods can install it into any XCode project. For that, go into
+your project's directory and create a Podfile by running:
 
 ```sh
 pod init
@@ -151,7 +163,7 @@ files:
 
 * [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime
 library. This can be tedious to configure manually.
-* [Podspec](https://github.com/jcanizales/protobuf/blob/add-podspec/Protobuf.podspec) for the
+* [Podspec](https://github.com/google/protobuf/blob/master/Protobuf.podspec) for the
 Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/

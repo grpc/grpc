@@ -62,12 +62,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   char *server_hostport;
   grpc_channel *client;
   grpc_server *server;
-  grpc_completion_queue *client_cq;
-  grpc_completion_queue *server_cq;
+  grpc_completion_queue *cq;
   grpc_call *c;
   grpc_call *s;
-  cq_verifier *v_client;
-  cq_verifier *v_server;
+  cq_verifier *cqv;
   gpr_timespec deadline;
   int got_port;
   grpc_op ops[6];
@@ -93,9 +91,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
-  server_cq = grpc_completion_queue_create();
+  cq = grpc_completion_queue_create();
   server = grpc_server_create(NULL);
-  grpc_server_register_completion_queue(server, server_cq);
+  grpc_server_register_completion_queue(server, cq);
   GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
              0);
   if (port == 0) {
@@ -104,13 +102,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(port == got_port);
   }
   grpc_server_start(server);
-  v_server = cq_verifier_create(server_cq);
+  cqv = cq_verifier_create(cq);
 
   /* Create client. */
   gpr_join_host_port(&client_hostport, client_host, port);
-  client_cq = grpc_completion_queue_create();
   client = grpc_channel_create(client_hostport, NULL);
-  v_client = cq_verifier_create(client_cq);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");
@@ -128,89 +124,92 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
-  c = grpc_channel_create_call(client, client_cq, "/foo", "foo.test.google.fr",
+  c = grpc_channel_create_call(client, cq, "/foo", "foo.test.google.fr",
                                deadline);
   GPR_ASSERT(c);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
   if (expect_ok) {
     /* Check for a successful request. */
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_call(server, &s, &call_details,
-                                        &request_metadata_recv, server_cq,
-                                        server_cq, tag(101)));
-    cq_expect_completion(v_server, tag(101), 1);
-    cq_verify(v_server);
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                   server, &s, &call_details,
+                                   &request_metadata_recv, cq, cq, tag(101)));
+    cq_expect_completion(cqv, tag(101), 1);
+    cq_verify(cqv);
 
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
+    op->flags = 0;
     op++;
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count = 0;
     op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
     op->data.send_status_from_server.status_details = "xyz";
+    op->flags = 0;
     op++;
     op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     op->data.recv_close_on_server.cancelled = &was_cancelled;
+    op->flags = 0;
     op++;
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-    cq_expect_completion(v_server, tag(102), 1);
-    cq_verify(v_server);
-
-    cq_expect_completion(v_client, tag(1), 1);
-    cq_verify(v_client);
+    cq_expect_completion(cqv, tag(102), 1);
+    cq_expect_completion(cqv, tag(1), 1);
+    cq_verify(cqv);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
     GPR_ASSERT(0 == strcmp(details, "xyz"));
     GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
     GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-    GPR_ASSERT(was_cancelled == 0);
+    GPR_ASSERT(was_cancelled == 1);
 
     grpc_call_destroy(s);
   } else {
     /* Check for a failed connection. */
-    cq_expect_completion(v_client, tag(1), 1);
-    cq_verify(v_client);
+    cq_expect_completion(cqv, tag(1), 1);
+    cq_verify(cqv);
 
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
   }
 
   grpc_call_destroy(c);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
 
   /* Destroy client. */
   grpc_channel_destroy(client);
-  grpc_completion_queue_shutdown(client_cq);
-  drain_cq(client_cq);
-  grpc_completion_queue_destroy(client_cq);
 
   /* Destroy server. */
-  grpc_server_shutdown(server);
+  grpc_server_shutdown_and_notify(server, cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
-  grpc_completion_queue_shutdown(server_cq);
-  drain_cq(server_cq);
-  grpc_completion_queue_destroy(server_cq);
+  grpc_completion_queue_shutdown(cq);
+  drain_cq(cq);
+  grpc_completion_queue_destroy(cq);
 
   grpc_call_details_destroy(&call_details);
   gpr_free(details);

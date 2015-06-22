@@ -45,20 +45,31 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
+static grpc_pollset_set g_pollset_set;
+static grpc_pollset g_pollset;
+static int g_connections_complete = 0;
+
 static gpr_timespec test_deadline(void) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+}
+
+static void finish_connection() {
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  g_connections_complete++;
+  grpc_pollset_kick(&g_pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
 static void must_succeed(void *arg, grpc_endpoint *tcp) {
   GPR_ASSERT(tcp);
   grpc_endpoint_shutdown(tcp);
   grpc_endpoint_destroy(tcp);
-  gpr_event_set(arg, (void *)1);
+  finish_connection();
 }
 
 static void must_fail(void *arg, grpc_endpoint *tcp) {
   GPR_ASSERT(!tcp);
-  gpr_event_set(arg, (void *)1);
+  finish_connection();
 }
 
 void test_succeeds(void) {
@@ -66,9 +77,7 @@ void test_succeeds(void) {
   socklen_t addr_len = sizeof(addr);
   int svr_fd;
   int r;
-  gpr_event ev;
-
-  gpr_event_init(&ev);
+  int connections_complete_before;
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -79,10 +88,14 @@ void test_succeeds(void) {
   GPR_ASSERT(0 == bind(svr_fd, (struct sockaddr *)&addr, addr_len));
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  connections_complete_before = g_connections_complete;
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
-  grpc_tcp_client_connect(must_succeed, &ev, (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future);
+  grpc_tcp_client_connect(must_succeed, NULL, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, gpr_inf_future);
 
   /* await the connection */
   do {
@@ -92,26 +105,39 @@ void test_succeeds(void) {
   GPR_ASSERT(r >= 0);
   close(r);
 
-  /* wait for the connection callback to finish */
-  GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+
+  while (g_connections_complete == connections_complete_before) {
+    grpc_pollset_work(&g_pollset, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
+  }
+
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
 void test_fails(void) {
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
-  gpr_event ev;
-
-  gpr_event_init(&ev);
+  int connections_complete_before;
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
 
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  connections_complete_before = g_connections_complete;
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+
   /* connect to a broken address */
-  grpc_tcp_client_connect(must_fail, &ev, (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future);
+  grpc_tcp_client_connect(must_fail, NULL, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, gpr_inf_future);
+
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
   /* wait for the connection callback to finish */
-  GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
+  while (g_connections_complete == connections_complete_before) {
+    grpc_pollset_work(&g_pollset, test_deadline());
+  }
+
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
 void test_times_out(void) {
@@ -122,10 +148,8 @@ void test_times_out(void) {
   int client_fd[NUM_CLIENT_CONNECTS];
   int i;
   int r;
-  gpr_event ev;
+  int connections_complete_before;
   gpr_timespec connect_deadline;
-
-  gpr_event_init(&ev);
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -153,28 +177,50 @@ void test_times_out(void) {
 
   connect_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
 
-  grpc_tcp_client_connect(must_fail, &ev, (struct sockaddr *)&addr, addr_len,
-                          connect_deadline);
-  /* Make sure the event doesn't trigger early */
-  GPR_ASSERT(!gpr_event_wait(&ev, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(500)));
-  /* Now wait until it should have triggered */
-  sleep(1);
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  connections_complete_before = g_connections_complete;
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  /* wait for the connection callback to finish */
-  GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
+  grpc_tcp_client_connect(must_fail, NULL, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, connect_deadline);
+
+  /* Make sure the event doesn't trigger early */
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  while (gpr_time_cmp(gpr_time_add(connect_deadline, gpr_time_from_seconds(2)),
+                      gpr_now()) > 0) {
+    int is_after_deadline = gpr_time_cmp(connect_deadline, gpr_now()) <= 0;
+    if (is_after_deadline &&
+        gpr_time_cmp(gpr_time_add(connect_deadline, gpr_time_from_seconds(1)),
+                     gpr_now()) > 0) {
+      /* allow some slack before insisting that things be done */
+    } else {
+      GPR_ASSERT(g_connections_complete ==
+                 connections_complete_before + is_after_deadline);
+    }
+    grpc_pollset_work(&g_pollset, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
+  }
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+
   close(svr_fd);
   for (i = 0; i < NUM_CLIENT_CONNECTS; ++i) {
     close(client_fd[i]);
   }
 }
 
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
+  grpc_pollset_set_init(&g_pollset_set);
+  grpc_pollset_init(&g_pollset);
+  grpc_pollset_set_add_pollset(&g_pollset_set, &g_pollset);
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   test_times_out();
+  grpc_pollset_set_destroy(&g_pollset_set);
+  grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
   grpc_iomgr_shutdown();
   return 0;
 }

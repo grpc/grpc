@@ -157,7 +157,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -665,7 +665,7 @@ else
 endif
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
-	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
+	$(Q)(unset CPPFLAGS; $(MAKE) -C third_party/openssl build_crypto build_ssl)
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
@@ -812,9 +812,20 @@ test_python: static_c
 	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
 
 
-tools: privatelibs\
+tools: tools_c tools_cxx
+
+
+tools_c: privatelibs_c\
 % for tgt in targets:
-% if tgt.build == 'tool':
+% if tgt.build == 'tool' and not tgt.language=='c++':
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
+% endif
+% endfor
+
+
+tools_cxx: privatelibs_cxx\
+% for tgt in targets:
+% if tgt.build == 'tool' and tgt.language=='c++':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor

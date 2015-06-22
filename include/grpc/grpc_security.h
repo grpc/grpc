@@ -195,8 +195,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
 
 /* TODO(jboeuf): Define some well-known property names. */
 
-#define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME \
-  "transport_security_type"
+#define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
 
@@ -251,4 +250,4 @@ const grpc_auth_context *grpc_call_auth_context(grpc_call *call);
 }
 #endif
 
-#endif  /* GRPC_GRPC_SECURITY_H */
+#endif /* GRPC_GRPC_SECURITY_H */

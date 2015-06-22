@@ -41,8 +41,8 @@
           body: "hello world"
         }
     b. under grpc/ run
-        protoc --proto_path=test/cpp/interop/ \
-        --encode=grpc.testing.SimpleRequest test/cpp/interop/messages.proto \
+        protoc --proto_path=test/proto/ \
+        --encode=grpc.testing.SimpleRequest test/proto/messages.proto \
         < input.txt > input.bin
   2. Start a server
     make interop_server && bins/opt/interop_server --port=50051
@@ -51,10 +51,12 @@
     /grpc.testing.TestService/UnaryCall --enable_ssl=false \
     --input_binary_file=input.bin --output_binary_file=output.bin
   4. Decode response
-    protoc --proto_path=test/cpp/interop/ \
-    --decode=grpc.testing.SimpleResponse test/cpp/interop/messages.proto \
+    protoc --proto_path=test/proto/ \
+    --decode=grpc.testing.SimpleResponse test/proto/messages.proto \
     < output.bin > output.txt
   5. Now the text form of response should be in output.txt
+  Optionally, metadata can be passed to server via flag --metadata, e.g.
+    --metadata="MyHeaderKey1:Value1:MyHeaderKey2:Value2"
 */
 
 #include <fstream>
@@ -77,6 +79,44 @@ DEFINE_string(input_binary_file, "",
               "Path to input file containing serialized request.");
 DEFINE_string(output_binary_file, "output.bin",
               "Path to output file to write serialized response.");
+DEFINE_string(metadata, "",
+              "Metadata to send to server, in the form of key1:val1:key2:val2");
+
+void ParseMetadataFlag(
+    std::multimap<grpc::string, grpc::string>* client_metadata) {
+  if (FLAGS_metadata.empty()) {
+    return;
+  }
+  std::vector<grpc::string> fields;
+  const char* delim = ":";
+  size_t cur, next = -1;
+  do {
+    cur = next + 1;
+    next = FLAGS_metadata.find_first_of(delim, cur);
+    fields.push_back(FLAGS_metadata.substr(cur, next - cur));
+  } while (next != grpc::string::npos);
+  if (fields.size() % 2) {
+    std::cout << "Failed to parse metadata flag" << std::endl;
+    exit(1);
+  }
+  for (size_t i = 0; i < fields.size(); i += 2) {
+    client_metadata->insert(
+        std::pair<grpc::string, grpc::string>(fields[i], fields[i + 1]));
+  }
+}
+
+void PrintMetadata(const std::multimap<grpc::string, grpc::string>& m,
+                   const grpc::string& message) {
+  if (m.empty()) {
+    return;
+  }
+  std::cout << message << std::endl;
+  for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
+           m.begin();
+       iter != m.end(); ++iter) {
+    std::cout << iter->first << " : " << iter->second << std::endl;
+  }
+}
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
@@ -118,11 +158,27 @@ int main(int argc, char** argv) {
       grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
 
   grpc::string response;
-  grpc::testing::CliCall::Call(channel, method, input_stream.str(), &response);
-  if (!response.empty()) {
-    std::ofstream output_file(FLAGS_output_binary_file,
-                              std::ios::trunc | std::ios::binary);
-    output_file << response;
+  std::multimap<grpc::string, grpc::string> client_metadata,
+      server_initial_metadata, server_trailing_metadata;
+  ParseMetadataFlag(&client_metadata);
+  PrintMetadata(client_metadata, "Sending client initial metadata:");
+  grpc::Status s = grpc::testing::CliCall::Call(
+      channel, method, input_stream.str(), &response, client_metadata,
+      &server_initial_metadata, &server_trailing_metadata);
+  PrintMetadata(server_initial_metadata,
+                "Received initial metadata from server:");
+  PrintMetadata(server_trailing_metadata,
+                "Received trailing metadata from server:");
+  if (s.ok()) {
+    std::cout << "Rpc succeeded with OK status" << std::endl;
+    if (!response.empty()) {
+      std::ofstream output_file(FLAGS_output_binary_file,
+                                std::ios::trunc | std::ios::binary);
+      output_file << response;
+    }
+  } else {
+    std::cout << "Rpc failed with status code " << s.error_code()
+              << " error message " << s.error_message() << std::endl;
   }
 
   return 0;

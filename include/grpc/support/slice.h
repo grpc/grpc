@@ -110,8 +110,9 @@ gpr_slice gpr_slice_ref(gpr_slice s);
 /* Decrement the ref count of s.  If the ref count of s reaches zero, all
    slices sharing the ref count are destroyed, and considered no longer
    initialized.  If s is ultimately derived from a call to gpr_slice_new(start,
-   len, dest) where dest!=NULL , then (*dest)(start, len) is called.  Requires
-   s initialized.  */
+   len, dest) where dest!=NULL , then (*dest)(start) is called, else if s is
+   ultimately derived from a call to gpr_slice_new_with_len(start, len, dest)
+   where dest!=NULL , then (*dest)(start, len).  Requires s initialized.  */
 void gpr_slice_unref(gpr_slice s);
 
 /* Create a slice pointing at some data. Calls malloc to allocate a refcount
@@ -175,4 +176,4 @@ int gpr_slice_str_cmp(gpr_slice a, const char *b);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_SLICE_H */
+#endif /* GRPC_SUPPORT_SLICE_H */

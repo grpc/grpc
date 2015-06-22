@@ -615,7 +615,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
-    if (status.IsOk()) {
+    if (status.ok()) {
       finish_buf_.AddSendMessage(msg);
     }
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
@@ -623,7 +623,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
   }
 
   void FinishWithError(const Status& status, void* tag) {
-    GPR_ASSERT(!status.IsOk());
+    GPR_ASSERT(!status.ok());
     finish_buf_.Reset(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
