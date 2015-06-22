@@ -405,6 +405,8 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
 
 static void set_status_code(grpc_call *call, status_source source,
                             gpr_uint32 status) {
+  if (call->status[source].is_set) return;
+
   call->status[source].is_set = 1;
   call->status[source].code = status;
 
