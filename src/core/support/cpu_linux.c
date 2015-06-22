@@ -51,7 +51,8 @@
 static int ncpus = 0;
 
 static void init_num_cpus() {
-  // This must be signed. sysconf returns -1 when the number can't be determined
+  /* This must be signed. sysconf returns -1 when the number cannot be
+     determined */
   ncpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
   if (ncpus < 1) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
