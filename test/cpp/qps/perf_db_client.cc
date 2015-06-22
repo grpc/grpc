@@ -38,37 +38,37 @@ namespace testing {
 
 //sets the client and server config information
 void PerfDbClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) {
-  clientConfig_ = clientConfig;
-  serverConfig_ = serverConfig;
+  this->clientConfig_ = clientConfig;
+  this->serverConfig_ = serverConfig;
 }
 
 //sets the QPS
 void PerfDbClient::setQPS(double QPS) {
-  QPS_ = QPS;
+  this->QPS_ = QPS;
 }
 
 //sets the QPS per core
 void PerfDbClient::setQPSPerCore(double QPSPerCore) {
-  QPSPerCore_ = QPSPerCore;
+  this->QPSPerCore_ = QPSPerCore;
 }
 
 //sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
 void PerfDbClient::setLatencies(double percentileLatency50, double percentileLatency90,
     double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) {
-  percentileLatency50_ = percentileLatency50;
-  percentileLatency90_ = percentileLatency90;
-  percentileLatency95_ = percentileLatency95;
-  percentileLatency99_ = percentileLatency99;
-  percentileLatency99Point9_ = percentileLatency99Point9;
+  this->percentileLatency50_ = percentileLatency50;
+  this->percentileLatency90_ = percentileLatency90;
+  this->percentileLatency95_ = percentileLatency95;
+  this->percentileLatency99_ = percentileLatency99;
+  this->percentileLatency99Point9_ = percentileLatency99Point9;
 }
 
 //sets the server and client, user and system times
 void PerfDbClient::setTimes(double serverSystemTime, double serverUserTime, 
     double clientSystemTime, double clientUserTime) {
-  serverSystemTime_ = serverSystemTime;
-  serverUserTime_ = serverUserTime;
-  clientSystemTime_ = clientSystemTime;
-  clientUserTime_ = clientUserTime;
+  this->serverSystemTime_ = serverSystemTime;
+  this->serverUserTime_ = serverUserTime;
+  this->clientSystemTime_ = clientSystemTime;
+  this->clientUserTime_ = clientUserTime;
 }
 
 //sends the data to the performancew database server

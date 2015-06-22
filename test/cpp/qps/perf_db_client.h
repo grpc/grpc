@@ -52,7 +52,19 @@ namespace testing {
 //Manages data sending to performance database server
 class PerfDbClient {
 public:
-  PerfDbClient() {}
+  PerfDbClient() {
+    QPS_ = DBL_MIN;
+    QPSPerCore_ = DBL_MIN;
+    percentileLatency50_ = DBL_MIN;
+    percentileLatency90_ = DBL_MIN;
+    percentileLatency95_ = DBL_MIN;
+    percentileLatency99_ = DBL_MIN;
+    percentileLatency99Point9_ = DBL_MIN;
+    serverSystemTime_ = DBL_MIN;
+    serverUserTime_ = DBL_MIN;
+    clientSystemTime_ = DBL_MIN;
+    clientUserTime_ = DBL_MIN;
+  }
   
   void init(std::shared_ptr<ChannelInterface> channel) { stub_ = PerfDbTransfer::NewStub(channel); }
 
@@ -82,17 +94,17 @@ private:
   std::unique_ptr<PerfDbTransfer::Stub> stub_;
   ClientConfig clientConfig_;
   ServerConfig serverConfig_;
-  double QPS_ = DBL_MIN;
-  double QPSPerCore_ = DBL_MIN;
-  double percentileLatency50_ = DBL_MIN;
-  double percentileLatency90_ = DBL_MIN;
-  double percentileLatency95_ = DBL_MIN;
-  double percentileLatency99_ = DBL_MIN;
-  double percentileLatency99Point9_ = DBL_MIN;
-  double serverSystemTime_ = DBL_MIN;
-  double serverUserTime_ = DBL_MIN;
-  double clientSystemTime_ = DBL_MIN;
-  double clientUserTime_ = DBL_MIN;
+  double QPS_;
+  double QPSPerCore_;
+  double percentileLatency50_;
+  double percentileLatency90_;
+  double percentileLatency95_;
+  double percentileLatency99_;
+  double percentileLatency99Point9_;
+  double serverSystemTime_;
+  double serverUserTime_;
+  double clientSystemTime_;
+  double clientUserTime_;
 };
 
 } //namespace testing
