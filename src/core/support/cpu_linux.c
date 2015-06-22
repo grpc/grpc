@@ -48,10 +48,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-static unsigned ncpus = 0;
+static int ncpus = 0;
 
 static void init_num_cpus() {
-  ncpus = (unsigned)sysconf(_SC_NPROCESSORS_ONLN);
+  // This must be signed. sysconf returns -1 when the number can't be determined
+  ncpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
   if (ncpus < 1) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
     ncpus = 1;
@@ -61,7 +62,7 @@ static void init_num_cpus() {
 unsigned gpr_cpu_num_cores(void) {
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_num_cpus);
-  return ncpus;
+  return (unsigned)ncpus;
 }
 
 unsigned gpr_cpu_current_cpu(void) {
