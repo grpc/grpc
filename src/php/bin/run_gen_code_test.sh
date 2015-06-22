@@ -29,9 +29,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 cd $(dirname $0)
-GRPC_TEST_HOST=localhost:7070 php -d extension_dir=../ext/grpc/modules/ \
-  -d extension=grpc.so /usr/local/bin/phpunit -v --debug --strict \
+default_extension_dir=`php -i | grep extension_dir | sed 's/.*=> //g'`
+if [ ! -e $default_extension_dir/grpc.so ]
+then
+  extension_dir='-d extension_dir=../ext/grpc/modules/'
+fi
+GRPC_TEST_HOST=localhost:50051 php $extension_dir \
+  -d extension=grpc.so `which phpunit` -v --debug --strict \
   ../tests/generated_code/GeneratedCodeTest.php
-GRPC_TEST_HOST=localhost:7070 php -d extension_dir=../ext/grpc/modules/ \
-  -d extension=grpc.so /usr/local/bin/phpunit -v --debug --strict \
+GRPC_TEST_HOST=localhost:50051 php $extension_dir \
+  -d extension=grpc.so `which phpunit` -v --debug --strict \
   ../tests/generated_code/GeneratedCodeWithCallbackTest.php
