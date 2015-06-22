@@ -290,23 +290,38 @@ struct grpc_chttp2_transport_parsing {
   grpc_chttp2_outstanding_ping pings;
 };
 
+typedef struct grpc_chttp2_executor_action_header {
+  grpc_chttp2_stream *stream;
+  void (*action)(grpc_chttp2_transport *t, grpc_chttp2_stream *s, void *arg);
+  struct grpc_chttp2_executor_action_header *next;
+  void *arg;
+} grpc_chttp2_executor_action_header;
+
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
+  gpr_refcount refs;
   grpc_endpoint *ep;
   grpc_mdctx *metadata_context;
-  gpr_refcount refs;
 
-  gpr_mu mu;
+  struct {
+    gpr_mu mu;
+
+    /** is a thread currently in the global lock */
+    gpr_uint8 global_active;
+    /** is a thread currently writing */
+    gpr_uint8 writing_active;
+    /** is a thread currently parsing */
+    gpr_uint8 parsing_active;
+    /** is a thread currently executing channel callbacks */
+    gpr_uint8 channel_callback_active;
+
+    grpc_chttp2_executor_action_header *pending_actions;
+  } executor;
 
   /** is the transport destroying itself? */
   gpr_uint8 destroying;
   /** has the upper layer closed the transport? */
   gpr_uint8 closed;
-
-  /** is a thread currently writing */
-  gpr_uint8 writing_active;
-  /** is a thread currently parsing */
-  gpr_uint8 parsing_active;
 
   /** is there a read request to the endpoint outstanding? */
   gpr_uint8 endpoint_reading;
@@ -343,8 +358,6 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream **accepting_stream;
 
   struct {
-    /** is a thread currently performing channel callbacks */
-    gpr_uint8 executing;
     /** transport channel-level callback */
     const grpc_transport_callbacks *cb;
     /** user data for cb calls */
@@ -614,6 +627,11 @@ void grpc_chttp2_for_all_streams(
 
 void grpc_chttp2_parsing_become_skip_parser(
     grpc_chttp2_transport_parsing *transport_parsing);
+
+void grpc_chttp2_run_with_global_lock(
+  grpc_chttp2_transport *transport, grpc_chttp2_stream *optional_stream,
+  void (*action)(grpc_chttp2_transport *t, grpc_chttp2_stream *s, void *arg),
+  void *arg, size_t sizeof_arg);
 
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
