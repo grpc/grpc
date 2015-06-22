@@ -387,7 +387,10 @@ grpc_call *grpc_channel_create_registered_call(
    The order of ops specified in the batch has no significance.
    Only one operation of each type can be active at once in any given
    batch. 
-   THREAD SAFETY: grpc_call_start_batch is thread-compatible */
+   THREAD SAFETY: access to grpc_call_start_batch in multi-threaded environment
+   needs to be synchronized. As an optimization, you may synchronize batches
+   containing just send operations independently from batches containing just
+   receive operations. */
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                                       size_t nops, void *tag);
 
