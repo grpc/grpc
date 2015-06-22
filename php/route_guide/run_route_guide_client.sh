@@ -32,4 +32,5 @@ set -e
 cd $(dirname $0)
 command -v brew >/dev/null 2>&1 && \
   extension_dir="-d extension_dir="`brew --prefix`/opt/grpc-php
-php $extension_dir -d extension=grpc.so greeter_client.php $1
+php $extension_dir -d extension=grpc.so \
+  route_guide_client.php ../../node/route_guide/route_guide_db.json
