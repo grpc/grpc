@@ -41,7 +41,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
-#include "perf_db_client.h"
+#include "test/cpp/qps/perf_db_client.h"
 
 namespace grpc {
 namespace testing {
@@ -104,7 +104,7 @@ class GprLogReporter : public Reporter {
   void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
 };
 
-/** Reporter for client leaderboard. */
+/** Reporter for performance database tool */
 class PerfDbReporter : public Reporter {
  public:
   PerfDbReporter(const string& name, const string& access_token, const string& test_name, const string& sys_info, const string& server_address)
@@ -114,7 +114,7 @@ class PerfDbReporter : public Reporter {
   ~PerfDbReporter() { SendData(); };
 
  private:
-  PerfDbClient perfDbClient;
+  PerfDbClient perfDbClient_;
   std::string access_token_;
   std::string test_name_;
   std::string sys_info_;

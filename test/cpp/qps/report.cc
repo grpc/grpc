@@ -123,8 +123,8 @@ void PerfDbReporter::ReportQPS(const ScenarioResult& result) const {
               average(result.client_resources,
                       [](ResourceUsage u) { return u.wall_time; });
 
-  perfDbClient.setQPS(qps);
-  perfDbClient.setConfigs(result.client_config, result.server_config);
+  perfDbClient_.setQPS(qps);
+  perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) const {
@@ -134,18 +134,18 @@ void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) const {
 
   auto qpsPerCore = qps / result.server_config.threads();
 
-  perfDbClient.setQPS(qps);
-  perfDbClient.setQPSPerCore(qpsPerCore);
-  perfDbClient.setConfigs(result.client_config, result.server_config);
+  perfDbClient_.setQPS(qps);
+  perfDbClient_.setQPSPerCore(qpsPerCore);
+  perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportLatency(const ScenarioResult& result) const {
-  perfDbClient.setLatencies(result.latencies.Percentile(50) / 1000,
+  perfDbClient_.setLatencies(result.latencies.Percentile(50) / 1000,
                               result.latencies.Percentile(90) / 1000,
                               result.latencies.Percentile(95) / 1000,
                               result.latencies.Percentile(99) / 1000,
                               result.latencies.Percentile(99.9) / 1000);
-  perfDbClient.setConfigs(result.client_config, result.server_config);
+  perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportTimes(const ScenarioResult& result) const {
@@ -166,14 +166,14 @@ void PerfDbReporter::ReportTimes(const ScenarioResult& result) const {
                     sum(result.client_resources,
                   [](ResourceUsage u) { return u.wall_time; });
 
-  perfDbClient.setTimes(serverSystemTime, serverUserTime, 
+  perfDbClient_.setTimes(serverSystemTime, serverUserTime, 
     clientSystemTime, clientUserTime);
-  perfDbClient.setConfigs(result.client_config, result.server_config);
+  perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::SendData() const {
   //send data to performance database
-  int dataState = perfDbClient.sendData(access_token_, test_name_, sys_info_);
+  int dataState = perfDbClient_.sendData(access_token_, test_name_, sys_info_);
 
   //check state of data sending
   switch(dataState) {
