@@ -82,23 +82,23 @@ int PerfDbClient::sendData(std::string access_token, std::string test_name, std:
   singleUserRecordRequest.set_sys_info(sys_info);
 
   //setting configs
-  *(singleUserRecordRequest.mutable_client_config()) = clientConfig_;
-  *(singleUserRecordRequest.mutable_server_config()) = serverConfig_;
+  *(singleUserRecordRequest.mutable_client_config()) = this->clientConfig_;
+  *(singleUserRecordRequest.mutable_server_config()) = this->serverConfig_;
   
   Metrics* metrics = singleUserRecordRequest.mutable_metrics();
 
   //setting metrcs in data record request
-  if(QPS_ != DBL_MIN) metrics->set_qps(QPS_);
-  if(QPSPerCore_ != DBL_MIN) metrics->set_qps_per_core(QPSPerCore_);
-  if(percentileLatency50_ != DBL_MIN) metrics->set_perc_lat_50(percentileLatency50_);
-  if(percentileLatency90_ != DBL_MIN) metrics->set_perc_lat_90(percentileLatency90_);
-  if(percentileLatency95_ != DBL_MIN) metrics->set_perc_lat_95(percentileLatency95_);
-  if(percentileLatency99_ != DBL_MIN) metrics->set_perc_lat_99(percentileLatency99_);
-  if(percentileLatency99Point9_ != DBL_MIN) metrics->set_perc_lat_99_point_9(percentileLatency99Point9_);
-  if(serverSystemTime_ != DBL_MIN) metrics->set_server_system_time(serverSystemTime_);
-  if(serverUserTime_ != DBL_MIN) metrics->set_server_user_time(serverUserTime_);
-  if(clientSystemTime_ != DBL_MIN) metrics->set_client_system_time(clientSystemTime_);
-  if(clientUserTime_ != DBL_MIN) metrics->set_client_user_time(clientUserTime_);
+  if(QPS_ != DBL_MIN) metrics->set_qps(this->QPS_);
+  if(QPSPerCore_ != DBL_MIN) metrics->set_qps_per_core(this->QPSPerCore_);
+  if(percentileLatency50_ != DBL_MIN) metrics->set_perc_lat_50(this->percentileLatency50_);
+  if(percentileLatency90_ != DBL_MIN) metrics->set_perc_lat_90(this->percentileLatency90_);
+  if(percentileLatency95_ != DBL_MIN) metrics->set_perc_lat_95(this->percentileLatency95_);
+  if(percentileLatency99_ != DBL_MIN) metrics->set_perc_lat_99(this->percentileLatency99_);
+  if(percentileLatency99Point9_ != DBL_MIN) metrics->set_perc_lat_99_point_9(this->percentileLatency99Point9_);
+  if(serverSystemTime_ != DBL_MIN) metrics->set_server_system_time(this->serverSystemTime_);
+  if(serverUserTime_ != DBL_MIN) metrics->set_server_user_time(this->serverUserTime_);
+  if(clientSystemTime_ != DBL_MIN) metrics->set_client_system_time(this->clientSystemTime_);
+  if(clientUserTime_ != DBL_MIN) metrics->set_client_user_time(this->clientUserTime_);
 
   SingleUserRecordReply singleUserRecordReply;
   ClientContext context;
