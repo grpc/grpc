@@ -116,7 +116,7 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
                     grpc_endpoint_cb_status error) {
   unsigned i;
   gpr_uint8 keep_looping = 0;
-  int input_buffer_count = 0;
+  size_t input_buffer_count = 0;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)user_data;
   gpr_uint8 *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
@@ -181,9 +181,9 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
     return;
   }
   /* The upper level will unref the slices. */
-  input_buffer_count = (int)ep->input_buffer.count;
+  input_buffer_count = ep->input_buffer.count;
   ep->input_buffer.count = 0;
-  call_read_cb(ep, ep->input_buffer.slices, (size_t)input_buffer_count, error);
+  call_read_cb(ep, ep->input_buffer.slices, input_buffer_count, error);
 }
 
 static void endpoint_notify_on_read(grpc_endpoint *secure_ep,
