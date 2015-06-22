@@ -78,9 +78,9 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
   /* tail */
   switch (len & 3) {
     case 3:
-      k1 ^= (gpr_uint32)(tail[2] << 16);
+      k1 ^= ((gpr_uint32)tail[2]) << 16;
     case 2:
-      k1 ^= (gpr_uint32)(tail[1] << 8);
+      k1 ^= ((gpr_uint32)tail[1]) << 8;
     case 1:
       k1 ^= tail[0];
       k1 *= c1;

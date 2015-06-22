@@ -31,6 +31,8 @@
  *
  */
 
+#include <sys/types.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
@@ -313,7 +315,7 @@ gpr_slice gpr_slice_split_head(gpr_slice *source, size_t split) {
 }
 
 int gpr_slice_cmp(gpr_slice a, gpr_slice b) {
-  int d = (int)(GPR_SLICE_LENGTH(a) - GPR_SLICE_LENGTH(b));
+  ssize_t d = (ssize_t)(GPR_SLICE_LENGTH(a) - GPR_SLICE_LENGTH(b));
   if (d != 0) return d;
   return memcmp(GPR_SLICE_START_PTR(a), GPR_SLICE_START_PTR(b),
                 GPR_SLICE_LENGTH(a));
@@ -321,7 +323,7 @@ int gpr_slice_cmp(gpr_slice a, gpr_slice b) {
 
 int gpr_slice_str_cmp(gpr_slice a, const char *b) {
   size_t b_length = strlen(b);
-  int d = (int)(GPR_SLICE_LENGTH(a) - b_length);
+  ssize_t d = (ssize_t)(GPR_SLICE_LENGTH(a) - b_length);
   if (d != 0) return d;
   return memcmp(GPR_SLICE_START_PTR(a), b, b_length);
 }
