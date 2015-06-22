@@ -67,7 +67,8 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
         in_flight_(false),
         has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
                              method->method_type() ==
-                                 RpcMethod::SERVER_STREAMING) {
+                                 RpcMethod::SERVER_STREAMING),
+        cq_(nullptr) {
     grpc_metadata_array_init(&request_metadata_);
   }
 
@@ -84,10 +85,16 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
+  void SetupRequest() { cq_ = grpc_completion_queue_create(); }
+
+  void TeardownRequest() {
+    grpc_completion_queue_destroy(cq_);
+    cq_ = nullptr;
+  }
+
   void Request(grpc_server* server, grpc_completion_queue* notify_cq) {
-    GPR_ASSERT(!in_flight_);
+    GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
-    cq_ = grpc_completion_queue_create();
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_registered_call(
                    server, tag_, &call_, &deadline_, &request_metadata_,
@@ -254,6 +261,7 @@ bool Server::Start() {
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
     for (auto m = sync_methods_->begin(); m != sync_methods_->end(); m++) {
+      m->SetupRequest();
       m->Request(server_, cq_.cq());
     }
 
@@ -384,9 +392,13 @@ void Server::RunRpc() {
     if (ok) {
       SyncRequest::CallData cd(this, mrd);
       {
+        mrd->SetupRequest();
         grpc::unique_lock<grpc::mutex> lock(mu_);
         if (!shutdown_) {
           mrd->Request(server_, cq_.cq());
+        } else {
+          // destroy the structure that was created
+          mrd->TeardownRequest();
         }
       }
       cd.Run();
