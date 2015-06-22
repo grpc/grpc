@@ -79,6 +79,7 @@ bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
 void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
+  ops->flags = 0;
   *nops = 1;
 }
 

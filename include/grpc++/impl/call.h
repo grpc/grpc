@@ -84,6 +84,7 @@ class CallOpSendInitialMetadata {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->flags = 0;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
   }
@@ -110,6 +111,7 @@ class CallOpSendMessage {
     if (send_buf_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
+    op->flags = 0;
     op->data.send_message = send_buf_;
   }
   void FinishOp(bool* status, int max_message_size) {
@@ -141,6 +143,7 @@ class CallOpRecvMessage {
     if (message_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
+    op->flags = 0;
     op->data.recv_message = &recv_buf_;
   }
 
@@ -188,6 +191,7 @@ class CallOpGenericRecvMessage {
     if (!deserialize_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
+    op->flags = 0;
     op->data.recv_message = &recv_buf_;
   }
 
@@ -223,7 +227,9 @@ class CallOpClientSendClose {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_) return;
-    ops[(*nops)++].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    grpc_op* op = &ops[(*nops)++];
+    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+    op->flags = 0;
   }
   void FinishOp(bool* status, int max_message_size) { send_ = false; }
 
@@ -256,6 +262,7 @@ class CallOpServerSendStatus {
     op->data.send_status_from_server.status = send_status_code_;
     op->data.send_status_from_server.status_details =
         send_status_details_.empty() ? nullptr : send_status_details_.c_str();
+    op->flags = 0;
   }
 
   void FinishOp(bool* status, int max_message_size) {
@@ -288,6 +295,7 @@ class CallOpRecvInitialMetadata {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
+    op->flags = 0;
   }
   void FinishOp(bool* status, int max_message_size) {
     if (recv_initial_metadata_ == nullptr) return;
@@ -324,6 +332,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.status_details = &status_details_;
     op->data.recv_status_on_client.status_details_capacity =
         &status_details_capacity_;
+    op->flags = 0;
   }
 
   void FinishOp(bool* status, int max_message_size) {
