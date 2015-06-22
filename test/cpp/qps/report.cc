@@ -118,7 +118,7 @@ void GprLogReporter::ReportTimes(const ScenarioResult& result) {
                   [](ResourceUsage u) { return u.wall_time; }));
 }
 
-void PerfDbReporter::ReportQPS(const ScenarioResult& result) const {
+void PerfDbReporter::ReportQPS(const ScenarioResult& result) {
   auto qps = result.latencies.Count() /
               average(result.client_resources,
                       [](ResourceUsage u) { return u.wall_time; });
@@ -127,7 +127,7 @@ void PerfDbReporter::ReportQPS(const ScenarioResult& result) const {
   perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
-void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) const {
+void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
   auto qps = result.latencies.Count() /
             average(result.client_resources,
                     [](ResourceUsage u) { return u.wall_time; });
@@ -139,7 +139,7 @@ void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) const {
   perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
-void PerfDbReporter::ReportLatency(const ScenarioResult& result) const {
+void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
   perfDbClient_.setLatencies(result.latencies.Percentile(50) / 1000,
                               result.latencies.Percentile(90) / 1000,
                               result.latencies.Percentile(95) / 1000,
@@ -148,7 +148,7 @@ void PerfDbReporter::ReportLatency(const ScenarioResult& result) const {
   perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
-void PerfDbReporter::ReportTimes(const ScenarioResult& result) const {
+void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
   double serverSystemTime = 100.0 * sum(result.server_resources,
                   [](ResourceUsage u) { return u.system_time; }) /
                     sum(result.server_resources,
@@ -171,7 +171,7 @@ void PerfDbReporter::ReportTimes(const ScenarioResult& result) const {
   perfDbClient_.setConfigs(result.client_config, result.server_config);
 }
 
-void PerfDbReporter::SendData() const {
+void PerfDbReporter::SendData() {
   //send data to performance database
   int dataState = perfDbClient_.sendData(access_token_, test_name_, sys_info_);
 

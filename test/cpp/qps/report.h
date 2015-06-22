@@ -109,7 +109,7 @@ class PerfDbReporter : public Reporter {
  public:
   PerfDbReporter(const string& name, const string& access_token, const string& test_name, const string& sys_info, const string& server_address)
    : Reporter(name), access_token_(access_token), test_name_(test_name), sys_info_(sys_info) {
-    perfDbClient.init(grpc::CreateChannel(server_address, grpc::InsecureCredentials(), ChannelArguments()));
+    perfDbClient_.init(grpc::CreateChannel(server_address, grpc::InsecureCredentials(), ChannelArguments()));
   }
   ~PerfDbReporter() { SendData(); };
 
@@ -118,11 +118,11 @@ class PerfDbReporter : public Reporter {
   std::string access_token_;
   std::string test_name_;
   std::string sys_info_;
-  void ReportQPS(const ScenarioResult& result) const GRPC_OVERRIDE;
-  void ReportQPSPerCore(const ScenarioResult& result) const GRPC_OVERRIDE;
-  void ReportLatency(const ScenarioResult& result) const GRPC_OVERRIDE;
-  void ReportTimes(const ScenarioResult& result) const GRPC_OVERRIDE;
-  void SendData() const;
+  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void SendData();
 };
 
 }  // namespace testing

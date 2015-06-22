@@ -27,7 +27,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto2";
+syntax = "proto3";
 
 import "test/cpp/qps/qpstest.proto";
 
@@ -44,58 +44,58 @@ service PerfDbTransfer {
 
 //Metrics to be stored
 message Metrics {
-  optional double qps = 1;
-  optional double qps_per_core = 2;
-  optional double perc_lat_50 = 3;
-  optional double perc_lat_90 = 4;
-  optional double perc_lat_95 = 5;
-  optional double perc_lat_99 = 6;
-  optional double perc_lat_99_point_9 = 7;
-  optional double server_system_time = 8;
-  optional double server_user_time = 9;
-  optional double client_system_time = 10;
-  optional double client_user_time = 11;
+  double qps = 1;
+  double qps_per_core = 2;
+  double perc_lat_50 = 3;
+  double perc_lat_90 = 4;
+  double perc_lat_95 = 5;
+  double perc_lat_99 = 6;
+  double perc_lat_99_point_9 = 7;
+  double server_system_time = 8;
+  double server_user_time = 9;
+  double client_system_time = 10;
+  double client_user_time = 11;
 }
 
 //Timestamped details
 message DataDetails {
-  optional string timestamp = 1;
-  optional string test_name = 2;
-  optional string sys_info = 3;
-  optional Metrics metrics = 4;
-  optional ClientConfig client_config = 5;
-  optional ServerConfig server_config = 6;
+  string timestamp = 1;
+  string test_name = 2;
+  string sys_info = 3;
+  Metrics metrics = 4;
+  ClientConfig client_config = 5;
+  ServerConfig server_config = 6;
 }
 
 //User details
 message UserDetails {
-  optional string id = 1;
-  optional string email = 2;
-  optional bool verified_email = 3;
-  optional string name = 4;
-  optional string given_name = 5;
-  optional string family_name = 6;
-  optional string link = 7;
-  optional string picture = 8;
-  optional string gender = 9;
-  optional string locale = 10;
-  optional string hd = 11;
+  string id = 1;
+  string email = 2;
+  bool verified_email = 3;
+  string name = 4;
+  string given_name = 5;
+  string family_name = 6;
+  string link = 7;
+  string picture = 8;
+  string gender = 9;
+  string locale = 10;
+  string hd = 11;
 }
 
 //Stored to database
 message SingleUserDetails {
   repeated DataDetails data_details = 1;
-  optional UserDetails user_details = 2;
+  UserDetails user_details = 2;
 }
 
 //Request for storing a single user's data
 message SingleUserRecordRequest {
-  optional string access_token = 1;
-  optional string test_name = 2;
-  optional string sys_info = 3;
-  optional Metrics metrics = 4;
-  optional ClientConfig client_config = 5;
-  optional ServerConfig server_config = 6;
+  string access_token = 1;
+  string test_name = 2;
+  string sys_info = 3;
+  Metrics metrics = 4;
+  ClientConfig client_config = 5;
+  ServerConfig server_config = 6;
 }
 
 //Reply to request for storing single user's data
@@ -104,12 +104,12 @@ message SingleUserRecordReply {
 
 //Request for retrieving single user's data
 message SingleUserRetrieveRequest {
-  optional string user_id = 1;
+  string user_id = 1;
 }
 
 //Reply for request to retrieve single user's data
 message SingleUserRetrieveReply {
-  optional SingleUserDetails details = 1;
+  SingleUserDetails details = 1;
 }
 
 //Request for retrieving all users' data

@@ -31,30 +31,30 @@
  *
  */
 
-#include "perf_db_client.h"
+#include "test/cpp/qps/perf_db_client.h"
 
 namespace grpc {
 namespace testing {
 
 //sets the client and server config information
-void PerfDbClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) const {
+void PerfDbClient::setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig) {
   clientConfig_ = clientConfig;
   serverConfig_ = serverConfig;
 }
 
 //sets the QPS
-void PerfDbClient::setQPS(double QPS) const {
+void PerfDbClient::setQPS(double QPS) {
   QPS_ = QPS;
 }
 
 //sets the QPS per core
-void PerfDbClient::setQPSPerCore(double QPSPerCore) const {
+void PerfDbClient::setQPSPerCore(double QPSPerCore) {
   QPSPerCore_ = QPSPerCore;
 }
 
 //sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
 void PerfDbClient::setLatencies(double percentileLatency50, double percentileLatency90,
-    double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) const {
+    double percentileLatency95, double percentileLatency99, double percentileLatency99Point9) {
   percentileLatency50_ = percentileLatency50;
   percentileLatency90_ = percentileLatency90;
   percentileLatency95_ = percentileLatency95;
@@ -64,7 +64,7 @@ void PerfDbClient::setLatencies(double percentileLatency50, double percentileLat
 
 //sets the server and client, user and system times
 void PerfDbClient::setTimes(double serverSystemTime, double serverUserTime, 
-    double clientSystemTime, double clientUserTime) const {
+    double clientSystemTime, double clientUserTime) {
   serverSystemTime_ = serverSystemTime;
   serverUserTime_ = serverUserTime;
   clientSystemTime_ = clientSystemTime;
@@ -72,7 +72,7 @@ void PerfDbClient::setTimes(double serverSystemTime, double serverUserTime,
 }
 
 //sends the data to the performancew database server
-int PerfDbClient::sendData(std::string access_token, std::string test_name, std::string sys_info) const {
+int PerfDbClient::sendData(std::string access_token, std::string test_name, std::string sys_info) {
   //Data record request object
   SingleUserRecordRequest singleUserRecordRequest;
 
