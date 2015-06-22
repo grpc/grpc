@@ -509,6 +509,9 @@
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>

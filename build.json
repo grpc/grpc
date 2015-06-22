@@ -133,6 +133,7 @@
         "src/core/iomgr/pollset.h",
         "src/core/iomgr/pollset_kick_posix.h",
         "src/core/iomgr/pollset_posix.h",
+        "src/core/iomgr/pollset_set.h",
         "src/core/iomgr/pollset_set_posix.h",
         "src/core/iomgr/pollset_set_windows.h",
         "src/core/iomgr/pollset_windows.h",
