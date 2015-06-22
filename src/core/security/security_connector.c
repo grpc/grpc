@@ -386,29 +386,13 @@ static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
   return r;
 }
 
-static grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
-  /* We bet that iterating over a handful of properties twice will be faster
-     than having to realloc on average . */
-  size_t auth_prop_count = 1; /* for transport_security_type. */
+grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
   size_t i;
-  const char *peer_identity_property_name = NULL;
   grpc_auth_context *ctx = NULL;
-  for (i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property *prop = &peer->properties[i];
-    if (prop->name == NULL) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
-      auth_prop_count++;
-      /* If there is no subject alt name, have the CN as the identity. */
-      if (peer_identity_property_name == NULL) {
-        peer_identity_property_name = prop->name;
-      }
-    } else if (strcmp(prop->name,
-                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
-      auth_prop_count++;
-      peer_identity_property_name = prop->name;
-    }
-  }
-  ctx = grpc_auth_context_create(NULL, auth_prop_count);
+
+  /* The caller has checked the certificate type property. */
+  GPR_ASSERT(peer->property_count >= 1);
+  ctx = grpc_auth_context_create(NULL, peer->property_count);
   ctx->properties[0] = grpc_auth_property_init_from_cstring(
       GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -417,15 +401,19 @@ static grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
     const tsi_peer_property *prop = &peer->properties[i];
     if (prop->name == NULL) continue;
     if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      /* If there is no subject alt name, have the CN as the identity. */
+      if (ctx->peer_identity_property_name == NULL) {
+        ctx->peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
+      }
       ctx->properties[ctx->property_count++] = grpc_auth_property_init(
           GRPC_X509_CN_PROPERTY_NAME, prop->value.data, prop->value.length);
     } else if (strcmp(prop->name,
                       TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      ctx->peer_identity_property_name = GRPC_X509_SAN_PROPERTY_NAME;
       ctx->properties[ctx->property_count++] = grpc_auth_property_init(
           GRPC_X509_SAN_PROPERTY_NAME, prop->value.data, prop->value.length);
     }
   }
-  GPR_ASSERT(auth_prop_count == ctx->property_count);
   return ctx;
 }
 
