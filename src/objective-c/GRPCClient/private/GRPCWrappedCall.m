@@ -43,6 +43,8 @@
 
 @implementation GRPCOperation {
 @protected
+  // Most operation subclasses don't set any flags in the grpc_op, and rely on the flag member being
+  // initialized to zero.
   grpc_op _op;
   void(^_handler)();
 }
