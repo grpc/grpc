@@ -33,53 +33,50 @@
 
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
+
 #import "GRPCChannel.h"
 
-typedef void(^GRPCCompletionHandler)(NSDictionary *);
-
-@protocol GRPCOp <NSObject>
-
-- (void)getOp:(grpc_op *)op;
-
+@interface GRPCOperation : NSObject
+@property(nonatomic, readonly) grpc_op op;
 - (void)finish;
-
 @end
 
-@interface GRPCOpSendMetadata : NSObject <GRPCOp>
+@interface GRPCOpSendMetadata : GRPCOperation
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
-                         handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+                         handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
-@interface GRPCOpSendMessage : NSObject <GRPCOp>
+@interface GRPCOpSendMessage : GRPCOperation
 
 - (instancetype)initWithMessage:(NSData *)message
-                        handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+                        handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
-@interface GRPCOpSendClose : NSObject <GRPCOp>
+@interface GRPCOpSendClose : GRPCOperation
 
-- (instancetype)initWithHandler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
-@interface GRPCOpRecvMetadata : NSObject <GRPCOp>
+@interface GRPCOpRecvMetadata : GRPCOperation
 
 - (instancetype)initWithHandler:(void(^)(NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
-@interface GRPCOpRecvMessage : NSObject <GRPCOp>
+@interface GRPCOpRecvMessage : GRPCOperation
 
 - (instancetype)initWithHandler:(void(^)(grpc_byte_buffer *))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
-@interface GRPCOpRecvStatus : NSObject <GRPCOp>
+@interface GRPCOpRecvStatus : GRPCOperation
 
-- (instancetype)initWithHandler:(void(^)(NSError *, NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void(^)(NSError *, NSDictionary *))handler
+    NS_DESIGNATED_INITIALIZER;
 
 @end
 
