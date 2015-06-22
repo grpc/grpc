@@ -203,4 +203,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
 const tsi_peer_property *tsi_peer_get_property_by_name(
     const tsi_peer *peer, const char *name);
 
+/* Exposed for testing only. */
+grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer);
+
 #endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONNECTOR_H */
