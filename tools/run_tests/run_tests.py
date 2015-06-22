@@ -50,6 +50,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
 
+_FORCE_ENVIRON_FOR_WRAPPERS = {}
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
@@ -97,7 +100,7 @@ class ValgrindConfig(object):
   def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
-                          shortname='valgrind %s' % binary,
+                          shortname='valgrind %s' % cmdline[0],
                           hash_targets=None)
 
 
@@ -130,7 +133,7 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
-    return ['buildtests_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def build_steps(self):
     return []
@@ -146,7 +149,7 @@ class NodeLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -165,7 +168,7 @@ class PhpLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -190,13 +193,13 @@ class PythonLanguage(object):
     modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
                                 test['module']],
                                None,
-                               environ={'GRPC_TRACE': 'surface,batch'},
+                               environ=_FORCE_ENVIRON_FOR_WRAPPERS,
                                shortname=test['module'])
                for test in self._tests if 'module' in test]
     files = [config.job_spec(['tools/run_tests/run_python.sh',
                               test['file']],
                              None,
-                             environ={'GRPC_TRACE': 'surface,batch'},
+                             environ=_FORCE_ENVIRON_FOR_WRAPPERS,
                              shortname=test['file'])
             for test in self._tests if 'file' in test]
     return files + modules
@@ -218,7 +221,7 @@ class RubyLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['run_dep_checks']
@@ -251,7 +254,7 @@ class CSharpLanguage(object):
       cmd = 'tools/run_tests/run_csharp.sh'
     return [config.job_spec([cmd, assembly],
             None, shortname=assembly,
-            environ={'GRPC_TRACE': 'surface,batch'})
+            environ=_FORCE_ENVIRON_FOR_WRAPPERS)
             for assembly in assemblies ]
 
   def make_targets(self):
@@ -385,9 +388,9 @@ argp.add_argument('--newline_on_success',
                   action='store_const',
                   const=True)
 argp.add_argument('-l', '--language',
-                  choices=sorted(_LANGUAGES.keys()),
+                  choices=['all'] + sorted(_LANGUAGES.keys()),
                   nargs='+',
-                  default=sorted(_LANGUAGES.keys()))
+                  default=['all'])
 argp.add_argument('-S', '--stop_on_failure',
                   default=False,
                   action='store_const',
@@ -402,8 +405,14 @@ run_configs = set(_CONFIGS[cfg]
                       for x in args.config))
 build_configs = set(cfg.build_config for cfg in run_configs)
 
+if args.travis:
+  _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
+
 make_targets = []
-languages = set(_LANGUAGES[l] for l in args.language)
+languages = set(_LANGUAGES[l]
+                for l in itertools.chain.from_iterable(
+                      _LANGUAGES.iterkeys() if x == 'all' else [x]
+                      for x in args.language))
 
 if len(build_configs) > 1:
   for language in languages:
@@ -435,8 +444,8 @@ build_steps.extend(set(
 one_run = set(
     spec
     for config in run_configs
-    for language in args.language
-    for spec in _LANGUAGES[language].test_specs(config, args.travis)
+    for language in languages
+    for spec in language.test_specs(config, args.travis)
     if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test

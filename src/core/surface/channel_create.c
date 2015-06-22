@@ -91,7 +91,7 @@ static void done(request *r, int was_successful) {
 static void on_connect(void *rp, grpc_endpoint *tcp) {
   request *r = rp;
 
-  if (!grpc_client_setup_request_should_continue(r->cs_request)) {
+  if (!grpc_client_setup_request_should_continue(r->cs_request, "on_connect")) {
     if (tcp) {
       grpc_endpoint_shutdown(tcp);
       grpc_endpoint_destroy(tcp);
@@ -107,12 +107,12 @@ static void on_connect(void *rp, grpc_endpoint *tcp) {
     } else {
       return;
     }
-  } else if (grpc_client_setup_cb_begin(r->cs_request)) {
+  } else if (grpc_client_setup_cb_begin(r->cs_request, "on_connect")) {
     grpc_create_chttp2_transport(
         r->setup->setup_callback, r->setup->setup_user_data,
         grpc_client_setup_get_channel_args(r->cs_request), tcp, NULL, 0,
         grpc_client_setup_get_mdctx(r->cs_request), 1);
-    grpc_client_setup_cb_end(r->cs_request);
+    grpc_client_setup_cb_end(r->cs_request, "on_connect");
     done(r, 1);
     return;
   } else {
@@ -126,9 +126,10 @@ static int maybe_try_next_resolved(request *r) {
   if (!r->resolved) return 0;
   if (r->resolved_index == r->resolved->naddrs) return 0;
   addr = &r->resolved->addrs[r->resolved_index++];
-  grpc_tcp_client_connect(on_connect, r, (struct sockaddr *)&addr->addr,
-                          addr->len,
-                          grpc_client_setup_request_deadline(r->cs_request));
+  grpc_tcp_client_connect(
+      on_connect, r, grpc_client_setup_get_interested_parties(r->cs_request),
+      (struct sockaddr *)&addr->addr, addr->len,
+      grpc_client_setup_request_deadline(r->cs_request));
   return 1;
 }
 
@@ -137,7 +138,8 @@ static void on_resolved(void *rp, grpc_resolved_addresses *resolved) {
   request *r = rp;
 
   /* if we're not still the active request, abort */
-  if (!grpc_client_setup_request_should_continue(r->cs_request)) {
+  if (!grpc_client_setup_request_should_continue(r->cs_request,
+                                                 "on_resolved")) {
     if (resolved) {
       grpc_resolved_addresses_destroy(resolved);
     }

@@ -176,4 +176,4 @@ int gpr_slice_str_cmp(gpr_slice a, const char *b);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_SLICE_H */
+#endif /* GRPC_SUPPORT_SLICE_H */

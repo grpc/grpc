@@ -37,7 +37,6 @@
 #include <windows.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/pollset_kick.h"
 #include "src/core/iomgr/socket_windows.h"
 
 /* There isn't really any such thing as a pollset under Windows, due to the
@@ -45,12 +44,8 @@
    and a condition variable, as this is the minimal set of features we need
    implemented for the rest of grpc. But we won't use them directly. */
 
-typedef struct grpc_pollset {
-  gpr_mu mu;
-  gpr_cv cv;
-} grpc_pollset;
+typedef struct grpc_pollset { gpr_mu mu; } grpc_pollset;
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-#define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

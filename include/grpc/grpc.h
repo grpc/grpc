@@ -145,7 +145,10 @@ typedef enum grpc_call_error {
   /* the flags value was illegal for this call */
   GRPC_CALL_ERROR_INVALID_FLAGS,
   /* invalid metadata was passed to this call */
-  GRPC_CALL_ERROR_INVALID_METADATA
+  GRPC_CALL_ERROR_INVALID_METADATA,
+  /* completion queue for notification has not been registered with the server
+     */
+  GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
 } grpc_call_error;
 
 /* Write Flags: */
@@ -253,7 +256,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
-  gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
+  gpr_uint32 flags; /**< Write flags bitset for grpc_begin_messages */
   union {
     struct {
       size_t count;
@@ -338,7 +341,7 @@ void grpc_shutdown(void);
 grpc_completion_queue *grpc_completion_queue_create(void);
 
 /** Blocks until an event is available, the completion queue is being shut down,
-    or deadline is reached. 
+    or deadline is reached.
 
     Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
     otherwise a grpc_event describing the event that occurred.
@@ -349,7 +352,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                       gpr_timespec deadline);
 
 /** Blocks until an event with tag 'tag' is available, the completion queue is
-    being shutdown or deadline is reached. 
+    being shutdown or deadline is reached.
 
     Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
     otherwise a grpc_event describing the event that occurred.
@@ -446,7 +449,9 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 /* Destroy a call. */
 void grpc_call_destroy(grpc_call *call);
 
-/* Request notification of a new call */
+/* Request notification of a new call. 'cq_for_notification' must
+   have been registered to the server via grpc_server_register_completion_queue.
+   */
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
@@ -463,7 +468,9 @@ grpc_call_error grpc_server_request_call(
 void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host);
 
-/* Request notification of a new pre-registered call */
+/* Request notification of a new pre-registered call. 'cq_for_notification' must
+   have been registered to the server via grpc_server_register_completion_queue.
+   */
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *request_metadata,
@@ -477,9 +484,10 @@ grpc_call_error grpc_server_request_registered_call(
    through the invocation of this function. */
 grpc_server *grpc_server_create(const grpc_channel_args *args);
 
-/* Register a completion queue with the server. Must be done for any completion
-   queue that is passed to grpc_server_request_* call. Must be performed prior
-   to grpc_server_start. */
+/* Register a completion queue with the server. Must be done for any
+   notification completion queue that is passed to grpc_server_request_*_call
+   and to grpc_server_shutdown_and_notify. Must be performed prior to
+   grpc_server_start. */
 void grpc_server_register_completion_queue(grpc_server *server,
                                            grpc_completion_queue *cq);
 
@@ -496,7 +504,8 @@ void grpc_server_start(grpc_server *server);
    Existing calls will be allowed to complete.
    Send a GRPC_OP_COMPLETE event when there are no more calls being serviced.
    Shutdown is idempotent, and all tags will be notified at once if multiple
-   grpc_server_shutdown_and_notify calls are made. */
+   grpc_server_shutdown_and_notify calls are made. 'cq' must have been
+   registered to this server via grpc_server_register_completion_queue. */
 void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag);
 
@@ -514,9 +523,9 @@ void grpc_server_destroy(grpc_server *server);
 
     Tracers (usually controlled by the environment variable GRPC_TRACE)
     allow printf-style debugging on GRPC internals, and are useful for
-    tracking down problems in the field. 
+    tracking down problems in the field.
 
-    Use of this function is not strictly thread-safe, but the 
+    Use of this function is not strictly thread-safe, but the
     thread-safety issues raised by it should not be of concern. */
 int grpc_tracer_set_enabled(const char *name, int enabled);
 
