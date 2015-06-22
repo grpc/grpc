@@ -83,7 +83,7 @@ static void json_writer_output_check(void* userdata, size_t needed) {
   if (state->free_space >= needed) return;
   needed -= state->free_space;
   /* Round up by 256 bytes. */
-  needed = (needed + 0xff) & ~0xff;
+  needed = (needed + 0xff) & ~0xffU;
   state->output = gpr_realloc(state->output, state->allocated + needed);
   state->free_space += needed;
   state->allocated += needed;
@@ -128,7 +128,7 @@ static void json_reader_string_add_char(void* userdata, gpr_uint32 c) {
   json_reader_userdata* state = userdata;
   GPR_ASSERT(state->string_ptr < state->input);
   GPR_ASSERT(c <= 0xff);
-  *state->string_ptr++ = (char)c;
+  *state->string_ptr++ = (gpr_uint8)c;
 }
 
 /* We are converting a UTF-32 character into UTF-8 here,
@@ -138,22 +138,22 @@ static void json_reader_string_add_utf32(void* userdata, gpr_uint32 c) {
   if (c <= 0x7f) {
     json_reader_string_add_char(userdata, c);
   } else if (c <= 0x7ff) {
-    int b1 = 0xc0 | ((c >> 6) & 0x1f);
-    int b2 = 0x80 | (c & 0x3f);
+    gpr_uint32 b1 = 0xc0 | ((c >> 6) & 0x1f);
+    gpr_uint32 b2 = 0x80 | (c & 0x3f);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
   } else if (c <= 0xffff) {
-    int b1 = 0xe0 | ((c >> 12) & 0x0f);
-    int b2 = 0x80 | ((c >> 6) & 0x3f);
-    int b3 = 0x80 | (c & 0x3f);
+    gpr_uint32 b1 = 0xe0 | ((c >> 12) & 0x0f);
+    gpr_uint32 b2 = 0x80 | ((c >> 6) & 0x3f);
+    gpr_uint32 b3 = 0x80 | (c & 0x3f);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
     json_reader_string_add_char(userdata, b3);
   } else if (c <= 0x1fffff) {
-    int b1 = 0xf0 | ((c >> 18) & 0x07);
-    int b2 = 0x80 | ((c >> 12) & 0x3f);
-    int b3 = 0x80 | ((c >> 6) & 0x3f);
-    int b4 = 0x80 | (c & 0x3f);
+    gpr_uint32 b1 = 0xf0 | ((c >> 18) & 0x07);
+    gpr_uint32 b2 = 0x80 | ((c >> 12) & 0x3f);
+    gpr_uint32 b3 = 0x80 | ((c >> 6) & 0x3f);
+    gpr_uint32 b4 = 0x80 | (c & 0x3f);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
     json_reader_string_add_char(userdata, b3);
