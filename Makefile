@@ -3402,7 +3402,6 @@ LIBGRPC++_SRC = \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
-    src/cpp/client/client_unary_call.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
@@ -3443,6 +3442,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
+    include/grpc++/impl/serialization_traits.h \
     include/grpc++/impl/service_type.h \
     include/grpc++/impl/sync.h \
     include/grpc++/impl/sync_cxx11.h \
@@ -3690,7 +3690,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
-    src/cpp/client/client_unary_call.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
@@ -3731,6 +3730,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
+    include/grpc++/impl/serialization_traits.h \
     include/grpc++/impl/service_type.h \
     include/grpc++/impl/sync.h \
     include/grpc++/impl/sync_cxx11.h \
