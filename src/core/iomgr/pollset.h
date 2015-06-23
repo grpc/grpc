@@ -62,7 +62,10 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    May involve invoking asynchronous callbacks, or actually polling file
    descriptors.
    Requires GRPC_POLLSET_MU(pollset) locked.
-   May unlock GRPC_POLLSET_MU(pollset) during its execution. */
+   May unlock GRPC_POLLSET_MU(pollset) during its execution.
+   
+   Returns true if some work has been done, and false if the deadline
+   got attained. */
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
 
 /* Break one polling thread out of polling work for this pollset.

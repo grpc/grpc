@@ -31,48 +31,47 @@
  *
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif  /* _GNU_SOURCE */
+#include <grpc++/slice.h>
 
-#include <grpc/support/port_platform.h>
+#include <grpc/support/slice.h>
+#include <gtest/gtest.h>
 
-#ifdef GPR_CPU_LINUX
+namespace grpc {
+namespace {
 
-#include <sched.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
+const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
-static int ncpus = 0;
-
-static void init_num_cpus() {
-  /* This must be signed. sysconf returns -1 when the number cannot be
-     determined */
-  ncpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
-  if (ncpus < 1) {
-    gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
-    ncpus = 1;
+class SliceTest : public ::testing::Test {
+ protected:
+  void CheckSlice(const Slice& s, const grpc::string& content) {
+    EXPECT_EQ(content.size(), s.size());
+    EXPECT_EQ(content,
+              grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
+};
+
+TEST_F(SliceTest, Steal) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::STEAL_REF);
+  CheckSlice(spp, kContent);
 }
 
-unsigned gpr_cpu_num_cores(void) {
-  static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, init_num_cpus);
-  return (unsigned)ncpus;
+TEST_F(SliceTest, Add) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::ADD_REF);
+  gpr_slice_unref(s);
+  CheckSlice(spp, kContent);
 }
 
-unsigned gpr_cpu_current_cpu(void) {
-  int cpu = sched_getcpu();
-  if (cpu < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
-    return 0;
-  }
-  return (unsigned)cpu;
+TEST_F(SliceTest, Empty) {
+  Slice empty_slice;
+  CheckSlice(empty_slice, "");
 }
 
-#endif /* GPR_CPU_LINUX */
+}  // namespace
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

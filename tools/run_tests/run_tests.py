@@ -133,7 +133,7 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
-    return ['buildtests_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def build_steps(self):
     return []
@@ -513,6 +513,8 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
       # chance to run.
       massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
       random.shuffle(massaged_one_run)  # which it modifies in-place.
+    if infinite_runs:
+      assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
