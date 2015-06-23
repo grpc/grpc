@@ -31,84 +31,47 @@
  *
  */
 
-#ifndef GRPCXX_CONFIG_H
-#define GRPCXX_CONFIG_H
+#include <grpc++/slice.h>
 
-#if !defined(GRPC_NO_AUTODETECT_PLATFORM)
-
-#ifdef _MSC_VER
-// Visual Studio 2010 is 1600.
-#if _MSC_VER < 1600
-#error "gRPC is only supported with Visual Studio starting at 2010"
-// Visual Studio 2013 is 1800.
-#elif _MSC_VER < 1800
-#define GRPC_CXX0X_NO_FINAL 1
-#define GRPC_CXX0X_NO_OVERRIDE 1
-#define GRPC_CXX0X_NO_CHRONO 1
-#define GRPC_CXX0X_NO_THREAD 1
-#endif
-#endif  // Visual Studio
-
-#ifndef __clang__
-#ifdef __GNUC__
-// nullptr was added in gcc 4.6
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
-#define GRPC_CXX0X_NO_NULLPTR 1
-#endif
-// final and override were added in gcc 4.7
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 407)
-#define GRPC_CXX0X_NO_FINAL 1
-#define GRPC_CXX0X_NO_OVERRIDE 1
-#endif
-#endif
-#endif
-
-#endif
-
-#ifdef GRPC_CXX0X_NO_FINAL
-#define GRPC_FINAL
-#else
-#define GRPC_FINAL final
-#endif
-
-#ifdef GRPC_CXX0X_NO_OVERRIDE
-#define GRPC_OVERRIDE
-#else
-#define GRPC_OVERRIDE override
-#endif
-
-#ifdef GRPC_CXX0X_NO_NULLPTR
-#include <memory>
-const class {
- public:
-  template <class T>
-  operator T *() const {
-    return static_cast<T *>(0);
-  }
-  template <class T>
-  operator std::unique_ptr<T>() const {
-    return std::unique_ptr<T>(static_cast<T *>(0));
-  }
-  template <class T>
-  operator std::shared_ptr<T>() const {
-    return std::shared_ptr<T>(static_cast<T *>(0));
-  }
-  operator bool() const { return false; }
-
- private:
-  void operator&() const = delete;
-} nullptr = {};
-#endif
-
-#ifndef GRPC_CUSTOM_STRING
-#include <string>
-#define GRPC_CUSTOM_STRING std::string
-#endif
+#include <grpc/support/slice.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
+namespace {
 
-typedef GRPC_CUSTOM_STRING string;
+const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
+class SliceTest : public ::testing::Test {
+ protected:
+  void CheckSlice(const Slice& s, const grpc::string& content) {
+    EXPECT_EQ(content.size(), s.size());
+    EXPECT_EQ(content,
+              grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
+  }
+};
+
+TEST_F(SliceTest, Steal) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::STEAL_REF);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Add) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::ADD_REF);
+  gpr_slice_unref(s);
+  CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Empty) {
+  Slice empty_slice;
+  CheckSlice(empty_slice, "");
+}
+
+}  // namespace
 }  // namespace grpc
 
-#endif  // GRPCXX_CONFIG_H
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

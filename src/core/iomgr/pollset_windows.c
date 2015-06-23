@@ -46,7 +46,10 @@
    set of features for the sake of the rest of grpc. But grpc_pollset_work
    won't actually do any polling, and return as quickly as possible. */
 
-void grpc_pollset_init(grpc_pollset *pollset) { gpr_mu_init(&pollset->mu); }
+void grpc_pollset_init(grpc_pollset *pollset) {
+  gpr_mu_init(&pollset->mu);
+  gpr_cv_init(&pollset->cv);
+}
 
 void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
@@ -56,6 +59,7 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
+  gpr_cv_destroy(&pollset->cv);
 }
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
@@ -70,9 +74,12 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (grpc_alarm_check(NULL, now, &deadline)) {
     return 1 /* GPR_TRUE */;
   }
-  return 0 /* GPR_FALSE */;
+  gpr_cv_wait(&pollset->cv, &pollset->mu, deadline);
+  return 1 /* GPR_TRUE */;
 }
 
-void grpc_pollset_kick(grpc_pollset *p) {}
+void grpc_pollset_kick(grpc_pollset *p) {
+  gpr_cv_signal(&p->cv);
+}
 
 #endif /* GPR_WINSOCK_SOCKET */

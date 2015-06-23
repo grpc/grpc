@@ -45,6 +45,7 @@
         "include/grpc++/impl/internal_stub.h",
         "include/grpc++/impl/rpc_method.h",
         "include/grpc++/impl/rpc_service_method.h",
+        "include/grpc++/impl/serialization_traits.h",
         "include/grpc++/impl/service_type.h",
         "include/grpc++/impl/sync.h",
         "include/grpc++/impl/sync_cxx11.h",
@@ -72,7 +73,6 @@
         "src/cpp/client/channel.cc",
         "src/cpp/client/channel_arguments.cc",
         "src/cpp/client/client_context.cc",
-        "src/cpp/client/client_unary_call.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/generic_stub.cc",
@@ -133,6 +133,7 @@
         "src/core/iomgr/pollset.h",
         "src/core/iomgr/pollset_kick_posix.h",
         "src/core/iomgr/pollset_posix.h",
+        "src/core/iomgr/pollset_set.h",
         "src/core/iomgr/pollset_set_posix.h",
         "src/core/iomgr/pollset_set_windows.h",
         "src/core/iomgr/pollset_windows.h",
@@ -1829,6 +1830,36 @@
       "deps": [
         "grpc++",
         "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "cxx_byte_buffer_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/byte_buffer_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "cxx_slice_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/slice_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },

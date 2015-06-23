@@ -184,34 +184,34 @@ static void assert_valid_list(grpc_mdelem_list *list) {
 }
 
 #ifndef NDEBUG
-void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd) {
-  assert_valid_list(&comd->list);
-  assert_valid_list(&comd->garbage);
+void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
+  assert_valid_list(&batch->list);
+  assert_valid_list(&batch->garbage);
 }
 #endif /* NDEBUG */
 
-void grpc_metadata_batch_init(grpc_metadata_batch *comd) {
-  comd->list.head = comd->list.tail = comd->garbage.head = comd->garbage.tail =
+void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
+  batch->list.head = batch->list.tail = batch->garbage.head = batch->garbage.tail =
       NULL;
-  comd->deadline = gpr_inf_future;
+  batch->deadline = gpr_inf_future;
 }
 
-void grpc_metadata_batch_destroy(grpc_metadata_batch *comd) {
+void grpc_metadata_batch_destroy(grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
-  for (l = comd->list.head; l; l = l->next) {
+  for (l = batch->list.head; l; l = l->next) {
     grpc_mdelem_unref(l->md);
   }
-  for (l = comd->garbage.head; l; l = l->next) {
+  for (l = batch->garbage.head; l; l = l->next) {
     grpc_mdelem_unref(l->md);
   }
 }
 
-void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
+void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
                                   grpc_mdelem *elem_to_add) {
   GPR_ASSERT(elem_to_add);
   storage->md = elem_to_add;
-  grpc_metadata_batch_link_head(comd, storage);
+  grpc_metadata_batch_link_head(batch, storage);
 }
 
 static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
@@ -228,17 +228,17 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
+void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
                                    grpc_linked_mdelem *storage) {
-  link_head(&comd->list, storage);
+  link_head(&batch->list, storage);
 }
 
-void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
+void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
                                   grpc_mdelem *elem_to_add) {
   GPR_ASSERT(elem_to_add);
   storage->md = elem_to_add;
-  grpc_metadata_batch_link_tail(comd, storage);
+  grpc_metadata_batch_link_tail(batch, storage);
 }
 
 static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
@@ -255,9 +255,9 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
+void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
                                    grpc_linked_mdelem *storage) {
-  link_tail(&comd->list, storage);
+  link_tail(&batch->list, storage);
 }
 
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
@@ -274,16 +274,16 @@ void grpc_metadata_batch_merge(grpc_metadata_batch *target,
   }
 }
 
-void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
+void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
                                 grpc_mdelem *(*filter)(void *user_data,
                                                        grpc_mdelem *elem),
                                 void *user_data) {
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
 
-  assert_valid_list(&comd->list);
-  assert_valid_list(&comd->garbage);
-  for (l = comd->list.head; l; l = next) {
+  assert_valid_list(&batch->list);
+  assert_valid_list(&batch->garbage);
+  for (l = batch->list.head; l; l = next) {
     grpc_mdelem *orig = l->md;
     grpc_mdelem *filt = filter(user_data, orig);
     next = l->next;
@@ -294,19 +294,19 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
       if (l->next) {
         l->next->prev = l->prev;
       }
-      if (comd->list.head == l) {
-        comd->list.head = l->next;
+      if (batch->list.head == l) {
+        batch->list.head = l->next;
       }
-      if (comd->list.tail == l) {
-        comd->list.tail = l->prev;
+      if (batch->list.tail == l) {
+        batch->list.tail = l->prev;
       }
-      assert_valid_list(&comd->list);
-      link_head(&comd->garbage, l);
+      assert_valid_list(&batch->list);
+      link_head(&batch->garbage, l);
     } else if (filt != orig) {
       grpc_mdelem_unref(orig);
       l->md = filt;
     }
   }
-  assert_valid_list(&comd->list);
-  assert_valid_list(&comd->garbage);
+  assert_valid_list(&batch->list);
+  assert_valid_list(&batch->garbage);
 }
