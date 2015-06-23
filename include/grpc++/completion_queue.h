@@ -36,6 +36,7 @@
 
 #include <grpc/support/time.h>
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/status.h>
 #include <grpc++/time.h>
 
 struct grpc_completion_queue;
@@ -70,7 +71,6 @@ class RpcMethod;
 class Server;
 class ServerBuilder;
 class ServerContext;
-class Status;
 
 class CompletionQueueTag {
  public:
