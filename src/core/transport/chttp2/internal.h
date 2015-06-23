@@ -351,6 +351,13 @@ struct grpc_chttp2_transport {
   grpc_iomgr_closure writing_action;
   /** closure to start reading from the endpoint */
   grpc_iomgr_closure reading_action;
+  /** closure to actually do parsing */
+  grpc_iomgr_closure parsing_action;
+
+  struct {
+    size_t nslices;
+    gpr_slice *slices;
+  } executor_parsing;
 
   /** address to place a newly accepted stream - set and unset by
       grpc_chttp2_parsing_accept_stream; used by init_stream to
