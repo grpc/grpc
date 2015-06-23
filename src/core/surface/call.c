@@ -209,8 +209,8 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
-  /** Compression level for the call */
-  grpc_compression_level compression_level;
+  /** Compression algorithm for the call */
+  grpc_compression_algorithm compression_algorithm;
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
@@ -395,9 +395,9 @@ static void set_status_code(grpc_call *call, status_source source,
   }
 }
 
-static void set_compression_level(grpc_call *call,
-                                         grpc_compression_level clevel) {
-  call->compression_level = clevel;
+static void set_compression_algorithm(grpc_call *call,
+                                      grpc_compression_algorithm algo) {
+  call->compression_algorithm = algo;
 }
 
 static void set_status_details(grpc_call *call, status_source source,
@@ -651,12 +651,10 @@ static void finish_message(grpc_call *call) {
   /* some aliases for readability */
   gpr_slice *slices = call->incoming_message.slices;
   const size_t nslices = call->incoming_message.count;
-  const grpc_compression_algorithm compression_algorithm =
-      grpc_compression_algorithm_for_level(call->compression_level);
 
-  if (call->compression_level > GRPC_COMPRESS_LEVEL_NONE) {
-    byte_buffer = grpc_raw_compressed_byte_buffer_create(slices, nslices,
-                                                         compression_algorithm);
+  if (call->compression_algorithm > GRPC_COMPRESS_NONE) {
+    byte_buffer = grpc_raw_compressed_byte_buffer_create(
+        slices, nslices, call->compression_algorithm);
   } else {
     byte_buffer = grpc_raw_byte_buffer_create(slices, nslices);
   }
@@ -683,12 +681,11 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
    * compression level should already be present in the call, as parsed off its
    * corresponding metadata. */
   if ((msg.flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
-      (call->compression_level == GRPC_COMPRESS_LEVEL_NONE)) {
+      (call->compression_algorithm == GRPC_COMPRESS_NONE)) {
     char *message = NULL;
     gpr_asprintf(
         &message, "Invalid compression algorithm (%s) for compressed message.",
-        grpc_compression_algorithm_name(
-            grpc_compression_algorithm_for_level(call->compression_level)));
+        grpc_compression_algorithm_name(call->compression_algorithm));
     cancel_with_status(call, GRPC_STATUS_FAILED_PRECONDITION, message, 1);
   }
   /* stash away parameters, and prepare for incoming slices */
@@ -1183,8 +1180,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     } else if (key == grpc_channel_get_message_string(call->channel)) {
       set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
     } else if (key ==
-               grpc_channel_get_compresssion_level_string(call->channel)) {
-      set_compression_level(call, decode_compression(md));
+               grpc_channel_get_compresssion_algorithm_string(call->channel)) {
+      set_compression_algorithm(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {

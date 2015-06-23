@@ -251,10 +251,10 @@ static void request_with_payload_template(
   config.tear_down_data(&f);
 }
 
-static void test_invoke_request_with_excepcionally_uncompressed_payload(
+static void test_invoke_request_with_exceptionally_uncompressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
-      config, "test_invoke_request_with_excepcionally_uncompressed_payload",
+      config, "test_invoke_request_with_exceptionally_uncompressed_payload",
       GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_LEVEL_HIGH, GRPC_COMPRESS_NONE);
 }
 
@@ -276,7 +276,7 @@ static void test_invoke_request_with_uncompressed_payload(
 
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  test_invoke_request_with_excepcionally_uncompressed_payload(config);
+  test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
 }
