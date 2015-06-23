@@ -1075,6 +1075,7 @@ objc_library(
   deps = [
     ":gpr_objc",
   ],
+  sdk_dylibs = ["libz"],
 )
 
 
