@@ -39,6 +39,8 @@
 namespace grpc {
 namespace {
 
+const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
+
 class SliceTest : public ::testing::Test {
  protected:
   void CheckSlice(const Slice& s, const grpc::string& content) {
@@ -46,8 +48,6 @@ class SliceTest : public ::testing::Test {
     EXPECT_EQ(content,
               grpc::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
-
-  const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 };
 
 TEST_F(SliceTest, Steal) {

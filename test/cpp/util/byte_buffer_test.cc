@@ -43,21 +43,21 @@
 namespace grpc {
 namespace {
 
+const char* kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
+
 class ByteBufferTest : public ::testing::Test {
- protected:
-  const char* kContent1_ = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-  const char* kContent2_ = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 };
 
 TEST_F(ByteBufferTest, CreateFromSingleSlice) {
-  gpr_slice hello = gpr_slice_from_copied_string(kContent1_);
+  gpr_slice hello = gpr_slice_from_copied_string(kContent1);
   Slice s(hello, Slice::STEAL_REF);
   ByteBuffer buffer(&s, 1);
 }
 
 TEST_F(ByteBufferTest, CreateFromVector) {
-  gpr_slice hello = gpr_slice_from_copied_string(kContent1_);
-  gpr_slice world = gpr_slice_from_copied_string(kContent2_);
+  gpr_slice hello = gpr_slice_from_copied_string(kContent1);
+  gpr_slice world = gpr_slice_from_copied_string(kContent2);
   std::vector<Slice> slices;
   slices.push_back(Slice(hello, Slice::STEAL_REF));
   slices.push_back(Slice(world, Slice::STEAL_REF));
@@ -65,20 +65,20 @@ TEST_F(ByteBufferTest, CreateFromVector) {
 }
 
 TEST_F(ByteBufferTest, Clear) {
-  gpr_slice hello = gpr_slice_from_copied_string(kContent1_);
+  gpr_slice hello = gpr_slice_from_copied_string(kContent1);
   Slice s(hello, Slice::STEAL_REF);
   ByteBuffer buffer(&s, 1);
   buffer.Clear();
 }
 
 TEST_F(ByteBufferTest, Length) {
-  gpr_slice hello = gpr_slice_from_copied_string(kContent1_);
-  gpr_slice world = gpr_slice_from_copied_string(kContent2_);
+  gpr_slice hello = gpr_slice_from_copied_string(kContent1);
+  gpr_slice world = gpr_slice_from_copied_string(kContent2);
   std::vector<Slice> slices;
   slices.push_back(Slice(hello, Slice::STEAL_REF));
   slices.push_back(Slice(world, Slice::STEAL_REF));
   ByteBuffer buffer(&slices[0], 2);
-  EXPECT_EQ(strlen(kContent1_) + strlen(kContent2_), buffer.Length());
+  EXPECT_EQ(strlen(kContent1) + strlen(kContent2), buffer.Length());
 }
 
 bool SliceEqual(const Slice& a, gpr_slice b) {
@@ -94,8 +94,8 @@ bool SliceEqual(const Slice& a, gpr_slice b) {
 }
 
 TEST_F(ByteBufferTest, Dump) {
-  gpr_slice hello = gpr_slice_from_copied_string(kContent1_);
-  gpr_slice world = gpr_slice_from_copied_string(kContent2_);
+  gpr_slice hello = gpr_slice_from_copied_string(kContent1);
+  gpr_slice world = gpr_slice_from_copied_string(kContent2);
   std::vector<Slice> slices;
   slices.push_back(Slice(hello, Slice::STEAL_REF));
   slices.push_back(Slice(world, Slice::STEAL_REF));
