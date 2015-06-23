@@ -64,7 +64,7 @@ message Payload {
 
 // A protobuf representation for grpc status. This is used by test
 // clients to specify a status that the server should attempt to return.
-message Status { 
+message EchoStatus { 
   optional int32 code = 1;
   optional string message = 2;
 }
@@ -92,7 +92,7 @@ message SimpleRequest {
   optional CompressionType response_compression = 6;
 
   // Whether server should return a given status
-  optional Status response_status = 7;
+  optional EchoStatus response_status = 7;
 }
 
 // Unary response, as configured by the request.
@@ -149,7 +149,7 @@ message StreamingOutputCallRequest {
   optional CompressionType response_compression = 6;
 
   // Whether server should return a given status
-  optional Status response_status = 7;
+  optional EchoStatus response_status = 7;
 }
 
 // Server-streaming response, as configured by the request and parameters.
