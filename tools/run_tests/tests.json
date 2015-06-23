@@ -607,6 +607,24 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "cxx_byte_buffer_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "cxx_slice_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "cxx_time_test", 
     "platforms": [
       "windows", 

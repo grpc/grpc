@@ -1830,6 +1830,36 @@
       ]
     },
     {
+      "name": "cxx_byte_buffer_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/byte_buffer_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "cxx_slice_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/slice_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "cxx_time_test",
       "build": "test",
       "language": "c++",
