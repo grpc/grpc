@@ -372,6 +372,7 @@ OPENSSL_LIBS = ssl crypto
 endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
+OPENSSL_NPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
@@ -382,6 +383,7 @@ SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/buil
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
+OPENSSL_NPN_CHECK_CMD += -ldl
 endif
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
@@ -395,11 +397,17 @@ endif
 HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+HAS_SYSTEM_OPENSSL_NPN = true
+else
+HAS_SYSTEM_OPENSSL_NPN = $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+endif
 HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_PROTOBUF = $(HAS_SYSTEM_PROTOBUF_VERIFY)
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
+HAS_SYSTEM_OPENSSL_NPN = false
 HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
@@ -423,6 +431,9 @@ HAS_SYSTEMTAP = true
 endif
 endif
 
+# Note that for testing purposes, one can do:
+#   make HAS_EMBEDDED_OPENSSL_ALPN=false
+# to emulate the fact we do not have OpenSSL in the third_party folder.
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
 else
@@ -456,6 +467,7 @@ endif
 
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
+USE_SYSTEM_OPENSSL = false
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
 # need to prefix these to ensure overriding system libraries
@@ -465,9 +477,19 @@ ifeq ($(OPENSSL_REQUIRES_DL),true)
 LIBS_SECURE = dl
 endif
 else
-NO_SECURE = true
+ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+USE_SYSTEM_OPENSSL = true
+CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
+LIBS_SECURE = $(OPENSSL_LIBS)
+ifeq ($(OPENSSL_REQUIRES_DL),true)
+LIBS_SECURE += dl
 endif
 else
+NO_SECURE = true
+endif
+endif
+else
+USE_SYSTEM_OPENSSL = true
 LIBS_SECURE = $(OPENSSL_LIBS)
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 LIBS_SECURE += dl
@@ -564,7 +586,7 @@ openssl_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires OpenSSL with ALPN support."
+	@echo "The target you are trying to run requires OpenSSL."
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -622,6 +644,7 @@ ${tgt.name}: $(BINDIR)/$(CONFIG)/${tgt.name}
 
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
+	$(OPENSSL_NPN_CHECK_CMD) || true
 	$(ZLIB_CHECK_CMD) || true
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
@@ -642,7 +665,7 @@ ifeq ($(SYSTEM),Darwin)
 else
 ifeq ($(SYSTEM),MINGW32)
 	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
-	@echo "Please provide an ALPN-capable OpenSSL in your mingw32 system."
+	@echo "Please provide a OpenSSL in your mingw32 system."
 	@echo
 	@echo "Note that you can find a compatible version of the libraries here:"
 	@echo
@@ -1112,11 +1135,11 @@ PUBLIC_HEADERS_C += \\
 
 LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
-## If the library requires OpenSSL with ALPN, let's add some restrictions.
+## If the library requires OpenSSL, let's add some restrictions.
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure libraries if you don't have OpenSSL with ALPN.
+# You can't build secure libraries if you don't have OpenSSL.
 
 $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
@@ -1256,7 +1279,7 @@ endif
 % endif
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ## If the lib was secure, we have to close the Makefile's if that tested
-## the presence of an ALPN-capable OpenSSL.
+## the presence of OpenSSL.
 
 endif
 % endif
@@ -1297,7 +1320,7 @@ ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(b
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/${tgt.name}: openssl_dep_error
 
