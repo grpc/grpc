@@ -31,21 +31,19 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONFIGURED_SUBCHANNEL_FACTORY_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONFIGURED_SUBCHANNEL_FACTORY_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 
-typedef struct grpc_configured_subchannel_factory
-    grpc_configured_subchannel_factory;
-typedef struct grpc_configured_subchannel_factory_vtable
-    grpc_configured_subchannel_factory_vtable;
+typedef struct grpc_subchannel_factory grpc_subchannel_factory;
+typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
 
 /** Constructor for new configured channels.
     Creating decorators around this type is encouraged to adapt behavior. */
-struct grpc_configured_subchannel_factory {
-  const grpc_configured_subchannel_factory_vtable *vtable;
+struct grpc_subchannel_factory {
+  const grpc_subchannel_factory_vtable *vtable;
 };
 
-struct grpc_configured_subchannel_args {
+struct grpc_subchannel_args {
   /* TODO(ctiller): consider making (parent, metadata_context) more opaque
      - these details are not needed at this level of API */
   /** Parent channel element - passed from the master channel */
@@ -63,24 +61,19 @@ struct grpc_configured_subchannel_args {
   struct sockaddr *addr;
 };
 
-struct grpc_configured_subchannel_factory_vtable {
-  void (*ref)(grpc_configured_subchannel_factory *factory);
-  void (*unref)(grpc_configured_subchannel_factory *factory);
-  grpc_configured_subchannel *(*create_subchannel)(
-      grpc_configured_subchannel_factory *factory,
-      grpc_configured_subchannel_args *args);
+struct grpc_subchannel_factory_vtable {
+  void (*ref)(grpc_subchannel_factory *factory);
+  void (*unref)(grpc_subchannel_factory *factory);
+  grpc_subchannel *(*create_subchannel)(grpc_subchannel_factory *factory,
+                                        grpc_subchannel_args *args);
 };
 
-void grpc_configured_subchannel_factory_ref(
-    grpc_configured_subchannel_factory *factory);
-void grpc_configured_subchannel_factory_unref(
-    grpc_configured_subchannel_factory *factory);
-/** Create a new grpc_configured_subchannel */
-void grpc_configured_subchannel_factory_create_subchannel(
-    grpc_configured_subchannel_factory *factory,
-    grpc_configured_subchannel_args *args);
+void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
+void grpc_subchannel_factory_unref(grpc_subchannel_factory *factory);
+/** Create a new grpc_subchannel */
+void grpc_subchannel_factory_create_subchannel(grpc_subchannel_factory *factory,
+                                               grpc_subchannel_args *args);
 
-grpc_configured_subchannel_factory *
-grpc_default_configured_subchannel_factory();
+grpc_subchannel_factory *grpc_default_subchannel_factory();
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONFIGURED_SUBCHANNEL_FACTORY_H */
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

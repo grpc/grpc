@@ -25,21 +25,20 @@ Load balancing configuration is provided by a grpc_lb_policy object, stored as
 part of grpc_client_config. 
 
 A load balancing policies primary job is to pick a target server given only the
-initial metadata for a request. It does this by providing a 
-grpc_configured_channel object to the owning channel.
+initial metadata for a request. It does this by providing a grpc_subchannel 
+object to the owning channel.
 
 
-Configured Sub-Channels
------------------------
+Sub-Channels
+------------
 
-A configured sub-channel provides a connection to a server for a client 
-channel. It has a connectivity state like a regular channel, and so can be 
-connected or disconnected. This connectivity state can be used to inform load 
-balancing decisions (for example, by avoiding disconnected backends).
+A sub-channel provides a connection to a server for a client channel. It has a 
+connectivity state like a regular channel, and so can be connected or 
+disconnected. This connectivity state can be used to inform load balancing 
+decisions (for example, by avoiding disconnected backends).
 
 Configured sub-channels are fully setup to participate in the grpc data plane.
 Their behavior is specified by a set of grpc channel filters defined at their
-construction. To customize this behavior, resolvers build 
-grpc_configured_subchannel_factory objects, which use the decorator pattern
-to customize construction arguments for concrete grpc_configured_subchannel
-instances.
+construction. To customize this behavior, resolvers build grpc_subchannel_factory 
+objects, which use the decorator pattern to customize construction arguments for 
+concrete grpc_subchannel instances.
