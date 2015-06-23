@@ -538,7 +538,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     alpn_protocol_strings[i] =
         (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
     alpn_protocol_string_lengths[i] =
-        strlen(grpc_chttp2_get_alpn_version_index(i));
+        (unsigned char)strlen(grpc_chttp2_get_alpn_version_index(i));
   }
 
   if (config == NULL || target_name == NULL) {
@@ -577,7 +577,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
       config->pem_private_key, config->pem_private_key_size,
       config->pem_cert_chain, config->pem_cert_chain_size, pem_root_certs,
       pem_root_certs_size, ssl_cipher_suites(), alpn_protocol_strings,
-      alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);
+      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -611,7 +611,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     alpn_protocol_strings[i] =
         (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
     alpn_protocol_string_lengths[i] =
-        strlen(grpc_chttp2_get_alpn_version_index(i));
+        (unsigned char)strlen(grpc_chttp2_get_alpn_version_index(i));
   }
 
   if (config == NULL || config->num_key_cert_pairs == 0) {
@@ -630,7 +630,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
       (const unsigned char **)config->pem_cert_chains,
       config->pem_cert_chains_sizes, config->num_key_cert_pairs,
       config->pem_root_certs, config->pem_root_certs_size, ssl_cipher_suites(),
-      alpn_protocol_strings, alpn_protocol_string_lengths, num_alpn_protocols,
+      alpn_protocol_strings, alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
       &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -649,4 +649,3 @@ error:
   gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_ERROR;
 }
-
