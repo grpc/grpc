@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_H
 
-#include "src/core/client_config/configured_channel.h"
+#include "src/core/client_config/subchannel.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
     is expected to be extended to contain some parameters) */
@@ -42,7 +42,7 @@ typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 
 typedef void (*grpc_lb_completion)(void *cb_arg,
-                                   grpc_configured_channel *configured_channel,
+                                   grpc_subchannel *subchannel,
                                    grpc_status_code status, const char *errmsg);
 
 struct grpc_lb_policy_vtable {
@@ -54,7 +54,7 @@ struct grpc_lb_policy_vtable {
   /** implement grpc_lb_policy_pick */
   void (*pick)(grpc_lb_policy *policy, grpc_pollset *pollset,
                grpc_metadata_batch *initial_metadata,
-               grpc_configured_channel **target,
+               grpc_subchannel **target,
                grpc_iomgr_closure *on_complete);
 };
 
@@ -67,7 +67,7 @@ void grpc_lb_policy_shutdown(grpc_lb_policy *policy);
     Picking can be asynchronous. Any IO should be done under \a pollset. */
 void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_metadata_batch *initial_metadata,
-                         grpc_configured_channel **target,
+                         grpc_subchannel **target,
                          grpc_iomgr_closure *on_complete);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */

@@ -34,6 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H
 
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/sockaddr.h"
+#include "src/core/transport/transport.h"
+
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;

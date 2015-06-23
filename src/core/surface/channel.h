@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/subchannel_factory.h"
 
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t count,

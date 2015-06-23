@@ -34,8 +34,12 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 
+#include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/subchannel.h"
+
 typedef struct grpc_subchannel_factory grpc_subchannel_factory;
 typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
+typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 /** Constructor for new configured channels.
     Creating decorators around this type is encouraged to adapt behavior. */
@@ -51,7 +55,7 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
-
+  /** Address to connect to */
   struct sockaddr *addr;
 };
 

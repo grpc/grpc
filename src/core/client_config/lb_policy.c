@@ -31,21 +31,4 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
-
 #include "src/core/client_config/lb_policy.h"
-
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
-
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_client_config *client_config);
-
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
-
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H */
