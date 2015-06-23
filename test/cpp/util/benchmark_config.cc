@@ -47,6 +47,8 @@ DEFINE_string(sys_info, "", "System information");
 
 DEFINE_string(server_address, "localhost:50052", "Address of the performance database server");
 
+DEFINE_string(tag, "", "Optional tag for the test");
+
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
 namespace google {}
@@ -69,7 +71,8 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   }
   if(FLAGS_report_metrics_db) {
     composite_reporter->add(
-      std::unique_ptr<Reporter>(new PerfDbReporter("PerfDbReporter", FLAGS_access_token, FLAGS_test_name, FLAGS_sys_info, FLAGS_server_address)));
+      std::unique_ptr<Reporter>(new PerfDbReporter("PerfDbReporter", FLAGS_access_token, FLAGS_test_name, 
+        FLAGS_sys_info, FLAGS_server_address, FLAGS_tag)));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

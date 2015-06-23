@@ -62,9 +62,10 @@ message DataDetails {
   string timestamp = 1;
   string test_name = 2;
   string sys_info = 3;
-  Metrics metrics = 4;
-  ClientConfig client_config = 5;
-  ServerConfig server_config = 6;
+  string tag = 4;
+  Metrics metrics = 5;
+  ClientConfig client_config = 6;
+  ServerConfig server_config = 7;
 }
 
 //User details
@@ -93,9 +94,10 @@ message SingleUserRecordRequest {
   string access_token = 1;
   string test_name = 2;
   string sys_info = 3;
-  Metrics metrics = 4;
-  ClientConfig client_config = 5;
-  ServerConfig server_config = 6;
+  string tag = 4;
+  Metrics metrics = 5;
+  ClientConfig client_config = 6;
+  ServerConfig server_config = 7;
 }
 
 //Reply to request for storing single user's data

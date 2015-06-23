@@ -88,7 +88,7 @@ public:
     double clientSystemTime, double clientUserTime);
 
   //sends the data to the performancew database server
-  int sendData(std::string access_token, std::string test_name, std::string sys_info);
+  int sendData(std::string access_token, std::string test_name, std::string sys_info, std::string tag);
 
 private:
   std::unique_ptr<PerfDbTransfer::Stub> stub_;

@@ -72,7 +72,7 @@ void PerfDbClient::setTimes(double serverSystemTime, double serverUserTime,
 }
 
 //sends the data to the performancew database server
-int PerfDbClient::sendData(std::string access_token, std::string test_name, std::string sys_info) {
+int PerfDbClient::sendData(std::string access_token, std::string test_name, std::string sys_info, std::string tag) {
   //Data record request object
   SingleUserRecordRequest singleUserRecordRequest;
 
@@ -80,6 +80,7 @@ int PerfDbClient::sendData(std::string access_token, std::string test_name, std:
   singleUserRecordRequest.set_access_token(access_token);
   singleUserRecordRequest.set_test_name(test_name);
   singleUserRecordRequest.set_sys_info(sys_info);
+  singleUserRecordRequest.set_tag(tag);
 
   //setting configs
   *(singleUserRecordRequest.mutable_client_config()) = this->clientConfig_;
