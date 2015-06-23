@@ -3433,6 +3433,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \
+    include/grpc++/config_protobuf.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
     include/grpc++/generic_stub.h \
@@ -3440,6 +3441,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/internal_stub.h \
+    include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
@@ -3721,6 +3723,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \
+    include/grpc++/config_protobuf.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
     include/grpc++/generic_stub.h \
@@ -3728,6 +3731,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/internal_stub.h \
+    include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
