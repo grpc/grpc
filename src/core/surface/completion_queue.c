@@ -144,6 +144,10 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
 }
 
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call) {
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  GPR_ASSERT(!cc->shutdown_called);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+
   gpr_ref(&cc->refs);
   if (call) GRPC_CALL_INTERNAL_REF(call, "cq");
 }
