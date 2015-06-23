@@ -123,7 +123,6 @@ static void finish_shutdown(grpc_pollset *pollset) {
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
   gpr_timespec now = gpr_now();
-  int r;
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0;
   }
@@ -137,7 +136,7 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
     return 1;
   }
   gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
-  r = pollset->vtable->maybe_work(pollset, deadline, now, 1);
+  pollset->vtable->maybe_work(pollset, deadline, now, 1);
   gpr_tls_set(&g_current_thread_poller, 0);
   if (pollset->shutting_down) {
     if (pollset->counter > 0) {
@@ -153,7 +152,7 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
       gpr_mu_lock(&pollset->mu);
     }
   }
-  return r;
+  return 1;
 }
 
 void grpc_pollset_shutdown(grpc_pollset *pollset,
@@ -338,9 +337,9 @@ static void basic_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   }
 }
 
-static int basic_pollset_maybe_work(grpc_pollset *pollset,
-                                    gpr_timespec deadline, gpr_timespec now,
-                                    int allow_synchronous_callback) {
+static void basic_pollset_maybe_work(grpc_pollset *pollset,
+                                     gpr_timespec deadline, gpr_timespec now,
+                                     int allow_synchronous_callback) {
   struct pollfd pfd[2];
   grpc_fd *fd;
   grpc_fd_watcher fd_watcher;
@@ -353,7 +352,7 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
     /* Give do_promote priority so we don't starve it out */
     gpr_mu_unlock(&pollset->mu);
     gpr_mu_lock(&pollset->mu);
-    return 1;
+    return;
   }
   fd = pollset->data.ptr;
   if (fd && grpc_fd_is_orphaned(fd)) {
@@ -364,7 +363,7 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
   kfd = grpc_pollset_kick_pre_poll(&pollset->kick_state);
   if (kfd == NULL) {
     /* Already kicked */
-    return 1;
+    return;
   }
   pfd[0].fd = GRPC_POLLSET_KICK_GET_FD(kfd);
   pfd[0].events = POLLIN;
@@ -418,7 +417,6 @@ static int basic_pollset_maybe_work(grpc_pollset *pollset,
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter--;
-  return 1;
 }
 
 static void basic_pollset_destroy(grpc_pollset *pollset) {

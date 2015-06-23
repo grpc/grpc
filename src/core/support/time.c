@@ -86,11 +86,11 @@ gpr_timespec gpr_time_from_nanos(long ns) {
     result = gpr_inf_past;
   } else if (ns >= 0) {
     result.tv_sec = ns / GPR_NS_PER_SEC;
-    result.tv_nsec = ns - result.tv_sec * GPR_NS_PER_SEC;
+    result.tv_nsec = (int)(ns - result.tv_sec * GPR_NS_PER_SEC);
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
     result.tv_sec = (-(999999999 - (ns + GPR_NS_PER_SEC)) / GPR_NS_PER_SEC) - 1;
-    result.tv_nsec = ns - result.tv_sec * GPR_NS_PER_SEC;
+    result.tv_nsec = (int)(ns - result.tv_sec * GPR_NS_PER_SEC);
   }
   return result;
 }
@@ -103,11 +103,11 @@ gpr_timespec gpr_time_from_micros(long us) {
     result = gpr_inf_past;
   } else if (us >= 0) {
     result.tv_sec = us / 1000000;
-    result.tv_nsec = (us - result.tv_sec * 1000000) * 1000;
+    result.tv_nsec = (int)((us - result.tv_sec * 1000000) * 1000);
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
     result.tv_sec = (-(999999 - (us + 1000000)) / 1000000) - 1;
-    result.tv_nsec = (us - result.tv_sec * 1000000) * 1000;
+    result.tv_nsec = (int)((us - result.tv_sec * 1000000) * 1000);
   }
   return result;
 }
@@ -120,11 +120,11 @@ gpr_timespec gpr_time_from_millis(long ms) {
     result = gpr_inf_past;
   } else if (ms >= 0) {
     result.tv_sec = ms / 1000;
-    result.tv_nsec = (ms - result.tv_sec * 1000) * 1000000;
+    result.tv_nsec = (int)((ms - result.tv_sec * 1000) * 1000000);
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
     result.tv_sec = (-(999 - (ms + 1000)) / 1000) - 1;
-    result.tv_nsec = (ms - result.tv_sec * 1000) * 1000000;
+    result.tv_nsec = (int)((ms - result.tv_sec * 1000) * 1000000);
   }
   return result;
 }
@@ -245,10 +245,10 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
        care?) */
     return -2147483647;
   } else {
-    return t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
+    return (gpr_int32)(t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS);
   }
 }
 
 double gpr_timespec_to_micros(gpr_timespec t) {
-  return t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
+  return (double)t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
 }

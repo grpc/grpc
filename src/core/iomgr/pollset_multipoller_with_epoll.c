@@ -83,7 +83,7 @@ static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,
 /* TODO(klempner): We probably want to turn this down a bit */
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
-static int multipoll_with_epoll_pollset_maybe_work(
+static void multipoll_with_epoll_pollset_maybe_work(
     grpc_pollset *pollset, gpr_timespec deadline, gpr_timespec now,
     int allow_synchronous_callback) {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
@@ -133,7 +133,6 @@ static int multipoll_with_epoll_pollset_maybe_work(
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter -= 1;
-  return 1;
 }
 
 static void multipoll_with_epoll_pollset_finish_shutdown(

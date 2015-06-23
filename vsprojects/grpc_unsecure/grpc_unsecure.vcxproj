@@ -186,6 +186,7 @@
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h" />

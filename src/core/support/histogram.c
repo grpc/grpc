@@ -189,12 +189,12 @@ static double threshold_for_count_below(gpr_histogram *h, double count_below) {
         break;
       }
     }
-    return (bucket_start(h, lower_idx) + bucket_start(h, upper_idx)) / 2.0;
+    return (bucket_start(h, (double)lower_idx) + bucket_start(h, (double)upper_idx)) / 2.0;
   } else {
     /* treat values as uniform throughout the bucket, and find where this value
        should lie */
-    lower_bound = bucket_start(h, lower_idx);
-    upper_bound = bucket_start(h, lower_idx + 1);
+    lower_bound = bucket_start(h, (double)lower_idx);
+    upper_bound = bucket_start(h, (double)(lower_idx + 1));
     return GPR_CLAMP(upper_bound - (upper_bound - lower_bound) *
                                        (count_so_far - count_below) /
                                        h->buckets[lower_idx],
