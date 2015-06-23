@@ -48,7 +48,7 @@ class ByteBuffer GRPC_FINAL {
  public:
   ByteBuffer() : buffer_(nullptr) {}
 
-  ByteBuffer(Slice* slices, size_t nslices);
+  ByteBuffer(const Slice* slices, size_t nslices);
 
   ~ByteBuffer() {
     if (buffer_) {
@@ -56,10 +56,10 @@ class ByteBuffer GRPC_FINAL {
     }
   }
 
-  void Dump(std::vector<Slice>* slices);
+  void Dump(std::vector<Slice>* slices) const;
 
   void Clear();
-  size_t Length();
+  size_t Length() const;
 
  private:
   friend class CallOpBuffer;

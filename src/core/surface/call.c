@@ -413,6 +413,8 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
 
 static void set_status_code(grpc_call *call, status_source source,
                             gpr_uint32 status) {
+  if (call->status[source].is_set) return;
+
   call->status[source].is_set = 1;
   call->status[source].code = status;
 
@@ -1215,9 +1217,14 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   if (user_data) {
     clevel = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
-    if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
+    gpr_uint32 parsed_clevel_bytes;
+    if (gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
-                                   &clevel)) {
+                                   &parsed_clevel_bytes)) {
+      /* the following cast is safe, as a gpr_uint32 should be able to hold all
+       * possible values of the grpc_compression_level enum */
+      clevel = (grpc_compression_level) parsed_clevel_bytes;
+    } else {
       clevel = GRPC_COMPRESS_LEVEL_NONE;  /* could not parse, no compression */
     }
     grpc_mdelem_set_user_data(md, destroy_compression,

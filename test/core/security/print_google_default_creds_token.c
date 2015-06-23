@@ -44,8 +44,7 @@
 #include <grpc/support/sync.h>
 
 typedef struct {
-  gpr_cv cv;
-  gpr_mu mu;
+  grpc_pollset pollset;
   int is_done;
 } synchronizer;
 
@@ -61,10 +60,10 @@ static void on_metadata_response(void *user_data,
     printf("\nGot token: %s\n\n",
            (const char *)GPR_SLICE_START_PTR(md_elems[0].value));
   }
-  gpr_mu_lock(&sync->mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
   sync->is_done = 1;
-  gpr_mu_unlock(&sync->mu);
-  gpr_cv_signal(&sync->cv);
+  grpc_pollset_kick(&sync->pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
 }
 
 int main(int argc, char **argv) {
@@ -86,18 +85,16 @@ int main(int argc, char **argv) {
     goto end;
   }
 
-  gpr_mu_init(&sync.mu);
-  gpr_cv_init(&sync.cv);
+  grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, "", on_metadata_response, &sync);
+  grpc_credentials_get_request_metadata(creds, &sync.pollset, "", on_metadata_response, &sync);
 
-  gpr_mu_lock(&sync.mu);
-  while (!sync.is_done) gpr_cv_wait(&sync.cv, &sync.mu, gpr_inf_future);
-  gpr_mu_unlock(&sync.mu);
+  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
+  while (!sync.is_done) grpc_pollset_work(&sync.pollset, gpr_inf_future);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
-  gpr_mu_destroy(&sync.mu);
-  gpr_cv_destroy(&sync.cv);
+  grpc_pollset_destroy(&sync.pollset);
   grpc_credentials_release(creds);
 
 end:
