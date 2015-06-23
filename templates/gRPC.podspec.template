@@ -41,6 +41,22 @@ def fix_header_name(name):
     return '/'.join(split_name[:-1] + ['grpc_' + split_name[-1]])
   else:
     return name
+
+def grpc_files(libs):
+  out = []
+  for lib in libs:
+    if lib.name in ("grpc", "gpr"):
+      out.extend(fix_header_name(h) for h in lib.get('headers', []))
+      out.extend(fix_header_name(h) for h in lib.get('public_headers', []))
+      out.extend(lib.get('src', []))
+  return out;
+
+def grpc_private_headers(libs):
+  out = []
+  for lib in libs:
+    if lib.name in ("grpc", "gpr"):
+      out.extend(lib.get('headers', []))
+  return out
 %>
 
 Pod::Spec.new do |s|
@@ -68,29 +84,9 @@ Pod::Spec.new do |s|
 
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |cs|
-    cs.source_files = \
-% for lib in libs:
-% if lib.name in ("grpc", "gpr"):
-% for hdr in lib.get("headers", []):
-'${fix_header_name(hdr)}', \
-% endfor
-% for hdr in lib.get("public_headers", []):
-'${fix_header_name(hdr)}', \
-% endfor
-% for src in lib.src:
-'${src}', \
-% endfor
-% endif
-% endfor
+    cs.source_files = ${(',\n' + 22*' ').join('\'%s\'' % f for f in grpc_files(libs))}
 
-    cs.private_header_files = \
-% for lib in libs:
-% if lib.name in ("grpc", "gpr"):
-% for hdr in lib.get("headers", []):
-'${hdr}', \
-% endfor
-% endif
-% endfor
+    cs.private_header_files = ${(',\n' + 30*' ').join('\'%s\'' % f for f in grpc_private_headers(libs))}
 
     cs.header_mappings_dir = '.'
     # The core library includes its headers as either "src/core/..." or "grpc/...", meaning we have
