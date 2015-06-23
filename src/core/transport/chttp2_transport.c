@@ -505,6 +505,7 @@ static void finish_global_actions(grpc_chttp2_transport *t) {
         hdr->action(t, hdr->stream, hdr->arg);
         next = hdr->next;
         gpr_free(hdr);
+        UNREF_TRANSPORT(t, "pending_action");
         hdr = next;
       }
       continue;
@@ -519,6 +520,7 @@ void grpc_chttp2_run_with_global_lock(grpc_chttp2_transport *t, grpc_chttp2_stre
   void *arg, size_t sizeof_arg) {
   grpc_chttp2_executor_action_header *hdr;
 
+  REF_TRANSPORT(t, "run_global");
   gpr_mu_lock(&t->executor.mu);
 
   for (;;) {
@@ -549,10 +551,13 @@ void grpc_chttp2_run_with_global_lock(grpc_chttp2_transport *t, grpc_chttp2_stre
       }
       hdr->next = t->executor.pending_actions;
       t->executor.pending_actions = hdr;
+      REF_TRANSPORT(t, "pending_action");
       gpr_mu_unlock(&t->executor.mu);
     }
     break;
   }
+
+  UNREF_TRANSPORT(t, "run_global");
 }
 
 /*
@@ -921,8 +926,9 @@ static void recv_data_error_locked(grpc_chttp2_transport *t, grpc_chttp2_stream 
     UNREF_TRANSPORT(
         t, "disconnect"); /* safe as we still have a ref for read */
   }
-  UNREF_TRANSPORT(t, "recv_data");
   for (i = 0; i < t->executor_parsing.nslices; i++) gpr_slice_unref(t->executor_parsing.slices[i]);
+  memset(&t->executor_parsing, 0, sizeof(t->executor_parsing));
+  UNREF_TRANSPORT(t, "recv_data");
 }
 
 static void finish_parsing_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *s_ignored, void *a) {
@@ -944,6 +950,7 @@ static void finish_parsing_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *
   if (i == t->executor_parsing.nslices) {
     grpc_chttp2_schedule_closure(&t->global, &t->reading_action, 1);
   }
+  memset(&t->executor_parsing, 0, sizeof(t->executor_parsing));
 }
 
 static void parsing_action(void *pt, int iomgr_success_ignored) {
@@ -969,6 +976,7 @@ static void recv_data_ok_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     grpc_chttp2_schedule_closure(&t->global, &t->parsing_action, 1);
   } else {
     for (i = 0; i < t->executor_parsing.nslices; i++) gpr_slice_unref(t->executor_parsing.slices[i]);
+    memset(&t->executor_parsing, 0, sizeof(t->executor_parsing));
   }
 }
 
