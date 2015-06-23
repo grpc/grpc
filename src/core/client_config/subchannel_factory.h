@@ -44,12 +44,6 @@ struct grpc_subchannel_factory {
 };
 
 struct grpc_subchannel_args {
-  /* TODO(ctiller): consider making (parent, metadata_context) more opaque
-     - these details are not needed at this level of API */
-  /** Parent channel element - passed from the master channel */
-  grpc_channel_element *parent;
-  /** Metadata context for this channel - passed from the master channel */
-  grpc_mdctx *metadata_context;
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */
   const grpc_channel_filter **filters;
@@ -70,10 +64,9 @@ struct grpc_subchannel_factory_vtable {
 
 void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
 void grpc_subchannel_factory_unref(grpc_subchannel_factory *factory);
+
 /** Create a new grpc_subchannel */
 void grpc_subchannel_factory_create_subchannel(grpc_subchannel_factory *factory,
                                                grpc_subchannel_args *args);
-
-grpc_subchannel_factory *grpc_default_subchannel_factory();
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

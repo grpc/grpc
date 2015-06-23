@@ -60,11 +60,13 @@ void grpc_subchannel_unref(grpc_subchannel *channel);
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel *channel);
+
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
 void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
                                             grpc_iomgr_closure *notify);
+
 /** continue processing of transport operation \a op */
 void grpc_subchannel_continue_op(grpc_subchannel *channel,
                                  grpc_transport_op *op);
