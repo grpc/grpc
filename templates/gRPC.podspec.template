@@ -113,7 +113,7 @@ Pod::Spec.new do |s|
     DIR_TIME="grpc/support"
     BAD_TIME="$DIR_TIME/time.h"
     GOOD_TIME="$DIR_TIME/grpc_time.h"
-    grep -rl "$BAD_TIME" grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
+    grep -rl "$BAD_TIME" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
     if [ -f "include/$BAD_TIME" ];
     then
       mv -f "include/$BAD_TIME" "include/$GOOD_TIME"
@@ -122,7 +122,7 @@ Pod::Spec.new do |s|
     DIR_STRING="src/core/support"
     BAD_STRING="$DIR_STRING/string.h"
     GOOD_STRING="$DIR_STRING/grpc_string.h"
-    grep -rl "$BAD_STRING" grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
+    grep -rl "$BAD_STRING" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
     if [ -f "$BAD_STRING" ];
     then
       mv -f "$BAD_STRING" "$GOOD_STRING"
