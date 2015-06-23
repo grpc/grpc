@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/cpp/proto/proto_utils.h"
+#include <grpc++/impl/proto_utils.h>
 #include <grpc++/config.h>
 
 #include <grpc/grpc.h>
@@ -67,7 +67,7 @@ class GrpcBufferWriter GRPC_FINAL
       slice_ = gpr_slice_malloc(block_size_);
     }
     *data = GPR_SLICE_START_PTR(slice_);
-    byte_count_ += *size = GPR_SLICE_LENGTH(slice_);
+    byte_count_ += * size = GPR_SLICE_LENGTH(slice_);
     gpr_slice_buffer_add(slice_buffer_, slice_);
     return true;
   }
@@ -118,7 +118,7 @@ class GrpcBufferReader GRPC_FINAL
     }
     gpr_slice_unref(slice_);
     *data = GPR_SLICE_START_PTR(slice_);
-    byte_count_ += *size = GPR_SLICE_LENGTH(slice_);
+    byte_count_ += * size = GPR_SLICE_LENGTH(slice_);
     return true;
   }
 
@@ -152,20 +152,28 @@ class GrpcBufferReader GRPC_FINAL
 
 namespace grpc {
 
-bool SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
+Status SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
   GrpcBufferWriter writer(bp);
-  return msg.SerializeToZeroCopyStream(&writer);
+  return msg.SerializeToZeroCopyStream(&writer) ? Status::OK : Status(INVALID_ARGUMENT, "Failed to serialize message");
 }
 
-bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                      int max_message_size) {
-  if (!buffer) return false;
+Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
+                        int max_message_size) {
+  if (!buffer) {
+    return Status(INVALID_ARGUMENT, "No payload");
+  }
   GrpcBufferReader reader(buffer);
   ::grpc::protobuf::io::CodedInputStream decoder(&reader);
   if (max_message_size > 0) {
     decoder.SetTotalBytesLimit(max_message_size, max_message_size);
   }
-  return msg->ParseFromCodedStream(&decoder) && decoder.ConsumedEntireMessage();
+  if (!msg->ParseFromCodedStream(&decoder)) {
+    return Status(INVALID_ARGUMENT, msg->InitializationErrorString());
+  }
+  if (!decoder.ConsumedEntireMessage()) {
+    return Status(INVALID_ARGUMENT, "Did not read entire message");
+  }
+  return Status::OK;
 }
 
 }  // namespace grpc

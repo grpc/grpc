@@ -120,6 +120,7 @@ module GRPC
       @started = started
       @unmarshal = unmarshal
       @metadata_tag = metadata_tag
+      @op_notifier = nil
     end
 
     # output_metadata are provides access to hash that can be used to
@@ -148,6 +149,7 @@ module GRPC
     # operation provides a restricted view of this ActiveCall for use as
     # a Operation.
     def operation
+      @op_notifier = Notifier.new
       Operation.new(self)
     end
 
@@ -167,6 +169,7 @@ module GRPC
       batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
       return unless assert_finished
       @call.status = batch_result.status
+      op_is_done
       batch_result.check_status
     end
 
@@ -184,6 +187,7 @@ module GRPC
         end
       end
       @call.status = batch_result.status
+      op_is_done
       batch_result.check_status
     end
 
@@ -415,7 +419,7 @@ module GRPC
     def bidi_streamer(requests, **kw, &blk)
       start_call(**kw) unless @started
       bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
-      bd.run_on_client(requests, &blk)
+      bd.run_on_client(requests, @op_notifier, &blk)
     end
 
     # run_server_bidi orchestrates a BiDi stream processing on a server.
@@ -432,6 +436,19 @@ module GRPC
     def run_server_bidi(gen_each_reply)
       bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
       bd.run_on_server(gen_each_reply)
+    end
+
+    # Waits till an operation completes
+    def wait
+      return if @op_notifier.nil?
+      GRPC.logger.debug("active_call.wait: on #{@op_notifier}")
+      @op_notifier.wait
+    end
+
+    # Signals that an operation is done
+    def op_is_done
+      return if @op_notifier.nil?
+      @op_notifier.notify(self)
     end
 
     private
@@ -468,6 +485,6 @@ module GRPC
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.
     Operation = view_class(:cancel, :cancelled, :deadline, :execute,
-                           :metadata, :status, :start_call)
+                           :metadata, :status, :start_call, :wait)
   end
 end

@@ -45,6 +45,7 @@
         "include/grpc++/impl/internal_stub.h",
         "include/grpc++/impl/rpc_method.h",
         "include/grpc++/impl/rpc_service_method.h",
+        "include/grpc++/impl/serialization_traits.h",
         "include/grpc++/impl/service_type.h",
         "include/grpc++/impl/sync.h",
         "include/grpc++/impl/sync_cxx11.h",
@@ -72,7 +73,6 @@
         "src/cpp/client/channel.cc",
         "src/cpp/client/channel_arguments.cc",
         "src/cpp/client/client_context.cc",
-        "src/cpp/client/client_unary_call.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/generic_stub.cc",
@@ -132,10 +132,11 @@
         "src/core/iomgr/iomgr_internal.h",
         "src/core/iomgr/iomgr_posix.h",
         "src/core/iomgr/pollset.h",
-        "src/core/iomgr/pollset_kick.h",
         "src/core/iomgr/pollset_kick_posix.h",
-        "src/core/iomgr/pollset_kick_windows.h",
         "src/core/iomgr/pollset_posix.h",
+        "src/core/iomgr/pollset_set.h",
+        "src/core/iomgr/pollset_set_posix.h",
+        "src/core/iomgr/pollset_set_windows.h",
         "src/core/iomgr/pollset_windows.h",
         "src/core/iomgr/resolve_address.h",
         "src/core/iomgr/sockaddr.h",
@@ -215,10 +216,12 @@
         "src/core/iomgr/iomgr.c",
         "src/core/iomgr/iomgr_posix.c",
         "src/core/iomgr/iomgr_windows.c",
-        "src/core/iomgr/pollset_kick.c",
+        "src/core/iomgr/pollset_kick_posix.c",
         "src/core/iomgr/pollset_multipoller_with_epoll.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
+        "src/core/iomgr/pollset_set_posix.c",
+        "src/core/iomgr/pollset_set_windows.c",
         "src/core/iomgr/pollset_windows.c",
         "src/core/iomgr/resolve_address_posix.c",
         "src/core/iomgr/resolve_address_windows.c",
@@ -1284,6 +1287,20 @@
       ]
     },
     {
+      "name": "grpc_security_connector_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/security/security_connector_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_stream_op_test",
       "build": "test",
       "language": "c",
@@ -1811,6 +1828,36 @@
       "deps": [
         "grpc++",
         "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "cxx_byte_buffer_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/byte_buffer_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "cxx_slice_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/slice_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },

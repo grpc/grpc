@@ -74,9 +74,12 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (grpc_alarm_check(NULL, now, &deadline)) {
     return 1 /* GPR_TRUE */;
   }
-  return 0 /* GPR_FALSE */;
+  gpr_cv_wait(&pollset->cv, &pollset->mu, deadline);
+  return 1 /* GPR_TRUE */;
 }
 
-void grpc_pollset_kick(grpc_pollset *p) { }
+void grpc_pollset_kick(grpc_pollset *p) {
+  gpr_cv_signal(&p->cv);
+}
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */

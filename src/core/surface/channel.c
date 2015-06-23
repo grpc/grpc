@@ -190,8 +190,14 @@ grpc_call *grpc_channel_create_registered_call(
       grpc_mdelem_ref(rc->authority), deadline);
 }
 
-void grpc_channel_internal_ref(grpc_channel *channel) {
-  gpr_ref(&channel->refs);
+#ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
+void grpc_channel_internal_ref(grpc_channel *c, const char *reason) {
+  gpr_log(GPR_DEBUG, "CHANNEL:   ref %p %d -> %d [%s]", c, c->refs.count,
+          c->refs.count + 1, reason);
+#else
+void grpc_channel_internal_ref(grpc_channel *c) {
+#endif
+  gpr_ref(&c->refs);
 }
 
 static void destroy_channel(void *p, int ok) {
@@ -218,7 +224,13 @@ static void destroy_channel(void *p, int ok) {
   gpr_free(channel);
 }
 
+#ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
+void grpc_channel_internal_unref(grpc_channel *channel, const char *reason) {
+  gpr_log(GPR_DEBUG, "CHANNEL: unref %p %d -> %d [%s]", channel,
+          channel->refs.count, channel->refs.count - 1, reason);
+#else
 void grpc_channel_internal_unref(grpc_channel *channel) {
+#endif
   if (gpr_unref(&channel->refs)) {
     channel->destroy_closure.cb = destroy_channel;
     channel->destroy_closure.cb_arg = channel;
@@ -242,11 +254,11 @@ void grpc_channel_destroy(grpc_channel *channel) {
   op.dir = GRPC_CALL_DOWN;
   elem->filter->channel_op(elem, NULL, &op);
 
-  grpc_channel_internal_unref(channel);
+  GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }
 
 void grpc_client_channel_closed(grpc_channel_element *elem) {
-  grpc_channel_internal_unref(CHANNEL_FROM_TOP_ELEM(elem));
+  GRPC_CHANNEL_INTERNAL_UNREF(CHANNEL_FROM_TOP_ELEM(elem), "closed");
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {

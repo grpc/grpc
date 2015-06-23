@@ -10,9 +10,6 @@
     <ClCompile Include="..\..\src\cpp\client\client_context.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\client\client_unary_call.cc">
-      <Filter>src\cpp\client</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -127,6 +124,9 @@
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h">
