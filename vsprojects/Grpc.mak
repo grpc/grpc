@@ -135,8 +135,8 @@ fling_server: fling_server.exe
 	$(OUT_DIR)\fling_server.exe
 gen_hpack_tables.exe: build_libs $(OUT_DIR)
 	echo Building gen_hpack_tables
-	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\src\core\transport\chttp2\gen_hpack_tables.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\gen_hpack_tables.exe" Debug\grpc_test_util.lib Debug\gpr.lib Debug\grpc.lib $(LIBS) $(OUT_DIR)\gen_hpack_tables.obj 
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\tools\codegen\core\gen_hpack_tables.c 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\gen_hpack_tables.exe" Debug\gpr.lib Debug\grpc.lib $(LIBS) $(OUT_DIR)\gen_hpack_tables.obj 
 gen_hpack_tables: gen_hpack_tables.exe
 	echo Running gen_hpack_tables
 	$(OUT_DIR)\gen_hpack_tables.exe
