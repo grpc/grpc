@@ -32,7 +32,7 @@ set -e
 cd $(dirname $0)
 source ./determine_extension_dir.sh
 export GRPC_TEST_HOST=localhost:7071
-php $extension_dir -d extension=grpc.so `which phpunit` -v --debug --strict \
+php $extension_dir -d extension=grpc.so $(which phpunit) -v --debug --strict \
   ../tests/generated_code/GeneratedCodeTest.php
-php $extension_dir -d extension=grpc.so `which phpunit` -v --debug --strict \
+php $extension_dir -d extension=grpc.so $(which phpunit) -v --debug --strict \
   ../tests/generated_code/GeneratedCodeWithCallbackTest.php
