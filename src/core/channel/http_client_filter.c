@@ -43,8 +43,12 @@ typedef struct call_data {
 
   int got_initial_metadata;
   grpc_stream_op_buffer *recv_ops;
-  grpc_iomgr_closure *on_done_recv;
 
+  /** Closure to call when finished with the hc_on_recv hook */
+  grpc_iomgr_closure *on_done_recv;
+  /** Receive closures are chained: we inject this closure as the on_done_recv
+      up-call on transport_op, and remember to call our on_done_recv member
+      after handling it. */
   grpc_iomgr_closure hc_on_recv;
 } call_data;
 
