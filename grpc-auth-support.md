@@ -108,7 +108,7 @@ stub = Helloworld::Greeter::Stub.new('localhost:50051')
 ...
 
 # Authenticating with Google
-require 'googleauth'  # from [googleauth](http://www.rubydoc.info/gems/googleauth/0.1.0)
+require 'googleauth'  # from http://www.rubydoc.info/gems/googleauth/0.1.0
 ...
 creds = GRPC::Core::Credentials.new(load_certs)  # load_certs typically loads a CA roots file
 scope = 'https://www.googleapis.com/auth/grpc-testing'
