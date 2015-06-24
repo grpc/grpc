@@ -132,8 +132,12 @@
     grpc_metadata_array_init(&_headers);
     _op.data.recv_initial_metadata = &_headers;
     if (handler) {
+      // Prevent reference cycle with handler
+      __weak typeof(self) weakSelf = self;
       _handler = ^{
-        NSDictionary *metadata = [NSDictionary grpc_dictionaryFromMetadataArray:_headers];
+        __strong typeof(self) strongSelf = weakSelf;
+        NSDictionary *metadata = [NSDictionary
+                                  grpc_dictionaryFromMetadataArray:strongSelf->_headers];
         handler(metadata);
       };
     }
@@ -160,8 +164,11 @@
     _op.op = GRPC_OP_RECV_MESSAGE;
     _op.data.recv_message = &_receivedMessage;
     if (handler) {
+      // Prevent reference cycle with handler
+      __weak typeof(self) weakSelf = self;
       _handler = ^{
-        handler(_receivedMessage);
+        __strong typeof(self) strongSelf = weakSelf;
+        handler(strongSelf->_receivedMessage);
       };
     }
   }
@@ -190,9 +197,14 @@
     grpc_metadata_array_init(&_trailers);
     _op.data.recv_status_on_client.trailing_metadata = &_trailers;
     if (handler) {
+      // Prevent reference cycle with handler
+      __weak typeof(self) weakSelf = self;
       _handler = ^{
-        NSError *error = [NSError grpc_errorFromStatusCode:_statusCode details:_details];
-        NSDictionary *trailers = [NSDictionary grpc_dictionaryFromMetadataArray:_trailers];
+        __strong typeof(self) strongSelf = weakSelf;
+        NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
+                                                   details:strongSelf->_details];
+        NSDictionary *trailers = [NSDictionary
+                                  grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
         handler(error, trailers);
       };
     }
