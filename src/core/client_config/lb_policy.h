@@ -41,8 +41,7 @@
 typedef struct grpc_lb_policy grpc_lb_policy;
 typedef struct grpc_lb_policy_vtable grpc_lb_policy_vtable;
 
-typedef void (*grpc_lb_completion)(void *cb_arg,
-                                   grpc_subchannel *subchannel,
+typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
                                    grpc_status_code status, const char *errmsg);
 
 struct grpc_lb_policy_vtable {
@@ -53,8 +52,7 @@ struct grpc_lb_policy_vtable {
 
   /** implement grpc_lb_policy_pick */
   void (*pick)(grpc_lb_policy *policy, grpc_pollset *pollset,
-               grpc_metadata_batch *initial_metadata,
-               grpc_subchannel **target,
+               grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
                grpc_iomgr_closure *on_complete);
 };
 
