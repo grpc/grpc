@@ -174,3 +174,24 @@ if (authorization.IsCreateScopedRequired)
 var client = new Greeter.GreeterClient(channel,
         new StubConfiguration(OAuth2InterceptorFactory.Create(credential)));
 ```
+
+###Authenticating with Google (PHP)
+```php
+// Base case - No encryption/authorization
+$client = new helloworld\GreeterClient(
+  new Grpc\BaseStub('localhost:50051', []));
+...
+
+// Authenticating with Google
+// the environment variable "GOOGLE_APPLICATION_CREDENTIALS" needs to be set
+$scope = "https://www.googleapis.com/auth/grpc-testing";
+$auth = Google\Auth\ApplicationDefaultCredentials::getCredentials($scope);
+$opts = [
+  'credentials' => Grpc\Credentials::createSsl(file_get_contents('ca.pem'));
+  'update_metadata' => $auth->getUpdateMetadataFunc(),
+];
+
+$client = new helloworld\GreeterClient(
+  new Grpc\BaseStub('localhost:50051', $opts));
+
+```
