@@ -166,8 +166,8 @@ static void process_send_ops(grpc_call_element *elem,
           sop->data.begin_message.length = calld->slices.length;
           sop->data.begin_message.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         } else {
-          /* either because the user requested the exception or because compressing
-           * would have resulted in a larger output */
+          /* either because the user requested the exception or because
+           * compressing would have resulted in a larger output */
           calld->compression_algorithm = GRPC_COMPRESS_NONE;
           /* reset the flag compression bit */
           sop->data.begin_message.flags &= ~GRPC_WRITE_INTERNAL_COMPRESS;
@@ -181,9 +181,10 @@ static void process_send_ops(grpc_call_element *elem,
         break;
       case GRPC_OP_SLICE:
         if (did_compress) {
-          GPR_ASSERT(j < calld->slices.count);
           gpr_slice_unref(sop->data.slice);
-          sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
+          if (j < calld->slices.count) {
+            sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
+          }
         }
         break;
       case GRPC_NO_OP:

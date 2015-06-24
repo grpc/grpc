@@ -1207,20 +1207,12 @@ static void destroy_compression(void *ignored) {}
 
 static gpr_uint32 decode_compression(grpc_mdelem *md) {
   grpc_compression_level clevel;
-  void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
+  void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
     clevel = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
-    gpr_uint32 parsed_clevel_bytes;
-    if (gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
-                                   GPR_SLICE_LENGTH(md->value->slice),
-                                   &parsed_clevel_bytes)) {
-      /* the following cast is safe, as a gpr_uint32 should be able to hold all
-       * possible values of the grpc_compression_level enum */
-      clevel = (grpc_compression_level) parsed_clevel_bytes;
-    } else {
-      clevel = GRPC_COMPRESS_LEVEL_NONE;  /* could not parse, no compression */
-    }
+    GPR_ASSERT(sizeof(clevel) == GPR_SLICE_LENGTH(md->value->slice));
+    memcpy(&clevel, GPR_SLICE_START_PTR(md->value->slice), sizeof(clevel));
     grpc_mdelem_set_user_data(md, destroy_compression,
                               (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
   }
