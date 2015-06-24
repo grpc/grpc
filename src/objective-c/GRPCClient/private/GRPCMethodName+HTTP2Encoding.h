@@ -33,7 +33,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCMethodName.h"
+#import "GRPCClient/GRPCMethodName.h"
 
 @interface GRPCMethodName (HTTP2Encoding)
 - (NSString *)HTTP2Path;
