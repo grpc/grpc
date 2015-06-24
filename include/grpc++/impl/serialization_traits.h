@@ -31,34 +31,38 @@
  *
  */
 
-#include <grpc++/impl/client_unary_call.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/status.h>
-#include <grpc/support/log.h>
+#ifndef GRPCXX_IMPL_SERIALIZATION_TRAITS_H
+#define GRPCXX_IMPL_SERIALIZATION_TRAITS_H
 
 namespace grpc {
 
-// Wrapper that performs a blocking unary call
-Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context,
-                         const grpc::protobuf::Message& request,
-                         grpc::protobuf::Message* result) {
-  CompletionQueue cq;
-  Call call(channel->CreateCall(method, context, &cq));
-  CallOpBuffer buf;
-  Status status;
-  buf.AddSendInitialMetadata(context);
-  buf.AddSendMessage(request);
-  buf.AddRecvInitialMetadata(context);
-  buf.AddRecvMessage(result);
-  buf.AddClientSendClose();
-  buf.AddClientRecvStatus(context, &status);
-  call.PerformOps(&buf);
-  GPR_ASSERT((cq.Pluck(&buf) && buf.got_message) || !status.ok());
-  return status;
-}
+/// Defines how to serialize and deserialize some type.
+/// 
+/// Used for hooking different message serialization API's into GRPC.
+/// Each SerializationTraits implementation must provide the following
+/// functions:
+///   static Status Serialize(const Message& msg,
+///                           grpc_byte_buffer** buffer, 
+//                            bool* own_buffer);
+///   static Status Deserialize(grpc_byte_buffer* buffer,
+///                             Message* msg,
+///                             int max_message_size);
+///
+/// Serialize is required to convert message to a grpc_byte_buffer, and
+/// to store a pointer to that byte buffer at *buffer. *own_buffer should
+/// be set to true if the caller owns said byte buffer, or false if
+/// ownership is retained elsewhere.
+///
+/// Deserialize is required to convert buffer into the message stored at
+/// msg. max_message_size is passed in as a bound on the maximum number of
+/// message bytes Deserialize should accept.
+///
+/// Both functions return a Status, allowing them to explain what went 
+/// wrong if required.
+template <class Message,
+          class UnusedButHereForPartialTemplateSpecialization = void>
+class SerializationTraits;
 
 }  // namespace grpc
+
+#endif  // GRPCXX_IMPL_SERIALIZATION_TRAITS_H

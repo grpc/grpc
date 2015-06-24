@@ -235,7 +235,7 @@ static void on_handshake_data_received_from_peer(
     gpr_slice_unref(slices[i]); /* split_tail above increments refcount. */
   }
   gpr_slice_buffer_addn(&s->left_overs, &slices[i + 1],
-                        num_left_overs - has_left_overs_in_current_slice);
+                        num_left_overs - (size_t)has_left_overs_in_current_slice);
   check_peer(s);
 }
 

@@ -33,7 +33,7 @@
 
 #import "NSError+GRPC.h"
 
-#include <grpc.h>
+#include <grpc/grpc.h>
 
 NSString * const kGRPCErrorDomain = @"io.grpc";
 

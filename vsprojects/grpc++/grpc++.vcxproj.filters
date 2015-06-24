@@ -16,9 +16,6 @@
     <ClCompile Include="..\..\src\cpp\client\client_context.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\client\client_unary_call.cc">
-      <Filter>src\cpp\client</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -108,6 +105,9 @@
     <ClInclude Include="..\..\include\grpc++\config.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\config_protobuf.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\create_channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -129,10 +129,16 @@
     <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\proto_utils.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h">
@@ -196,9 +202,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\cpp\proto\proto_utils.h">
-      <Filter>src\cpp\proto</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h">
       <Filter>src\cpp\server</Filter>
