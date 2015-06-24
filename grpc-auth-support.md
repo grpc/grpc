@@ -31,7 +31,7 @@ Tokens to each request being made on the channel.
 This is the simplest authentication scenario, where a client just wants to
 authenticate the server and encrypt all data.
 
-```
+```cpp
 SslCredentialsOptions ssl_opts;  // Options to override SSL params, empty by default
 // Create the credentials object by providing service account key in constructor
 std::unique_ptr<Credentials> creds = CredentialsFactory::SslCredentials(ssl_opts);
@@ -52,7 +52,7 @@ passed to the factory method.
 
 gRPC applications can use a simple API to create a credential that works in various deployment scenarios.
 
-```
+```cpp
 std::unique_ptr<Credentials> creds = CredentialsFactory::GoogleDefaultCredentials();
 // Create a channel, stub and make RPC calls (same as in the previous example)
 std::shared_ptr<ChannelInterface> channel = CreateChannel(server_name, creds, channel_args);
