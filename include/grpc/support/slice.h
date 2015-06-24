@@ -172,6 +172,10 @@ gpr_slice gpr_empty_slice(void);
 int gpr_slice_cmp(gpr_slice a, gpr_slice b);
 int gpr_slice_str_cmp(gpr_slice a, const char *b);
 
+/* Returns a null terminated C string from a slice. It is the responsibility of
+   the caller to call gpr_free on the result. */
+char *gpr_slice_to_cstring(gpr_slice s);
+
 #ifdef __cplusplus
 }
 #endif

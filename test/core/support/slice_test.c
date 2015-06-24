@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
@@ -211,6 +212,33 @@ static void test_slice_from_copied_string_works(void) {
   gpr_slice_unref(slice);
 }
 
+static void test_slice_to_cstring_works(void) {
+  static const char *text = "HELLO WORLD!";
+  static const char *long_text =
+      "It was a bright cold day in April, and the clocks were striking "
+      "thirteen. Winston Smith, his chin nuzzled into his breast in an effort "
+      "to escape the vile wind, slipped quickly through the glass doors of "
+      "Victory Mansions, though not quickly enough to prevent a swirl of "
+      "gritty dust from entering along with him.";
+  gpr_slice slice;
+  char *text2;
+  char *long_text2;
+
+  LOG_TEST_NAME("test_slice_to_cstring_works");
+
+  slice = gpr_slice_from_copied_string(text);
+  text2 = gpr_slice_to_cstring(slice);
+  GPR_ASSERT(strcmp(text, text2) == 0);
+  gpr_free(text2);
+  gpr_slice_unref(slice);
+
+  slice = gpr_slice_from_copied_string(long_text);
+  long_text2 = gpr_slice_to_cstring(slice);
+  GPR_ASSERT(strcmp(long_text, long_text2) == 0);
+  gpr_free(long_text2);
+  gpr_slice_unref(slice);
+}
+
 int main(int argc, char **argv) {
   unsigned length;
   grpc_test_init(argc, argv);
@@ -223,5 +251,6 @@ int main(int argc, char **argv) {
     test_slice_split_tail_works(length);
   }
   test_slice_from_copied_string_works();
+  test_slice_to_cstring_works();
   return 0;
 }
