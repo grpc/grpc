@@ -44,6 +44,7 @@ default_secure_fixture_options = FixtureOptions(True, ['windows', 'posix'])
 END2END_FIXTURES = {
     'chttp2_fake_security': default_secure_fixture_options,
     'chttp2_fullstack': default_unsecure_fixture_options,
+    'chttp2_fullstack_compression': default_unsecure_fixture_options,
     'chttp2_fullstack_with_poll': FixtureOptions(False, ['posix']),
     'chttp2_fullstack_uds_posix': FixtureOptions(False, ['posix']),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,

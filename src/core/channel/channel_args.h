@@ -56,7 +56,7 @@ int grpc_channel_args_is_census_enabled(const grpc_channel_args *a);
 grpc_compression_level grpc_channel_args_get_compression_level(
     const grpc_channel_args *a);
 
-/** Returns an channel arg instance with compression enabled. If \a a is
+/** Returns a channel arg instance with compression enabled. If \a a is
  * non-NULL, its args are copied. N.B. GRPC_COMPRESS_LEVEL_NONE disables
  * compression for the channel. */
 grpc_channel_args *grpc_channel_args_set_compression_level(

@@ -228,7 +228,6 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_slice_unref(request_payload_slice);
   gpr_slice_unref(response_payload_slice);
 
   end_test(&f);

@@ -177,7 +177,8 @@ static void process_send_ops(grpc_call_element *elem,
         grpc_metadata_batch_add_head(
             &(sop->data.metadata), &calld->compression_algorithm_storage,
             grpc_mdelem_ref(channeld->mdelem_compression_algorithms
-                                [calld->compression_algorithm]));
+                                [did_compress ? calld->compression_algorithm
+                                              : GRPC_COMPRESS_NONE]));
         break;
       case GRPC_OP_SLICE:
         if (did_compress) {
