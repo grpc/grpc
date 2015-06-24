@@ -69,7 +69,6 @@ typedef struct grpc_transport_op {
 
   grpc_stream_op_buffer *send_ops;
   int is_last_send;
-  int dont_compress;
   void (*on_done_send)(void *user_data, int success);
   void *send_user_data;
 

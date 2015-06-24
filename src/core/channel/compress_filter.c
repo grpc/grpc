@@ -114,9 +114,6 @@ static void process_send_ops(grpc_call_element *elem,
     switch (sop->type) {
       case GRPC_OP_BEGIN_MESSAGE:
         calld->remaining_slice_bytes = sop->data.begin_message.length;
-        /* TODO(dgq): we may want to get rid of the flags mechanism to have
-         * exceptions to compression: we can rely solely on metadata to set NONE
-         * as the compression algorithm */
         if (sop->data.begin_message.flags & GRPC_WRITE_NO_COMPRESS) {
           calld->has_compression_algorithm = 1;  /* GPR_TRUE */
           calld->compression_algorithm = GRPC_COMPRESS_NONE;
