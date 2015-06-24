@@ -32,7 +32,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <gRPC/GRPCCall.h>
+#import <GRPCClient/GRPCCall.h>
 
 @interface ProtoRPC : GRPCCall
 

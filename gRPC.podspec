@@ -34,7 +34,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
   s.version  = '0.6.0'
@@ -50,17 +49,19 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.8'
   s.requires_arc = true
 
+  objc_dir = 'src/objective-c'
+
   # Reactive Extensions library for iOS.
-  s.subspec 'RxLibrary' do |rs|
-    rs.source_files = 'src/objective-c/RxLibrary/*.{h,m}',
-                      'src/objective-c/RxLibrary/transformations/*.{h,m}',
-                      'src/objective-c/RxLibrary/private/*.{h,m}'
-    rs.private_header_files = 'src/objective-c/RxLibrary/private/*.h'
+  s.subspec 'RxLibrary' do |ss|
+    src_dir = "#{objc_dir}/RxLibrary"
+    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.private_header_files = "#{src_dir}/private/*.h"
+    ss.header_mappings_dir = "#{objc_dir}"
   end
 
   # Core cross-platform gRPC library, written in C.
-  s.subspec 'C-Core' do |cs|
-    cs.source_files = 'src/core/support/env.h',
+  s.subspec 'C-Core' do |ss|
+    ss.source_files = 'src/core/support/env.h',
                       'src/core/support/file.h',
                       'src/core/support/murmur_hash.h',
                       'src/core/support/grpc_string.h',
@@ -357,7 +358,7 @@ Pod::Spec.new do |s|
                       'src/core/census/context.c',
                       'src/core/census/initialize.c'
 
-    cs.private_header_files = 'src/core/support/env.h',
+    ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
                               'src/core/support/murmur_hash.h',
                               'src/core/support/string.h',
@@ -464,11 +465,11 @@ Pod::Spec.new do |s|
                               'src/core/transport/transport_impl.h',
                               'src/core/census/context.h'
 
-    cs.header_mappings_dir = '.'
+    ss.header_mappings_dir = '.'
 
-    cs.requires_arc = false
-    cs.libraries = 'z'
-    cs.dependency 'OpenSSL', '~> 1.0.200'
+    ss.requires_arc = false
+    ss.libraries = 'z'
+    ss.dependency 'OpenSSL', '~> 1.0.200'
   end
 
   # This is a workaround for Cocoapods Issue #1437.
@@ -476,7 +477,7 @@ Pod::Spec.new do |s|
   # It needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
   # prepare_command's of subspecs.
   #
-  # TODO(jcanizales): Try out Todd Reed's solution at Issue #1437.
+  # TODO(jcanizales): Try out others' solutions at Issue #1437.
   s.prepare_command = <<-CMD
     # Move contents of include up a level to avoid manually specifying include paths
     cp -r "include/grpc" "."
@@ -484,7 +485,7 @@ Pod::Spec.new do |s|
     DIR_TIME="grpc/support"
     BAD_TIME="$DIR_TIME/time.h"
     GOOD_TIME="$DIR_TIME/grpc_time.h"
-    grep -rl "$BAD_TIME" grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
+    grep -rl "$BAD_TIME" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
     if [ -f "include/$BAD_TIME" ];
     then
       mv -f "include/$BAD_TIME" "include/$GOOD_TIME"
@@ -493,7 +494,7 @@ Pod::Spec.new do |s|
     DIR_STRING="src/core/support"
     BAD_STRING="$DIR_STRING/string.h"
     GOOD_STRING="$DIR_STRING/grpc_string.h"
-    grep -rl "$BAD_STRING" grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
+    grep -rl "$BAD_STRING" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
     if [ -f "$BAD_STRING" ];
     then
       mv -f "$BAD_STRING" "$GOOD_STRING"
@@ -501,25 +502,27 @@ Pod::Spec.new do |s|
   CMD
 
   # Objective-C wrapper around the core gRPC library.
-  s.subspec 'GRPCClient' do |gs|
-    gs.source_files = 'src/objective-c/GRPCClient/*.{h,m}',
-                      'src/objective-c/GRPCClient/private/*.{h,m}'
-    gs.private_header_files = 'src/objective-c/GRPCClient/private/*.h'
-    gs.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
+  s.subspec 'GRPCClient' do |ss|
+    src_dir = "#{objc_dir}/GRPCClient"
+    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.private_header_files = "#{src_dir}/private/*.h"
+    ss.header_mappings_dir = "#{objc_dir}"
 
-    gs.dependency 'gRPC/C-Core'
-    gs.dependency 'gRPC/RxLibrary'
+    ss.dependency 'gRPC/C-Core'
+    ss.dependency 'gRPC/RxLibrary'
 
     # Certificates, to be able to establish TLS connections:
-    gs.resource_bundles = { 'gRPC' => ['etc/roots.pem'] }
+    ss.resource_bundles = { 'gRPC' => ['etc/roots.pem'] }
   end
 
   # RPC library for ProtocolBuffers, based on gRPC
-  s.subspec 'ProtoRPC' do |ps|
-    ps.source_files = 'src/objective-c/ProtoRPC/*.{h,m}'
+  s.subspec 'ProtoRPC' do |ss|
+    src_dir = "#{objc_dir}/ProtoRPC"
+    ss.source_files = "#{src_dir}/*.{h,m}"
+    ss.header_mappings_dir = "#{objc_dir}"
 
-    ps.dependency 'gRPC/GRPCClient'
-    ps.dependency 'gRPC/RxLibrary'
-    ps.dependency 'Protobuf', '~> 3.0.0-alpha-3'
+    ss.dependency 'gRPC/GRPCClient'
+    ss.dependency 'gRPC/RxLibrary'
+    ss.dependency 'Protobuf', '~> 3.0.0-alpha-3'
   end
 end
