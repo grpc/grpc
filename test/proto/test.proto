@@ -75,7 +75,7 @@ service TestService {
 
 // A simple service NOT implemented at servers so clients can test for
 // that case.
-service UnImplementedService {
+service UnimplementedService {
   // A call that no server should implement
   rpc UnimplementedCall(grpc.testing.Empty) returns(grpc.testing.Empty);  
 }
