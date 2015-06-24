@@ -66,34 +66,34 @@ Pod::Spec.new do |s|
                       'src/core/support/grpc_string.h',
                       'src/core/support/string_win32.h',
                       'src/core/support/thd_internal.h',
-                      'include/grpc/support/alloc.h',
-                      'include/grpc/support/atm.h',
-                      'include/grpc/support/atm_gcc_atomic.h',
-                      'include/grpc/support/atm_gcc_sync.h',
-                      'include/grpc/support/atm_win32.h',
-                      'include/grpc/support/cancellable_platform.h',
-                      'include/grpc/support/cmdline.h',
-                      'include/grpc/support/cpu.h',
-                      'include/grpc/support/histogram.h',
-                      'include/grpc/support/host_port.h',
-                      'include/grpc/support/log.h',
-                      'include/grpc/support/log_win32.h',
-                      'include/grpc/support/port_platform.h',
-                      'include/grpc/support/slice.h',
-                      'include/grpc/support/slice_buffer.h',
-                      'include/grpc/support/string_util.h',
-                      'include/grpc/support/subprocess.h',
-                      'include/grpc/support/sync.h',
-                      'include/grpc/support/sync_generic.h',
-                      'include/grpc/support/sync_posix.h',
-                      'include/grpc/support/sync_win32.h',
-                      'include/grpc/support/thd.h',
-                      'include/grpc/support/grpc_time.h',
-                      'include/grpc/support/tls.h',
-                      'include/grpc/support/tls_gcc.h',
-                      'include/grpc/support/tls_msvc.h',
-                      'include/grpc/support/tls_pthread.h',
-                      'include/grpc/support/useful.h',
+                      'grpc/support/alloc.h',
+                      'grpc/support/atm.h',
+                      'grpc/support/atm_gcc_atomic.h',
+                      'grpc/support/atm_gcc_sync.h',
+                      'grpc/support/atm_win32.h',
+                      'grpc/support/cancellable_platform.h',
+                      'grpc/support/cmdline.h',
+                      'grpc/support/cpu.h',
+                      'grpc/support/histogram.h',
+                      'grpc/support/host_port.h',
+                      'grpc/support/log.h',
+                      'grpc/support/log_win32.h',
+                      'grpc/support/port_platform.h',
+                      'grpc/support/slice.h',
+                      'grpc/support/slice_buffer.h',
+                      'grpc/support/string_util.h',
+                      'grpc/support/subprocess.h',
+                      'grpc/support/sync.h',
+                      'grpc/support/sync_generic.h',
+                      'grpc/support/sync_posix.h',
+                      'grpc/support/sync_win32.h',
+                      'grpc/support/thd.h',
+                      'grpc/support/grpc_time.h',
+                      'grpc/support/tls.h',
+                      'grpc/support/tls_gcc.h',
+                      'grpc/support/tls_msvc.h',
+                      'grpc/support/tls_pthread.h',
+                      'grpc/support/useful.h',
                       'src/core/support/alloc.c',
                       'src/core/support/cancellable.c',
                       'src/core/support/cmdline.c',
@@ -231,13 +231,13 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/context.h',
-                      'include/grpc/grpc_security.h',
-                      'include/grpc/byte_buffer.h',
-                      'include/grpc/byte_buffer_reader.h',
-                      'include/grpc/compression.h',
-                      'include/grpc/grpc.h',
-                      'include/grpc/status.h',
-                      'include/grpc/census.h',
+                      'grpc/grpc_security.h',
+                      'grpc/byte_buffer.h',
+                      'grpc/byte_buffer_reader.h',
+                      'grpc/compression.h',
+                      'grpc/grpc.h',
+                      'grpc/status.h',
+                      'grpc/census.h',
                       'src/core/httpcli/format_request.c',
                       'src/core/httpcli/httpcli.c',
                       'src/core/httpcli/httpcli_security_connector.c',
@@ -465,14 +465,6 @@ Pod::Spec.new do |s|
                               'src/core/census/context.h'
 
     cs.header_mappings_dir = '.'
-    # The core library includes its headers as either "src/core/..." or "grpc/...", meaning we have
-    # to tell XCode to look for headers under the "include" subdirectory too.
-    #
-    # TODO(jcanizales): Instead of doing this, during installation move everything under
-    # "include/grpc" one directory up. The directory names under PODS_ROOT are implementation
-    # details of Cocoapods, and have changed in the past, breaking this podspec.
-    cs.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
-                                             '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
 
     cs.requires_arc = false
     cs.libraries = 'z'
@@ -486,10 +478,13 @@ Pod::Spec.new do |s|
   #
   # TODO(jcanizales): Try out Todd Reed's solution at Issue #1437.
   s.prepare_command = <<-CMD
+    # Move contents of include up a level to avoid manually specifying include paths
+    cp -r "include/grpc" "."
+
     DIR_TIME="grpc/support"
     BAD_TIME="$DIR_TIME/time.h"
     GOOD_TIME="$DIR_TIME/grpc_time.h"
-    grep -rl "$BAD_TIME" include/grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
+    grep -rl "$BAD_TIME" grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
     if [ -f "include/$BAD_TIME" ];
     then
       mv -f "include/$BAD_TIME" "include/$GOOD_TIME"
@@ -498,7 +493,7 @@ Pod::Spec.new do |s|
     DIR_STRING="src/core/support"
     BAD_STRING="$DIR_STRING/string.h"
     GOOD_STRING="$DIR_STRING/grpc_string.h"
-    grep -rl "$BAD_STRING" include/grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
+    grep -rl "$BAD_STRING" grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
     if [ -f "$BAD_STRING" ];
     then
       mv -f "$BAD_STRING" "$GOOD_STRING"
@@ -513,9 +508,6 @@ Pod::Spec.new do |s|
     gs.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
 
     gs.dependency 'gRPC/C-Core'
-    # TODO(jcanizales): Remove this when the prepare_command moves everything under "include/grpc"
-    # one directory up.
-    gs.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Public/gRPC/include"' }
     gs.dependency 'gRPC/RxLibrary'
 
     # Certificates, to be able to establish TLS connections:
