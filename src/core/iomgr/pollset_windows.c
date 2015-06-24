@@ -70,10 +70,10 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0 /* GPR_FALSE */;
   }
-  if (grpc_maybe_call_delayed_callbacks(NULL, 1 /* GPR_TRUE */)) {
+  if (grpc_maybe_call_delayed_callbacks(&pollset->mu, 1 /* GPR_TRUE */)) {
     return 1 /* GPR_TRUE */;
   }
-  if (grpc_alarm_check(NULL, now, &deadline)) {
+  if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     return 1 /* GPR_TRUE */;
   }
   gpr_cv_wait(&pollset->cv, &pollset->mu, deadline);
