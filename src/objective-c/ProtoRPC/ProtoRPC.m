@@ -33,10 +33,10 @@
 
 #import "ProtoRPC.h"
 
-#import <gRPC/GRXWriteable.h>
-#import <gRPC/GRXWriter.h>
-#import <gRPC/GRXWriter+Transformations.h>
 #import <Protobuf/GPBProtocolBuffers.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
+#import <RxLibrary/GRXWriter+Transformations.h>
 
 @implementation ProtoRPC {
   id<GRXWriteable> _responseWriteable;

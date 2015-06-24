@@ -46,7 +46,7 @@
 // transparently on the same TCP connection.
 
 #import <Foundation/Foundation.h>
-#import <gRPC/GRXWriter.h>
+#import <RxLibrary/GRXWriter.h>
 
 @class GRPCMethodName;
 
