@@ -543,6 +543,15 @@
   }, 
   {
     "flaky": false, 
+    "language": "c", 
+    "name": "uri_parser_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
     "language": "c++", 
     "name": "async_end2end_test", 
     "platforms": [

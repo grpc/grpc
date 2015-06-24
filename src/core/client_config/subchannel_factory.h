@@ -57,6 +57,7 @@ struct grpc_subchannel_args {
   const grpc_channel_args *args;
   /** Address to connect to */
   struct sockaddr *addr;
+  size_t addr_len;
 };
 
 struct grpc_subchannel_factory_vtable {
@@ -70,7 +71,7 @@ void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
 void grpc_subchannel_factory_unref(grpc_subchannel_factory *factory);
 
 /** Create a new grpc_subchannel */
-void grpc_subchannel_factory_create_subchannel(grpc_subchannel_factory *factory,
-                                               grpc_subchannel_args *args);
+grpc_subchannel *grpc_subchannel_factory_create_subchannel(
+    grpc_subchannel_factory *factory, grpc_subchannel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

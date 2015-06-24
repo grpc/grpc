@@ -37,6 +37,9 @@
     <ClCompile Include="..\..\src\core\client_config\client_config.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\lb_policies\pick_first.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\lb_policy.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -46,10 +49,19 @@
     <ClCompile Include="..\..\src\core\client_config\resolver_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_registry.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\compression\algorithm.c">
@@ -368,6 +380,9 @@
     <ClInclude Include="..\..\src\core\client_config\client_config.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\lb_policies\pick_first.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\lb_policy.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
@@ -377,10 +392,19 @@
     <ClInclude Include="..\..\src\core\client_config\resolver_factory.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver_registry.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
@@ -622,6 +646,12 @@
     </Filter>
     <Filter Include="src\core\client_config">
       <UniqueIdentifier>{02bd7340-02ee-4337-ffa5-0b6ecc7cf60c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\lb_policies">
+      <UniqueIdentifier>{308af086-46c7-fa66-9021-19b1c3d4a6bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\resolvers">
+      <UniqueIdentifier>{dd617c24-6f07-fdff-80d5-c8610d6f815e}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>

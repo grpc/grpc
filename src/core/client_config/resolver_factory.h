@@ -34,31 +34,34 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
 
-#include "src/core/client_config/client_config.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/sockaddr.h"
+#include "src/core/client_config/resolver.h"
+#include "src/core/client_config/subchannel_factory.h"
+#include "src/core/client_config/uri_parser.h"
 
-typedef struct grpc_resolver grpc_resolver;
-typedef struct grpc_resolver_vtable grpc_resolver_vtable;
+typedef struct grpc_resolver_factory grpc_resolver_factory;
+typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;
 
 /** grpc_resolver provides grpc_client_config objects to grpc_channel
     objects */
-struct grpc_resolver {
-  const grpc_resolver_vtable *vtable;
+struct grpc_resolver_factory {
+  const grpc_resolver_factory_vtable *vtable;
 };
 
 struct grpc_resolver_factory_vtable {
-  void (*ref)(grpc_resolver *resolver);
-  void (*unref)(grpc_resolver *resolver);
+  void (*ref)(grpc_resolver_factory *factory);
+  void (*unref)(grpc_resolver_factory *factory);
 
-  grpc_resolver *(*create_resolver)(const char *name);
+  grpc_resolver *(*create_resolver)(
+      grpc_resolver_factory *factory, grpc_uri *uri,
+      grpc_subchannel_factory *subchannel_factory);
 };
 
-void grpc_resolver_factory_ref(grpc_resolver *resolver);
-void grpc_resolver_factory_unref(grpc_resolver *resolver);
+void grpc_resolver_factory_ref(grpc_resolver_factory *resolver);
+void grpc_resolver_factory_unref(grpc_resolver_factory *resolver);
 
 /** Create a resolver instance for a name */
 grpc_resolver *grpc_resolver_factory_create_resolver(
-    grpc_resolver_factory *resolver, const char *name);
+    grpc_resolver_factory *factory, grpc_uri *uri,
+    grpc_subchannel_factory *subchannel_factory);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_FACTORY_H */

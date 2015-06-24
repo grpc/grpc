@@ -52,7 +52,8 @@ struct grpc_resolver_vtable {
   void (*unref)(grpc_resolver *resolver);
   void (*shutdown)(grpc_resolver *resolver);
   void (*channel_saw_error)(grpc_resolver *resolver,
-                            struct sockaddr *failing_address);
+                            struct sockaddr *failing_address,
+                            int failing_address_len);
   void (*next)(grpc_resolver *resolver, grpc_client_config **target_config,
                grpc_iomgr_closure *on_complete);
 };

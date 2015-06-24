@@ -31,22 +31,24 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H
 
-#include "src/core/client_config/lb_policy.h"
+#include "src/core/client_config/resolver_factory.h"
 
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
+void grpc_resolver_registry_init(grpc_resolver_factory *default_resolver);
+void grpc_resolver_registry_shutdown(void);
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_client_config *client_config);
+/** Register a resolver type.
+    URI's of \a scheme will be resolved with the given resolver.
+    If \a priority is greater than zero, then the resolver will be eligible
+    to resolve names that are passed in with no scheme. Higher priority
+    resolvers will be tried before lower priority schemes. */
+void grpc_register_resolver_type(const char *scheme,
+                                 grpc_resolver_factory *factory);
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
+/** Create a resolver given a \a uri string (with an optional scheme prefix) */
+grpc_resolver *grpc_resolver_create(
+    const char *name, grpc_subchannel_factory *subchannel_factory);
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H */
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H */

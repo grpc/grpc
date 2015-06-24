@@ -34,7 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H
 
-/** Create a dns resolver for \a name */
-grpc_resolver *grpc_dns_resolver_create(const char *name);
+#include "src/core/client_config/resolver_factory.h"
 
-#endif  /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H */
+/** Create a dns resolver for \a name */
+grpc_resolver_factory *grpc_dns_resolver_factory_create(
+    const char *default_port);
+
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H */

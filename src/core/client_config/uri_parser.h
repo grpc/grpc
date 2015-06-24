@@ -31,22 +31,22 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_URI_PARSER_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_URI_PARSER_H
 
-#include "src/core/client_config/lb_policy.h"
+typedef struct {
+  char *scheme;
+  char *authority;
+  char *path;
+} grpc_uri;
 
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
+/** parse a uri, return NULL on failure */
+grpc_uri *grpc_uri_parse(const char *uri_text);
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_client_config *client_config);
+/** return 1 if uri_text has something that is likely a scheme, 0 otherwise */
+int grpc_has_scheme(const char *uri_text);
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
+/** destroy a uri */
+void grpc_uri_destroy(grpc_uri *uri);
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H */
+#endif

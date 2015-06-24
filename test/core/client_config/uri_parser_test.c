@@ -31,22 +31,38 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
+#include "src/core/client_config/uri_parser.h"
 
-#include "src/core/client_config/lb_policy.h"
+#include <string.h>
 
-/** Total configuration for a client. Provided, and updated, by
-    grpc_resolver */
-typedef struct grpc_client_config grpc_client_config;
+#include <grpc/support/log.h>
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_client_config *client_config);
+#include "test/core/util/test_config.h"
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
+static void test_succeeds(const char *uri_text, const char *scheme,
+                          const char *authority, const char *path) {
+  grpc_uri *uri = grpc_uri_parse(uri_text);
+  GPR_ASSERT(uri);
+  GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
+  GPR_ASSERT(0 == strcmp(authority, uri->authority));
+  GPR_ASSERT(0 == strcmp(path, uri->path));
+  grpc_uri_destroy(uri);
+}
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H */
+static void test_fails(const char *uri_text) {
+  GPR_ASSERT(NULL == grpc_uri_parse(uri_text));
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_succeeds("http://www.google.com", "http", "www.google.com", "");
+  test_succeeds("dns:///foo", "dns", "", "/foo");
+  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
+  test_fails("xyz");
+  test_fails("http://www.google.com?why-are-you-using-queries");
+
+  GPR_ASSERT(grpc_has_scheme("http:adfhadf"));
+  GPR_ASSERT(grpc_has_scheme("http://adfhadf"));
+  GPR_ASSERT(!grpc_has_scheme("adfhadf"));
+  return 0;
+}
