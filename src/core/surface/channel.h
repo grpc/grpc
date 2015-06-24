@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/subchannel_factory.h"
 
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t count,
@@ -42,6 +43,11 @@ grpc_channel *grpc_channel_create_from_filters(
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
+
+/** Get a (borrowed) pointer to this channels subchannel factory (if it exists)
+ */
+grpc_subchannel_factory *grpc_channel_get_subchannel_factory(
+    grpc_channel *channel);
 
 /** Get a (borrowed) pointer to the channel wide metadata context */
 grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);

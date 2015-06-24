@@ -34,6 +34,24 @@
     <ClCompile Include="..\..\src\core\channel\noop_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\client_config.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\lb_policy.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\compression\algorithm.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
@@ -347,6 +365,24 @@
     <ClInclude Include="..\..\src\core\channel\noop_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\client_config.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\lb_policy.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
     </ClInclude>
@@ -583,6 +619,9 @@
     </Filter>
     <Filter Include="src\core\channel">
       <UniqueIdentifier>{cc102c4b-66ff-cf4c-2288-d76327e1a183}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config">
+      <UniqueIdentifier>{02bd7340-02ee-4337-ffa5-0b6ecc7cf60c}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>

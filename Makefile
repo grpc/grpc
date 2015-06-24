@@ -3020,6 +3020,12 @@ LIBGRPC_SRC = \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
+    src/core/client_config/client_config.c \
+    src/core/client_config/lb_policy.c \
+    src/core/client_config/resolver.c \
+    src/core/client_config/resolver_factory.c \
+    src/core/client_config/subchannel.c \
+    src/core/client_config/subchannel_factory.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
@@ -3266,6 +3272,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
+    src/core/client_config/client_config.c \
+    src/core/client_config/lb_policy.c \
+    src/core/client_config/resolver.c \
+    src/core/client_config/resolver_factory.c \
+    src/core/client_config/subchannel.c \
+    src/core/client_config/subchannel_factory.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
