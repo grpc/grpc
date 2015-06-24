@@ -39,6 +39,7 @@
 
 #include "src/core/iomgr/alarm_internal.h"
 #include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/pollset_windows.h"
 
 /* There isn't really any such thing as a pollset under Windows, due to the
@@ -54,6 +55,7 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
                            void *shutdown_done_arg) {
+  grpc_pollset_kick(pollset);
   shutdown_done(shutdown_done_arg);
 }
 
