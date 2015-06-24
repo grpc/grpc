@@ -33,9 +33,9 @@
 
 #import "ProtoService.h"
 
-#import <gRPC/GRPCMethodName.h>
-#import <gRPC/GRXWriteable.h>
-#import <gRPC/GRXWriter.h>
+#import <GRPCClient/GRPCMethodName.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
 
 #import "ProtoRPC.h"
 

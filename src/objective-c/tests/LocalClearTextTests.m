@@ -34,12 +34,12 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import <gRPC/GRPCCall.h>
-#import <gRPC/GRPCMethodName.h>
-#import <gRPC/GRXWriter+Immediate.h>
-#import <gRPC/GRXWriteable.h>
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCMethodName.h>
 #import <RouteGuide/RouteGuide.pbobjc.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
 
 // These tests require a gRPC "RouteGuide" sample server to be running locally. You can compile and
 // run one by following the instructions here: https://github.com/grpc/grpc-common/blob/master/cpp/cpptutorial.md#try-it-out
