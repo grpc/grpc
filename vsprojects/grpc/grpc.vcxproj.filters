@@ -109,6 +109,9 @@
     <ClCompile Include="..\..\src\core\client_config\resolver.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -486,6 +489,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\resolver.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver_factory.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel.h">

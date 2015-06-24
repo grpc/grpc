@@ -3023,6 +3023,7 @@ LIBGRPC_SRC = \
     src/core/client_config/client_config.c \
     src/core/client_config/lb_policy.c \
     src/core/client_config/resolver.c \
+    src/core/client_config/resolver_factory.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
     src/core/compression/algorithm.c \
@@ -3274,6 +3275,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/client_config.c \
     src/core/client_config/lb_policy.c \
     src/core/client_config/resolver.c \
+    src/core/client_config/resolver_factory.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
     src/core/compression/algorithm.c \

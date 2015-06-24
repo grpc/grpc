@@ -34,11 +34,11 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import <gRPC/GRPCCall.h>
-#import <gRPC/GRPCMethodName.h>
-#import <gRPC/GRXWriter+Immediate.h>
-#import <gRPC/GRXWriteable.h>
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCMethodName.h>
 #import <RemoteTest/Messages.pbobjc.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
 
 // These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
 // rather than a generated proto library on top of it.

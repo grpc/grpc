@@ -31,10 +31,34 @@
  *
  */
 
-#import "RxLibrary/GRXWriter.h"
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_FACTORY_H
 
-// A "proxy" writer that transforms all the values of its input writer by using a mapping function.
-@interface GRXMappingWriter : GRXWriter
-- (instancetype)initWithWriter:(id<GRXWriter>)writer map:(id (^)(id value))map
-    NS_DESIGNATED_INITIALIZER;
-@end
+#include "src/core/client_config/client_config.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/sockaddr.h"
+
+typedef struct grpc_resolver grpc_resolver;
+typedef struct grpc_resolver_vtable grpc_resolver_vtable;
+
+/** grpc_resolver provides grpc_client_config objects to grpc_channel
+    objects */
+struct grpc_resolver {
+  const grpc_resolver_vtable *vtable;
+};
+
+struct grpc_resolver_factory_vtable {
+  void (*ref)(grpc_resolver *resolver);
+  void (*unref)(grpc_resolver *resolver);
+
+  grpc_resolver *(*create_resolver)(const char *name);
+};
+
+void grpc_resolver_factory_ref(grpc_resolver *resolver);
+void grpc_resolver_factory_unref(grpc_resolver *resolver);
+
+/** Create a resolver instance for a name */
+grpc_resolver *grpc_resolver_factory_create_resolver(
+    grpc_resolver_factory *resolver, const char *name);
+
+#endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_FACTORY_H */
