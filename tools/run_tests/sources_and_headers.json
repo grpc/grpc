@@ -199,7 +199,6 @@
   }, 
   {
     "deps": [
-      "grpc_test_util", 
       "gpr", 
       "grpc"
     ], 
@@ -207,7 +206,7 @@
     "language": "c", 
     "name": "gen_hpack_tables", 
     "src": [
-      "src/core/transport/chttp2/gen_hpack_tables.c"
+      "tools/codegen/core/gen_hpack_tables.c"
     ]
   }, 
   {

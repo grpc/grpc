@@ -856,3 +856,30 @@ cc_binary(
 
 
 
+
+objc_path = "src/objective-c"
+
+rx_library_path = objc_path + "/RxLibrary"
+
+objc_library(
+    name = "rx_library",
+    hdrs = glob([
+        rx_library_path + "/*.h",
+        rx_library_path + "/transformations/*.h",
+    ]),
+    srcs = glob([
+        rx_library_path + "/*.m",
+        rx_library_path + "/transformations/*.m",
+    ]),
+    includes = [objc_path],
+    deps = [
+        ":rx_library_private",
+    ],
+)
+
+objc_library(
+    name = "rx_library_private",
+    hdrs = glob([rx_library_path + "/private/*.h"]),
+    srcs = glob([rx_library_path + "/private/*.m"]),
+    visibility = ["//visibility:private"],
+)

@@ -36,13 +36,13 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import <gRPC/GRXWriter+Immediate.h>
-#import <gRPC/GRXBufferedPipe.h>
-#import <gRPC/ProtoRPC.h>
+#import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
+#import <RxLibrary/GRXBufferedPipe.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
 
 // Convenience constructors for the generated proto messages:
 
