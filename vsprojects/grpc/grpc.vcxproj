@@ -234,7 +234,6 @@
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
-    <ClInclude Include="..\..\src\core\surface\client.h" />
     <ClInclude Include="..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\src\core\surface\event_string.h" />
     <ClInclude Include="..\..\src\core\surface\init.h" />
@@ -453,8 +452,6 @@
     <ClCompile Include="..\..\src\core\surface\channel.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\client.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\completion_queue.c">
     </ClCompile>

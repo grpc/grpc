@@ -39,7 +39,6 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
-#include "src/core/surface/client.h"
 #include "src/core/surface/init.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -238,22 +237,15 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
   }
 }
 
+static void execute_op(grpc_channel *channel, grpc_transport_op *op) {
+  abort();
+}
+
 void grpc_channel_destroy(grpc_channel *channel) {
-  grpc_channel_op op;
-  grpc_channel_element *elem;
-
-  elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
-
-  op.type = GRPC_CHANNEL_GOAWAY;
-  op.dir = GRPC_CALL_DOWN;
-  op.data.goaway.status = GRPC_STATUS_OK;
-  op.data.goaway.message = gpr_slice_from_copied_string("Client disconnect");
-  elem->filter->channel_op(elem, NULL, &op);
-
-  op.type = GRPC_CHANNEL_DISCONNECT;
-  op.dir = GRPC_CALL_DOWN;
-  elem->filter->channel_op(elem, NULL, &op);
-
+  grpc_transport_op op;
+  memset(&op, 0, sizeof(op));
+  op.disconnect = 1;
+  execute_op(channel, &op);
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }
 

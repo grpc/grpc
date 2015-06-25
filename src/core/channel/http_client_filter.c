@@ -134,23 +134,6 @@ static void hc_start_transport_op(grpc_call_element *elem,
   grpc_call_next_op(elem, op);
 }
 
-/* Called on special channel events, such as disconnection or new incoming
-   calls on the server */
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  /* grab pointers to our data from the channel element */
-  channel_data *channeld = elem->channel_data;
-
-  ignore_unused(channeld);
-
-  switch (op->type) {
-    default:
-      /* pass control up or down the stack depending on op->dir */
-      grpc_channel_next_op(elem, op);
-      break;
-  }
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
@@ -222,6 +205,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    hc_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "http-client"};
+    hc_start_transport_op, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem,        destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem,     destroy_channel_elem, "http-client"};

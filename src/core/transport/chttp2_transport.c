@@ -1038,11 +1038,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              init_stream,
                                              perform_op,
-                                             add_to_pollset,
                                              destroy_stream,
-                                             goaway,
-                                             close_transport,
-                                             send_ping,
                                              destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,

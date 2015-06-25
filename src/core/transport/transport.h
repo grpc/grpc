@@ -85,6 +85,8 @@ typedef struct grpc_transport_stream_op {
 
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
+  /** called when processing of this op is done */
+  grpc_iomgr_closure *on_consumed;
   /** connectivity monitoring */
   grpc_iomgr_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;

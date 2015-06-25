@@ -38,9 +38,7 @@
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/client_config/resolver_registry.h"
-#include "src/core/client_config/subchannels/tcp_subchannel.h"
 #include "src/core/surface/channel.h"
-#include "src/core/surface/client.h"
 
 /* Create a client channel:
    Asynchronously: - resolve target
@@ -53,7 +51,6 @@ grpc_channel *grpc_channel_create(const char *target,
   const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_resolver *resolver;
   int n = 0;
-  filters[n++] = &grpc_client_surface_filter;
   /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
@@ -61,7 +58,8 @@ grpc_channel *grpc_channel_create(const char *target,
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  resolver = grpc_resolver_create(target, grpc_create_tcp_subchannel_factory());
+  GPR_ASSERT(!"NULL should be a subchannel factory creation below");
+  resolver = grpc_resolver_create(target, NULL);
   if (!resolver) {
     return NULL;
   }

@@ -1154,7 +1154,7 @@ static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
   op->context = call->context;
-  elem->filter->start_transport_op(elem, op);
+  elem->filter->start_transport_stream_op(elem, op);
 }
 
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {

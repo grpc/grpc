@@ -38,15 +38,6 @@ size_t grpc_transport_stream_size(grpc_transport *transport) {
   return transport->vtable->sizeof_stream;
 }
 
-void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
-                           gpr_slice message) {
-  transport->vtable->goaway(transport, status, message);
-}
-
-void grpc_transport_close(grpc_transport *transport) {
-  transport->vtable->close(transport);
-}
-
 void grpc_transport_destroy(grpc_transport *transport) {
   transport->vtable->destroy(transport);
 }
@@ -68,18 +59,9 @@ void grpc_transport_perform_op(grpc_transport *transport,
   transport->vtable->perform_op(transport, op);
 }
 
-void grpc_transport_add_to_pollset(grpc_transport *transport,
-                                   grpc_pollset *pollset) {
-  transport->vtable->add_to_pollset(transport, pollset);
-}
-
 void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream) {
   transport->vtable->destroy_stream(transport, stream);
-}
-
-void grpc_transport_ping(grpc_transport *transport, grpc_iomgr_closure *cb) {
-  transport->vtable->ping(transport, cb);
 }
 
 void grpc_transport_setup_cancel(grpc_transport_setup *setup) {

@@ -214,9 +214,6 @@
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\client.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\completion_queue.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -531,9 +528,6 @@
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\channel.h">
-      <Filter>src\core\surface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\surface\client.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\completion_queue.h">

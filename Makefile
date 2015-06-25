@@ -3083,7 +3083,6 @@ LIBGRPC_SRC = \
     src/core/surface/call_log_batch.c \
     src/core/surface/channel.c \
     src/core/surface/channel_create.c \
-    src/core/surface/client.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
@@ -3341,7 +3340,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/call_log_batch.c \
     src/core/surface/channel.c \
     src/core/surface/channel_create.c \
-    src/core/surface/client.c \
     src/core/surface/completion_queue.c \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
