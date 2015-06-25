@@ -48,6 +48,7 @@
    won't actually do any polling, and return as quickly as possible. */
 
 void grpc_pollset_init(grpc_pollset *pollset) {
+  memset(pollset, 0, sizeof(*pollset));
   gpr_mu_init(&pollset->mu);
   gpr_cv_init(&pollset->cv);
 }
@@ -55,7 +56,10 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
                            void *shutdown_done_arg) {
-  grpc_pollset_kick(pollset);
+  gpr_mu_lock(&pollset->mu);
+  pollset->shutting_down = 1;
+  gpr_cv_broadcast(&pollset->cv);
+  gpr_mu_unlock(&pollset->mu);
   shutdown_done(shutdown_done_arg);
 }
 
@@ -76,7 +80,9 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     return 1 /* GPR_TRUE */;
   }
-  gpr_cv_wait(&pollset->cv, &pollset->mu, deadline);
+  if (!pollset->shutting_down) {
+    gpr_cv_wait(&pollset->cv, &pollset->mu, deadline);
+  }
   return 1 /* GPR_TRUE */;
 }
 
