@@ -31,7 +31,7 @@
  *
  */
 
-#include "context.h"
+#include "src/core/census/context.h"
 
 #include <string.h>
 #include <grpc/census.h>

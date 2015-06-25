@@ -578,6 +578,7 @@ cc_library(
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/channel.h",
     "src/cpp/server/thread_pool.h",
+    "src/cpp/client/secure_channel_arguments.cc",
     "src/cpp/client/secure_credentials.cc",
     "src/cpp/server/secure_server_credentials.cc",
     "src/cpp/client/channel.cc",
@@ -740,6 +741,8 @@ cc_library(
 cc_library(
   name = "grpc_plugin_support",
   srcs = [
+    "include/grpc++/config.h",
+    "include/grpc++/config_protobuf.h",
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
     "src/compiler/cpp_generator_helpers.h",

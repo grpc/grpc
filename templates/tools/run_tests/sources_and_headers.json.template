@@ -1,0 +1,27 @@
+<%!
+import json
+import os
+
+def proto_headers(src):
+	out = []
+	for f in src:
+		name, ext = os.path.splitext(f)
+		if ext == '.proto':
+			out.extend(fmt % name for fmt in ['%s.grpc.pb.h', '%s.pb.h'])
+	return out
+
+def no_protos(src):
+	out = []
+	for f in src:
+		if os.path.splitext(f)[1] != '.proto':
+			out.append(f)
+	return out
+%>
+
+${json.dumps([{"name": tgt.name,
+               "language": tgt.language,
+               "src": no_protos(tgt.src) + tgt.get('public_headers', []) + tgt.get('headers', []),
+               "headers": tgt.get('public_headers', []) + tgt.get('headers', []) + proto_headers(tgt.src),
+               "deps": tgt.get('deps', [])}
+              for tgt in (targets + libs)],
+             sort_keys=True, indent=2)}

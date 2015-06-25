@@ -278,7 +278,8 @@ class CSharpLanguage(object):
 class Sanity(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_sanity.sh', None)]
+    return [config.job_spec('tools/run_tests/run_sanity.sh', None),
+            config.job_spec('tools/run_tests/check_sources_and_headers.py', None)]
 
   def make_targets(self):
     return ['run_dep_checks']
