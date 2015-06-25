@@ -99,11 +99,7 @@ void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
     grpc_chttp2_incoming_metadata_buffer *dst, grpc_stream_op_buffer *sopb) {
   size_t delta;
   size_t i;
-  if (gpr_time_cmp(dst->deadline, gpr_inf_future) == 0) {
-    dst->deadline = src->deadline;
-  } else if (gpr_time_cmp(src->deadline, gpr_inf_future) != 0) {
-    dst->deadline = gpr_time_min(src->deadline, dst->deadline);
-  }
+  dst->deadline = gpr_time_min(src->deadline, dst->deadline);
 
   if (src->count == 0) {
     return;
