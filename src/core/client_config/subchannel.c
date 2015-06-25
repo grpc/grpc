@@ -32,3 +32,51 @@
  */
 
 #include "src/core/client_config/subchannel.h"
+
+#include <grpc/support/alloc.h>
+
+struct grpc_subchannel {
+  gpr_refcount refs;
+};
+
+struct grpc_subchannel_call {
+  grpc_subchannel *subchannel;
+  gpr_refcount refs;
+};
+
+#define SUBCHANNEL_CALL_TO_CALL_STACK(call) (((grpc_call_stack *)(call)) + 1)
+
+/*
+ * grpc_subchannel implementation
+ */
+
+void grpc_subchannel_ref(grpc_subchannel *channel) { gpr_ref(&channel->refs); }
+
+void grpc_subchannel_unref(grpc_subchannel *channel) {
+  if (gpr_unref(&channel->refs)) {
+    gpr_free(channel);
+  }
+}
+
+/*
+ * grpc_subchannel_call implementation
+ */
+
+void grpc_subchannel_call_ref(grpc_subchannel_call *call) {
+  gpr_ref(&call->refs);
+}
+
+void grpc_subchannel_call_unref(grpc_subchannel_call *call) {
+  if (gpr_unref(&call->refs)) {
+    grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(call));
+    grpc_subchannel_unref(call->subchannel);
+    gpr_free(call);
+  }
+}
+
+void grpc_subchannel_call_process_op(grpc_subchannel_call *call,
+                                     grpc_transport_stream_op *op) {
+  grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
+  grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
+  top_elem->filter->start_transport_stream_op(top_elem, op);
+}
