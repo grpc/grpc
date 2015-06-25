@@ -253,6 +253,8 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\hpack_table.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\http2_errors.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\incoming_metadata.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\internal.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\status_conversion.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_encoder.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_map.h" />
@@ -494,15 +496,23 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\incoming_metadata.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\status_conversion.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_encoder.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_lists.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_map.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\timeout_encoding.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\writing.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
     </ClCompile>
