@@ -72,56 +72,56 @@ typedef enum {
 /* deframer state for the overall http2 stream of bytes */
 typedef enum {
   /* prefix: one entry per http2 connection prefix byte */
-  DTS_CLIENT_PREFIX_0 = 0,
-  DTS_CLIENT_PREFIX_1,
-  DTS_CLIENT_PREFIX_2,
-  DTS_CLIENT_PREFIX_3,
-  DTS_CLIENT_PREFIX_4,
-  DTS_CLIENT_PREFIX_5,
-  DTS_CLIENT_PREFIX_6,
-  DTS_CLIENT_PREFIX_7,
-  DTS_CLIENT_PREFIX_8,
-  DTS_CLIENT_PREFIX_9,
-  DTS_CLIENT_PREFIX_10,
-  DTS_CLIENT_PREFIX_11,
-  DTS_CLIENT_PREFIX_12,
-  DTS_CLIENT_PREFIX_13,
-  DTS_CLIENT_PREFIX_14,
-  DTS_CLIENT_PREFIX_15,
-  DTS_CLIENT_PREFIX_16,
-  DTS_CLIENT_PREFIX_17,
-  DTS_CLIENT_PREFIX_18,
-  DTS_CLIENT_PREFIX_19,
-  DTS_CLIENT_PREFIX_20,
-  DTS_CLIENT_PREFIX_21,
-  DTS_CLIENT_PREFIX_22,
-  DTS_CLIENT_PREFIX_23,
+  GRPC_DTS_CLIENT_PREFIX_0 = 0,
+  GRPC_DTS_CLIENT_PREFIX_1,
+  GRPC_DTS_CLIENT_PREFIX_2,
+  GRPC_DTS_CLIENT_PREFIX_3,
+  GRPC_DTS_CLIENT_PREFIX_4,
+  GRPC_DTS_CLIENT_PREFIX_5,
+  GRPC_DTS_CLIENT_PREFIX_6,
+  GRPC_DTS_CLIENT_PREFIX_7,
+  GRPC_DTS_CLIENT_PREFIX_8,
+  GRPC_DTS_CLIENT_PREFIX_9,
+  GRPC_DTS_CLIENT_PREFIX_10,
+  GRPC_DTS_CLIENT_PREFIX_11,
+  GRPC_DTS_CLIENT_PREFIX_12,
+  GRPC_DTS_CLIENT_PREFIX_13,
+  GRPC_DTS_CLIENT_PREFIX_14,
+  GRPC_DTS_CLIENT_PREFIX_15,
+  GRPC_DTS_CLIENT_PREFIX_16,
+  GRPC_DTS_CLIENT_PREFIX_17,
+  GRPC_DTS_CLIENT_PREFIX_18,
+  GRPC_DTS_CLIENT_PREFIX_19,
+  GRPC_DTS_CLIENT_PREFIX_20,
+  GRPC_DTS_CLIENT_PREFIX_21,
+  GRPC_DTS_CLIENT_PREFIX_22,
+  GRPC_DTS_CLIENT_PREFIX_23,
   /* frame header byte 0... */
   /* must follow from the prefix states */
-  DTS_FH_0,
-  DTS_FH_1,
-  DTS_FH_2,
-  DTS_FH_3,
-  DTS_FH_4,
-  DTS_FH_5,
-  DTS_FH_6,
-  DTS_FH_7,
+  GRPC_DTS_FH_0,
+  GRPC_DTS_FH_1,
+  GRPC_DTS_FH_2,
+  GRPC_DTS_FH_3,
+  GRPC_DTS_FH_4,
+  GRPC_DTS_FH_5,
+  GRPC_DTS_FH_6,
+  GRPC_DTS_FH_7,
   /* ... frame header byte 8 */
-  DTS_FH_8,
+  GRPC_DTS_FH_8,
   /* inside a http2 frame */
-  DTS_FRAME
+  GRPC_DTS_FRAME
 } grpc_chttp2_deframe_transport_state;
 
 typedef enum {
-  WRITE_STATE_OPEN,
-  WRITE_STATE_QUEUED_CLOSE,
-  WRITE_STATE_SENT_CLOSE
+  GRPC_WRITE_STATE_OPEN,
+  GRPC_WRITE_STATE_QUEUED_CLOSE,
+  GRPC_WRITE_STATE_SENT_CLOSE
 } grpc_chttp2_write_state;
 
 typedef enum {
-  DONT_SEND_CLOSED = 0,
-  SEND_CLOSED,
-  SEND_CLOSED_WITH_RST_STREAM
+  GRPC_DONT_SEND_CLOSED = 0,
+  GRPC_SEND_CLOSED,
+  GRPC_SEND_CLOSED_WITH_RST_STREAM
 } grpc_chttp2_send_closed;
 
 typedef struct {
@@ -143,14 +143,14 @@ typedef enum {
 /* We keep several sets of connection wide parameters */
 typedef enum {
   /* The settings our peer has asked for (and we have acked) */
-  PEER_SETTINGS = 0,
+  GRPC_PEER_SETTINGS = 0,
   /* The settings we'd like to have */
-  LOCAL_SETTINGS,
+  GRPC_LOCAL_SETTINGS,
   /* The settings we've published to our peer */
-  SENT_SETTINGS,
+  GRPC_SENT_SETTINGS,
   /* The settings the peer has acked */
-  ACKED_SETTINGS,
-  NUM_SETTING_SETS
+  GRPC_ACKED_SETTINGS,
+  GRPC_NUM_SETTING_SETS
 } grpc_chttp2_setting_set;
 
 /* Outstanding ping request data */
@@ -183,7 +183,7 @@ typedef struct {
   /** bitmask of setting indexes to send out */
   gpr_uint32 force_send_settings;
   /** settings values */
-  gpr_uint32 settings[NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
+  gpr_uint32 settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
 
   /** has there been a connection level error, and have we notified
       anyone about it? */
@@ -352,34 +352,6 @@ struct grpc_chttp2_transport {
     /** closure for notifying transport closure */
     grpc_iomgr_closure notify_closed;
   } channel_callback;
-
-#if 0
-  /* basic state management - what are we doing at the moment? */
-  gpr_uint8 reading;
-  /** are we calling back any grpc_transport_op completion events */
-  gpr_uint8 calling_back_ops;
-  gpr_uint8 destroying;
-  gpr_uint8 closed;
-
-  /* stream indexing */
-  gpr_uint32 next_stream_id;
-
-  /* window management */
-  gpr_uint32 outgoing_window_update;
-
-  /* state for a stream that's not yet been created */
-  grpc_stream_op_buffer new_stream_sopb;
-
-  /* stream ops that need to be destroyed, but outside of the lock */
-  grpc_stream_op_buffer nuke_later_sopb;
-
-  /* pings */
-  gpr_int64 ping_counter;
-
-
-  grpc_chttp2_stream **accepting_stream;
-
-#endif
 };
 
 typedef struct {
@@ -451,14 +423,6 @@ struct grpc_chttp2_stream_parsing {
 
   /** incoming metadata */
   grpc_chttp2_incoming_metadata_buffer incoming_metadata;
-
-  /*
-    grpc_linked_mdelem *incoming_metadata;
-    size_t incoming_metadata_count;
-    size_t incoming_metadata_capacity;
-    grpc_linked_mdelem *old_incoming_metadata;
-    gpr_timespec incoming_deadline;
-  */
 };
 
 struct grpc_chttp2_stream {
@@ -468,14 +432,6 @@ struct grpc_chttp2_stream {
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
   gpr_uint8 included[STREAM_LIST_COUNT];
-
-#if 0
-  gpr_uint32 outgoing_window_update;
-  gpr_uint8 cancelled;
-
-  grpc_stream_state callback_state;
-  grpc_stream_op_buffer callback_sopb;
-#endif
 };
 
 /** Transport writing call flow:
@@ -502,14 +458,15 @@ void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *global,
 
 void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_parsing *parsing);
-/** Process one slice of incoming data */
+/** Process one slice of incoming data; return 1 if the connection is still
+    viable after reading, or 0 if the connection should be torn down */
 int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
                              gpr_slice slice);
 void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global,
                                grpc_chttp2_transport_parsing *parsing);
 
 /** Get a writable stream
-    \return non-zero if there was a stream available */
+    returns non-zero if there was a stream available */
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
@@ -622,10 +579,10 @@ void grpc_chttp2_parsing_become_skip_parser(
 extern int grpc_http_trace;
 extern int grpc_flowctl_trace;
 
-#define IF_TRACING(stmt)  \
-  if (!(grpc_http_trace)) \
-    ;                     \
-  else                    \
+#define GRPC_CHTTP2_IF_TRACING(stmt) \
+  if (!(grpc_http_trace))            \
+    ;                                \
+  else                               \
   stmt
 
 #define GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(reason, transport, context, var,      \

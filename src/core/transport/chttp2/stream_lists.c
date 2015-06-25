@@ -344,10 +344,9 @@ void grpc_chttp2_for_all_streams(
     void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
                grpc_chttp2_stream_global *stream_global)) {
   grpc_chttp2_stream *s;
-  for (s = TRANSPORT_FROM_GLOBAL(transport_global)
-               ->lists[GRPC_CHTTP2_LIST_ALL_STREAMS]
-               .head;
-       s; s = s->links[GRPC_CHTTP2_LIST_ALL_STREAMS].next) {
+  grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
+  for (s = t->lists[GRPC_CHTTP2_LIST_ALL_STREAMS].head; s != NULL;
+       s = s->links[GRPC_CHTTP2_LIST_ALL_STREAMS].next) {
     cb(transport_global, user_data, &s->global);
   }
 }
