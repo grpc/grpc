@@ -50,7 +50,7 @@ typedef struct {
 typedef struct { grpc_mdctx *mdctx; } channel_data;
 
 static void lame_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+                                    grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
@@ -98,9 +98,9 @@ static void channel_op(grpc_channel_element *elem,
 
 static void init_call_elem(grpc_call_element *elem,
                            const void *transport_server_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   if (initial_op) {
-    grpc_transport_op_finish_with_failure(initial_op);
+    grpc_transport_stream_op_finish_with_failure(initial_op);
   }
 }
 

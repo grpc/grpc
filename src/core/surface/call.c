@@ -252,8 +252,8 @@ struct grpc_call {
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline);
 static void call_on_done_recv(void *call, int success);
 static void call_on_done_send(void *call, int success);
-static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
-static void execute_op(grpc_call *call, grpc_transport_op *op);
+static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op);
+static void execute_op(grpc_call *call, grpc_transport_stream_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
@@ -268,8 +268,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline) {
   size_t i;
-  grpc_transport_op initial_op;
-  grpc_transport_op *initial_op_ptr = NULL;
+  grpc_transport_stream_op initial_op;
+  grpc_transport_stream_op *initial_op_ptr = NULL;
   grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack(channel);
   grpc_call *call =
       gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
@@ -454,7 +454,7 @@ static int need_more_data(grpc_call *call) {
 }
 
 static void unlock(grpc_call *call) {
-  grpc_transport_op op;
+  grpc_transport_stream_op op;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int completing_requests = 0;
   int start_op = 0;
@@ -868,7 +868,7 @@ static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
   }
 }
 
-static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
+static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
   grpc_ioreq_data data;
   gpr_uint32 flags;
   grpc_metadata_batch mdb;
@@ -1115,7 +1115,7 @@ static void finished_loose_op(void *call, int success_ignored) {
   GRPC_CALL_INTERNAL_UNREF(call, "loose-op", 0);
 }
 
-static void execute_op(grpc_call *call, grpc_transport_op *op) {
+static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
   grpc_call_element *elem;
 
   GPR_ASSERT(op->on_consumed == NULL);

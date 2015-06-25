@@ -66,7 +66,7 @@ typedef struct {
 typedef struct { grpc_child_channel *channel; } lb_call_data;
 
 static void lb_start_transport_op(grpc_call_element *elem,
-                                  grpc_transport_op *op) {
+                                  grpc_transport_stream_op *op) {
   grpc_call_next_op(elem, op);
 }
 
@@ -124,7 +124,7 @@ static void lb_channel_op(grpc_channel_element *elem,
 /* Constructor for call_data */
 static void lb_init_call_elem(grpc_call_element *elem,
                               const void *server_transport_data,
-                              grpc_transport_op *initial_op) {}
+                              grpc_transport_stream_op *initial_op) {}
 
 /* Destructor for call_data */
 static void lb_destroy_call_elem(grpc_call_element *elem) {}
@@ -269,9 +269,9 @@ void grpc_child_channel_handle_op(grpc_child_channel *channel,
   grpc_channel_next_op(LINK_BACK_ELEM_FROM_CHANNEL(channel), op);
 }
 
-grpc_child_call *grpc_child_channel_create_call(grpc_child_channel *channel,
-                                                grpc_call_element *parent,
-                                                grpc_transport_op *initial_op) {
+grpc_child_call *grpc_child_channel_create_call(
+    grpc_child_channel *channel, grpc_call_element *parent,
+    grpc_transport_stream_op *initial_op) {
   grpc_call_stack *stk = gpr_malloc((channel)->call_stack_size);
   grpc_call_element *lbelem;
   lb_call_data *lbcalld;

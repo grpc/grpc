@@ -526,7 +526,8 @@ static void server_on_recv(void *ptr, int success) {
   calld->on_done_recv(calld->recv_user_data, success);
 }
 
-static void server_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void server_mutate_op(grpc_call_element *elem,
+                             grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
 
   if (op->recv_ops) {
@@ -541,7 +542,7 @@ static void server_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
 }
 
 static void server_start_transport_op(grpc_call_element *elem,
-                                      grpc_transport_op *op) {
+                                      grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   server_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
@@ -625,7 +626,7 @@ static void shutdown_channel(channel_data *chand, int send_goaway,
 
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));

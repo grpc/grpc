@@ -44,7 +44,7 @@ typedef struct { void *unused; } call_data;
 typedef struct { void *unused; } channel_data;
 
 static void client_start_transport_op(grpc_call_element *elem,
-                                      grpc_transport_op *op) {
+                                      grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   grpc_call_next_op(elem, op);
 }
@@ -69,7 +69,7 @@ static void channel_op(grpc_channel_element *elem,
 
 static void init_call_elem(grpc_call_element *elem,
                            const void *transport_server_data,
-                           grpc_transport_op *initial_op) {}
+                           grpc_transport_stream_op *initial_op) {}
 
 static void destroy_call_elem(grpc_call_element *elem) {}
 

@@ -107,7 +107,7 @@ char *grpc_sopb_string(grpc_stream_op_buffer *sopb) {
   return out;
 }
 
-char *grpc_transport_op_string(grpc_transport_op *op) {
+char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   char *tmp;
   char *out;
   int first = 1;
@@ -158,8 +158,8 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
 }
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_op *op) {
-  char *str = grpc_transport_op_string(op);
+                      grpc_call_element *elem, grpc_transport_stream_op *op) {
+  char *str = grpc_transport_stream_op_string(op);
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem, str);
   gpr_free(str);
 }

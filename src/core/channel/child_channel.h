@@ -56,9 +56,9 @@ grpc_channel_element *grpc_child_channel_get_bottom_element(
 void grpc_child_channel_destroy(grpc_child_channel *channel,
                                 int wait_for_callbacks);
 
-grpc_child_call *grpc_child_channel_create_call(grpc_child_channel *channel,
-                                                grpc_call_element *parent,
-                                                grpc_transport_op *initial_op);
+grpc_child_call *grpc_child_channel_create_call(
+    grpc_child_channel *channel, grpc_call_element *parent,
+    grpc_transport_stream_op *initial_op);
 grpc_call_element *grpc_child_call_get_top_element(grpc_child_call *call);
 void grpc_child_call_destroy(grpc_child_call *call);
 

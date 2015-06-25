@@ -232,7 +232,7 @@ struct transport {
   gpr_uint8 writing;
   /** are we calling back (via cb) with a channel-level event */
   gpr_uint8 calling_back_channel;
-  /** are we calling back any grpc_transport_op completion events */
+  /** are we calling back any grpc_transport_stream_op completion events */
   gpr_uint8 calling_back_ops;
   gpr_uint8 destroying;
   gpr_uint8 closed;
@@ -399,7 +399,8 @@ static void maybe_finish_read(transport *t, stream *s);
 static void maybe_join_window_updates(transport *t, stream *s);
 static void finish_reads(transport *t);
 static void add_to_pollset_locked(transport *t, grpc_pollset *pollset);
-static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op);
+static void perform_op_locked(transport *t, stream *s,
+                              grpc_transport_stream_op *op);
 static void add_metadata_batch(transport *t, stream *s);
 
 static void flowctl_trace(transport *t, const char *flow, gpr_int32 window,
@@ -644,7 +645,8 @@ static void goaway(grpc_transport *gt, grpc_status_code status,
 }
 
 static int init_stream(grpc_transport *gt, grpc_stream *gs,
-                       const void *server_data, grpc_transport_op *initial_op) {
+                       const void *server_data,
+                       grpc_transport_stream_op *initial_op) {
   transport *t = (transport *)gt;
   stream *s = (stream *)gs;
 
@@ -1127,7 +1129,8 @@ static void maybe_start_some_streams(transport *t) {
   }
 }
 
-static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
+static void perform_op_locked(transport *t, stream *s,
+                              grpc_transport_stream_op *op) {
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_stream(
         t, s, op->cancel_with_status,
@@ -1186,7 +1189,7 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
 }
 
 static void perform_op(grpc_transport *gt, grpc_stream *gs,
-                       grpc_transport_op *op) {
+                       grpc_transport_stream_op *op) {
   transport *t = (transport *)gt;
   stream *s = (stream *)gs;
 
