@@ -156,6 +156,9 @@ struct grpc_call {
   gpr_uint8 reading_message;
   /* have we bound a pollset yet? */
   gpr_uint8 bound_pollset;
+  /* is an error status set */
+  gpr_uint8 error_status_set;
+
   /* flags with bits corresponding to write states allowing us to determine
      what was sent */
   gpr_uint16 last_send_contains;
@@ -214,7 +217,7 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
-  /** Compression level for the call */
+  /* Compression level for the call */
   grpc_compression_level compression_level;
 
   /* Contexts for various subsystems (security, tracing, ...). */
@@ -409,6 +412,7 @@ static void set_status_code(grpc_call *call, status_source source,
 
   call->status[source].is_set = 1;
   call->status[source].code = status;
+  call->error_status_set = status != GRPC_STATUS_OK;
 
   if (status != GRPC_STATUS_OK && !grpc_bbq_empty(&call->incoming_queue)) {
     grpc_bbq_flush(&call->incoming_queue);
@@ -686,13 +690,13 @@ static void call_on_done_send(void *pc, int success) {
 }
 
 static void finish_message(grpc_call *call) {
-  /* TODO(ctiller): this could be a lot faster if coded directly */
-  grpc_byte_buffer *byte_buffer = grpc_raw_byte_buffer_create(
-      call->incoming_message.slices, call->incoming_message.count);
+  if (call->error_status_set == 0) {
+    /* TODO(ctiller): this could be a lot faster if coded directly */
+    grpc_byte_buffer *byte_buffer = grpc_raw_byte_buffer_create(
+        call->incoming_message.slices, call->incoming_message.count);
+    grpc_bbq_push(&call->incoming_queue, byte_buffer);
+  }
   gpr_slice_buffer_reset_and_unref(&call->incoming_message);
-
-  grpc_bbq_push(&call->incoming_queue, byte_buffer);
-
   GPR_ASSERT(call->incoming_message.count == 0);
   call->reading_message = 0;
 }
