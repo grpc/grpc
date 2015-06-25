@@ -43,7 +43,6 @@
 
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
-typedef struct grpc_transport_callbacks grpc_transport_callbacks;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe
    opaque pointer for whatever data the transport wants to track
@@ -62,7 +61,8 @@ typedef enum grpc_stream_state {
   GRPC_STREAM_CLOSED
 } grpc_stream_state;
 
-/* Transport op: a set of operations to perform on a transport */
+/* Transport stream op: a set of operations to perform on a transport
+   against a single stream */
 typedef struct grpc_transport_stream_op {
   grpc_iomgr_closure *on_consumed;
 
@@ -83,30 +83,27 @@ typedef struct grpc_transport_stream_op {
   grpc_call_context_element *context;
 } grpc_transport_stream_op;
 
-/* Callbacks made from the transport to the upper layers of grpc. */
-struct grpc_transport_callbacks {
-  /* Initialize a new stream on behalf of the transport.
-     Must result in a call to
-     grpc_transport_init_stream(transport, ..., request) in the same call
-     stack.
-     Must not result in any other calls to the transport.
-
-     Arguments:
-       user_data     - the transport user data set at transport creation time
-       transport     - the grpc_transport instance making this call
-       request       - request parameters for this stream (owned by the caller)
-       server_data   - opaque transport dependent argument that should be passed
-                       to grpc_transport_init_stream
-     */
-  void (*accept_stream)(void *user_data, grpc_transport *transport,
-                        const void *server_data);
-
-  void (*goaway)(void *user_data, grpc_transport *transport,
-                 grpc_status_code status, gpr_slice debug);
-
-  /* The transport has been closed */
-  void (*closed)(void *user_data, grpc_transport *transport);
-};
+/** Transport op: a set of operations to perform on a transport as a whole */
+typedef struct grpc_transport_op {
+  /** connectivity monitoring */
+  grpc_iomgr_closure *on_connectivity_state_change;
+  grpc_connectivity_state *connectivity_state;
+  /** should the transport be disconnected */
+  int disconnect;
+  /** should we send a goaway? */
+  int send_goaway;
+  /** what should the goaway contain? */
+  grpc_status_code goaway_status;
+  gpr_slice *goaway_message;
+  /** set the callback for accepting new streams;
+      this is a permanent callback, unlike the other one-shot closures */
+  void (*set_accept_stream)(void *user_data, grpc_transport *transport, const void *server_data);
+  void *set_accept_stream_user_data;
+  /** add this transport to a pollset */
+  grpc_pollset *bind_pollset;
+  /** send a ping, call this back if not NULL */
+  grpc_iomgr_closure *send_ping;
+} grpc_transport_op;
 
 /* Returns the amount of memory required to store a grpc_stream for this
    transport */
@@ -144,10 +141,6 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status,
                                                grpc_mdstr *message);
 
-/* TODO(ctiller): remove this */
-void grpc_transport_add_to_pollset(grpc_transport *transport,
-                                   grpc_pollset *pollset);
-
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 
 /* Send a batch of operations on a transport
@@ -159,8 +152,10 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
      stream    - the stream on which to send the operations. This must be
                  non-NULL and previously initialized by the same transport.
      op        - a grpc_transport_stream_op specifying the op to perform */
-void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
+void grpc_transport_perform_stream_op(grpc_transport *transport, grpc_stream *stream,
                                grpc_transport_stream_op *op);
+
+void grpc_transport_perform_op(grpc_transport *transport, grpc_transport_op *op);
 
 /* Send a ping on a transport
 
@@ -180,7 +175,6 @@ void grpc_transport_destroy(grpc_transport *transport);
 /* Return type for grpc_transport_setup_callback */
 typedef struct grpc_transport_setup_result {
   void *user_data;
-  const grpc_transport_callbacks *callbacks;
 } grpc_transport_setup_result;
 
 /* Given a transport, return callbacks for that transport. Used to finalize

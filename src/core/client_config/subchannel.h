@@ -44,22 +44,6 @@
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 
-/** Connectivity state of a channel.
-    TODO(ctiller): move to grpc.h when we implement the public
-    version of the connectivity apis */
-typedef enum {
-  /** channel is connecting */
-  GRPC_CHANNEL_CONNECTING,
-  /** channel is ready for work */
-  GRPC_CHANNEL_READY,
-  /** channel has seen a failure but expects to recover */
-  GRPC_CHANNEL_TRANSIENT_FAILURE,
-  /** channel is idle */
-  GRPC_CHANNEL_IDLE,
-  /** channel has seen a failure that it cannot recover from */
-  GRPC_CHANNEL_FATAL_FAILURE
-} grpc_connectivity_state;
-
 void grpc_subchannel_ref(grpc_subchannel *channel);
 void grpc_subchannel_unref(grpc_subchannel *channel);
 

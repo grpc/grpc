@@ -114,26 +114,9 @@ static void cancel_from_api(grpc_chttp2_transport_global *transport_global,
 static void add_to_pollset_locked(grpc_chttp2_transport *t,
                                   grpc_pollset *pollset);
 
-<<<<<<< HEAD
-static void schedule_cb(transport *t, op_closure closure, int success);
-static void maybe_finish_read(transport *t, stream *s);
-static void maybe_join_window_updates(transport *t, stream *s);
-static void finish_reads(transport *t);
-static void add_to_pollset_locked(transport *t, grpc_pollset *pollset);
-static void perform_op_locked(transport *t, stream *s,
-                              grpc_transport_stream_op *op);
-static void add_metadata_batch(transport *t, stream *s);
-
-static void flowctl_trace(transport *t, const char *flow, gpr_int32 window,
-                          gpr_uint32 id, gpr_int32 delta) {
-  gpr_log(GPR_DEBUG, "HTTP:FLOW:%p:%d:%s: %d + %d = %d", t, id, flow, window,
-          delta, window + delta);
-}
-=======
 /** Start new streams that have been created if we can */
 static void maybe_start_some_streams(
     grpc_chttp2_transport_global *transport_global);
->>>>>>> 48f0a13f3872876787f4d7588b396db914319b1b
 
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -385,16 +368,9 @@ static void goaway(grpc_transport *gt, grpc_status_code status,
 }
 
 static int init_stream(grpc_transport *gt, grpc_stream *gs,
-<<<<<<< HEAD
-                       const void *server_data,
-                       grpc_transport_stream_op *initial_op) {
-  transport *t = (transport *)gt;
-  stream *s = (stream *)gs;
-=======
                        const void *server_data, grpc_transport_stream_op *initial_op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
->>>>>>> 48f0a13f3872876787f4d7588b396db914319b1b
 
   memset(s, 0, sizeof(*s));
 
@@ -635,14 +611,9 @@ static void maybe_start_some_streams(
   }
 }
 
-<<<<<<< HEAD
-static void perform_op_locked(transport *t, stream *s,
-                              grpc_transport_stream_op *op) {
-=======
 static void perform_op_locked(grpc_chttp2_transport_global *transport_global,
                               grpc_chttp2_stream_global *stream_global,
                               grpc_transport_stream_op *op) {
->>>>>>> 48f0a13f3872876787f4d7588b396db914319b1b
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_from_api(transport_global, stream_global, op->cancel_with_status);
   }
@@ -699,15 +670,9 @@ static void perform_op_locked(grpc_chttp2_transport_global *transport_global,
 }
 
 static void perform_op(grpc_transport *gt, grpc_stream *gs,
-<<<<<<< HEAD
-                       grpc_transport_stream_op *op) {
-  transport *t = (transport *)gt;
-  stream *s = (stream *)gs;
-=======
                        grpc_transport_stream_op *op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
->>>>>>> 48f0a13f3872876787f4d7588b396db914319b1b
 
   lock(t);
   perform_op_locked(&t->global, &s->global, op);
