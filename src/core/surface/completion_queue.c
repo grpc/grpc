@@ -208,7 +208,6 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
     }
     if (cc->shutdown) {
       ev = create_shutdown_event();
-      grpc_pollset_kick(&cc->pollset);
       break;
     }
     if (!grpc_pollset_work(&cc->pollset, deadline)) {
