@@ -5,14 +5,27 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Pre-Alpha : This gRPC PHP implementation is work-in-progress and is not expected to work yet.
+Alpha : Ready for early adopters
 
 ## ENVIRONMENT
 
-Prerequisite: PHP 5.5 or later, PHPUnit, pecl
+Prerequisite: PHP 5.5 or later, `phpunit`, `pecl`
+
+Linux:
 
 ```sh
-sudo apt-get install php5 php5-dev phpunit php-pear
+$ sudo apt-get install php5 php5-dev phpunit php-pear
+```
+
+OS X:
+
+```sh
+$ curl https://phar.phpunit.de/phpunit.phar -o phpunit.phar
+$ chmod +x phpunit.phar
+$ sudo mv phpunit.phar /usr/local/bin/phpunit
+
+$ curl -O http://pear.php.net/go-pear.phar
+$ sudo php -d detect_unicode=0 go-pear.phar
 ```
 
 ## Build from Homebrew
@@ -71,8 +84,8 @@ $ make
 $ sudo make install
 ```
 
-In your php.ini file, add the line `extension=grpc.so` to load the extension
-at PHP startup.
+(Optional) In your php.ini file, add the line `extension=grpc.so` to load
+the extension at PHP startup.
 
 Install Composer
 
