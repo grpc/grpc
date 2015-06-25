@@ -34,7 +34,7 @@ script:
   - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
   - ./tools/run_tests/run_tests.py -l $TEST -t -j $JOBS -c $CONFIG -s 4.0
 after_success:
-  - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens --exclude test --exclude src/compiler -b. --gcov-options '\-p' ; fi
+  - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens --exclude test --exclude tools --exclude src/compiler -b. --gcov-options '\-p' ; fi
 notifications:
   email: false
   webhooks:

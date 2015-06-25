@@ -963,10 +963,9 @@
       "build": "tool",
       "language": "c",
       "src": [
-        "src/core/transport/chttp2/gen_hpack_tables.c"
+        "tools/codegen/core/gen_hpack_tables.c"
       ],
       "deps": [
-        "grpc_test_util",
         "gpr",
         "grpc"
       ]

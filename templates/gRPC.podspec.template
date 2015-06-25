@@ -42,6 +42,22 @@ def fix_header_name(name):
   if split_name[0] == 'include':
     split_name = split_name[1:]
   return '/'.join(split_name)
+
+def grpc_files(libs):
+  out = []
+  for lib in libs:
+    if lib.name in ("grpc", "gpr"):
+      out.extend(fix_header_name(h) for h in lib.get('headers', []))
+      out.extend(fix_header_name(h) for h in lib.get('public_headers', []))
+      out.extend(lib.get('src', []))
+  return out;
+
+def grpc_private_headers(libs):
+  out = []
+  for lib in libs:
+    if lib.name in ("grpc", "gpr"):
+      out.extend(lib.get('headers', []))
+  return out
 %>
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
@@ -70,29 +86,9 @@ Pod::Spec.new do |s|
 
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |ss|
-    ss.source_files = \
-% for lib in libs:
-% if lib.name in ("grpc", "gpr"):
-% for hdr in lib.get("headers", []):
-'${fix_header_name(hdr)}', \
-% endfor
-% for hdr in lib.get("public_headers", []):
-'${fix_header_name(hdr)}', \
-% endfor
-% for src in lib.src:
-'${src}', \
-% endfor
-% endif
-% endfor
+    ss.source_files = ${(',\n' + 22*' ').join('\'%s\'' % f for f in grpc_files(libs))}
 
-    ss.private_header_files = \
-% for lib in libs:
-% if lib.name in ("grpc", "gpr"):
-% for hdr in lib.get("headers", []):
-'${hdr}', \
-% endfor
-% endif
-% endfor
+    ss.private_header_files = ${(',\n' + 30*' ').join('\'%s\'' % f for f in grpc_private_headers(libs))}
 
     ss.header_mappings_dir = '.'
 
@@ -114,7 +110,7 @@ Pod::Spec.new do |s|
     DIR_TIME="grpc/support"
     BAD_TIME="$DIR_TIME/time.h"
     GOOD_TIME="$DIR_TIME/grpc_time.h"
-    grep -rl "$BAD_TIME" grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
+    grep -rl "$BAD_TIME" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
     if [ -f "include/$BAD_TIME" ];
     then
       mv -f "include/$BAD_TIME" "include/$GOOD_TIME"
@@ -123,7 +119,7 @@ Pod::Spec.new do |s|
     DIR_STRING="src/core/support"
     BAD_STRING="$DIR_STRING/string.h"
     GOOD_STRING="$DIR_STRING/grpc_string.h"
-    grep -rl "$BAD_STRING" grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
+    grep -rl "$BAD_STRING" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
     if [ -f "$BAD_STRING" ];
     then
       mv -f "$BAD_STRING" "$GOOD_STRING"

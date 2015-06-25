@@ -38,7 +38,7 @@
 @implementation GRPCSecureChannel
 
 - (instancetype)initWithHost:(NSString *)host {
-  static const grpc_credentials *kCredentials;
+  static grpc_credentials *kCredentials;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
