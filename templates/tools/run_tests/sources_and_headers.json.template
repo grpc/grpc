@@ -20,8 +20,14 @@ def no_protos(src):
 
 ${json.dumps([{"name": tgt.name,
                "language": tgt.language,
-               "src": no_protos(tgt.src) + tgt.get('public_headers', []) + tgt.get('headers', []),
-               "headers": tgt.get('public_headers', []) + tgt.get('headers', []) + proto_headers(tgt.src),
-               "deps": tgt.get('deps', [])}
+               "src": sorted(
+                   no_protos(tgt.src) + 
+                   tgt.get('public_headers', []) + 
+                   tgt.get('headers', [])),
+               "headers": sorted(
+                   tgt.get('public_headers', []) + 
+                   tgt.get('headers', []) + 
+                   proto_headers(tgt.src)),
+               "deps": sorted(tgt.get('deps', []))}
               for tgt in (targets + libs)],
              sort_keys=True, indent=2)}
