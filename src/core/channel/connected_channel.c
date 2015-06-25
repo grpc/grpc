@@ -132,13 +132,12 @@ const grpc_channel_filter grpc_connected_channel_filter = {
     "connected",
 };
 
-grpc_transport_setup_result grpc_connected_channel_bind_transport(
-    grpc_channel_stack *channel_stack, grpc_transport *transport) {
+void grpc_connected_channel_bind_transport(grpc_channel_stack *channel_stack,
+                                           grpc_transport *transport) {
   /* Assumes that the connected channel filter is always the last filter
      in a channel stack */
   grpc_channel_element *elem = grpc_channel_stack_last_element(channel_stack);
   channel_data *cd = (channel_data *)elem->channel_data;
-  grpc_transport_setup_result ret;
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
   GPR_ASSERT(cd->transport == NULL);
   cd->transport = transport;
@@ -150,7 +149,4 @@ grpc_transport_setup_result grpc_connected_channel_bind_transport(
      the last call element, and the last call element MUST be the connected
      channel. */
   channel_stack->call_stack_size += grpc_transport_stream_size(transport);
-
-  ret.user_data = elem;
-  return ret;
 }

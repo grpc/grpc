@@ -64,24 +64,6 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
   transport->vtable->destroy_stream(transport, stream);
 }
 
-void grpc_transport_setup_cancel(grpc_transport_setup *setup) {
-  setup->vtable->cancel(setup);
-}
-
-void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
-  setup->vtable->initiate(setup);
-}
-
-void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup,
-                                               grpc_pollset *pollset) {
-  setup->vtable->add_interested_party(setup, pollset);
-}
-
-void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup,
-                                               grpc_pollset *pollset) {
-  setup->vtable->del_interested_party(setup, pollset);
-}
-
 void grpc_transport_stream_op_finish_with_failure(
     grpc_transport_stream_op *op) {
   if (op->send_ops) {

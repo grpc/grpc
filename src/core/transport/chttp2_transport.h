@@ -40,11 +40,8 @@
 extern int grpc_http_trace;
 extern int grpc_flowctl_trace;
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+grpc_transport *grpc_create_chttp2_transport(
+    const grpc_channel_args *channel_args, grpc_endpoint *ep, gpr_slice *slices,
+    size_t nslices, grpc_mdctx *metadata_context, int is_client);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TRANSPORT_H */

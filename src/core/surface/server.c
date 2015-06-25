@@ -871,10 +871,10 @@ void grpc_server_start(grpc_server *server) {
   }
 }
 
-grpc_transport_setup_result grpc_server_setup_transport(
-    grpc_server *s, grpc_transport *transport,
-    grpc_channel_filter const **extra_filters, size_t num_extra_filters,
-    grpc_mdctx *mdctx, const grpc_channel_args *args) {
+void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
+                                 grpc_channel_filter const **extra_filters,
+                                 size_t num_extra_filters, grpc_mdctx *mdctx,
+                                 const grpc_channel_args *args) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters =
       gpr_malloc(sizeof(grpc_channel_filter *) * num_filters);
@@ -892,7 +892,6 @@ grpc_transport_setup_result grpc_server_setup_transport(
   gpr_uint32 probes;
   gpr_uint32 max_probes = 0;
   grpc_transport_op op;
-  grpc_transport_setup_result result;
 
   for (i = 0; i < s->channel_filter_count; i++) {
     filters[i] = s->channel_filters[i];
@@ -954,8 +953,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
     chand->registered_method_max_probes = max_probes;
   }
 
-  result = grpc_connected_channel_bind_transport(
-      grpc_channel_get_channel_stack(channel), transport);
+  grpc_connected_channel_bind_transport(grpc_channel_get_channel_stack(channel),
+                                        transport);
 
   gpr_mu_lock(&s->mu_global);
   chand->next = &s->root_channel_data;
@@ -964,8 +963,6 @@ grpc_transport_setup_result grpc_server_setup_transport(
   gpr_mu_unlock(&s->mu_global);
 
   gpr_free(filters);
-
-  return result;
 }
 
 void grpc_server_shutdown_and_notify(grpc_server *server,

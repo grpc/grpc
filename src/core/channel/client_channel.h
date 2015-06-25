@@ -52,12 +52,4 @@ extern const grpc_channel_filter grpc_client_channel_filter;
 void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
                                       grpc_resolver *resolver);
 
-/* grpc_transport_setup_callback for binding new transports into a client
-   channel - user_data should be the channel stack containing the client
-   channel */
-grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
-    grpc_channel_stack *channel_stack, grpc_transport *transport,
-    grpc_channel_filter const **channel_filters, size_t num_channel_filters,
-    grpc_mdctx *mdctx);
-
 #endif  /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_CHANNEL_H */
