@@ -10,8 +10,8 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2015-06-18</date>
- <time>10:02:45</time>
+ <date>2015-06-25</date>
+ <time>16:04:32</time>
  <version>
   <release>0.5.0</release>
   <api>0.5.0</api>
@@ -34,7 +34,7 @@ First alpha release
    <file baseinstalldir="/" md5sum="f1b66029daeced20b47cf00cc6523fc8" name="channel.h" role="src" />
    <file baseinstalldir="/" md5sum="81a1193e93d8b6602add8ac360de565b" name="completion_queue.c" role="src" />
    <file baseinstalldir="/" md5sum="f10b5bb232d74a6878e829e2e76cdaa2" name="completion_queue.h" role="src" />
-   <file baseinstalldir="/" md5sum="a9181ed994a072ac5f41e7c9705c170f" name="config.m4" role="src" />
+   <file baseinstalldir="/" md5sum="a22f8eac0164761058cc4d9eb2ceb069" name="config.m4" role="src" />
    <file baseinstalldir="/" md5sum="8c3f1e11dac623001378bfd53b554f08" name="credentials.c" role="src" />
    <file baseinstalldir="/" md5sum="6988d6e97c19c8f8e3eb92371cf8246b" name="credentials.h" role="src" />
    <file baseinstalldir="/" md5sum="38a1bc979d810c36ebc2a52d4b7b5319" name="CREDITS" role="doc" />
@@ -72,7 +72,7 @@ First alpha release
     <release>alpha</release>
     <api>alpha</api>
    </stability>
-   <date>2015-06-18</date>
+   <date>2015-06-25</date>
    <license>BSD</license>
    <notes>
 First alpha release

@@ -5,15 +5,39 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Pre-Alpha : This gRPC PHP implementation is work-in-progress and is not expected to work yet.
+Alpha : Ready for early adopters
 
 ## ENVIRONMENT
 
-Prerequisite: PHP 5.5 or later, PHPUnit, pecl
+Prerequisite: PHP 5.5 or later, `phpunit`, `pecl`
+
+Linux:
 
 ```sh
-sudo apt-get install php5 php5-dev phpunit php-pear
+$ sudo apt-get install php5 php5-dev phpunit php-pear
 ```
+
+OS X:
+
+```sh
+$ curl https://phar.phpunit.de/phpunit.phar -o phpunit.phar
+$ chmod +x phpunit.phar
+$ sudo mv phpunit.phar /usr/local/bin/phpunit
+
+$ curl -O http://pear.php.net/go-pear.phar
+$ sudo php -d detect_unicode=0 go-pear.phar
+```
+
+## Build from Homebrew
+
+On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][]. Run the following command to
+install gRPC.
+
+```sh
+$ curl -fsSL https://goo.gl/getgrpc | bash -s php
+```
+
+This will download and run the [gRPC install script][] and compile the gRPC PHP extension.
 
 ## Build from Source
 
@@ -116,4 +140,7 @@ $ cd grpc/src/php
 $ ./bin/run_gen_code_test.sh
 ```
 
+[homebrew]:http://brew.sh
+[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
+[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples
