@@ -120,7 +120,68 @@ char *grpc_base64_encode(const void *vdata, size_t data_size, int url_safe,
 }
 
 gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
-  size_t b64_len = strlen(b64);
+  return grpc_base64_decode_with_len(b64, strlen(b64), url_safe);
+}
+
+static void decode_one_char(const unsigned char *codes, unsigned char *result,
+                            size_t *result_offset) {
+  gpr_uint32 packed = (codes[0] << 2) | (codes[1] >> 4);
+  result[(*result_offset)++] = (unsigned char)packed;
+}
+
+static void decode_two_chars(const unsigned char *codes, unsigned char *result,
+                             size_t *result_offset) {
+  gpr_uint32 packed = (codes[0] << 10) | (codes[1] << 4) | (codes[2] >> 2);
+  result[(*result_offset)++] = (unsigned char)(packed >> 8);
+  result[(*result_offset)++] = (unsigned char)(packed);
+}
+
+static int decode_group(const unsigned char *codes, size_t num_codes,
+                        unsigned char *result, size_t *result_offset) {
+  GPR_ASSERT(num_codes <= 4);
+
+  /* Short end groups that may not have padding. */
+  if (num_codes == 1) {
+    gpr_log(GPR_ERROR, "Invalid group. Must be at least 2 bytes.");
+    return 0;
+  }
+  if (num_codes == 2) {
+    decode_one_char(codes, result, result_offset);
+    return 1;
+  }
+  if (num_codes == 3) {
+    decode_two_chars(codes, result, result_offset);
+    return 1;
+  }
+
+  /* Regular 4 byte groups with padding or not. */
+  GPR_ASSERT(num_codes == 4);
+  if (codes[0] == GRPC_BASE64_PAD_BYTE || codes[1] == GRPC_BASE64_PAD_BYTE) {
+    gpr_log(GPR_ERROR, "Invalid padding detected.");
+    return 0;
+  }
+  if (codes[2] == GRPC_BASE64_PAD_BYTE) {
+    if (codes[3] == GRPC_BASE64_PAD_BYTE) {
+      decode_one_char(codes, result, result_offset);
+      } else {
+      gpr_log(GPR_ERROR, "Invalid padding detected.");
+      return 0;
+    }
+  } else if (codes[3] == GRPC_BASE64_PAD_BYTE) {
+    decode_two_chars(codes, result, result_offset);
+  } else {
+    /* No padding. */
+    gpr_uint32 packed =
+        (codes[0] << 18) | (codes[1] << 12) | (codes[2] << 6) | codes[3];
+    result[(*result_offset)++] = (unsigned char)(packed >> 16);
+    result[(*result_offset)++] = (unsigned char)(packed >> 8);
+    result[(*result_offset)++] = (unsigned char)(packed);
+  }
+  return 1;
+}
+
+gpr_slice grpc_base64_decode_with_len(const char *b64, size_t b64_len,
+                                      int url_safe) {
   gpr_slice result = gpr_slice_malloc(b64_len);
   unsigned char *current = GPR_SLICE_START_PTR(result);
   size_t result_size = 0;
@@ -151,43 +212,15 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
     } else {
       codes[num_codes++] = (unsigned char)code;
       if (num_codes == 4) {
-        if (codes[0] == GRPC_BASE64_PAD_BYTE ||
-            codes[1] == GRPC_BASE64_PAD_BYTE) {
-          gpr_log(GPR_ERROR, "Invalid padding detected.");
-          goto fail;
-        }
-        if (codes[2] == GRPC_BASE64_PAD_BYTE) {
-          if (codes[3] == GRPC_BASE64_PAD_BYTE) {
-            /* Double padding. */
-            gpr_uint32 packed = (gpr_uint32)((codes[0] << 2) | (codes[1] >> 4));
-            current[result_size++] = (unsigned char)packed;
-          } else {
-            gpr_log(GPR_ERROR, "Invalid padding detected.");
-            goto fail;
-          }
-        } else if (codes[3] == GRPC_BASE64_PAD_BYTE) {
-          /* Single padding. */
-          gpr_uint32 packed =
-              (gpr_uint32)((codes[0] << 10) | (codes[1] << 4) | (codes[2] >> 2));
-          current[result_size++] = (unsigned char)(packed >> 8);
-          current[result_size++] = (unsigned char)(packed);
-        } else {
-          /* No padding. */
-          gpr_uint32 packed =
-              (gpr_uint32)((codes[0] << 18) | (codes[1] << 12) | (codes[2] << 6) | codes[3]);
-          current[result_size++] = (unsigned char)(packed >> 16);
-          current[result_size++] = (unsigned char)(packed >> 8);
-          current[result_size++] = (unsigned char)(packed);
-        }
+        if (!decode_group(codes, num_codes, current, &result_size)) goto fail;
         num_codes = 0;
       }
     }
   }
 
-  if (num_codes != 0) {
-    gpr_log(GPR_ERROR, "Invalid base64.");
-    gpr_slice_unref(result);
-    return gpr_empty_slice();
+  if (num_codes != 0 &&
+      !decode_group(codes, num_codes, current, &result_size)) {
+    goto fail;
   }
   GPR_SLICE_SET_LENGTH(result, result_size);
   return result;
