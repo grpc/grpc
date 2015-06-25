@@ -3022,6 +3022,7 @@ LIBGRPC_SRC = \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
     src/core/client_config/client_config.c \
+    src/core/client_config/connector.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policy.c \
     src/core/client_config/resolver.c \
@@ -3279,6 +3280,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
     src/core/client_config/client_config.c \
+    src/core/client_config/connector.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policy.c \
     src/core/client_config/resolver.c \

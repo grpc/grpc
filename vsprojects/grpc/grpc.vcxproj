@@ -183,6 +183,7 @@
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h" />
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\src\core\client_config\client_config.h" />
+    <ClInclude Include="..\..\src\core\client_config\connector.h" />
     <ClInclude Include="..\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="..\..\src\core\client_config\lb_policy.h" />
     <ClInclude Include="..\..\src\core\client_config\resolver.h" />
@@ -330,6 +331,8 @@
     <ClCompile Include="..\..\src\core\channel\noop_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\client_config.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\connector.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>

@@ -794,6 +794,7 @@ src/core/channel/http_client_filter.h \
 src/core/channel/http_server_filter.h \
 src/core/channel/noop_filter.h \
 src/core/client_config/client_config.h \
+src/core/client_config/connector.h \
 src/core/client_config/lb_policies/pick_first.h \
 src/core/client_config/lb_policy.h \
 src/core/client_config/resolver.h \
@@ -908,6 +909,7 @@ src/core/channel/http_client_filter.c \
 src/core/channel/http_server_filter.c \
 src/core/channel/noop_filter.c \
 src/core/client_config/client_config.c \
+src/core/client_config/connector.c \
 src/core/client_config/lb_policies/pick_first.c \
 src/core/client_config/lb_policy.c \
 src/core/client_config/resolver.c \

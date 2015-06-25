@@ -37,6 +37,7 @@
 
 struct grpc_subchannel {
   gpr_refcount refs;
+  grpc_connector *connector;
 };
 
 struct grpc_subchannel_call {
