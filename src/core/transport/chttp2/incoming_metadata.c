@@ -179,29 +179,3 @@ void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
     }
   }
 }
-
-#if 0
-void grpc_chttp2_parsing_add_metadata_batch(
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing) {
-  grpc_metadata_batch b;
-
-  b.list.head = NULL;
-  /* Store away the last element of the list, so that in patch_metadata_ops
-     we can reconstitute the list.
-     We can't do list building here as later incoming metadata may reallocate
-     the underlying array. */
-  b.list.tail = (void *)(gpr_intptr)stream_parsing->incoming_metadata_count;
-  b.garbage.head = b.garbage.tail = NULL;
-  b.deadline = stream_parsing->incoming_deadline;
-  stream_parsing->incoming_deadline = gpr_inf_future;
-
-  grpc_sopb_add_metadata(&stream_parsing->data_parser.incoming_sopb, b);
-}
-#endif
-
-#if 0
-static void patch_metadata_ops(grpc_chttp2_stream_global *stream_global,
-                               grpc_chttp2_stream_parsing *stream_parsing) {
-}
-#endif
