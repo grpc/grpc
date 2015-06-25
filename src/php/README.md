@@ -84,8 +84,8 @@ $ make
 $ sudo make install
 ```
 
-(Optional) In your php.ini file, add the line `extension=grpc.so` to load
-the extension at PHP startup.
+In your php.ini file, add the line `extension=grpc.so` to load the extension
+at PHP startup.
 
 Install Composer
 
