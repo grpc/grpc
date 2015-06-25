@@ -65,7 +65,8 @@ void grpc_resolver_shutdown(grpc_resolver *resolver);
 /** Notification that the channel has seen an error on some address.
     Can be used as a hint that re-resolution is desirable soon. */
 void grpc_resolver_channel_saw_error(grpc_resolver *resolver,
-                                     struct sockaddr *failing_address);
+                                     struct sockaddr *failing_address,
+                                     int failing_address_len);
 
 /** Get the next client config. Called by the channel to fetch a new
     configuration. Expected to set *target_config with a new configuration,

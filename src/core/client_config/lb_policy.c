@@ -32,3 +32,20 @@
  */
 
 #include "src/core/client_config/lb_policy.h"
+
+void grpc_lb_policy_ref(grpc_lb_policy *policy) { policy->vtable->ref(policy); }
+
+void grpc_lb_policy_unref(grpc_lb_policy *policy) {
+  policy->vtable->unref(policy);
+}
+
+void grpc_lb_policy_shutdown(grpc_lb_policy *policy) {
+  policy->vtable->shutdown(policy);
+}
+
+void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
+                         grpc_metadata_batch *initial_metadata,
+                         grpc_subchannel **target,
+                         grpc_iomgr_closure *on_complete) {
+  policy->vtable->pick(policy, pollset, initial_metadata, target, on_complete);
+}

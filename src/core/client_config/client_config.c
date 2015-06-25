@@ -32,3 +32,43 @@
  */
 
 #include "src/core/client_config/client_config.h"
+
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+
+struct grpc_client_config {
+  gpr_refcount refs;
+  grpc_lb_policy *lb_policy;
+};
+
+grpc_client_config *grpc_client_config_create() {
+  grpc_client_config *c = gpr_malloc(sizeof(*c));
+  memset(c, 0, sizeof(*c));
+  gpr_ref_init(&c->refs, 1);
+  return c;
+}
+
+void grpc_client_config_ref(grpc_client_config *c) { gpr_ref(&c->refs); }
+
+void grpc_client_config_unref(grpc_client_config *c) {
+  if (gpr_unref(&c->refs)) {
+    grpc_lb_policy_unref(c->lb_policy);
+    gpr_free(c);
+  }
+}
+
+void grpc_client_config_set_lb_policy(grpc_client_config *c,
+                                      grpc_lb_policy *lb_policy) {
+  if (lb_policy) {
+    grpc_lb_policy_ref(c->lb_policy);
+  }
+  if (c->lb_policy) {
+    grpc_lb_policy_unref(c->lb_policy);
+  }
+  c->lb_policy = lb_policy;
+}
+
+grpc_lb_policy *grpc_client_config_get_lb_policy(grpc_client_config *c) {
+  return c->lb_policy;
+}
