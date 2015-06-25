@@ -117,15 +117,15 @@ void grpc_chttp2_publish_reads(
 
   /* update global settings */
   if (transport_parsing->settings_updated) {
-    memcpy(transport_global->settings[PEER_SETTINGS],
+    memcpy(transport_global->settings[GRPC_PEER_SETTINGS],
            transport_parsing->settings, sizeof(transport_parsing->settings));
     transport_parsing->settings_updated = 0;
   }
 
   /* update settings based on ack if received */
   if (transport_parsing->settings_ack_received) {
-    memcpy(transport_global->settings[ACKED_SETTINGS],
-           transport_global->settings[SENT_SETTINGS],
+    memcpy(transport_global->settings[GRPC_ACKED_SETTINGS],
+           transport_global->settings[GRPC_SENT_SETTINGS],
            GRPC_CHTTP2_NUM_SETTINGS * sizeof(gpr_uint32));
     transport_parsing->settings_ack_received = 0;
   }
@@ -238,34 +238,34 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
   if (cur == end) return 1;
 
   switch (transport_parsing->deframe_state) {
-    case DTS_CLIENT_PREFIX_0:
-    case DTS_CLIENT_PREFIX_1:
-    case DTS_CLIENT_PREFIX_2:
-    case DTS_CLIENT_PREFIX_3:
-    case DTS_CLIENT_PREFIX_4:
-    case DTS_CLIENT_PREFIX_5:
-    case DTS_CLIENT_PREFIX_6:
-    case DTS_CLIENT_PREFIX_7:
-    case DTS_CLIENT_PREFIX_8:
-    case DTS_CLIENT_PREFIX_9:
-    case DTS_CLIENT_PREFIX_10:
-    case DTS_CLIENT_PREFIX_11:
-    case DTS_CLIENT_PREFIX_12:
-    case DTS_CLIENT_PREFIX_13:
-    case DTS_CLIENT_PREFIX_14:
-    case DTS_CLIENT_PREFIX_15:
-    case DTS_CLIENT_PREFIX_16:
-    case DTS_CLIENT_PREFIX_17:
-    case DTS_CLIENT_PREFIX_18:
-    case DTS_CLIENT_PREFIX_19:
-    case DTS_CLIENT_PREFIX_20:
-    case DTS_CLIENT_PREFIX_21:
-    case DTS_CLIENT_PREFIX_22:
-    case DTS_CLIENT_PREFIX_23:
-      while (cur != end && transport_parsing->deframe_state != DTS_FH_0) {
+    case GRPC_DTS_CLIENT_PREFIX_0:
+    case GRPC_DTS_CLIENT_PREFIX_1:
+    case GRPC_DTS_CLIENT_PREFIX_2:
+    case GRPC_DTS_CLIENT_PREFIX_3:
+    case GRPC_DTS_CLIENT_PREFIX_4:
+    case GRPC_DTS_CLIENT_PREFIX_5:
+    case GRPC_DTS_CLIENT_PREFIX_6:
+    case GRPC_DTS_CLIENT_PREFIX_7:
+    case GRPC_DTS_CLIENT_PREFIX_8:
+    case GRPC_DTS_CLIENT_PREFIX_9:
+    case GRPC_DTS_CLIENT_PREFIX_10:
+    case GRPC_DTS_CLIENT_PREFIX_11:
+    case GRPC_DTS_CLIENT_PREFIX_12:
+    case GRPC_DTS_CLIENT_PREFIX_13:
+    case GRPC_DTS_CLIENT_PREFIX_14:
+    case GRPC_DTS_CLIENT_PREFIX_15:
+    case GRPC_DTS_CLIENT_PREFIX_16:
+    case GRPC_DTS_CLIENT_PREFIX_17:
+    case GRPC_DTS_CLIENT_PREFIX_18:
+    case GRPC_DTS_CLIENT_PREFIX_19:
+    case GRPC_DTS_CLIENT_PREFIX_20:
+    case GRPC_DTS_CLIENT_PREFIX_21:
+    case GRPC_DTS_CLIENT_PREFIX_22:
+    case GRPC_DTS_CLIENT_PREFIX_23:
+      while (cur != end && transport_parsing->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[transport_parsing
                                                           ->deframe_state]) {
-          gpr_log(GPR_ERROR,
+          gpr_log(GPR_INFO,
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   GRPC_CHTTP2_CLIENT_CONNECT_STRING[transport_parsing
@@ -283,74 +283,74 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
       }
     /* fallthrough */
     dts_fh_0:
-    case DTS_FH_0:
+    case GRPC_DTS_FH_0:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_frame_size = ((gpr_uint32)*cur) << 16;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_1;
+        transport_parsing->deframe_state = GRPC_DTS_FH_1;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_1:
+    case GRPC_DTS_FH_1:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_frame_size |= ((gpr_uint32)*cur) << 8;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_2;
+        transport_parsing->deframe_state = GRPC_DTS_FH_2;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_2:
+    case GRPC_DTS_FH_2:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_frame_size |= *cur;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_3;
+        transport_parsing->deframe_state = GRPC_DTS_FH_3;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_3:
+    case GRPC_DTS_FH_3:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_frame_type = *cur;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_4;
+        transport_parsing->deframe_state = GRPC_DTS_FH_4;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_4:
+    case GRPC_DTS_FH_4:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_frame_flags = *cur;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_5;
+        transport_parsing->deframe_state = GRPC_DTS_FH_5;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_5:
+    case GRPC_DTS_FH_5:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_stream_id = (((gpr_uint32)*cur) & 0x7f) << 24;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_6;
+        transport_parsing->deframe_state = GRPC_DTS_FH_6;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_6:
+    case GRPC_DTS_FH_6:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_stream_id |= ((gpr_uint32)*cur) << 16;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_7;
+        transport_parsing->deframe_state = GRPC_DTS_FH_7;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_7:
+    case GRPC_DTS_FH_7:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_stream_id |= ((gpr_uint32)*cur) << 8;
       if (++cur == end) {
-        transport_parsing->deframe_state = DTS_FH_8;
+        transport_parsing->deframe_state = GRPC_DTS_FH_8;
         return 1;
       }
     /* fallthrough */
-    case DTS_FH_8:
+    case GRPC_DTS_FH_8:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_stream_id |= ((gpr_uint32)*cur);
-      transport_parsing->deframe_state = DTS_FRAME;
+      transport_parsing->deframe_state = GRPC_DTS_FRAME;
       if (!init_frame_parser(transport_parsing)) {
         return 0;
       }
@@ -364,7 +364,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
         }
         transport_parsing->incoming_stream = NULL;
         if (++cur == end) {
-          transport_parsing->deframe_state = DTS_FH_0;
+          transport_parsing->deframe_state = GRPC_DTS_FH_0;
           return 1;
         }
         goto dts_fh_0; /* loop */
@@ -373,7 +373,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
         return 1;
       }
     /* fallthrough */
-    case DTS_FRAME:
+    case GRPC_DTS_FRAME:
       GPR_ASSERT(cur < end);
       if ((gpr_uint32)(end - cur) == transport_parsing->incoming_frame_size) {
         if (!parse_frame_slice(
@@ -381,7 +381,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
                 gpr_slice_sub_no_ref(slice, cur - beg, end - beg), 1)) {
           return 0;
         }
-        transport_parsing->deframe_state = DTS_FH_0;
+        transport_parsing->deframe_state = GRPC_DTS_FH_0;
         transport_parsing->incoming_stream = NULL;
         return 1;
       } else if ((gpr_uint32)(end - cur) >
@@ -582,10 +582,10 @@ static void on_header(void *tp, grpc_mdelem *md) {
 
   GPR_ASSERT(stream_parsing);
 
-  IF_TRACING(gpr_log(GPR_INFO, "HTTP:%d:HDR: %s: %s", stream_parsing->id,
-                     transport_parsing->is_client ? "CLI" : "SVR",
-                     grpc_mdstr_as_c_string(md->key),
-                     grpc_mdstr_as_c_string(md->value)));
+  GRPC_CHTTP2_IF_TRACING(gpr_log(
+      GPR_INFO, "HTTP:%d:HDR: %s: %s", stream_parsing->id,
+      transport_parsing->is_client ? "CLI" : "SVR",
+      grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
   if (md->key == transport_parsing->str_grpc_timeout) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
