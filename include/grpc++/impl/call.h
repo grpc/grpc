@@ -41,6 +41,7 @@
 #include <grpc++/status.h>
 #include <grpc++/impl/serialization_traits.h>
 
+#include <functional>
 #include <memory>
 #include <map>
 
