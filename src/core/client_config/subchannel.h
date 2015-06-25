@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H
 
+#include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/transport/transport.h"
@@ -41,6 +42,7 @@
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
+typedef struct grpc_subchannel_call grpc_subchannel_call;
 
 /** Connectivity state of a channel.
     TODO(ctiller): move to grpc.h when we implement the public
@@ -61,6 +63,9 @@ typedef enum {
 void grpc_subchannel_ref(grpc_subchannel *channel);
 void grpc_subchannel_unref(grpc_subchannel *channel);
 
+void grpc_subchannel_call_ref(grpc_subchannel_call *call);
+void grpc_subchannel_call_unref(grpc_subchannel_call *call);
+
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel *channel);
@@ -71,8 +76,10 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
                                             grpc_iomgr_closure *notify);
 
-/** continue processing of transport operation \a op */
-void grpc_subchannel_continue_op(grpc_subchannel *channel,
-                                 grpc_transport_op *op);
+/** construct a call */
+grpc_subchannel_call *grpc_subchannel_create_call(grpc_subchannel *subchannel, grpc_call_element *parent, grpc_transport_op *initial_op);
+
+/** continue processing a transport op */
+void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call, grpc_transport_op *op);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

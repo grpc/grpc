@@ -56,6 +56,9 @@ struct grpc_lb_policy_vtable {
                grpc_iomgr_closure *on_complete);
 };
 
+void grpc_lb_policy_ref(grpc_lb_policy *policy);
+void grpc_lb_policy_unref(grpc_lb_policy *policy);
+
 /** Start shutting down (fail any pending picks) */
 void grpc_lb_policy_shutdown(grpc_lb_policy *policy);
 
