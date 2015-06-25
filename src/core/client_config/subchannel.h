@@ -77,9 +77,12 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_iomgr_closure *notify);
 
 /** construct a call */
-grpc_subchannel_call *grpc_subchannel_create_call(grpc_subchannel *subchannel, grpc_call_element *parent, grpc_transport_op *initial_op);
+grpc_subchannel_call *grpc_subchannel_create_call(
+    grpc_subchannel *subchannel, grpc_call_element *parent,
+    grpc_transport_stream_op *initial_op);
 
 /** continue processing a transport op */
-void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call, grpc_transport_op *op);
+void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
+                                     grpc_transport_stream_op *op);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

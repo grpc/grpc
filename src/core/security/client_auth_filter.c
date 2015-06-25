@@ -58,7 +58,7 @@ typedef struct {
      so that work can progress when this call wants work to
      progress */
   grpc_pollset *pollset;
-  grpc_transport_op op;
+  grpc_transport_stream_op op;
   size_t op_md_idx;
   int sent_initial_metadata;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
@@ -77,7 +77,7 @@ typedef struct {
 static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  grpc_transport_op_add_cancellation(
+  grpc_transport_stream_op_add_cancellation(
       &calld->op, GRPC_STATUS_UNAUTHENTICATED,
       grpc_mdstr_from_string(chand->md_ctx, error_msg));
   grpc_call_next_op(elem, &calld->op);
@@ -90,7 +90,7 @@ static void on_credentials_metadata(void *user_data,
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  grpc_transport_op *op = &calld->op;
+  grpc_transport_stream_op *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
   if (status != GRPC_CREDENTIALS_OK) {
@@ -131,7 +131,7 @@ static char *build_service_url(const char *url_scheme, call_data *calld) {
 }
 
 static void send_security_metadata(grpc_call_element *elem,
-                                   grpc_transport_op *op) {
+                                   grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
@@ -193,7 +193,7 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
 static void auth_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+                                    grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -263,7 +263,7 @@ static void channel_op(grpc_channel_element *elem,
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   call_data *calld = elem->call_data;
   calld->creds = NULL;
   calld->host = NULL;

@@ -45,7 +45,8 @@ typedef struct channel_data {
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
 
-static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void noop_mutate_op(grpc_call_element *elem,
+                           grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -62,7 +63,7 @@ static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
 static void noop_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+                                    grpc_transport_stream_op *op) {
   noop_mutate_op(elem, op);
 
   /* pass control down the stack */
@@ -89,7 +90,7 @@ static void channel_op(grpc_channel_element *elem,
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;

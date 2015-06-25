@@ -103,7 +103,8 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*start_transport_op)(grpc_call_element *elem, grpc_transport_op *op);
+  void (*start_transport_op)(grpc_call_element *elem,
+                             grpc_transport_stream_op *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -122,7 +123,7 @@ typedef struct {
      argument.*/
   void (*init_call_elem)(grpc_call_element *elem,
                          const void *server_transport_data,
-                         grpc_transport_op *initial_op);
+                         grpc_transport_stream_op *initial_op);
   /* Destroy per call data.
      The filter does not need to do any chaining */
   void (*destroy_call_elem)(grpc_call_element *elem);
@@ -201,13 +202,13 @@ void grpc_channel_stack_destroy(grpc_channel_stack *stack);
    server. */
 void grpc_call_stack_init(grpc_channel_stack *channel_stack,
                           const void *transport_server_data,
-                          grpc_transport_op *initial_op,
+                          grpc_transport_stream_op *initial_op,
                           grpc_call_stack *call_stack);
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack *stack);
 
 /* Call the next operation in a call stack */
-void grpc_call_next_op(grpc_call_element *elem, grpc_transport_op *op);
+void grpc_call_next_op(grpc_call_element *elem, grpc_transport_stream_op *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op);
@@ -219,7 +220,7 @@ grpc_channel_stack *grpc_channel_stack_from_top_element(
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_transport_op *op);
+                      grpc_call_element *elem, grpc_transport_stream_op *op);
 
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
 
