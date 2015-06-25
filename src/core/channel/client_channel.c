@@ -91,7 +91,7 @@ struct call_data {
       /* our child call stack */
       grpc_child_call *child_call;
     } active;
-    grpc_transport_op waiting_op;
+    grpc_transport_stream_op waiting_op;
     struct {
       grpc_linked_mdelem status;
       grpc_linked_mdelem details;
@@ -123,7 +123,8 @@ static int prepare_activate(grpc_call_element *elem,
   return 1;
 }
 
-static void complete_activate(grpc_call_element *elem, grpc_transport_op *op) {
+static void complete_activate(grpc_call_element *elem,
+                              grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   grpc_call_element *child_elem =
       grpc_child_call_get_top_element(calld->s.active.child_call);
@@ -152,7 +153,7 @@ static void remove_waiting_child(channel_data *chand, call_data *calld) {
 }
 
 static void handle_op_after_cancellation(grpc_call_element *elem,
-                                         grpc_transport_op *op) {
+                                         grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (op->send_ops) {
@@ -184,11 +185,11 @@ static void handle_op_after_cancellation(grpc_call_element *elem,
 }
 
 static void cc_start_transport_op(grpc_call_element *elem,
-                                  grpc_transport_op *op) {
+                                  grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_call_element *child_elem;
-  grpc_transport_op waiting_op;
+  grpc_transport_stream_op waiting_op;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
@@ -370,7 +371,7 @@ static void channel_op(grpc_channel_element *elem,
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   call_data *calld = elem->call_data;
 
   /* TODO(ctiller): is there something useful we can do here? */
@@ -468,7 +469,7 @@ grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
   call_data **waiting_children;
   size_t waiting_child_count;
   size_t i;
-  grpc_transport_op *call_ops;
+  grpc_transport_stream_op *call_ops;
 
   /* build the child filter stack */
   child_filters = gpr_malloc(sizeof(grpc_channel_filter *) * num_child_filters);
@@ -510,7 +511,7 @@ grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
     call_ops[i] = waiting_children[i]->s.waiting_op;
     if (!prepare_activate(waiting_children[i]->elem, chand->active_child)) {
       waiting_children[i] = NULL;
-      grpc_transport_op_finish_with_failure(&call_ops[i]);
+      grpc_transport_stream_op_finish_with_failure(&call_ops[i]);
     }
   }
 

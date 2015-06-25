@@ -54,7 +54,7 @@ static void channel_init_func(grpc_channel_element *elem,
 
 static void call_init_func(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
 }
@@ -65,7 +65,7 @@ static void call_destroy_func(grpc_call_element *elem) {
   ++*(int *)(elem->channel_data);
 }
 
-static void call_func(grpc_call_element *elem, grpc_transport_op *op) {
+static void call_func(grpc_call_element *elem, grpc_transport_stream_op *op) {
   ++*(int *)(elem->call_data);
 }
 
