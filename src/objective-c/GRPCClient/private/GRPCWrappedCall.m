@@ -132,7 +132,7 @@
     grpc_metadata_array_init(&_headers);
     _op.data.recv_initial_metadata = &_headers;
     if (handler) {
-      // Prevent reference cycle with handler
+      // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
@@ -164,7 +164,7 @@
     _op.op = GRPC_OP_RECV_MESSAGE;
     _op.data.recv_message = &_receivedMessage;
     if (handler) {
-      // Prevent reference cycle with handler
+      // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
@@ -197,7 +197,7 @@
     grpc_metadata_array_init(&_trailers);
     _op.data.recv_status_on_client.trailing_metadata = &_trailers;
     if (handler) {
-      // Prevent reference cycle with handler
+      // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
