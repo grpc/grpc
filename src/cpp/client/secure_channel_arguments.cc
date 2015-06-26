@@ -31,45 +31,24 @@
  *
  */
 
-#include <sys/signal.h>
+#include <grpc++/channel_arguments.h>
+#include <grpc/grpc_security.h>
 
-#include <chrono>
-#include <thread>
-
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
-#include <gflags/gflags.h>
-
-#include "test/cpp/qps/qps_worker.h"
-#include "test/cpp/util/test_config.h"
-
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
-
-static bool got_sigint = false;
-
-static void sigint_handler(int x) { got_sigint = true; }
+#include "src/core/channel/channel_args.h"
 
 namespace grpc {
-namespace testing {
 
-static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
+void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
+  SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
+}
 
-  while (!got_sigint) {
-    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(5)));
+grpc::string ChannelArguments::GetSslTargetNameOverride() const {
+  for (unsigned int i = 0; i < args_.size(); i++) {
+    if (grpc::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == args_[i].key) {
+      return args_[i].value.string;
+    }
   }
+  return "";
 }
 
-}  // namespace testing
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
-
-  grpc::testing::RunServer();
-
-  return 0;
-}
