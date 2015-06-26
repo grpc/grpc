@@ -916,14 +916,6 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   server_ref(s);
   chand->channel = channel;
 
-  GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
-  memset(&op, 0, sizeof(op));
-  op.set_accept_stream = accept_stream;
-  op.set_accept_stream_user_data = chand;
-  op.on_connectivity_state_change = &chand->channel_connectivity_changed;
-  op.connectivity_state = &chand->connectivity_state;
-  grpc_transport_perform_op(transport, &op);
-
   num_registered_methods = 0;
   for (rm = s->registered_methods; rm; rm = rm->next) {
     num_registered_methods++;
@@ -963,6 +955,14 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   gpr_mu_unlock(&s->mu_global);
 
   gpr_free(filters);
+
+  GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
+  memset(&op, 0, sizeof(op));
+  op.set_accept_stream = accept_stream;
+  op.set_accept_stream_user_data = chand;
+  op.on_connectivity_state_change = &chand->channel_connectivity_changed;
+  op.connectivity_state = &chand->connectivity_state;
+  grpc_transport_perform_op(transport, &op);
 }
 
 void grpc_server_shutdown_and_notify(grpc_server *server,

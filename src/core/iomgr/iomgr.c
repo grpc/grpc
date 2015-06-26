@@ -203,6 +203,7 @@ void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
 
 void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
   closure->success = success;
+  GPR_ASSERT(closure->cb);
   gpr_mu_lock(&g_mu);
   closure->next = NULL;
   if (!g_cbs_tail) {

@@ -91,6 +91,7 @@ static void connector_connect(
   c->notify = notify;
   c->args = channel_args;
   c->mdctx = metadata_context;
+  c->transport = transport;
   grpc_tcp_client_connect(connected, c, pollset_set, addr, addr_len, deadline);
 }
 
