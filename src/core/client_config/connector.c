@@ -41,11 +41,11 @@ void grpc_connector_unref(grpc_connector *connector) {
   connector->vtable->unref(connector);
 }
 
-void grpc_connector_connect(grpc_connector *connector,
-                            const grpc_channel_args *channel_args,
-                            grpc_mdctx *metadata_context,
-                            grpc_transport **transport,
-                            grpc_iomgr_closure *notify) {
-  connector->vtable->connect(connector, channel_args, metadata_context,
-                             transport, notify);
+void grpc_connector_connect(
+    grpc_connector *connector, grpc_pollset_set *pollset_set,
+    const struct sockaddr *addr, int addr_len, gpr_timespec deadline,
+    const grpc_channel_args *channel_args, grpc_mdctx *metadata_context,
+    grpc_transport **transport, grpc_iomgr_closure *notify) {
+  connector->vtable->connect(connector, pollset_set, addr, addr_len, deadline,
+                             channel_args, metadata_context, transport, notify);
 }

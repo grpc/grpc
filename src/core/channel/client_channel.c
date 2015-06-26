@@ -249,7 +249,6 @@ static void started_call(void *arg, int iomgr_success) {
 
 static void picked_target(void *arg, int iomgr_success) {
   call_data *calld = arg;
-  channel_data *chand = calld->elem->channel_data;
   grpc_transport_stream_op op;
 
   if (calld->picked_channel == NULL) {
@@ -268,7 +267,9 @@ static void picked_target(void *arg, int iomgr_success) {
       memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
       gpr_mu_unlock(&calld->mu_state);
       grpc_iomgr_closure_init(&calld->async_setup_task, started_call, calld);
-      grpc_subchannel_create_call(calld->picked_channel, chand->mdctx, &op, &calld->subchannel_call, &calld->async_setup_task);
+      grpc_subchannel_create_call(calld->picked_channel, &op,
+                                  &calld->subchannel_call,
+                                  &calld->async_setup_task);
     }
   }
 }

@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONNECTOR_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONNECTOR_H
 
+#include "src/core/iomgr/sockaddr.h"
 #include "src/core/transport/transport.h"
 
 typedef struct grpc_connector grpc_connector;
@@ -46,18 +47,19 @@ struct grpc_connector {
 struct grpc_connector_vtable {
   void (*ref)(grpc_connector *connector);
   void (*unref)(grpc_connector *connector);
-  void (*connect)(grpc_connector *connector,
-                  const grpc_channel_args *channel_args,
+  void (*connect)(grpc_connector *connector, grpc_pollset_set *pollset_set,
+                  const struct sockaddr *addr, int addr_len,
+                  gpr_timespec deadline, const grpc_channel_args *channel_args,
                   grpc_mdctx *metadata_context, grpc_transport **transport,
                   grpc_iomgr_closure *notify);
 };
 
 void grpc_connector_ref(grpc_connector *connector);
 void grpc_connector_unref(grpc_connector *connector);
-void grpc_connector_connect(grpc_connector *connector,
-                            const grpc_channel_args *channel_args,
-                            grpc_mdctx *metadata_context,
-                            grpc_transport **transport,
-                            grpc_iomgr_closure *notify);
+void grpc_connector_connect(
+    grpc_connector *connector, grpc_pollset_set *pollset_set,
+    const struct sockaddr *addr, int addr_len, gpr_timespec deadline,
+    const grpc_channel_args *channel_args, grpc_mdctx *metadata_context,
+    grpc_transport **transport, grpc_iomgr_closure *notify);
 
 #endif

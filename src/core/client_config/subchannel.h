@@ -64,7 +64,6 @@ void grpc_subchannel_del_interested_party(grpc_subchannel *channel, grpc_pollset
 
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
-  grpc_mdctx *mdctx,
                                  grpc_transport_stream_op *initial_op,
                                  grpc_subchannel_call **target,
                                  grpc_iomgr_closure *notify);
@@ -84,6 +83,8 @@ struct grpc_subchannel_args {
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
+  /** metadata context to use */
+  grpc_mdctx *mdctx;
 };
 
 /** create a subchannel given a connector */
