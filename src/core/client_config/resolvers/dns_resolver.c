@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/client_config/lb_policies/pick_first.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 
@@ -177,6 +178,8 @@ static void dns_start_resolving_locked(dns_resolver *r) {
 static void dns_maybe_finish_next_locked(dns_resolver *r) {
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
+    *r->target_config = r->resolved_config;
+    grpc_client_config_ref(r->resolved_config);
     grpc_iomgr_add_callback(r->next_completion);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
@@ -191,8 +194,11 @@ static void dns_destroy(dns_resolver *r) {
   gpr_free(r);
 }
 
-static grpc_resolver *dns_create(grpc_uri *uri, const char *default_port,
-                                 grpc_subchannel_factory *subchannel_factory) {
+static grpc_resolver *dns_create(
+    grpc_uri *uri, const char *default_port,
+    grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
+                                         size_t num_subchannels),
+    grpc_subchannel_factory *subchannel_factory) {
   dns_resolver *r;
   const char *path = uri->path;
 
@@ -211,6 +217,7 @@ static grpc_resolver *dns_create(grpc_uri *uri, const char *default_port,
   r->name = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->subchannel_factory = subchannel_factory;
+  r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
   return &r->base;
 }
@@ -219,43 +226,21 @@ static grpc_resolver *dns_create(grpc_uri *uri, const char *default_port,
  * FACTORY
  */
 
-typedef struct {
-  /** base: must be first */
-  grpc_resolver_factory base;
-  /** ref count */
-  gpr_refcount refs;
-  /** default port */
-  char *default_port;
-} dns_resolver_factory;
+static void dns_factory_ref(grpc_resolver_factory *factory) {}
 
-static void dns_factory_ref(grpc_resolver_factory *factory) {
-  dns_resolver_factory *f = (dns_resolver_factory *)factory;
-  gpr_ref(&f->refs);
-}
-
-static void dns_factory_unref(grpc_resolver_factory *factory) {
-  dns_resolver_factory *f = (dns_resolver_factory *)factory;
-  if (gpr_unref(&f->refs)) {
-    gpr_free(f->default_port);
-    gpr_free(f);
-  }
-}
+static void dns_factory_unref(grpc_resolver_factory *factory) {}
 
 static grpc_resolver *dns_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
-  dns_resolver_factory *f = (dns_resolver_factory *)factory;
-  return dns_create(uri, f->default_port, subchannel_factory);
+  return dns_create(uri, "https", grpc_create_pick_first_lb_policy,
+                    subchannel_factory);
 }
 
 static const grpc_resolver_factory_vtable dns_factory_vtable = {
     dns_factory_ref, dns_factory_unref, dns_factory_create_resolver};
+static grpc_resolver_factory dns_resolver_factory = {&dns_factory_vtable};
 
-grpc_resolver_factory *grpc_dns_resolver_factory_create(
-    const char *default_port) {
-  dns_resolver_factory *f = gpr_malloc(sizeof(*f));
-  memset(f, 0, sizeof(*f));
-  f->base.vtable = &dns_factory_vtable;
-  f->default_port = gpr_strdup(default_port);
-  return &f->base;
+grpc_resolver_factory *grpc_dns_resolver_factory_create() {
+  return &dns_resolver_factory;
 }

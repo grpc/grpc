@@ -45,5 +45,6 @@ void grpc_resolver_factory_unref(grpc_resolver_factory *factory) {
 grpc_resolver *grpc_resolver_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
+  if (!factory) return NULL;
   return factory->vtable->create_resolver(factory, uri, subchannel_factory);
 }

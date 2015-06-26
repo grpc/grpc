@@ -46,57 +46,76 @@ typedef struct {
   grpc_resolver_factory *factory;
 } registered_resolver;
 
-static registered_resolver all_of_the_resolvers[MAX_RESOLVERS];
-static int number_of_resolvers = 0;
+static registered_resolver g_all_of_the_resolvers[MAX_RESOLVERS];
+static int g_number_of_resolvers = 0;
 
-void grpc_resolver_registry_init(grpc_resolver_factory *r) {
-  number_of_resolvers = 0;
-  grpc_register_resolver_type("default-grpc-resolver", r);
+static char *g_default_resolver_scheme;
+
+void grpc_resolver_registry_init(const char *default_resolver_scheme) {
+  g_number_of_resolvers = 0;
+  g_default_resolver_scheme = gpr_strdup(default_resolver_scheme);
 }
 
 void grpc_resolver_registry_shutdown(void) {
   int i;
-  for (i = 0; i < number_of_resolvers; i++) {
-    gpr_free(all_of_the_resolvers[i].scheme);
-    grpc_resolver_factory_unref(all_of_the_resolvers[i].factory);
+  for (i = 0; i < g_number_of_resolvers; i++) {
+    gpr_free(g_all_of_the_resolvers[i].scheme);
+    grpc_resolver_factory_unref(g_all_of_the_resolvers[i].factory);
   }
+  gpr_free(g_default_resolver_scheme);
 }
 
 void grpc_register_resolver_type(const char *scheme,
                                  grpc_resolver_factory *factory) {
   int i;
-  for (i = 0; i < number_of_resolvers; i++) {
-    GPR_ASSERT(0 != strcmp(scheme, all_of_the_resolvers[i].scheme));
+  for (i = 0; i < g_number_of_resolvers; i++) {
+    GPR_ASSERT(0 != strcmp(scheme, g_all_of_the_resolvers[i].scheme));
   }
-  GPR_ASSERT(number_of_resolvers != MAX_RESOLVERS);
-  all_of_the_resolvers[number_of_resolvers].scheme = gpr_strdup(scheme);
+  GPR_ASSERT(g_number_of_resolvers != MAX_RESOLVERS);
+  g_all_of_the_resolvers[g_number_of_resolvers].scheme = gpr_strdup(scheme);
   grpc_resolver_factory_ref(factory);
-  all_of_the_resolvers[number_of_resolvers].factory = factory;
-  number_of_resolvers++;
+  g_all_of_the_resolvers[g_number_of_resolvers].factory = factory;
+  g_number_of_resolvers++;
+}
+
+static grpc_resolver_factory *lookup_factory(grpc_uri *uri) {
+  int i;
+
+  /* handling NULL uri's here simplifies grpc_resolver_create */
+  if (!uri) return NULL;
+
+  for (i = 0; i < g_number_of_resolvers; i++) {
+    if (0 == strcmp(uri->scheme, g_all_of_the_resolvers[i].scheme)) {
+      return g_all_of_the_resolvers[i].factory;
+    }
+  }
+
+  return NULL;
 }
 
 grpc_resolver *grpc_resolver_create(
     const char *name, grpc_subchannel_factory *subchannel_factory) {
   grpc_uri *uri;
-  int i;
   char *tmp;
-  grpc_resolver *resolver = NULL;
-  if (grpc_has_scheme(name)) {
-    uri = grpc_uri_parse(name);
-    if (!uri) {
-      return NULL;
+  grpc_resolver_factory *factory = NULL;
+  grpc_resolver *resolver;
+
+  uri = grpc_uri_parse(name);
+  factory = lookup_factory(uri);
+  if (factory == NULL && g_default_resolver_scheme != NULL) {
+    grpc_uri_destroy(uri);
+    gpr_asprintf(&tmp, "%s%s", g_default_resolver_scheme, name);
+    uri = grpc_uri_parse(tmp);
+    factory = lookup_factory(uri);
+    if (factory == NULL) {
+      gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", name, tmp);
     }
-    for (i = 0; i < number_of_resolvers; i++) {
-      if (0 == strcmp(all_of_the_resolvers[i].scheme, uri->scheme)) {
-        grpc_resolver_factory_create_resolver(all_of_the_resolvers[i].factory,
-                                              uri, subchannel_factory);
-      }
-    }
-  } else {
-    gpr_asprintf(&tmp, "default-grpc-resolver:%s", name);
-    GPR_ASSERT(grpc_has_scheme(tmp));
-    resolver = grpc_resolver_create(tmp, subchannel_factory);
     gpr_free(tmp);
+  } else if (factory == NULL) {
+    gpr_log(GPR_ERROR, "don't know how to resolve '%s'", name);
   }
+  resolver =
+      grpc_resolver_factory_create_resolver(factory, uri, subchannel_factory);
+  grpc_uri_destroy(uri);
   return resolver;
 }

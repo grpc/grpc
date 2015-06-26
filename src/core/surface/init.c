@@ -34,6 +34,8 @@
 #include <grpc/census.h>
 #include <grpc/grpc.h>
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/resolver_registry.h"
+#include "src/core/client_config/resolvers/dns_resolver.h"
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/profiling/timers.h"
@@ -56,6 +58,8 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
+    grpc_resolver_registry_init("dns:///");
+    grpc_register_resolver_type("dns", grpc_dns_resolver_factory_create());
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);

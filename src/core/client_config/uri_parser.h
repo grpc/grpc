@@ -43,9 +43,6 @@ typedef struct {
 /** parse a uri, return NULL on failure */
 grpc_uri *grpc_uri_parse(const char *uri_text);
 
-/** return 1 if uri_text has something that is likely a scheme, 0 otherwise */
-int grpc_has_scheme(const char *uri_text);
-
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri *uri);
 

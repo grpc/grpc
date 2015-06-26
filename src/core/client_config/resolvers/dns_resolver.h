@@ -37,7 +37,6 @@
 #include "src/core/client_config/resolver_factory.h"
 
 /** Create a dns resolver for \a name */
-grpc_resolver_factory *grpc_dns_resolver_factory_create(
-    const char *default_port);
+grpc_resolver_factory *grpc_dns_resolver_factory_create(void);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_DNS_RESOLVER_H */

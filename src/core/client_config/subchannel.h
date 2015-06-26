@@ -59,9 +59,12 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
                                             grpc_iomgr_closure *notify);
 
+void grpc_subchannel_add_interested_party(grpc_subchannel *channel, grpc_pollset *pollset);
+void grpc_subchannel_del_interested_party(grpc_subchannel *channel, grpc_pollset *pollset);
+
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
-                                 grpc_call_element *parent,
+  grpc_mdctx *mdctx,
                                  grpc_transport_stream_op *initial_op,
                                  grpc_subchannel_call **target,
                                  grpc_iomgr_closure *notify);

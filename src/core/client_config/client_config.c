@@ -61,7 +61,7 @@ void grpc_client_config_unref(grpc_client_config *c) {
 void grpc_client_config_set_lb_policy(grpc_client_config *c,
                                       grpc_lb_policy *lb_policy) {
   if (lb_policy) {
-    grpc_lb_policy_ref(c->lb_policy);
+    grpc_lb_policy_ref(lb_policy);
   }
   if (c->lb_policy) {
     grpc_lb_policy_unref(c->lb_policy);

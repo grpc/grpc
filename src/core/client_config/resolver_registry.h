@@ -36,7 +36,7 @@
 
 #include "src/core/client_config/resolver_factory.h"
 
-void grpc_resolver_registry_init(grpc_resolver_factory *default_resolver);
+void grpc_resolver_registry_init(const char *default_prefix);
 void grpc_resolver_registry_shutdown(void);
 
 /** Register a resolver type.
@@ -47,7 +47,15 @@ void grpc_resolver_registry_shutdown(void);
 void grpc_register_resolver_type(const char *scheme,
                                  grpc_resolver_factory *factory);
 
-/** Create a resolver given a \a uri string (with an optional scheme prefix) */
+/** Create a resolver given \a name.
+    First tries to parse \a name as a URI. If this succeeds, tries
+    to locate a registered resolver factory based on the URI scheme.
+    If parsing or location fails, prefixes default_prefix from
+    grpc_resolver_registry_init to name, and tries again (if default_prefix
+    was not NULL).
+    If a resolver factory was found, use it to instantiate a resolver and
+    return it.
+    If a resolver factory was not found, return NULL. */
 grpc_resolver *grpc_resolver_create(
     const char *name, grpc_subchannel_factory *subchannel_factory);
 

@@ -64,30 +64,6 @@ static char *copy_fragment(const char *src, int begin, int end) {
   return out;
 }
 
-int grpc_has_scheme(const char *uri_text) {
-  int scheme_begin = 0;
-  int scheme_end = -1;
-  int i;
-
-  for (i = scheme_begin; uri_text[i] != 0; i++) {
-    if (uri_text[i] == ':') {
-      scheme_end = i;
-      break;
-    }
-    if (uri_text[i] >= 'a' && uri_text[i] <= 'z') continue;
-    if (uri_text[i] >= 'A' && uri_text[i] <= 'Z') continue;
-    if (i != scheme_begin) {
-      if (uri_text[i] >= '0' && uri_text[i] <= '9') continue;
-      if (uri_text[i] == '+') continue;
-      if (uri_text[i] == '-') continue;
-      if (uri_text[i] == '.') continue;
-    }
-    break;
-  }
-
-  return scheme_end != -1;
-}
-
 grpc_uri *grpc_uri_parse(const char *uri_text) {
   grpc_uri *uri;
   int scheme_begin = 0;
@@ -162,6 +138,7 @@ grpc_uri *grpc_uri_parse(const char *uri_text) {
 }
 
 void grpc_uri_destroy(grpc_uri *uri) {
+  if (!uri) return;
   gpr_free(uri->scheme);
   gpr_free(uri->authority);
   gpr_free(uri->path);

@@ -45,7 +45,7 @@ typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
                                    grpc_status_code status, const char *errmsg);
 
 struct grpc_lb_policy {
-  grpc_lb_policy_vtable *vtable;
+  const grpc_lb_policy_vtable *vtable;
 };
 
 struct grpc_lb_policy_vtable {
