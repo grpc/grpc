@@ -149,7 +149,7 @@ struct grpc_server {
      before mu_call. This is currently used in shutdown processing
      (grpc_server_shutdown_and_notify and maybe_finish_shutdown) */
   gpr_mu mu_global; /* mutex for server and channel state */
-  gpr_mu mu_call; /* mutex for call-specific state */
+  gpr_mu mu_call;   /* mutex for call-specific state */
 
   registered_method *registered_methods;
   requested_call_array requested_calls;
@@ -557,7 +557,7 @@ static void channel_op(grpc_channel_element *elem,
       /* create a call */
       grpc_call_create(chand->channel, NULL,
                        op->data.accept_call.transport_server_data, NULL, 0,
-                       gpr_inf_future);
+                       gpr_inf_future, NULL);
       break;
     case GRPC_TRANSPORT_CLOSED:
       /* if the transport is closed for a server channel, we destroy the

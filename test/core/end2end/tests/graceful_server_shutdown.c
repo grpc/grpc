@@ -113,7 +113,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

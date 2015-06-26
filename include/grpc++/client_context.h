@@ -38,6 +38,7 @@
 #include <memory>
 #include <string>
 
+#include <grpc/census.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc++/config.h>
@@ -101,6 +102,9 @@ class ClientContext {
 
   gpr_timespec raw_deadline() { return deadline_; }
 
+  void set_census_context(census_context* cxt) { census_context_ = cxt; }
+  census_context* get_census_context() const { return census_context_; }
+
   void set_authority(const grpc::string& authority) { authority_ = authority; }
 
   // Set credentials for the rpc.
@@ -148,6 +152,7 @@ class ClientContext {
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;
+  census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;

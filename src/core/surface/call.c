@@ -40,6 +40,7 @@
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
+#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -266,7 +267,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
-                            gpr_timespec send_deadline) {
+                            gpr_timespec send_deadline,
+                            census_context *census_context) {
   size_t i;
   grpc_transport_op initial_op;
   grpc_transport_op *initial_op_ptr = NULL;
@@ -287,8 +289,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   if (call->is_client) {
     call->request_set[GRPC_IOREQ_SEND_TRAILING_METADATA] = REQSET_DONE;
     call->request_set[GRPC_IOREQ_SEND_STATUS] = REQSET_DONE;
-    call->context[GRPC_CONTEXT_TRACING].value = grpc_census_context_create();
-    call->context[GRPC_CONTEXT_TRACING].destroy = grpc_census_context_destroy;
+    grpc_call_set_census_context(call, census_context);
   }
   GPR_ASSERT(add_initial_metadata_count < MAX_SEND_INITIAL_METADATA_COUNT);
   for (i = 0; i < add_initial_metadata_count; i++) {
@@ -1193,7 +1194,7 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
                                    &clevel)) {
-      clevel = GRPC_COMPRESS_LEVEL_NONE;  /* could not parse, no compression */
+      clevel = GRPC_COMPRESS_LEVEL_NONE; /* could not parse, no compression */
     }
     grpc_mdelem_set_user_data(md, destroy_compression,
                               (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
@@ -1216,7 +1217,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
       set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
-    } else if (key == grpc_channel_get_compresssion_level_string(call->channel)) {
+    } else if (key ==
+               grpc_channel_get_compresssion_level_string(call->channel)) {
       set_decode_compression_level(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];
@@ -1441,6 +1443,20 @@ void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
 
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
   return call->context[elem].value;
+}
+
+void grpc_call_set_census_context(grpc_call *call, census_context *context) {
+  if (context == NULL) {
+    grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
+                          grpc_census_context_create(),
+                          grpc_census_context_destroy);
+  } else {
+    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
+  }
+}
+
+census_context *grpc_call_get_census_context(grpc_call *call) {
+  return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
 }
 
 gpr_uint8 grpc_call_is_client(grpc_call *call) { return call->is_client; }

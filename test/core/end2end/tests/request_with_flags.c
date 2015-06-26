@@ -122,7 +122,7 @@ static void test_invoke_request_with_flags(
   grpc_call_error expectation;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

@@ -38,7 +38,7 @@
 #ifndef CENSUS_CENSUS_H
 #define CENSUS_CENSUS_H
 
-#include <grpc/grpc.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

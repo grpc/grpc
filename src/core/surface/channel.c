@@ -138,7 +138,8 @@ grpc_channel *grpc_channel_create_from_filters(
 
 static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
-    grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
+    grpc_mdelem *authority_mdelem, gpr_timespec deadline,
+    census_context *census_context) {
   grpc_mdelem *send_metadata[2];
 
   GPR_ASSERT(channel->is_client);
@@ -147,13 +148,15 @@ static grpc_call *grpc_channel_create_call_internal(
   send_metadata[1] = authority_mdelem;
 
   return grpc_call_create(channel, cq, NULL, send_metadata,
-                          GPR_ARRAY_SIZE(send_metadata), deadline);
+                          GPR_ARRAY_SIZE(send_metadata), deadline,
+                          census_context);
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *cq,
                                     const char *method, const char *host,
-                                    gpr_timespec deadline) {
+                                    gpr_timespec deadline,
+                                    census_context *census_context) {
   return grpc_channel_create_call_internal(
       channel, cq,
       grpc_mdelem_from_metadata_strings(
@@ -162,7 +165,7 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
       grpc_mdelem_from_metadata_strings(
           channel->metadata_context, grpc_mdstr_ref(channel->authority_string),
           grpc_mdstr_from_string(channel->metadata_context, host)),
-      deadline);
+      deadline, census_context);
 }
 
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
@@ -183,11 +186,12 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 
 grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline) {
+    void *registered_call_handle, gpr_timespec deadline,
+    census_context *census_context) {
   registered_call *rc = registered_call_handle;
   return grpc_channel_create_call_internal(
       channel, completion_queue, grpc_mdelem_ref(rc->path),
-      grpc_mdelem_ref(rc->authority), deadline);
+      grpc_mdelem_ref(rc->authority), deadline, census_context);
 }
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
@@ -276,7 +280,6 @@ grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel) {
 grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel) {
   return channel->grpc_compression_level_string;
 }
-
 
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
   if (i >= 0 && i < NUM_CACHED_STATUS_ELEMS) {

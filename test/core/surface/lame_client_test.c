@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(chan);
   cq = grpc_completion_queue_create();
   call = grpc_channel_create_call(chan, cq, "/Foo", "anywhere",
-                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100));
+                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100), NULL);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 

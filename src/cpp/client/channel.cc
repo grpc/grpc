@@ -62,14 +62,14 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
   auto c_call =
       method.channel_tag()
-          ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
-                                                method.channel_tag(),
-                                                context->raw_deadline())
-          : grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
-                                     context->authority().empty()
-                                         ? target_.c_str()
-                                         : context->authority().c_str(),
-                                     context->raw_deadline());
+          ? grpc_channel_create_registered_call(
+                c_channel_, cq->cq(), method.channel_tag(),
+                context->raw_deadline(), context->get_census_context())
+          : grpc_channel_create_call(
+                c_channel_, cq->cq(), method.name(),
+                context->authority().empty() ? target_.c_str()
+                                             : context->authority().c_str(),
+                context->raw_deadline(), context->get_census_context());
   GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
   context->set_call(c_call, shared_from_this());
   return Call(c_call, this, cq);

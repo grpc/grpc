@@ -43,7 +43,8 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
       cq_(nullptr),
-      deadline_(gpr_inf_future) {}
+      deadline_(gpr_inf_future),
+      census_context_(nullptr) {}
 
 ClientContext::~ClientContext() {
   if (call_) {

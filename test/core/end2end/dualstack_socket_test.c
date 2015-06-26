@@ -125,7 +125,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Send a trivial request. */
   c = grpc_channel_create_call(client, cq, "/foo", "foo.test.google.fr",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   op = ops;

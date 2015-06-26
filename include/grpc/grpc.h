@@ -38,6 +38,7 @@
 
 #include <stddef.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/census.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
@@ -382,7 +383,8 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
-                                    gpr_timespec deadline);
+                                    gpr_timespec deadline,
+                                    census_context *census_context);
 
 /* Pre-register a method/host pair on a channel. */
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
@@ -391,7 +393,8 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 /* Create a call given a handle returned from grpc_channel_register_call */
 grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline);
+    void *registered_call_handle, gpr_timespec deadline,
+    census_context *census_context);
 
 /* Start a batch of operations defined in the array ops; when complete, post a
    completion of type 'tag' to the completion queue bound to the call.

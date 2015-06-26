@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H
 
 #include <grpc/census.h>
+#include <grpc/support/port_platform.h>
 
 /* census_context is the in-memory representation of information needed to
  * maintain tracing, RPC statistics and resource usage information. */

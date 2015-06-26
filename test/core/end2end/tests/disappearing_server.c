@@ -98,7 +98,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f->client, f->cq, "/foo",
-                               "foo.test.google.fr:1234", deadline);
+                               "foo.test.google.fr:1234", deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

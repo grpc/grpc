@@ -36,6 +36,7 @@
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/context.h"
+#include <grpc/census.h>
 #include <grpc/grpc.h>
 
 /* Primitive operation types - grpc_op's get rewritten into these */
@@ -89,7 +90,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
-                            gpr_timespec send_deadline);
+                            gpr_timespec send_deadline,
+                            census_context *census_context);
 
 void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
@@ -140,6 +142,14 @@ void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
                            void *value, void (*destroy)(void *value));
 /* Get a context pointer. */
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
+
+/* Set Census context pointer; if not called by an external context
+   provider, and census has been initialized, a new context will be
+   internally generated for every call. */
+void grpc_call_set_census_context(grpc_call *call, census_context *context);
+
+/* get the current census context for the call. */
+census_context *grpc_call_get_census_context(grpc_call *call);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)

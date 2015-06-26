@@ -114,7 +114,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   size_t details_capacity = 0;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "slartibartfast.local",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

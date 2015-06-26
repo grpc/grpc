@@ -106,7 +106,7 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
   grpc_op *op = NULL;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, op, 0, tag(1)));

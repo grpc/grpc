@@ -114,7 +114,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo",
-                               "foo.test.google.fr:1234", deadline);
+                               "foo.test.google.fr:1234", deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -245,10 +245,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
      the first completes */
   deadline = n_seconds_time(1000);
   c1 = grpc_channel_create_call(f.client, f.cq, "/alpha",
-                                "foo.test.google.fr:1234", deadline);
+                                "foo.test.google.fr:1234", deadline, NULL);
   GPR_ASSERT(c1);
   c2 = grpc_channel_create_call(f.client, f.cq, "/beta",
-                                "foo.test.google.fr:1234", deadline);
+                                "foo.test.google.fr:1234", deadline, NULL);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
