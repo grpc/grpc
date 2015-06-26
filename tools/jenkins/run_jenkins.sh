@@ -41,6 +41,10 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
+  cd `dirname $0`/../..
+  git_root=`pwd`
+  cd -
+
   # Use image name based on Dockerfile checksum
   DOCKER_IMAGE_NAME=grpc_jenkins_slave_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
 
@@ -57,17 +61,18 @@ then
   rm -f docker.cid
 
   # Run tests inside docker
-  docker run --cidfile=docker.cid $DOCKER_IMAGE_NAME bash -c -l "git clone --recursive $GIT_URL /var/local/git/grpc \
-    && cd /var/local/git/grpc \
-    $FETCH_PULL_REQUEST_CMD \
-    && git checkout -f $GIT_COMMIT \
-    && git submodule update \
-    && nvm use 0.12 \
-    && rvm use ruby-2.1 \
-    && CONFIG=$config tools/run_tests/prepare_travis.sh \
-    && CPPFLAGS=-I/tmp/prebuilt/include tools/run_tests/run_tests.py -t -c $config -l $language" || DOCKER_FAILED="true"
+  docker run \
+    -e "config=$config" \
+    -e "language=$language" \
+    -i \
+    -v "$git_root:/var/local/jenkins/grpc" \
+    --cidfile=docker.cid \
+    $DOCKER_IMAGE_NAME \
+    bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
 
   DOCKER_CID=`cat docker.cid`
+  docker kill $DOCKER_CID
+  docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
   if [ "$DOCKER_FAILED" == "" ]
   then
     echo "Docker finished successfully, deleting the container $DOCKER_CID"
@@ -89,7 +94,7 @@ then
   /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
   /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
 
-  python tools/run_tests/run_tests.py -t -l $language
+  python tools/run_tests/run_tests.py -t -l $language -x report.xml
 else
   echo "Unknown platform $platform"
   exit 1
