@@ -311,6 +311,14 @@
     },
     {
       "name": "grpc_test_util_base",
+      "headers": [
+        "test/core/end2end/cq_verifier.h",
+        "test/core/iomgr/endpoint_tests.h",
+        "test/core/util/grpc_profiler.h",
+        "test/core/util/parse_hexstring.h",
+        "test/core/util/port.h",
+        "test/core/util/slice_splitter.h"
+      ],
       "src": [
         "test/core/end2end/cq_verifier.c",
         "test/core/iomgr/endpoint_tests.c",
@@ -488,6 +496,9 @@
       "name": "grpc_test_util",
       "build": "private",
       "language": "c",
+      "headers": [
+        "test/core/end2end/data/ssl_test_data.h"
+      ],
       "src": [
         "test/core/end2end/data/server1_cert.c",
         "test/core/end2end/data/server1_key.c",
@@ -545,6 +556,7 @@
         "src/cpp/server/secure_server_credentials.h"
       ],
       "src": [
+        "src/cpp/client/secure_channel_arguments.cc",
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc"
       ],
@@ -560,19 +572,12 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
-      "name": "grpc++_benchmark_config",
-      "build": "private",
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/report.cc",
-        "test/cpp/util/benchmark_config.cc"
-      ]
-    },
-    {
       "name": "grpc++_test_config",
       "build": "private",
       "language": "c++",
+      "headers": [
+        "test/cpp/util/test_config.h"
+      ],
       "src": [
         "test/cpp/util/test_config.cc"
       ]
@@ -581,6 +586,12 @@
       "name": "grpc++_test_util",
       "build": "private",
       "language": "c++",
+      "headers": [
+        "test/cpp/util/cli_call.h",
+        "test/cpp/util/create_test_channel.h",
+        "test/cpp/util/fake_credentials.h",
+        "test/cpp/util/subprocess.h"
+      ],
       "src": [
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
@@ -589,6 +600,10 @@
         "test/cpp/util/create_test_channel.cc",
         "test/cpp/util/fake_credentials.cc",
         "test/cpp/util/subprocess.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc_test_util"
       ]
     },
     {
@@ -611,6 +626,8 @@
       "build": "protoc",
       "language": "c++",
       "headers": [
+        "include/grpc++/config.h",
+        "include/grpc++/config_protobuf.h",
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
@@ -640,6 +657,9 @@
       "name": "interop_client_helper",
       "build": "private",
       "language": "c++",
+      "headers": [
+        "test/cpp/interop/client_helper.h"
+      ],
       "src": [
         "test/cpp/interop/client_helper.cc"
       ],
@@ -655,6 +675,9 @@
       "name": "interop_client_main",
       "build": "private",
       "language": "c++",
+      "headers": [
+        "test/cpp/interop/interop_client.h"
+      ],
       "src": [
         "test/proto/empty.proto",
         "test/proto/messages.proto",
@@ -663,6 +686,7 @@
         "test/cpp/interop/interop_client.cc"
       ],
       "deps": [
+        "interop_client_helper",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -676,6 +700,9 @@
       "name": "interop_server_helper",
       "build": "private",
       "language": "c++",
+      "headers": [
+        "test/cpp/interop/server_helper.h"
+      ],
       "src": [
         "test/cpp/interop/server_helper.cc"
       ],
@@ -697,6 +724,7 @@
         "test/cpp/interop/server.cc"
       ],
       "deps": [
+        "interop_server_helper",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -710,6 +738,10 @@
       "name": "pubsub_client_lib",
       "build": "do_not_build",
       "language": "c++",
+      "headers": [
+        "examples/pubsub/publisher.h",
+        "examples/pubsub/subscriber.h"
+      ],
       "src": [
         "examples/pubsub/label.proto",
         "examples/pubsub/empty.proto",
@@ -728,11 +760,16 @@
       "build": "private",
       "language": "c++",
       "headers": [
+        "test/cpp/qps/client.h",
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/histogram.h",
         "test/cpp/qps/interarrival.h",
         "test/cpp/qps/qps_worker.h",
         "test/cpp/qps/report.h",
-        "test/cpp/qps/timer.h"
+        "test/cpp/qps/server.h",
+        "test/cpp/qps/stats.h",
+        "test/cpp/qps/timer.h",
+        "test/cpp/util/benchmark_config.h"
       ],
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -740,13 +777,16 @@
         "test/cpp/qps/client_sync.cc",
         "test/cpp/qps/driver.cc",
         "test/cpp/qps/qps_worker.cc",
+        "test/cpp/qps/report.cc",
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
-        "test/cpp/qps/timer.cc"
+        "test/cpp/qps/timer.cc",
+        "test/cpp/util/benchmark_config.cc"
       ],
       "deps": [
         "grpc_test_util",
-        "grpc++_test_util"
+        "grpc++_test_util",
+        "grpc++"
       ]
     },
     {
@@ -1764,7 +1804,6 @@
       "deps": [
         "qps",
         "grpc++_test_util",
-        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1782,7 +1821,6 @@
       "deps": [
         "qps",
         "grpc++_test_util",
-        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2158,8 +2196,7 @@
         "grpc",
         "gpr_test_util",
         "gpr",
-        "grpc++_test_config",
-        "grpc++_benchmark_config"
+        "grpc++_test_config"
       ]
     },
     {
@@ -2190,7 +2227,6 @@
       "deps": [
         "qps",
         "grpc++_test_util",
-        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2209,7 +2245,6 @@
       "deps": [
         "qps",
         "grpc++_test_util",
-        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2298,7 +2333,6 @@
       "deps": [
         "qps",
         "grpc++_test_util",
-        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2316,7 +2350,6 @@
       "deps": [
         "qps",
         "grpc++_test_util",
-        "grpc++_benchmark_config",
         "grpc_test_util",
         "grpc++",
         "grpc",
