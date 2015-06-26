@@ -190,3 +190,19 @@ void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
     GPR_SWAP(gpr_slice *, a->slices, b->slices);
   }
 }
+
+void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst) {
+  /* anything to move? */
+  if (src->count == 0) {
+    return;
+  }
+  /* anything in dst? */
+  if (dst->count == 0) {
+    gpr_slice_buffer_swap(src, dst);
+    return;
+  }
+  /* both buffers have data - copy, and reset src */
+  gpr_slice_buffer_addn(dst, src->slices, src->count);
+  src->count = 0;
+  src->length = 0;
+}

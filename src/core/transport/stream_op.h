@@ -199,6 +199,8 @@ void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
 
+void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst);
+
 char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */

@@ -63,8 +63,7 @@ typedef struct grpc_transport_vtable {
   void (*close)(grpc_transport *self);
 
   /* implementation of grpc_transport_ping */
-  void (*ping)(grpc_transport *self, void (*cb)(void *user_data),
-               void *user_data);
+  void (*ping)(grpc_transport *self, grpc_iomgr_closure *cb);
 
   /* implementation of grpc_transport_destroy */
   void (*destroy)(grpc_transport *self);

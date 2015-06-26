@@ -3093,11 +3093,15 @@ LIBGRPC_SRC = \
     src/core/transport/chttp2/hpack_parser.c \
     src/core/transport/chttp2/hpack_table.c \
     src/core/transport/chttp2/huffsyms.c \
+    src/core/transport/chttp2/incoming_metadata.c \
+    src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_lists.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
     src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2/writing.c \
     src/core/transport/chttp2_transport.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
@@ -3339,11 +3343,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/chttp2/hpack_parser.c \
     src/core/transport/chttp2/hpack_table.c \
     src/core/transport/chttp2/huffsyms.c \
+    src/core/transport/chttp2/incoming_metadata.c \
+    src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_lists.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
     src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2/writing.c \
     src/core/transport/chttp2_transport.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
