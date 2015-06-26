@@ -106,7 +106,7 @@ void pf_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
       p->checking_subchannel = 0;
       p->checking_connectivity = GRPC_CHANNEL_IDLE;
       pf_ref(pol);
-      grpc_subchannel_notify_on_state_change(p->subchannels[0], &p->checking_connectivity, &p->connectivity_changed);
+      grpc_subchannel_notify_on_state_change(p->subchannels[p->checking_subchannel], &p->checking_connectivity, &p->connectivity_changed);
     }
     grpc_subchannel_add_interested_party(p->subchannels[p->checking_subchannel], pollset);
     pp = gpr_malloc(sizeof(*pp));
@@ -142,7 +142,8 @@ static void pf_connectivity_changed(void *arg, int iomgr_success) {
 loop:
   switch (p->checking_connectivity) {
     case GRPC_CHANNEL_READY:
-      p->selected = p->subchannels[p->checking_connectivity];
+      p->selected = p->subchannels[p->checking_subchannel];
+      GPR_ASSERT(grpc_subchannel_check_connectivity(p->selected) == GRPC_CHANNEL_READY);
       while ((pp = p->pending_picks)) {
         p->pending_picks = pp->next;
         *pp->target = p->selected;

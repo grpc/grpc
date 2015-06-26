@@ -88,6 +88,7 @@ static void connector_connect(
     grpc_transport **transport, grpc_iomgr_closure *notify) {
   connector *c = (connector *)con;
   GPR_ASSERT(c->notify == NULL);
+  GPR_ASSERT(notify->cb);
   c->notify = notify;
   c->args = channel_args;
   c->mdctx = metadata_context;

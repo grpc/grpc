@@ -107,7 +107,6 @@ static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   channel_data *cd = (channel_data *)elem->channel_data;
-  GPR_ASSERT(!is_first);
   GPR_ASSERT(is_last);
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
   cd->transport = NULL;
