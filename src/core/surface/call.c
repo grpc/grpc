@@ -724,9 +724,14 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
   if ((msg.flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
       (call->compression_algorithm == GRPC_COMPRESS_NONE)) {
     char *message = NULL;
-    gpr_asprintf(
-        &message, "Invalid compression algorithm (%s) for compressed message.",
-        grpc_compression_algorithm_name(call->compression_algorithm));
+    char *alg_name;
+    if (!grpc_compression_algorithm_name(call->compression_algorithm, &alg_name)) {
+      /* This shouldn't happen, other than due to data corruption */
+      alg_name = "<unknown>";
+    }
+    gpr_asprintf(&message,
+                 "Invalid compression algorithm (%s) for compressed message.",
+                 alg_name);
     cancel_with_status(call, GRPC_STATUS_FAILED_PRECONDITION, message);
   }
   /* stash away parameters, and prepare for incoming slices */
@@ -1206,17 +1211,20 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
 static void destroy_compression(void *ignored) {}
 
 static gpr_uint32 decode_compression(grpc_mdelem *md) {
-  grpc_compression_level clevel;
+  grpc_compression_algorithm algorithm;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
-    clevel = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+    algorithm = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
-    GPR_ASSERT(sizeof(clevel) == GPR_SLICE_LENGTH(md->value->slice));
-    memcpy(&clevel, GPR_SLICE_START_PTR(md->value->slice), sizeof(clevel));
+    const char *md_c_str = grpc_mdstr_as_c_string(md->value);
+    if (!grpc_compression_algorithm_parse(md_c_str, &algorithm)) {
+      gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
+      assert(0);
+    }
     grpc_mdelem_set_user_data(md, destroy_compression,
-                              (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
+                              (void *)(gpr_intptr)(algorithm + COMPRESS_OFFSET));
   }
-  return clevel;
+  return algorithm;
 }
 
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {

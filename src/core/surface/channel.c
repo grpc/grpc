@@ -100,7 +100,7 @@ grpc_channel *grpc_channel_create_from_filters(
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_compression_algorithm_string =
-      grpc_mdstr_from_string(mdctx, "grpc-compression-algorithm");
+      grpc_mdstr_from_string(mdctx, "grpc-encoding");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
     char buf[GPR_LTOA_MIN_BUFSIZE];
@@ -273,7 +273,8 @@ grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel) {
   return channel->grpc_status_string;
 }
 
-grpc_mdstr *grpc_channel_get_compresssion_algorithm_string(grpc_channel *channel) {
+grpc_mdstr *grpc_channel_get_compresssion_algorithm_string(
+    grpc_channel *channel) {
   return channel->grpc_compression_algorithm_string;
 }
 

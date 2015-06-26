@@ -80,10 +80,13 @@ static grpc_mdelem* compression_md_filter(void *user_data, grpc_mdelem *md) {
   channel_data *channeld = elem->channel_data;
 
   if (md->key == channeld->mdstr_compression_algorithm_key) {
-    assert(GPR_SLICE_LENGTH(md->value->slice) ==
-           sizeof(grpc_compression_algorithm));
-    memcpy(&calld->compression_algorithm, GPR_SLICE_START_PTR(md->value->slice),
-           sizeof(grpc_compression_algorithm));
+    const char *md_c_str = grpc_mdstr_as_c_string(md->value);
+    if (!grpc_compression_algorithm_parse(md_c_str,
+                                          &calld->compression_algorithm)) {
+      gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'. Ignoring.",
+              md_c_str);
+      calld->compression_algorithm = GRPC_COMPRESS_NONE;
+    }
     calld->has_compression_algorithm = 1;
     return NULL;
   }
@@ -92,9 +95,11 @@ static grpc_mdelem* compression_md_filter(void *user_data, grpc_mdelem *md) {
 }
 
 static int skip_compression(channel_data *channeld, call_data *calld) {
-  if (calld->has_compression_algorithm &&
-      (calld->compression_algorithm == GRPC_COMPRESS_NONE)) {
-    return 1;
+  if (calld->has_compression_algorithm) {
+     if (calld->compression_algorithm == GRPC_COMPRESS_NONE) {
+       return 1;
+     }
+     return 0;  /* we have an actual call-specific algorithm */
   }
   /* no per-call compression override */
   return channeld->default_compression_algorithm == GRPC_COMPRESS_NONE;
@@ -255,14 +260,15 @@ static void init_channel_elem(grpc_channel_element *elem,
       grpc_compression_algorithm_for_level(clevel);
 
   channeld->mdstr_compression_algorithm_key =
-      grpc_mdstr_from_string(mdctx, "grpc-compression-algorithm");
+      grpc_mdstr_from_string(mdctx, "grpc-encoding");
 
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
+    char *algorith_name;
+    GPR_ASSERT(grpc_compression_algorithm_name(algo_idx, &algorith_name) != 0);
     channeld->mdelem_compression_algorithms[algo_idx] =
         grpc_mdelem_from_metadata_strings(
             mdctx, grpc_mdstr_ref(channeld->mdstr_compression_algorithm_key),
-            grpc_mdstr_from_buffer(mdctx, (gpr_uint8 *)&algo_idx,
-                                   sizeof(algo_idx)));
+            grpc_mdstr_from_string(mdctx, algorith_name));
   }
 
   /* The first and the last filters tend to be implemented differently to
