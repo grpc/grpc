@@ -72,6 +72,7 @@ then
 
   DOCKER_CID=`cat docker.cid`
   docker kill $DOCKER_CID
+  docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
   if [ "$DOCKER_FAILED" == "" ]
   then
     echo "Docker finished successfully, deleting the container $DOCKER_CID"
@@ -93,7 +94,7 @@ then
   /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
   /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
 
-  python tools/run_tests/run_tests.py -t -l $language
+  python tools/run_tests/run_tests.py -t -l $language -x report.xml
 else
   echo "Unknown platform $platform"
   exit 1
