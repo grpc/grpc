@@ -409,7 +409,7 @@ multi_init_test: multi_init_test.exe
 multiple_server_queues_test.exe: build_libs $(OUT_DIR)
 	echo Building multiple_server_queues_test
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\end2end\multiple_server_queues_test.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\multiple_server_queues_test.exe" Debug\grpc.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\multiple_server_queues_test.obj 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\multiple_server_queues_test.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\multiple_server_queues_test.obj 
 multiple_server_queues_test: multiple_server_queues_test.exe
 	echo Running multiple_server_queues_test
 	$(OUT_DIR)\multiple_server_queues_test.exe

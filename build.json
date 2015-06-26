@@ -1490,7 +1490,9 @@
         "test/core/end2end/multiple_server_queues_test.c"
       ],
       "deps": [
+        "grpc_test_util",
         "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },
