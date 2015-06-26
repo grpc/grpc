@@ -41,6 +41,7 @@
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
+typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 void grpc_subchannel_ref(grpc_subchannel *channel);
 void grpc_subchannel_unref(grpc_subchannel *channel);
@@ -69,7 +70,21 @@ void grpc_subchannel_create_call(grpc_subchannel *subchannel,
 void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op *op);
 
+struct grpc_subchannel_args {
+  /** Channel filters for this channel - wrapped factories will likely
+      want to mutate this */
+  const grpc_channel_filter **filters;
+  /** The number of filters in the above array */
+  size_t filter_count;
+  /** Channel arguments to be supplied to the newly created channel */
+  const grpc_channel_args *args;
+  /** Address to connect to */
+  struct sockaddr *addr;
+  size_t addr_len;
+};
+
 /** create a subchannel given a connector */
-grpc_subchannel *grpc_subchannel_create(grpc_connector *connector);
+grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
+                                        grpc_subchannel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

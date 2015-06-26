@@ -46,44 +46,42 @@
 typedef struct {
   grpc_connector base;
   gpr_refcount refs;
-  struct sockaddr *addr;
-  int addr_len;
-  grpc_channel_args *args;
 } connector;
 
-typedef struct {
-  grpc_subchannel_factory base;
-  gpr_refcount refs;
-  grpc_channel_args *args;
-} subchannel_factory;
-
-static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
-  subchannel_factory *f = (subchannel_factory*)scf;
-  gpr_ref(&f->refs);
+static void connector_ref(grpc_connector *con) {
+  connector *c = (connector *)con;
+  gpr_ref(&c->refs);
 }
 
-static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
-  subchannel_factory *f = (subchannel_factory*)scf;
-  if (gpr_unref(&f->refs)) {
-    grpc_channel_args_destroy(f->args);
-    gpr_free(f);
+static void connector_unref(grpc_connector *con) {
+  connector *c = (connector *)con;
+  if (gpr_unref(&c->refs)) {
+    gpr_free(c);
   }
 }
 
+static void connector_connect(grpc_connector *connector, const grpc_channel_args *channel_args, grpc_mdctx *metadata_context, grpc_transport **transport, grpc_iomgr_closure *notify) {
+  abort();
+}
+
+static const grpc_connector_vtable connector_vtable = {connector_ref, connector_unref, connector_connect};
+
+static void subchannel_factory_ref(grpc_subchannel_factory *scf) {}
+
+static void subchannel_factory_unref(grpc_subchannel_factory *scf) {}
+
 static grpc_subchannel *subchannel_factory_create_subchannel(grpc_subchannel_factory *scf, grpc_subchannel_args *args) {
-  subchannel_factory *f = (subchannel_factory*)scf;
   connector *c = gpr_malloc(sizeof(*c));
+  grpc_subchannel *s;
   c->base.vtable = &connector_vtable;
   gpr_ref_init(&c->refs, 1);
-  c->addr = gpr_malloc(args->addr_len);
-  memcpy(c->addr, args->addr, args->addr_len);
-  c->addr_len = args->addr_len;
-  c->args = grpc_channel_args_merge(args->args, f->args);
-
-  return grpc_subchannel_create(&c->base);
+  s = grpc_subchannel_create(&c->base, args);
+  grpc_connector_unref(&c->base);
+  return s;
 }
 
 static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {subchannel_factory_ref, subchannel_factory_unref, subchannel_factory_create_subchannel};
+static grpc_subchannel_factory subchannel_factory = {&subchannel_factory_vtable};
 
 /* Create a client channel:
    Asynchronously: - resolve target
@@ -92,7 +90,6 @@ static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {subchan
 grpc_channel *grpc_channel_create(const char *target,
                                   const grpc_channel_args *args) {
   grpc_channel *channel = NULL;
-  subchannel_factory *scfactory = gpr_malloc(sizeof(*scfactory));
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_resolver *resolver;
@@ -104,11 +101,7 @@ grpc_channel *grpc_channel_create(const char *target,
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  scfactory->base.vtable = &subchannel_factory_vtable;
-  gpr_ref_init(&scfactory->refs, 1);
-  scfactory->args = grpc_channel_args_copy(args);
-
-  resolver = grpc_resolver_create(target, &scfactory->base);
+  resolver = grpc_resolver_create(target, &subchannel_factory);
   if (!resolver) {
     return NULL;
   }

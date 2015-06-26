@@ -39,25 +39,11 @@
 
 typedef struct grpc_subchannel_factory grpc_subchannel_factory;
 typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
-typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 /** Constructor for new configured channels.
     Creating decorators around this type is encouraged to adapt behavior. */
 struct grpc_subchannel_factory {
   const grpc_subchannel_factory_vtable *vtable;
-};
-
-struct grpc_subchannel_args {
-  /** Channel filters for this channel - wrapped factories will likely
-      want to mutate this */
-  const grpc_channel_filter **filters;
-  /** The number of filters in the above array */
-  size_t filter_count;
-  /** Channel arguments to be supplied to the newly created channel */
-  const grpc_channel_args *args;
-  /** Address to connect to */
-  struct sockaddr *addr;
-  size_t addr_len;
 };
 
 struct grpc_subchannel_factory_vtable {

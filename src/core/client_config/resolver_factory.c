@@ -32,3 +32,18 @@
  */
 
 #include "src/core/client_config/resolver_factory.h"
+
+void grpc_resolver_factory_ref(grpc_resolver_factory *factory) {
+  factory->vtable->ref(factory);
+}
+
+void grpc_resolver_factory_unref(grpc_resolver_factory *factory) {
+  factory->vtable->unref(factory);
+}
+
+/** Create a resolver instance for a name */
+grpc_resolver *grpc_resolver_factory_create_resolver(
+    grpc_resolver_factory *factory, grpc_uri *uri,
+    grpc_subchannel_factory *subchannel_factory) {
+  return factory->vtable->create_resolver(factory, uri, subchannel_factory);
+}

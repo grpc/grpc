@@ -33,3 +33,19 @@
 
 #include "src/core/client_config/connector.h"
 
+void grpc_connector_ref(grpc_connector *connector) {
+  connector->vtable->ref(connector);
+}
+
+void grpc_connector_unref(grpc_connector *connector) {
+  connector->vtable->unref(connector);
+}
+
+void grpc_connector_connect(grpc_connector *connector,
+                            const grpc_channel_args *channel_args,
+                            grpc_mdctx *metadata_context,
+                            grpc_transport **transport,
+                            grpc_iomgr_closure *notify) {
+  connector->vtable->connect(connector, channel_args, metadata_context,
+                             transport, notify);
+}

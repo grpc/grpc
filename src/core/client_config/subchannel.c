@@ -33,11 +33,22 @@
 
 #include "src/core/client_config/subchannel.h"
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 
 struct grpc_subchannel {
   gpr_refcount refs;
   grpc_connector *connector;
+
+  /** non-transport related channel filters */
+  const grpc_channel_filter **filters;
+  size_t filter_count;
+  /** channel arguments */
+  grpc_channel_args *args;
+  /** address to connect to */
+  struct sockaddr *addr;
+  size_t addr_len;
 };
 
 struct grpc_subchannel_call {
@@ -57,6 +68,23 @@ void grpc_subchannel_unref(grpc_subchannel *channel) {
   if (gpr_unref(&channel->refs)) {
     gpr_free(channel);
   }
+}
+
+grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
+                                        grpc_subchannel_args *args) {
+  grpc_subchannel *c = gpr_malloc(sizeof(*c));
+  memset(c, 0, sizeof(*c));
+  gpr_ref_init(&c->refs, 1);
+  c->connector = connector;
+  grpc_connector_ref(c->connector);
+  c->filters = gpr_malloc(sizeof(grpc_channel_filter *) * args->filter_count);
+  memcpy(c->filters, args->filters,
+         sizeof(grpc_channel_filter *) * args->filter_count);
+  c->filter_count = args->filter_count;
+  c->addr = gpr_malloc(args->addr_len);
+  memcpy(c->addr, args->addr, args->addr_len);
+  c->addr_len = args->addr_len;
+  return c;
 }
 
 /*

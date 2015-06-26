@@ -46,11 +46,18 @@ struct grpc_connector {
 struct grpc_connector_vtable {
   void (*ref)(grpc_connector *connector);
   void (*unref)(grpc_connector *connector);
-  void (*connect)(grpc_connector *connector, const grpc_channel_args *channel_args, grpc_mdctx *metadata_context, grpc_transport **transport, grpc_iomgr_closure *notify);
+  void (*connect)(grpc_connector *connector,
+                  const grpc_channel_args *channel_args,
+                  grpc_mdctx *metadata_context, grpc_transport **transport,
+                  grpc_iomgr_closure *notify);
 };
 
 void grpc_connector_ref(grpc_connector *connector);
 void grpc_connector_unref(grpc_connector *connector);
-void grpc_connector_connect(grpc_connector *connector, const grpc_channel_args *channel_args, grpc_mdctx *metadata_context, grpc_transport **transport, grpc_iomgr_closure *notify);
+void grpc_connector_connect(grpc_connector *connector,
+                            const grpc_channel_args *channel_args,
+                            grpc_mdctx *metadata_context,
+                            grpc_transport **transport,
+                            grpc_iomgr_closure *notify);
 
 #endif
