@@ -1526,6 +1526,18 @@
       ]
     },
     {
+      "name": "queue_exit_stage_left",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/api/queue_exit_stage_left.c"
+      ],
+      "deps": [
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
       "name": "resolve_address_test",
       "build": "test",
       "language": "c",
