@@ -10,10 +10,10 @@ INSTALL
 -------
  - On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][]. Run the following command to install gRPC.
 
-  ```sh
-  $ curl -fsSL https://goo.gl/getgrpc | bash -
-  ```
-  This will download and run the [gRPC install script][].
+   ```sh
+   $ curl -fsSL https://goo.gl/getgrpc | bash -s php
+   ```
+   This will download and run the [gRPC install script][] and compile the gRPC PHP extension.
 
  - Clone this repository
 
@@ -26,20 +26,8 @@ INSTALL
    ```
    $ cd grpc-common/php
    $ curl -sS https://getcomposer.org/installer | php
+   $ php composer.phar install
    ```
-
- - (Coming soon) Download the gRPC PECL extension
-
-   ```
-   Coming soon
-   ```
-
- - (Temporary workaround) Compile gRPC extension from source
-
-   ```
-   $ curl -fsSL https://goo.gl/getgrpc | bash -s php
-   ```
-
 
 TRY IT!
 -------
@@ -56,8 +44,7 @@ TRY IT!
 
    ```
    $ cd grpc-common/php
-   $ php composer.phar install
-   $ php -d extension=grpc.so greeter_client.php
+   $ ./run_greeter_client.sh
    ```
 
 NOTE

@@ -31,7 +31,7 @@ Tokens to each request being made on the channel.
 This is the simplest authentication scenario, where a client just wants to
 authenticate the server and encrypt all data.
 
-```
+```cpp
 SslCredentialsOptions ssl_opts;  // Options to override SSL params, empty by default
 // Create the credentials object by providing service account key in constructor
 std::unique_ptr<Credentials> creds = CredentialsFactory::SslCredentials(ssl_opts);
@@ -52,7 +52,7 @@ passed to the factory method.
 
 gRPC applications can use a simple API to create a credential that works in various deployment scenarios.
 
-```
+```cpp
 std::unique_ptr<Credentials> creds = CredentialsFactory::GoogleDefaultCredentials();
 // Create a channel, stub and make RPC calls (same as in the previous example)
 std::shared_ptr<ChannelInterface> channel = CreateChannel(server_name, creds, channel_args);
@@ -137,7 +137,7 @@ stub = Helloworld::Greeter::Stub.new('localhost:50051')
 ...
 
 # Authenticating with Google
-require 'googleauth'  # from [googleauth](http://www.rubydoc.info/gems/googleauth/0.1.0)
+require 'googleauth'  # from http://www.rubydoc.info/gems/googleauth/0.1.0
 ...
 creds = GRPC::Core::Credentials.new(load_certs)  # load_certs typically loads a CA roots file
 scope = 'https://www.googleapis.com/auth/grpc-testing'
@@ -189,6 +189,27 @@ if (authorization.IsCreateScopedRequired)
 }
 var client = new Greeter.GreeterClient(channel,
         new StubConfiguration(OAuth2InterceptorFactory.Create(credential)));
+```
+
+###Authenticating with Google (PHP)
+```php
+// Base case - No encryption/authorization
+$client = new helloworld\GreeterClient(
+  new Grpc\BaseStub('localhost:50051', []));
+...
+
+// Authenticating with Google
+// the environment variable "GOOGLE_APPLICATION_CREDENTIALS" needs to be set
+$scope = "https://www.googleapis.com/auth/grpc-testing";
+$auth = Google\Auth\ApplicationDefaultCredentials::getCredentials($scope);
+$opts = [
+  'credentials' => Grpc\Credentials::createSsl(file_get_contents('ca.pem'));
+  'update_metadata' => $auth->getUpdateMetadataFunc(),
+];
+
+$client = new helloworld\GreeterClient(
+  new Grpc\BaseStub('localhost:50051', $opts));
+
 ```
 
 ###Authenticating with Google (Objective-C)

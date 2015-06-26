@@ -203,7 +203,7 @@ def main
   port = '0.0.0.0:50051'
   s = GRPC::RpcServer.new
   s.add_http2_port(port)
-  logger.info("... running insecurely on #{port}")
+  GRPC.logger.info("... running insecurely on #{port}")
   s.handle(ServerImpl.new(feature_db))
   s.run
 end

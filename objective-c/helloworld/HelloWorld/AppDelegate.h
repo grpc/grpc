@@ -31,57 +31,11 @@
  *
  */
 
-#include <iostream>
-#include <memory>
-#include <string>
+#import <UIKit/UIKit.h>
 
-#include <grpc/grpc.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include "helloworld.grpc.pb.h"
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
 
-using grpc::ChannelArguments;
-using grpc::ChannelInterface;
-using grpc::ClientContext;
-using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
+@property (strong, nonatomic) UIWindow *window;
 
-class GreeterClient {
- public:
-  GreeterClient(std::shared_ptr<ChannelInterface> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+@end
 
-  std::string SayHello(const std::string& user) {
-    HelloRequest request;
-    request.set_name(user);
-    HelloReply reply;
-    ClientContext context;
-
-    Status status = stub_->SayHello(&context, request, &reply);
-    if (status.ok()) {
-      return reply.message();
-    } else {
-      return "Rpc failed";
-    }
-  }
-
- private:
-  std::unique_ptr<Greeter::Stub> stub_;
-};
-
-int main(int argc, char** argv) {
-  GreeterClient greeter(
-      grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials(),
-                          ChannelArguments()));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user);
-  std::cout << "Greeter received: " << reply << std::endl;
-
-  return 0;
-}

@@ -39,8 +39,7 @@ service methods, and define the parameters and return
 types as protocol buffer message types. Both the client and the
 server use interface code generated from the service definition.
 
-Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](https://github.com/grpc/grpc-common/blob/master/python/helloworld/helloworld.proto). The `Greeting`
+Here's our example service definition. The `Greeting`
 service has one method, `hello`, that lets the server receive a single
 `HelloRequest`
 message from the remote client containing the user's name, then send back
