@@ -439,6 +439,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "queue_exit_stage_left", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "resolve_address_test", 
     "platforms": [
       "windows", 
