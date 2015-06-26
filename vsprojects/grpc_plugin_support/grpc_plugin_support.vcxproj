@@ -146,6 +146,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\grpc++\config.h" />
+    <ClInclude Include="..\..\include\grpc++\config_protobuf.h" />
     <ClInclude Include="..\..\src\compiler\config.h" />
     <ClInclude Include="..\..\src\compiler\cpp_generator.h" />
     <ClInclude Include="..\..\src\compiler\cpp_generator_helpers.h" />
