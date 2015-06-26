@@ -413,6 +413,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "multiple_server_queues_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "murmur_hash_test", 
     "platforms": [
       "windows", 
@@ -433,15 +442,6 @@
     "language": "c", 
     "name": "poll_kick_posix_test", 
     "platforms": [
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
-    "name": "queue_exit_stage_left", 
-    "platforms": [
-      "windows", 
       "posix"
     ]
   }, 

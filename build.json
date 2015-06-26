@@ -1483,6 +1483,18 @@
       ]
     },
     {
+      "name": "multiple_server_queues_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/end2end/multiple_server_queues_test.c"
+      ],
+      "deps": [
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
       "name": "murmur_hash_test",
       "build": "test",
       "language": "c",
@@ -1523,18 +1535,6 @@
       ],
       "platforms": [
         "posix"
-      ]
-    },
-    {
-      "name": "queue_exit_stage_left",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/api/queue_exit_stage_left.c"
-      ],
-      "deps": [
-        "grpc",
-        "gpr"
       ]
     },
     {
