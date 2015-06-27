@@ -64,7 +64,7 @@ ${cc_library(lib)}
 % endfor
 
 % for lib in libs:
-% if lib.name in ("grpc_unsecure", "gpr"):
+% if lib.name in ("grpc", "gpr"):
 ${objc_library(lib)}
 % endif
 % endfor
