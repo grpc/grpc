@@ -1134,6 +1134,7 @@ objc_library(
   ],
   deps = [
     ":gpr_objc",
+    "//external:libssl_objc",
   ],
   sdk_dylibs = ["libz"],
 )
