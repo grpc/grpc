@@ -58,6 +58,16 @@ struct grpc_lb_policy_vtable {
   void (*pick)(grpc_lb_policy *policy, grpc_pollset *pollset,
                grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
                grpc_iomgr_closure *on_complete);
+
+  /** broadcast a transport op to all subchannels */
+  void (*broadcast)(grpc_lb_policy *policy, grpc_transport_op *op);
+
+  /** check the current connectivity of the lb_policy */
+  grpc_connectivity_state (*check_connectivity)(grpc_lb_policy *policy);
+
+  /** call notify when the connectivity state of a channel changes from *state.
+      Updates *state with the new state of the policy */
+  void (*notify_on_state_change)(grpc_lb_policy *policy, grpc_connectivity_state *state, grpc_iomgr_closure *closure);
 };
 
 void grpc_lb_policy_ref(grpc_lb_policy *policy);

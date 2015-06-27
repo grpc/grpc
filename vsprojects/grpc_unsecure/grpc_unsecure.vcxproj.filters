@@ -19,6 +19,9 @@
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\connectivity_state.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\http_client_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -363,6 +366,9 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\connectivity_state.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\context.h">

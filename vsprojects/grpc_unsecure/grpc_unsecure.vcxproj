@@ -160,6 +160,7 @@
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
     <ClInclude Include="..\..\src\core\channel\connected_channel.h" />
+    <ClInclude Include="..\..\src\core\channel\connectivity_state.h" />
     <ClInclude Include="..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h" />
@@ -261,6 +262,8 @@
     <ClCompile Include="..\..\src\core\channel\client_channel.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\connectivity_state.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\http_client_filter.c">
     </ClCompile>

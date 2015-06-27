@@ -46,6 +46,15 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 void grpc_subchannel_ref(grpc_subchannel *channel);
 void grpc_subchannel_unref(grpc_subchannel *channel);
 
+/** construct a call (possibly asynchronously) */
+void grpc_subchannel_create_call(grpc_subchannel *subchannel,
+                                 grpc_transport_stream_op *initial_op,
+                                 grpc_subchannel_call **target,
+                                 grpc_iomgr_closure *notify);
+
+/** process a transport level op */
+void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel, grpc_transport_op *op);
+
 void grpc_subchannel_call_ref(grpc_subchannel_call *call);
 void grpc_subchannel_call_unref(grpc_subchannel_call *call);
 
@@ -61,12 +70,6 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
 
 void grpc_subchannel_add_interested_party(grpc_subchannel *channel, grpc_pollset *pollset);
 void grpc_subchannel_del_interested_party(grpc_subchannel *channel, grpc_pollset *pollset);
-
-/** construct a call (possibly asynchronously) */
-void grpc_subchannel_create_call(grpc_subchannel *subchannel,
-                                 grpc_transport_stream_op *initial_op,
-                                 grpc_subchannel_call **target,
-                                 grpc_iomgr_closure *notify);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
