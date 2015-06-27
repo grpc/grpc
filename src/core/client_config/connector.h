@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONNECTOR_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CONNECTOR_H
 
+#include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/transport/transport.h"
 
@@ -44,22 +45,43 @@ struct grpc_connector {
   const grpc_connector_vtable *vtable;
 };
 
+typedef struct {
+  /** set of pollsets interested in this connection */
+  grpc_pollset_set *interested_parties;
+  /** address to connect to */
+  const struct sockaddr *addr;
+  int addr_len;
+  /** deadline for connection */
+  gpr_timespec deadline;
+  /** channel arguments (to be passed to transport) */
+  const grpc_channel_args *channel_args;
+  /** metadata context */
+  grpc_mdctx *metadata_context;
+} grpc_connect_in_args;
+
+typedef struct {
+  /** the connected transport */
+  grpc_transport *transport;
+  /** any additional filters (owned by the caller of connect) */
+  const grpc_channel_filter **filters;
+  size_t num_filters;
+} grpc_connect_out_args;
+
 struct grpc_connector_vtable {
   void (*ref)(grpc_connector *connector);
   void (*unref)(grpc_connector *connector);
-  void (*connect)(grpc_connector *connector, grpc_pollset_set *pollset_set,
-                  const struct sockaddr *addr, int addr_len,
-                  gpr_timespec deadline, const grpc_channel_args *channel_args,
-                  grpc_mdctx *metadata_context, grpc_transport **transport,
+  void (*connect)(grpc_connector *connector,
+                  const grpc_connect_in_args *in_args,
+                  grpc_connect_out_args *out_args,
                   grpc_iomgr_closure *notify);
 };
 
 void grpc_connector_ref(grpc_connector *connector);
 void grpc_connector_unref(grpc_connector *connector);
 void grpc_connector_connect(
-    grpc_connector *connector, grpc_pollset_set *pollset_set,
-    const struct sockaddr *addr, int addr_len, gpr_timespec deadline,
-    const grpc_channel_args *channel_args, grpc_mdctx *metadata_context,
-    grpc_transport **transport, grpc_iomgr_closure *notify);
+    grpc_connector *connector, 
+    const grpc_connect_in_args *in_args,
+    grpc_connect_out_args *out_args,
+    grpc_iomgr_closure *notify);
 
 #endif

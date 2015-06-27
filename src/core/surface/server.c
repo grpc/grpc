@@ -1229,6 +1229,8 @@ static void begin_call(grpc_server *server, call_data *calld,
   calld->cq_new = rc->cq_for_notification;
   switch (rc->type) {
     case BATCH_CALL:
+      GPR_ASSERT(calld->host != NULL);
+      GPR_ASSERT(calld->path != NULL);
       cpstr(&rc->data.batch.details->host,
             &rc->data.batch.details->host_capacity, calld->host);
       cpstr(&rc->data.batch.details->method,

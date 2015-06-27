@@ -49,10 +49,9 @@ typedef struct {
   grpc_connector base;
   gpr_refcount refs;
 
-  grpc_transport **transport;
   grpc_iomgr_closure *notify;
-  const grpc_channel_args *args;
-  grpc_mdctx *mdctx;
+  grpc_connect_in_args args;
+  grpc_connect_out_args *result;
 } connector;
 
 static void connector_ref(grpc_connector *con) {
@@ -71,10 +70,10 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   connector *c = arg;
   grpc_iomgr_closure *notify;
   if (tcp != NULL) {
-    *c->transport =
-        grpc_create_chttp2_transport(c->args, tcp, NULL, 0, c->mdctx, 1);
+    c->result->transport =
+        grpc_create_chttp2_transport(c->args.channel_args, tcp, NULL, 0, c->args.metadata_context, 1);
   } else {
-    *c->transport = NULL;
+    c->result->transport = NULL;
   }
   notify = c->notify;
   c->notify = NULL;
@@ -82,18 +81,15 @@ static void connected(void *arg, grpc_endpoint *tcp) {
 }
 
 static void connector_connect(
-    grpc_connector *con, grpc_pollset_set *pollset_set,
-    const struct sockaddr *addr, int addr_len, gpr_timespec deadline,
-    const grpc_channel_args *channel_args, grpc_mdctx *metadata_context,
-    grpc_transport **transport, grpc_iomgr_closure *notify) {
+    grpc_connector *con, const grpc_connect_in_args *args,
+    grpc_connect_out_args *result, grpc_iomgr_closure *notify) {
   connector *c = (connector *)con;
   GPR_ASSERT(c->notify == NULL);
   GPR_ASSERT(notify->cb);
   c->notify = notify;
-  c->args = channel_args;
-  c->mdctx = metadata_context;
-  c->transport = transport;
-  grpc_tcp_client_connect(connected, c, pollset_set, addr, addr_len, deadline);
+  c->args = *args;
+  c->result = result;
+  grpc_tcp_client_connect(connected, c, args->interested_parties, args->addr, args->addr_len, args->deadline);
 }
 
 static const grpc_connector_vtable connector_vtable = {connector_ref, connector_unref, connector_connect};

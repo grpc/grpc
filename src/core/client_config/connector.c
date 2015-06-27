@@ -42,10 +42,9 @@ void grpc_connector_unref(grpc_connector *connector) {
 }
 
 void grpc_connector_connect(
-    grpc_connector *connector, grpc_pollset_set *pollset_set,
-    const struct sockaddr *addr, int addr_len, gpr_timespec deadline,
-    const grpc_channel_args *channel_args, grpc_mdctx *metadata_context,
-    grpc_transport **transport, grpc_iomgr_closure *notify) {
-  connector->vtable->connect(connector, pollset_set, addr, addr_len, deadline,
-                             channel_args, metadata_context, transport, notify);
+    grpc_connector *connector, 
+    const grpc_connect_in_args *in_args,
+    grpc_connect_out_args *out_args,
+    grpc_iomgr_closure *notify) {
+  connector->vtable->connect(connector, in_args, out_args, notify);
 }
