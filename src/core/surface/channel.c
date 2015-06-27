@@ -237,8 +237,19 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
   }
 }
 
+static void default_consumed(void *arg, int iomgr_success) {
+  grpc_channel *channel = arg;
+  GRPC_CHANNEL_INTERNAL_UNREF(channel, "op");
+}
+
 static void execute_op(grpc_channel *channel, grpc_transport_op *op) {
-  abort();
+  grpc_channel_element *elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
+  if (op->on_consumed == NULL) {
+    GRPC_CHANNEL_INTERNAL_REF(channel, "op");
+    op->on_consumed = gpr_malloc(sizeof(*op->on_consumed));
+    grpc_iomgr_closure_init(op->on_consumed, default_consumed, channel);
+  }
+  elem->filter->start_transport_op(elem, op);
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
