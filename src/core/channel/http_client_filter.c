@@ -179,7 +179,6 @@ static void init_channel_elem(grpc_channel_element *elem,
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
-  GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
 
   /* initialize members */

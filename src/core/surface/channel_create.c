@@ -40,6 +40,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/http_client_filter.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/surface/channel.h"
@@ -72,8 +73,11 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   if (tcp != NULL) {
     c->result->transport =
         grpc_create_chttp2_transport(c->args.channel_args, tcp, NULL, 0, c->args.metadata_context, 1);
+    c->result->filters = gpr_malloc(sizeof(grpc_channel_filter*));
+    c->result->filters[0] = &grpc_http_client_filter;
+    c->result->num_filters = 1;
   } else {
-    c->result->transport = NULL;
+    memset(c->result, 0, sizeof(*c->result));
   }
   notify = c->notify;
   c->notify = NULL;
