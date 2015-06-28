@@ -106,13 +106,67 @@ static gpr_timespec compute_connect_deadline(grpc_subchannel *c);
 static void subchannel_connected(void *subchannel, int iomgr_success);
 
 /*
+ * connection implementation
+ */
+
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+#define CONNECTION_REF(c, r) connection_ref((c), __FILE__, __LINE__, (r))
+#define CONNECTION_UNREF(c, r) connection_unref((c), __FILE__, __LINE__, (r))
+#else
+#define CONNECTION_REF(c, r) connection_ref((c))
+#define CONNECTION_UNREF(c, r) connection_unref((c))
+#endif
+
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+static void connection_ref(connection *c, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCONN:%p   ref %d -> %d %s",
+          c, (int)c->refs.count, (int)c->refs.count + 1,
+          reason);
+#else
+static void connection_ref(connection *c) { 
+#endif
+	gpr_ref(&c->refs); 
+}
+
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+static void connection_unref(connection *c, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCONN:%p unref %d -> %d %s",
+          c, (int)c->refs.count, (int)c->refs.count - 1,
+          reason);
+#else
+static void connection_unref(connection *c) {
+#endif
+  if (gpr_unref(&c->refs)) {
+  	GRPC_SUBCHANNEL_UNREF(c->subchannel, "connection");
+    gpr_free(c);
+  }
+}
+
+/*
  * grpc_subchannel implementation
  */
 
-void grpc_subchannel_ref(grpc_subchannel *c) { gpr_ref(&c->refs); }
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+void grpc_subchannel_ref(grpc_subchannel *c, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCHAN:%p   ref %d -> %d %s",
+          c, (int)c->refs.count, (int)c->refs.count + 1,
+          reason);
+#else
+void grpc_subchannel_ref(grpc_subchannel *c) { 
+#endif
+	gpr_ref(&c->refs); 
+}
 
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+void grpc_subchannel_unref(grpc_subchannel *c, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCHAN:%p unref %d -> %d %s",
+          c, (int)c->refs.count, (int)c->refs.count - 1,
+          reason);
+#else
 void grpc_subchannel_unref(grpc_subchannel *c) {
+#endif
   if (gpr_unref(&c->refs)) {
+  	if (c->active != NULL) CONNECTION_UNREF(c->active, "subchannel");
     gpr_free(c->filters);
     grpc_channel_args_destroy(c->args);
     gpr_free(c->addr);
@@ -178,7 +232,7 @@ void grpc_subchannel_create_call(grpc_subchannel *c,
   gpr_mu_lock(&c->mu);
   if (c->active != NULL) {
     con = c->active;
-    gpr_ref(&con->refs);
+    CONNECTION_REF(con, "call");
     gpr_mu_unlock(&c->mu);
 
     *target = create_call(con, initial_op);
@@ -194,7 +248,7 @@ void grpc_subchannel_create_call(grpc_subchannel *c,
     if (!c->connecting) {
       c->connecting = 1;
       connectivity_state_changed_locked(c);
-      grpc_subchannel_ref(c);
+      GRPC_SUBCHANNEL_REF(c, "connection");
       gpr_mu_unlock(&c->mu);
 
       start_connect(c);
@@ -220,7 +274,7 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *c,
   if (grpc_connectivity_state_notify_on_state_change(&c->state_tracker, state, notify)) {
   	do_connect = 1;
     c->connecting = 1;
-    grpc_subchannel_ref(c);
+    GRPC_SUBCHANNEL_REF(c, "connection");
     grpc_connectivity_state_set(&c->state_tracker, compute_connectivity_locked(c));
   }
   gpr_mu_unlock(&c->mu);
@@ -275,7 +329,7 @@ static void subchannel_connected(void *arg, int iomgr_success) {
 	if (c->connecting_result.transport) {
 		publish_transport(c);
 	} else {
-		grpc_subchannel_unref(c);
+		GRPC_SUBCHANNEL_UNREF(c, "connection");
 		/* TODO(ctiller): retry after sleeping */
 		abort();
 	}
@@ -304,17 +358,29 @@ static void connectivity_state_changed_locked(grpc_subchannel *c) {
  * grpc_subchannel_call implementation
  */
 
-void grpc_subchannel_call_ref(grpc_subchannel_call *call) {
-  gpr_ref(&call->refs);
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+void grpc_subchannel_call_ref(grpc_subchannel_call *c, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCALL:%p   ref %d -> %d %s",
+          c, (int)c->refs.count, (int)c->refs.count + 1,
+          reason);
+#else
+void grpc_subchannel_call_ref(grpc_subchannel_call *c) { 
+#endif
+  gpr_ref(&c->refs);
 }
 
-void grpc_subchannel_call_unref(grpc_subchannel_call *call) {
-  if (gpr_unref(&call->refs)) {
-    grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(call));
-    if (gpr_unref(&call->connection->refs)) {
-      gpr_free(call->connection);
-    }
-    gpr_free(call);
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+void grpc_subchannel_call_unref(grpc_subchannel_call *c, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCALL:%p unref %d -> %d %s",
+          c, (int)c->refs.count, (int)c->refs.count - 1,
+          reason);
+#else
+void grpc_subchannel_call_unref(grpc_subchannel_call *c) {
+#endif
+  if (gpr_unref(&c->refs)) {
+    grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c));
+    CONNECTION_UNREF(c->connection, "call");
+    gpr_free(c);
   }
 }
 

@@ -37,14 +37,33 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/connector.h"
 
+#define GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+#define GRPC_SUBCHANNEL_REF(c, r) grpc_subchannel_ref((c), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_UNREF(c, r) grpc_subchannel_unref((c), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_CALL_REF(c, r) grpc_subchannel_call_ref((c), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_CALL_UNREF(c, r) grpc_subchannel_call_unref((c), __FILE__, __LINE__, (r))
+void grpc_subchannel_ref(grpc_subchannel *channel, const char *file, int line, const char *reason);
+void grpc_subchannel_unref(grpc_subchannel *channel, const char *file, int line, const char *reason);
+void grpc_subchannel_call_ref(grpc_subchannel_call *call, const char *file, int line, const char *reason);
+void grpc_subchannel_call_unref(grpc_subchannel_call *call, const char *file, int line, const char *reason);
+#else
+#define GRPC_SUBCHANNEL_REF(c, r) grpc_subchannel_ref((c))
+#define GRPC_SUBCHANNEL_UNREF(c, r) grpc_subchannel_unref((c))
+#define GRPC_SUBCHANNEL_CALL_REF(c, r) grpc_subchannel_call_ref((c))
+#define GRPC_SUBCHANNEL_CALL_UNREF(c, r) grpc_subchannel_call_unref((c))
 void grpc_subchannel_ref(grpc_subchannel *channel);
 void grpc_subchannel_unref(grpc_subchannel *channel);
+void grpc_subchannel_call_ref(grpc_subchannel_call *call);
+void grpc_subchannel_call_unref(grpc_subchannel_call *call);
+#endif
 
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
@@ -54,9 +73,6 @@ void grpc_subchannel_create_call(grpc_subchannel *subchannel,
 
 /** process a transport level op */
 void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel, grpc_transport_op *op);
-
-void grpc_subchannel_call_ref(grpc_subchannel_call *call);
-void grpc_subchannel_call_unref(grpc_subchannel_call *call);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(

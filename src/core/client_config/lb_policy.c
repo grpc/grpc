@@ -49,3 +49,7 @@ void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_iomgr_closure *on_complete) {
   policy->vtable->pick(policy, pollset, initial_metadata, target, on_complete);
 }
+
+void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op) {
+	policy->vtable->broadcast(policy, op);
+}

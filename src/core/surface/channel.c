@@ -93,9 +93,8 @@ grpc_channel *grpc_channel_create_from_filters(
   grpc_channel *channel = gpr_malloc(size);
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
-  /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if
-   * is_client */
-  gpr_ref_init(&channel->refs, 1 + is_client);
+  /* decremented by grpc_channel_destroy */
+  gpr_ref_init(&channel->refs, 1);
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_compression_level_string =
@@ -237,31 +236,8 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
   }
 }
 
-static void default_consumed(void *arg, int iomgr_success) {
-  grpc_channel *channel = arg;
-  GRPC_CHANNEL_INTERNAL_UNREF(channel, "op");
-}
-
-static void execute_op(grpc_channel *channel, grpc_transport_op *op) {
-  grpc_channel_element *elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
-  if (op->on_consumed == NULL) {
-    GRPC_CHANNEL_INTERNAL_REF(channel, "op");
-    op->on_consumed = gpr_malloc(sizeof(*op->on_consumed));
-    grpc_iomgr_closure_init(op->on_consumed, default_consumed, channel);
-  }
-  elem->filter->start_transport_op(elem, op);
-}
-
 void grpc_channel_destroy(grpc_channel *channel) {
-  grpc_transport_op op;
-  memset(&op, 0, sizeof(op));
-  op.disconnect = 1;
-  execute_op(channel, &op);
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
-}
-
-void grpc_client_channel_closed(grpc_channel_element *elem) {
-  GRPC_CHANNEL_INTERNAL_UNREF(CHANNEL_FROM_TOP_ELEM(elem), "closed");
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {

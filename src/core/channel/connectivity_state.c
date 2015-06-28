@@ -75,6 +75,9 @@ int grpc_connectivity_state_notify_on_state_change(grpc_connectivity_state_track
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker, grpc_connectivity_state state) {
   grpc_connectivity_state_watcher *new = NULL;
   grpc_connectivity_state_watcher *w;
+  if (tracker->current_state == state) {
+  	return;
+  }
   tracker->current_state = state;
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;

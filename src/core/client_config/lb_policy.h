@@ -85,4 +85,6 @@ void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_subchannel **target,
                          grpc_iomgr_closure *on_complete);
 
+void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op);
+
 #endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */
