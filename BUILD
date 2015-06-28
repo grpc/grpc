@@ -1247,8 +1247,15 @@ objc_library(
     objc_client_path + "/private/*.m",
   ]),
   includes = [objc_path],
+  bundles = [":gRPCCertificates"],
   deps = [
     ":grpc_objc",
     ":rx_library",
   ],
+)
+
+objc_bundle_library(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"],
 )

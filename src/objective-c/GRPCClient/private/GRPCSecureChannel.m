@@ -43,8 +43,12 @@
   dispatch_once(&loading, ^{
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
     NSBundle *bundle = [NSBundle bundleForClass:self.class];
-    NSString *certsPath = [bundle pathForResource:@"gRPC.bundle/roots" ofType:@"pem"];
+    NSString *certsPath = [bundle pathForResource:@"gRPCCertificates.bundle/roots" ofType:@"pem"];
+    NSAssert(certsPath.length,
+             @"gRPCCertificates.bundle/roots.pem not found under %@. This file, with the root "
+             "certificates, is needed to establish TLS (HTTPS) connections.", bundle.bundlePath);
     NSData *certsData = [NSData dataWithContentsOfFile:certsPath];
+    NSAssert(certsData.length, @"No data read from %@", certsPath);
     NSString *certsString = [[NSString alloc] initWithData:certsData encoding:NSUTF8StringEncoding];
     kCredentials = grpc_ssl_credentials_create(certsString.UTF8String, NULL);
   });
