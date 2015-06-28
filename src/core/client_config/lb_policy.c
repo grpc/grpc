@@ -33,10 +33,33 @@
 
 #include "src/core/client_config/lb_policy.h"
 
-void grpc_lb_policy_ref(grpc_lb_policy *policy) { policy->vtable->ref(policy); }
+void grpc_lb_policy_init(grpc_lb_policy *policy, const grpc_lb_policy_vtable *vtable) {
+	policy->vtable = vtable;
+	gpr_ref_init(&policy->refs, 1);
+}
 
+#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
+void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p   ref %d -> %d %s",
+          policy, (int)policy->refs.count, (int)policy->refs.count + 1,
+          reason);
+#else
+void grpc_lb_policy_ref(grpc_lb_policy *policy) { 
+#endif
+	gpr_ref(&policy->refs); 
+}
+
+#ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
+void grpc_lb_policy_unref(grpc_lb_policy *policy, const char *file, int line, const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p unref %d -> %d %s",
+          policy, (int)policy->refs.count, (int)policy->refs.count - 1,
+          reason);
+#else
 void grpc_lb_policy_unref(grpc_lb_policy *policy) {
-  policy->vtable->unref(policy);
+#endif
+	if (gpr_unref(&policy->refs)) {
+		policy->vtable->destroy(policy);
+	}
 }
 
 void grpc_lb_policy_shutdown(grpc_lb_policy *policy) {

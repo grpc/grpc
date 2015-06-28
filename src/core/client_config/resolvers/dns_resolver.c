@@ -145,6 +145,7 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   grpc_client_config *config = NULL;
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
+  grpc_lb_policy *lb_policy;
   size_t i;
   if (addresses) {
     config = grpc_client_config_create();
@@ -156,8 +157,9 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
-    grpc_client_config_set_lb_policy(
-        config, r->lb_policy_factory(subchannels, addresses->naddrs));
+    lb_policy = r->lb_policy_factory(subchannels, addresses->naddrs);
+    grpc_client_config_set_lb_policy(config, lb_policy);
+    GRPC_LB_POLICY_UNREF(lb_policy, "construction");
   }
   gpr_mu_lock(&r->mu);
   if (r->resolved_config) {
@@ -167,6 +169,8 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   r->resolved_version++;
   dns_maybe_finish_next_locked(r);
   gpr_mu_unlock(&r->mu);
+
+  dns_unref(&r->base);
 }
 
 static void dns_start_resolving_locked(dns_resolver *r) {
@@ -188,6 +192,9 @@ static void dns_maybe_finish_next_locked(dns_resolver *r) {
 
 static void dns_destroy(dns_resolver *r) {
   gpr_mu_destroy(&r->mu);
+  if (r->resolved_config) {
+    grpc_client_config_unref(r->resolved_config);
+  }
   grpc_subchannel_factory_unref(r->subchannel_factory);
   gpr_free(r->name);
   gpr_free(r->default_port);

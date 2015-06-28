@@ -297,14 +297,14 @@ static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_
         gpr_mu_lock(&chand->mu_config);
         lb_policy = chand->lb_policy;
         if (lb_policy) {
-          grpc_lb_policy_ref(lb_policy);
+          GRPC_LB_POLICY_REF(lb_policy, "pick");
           gpr_mu_unlock(&chand->mu_config);
           calld->state = CALL_WAITING_FOR_PICK;
           gpr_mu_unlock(&calld->mu_state);
 
           pick_target(lb_policy, calld);
 
-          grpc_lb_policy_unref(lb_policy);
+          GRPC_LB_POLICY_UNREF(lb_policy, "pick");
         } else {
           calld->state = CALL_WAITING_FOR_CONFIG;
           add_to_lb_policy_wait_queue_locked_state_config(elem);
@@ -332,9 +332,9 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   grpc_resolver *old_resolver;
   grpc_iomgr_closure *wakeup_closures = NULL;
 
-  if (chand->incoming_configuration) {
+  if (chand->incoming_configuration != NULL) {
     lb_policy = grpc_client_config_get_lb_policy(chand->incoming_configuration);
-    grpc_lb_policy_ref(lb_policy);
+    GRPC_LB_POLICY_REF(lb_policy, "channel");
 
     grpc_client_config_unref(chand->incoming_configuration);
   }
@@ -357,7 +357,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   }
 
   if (old_lb_policy) {
-    grpc_lb_policy_unref(old_lb_policy);
+    GRPC_LB_POLICY_UNREF(old_lb_policy, "channel");
   }
 
   if (iomgr_success) {
@@ -391,14 +391,14 @@ static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op 
   if (!is_empty(op, sizeof(*op))) {
     lb_policy = chand->lb_policy;
     if (lb_policy) {
-      grpc_lb_policy_ref(lb_policy);
+      GRPC_LB_POLICY_REF(lb_policy, "broadcast");
     }
   }
   gpr_mu_unlock(&chand->mu_config);
 
   if (lb_policy) {
     grpc_lb_policy_broadcast(lb_policy, op);
-    grpc_lb_policy_unref(lb_policy);
+    GRPC_LB_POLICY_UNREF(lb_policy, "broadcast");
   }
 
   if (on_consumed) {
@@ -436,7 +436,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
     case CALL_ACTIVE:
       subchannel_call = calld->subchannel_call;
       gpr_mu_unlock(&calld->mu_state);
-      GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call, "channel");
+      grpc_subchannel_call_unref(subchannel_call);
       break;
     case CALL_CREATED:
     case CALL_CANCELLED:
@@ -472,11 +472,11 @@ static void init_channel_elem(grpc_channel_element *elem,
 static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
 
-  if (chand->resolver) {
+  if (chand->resolver != NULL) {
     grpc_resolver_unref(chand->resolver);
   }
-  if (chand->lb_policy) {
-    grpc_lb_policy_unref(chand->lb_policy);
+  if (chand->lb_policy != NULL) {
+    GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel");
   }
   gpr_mu_destroy(&chand->mu_config);
 }
