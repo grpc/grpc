@@ -1212,24 +1212,50 @@ objc_path = "src/objective-c"
 rx_library_path = objc_path + "/RxLibrary"
 
 objc_library(
-    name = "rx_library",
-    hdrs = glob([
-        rx_library_path + "/*.h",
-        rx_library_path + "/transformations/*.h",
-    ]),
-    srcs = glob([
-        rx_library_path + "/*.m",
-        rx_library_path + "/transformations/*.m",
-    ]),
-    includes = [objc_path],
-    deps = [
-        ":rx_library_private",
-    ],
+  name = "rx_library",
+  hdrs = glob([
+    rx_library_path + "/*.h",
+    rx_library_path + "/transformations/*.h",
+  ]),
+  srcs = glob([
+    rx_library_path + "/*.m",
+    rx_library_path + "/transformations/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":rx_library_private",
+  ],
 )
 
 objc_library(
-    name = "rx_library_private",
-    hdrs = glob([rx_library_path + "/private/*.h"]),
-    srcs = glob([rx_library_path + "/private/*.m"]),
-    visibility = ["//visibility:private"],
+  name = "rx_library_private",
+  hdrs = glob([rx_library_path + "/private/*.h"]),
+  srcs = glob([rx_library_path + "/private/*.m"]),
+  visibility = ["//visibility:private"],
+)
+
+objc_client_path = objc_path + "/GRPCClient"
+
+objc_library(
+  name = "grpc_client",
+  hdrs = glob([
+    objc_client_path + "/*.h",
+    objc_client_path + "/private/*.h",
+  ]),
+  srcs = glob([
+    objc_client_path + "/*.m",
+    objc_client_path + "/private/*.m",
+  ]),
+  includes = [objc_path],
+  bundles = [":gRPCCertificates"],
+  deps = [
+    ":grpc_objc",
+    ":rx_library",
+  ],
+)
+
+objc_bundle_library(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"],
 )
