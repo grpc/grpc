@@ -932,9 +932,31 @@ objc_library(
 
 
 objc_library(
-  name = "grpc_unsecure_objc",
+  name = "grpc_objc",
   srcs = [
-    "src/core/surface/init_unsecure.c",
+    "src/core/httpcli/format_request.c",
+    "src/core/httpcli/httpcli.c",
+    "src/core/httpcli/httpcli_security_connector.c",
+    "src/core/httpcli/parser.c",
+    "src/core/security/base64.c",
+    "src/core/security/client_auth_filter.c",
+    "src/core/security/credentials.c",
+    "src/core/security/credentials_metadata.c",
+    "src/core/security/credentials_posix.c",
+    "src/core/security/credentials_win32.c",
+    "src/core/security/google_default_credentials.c",
+    "src/core/security/json_token.c",
+    "src/core/security/secure_endpoint.c",
+    "src/core/security/secure_transport_setup.c",
+    "src/core/security/security_connector.c",
+    "src/core/security/security_context.c",
+    "src/core/security/server_auth_filter.c",
+    "src/core/security/server_secure_chttp2.c",
+    "src/core/surface/init_secure.c",
+    "src/core/surface/secure_channel_create.c",
+    "src/core/tsi/fake_transport_security.c",
+    "src/core/tsi/ssl_transport_security.c",
+    "src/core/tsi/transport_security.c",
     "src/core/census/grpc_context.c",
     "src/core/channel/channel_args.c",
     "src/core/channel/channel_stack.c",
@@ -1046,12 +1068,29 @@ objc_library(
     "src/core/census/initialize.c",
   ],
   hdrs = [
+    "include/grpc/grpc_security.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
     "include/grpc/grpc.h",
     "include/grpc/status.h",
     "include/grpc/census.h",
+    "src/core/httpcli/format_request.h",
+    "src/core/httpcli/httpcli.h",
+    "src/core/httpcli/httpcli_security_connector.h",
+    "src/core/httpcli/parser.h",
+    "src/core/security/auth_filters.h",
+    "src/core/security/base64.h",
+    "src/core/security/credentials.h",
+    "src/core/security/json_token.h",
+    "src/core/security/secure_endpoint.h",
+    "src/core/security/secure_transport_setup.h",
+    "src/core/security/security_connector.h",
+    "src/core/security/security_context.h",
+    "src/core/tsi/fake_transport_security.h",
+    "src/core/tsi/ssl_transport_security.h",
+    "src/core/tsi/transport_security.h",
+    "src/core/tsi/transport_security_interface.h",
     "src/core/census/grpc_context.h",
     "src/core/channel/census_filter.h",
     "src/core/channel/channel_args.h",
@@ -1155,6 +1194,7 @@ objc_library(
   ],
   deps = [
     ":gpr_objc",
+    "//external:libssl_objc",
   ],
   sdk_dylibs = ["libz"],
 )
@@ -1232,24 +1272,50 @@ objc_path = "src/objective-c"
 rx_library_path = objc_path + "/RxLibrary"
 
 objc_library(
-    name = "rx_library",
-    hdrs = glob([
-        rx_library_path + "/*.h",
-        rx_library_path + "/transformations/*.h",
-    ]),
-    srcs = glob([
-        rx_library_path + "/*.m",
-        rx_library_path + "/transformations/*.m",
-    ]),
-    includes = [objc_path],
-    deps = [
-        ":rx_library_private",
-    ],
+  name = "rx_library",
+  hdrs = glob([
+    rx_library_path + "/*.h",
+    rx_library_path + "/transformations/*.h",
+  ]),
+  srcs = glob([
+    rx_library_path + "/*.m",
+    rx_library_path + "/transformations/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":rx_library_private",
+  ],
 )
 
 objc_library(
-    name = "rx_library_private",
-    hdrs = glob([rx_library_path + "/private/*.h"]),
-    srcs = glob([rx_library_path + "/private/*.m"]),
-    visibility = ["//visibility:private"],
+  name = "rx_library_private",
+  hdrs = glob([rx_library_path + "/private/*.h"]),
+  srcs = glob([rx_library_path + "/private/*.m"]),
+  visibility = ["//visibility:private"],
+)
+
+objc_client_path = objc_path + "/GRPCClient"
+
+objc_library(
+  name = "grpc_client",
+  hdrs = glob([
+    objc_client_path + "/*.h",
+    objc_client_path + "/private/*.h",
+  ]),
+  srcs = glob([
+    objc_client_path + "/*.m",
+    objc_client_path + "/private/*.m",
+  ]),
+  includes = [objc_path],
+  bundles = [":gRPCCertificates"],
+  deps = [
+    ":grpc_objc",
+    ":rx_library",
+  ],
+)
+
+objc_bundle_library(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"],
 )
