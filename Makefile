@@ -461,7 +461,26 @@ LDFLAGS += $(shell pkg-config --libs-only-L zlib)
 endif
 endif
 
-ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
+OPENSSL_PKG_CONFIG = false
+
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+ifeq ($(HAS_PKG_CONFIG),true)
+OPENSSL_PKG_CONFIG = true
+CPPFLAGS := $(shell pkg-config --cflags openssl) $(CPPFLAGS)
+LDFLAGS_OPENSSL_PKG_CONFIG = $(shell pkg-config --libs-only-L openssl)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
+LDFLAGS_OPENSSL_PKG_CONFIG += $(shell pkg-config --libs-only-L openssl | sed s/L/Wl,-rpath,/)
+endif
+endif
+LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
+else
+LIBS_SECURE = $(OPENSSL_LIBS)
+ifeq ($(OPENSSL_REQUIRES_DL),true)
+LIBS_SECURE += dl
+endif
+endif
+else
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
@@ -474,25 +493,28 @@ endif
 else
 NO_SECURE = true
 endif
-else
-ifeq ($(HAS_PKG_CONFIG),true)
-CPPFLAGS += $(shell pkg-config --cflags openssl)
-LDFLAGS += $(shell pkg-config --libs-only-L openssl)
-else
-LIBS_SECURE = $(OPENSSL_LIBS)
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE += dl
-endif
-endif
 endif
 
-ifeq ($(HAS_PKG_CONFIG),true)
+ifeq ($(OPENSSL_PKG_CONFIG),true)
 LDLIBS_SECURE += $(shell pkg-config --libs-only-l openssl)
 else
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 endif
 
-ifeq ($(HAS_SYSTEM_PROTOBUF),false)
+PROTOBUF_PKG_CONFIG = false
+
+ifeq ($(HAS_SYSTEM_PROTOBUF),true)
+ifeq ($(HAS_PKG_CONFIG),true)
+PROTOBUF_PKG_CONFIG = true
+CPPFLAGS := $(shell pkg-config --cflags protobuf) $(CPPFLAGS)
+LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell pkg-config --libs-only-L protobuf)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
+LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell pkg-config --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
+endif
+endif
+endif
+else
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
@@ -501,11 +523,6 @@ PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
 endif
-else
-ifeq ($(HAS_PKG_CONFIG),true)
-CPPFLAGS += $(shell pkg-config --cflags protobuf)
-LDFLAGS += $(shell pkg-config --libs-only-L protobuf)
-endif
 endif
 
 LIBS_PROTOBUF = protobuf
@@ -513,7 +530,7 @@ LIBS_PROTOC = protoc protobuf
 
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
-ifeq ($(HAS_PKG_CONFIG),true)
+ifeq ($(PROTOBUF_PKG_CONFIG),true)
 LDLIBS_PROTOBUF += $(shell pkg-config --libs-only-l protobuf)
 else
 LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
