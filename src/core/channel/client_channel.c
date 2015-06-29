@@ -402,7 +402,6 @@ static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op 
     grpc_connectivity_state_set(&chand->state_tracker, GRPC_CHANNEL_FATAL_FAILURE);
     destroy_resolver = chand->resolver;
     chand->resolver = NULL;
-    op->disconnect = 0;
   }
 
   if (!is_empty(op, sizeof(*op))) {
