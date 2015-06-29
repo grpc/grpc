@@ -36,7 +36,25 @@
 #ifndef CENSUS_GRPC_CONTEXT_H
 #define CENSUS_GRPC_CONTEXT_H
 
+#include <grpc/census.h>
+#include "src/core/surface/call.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void *grpc_census_context_create();
 void grpc_census_context_destroy(void *context);
+
+/* Set census context for the call; Must be called before first call to
+   grpc_call_start_batch(). */
+void grpc_census_call_set_context(grpc_call *call, census_context *context);
+
+/* Retrieve the calls current census context. */
+census_context *grpc_census_call_get_context(grpc_call *call);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CENSUS_GRPC_CONTEXT_H */
