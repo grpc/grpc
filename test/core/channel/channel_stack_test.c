@@ -39,7 +39,7 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-static void channel_init_func(grpc_channel_element *elem,
+static void channel_init_func(grpc_channel_element *elem,grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
@@ -98,7 +98,7 @@ static void test_create_channel_stack(void) {
   chan_args.args = &arg;
 
   channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
-  grpc_channel_stack_init(&filters, 1, &chan_args, metadata_context,
+  grpc_channel_stack_init(&filters, 1, NULL, &chan_args, metadata_context,
                           channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);

@@ -78,6 +78,8 @@ struct grpc_subchannel {
   size_t addr_len;
   /** metadata context */
   grpc_mdctx *mdctx;
+  /** master channel */
+  grpc_channel *master;
 
   /** set during connection */
   grpc_connect_out_args connecting_result;
@@ -217,6 +219,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   c->addr_len = args->addr_len;
   c->args = grpc_channel_args_copy(args->args);
   c->mdctx = args->mdctx;
+  c->master = args->master;
   grpc_mdctx_ref(c->mdctx);
   grpc_pollset_set_init(&c->pollset_set);
   grpc_iomgr_closure_init(&c->connected, subchannel_connected, c);
@@ -267,6 +270,7 @@ void grpc_subchannel_create_call(grpc_subchannel *c,
     w4c->initial_op = *initial_op;
     w4c->target = target;
     w4c->subchannel = c;
+    /* released when clearing w4c */
     subchannel_ref_locked(c);
     grpc_iomgr_closure_init(&w4c->continuation, continue_creating_call, w4c);
     c->waiting = w4c;
@@ -274,6 +278,7 @@ void grpc_subchannel_create_call(grpc_subchannel *c,
     if (!c->connecting) {
       c->connecting = 1;
       connectivity_state_changed_locked(c);
+      /* released by connection */
       subchannel_ref_locked(c);
       gpr_mu_unlock(&c->mu);
 
@@ -301,6 +306,7 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *c,
                                                      notify)) {
     do_connect = 1;
     c->connecting = 1;
+    /* released by connection */
     subchannel_ref_locked(c);
     grpc_connectivity_state_set(&c->state_tracker,
                                 compute_connectivity_locked(c));
@@ -313,7 +319,8 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *c,
 
 void grpc_subchannel_process_transport_op(grpc_subchannel *c,
                                           grpc_transport_op *op) {
-  abort(); /* not implemented */
+  gpr_log(GPR_ERROR, "grpc_subchannel_process_transport_op not implemented");
+  abort();
 }
 
 static void on_state_changed(void *p, int iomgr_success) {
@@ -357,6 +364,7 @@ static void on_state_changed(void *p, int iomgr_success) {
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       /* things are starting to go wrong, reconnect but don't deactivate */
+      /* released by connection */
       subchannel_ref_locked(c);
       do_connect = 1;
       c->connecting = 1;
@@ -406,8 +414,9 @@ static void publish_transport(grpc_subchannel *c) {
   stk = (grpc_channel_stack *)(con + 1);
   con->refs = 0;
   con->subchannel = c;
-  grpc_channel_stack_init(filters, num_filters, c->args, c->mdctx, stk);
+  grpc_channel_stack_init(filters, num_filters, c->master, c->args, c->mdctx, stk);
   grpc_connected_channel_bind_transport(stk, c->connecting_result.transport);
+  gpr_free(c->connecting_result.filters);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */

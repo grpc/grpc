@@ -709,7 +709,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
   server_unref(chand->server);
 }
 
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {

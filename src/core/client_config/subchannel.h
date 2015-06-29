@@ -90,6 +90,8 @@ struct grpc_subchannel_args {
   size_t addr_len;
   /** metadata context to use */
   grpc_mdctx *mdctx;
+  /** master channel */
+  grpc_channel *master;
 };
 
 /** create a subchannel given a connector */

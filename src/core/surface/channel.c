@@ -109,8 +109,6 @@ grpc_channel *grpc_channel_create_from_filters(
   }
   channel->path_string = grpc_mdstr_from_string(mdctx, ":path");
   channel->authority_string = grpc_mdstr_from_string(mdctx, ":authority");
-  grpc_channel_stack_init(filters, num_filters, args, channel->metadata_context,
-                          CHANNEL_STACK_FROM_CHANNEL(channel));
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
@@ -130,6 +128,9 @@ grpc_channel *grpc_channel_create_from_filters(
       }
     }
   }
+
+  grpc_channel_stack_init(filters, num_filters, channel, args, channel->metadata_context,
+                          CHANNEL_STACK_FROM_CHANNEL(channel));
 
   return channel;
 }
@@ -237,6 +238,13 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
+  grpc_transport_op op;
+  grpc_channel_element *elem;
+  memset(&op, 0, sizeof(op));
+  op.disconnect = 1;
+  elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
+  elem->filter->start_transport_op(elem, &op);
+
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }
 

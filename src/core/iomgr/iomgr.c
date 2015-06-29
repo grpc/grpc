@@ -201,10 +201,21 @@ void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
   closure->next = NULL;
 }
 
+static void assert_not_scheduled_locked(grpc_iomgr_closure *closure) {
+#ifndef NDEBUG
+  grpc_iomgr_closure *c;
+
+  for (c = g_cbs_head; c; c = c->next) {
+    GPR_ASSERT(c != closure);
+  }
+#endif
+}
+
 void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
   closure->success = success;
   GPR_ASSERT(closure->cb);
   gpr_mu_lock(&g_mu);
+  assert_not_scheduled_locked(closure);
   closure->next = NULL;
   if (!g_cbs_tail) {
     g_cbs_head = g_cbs_tail = closure;

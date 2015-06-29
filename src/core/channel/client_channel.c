@@ -38,6 +38,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
+#include "src/core/surface/channel.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/pollset_set.h"
 #include "src/core/support/string.h"
@@ -56,6 +57,8 @@ typedef struct {
   grpc_mdctx *mdctx;
   /** resolver for this channel */
   grpc_resolver *resolver;
+  /** master channel */
+  grpc_channel *master;
 
   /** mutex protecting client configuration, resolution state */
   gpr_mu mu_config;
@@ -321,10 +324,6 @@ static void cc_start_transport_stream_op(grpc_call_element *elem,
   perform_transport_stream_op(elem, op, 0);
 }
 
-static void update_state_locked(channel_data *chand) {
-  gpr_log(GPR_ERROR, "update_state_locked not implemented");
-}
-
 static void cc_on_config_changed(void *arg, int iomgr_success) {
   channel_data *chand = arg;
   grpc_lb_policy *lb_policy = NULL;
@@ -350,31 +349,42 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   }
   gpr_mu_unlock(&chand->mu_config);
 
+  if (old_lb_policy) {
+    GRPC_LB_POLICY_UNREF(old_lb_policy, "channel");
+  }
+
+  gpr_mu_lock(&chand->mu_config);
+  if (iomgr_success && chand->resolver) {
+    grpc_resolver *resolver = chand->resolver;
+    GRPC_RESOLVER_REF(resolver, "channel-next");
+    gpr_mu_unlock(&chand->mu_config);
+    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+    grpc_resolver_next(chand->resolver, &chand->incoming_configuration, &chand->on_config_changed);
+    GRPC_RESOLVER_UNREF(resolver, "channel-next");
+  } else {
+    old_resolver = chand->resolver;
+    chand->resolver = NULL;
+    grpc_connectivity_state_set(&chand->state_tracker, GRPC_CHANNEL_FATAL_FAILURE);
+    gpr_mu_unlock(&chand->mu_config);
+    if (old_resolver != NULL) {
+      grpc_resolver_shutdown(old_resolver);
+      GRPC_RESOLVER_UNREF(old_resolver, "channel");
+    }
+  }
+
   while (wakeup_closures) {
     grpc_iomgr_closure *next = wakeup_closures->next;
     grpc_iomgr_add_callback(wakeup_closures);
     wakeup_closures = next;
   }
 
-  if (old_lb_policy) {
-    GRPC_LB_POLICY_UNREF(old_lb_policy, "channel");
-  }
-
-  if (iomgr_success) {
-    grpc_resolver_next(chand->resolver, &chand->incoming_configuration, &chand->on_config_changed);
-  } else {
-    gpr_mu_lock(&chand->mu_config);
-    old_resolver = chand->resolver;
-    chand->resolver = NULL;
-    update_state_locked(chand);
-    gpr_mu_unlock(&chand->mu_config);
-    grpc_resolver_unref(old_resolver);
-  }
+  GRPC_CHANNEL_INTERNAL_UNREF(chand->master, "resolver");
 }
 
 static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op *op) {
   grpc_lb_policy *lb_policy = NULL;
   channel_data *chand = elem->channel_data;
+  grpc_resolver *destroy_resolver = NULL;
   grpc_iomgr_closure *on_consumed = op->on_consumed;
   op->on_consumed = NULL;
 
@@ -388,6 +398,13 @@ static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op 
     op->connectivity_state = NULL;
   }
 
+  if (op->disconnect && chand->resolver != NULL) {
+    grpc_connectivity_state_set(&chand->state_tracker, GRPC_CHANNEL_FATAL_FAILURE);
+    destroy_resolver = chand->resolver;
+    chand->resolver = NULL;
+    op->disconnect = 0;
+  }
+
   if (!is_empty(op, sizeof(*op))) {
     lb_policy = chand->lb_policy;
     if (lb_policy) {
@@ -395,6 +412,11 @@ static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op 
     }
   }
   gpr_mu_unlock(&chand->mu_config);
+
+  if (destroy_resolver) {
+    grpc_resolver_shutdown(destroy_resolver);
+    GRPC_RESOLVER_UNREF(destroy_resolver, "channel");
+  }
 
   if (lb_policy) {
     grpc_lb_policy_broadcast(lb_policy, op);
@@ -432,6 +454,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
      remove it from the in-flight requests tracked by the child_entry we
      picked */
   gpr_mu_lock(&calld->mu_state);
+  gpr_log(GPR_DEBUG, "call_elem destroy @ state %d", calld->state);
   switch (calld->state) {
     case CALL_ACTIVE:
       subchannel_call = calld->subchannel_call;
@@ -452,7 +475,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
@@ -465,7 +488,10 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   gpr_mu_init(&chand->mu_config);
   chand->mdctx = metadata_context;
+  chand->master = master;
   grpc_iomgr_closure_init(&chand->on_config_changed, cc_on_config_changed, chand);
+
+  grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE);
 }
 
 /* Destructor for channel_data */
@@ -473,7 +499,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
 
   if (chand->resolver != NULL) {
-    grpc_resolver_unref(chand->resolver);
+    grpc_resolver_shutdown(chand->resolver);
+    GRPC_RESOLVER_UNREF(chand->resolver, "channel");
   }
   if (chand->lb_policy != NULL) {
     GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel");
@@ -494,6 +521,7 @@ void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(!chand->resolver);
   chand->resolver = resolver;
-  grpc_resolver_ref(resolver);
+  GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+  GRPC_RESOLVER_REF(resolver, "channel");
   grpc_resolver_next(resolver, &chand->incoming_configuration, &chand->on_config_changed);
 }

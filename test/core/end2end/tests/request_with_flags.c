@@ -105,7 +105,7 @@ static void test_invoke_request_with_flags(
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10);
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_request_with_flags", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -155,6 +155,11 @@ static void test_invoke_request_with_flags(
   op++;
   expectation = call_start_batch_expected_result;
   GPR_ASSERT(expectation == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+
+  if (expectation == GRPC_CALL_OK) {
+    cq_expect_completion(cqv, tag(1), 1);
+    cq_verify(cqv);
+  }
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

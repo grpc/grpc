@@ -33,15 +33,18 @@
 
 #include "src/core/transport/connectivity_state.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state) {
   tracker->current_state = init_state;
   tracker->watchers = NULL;
+  /*gpr_log(GPR_DEBUG, "CS:%p:init:%d", tracker, init_state);*/
 }
 
 void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker) {
   grpc_connectivity_state_watcher *w;
+  /*gpr_log(GPR_DEBUG, "CS:%p:destroy", tracker);*/
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
@@ -80,6 +83,7 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state) {
   grpc_connectivity_state_watcher *new = NULL;
   grpc_connectivity_state_watcher *w;
+  /*gpr_log(GPR_DEBUG, "CS:%p:set:%d", tracker, state);*/
   if (tracker->current_state == state) {
     return;
   }

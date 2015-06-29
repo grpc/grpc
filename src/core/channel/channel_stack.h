@@ -97,6 +97,7 @@ typedef struct {
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining */
   void (*init_channel_elem)(grpc_channel_element *elem,
+    grpc_channel *master,
                             const grpc_channel_args *args,
                             grpc_mdctx *metadata_context, int is_first,
                             int is_last);
@@ -151,7 +152,7 @@ size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
 void grpc_channel_stack_init(const grpc_channel_filter **filters,
-                             size_t filter_count, const grpc_channel_args *args,
+                             size_t filter_count, grpc_channel *master,const grpc_channel_args *args,
                              grpc_mdctx *metadata_context,
                              grpc_channel_stack *stack);
 /* Destroy a channel stack */

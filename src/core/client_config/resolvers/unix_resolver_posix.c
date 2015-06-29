@@ -71,12 +71,10 @@ typedef struct {
   grpc_client_config **target_config;
 } unix_resolver;
 
-static void unix_destroy(unix_resolver *r);
+static void unix_destroy(grpc_resolver *r);
 
 static void unix_maybe_finish_next_locked(unix_resolver *r);
 
-static void unix_ref(grpc_resolver *r);
-static void unix_unref(grpc_resolver *r);
 static void unix_shutdown(grpc_resolver *r);
 static void unix_channel_saw_error(grpc_resolver *r,
                                    struct sockaddr *failing_address,
@@ -85,19 +83,7 @@ static void unix_next(grpc_resolver *r, grpc_client_config **target_config,
                       grpc_iomgr_closure *on_complete);
 
 static const grpc_resolver_vtable unix_resolver_vtable = {
-    unix_ref, unix_unref, unix_shutdown, unix_channel_saw_error, unix_next};
-
-static void unix_ref(grpc_resolver *resolver) {
-  unix_resolver *r = (unix_resolver *)resolver;
-  gpr_ref(&r->refs);
-}
-
-static void unix_unref(grpc_resolver *resolver) {
-  unix_resolver *r = (unix_resolver *)resolver;
-  if (gpr_unref(&r->refs)) {
-    unix_destroy(r);
-  }
-}
+    unix_destroy, unix_shutdown, unix_channel_saw_error, unix_next};
 
 static void unix_shutdown(grpc_resolver *resolver) {
   unix_resolver *r = (unix_resolver *)resolver;
@@ -149,7 +135,8 @@ static void unix_maybe_finish_next_locked(unix_resolver *r) {
   }
 }
 
-static void unix_destroy(unix_resolver *r) {
+static void unix_destroy(grpc_resolver *gr) {
+  unix_resolver *r = (unix_resolver*)gr;
   gpr_mu_destroy(&r->mu);
   grpc_subchannel_factory_unref(r->subchannel_factory);
   gpr_free(r);
@@ -171,7 +158,7 @@ static grpc_resolver *unix_create(
   memset(r, 0, sizeof(*r));
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
-  r->base.vtable = &unix_resolver_vtable;
+  grpc_resolver_init(&r->base, &unix_resolver_vtable);
   r->subchannel_factory = subchannel_factory;
   r->lb_policy_factory = lb_policy_factory;
 

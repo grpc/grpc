@@ -102,7 +102,7 @@ grpc_call_element *grpc_call_stack_element(grpc_call_stack *call_stack,
 }
 
 void grpc_channel_stack_init(const grpc_channel_filter **filters,
-                             size_t filter_count, const grpc_channel_args *args,
+                             size_t filter_count, grpc_channel *master, const grpc_channel_args *args,
                              grpc_mdctx *metadata_context,
                              grpc_channel_stack *stack) {
   size_t call_size =
@@ -122,7 +122,7 @@ void grpc_channel_stack_init(const grpc_channel_filter **filters,
   for (i = 0; i < filter_count; i++) {
     elems[i].filter = filters[i];
     elems[i].channel_data = user_data;
-    elems[i].filter->init_channel_elem(&elems[i], args, metadata_context,
+    elems[i].filter->init_channel_elem(&elems[i], master, args, metadata_context,
                                        i == 0, i == (filter_count - 1));
     user_data += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_channel_data);
     call_size += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);

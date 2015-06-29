@@ -155,6 +155,7 @@ grpc_channel *grpc_channel_create(const char *target,
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;
   gpr_ref_init(&f->refs, 1);
+  grpc_mdctx_ref(mdctx);
   f->mdctx = mdctx;
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
@@ -163,7 +164,8 @@ grpc_channel *grpc_channel_create(const char *target,
 
   channel = grpc_channel_create_from_filters(filters, n, args, mdctx, 1);
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel), resolver);
-  grpc_resolver_unref(resolver);
+  GRPC_RESOLVER_UNREF(resolver, "create");
+  grpc_subchannel_factory_unref(&f->base);
 
   return channel;
 }
