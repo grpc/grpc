@@ -55,7 +55,8 @@ void grpc_subchannel_create_call(grpc_subchannel *subchannel,
                                  grpc_iomgr_closure *notify);
 
 /** process a transport level op */
-void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel, grpc_transport_op *op);
+void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel,
+                                          grpc_transport_op *op);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
@@ -67,8 +68,10 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
                                             grpc_iomgr_closure *notify);
 
-void grpc_subchannel_add_interested_party(grpc_subchannel *channel, grpc_pollset *pollset);
-void grpc_subchannel_del_interested_party(grpc_subchannel *channel, grpc_pollset *pollset);
+void grpc_subchannel_add_interested_party(grpc_subchannel *channel,
+                                          grpc_pollset *pollset);
+void grpc_subchannel_del_interested_party(grpc_subchannel *channel,
+                                          grpc_pollset *pollset);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,

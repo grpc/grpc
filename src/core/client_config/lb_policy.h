@@ -67,14 +67,20 @@ struct grpc_lb_policy_vtable {
 
   /** call notify when the connectivity state of a channel changes from *state.
       Updates *state with the new state of the policy */
-  void (*notify_on_state_change)(grpc_lb_policy *policy, grpc_connectivity_state *state, grpc_iomgr_closure *closure);
+  void (*notify_on_state_change)(grpc_lb_policy *policy,
+                                 grpc_connectivity_state *state,
+                                 grpc_iomgr_closure *closure);
 };
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-#define GRPC_LB_POLICY_REF(p, r) grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_LB_POLICY_UNREF(p, r) grpc_lb_policy_unref((p), __FILE__, __LINE__, (r))
-void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line, const char *reason);
-void grpc_lb_policy_unref(grpc_lb_policy *policy, const char *file, int line, const char *reason);
+#define GRPC_LB_POLICY_REF(p, r) \
+  grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_LB_POLICY_UNREF(p, r) \
+  grpc_lb_policy_unref((p), __FILE__, __LINE__, (r))
+void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line,
+                        const char *reason);
+void grpc_lb_policy_unref(grpc_lb_policy *policy, const char *file, int line,
+                          const char *reason);
 #else
 #define GRPC_LB_POLICY_REF(p, r) grpc_lb_policy_ref((p))
 #define GRPC_LB_POLICY_UNREF(p, r) grpc_lb_policy_unref((p))
@@ -83,7 +89,8 @@ void grpc_lb_policy_unref(grpc_lb_policy *policy);
 #endif
 
 /** called by concrete implementations to initialize the base struct */
-void grpc_lb_policy_init(grpc_lb_policy *policy, const grpc_lb_policy_vtable *vtable);
+void grpc_lb_policy_init(grpc_lb_policy *policy,
+                         const grpc_lb_policy_vtable *vtable);
 
 /** Start shutting down (fail any pending picks) */
 void grpc_lb_policy_shutdown(grpc_lb_policy *policy);

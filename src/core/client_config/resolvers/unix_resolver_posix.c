@@ -79,10 +79,10 @@ static void unix_ref(grpc_resolver *r);
 static void unix_unref(grpc_resolver *r);
 static void unix_shutdown(grpc_resolver *r);
 static void unix_channel_saw_error(grpc_resolver *r,
-                                  struct sockaddr *failing_address,
-                                  int failing_address_len);
+                                   struct sockaddr *failing_address,
+                                   int failing_address_len);
 static void unix_next(grpc_resolver *r, grpc_client_config **target_config,
-                     grpc_iomgr_closure *on_complete);
+                      grpc_iomgr_closure *on_complete);
 
 static const grpc_resolver_vtable unix_resolver_vtable = {
     unix_ref, unix_unref, unix_shutdown, unix_channel_saw_error, unix_next};
@@ -112,12 +112,11 @@ static void unix_shutdown(grpc_resolver *resolver) {
 }
 
 static void unix_channel_saw_error(grpc_resolver *resolver, struct sockaddr *sa,
-                                  int len) {
-}
+                                   int len) {}
 
 static void unix_next(grpc_resolver *resolver,
-                     grpc_client_config **target_config,
-                     grpc_iomgr_closure *on_complete) {
+                      grpc_client_config **target_config,
+                      grpc_iomgr_closure *on_complete) {
   unix_resolver *r = (unix_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
@@ -136,9 +135,10 @@ static void unix_maybe_finish_next_locked(unix_resolver *r) {
   if (r->next_completion != NULL && !r->published) {
     cfg = grpc_client_config_create();
     memset(&args, 0, sizeof(args));
-    args.addr = (struct sockaddr *) &r->addr;
+    args.addr = (struct sockaddr *)&r->addr;
     args.addr_len = r->addr_len;
-    subchannel = grpc_subchannel_factory_create_subchannel(r->subchannel_factory, &args);
+    subchannel =
+        grpc_subchannel_factory_create_subchannel(r->subchannel_factory, &args);
     lb_policy = r->lb_policy_factory(&subchannel, 1);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "unix");
@@ -194,8 +194,7 @@ static void unix_factory_unref(grpc_resolver_factory *factory) {}
 static grpc_resolver *unix_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
-  return unix_create(uri, grpc_create_pick_first_lb_policy,
-                    subchannel_factory);
+  return unix_create(uri, grpc_create_pick_first_lb_policy, subchannel_factory);
 }
 
 static const grpc_resolver_factory_vtable unix_factory_vtable = {
