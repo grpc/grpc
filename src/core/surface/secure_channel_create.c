@@ -81,14 +81,18 @@ static void on_secure_transport_setup_done(void *arg,
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
-    notify = c->notify;
-    c->notify = NULL;
-    grpc_iomgr_add_callback(notify);
   } else {
     c->result->transport = grpc_create_chttp2_transport(
         c->args.channel_args, secure_endpoint,
         NULL, 0, c->args.metadata_context, 1);
+    c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);
+    c->result->filters[0] = &grpc_client_auth_filter;
+    c->result->filters[1] = &grpc_http_client_filter;
+    c->result->num_filters = 2;
   }
+  notify = c->notify;
+  c->notify = NULL;
+  grpc_iomgr_add_callback(notify);
 }
 
 static void connected(void *arg, grpc_endpoint *tcp) {
@@ -123,6 +127,7 @@ typedef struct {
   grpc_subchannel_factory base;
   gpr_refcount refs;
   grpc_mdctx *mdctx;
+  grpc_channel_args *merge_args;
   grpc_channel_security_connector *security_connector;
 } subchannel_factory;
 
@@ -142,14 +147,18 @@ static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
 static grpc_subchannel *subchannel_factory_create_subchannel(grpc_subchannel_factory *scf, grpc_subchannel_args *args) {
   subchannel_factory *f = (subchannel_factory *)scf;
   connector *c = gpr_malloc(sizeof(*c));
+  grpc_channel_args *final_args =
+      grpc_channel_args_merge(args->args, f->merge_args);
   grpc_subchannel *s;
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
+  args->args = final_args;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(&c->base);
+  grpc_channel_args_destroy(final_args);
   return s;
 }
 
@@ -334,7 +343,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   connector_arg = grpc_security_connector_to_arg(&connector->base);
   args_copy = grpc_channel_args_copy_and_add(
       new_args_from_connector != NULL ? new_args_from_connector : args,
-      &connector_arg);
+      &connector_arg, 1);
   /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
@@ -347,6 +356,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   gpr_ref_init(&f->refs, 1);
   f->mdctx = mdctx;
   f->security_connector = connector;
+  f->merge_args = grpc_channel_args_copy(args_copy);
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
     return NULL;

@@ -102,6 +102,7 @@ typedef struct {
   grpc_subchannel_factory base;
   gpr_refcount refs;
   grpc_mdctx *mdctx;
+  grpc_channel_args *merge_args;
 } subchannel_factory;
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
@@ -120,13 +121,17 @@ static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
 static grpc_subchannel *subchannel_factory_create_subchannel(grpc_subchannel_factory *scf, grpc_subchannel_args *args) {
   subchannel_factory *f = (subchannel_factory *)scf;
   connector *c = gpr_malloc(sizeof(*c));
+  grpc_channel_args *final_args =
+      grpc_channel_args_merge(args->args, f->merge_args);
   grpc_subchannel *s;
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
+  args->args = final_args;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(&c->base);
+  grpc_channel_args_destroy(final_args);
   return s;
 }
 
@@ -157,6 +162,7 @@ grpc_channel *grpc_channel_create(const char *target,
   gpr_ref_init(&f->refs, 1);
   grpc_mdctx_ref(mdctx);
   f->mdctx = mdctx;
+  f->merge_args = grpc_channel_args_copy(args);
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
     return NULL;

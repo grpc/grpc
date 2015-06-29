@@ -43,8 +43,10 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src);
 /** Copy some arguments and add the to_add parameter in the end.
    If to_add is NULL, it is equivalent to call grpc_channel_args_copy. */
 grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
-                                                  const grpc_arg *to_add);
+                                                  const grpc_arg *to_add,
+                                                  size_t num_to_add);
 
+/** Copy args from a then args from b into a new channel args */
 grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a, const grpc_channel_args *b);
 
 /** Destroy arguments created by grpc_channel_args_copy */
