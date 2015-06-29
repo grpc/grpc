@@ -84,6 +84,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "fd_conservation_posix_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "fd_posix_test", 
     "platforms": [
       "posix"

@@ -208,6 +208,7 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   gpr_mu_lock(&fd->watcher_mu);
   if (!has_watchers(fd)) {
+    close(fd->fd);
     if (fd->on_done_closure) {
       grpc_iomgr_add_callback(fd->on_done_closure);
     }
@@ -423,8 +424,11 @@ void grpc_fd_end_poll(grpc_fd_watcher *watcher, int got_read, int got_write) {
   if (kick) {
     maybe_wake_one_watcher_locked(fd);
   }
-  if (fd->on_done_closure != NULL && !has_watchers(fd)) {
-    grpc_iomgr_add_callback(fd->on_done_closure);
+  if (grpc_fd_is_orphaned(fd) && !has_watchers(fd)) {
+    close(fd->fd);
+    if (fd->on_done_closure != NULL) {
+      grpc_iomgr_add_callback(fd->on_done_closure);
+    }
   }
   gpr_mu_unlock(&fd->watcher_mu);
 

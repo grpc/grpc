@@ -912,6 +912,23 @@
       ]
     },
     {
+      "name": "fd_conservation_posix_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/iomgr/fd_conservation_posix_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "platforms": [
+        "posix"
+      ]
+    },
+    {
       "name": "fd_posix_test",
       "build": "test",
       "language": "c",

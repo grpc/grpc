@@ -136,6 +136,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "fd_conservation_posix_test", 
+    "src": [
+      "test/core/iomgr/fd_conservation_posix_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "fd_posix_test", 
     "src": [
       "test/core/iomgr/fd_posix_test.c"
