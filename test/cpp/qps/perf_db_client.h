@@ -52,17 +52,17 @@ namespace testing {
 class PerfDbClient {
  public:
   PerfDbClient() {
-    QPS_ = DBL_MIN;
-    QPSPerCore_ = DBL_MIN;
-    percentileLatency50_ = DBL_MIN;
-    percentileLatency90_ = DBL_MIN;
-    percentileLatency95_ = DBL_MIN;
-    percentileLatency99_ = DBL_MIN;
-    percentileLatency99Point9_ = DBL_MIN;
-    serverSystemTime_ = DBL_MIN;
-    serverUserTime_ = DBL_MIN;
-    clientSystemTime_ = DBL_MIN;
-    clientUserTime_ = DBL_MIN;
+    qps_ = DBL_MIN;
+    qps_per_core_ = DBL_MIN;
+    perc_lat_50_ = DBL_MIN;
+    perc_lat_90_ = DBL_MIN;
+    perc_lat_95_ = DBL_MIN;
+    perc_lat_99_ = DBL_MIN;
+    perc_lat_99_point_9_ = DBL_MIN;
+    server_system_time_ = DBL_MIN;
+    server_user_time_ = DBL_MIN;
+    client_system_time_ = DBL_MIN;
+    client_user_time_ = DBL_MIN;
   }
 
   void init(std::shared_ptr<ChannelInterface> channel) {
@@ -72,23 +72,23 @@ class PerfDbClient {
   ~PerfDbClient() {}
 
   // sets the client and server config information
-  void setConfigs(const ClientConfig& clientConfig,
-                  const ServerConfig& serverConfig);
+  void setConfigs(const ClientConfig& client_config,
+                  const ServerConfig& server_config);
 
-  // sets the QPS
-  void setQPS(double QPS);
+  // sets the qps
+  void setQps(double qps);
 
-  // sets the QPS per core
-  void setQPSPerCore(double QPSPerCore);
+  // sets the qps per core
+  void setQpsPerCore(double qps_per_core);
 
   // sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
-  void setLatencies(double percentileLatency50, double percentileLatency90,
-                    double percentileLatency95, double percentileLatency99,
-                    double percentileLatency99Point9);
+  void setLatencies(double perc_lat_50, double perc_lat_90,
+                    double perc_lat_95, double perc_lat_99,
+                    double perc_lat_99_point_9);
 
   // sets the server and client, user and system times
-  void setTimes(double serverSystemTime, double serverUserTime,
-                double clientSystemTime, double clientUserTime);
+  void setTimes(double server_system_time, double server_user_time,
+                double client_system_time, double client_user_time);
 
   // sends the data to the performance database server
   bool sendData(std::string access_token, std::string test_name,
@@ -96,19 +96,19 @@ class PerfDbClient {
 
  private:
   std::unique_ptr<PerfDbTransfer::Stub> stub_;
-  ClientConfig clientConfig_;
-  ServerConfig serverConfig_;
-  double QPS_;
-  double QPSPerCore_;
-  double percentileLatency50_;
-  double percentileLatency90_;
-  double percentileLatency95_;
-  double percentileLatency99_;
-  double percentileLatency99Point9_;
-  double serverSystemTime_;
-  double serverUserTime_;
-  double clientSystemTime_;
-  double clientUserTime_;
+  ClientConfig client_config_;
+  ServerConfig server_config_;
+  double qps_;
+  double qps_per_core_;
+  double perc_lat_50_;
+  double perc_lat_90_;
+  double perc_lat_95_;
+  double perc_lat_99_;
+  double perc_lat_99_point_9_;
+  double server_system_time_;
+  double server_user_time_;
+  double client_system_time_;
+  double client_user_time_;
 };
 
 }  // namespace testing

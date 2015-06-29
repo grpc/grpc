@@ -121,8 +121,8 @@ void PerfDbReporter::ReportQPS(const ScenarioResult& result) {
              average(result.client_resources,
                      [](ResourceUsage u) { return u.wall_time; });
 
-  perfDbClient_.setQPS(qps);
-  perfDbClient_.setConfigs(result.client_config, result.server_config);
+  perf_db_client_.setQps(qps);
+  perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
@@ -132,50 +132,50 @@ void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
 
   auto qpsPerCore = qps / result.server_config.threads();
 
-  perfDbClient_.setQPS(qps);
-  perfDbClient_.setQPSPerCore(qpsPerCore);
-  perfDbClient_.setConfigs(result.client_config, result.server_config);
+  perf_db_client_.setQps(qps);
+  perf_db_client_.setQpsPerCore(qpsPerCore);
+  perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
-  perfDbClient_.setLatencies(result.latencies.Percentile(50) / 1000,
+  perf_db_client_.setLatencies(result.latencies.Percentile(50) / 1000,
                              result.latencies.Percentile(90) / 1000,
                              result.latencies.Percentile(95) / 1000,
                              result.latencies.Percentile(99) / 1000,
                              result.latencies.Percentile(99.9) / 1000);
-  perfDbClient_.setConfigs(result.client_config, result.server_config);
+  perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
-  double serverSystemTime =
+  double server_system_time =
       100.0 * sum(result.server_resources,
                   [](ResourceUsage u) { return u.system_time; }) /
       sum(result.server_resources, [](ResourceUsage u) { return u.wall_time; });
-  double serverUserTime =
+  double server_user_time =
       100.0 * sum(result.server_resources,
                   [](ResourceUsage u) { return u.user_time; }) /
       sum(result.server_resources, [](ResourceUsage u) { return u.wall_time; });
-  double clientSystemTime =
+  double client_system_time =
       100.0 * sum(result.client_resources,
                   [](ResourceUsage u) { return u.system_time; }) /
       sum(result.client_resources, [](ResourceUsage u) { return u.wall_time; });
-  double clientUserTime =
+  double client_user_time =
       100.0 * sum(result.client_resources,
                   [](ResourceUsage u) { return u.user_time; }) /
       sum(result.client_resources, [](ResourceUsage u) { return u.wall_time; });
 
-  perfDbClient_.setTimes(serverSystemTime, serverUserTime, clientSystemTime,
-                         clientUserTime);
-  perfDbClient_.setConfigs(result.client_config, result.server_config);
+  perf_db_client_.setTimes(server_system_time, server_user_time, client_system_time,
+                         client_user_time);
+  perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::SendData() {
   // send data to performance database
-  bool dataState =
-      perfDbClient_.sendData(access_token_, test_name_, sys_info_, tag_);
+  bool data_state =
+      perf_db_client_.sendData(access_token_, test_name_, sys_info_, tag_);
 
   // check state of data sending
-  if (dataState) {
+  if (data_state) {
     gpr_log(GPR_INFO, "Data sent to performance database successfully");
   } else {
     gpr_log(GPR_INFO, "Data could not be sent to performance database");

@@ -115,13 +115,13 @@ class PerfDbReporter : public Reporter {
         test_name_(test_name),
         sys_info_(sys_info),
         tag_(tag) {
-    perfDbClient_.init(grpc::CreateChannel(
+    perf_db_client_.init(grpc::CreateChannel(
         server_address, grpc::InsecureCredentials(), ChannelArguments()));
   }
   ~PerfDbReporter() GRPC_OVERRIDE { SendData(); };
 
  private:
-  PerfDbClient perfDbClient_;
+  PerfDbClient perf_db_client_;
   std::string access_token_;
   std::string test_name_;
   std::string sys_info_;

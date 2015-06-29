@@ -37,100 +37,102 @@ namespace grpc {
 namespace testing {
 
 // sets the client and server config information
-void PerfDbClient::setConfigs(const ClientConfig& clientConfig,
-                              const ServerConfig& serverConfig) {
-  this->clientConfig_ = clientConfig;
-  this->serverConfig_ = serverConfig;
+void PerfDbClient::setConfigs(const ClientConfig& client_config,
+                              const ServerConfig& server_config) {
+  this->client_config_ = client_config;
+  this->server_config_ = server_config;
 }
 
 // sets the QPS
-void PerfDbClient::setQPS(double QPS) { this->QPS_ = QPS; }
+void PerfDbClient::setQps(double qps) {
+  this->qps_ = qps;
+}
 
 // sets the QPS per core
-void PerfDbClient::setQPSPerCore(double QPSPerCore) {
-  this->QPSPerCore_ = QPSPerCore;
+void PerfDbClient::setQpsPerCore(double qps_per_core) {
+  this->qps_per_core_ = qps_per_core;
 }
 
 // sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
-void PerfDbClient::setLatencies(double percentileLatency50,
-                                double percentileLatency90,
-                                double percentileLatency95,
-                                double percentileLatency99,
-                                double percentileLatency99Point9) {
-  this->percentileLatency50_ = percentileLatency50;
-  this->percentileLatency90_ = percentileLatency90;
-  this->percentileLatency95_ = percentileLatency95;
-  this->percentileLatency99_ = percentileLatency99;
-  this->percentileLatency99Point9_ = percentileLatency99Point9;
+void PerfDbClient::setLatencies(double perc_lat_50,
+                                double perc_lat_90,
+                                double perc_lat_95,
+                                double perc_lat_99,
+                                double perc_lat_99_point_9) {
+  this->perc_lat_50_ = perc_lat_50;
+  this->perc_lat_90_ = perc_lat_90;
+  this->perc_lat_95_ = perc_lat_95;
+  this->perc_lat_99_ = perc_lat_99;
+  this->perc_lat_99_point_9_ = perc_lat_99_point_9;
 }
 
 // sets the server and client, user and system times
-void PerfDbClient::setTimes(double serverSystemTime, double serverUserTime,
-                            double clientSystemTime, double clientUserTime) {
-  this->serverSystemTime_ = serverSystemTime;
-  this->serverUserTime_ = serverUserTime;
-  this->clientSystemTime_ = clientSystemTime;
-  this->clientUserTime_ = clientUserTime;
+void PerfDbClient::setTimes(double server_system_time, double server_user_time,
+                            double client_system_time, double client_user_time) {
+  this->server_system_time_ = server_system_time;
+  this->server_user_time_ = server_user_time;
+  this->client_system_time_ = client_system_time;
+  this->client_user_time_ = client_user_time;
 }
 
 // sends the data to the performance database server
 bool PerfDbClient::sendData(std::string access_token, std::string test_name,
                             std::string sys_info, std::string tag) {
   // Data record request object
-  SingleUserRecordRequest singleUserRecordRequest;
+  SingleUserRecordRequest single_user_record_request;
 
   // setting access token, name of the test and the system information
-  singleUserRecordRequest.set_access_token(access_token);
-  singleUserRecordRequest.set_test_name(test_name);
-  singleUserRecordRequest.set_sys_info(sys_info);
-  singleUserRecordRequest.set_tag(tag);
+  single_user_record_request.set_access_token(access_token);
+  single_user_record_request.set_test_name(test_name);
+  single_user_record_request.set_sys_info(sys_info);
+  single_user_record_request.set_tag(tag);
 
   // setting configs
-  *(singleUserRecordRequest.mutable_client_config()) = this->clientConfig_;
-  *(singleUserRecordRequest.mutable_server_config()) = this->serverConfig_;
+  *(single_user_record_request.mutable_client_config()) = this->client_config_;
+  *(single_user_record_request.mutable_server_config()) = this->server_config_;
 
-  Metrics* metrics = singleUserRecordRequest.mutable_metrics();
+  Metrics* metrics = single_user_record_request.mutable_metrics();
 
   // setting metrcs in data record request
-  if (QPS_ != DBL_MIN) {
-    metrics->set_qps(this->QPS_);
+  if (qps_ != DBL_MIN) {
+    metrics->set_qps(this->qps_);
   }
-  if (QPSPerCore_ != DBL_MIN) {
-    metrics->set_qps_per_core(this->QPSPerCore_);
+  if (qps_per_core_ != DBL_MIN) {
+    metrics->set_qps_per_core(this->qps_per_core_);
   }
-  if (percentileLatency50_ != DBL_MIN) {
-    metrics->set_perc_lat_50(this->percentileLatency50_);
+  if (perc_lat_50_ != DBL_MIN) {
+    metrics->set_perc_lat_50(this->perc_lat_50_);
   }
-  if (percentileLatency90_ != DBL_MIN) {
-    metrics->set_perc_lat_90(this->percentileLatency90_);
+  if (perc_lat_90_ != DBL_MIN) {
+    metrics->set_perc_lat_90(this->perc_lat_90_);
   }
-  if (percentileLatency95_ != DBL_MIN) {
-    metrics->set_perc_lat_95(this->percentileLatency95_);
+  if (perc_lat_95_ != DBL_MIN) {
+    metrics->set_perc_lat_95(this->perc_lat_95_);
   }
-  if (percentileLatency99_ != DBL_MIN) {
-    metrics->set_perc_lat_99(this->percentileLatency99_);
+  if (perc_lat_99_ != DBL_MIN) {
+    metrics->set_perc_lat_99(this->perc_lat_99_);
   }
-  if (percentileLatency99Point9_ != DBL_MIN) {
-    metrics->set_perc_lat_99_point_9(this->percentileLatency99Point9_);
+  if (perc_lat_99_point_9_ != DBL_MIN) {
+    metrics->set_perc_lat_99_point_9(this->perc_lat_99_point_9_);
   }
-  if (serverSystemTime_ != DBL_MIN) {
-    metrics->set_server_system_time(this->serverSystemTime_);
+  if (server_system_time_ != DBL_MIN) {
+    metrics->set_server_system_time(this->server_system_time_);
   }
-  if (serverUserTime_ != DBL_MIN) {
-    metrics->set_server_user_time(this->serverUserTime_);
+  if (server_user_time_ != DBL_MIN) {
+    metrics->set_server_user_time(this->server_user_time_);
   }
-  if (clientSystemTime_ != DBL_MIN) {
-    metrics->set_client_system_time(this->clientSystemTime_);
+  if (client_system_time_ != DBL_MIN) {
+    metrics->set_client_system_time(this->client_system_time_);
   }
-  if (clientUserTime_ != DBL_MIN) {
-    metrics->set_client_user_time(this->clientUserTime_);
+  if (client_user_time_ != DBL_MIN) {
+    metrics->set_client_user_time(this->client_user_time_);
   }
 
-  SingleUserRecordReply singleUserRecordReply;
+  SingleUserRecordReply single_user_record_reply;
   ClientContext context;
 
   Status status = stub_->RecordSingleClientData(
-      &context, singleUserRecordRequest, &singleUserRecordReply);
+      &context, single_user_record_request, &single_user_record_reply);
   if (status.ok()) {
     return true;  // data sent to database successfully
   } else {
