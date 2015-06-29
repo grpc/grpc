@@ -34,7 +34,6 @@
 #ifndef GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 #define GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 
-#include "src/core/transport/transport_impl.h"
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/transport/chttp2/frame_data.h"
@@ -47,6 +46,8 @@
 #include "src/core/transport/chttp2/incoming_metadata.h"
 #include "src/core/transport/chttp2/stream_encoder.h"
 #include "src/core/transport/chttp2/stream_map.h"
+#include "src/core/transport/connectivity_state.h"
+#include "src/core/transport/transport_impl.h"
 
 typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;
@@ -335,8 +336,7 @@ struct grpc_chttp2_transport {
     void *accept_stream_user_data;
 
     /** connectivity tracking */
-    grpc_iomgr_closure *on_connectivity_changed;
-    grpc_connectivity_state *connectivity;
+    grpc_connectivity_state_tracker state_tracker;
   } channel_callback;
 };
 

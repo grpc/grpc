@@ -31,14 +31,14 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTIVITY_STATE_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTIVITY_STATE_H
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H
 
 #include <grpc/grpc.h>
 #include "src/core/iomgr/iomgr.h"
 
 typedef struct grpc_connectivity_state_watcher {
-	/** we keep watchers in a linked list */
+  /** we keep watchers in a linked list */
   struct grpc_connectivity_state_watcher *next;
   /** closure to notify on change */
   grpc_iomgr_closure *notify;
@@ -47,20 +47,25 @@ typedef struct grpc_connectivity_state_watcher {
 } grpc_connectivity_state_watcher;
 
 typedef struct {
-	/** current connectivity state */
+  /** current connectivity state */
   grpc_connectivity_state current_state;
   /** all our watchers */
   grpc_connectivity_state_watcher *watchers;
 } grpc_connectivity_state_tracker;
 
-void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker, grpc_connectivity_state init_state);
+void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
+                                  grpc_connectivity_state init_state);
 void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
 
-void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker, grpc_connectivity_state state);
+void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
+                                 grpc_connectivity_state state);
 
-grpc_connectivity_state grpc_connectivity_state_check(grpc_connectivity_state_tracker *tracker);
+grpc_connectivity_state grpc_connectivity_state_check(
+    grpc_connectivity_state_tracker *tracker);
 
 /** Return 1 if the channel should start connecting, 0 otherwise */
-int grpc_connectivity_state_notify_on_state_change(grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current, grpc_iomgr_closure *notify);
+int grpc_connectivity_state_notify_on_state_change(
+    grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current,
+    grpc_iomgr_closure *notify);
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTIVITY_STATE_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

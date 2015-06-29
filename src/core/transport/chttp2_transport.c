@@ -37,18 +37,19 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/profiling/timers.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/http2_errors.h"
-#include "src/core/transport/chttp2/status_conversion.h"
-#include "src/core/transport/chttp2/timeout_encoding.h"
-#include "src/core/transport/chttp2/internal.h"
-#include "src/core/transport/transport_impl.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/transport/chttp2/http2_errors.h"
+#include "src/core/transport/chttp2/internal.h"
+#include "src/core/transport/chttp2/status_conversion.h"
+#include "src/core/transport/chttp2/timeout_encoding.h"
+#include "src/core/transport/transport_impl.h"
 
 /* #define REFCOUNTING_DEBUG */
 
@@ -81,7 +82,6 @@ static const grpc_transport_vtable vtable;
 static void lock(grpc_chttp2_transport *t);
 static void unlock(grpc_chttp2_transport *t);
 
-static void unlock_check_channel_callbacks(grpc_chttp2_transport *t);
 static void unlock_check_read_write_state(grpc_chttp2_transport *t);
 
 /* forward declarations of various callbacks that we'll build closures around */
@@ -149,6 +149,7 @@ static void destruct_transport(grpc_chttp2_transport *t) {
 
   grpc_chttp2_stream_map_destroy(&t->parsing_stream_map);
   grpc_chttp2_stream_map_destroy(&t->new_stream_map);
+  grpc_connectivity_state_destroy(&t->channel_callback.state_tracker);
 
   gpr_mu_unlock(&t->mu);
   gpr_mu_destroy(&t->mu);
@@ -229,6 +230,8 @@ static void init_transport(grpc_chttp2_transport *t,
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
+  grpc_connectivity_state_init(&t->channel_callback.state_tracker,
+                               GRPC_CHANNEL_READY);
 
   gpr_slice_buffer_init(&t->global.qbuf);
 
@@ -325,6 +328,8 @@ static void destroy_transport(grpc_transport *gt) {
 static void close_transport_locked(grpc_chttp2_transport *t) {
   if (!t->closed) {
     t->closed = 1;
+    grpc_connectivity_state_set(&t->channel_callback.state_tracker,
+                                GRPC_CHANNEL_FATAL_FAILURE);
     if (t->ep) {
       grpc_endpoint_shutdown(t->ep);
     }
@@ -445,8 +450,6 @@ static void unlock(grpc_chttp2_transport *t) {
     REF_TRANSPORT(t, "writing");
     grpc_chttp2_schedule_closure(&t->global, &t->writing_action, 1);
   }
-  /* unlock_check_parser(t); */
-  unlock_check_channel_callbacks(t);
 
   run_closures = t->global.pending_closures;
   t->global.pending_closures = NULL;
@@ -520,6 +523,9 @@ void grpc_chttp2_add_incoming_goaway(
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
+  grpc_connectivity_state_set(
+      &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
+      GRPC_CHANNEL_FATAL_FAILURE);
 }
 
 static void maybe_start_some_streams(
@@ -544,9 +550,9 @@ static void maybe_start_some_streams(
     transport_global->next_stream_id += 2;
 
     if (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      grpc_chttp2_add_incoming_goaway(
-          transport_global, GRPC_CHTTP2_NO_ERROR,
-          gpr_slice_from_copied_string("Exceeded sequence number limit"));
+      grpc_connectivity_state_set(&TRANSPORT_FROM_GLOBAL(transport_global)
+                                       ->channel_callback.state_tracker,
+                                  GRPC_CHANNEL_TRANSIENT_FAILURE);
     }
 
     stream_global->outgoing_window =
@@ -669,10 +675,9 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
   }
 
   if (op->on_connectivity_state_change) {
-    GPR_ASSERT(t->channel_callback.on_connectivity_changed == NULL);
-    t->channel_callback.on_connectivity_changed =
-        op->on_connectivity_state_change;
-    t->channel_callback.connectivity = op->connectivity_state;
+    grpc_connectivity_state_notify_on_state_change(
+        &t->channel_callback.state_tracker, op->connectivity_state,
+        op->on_connectivity_state_change);
   }
 
   if (op->send_goaway) {
@@ -927,24 +932,6 @@ static void reading_action(void *pt, int iomgr_success_ignored) {
 /*
  * CALLBACK LOOP
  */
-
-static void unlock_check_channel_callbacks(grpc_chttp2_transport *t) {
-  if (t->channel_callback.on_connectivity_changed != NULL) {
-    grpc_connectivity_state current;
-    if (t->closed || t->global.seen_goaway) {
-      current = GRPC_CHANNEL_FATAL_FAILURE;
-    } else {
-      current = GRPC_CHANNEL_READY;
-    }
-    if (current != *t->channel_callback.connectivity) {
-      *t->channel_callback.connectivity = current;
-      grpc_chttp2_schedule_closure(
-          &t->global, t->channel_callback.on_connectivity_changed, 1);
-      t->channel_callback.on_connectivity_changed = NULL;
-      t->channel_callback.connectivity = NULL;
-    }
-  }
-}
 
 void grpc_chttp2_schedule_closure(
     grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,

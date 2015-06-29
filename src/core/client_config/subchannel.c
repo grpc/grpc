@@ -39,7 +39,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/channel/connectivity_state.h"
+#include "src/core/transport/connectivity_state.h"
 
 typedef struct {
 	/* all fields protected by subchannel->mu */

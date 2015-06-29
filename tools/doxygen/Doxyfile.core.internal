@@ -789,7 +789,6 @@ src/core/channel/channel_args.h \
 src/core/channel/channel_stack.h \
 src/core/channel/client_channel.h \
 src/core/channel/connected_channel.h \
-src/core/channel/connectivity_state.h \
 src/core/channel/context.h \
 src/core/channel/http_client_filter.h \
 src/core/channel/http_server_filter.h \
@@ -874,6 +873,7 @@ src/core/transport/chttp2/stream_map.h \
 src/core/transport/chttp2/timeout_encoding.h \
 src/core/transport/chttp2/varint.h \
 src/core/transport/chttp2_transport.h \
+src/core/transport/connectivity_state.h \
 src/core/transport/metadata.h \
 src/core/transport/stream_op.h \
 src/core/transport/transport.h \
@@ -907,7 +907,6 @@ src/core/channel/channel_args.c \
 src/core/channel/channel_stack.c \
 src/core/channel/client_channel.c \
 src/core/channel/connected_channel.c \
-src/core/channel/connectivity_state.c \
 src/core/channel/http_client_filter.c \
 src/core/channel/http_server_filter.c \
 src/core/channel/noop_filter.c \
@@ -1005,6 +1004,7 @@ src/core/transport/chttp2/timeout_encoding.c \
 src/core/transport/chttp2/varint.c \
 src/core/transport/chttp2/writing.c \
 src/core/transport/chttp2_transport.c \
+src/core/transport/connectivity_state.c \
 src/core/transport/metadata.c \
 src/core/transport/stream_op.c \
 src/core/transport/transport.c \

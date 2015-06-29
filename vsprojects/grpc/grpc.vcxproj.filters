@@ -85,9 +85,6 @@
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\connectivity_state.c">
-      <Filter>src\core\channel</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\http_client_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -379,6 +376,9 @@
     <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\connectivity_state.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\metadata.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
@@ -486,9 +486,6 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
-      <Filter>src\core\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\channel\connectivity_state.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\context.h">
@@ -741,6 +738,9 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2_transport.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\connectivity_state.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\metadata.h">

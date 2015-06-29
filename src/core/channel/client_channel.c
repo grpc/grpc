@@ -38,10 +38,10 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/channel/connectivity_state.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/pollset_set.h"
 #include "src/core/support/string.h"
+#include "src/core/transport/connectivity_state.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>

@@ -3024,7 +3024,6 @@ LIBGRPC_SRC = \
     src/core/channel/channel_stack.c \
     src/core/channel/client_channel.c \
     src/core/channel/connected_channel.c \
-    src/core/channel/connectivity_state.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
@@ -3122,6 +3121,7 @@ LIBGRPC_SRC = \
     src/core/transport/chttp2/varint.c \
     src/core/transport/chttp2/writing.c \
     src/core/transport/chttp2_transport.c \
+    src/core/transport/connectivity_state.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
     src/core/transport/transport.c \
@@ -3284,7 +3284,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/channel_stack.c \
     src/core/channel/client_channel.c \
     src/core/channel/connected_channel.c \
-    src/core/channel/connectivity_state.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
     src/core/channel/noop_filter.c \
@@ -3382,6 +3381,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/chttp2/varint.c \
     src/core/transport/chttp2/writing.c \
     src/core/transport/chttp2_transport.c \
+    src/core/transport/connectivity_state.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
     src/core/transport/transport.c \

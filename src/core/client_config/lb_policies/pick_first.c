@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include "src/core/channel/connectivity_state.h"
+#include "src/core/transport/connectivity_state.h"
 
 typedef struct pending_pick {
   struct pending_pick *next;
