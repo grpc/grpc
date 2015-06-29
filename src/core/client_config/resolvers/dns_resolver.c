@@ -173,7 +173,9 @@ static void dns_maybe_finish_next_locked(dns_resolver *r) {
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
     *r->target_config = r->resolved_config;
-    grpc_client_config_ref(r->resolved_config);
+    if (r->resolved_config) {
+      grpc_client_config_ref(r->resolved_config);
+    }
     grpc_iomgr_add_callback(r->next_completion);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;

@@ -66,7 +66,7 @@ void grpc_subchannel_call_unref(grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_E
 
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
-                                 grpc_transport_stream_op *initial_op,
+                                 grpc_pollset *pollset,
                                  grpc_subchannel_call **target,
                                  grpc_iomgr_closure *notify);
 

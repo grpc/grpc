@@ -198,7 +198,7 @@ static void started_call(void *arg, int iomgr_success) {
 
 static void picked_target(void *arg, int iomgr_success) {
   call_data *calld = arg;
-  grpc_transport_stream_op op;
+  grpc_pollset *pollset;
 
   if (calld->picked_channel == NULL) {
     /* treat this like a cancellation */
@@ -212,11 +212,10 @@ static void picked_target(void *arg, int iomgr_success) {
     } else {
       GPR_ASSERT(calld->state == CALL_WAITING_FOR_PICK);
       calld->state = CALL_WAITING_FOR_CALL;
-      op = calld->waiting_op;
-      memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
+      pollset = calld->waiting_op.bind_pollset;
       gpr_mu_unlock(&calld->mu_state);
       grpc_iomgr_closure_init(&calld->async_setup_task, started_call, calld);
-      grpc_subchannel_create_call(calld->picked_channel, &op,
+      grpc_subchannel_create_call(calld->picked_channel, pollset,
                                   &calld->subchannel_call,
                                   &calld->async_setup_task);
     }
