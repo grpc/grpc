@@ -64,7 +64,7 @@ ${cc_library(lib)}
 % endfor
 
 % for lib in libs:
-% if lib.name in ("grpc_unsecure", "gpr"):
+% if lib.name in ("grpc", "gpr"):
 ${objc_library(lib)}
 % endif
 % endfor
@@ -127,6 +127,9 @@ objc_library(
 % for dep in lib.get("deps", []):
     ":${dep}_objc",
 % endfor
+% if lib.get('secure', 'no') == 'yes':
+    "//external:libssl_objc",
+% endif
   ],
 % if lib.get("baselib", false):
   sdk_dylibs = ["libz"],
