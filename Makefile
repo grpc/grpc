@@ -3557,63 +3557,6 @@ endif
 endif
 
 
-<<<<<<< HEAD
-LIBGRPC++_BENCHMARK_CONFIG_SRC = \
-    $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc \
-    $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc \
-    test/cpp/qps/perf_db_client.cc \
-    test/cpp/qps/report.cc \
-    test/cpp/util/benchmark_config.cc \
-
-
-LIBGRPC++_BENCHMARK_CONFIG_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_BENCHMARK_CONFIG_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL with ALPN.
-
-$(LIBDIR)/$(CONFIG)/libgrpc++_benchmark_config.a: openssl_dep_error
-
-
-else
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-$(LIBDIR)/$(CONFIG)/libgrpc++_benchmark_config.a: protobuf_dep_error
-
-
-else
-
-$(LIBDIR)/$(CONFIG)/libgrpc++_benchmark_config.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_BENCHMARK_CONFIG_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_benchmark_config.a
-	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc++_benchmark_config.a $(LIBGRPC++_BENCHMARK_CONFIG_OBJS)
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc++_benchmark_config.a
-endif
-
-
-
-
-endif
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBGRPC++_BENCHMARK_CONFIG_OBJS:.o=.dep)
-endif
-endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-
-
-=======
->>>>>>> a6de02f5ef15646c12f495f11c410326d34e5dfe
 LIBGRPC++_TEST_CONFIG_SRC = \
     test/cpp/util/test_config.cc \
 
@@ -4180,26 +4123,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-<<<<<<< HEAD
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-=======
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc
->>>>>>> a6de02f5ef15646c12f495f11c410326d34e5dfe
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/cpp/qps/qpstest.pb.cc $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 
 
 LIBGRPC_CSHARP_EXT_SRC = \

@@ -556,21 +556,6 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
-<<<<<<< HEAD
-      "name": "grpc++_benchmark_config",
-      "build": "private",
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/perf_db.proto",
-        "test/cpp/qps/perf_db_client.cc",
-        "test/cpp/qps/report.cc",
-        "test/cpp/util/benchmark_config.cc"
-      ]
-    },
-    {
-=======
->>>>>>> a6de02f5ef15646c12f495f11c410326d34e5dfe
       "name": "grpc++_test_config",
       "build": "private",
       "language": "c++",
