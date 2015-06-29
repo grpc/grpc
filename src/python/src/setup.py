@@ -109,7 +109,12 @@ _CYTHON_EXTENSION_MODULES = cython_extensions(
     list(_EXTENSION_INCLUDE_DIRECTORIES), list(_EXTENSION_LIBRARIES),
     bool(_BUILD_WITH_CYTHON))
 
-_EXTENSION_MODULES = _C_EXTENSION_MODULES + _CYTHON_EXTENSION_MODULES
+# TODO(atash): We shouldn't need to gate any C code based on the python version
+# from the distutils build system. Remove this hackery once we're on Cython and
+# 3.x C API compliant.
+_EXTENSION_MODULES = list(_CYTHON_EXTENSION_MODULES)
+if sys.version_info[0:2] <= (2, 7):
+  _EXTENSION_MODULES += _C_EXTENSION_MODULES
 
 
 _PACKAGES = (
