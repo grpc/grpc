@@ -107,12 +107,18 @@ class GprLogReporter : public Reporter {
 /** Reporter for performance database tool */
 class PerfDbReporter : public Reporter {
  public:
-  PerfDbReporter(const string& name, const string& access_token, const string& test_name, 
-    const string& sys_info, const string& server_address, const string& tag)
-   : Reporter(name), access_token_(access_token), test_name_(test_name), sys_info_(sys_info), tag_(tag) {
-    perfDbClient_.init(grpc::CreateChannel(server_address, grpc::InsecureCredentials(), ChannelArguments()));
+  PerfDbReporter(const string& name, const string& access_token,
+                 const string& test_name, const string& sys_info,
+                 const string& server_address, const string& tag)
+      : Reporter(name),
+        access_token_(access_token),
+        test_name_(test_name),
+        sys_info_(sys_info),
+        tag_(tag) {
+    perfDbClient_.init(grpc::CreateChannel(
+        server_address, grpc::InsecureCredentials(), ChannelArguments()));
   }
-  ~PerfDbReporter() { SendData(); };
+  ~PerfDbReporter() GRPC_OVERRIDE { SendData(); };
 
  private:
   PerfDbClient perfDbClient_;

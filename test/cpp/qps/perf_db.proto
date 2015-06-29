@@ -35,14 +35,12 @@ package grpc.testing;
 
 service PerfDbTransfer {
   // Sends client info
-  rpc RecordSingleClientData (SingleUserRecordRequest) returns (SingleUserRecordReply) {}
-
-  rpc RetrieveSingleUserData (SingleUserRetrieveRequest) returns (SingleUserRetrieveReply) {}
-
-  rpc RetrieveAllUsersData (AllUsersRetrieveRequest) returns (AllUsersRetrieveReply) {}
+  rpc RecordSingleClientData(SingleUserRecordRequest)
+      returns (SingleUserRecordReply) {
+  }
 }
 
-//Metrics to be stored
+// Metrics to be stored
 message Metrics {
   double qps = 1;
   double qps_per_core = 2;
@@ -57,39 +55,7 @@ message Metrics {
   double client_user_time = 11;
 }
 
-//Timestamped details
-message DataDetails {
-  string timestamp = 1;
-  string test_name = 2;
-  string sys_info = 3;
-  string tag = 4;
-  Metrics metrics = 5;
-  ClientConfig client_config = 6;
-  ServerConfig server_config = 7;
-}
-
-//User details
-message UserDetails {
-  string id = 1;
-  string email = 2;
-  bool verified_email = 3;
-  string name = 4;
-  string given_name = 5;
-  string family_name = 6;
-  string link = 7;
-  string picture = 8;
-  string gender = 9;
-  string locale = 10;
-  string hd = 11;
-}
-
-//Stored to database
-message SingleUserDetails {
-  repeated DataDetails data_details = 1;
-  UserDetails user_details = 2;
-}
-
-//Request for storing a single user's data
+// Request for storing a single user's data
 message SingleUserRecordRequest {
   string access_token = 1;
   string test_name = 2;
@@ -100,25 +66,6 @@ message SingleUserRecordRequest {
   ServerConfig server_config = 7;
 }
 
-//Reply to request for storing single user's data
+// Reply to request for storing single user's data
 message SingleUserRecordReply {
-}
-
-//Request for retrieving single user's data
-message SingleUserRetrieveRequest {
-  string user_id = 1;
-}
-
-//Reply for request to retrieve single user's data
-message SingleUserRetrieveReply {
-  SingleUserDetails details = 1;
-}
-
-//Request for retrieving all users' data
-message AllUsersRetrieveReply {
-  repeated SingleUserDetails user_data = 1;
-}
-
-//Reply to request for retrieving all users' data
-message AllUsersRetrieveRequest {
 }

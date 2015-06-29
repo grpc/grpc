@@ -45,13 +45,12 @@
 #include <grpc++/status.h>
 #include "test/cpp/qps/perf_db.grpc.pb.h"
 
-
-namespace grpc{
+namespace grpc {
 namespace testing {
 
-//Manages data sending to performance database server
+// Manages data sending to performance database server
 class PerfDbClient {
-public:
+ public:
   PerfDbClient() {
     QPS_ = DBL_MIN;
     QPSPerCore_ = DBL_MIN;
@@ -65,32 +64,37 @@ public:
     clientSystemTime_ = DBL_MIN;
     clientUserTime_ = DBL_MIN;
   }
-  
-  void init(std::shared_ptr<ChannelInterface> channel) { stub_ = PerfDbTransfer::NewStub(channel); }
+
+  void init(std::shared_ptr<ChannelInterface> channel) {
+    stub_ = PerfDbTransfer::NewStub(channel);
+  }
 
   ~PerfDbClient() {}
 
-  //sets the client and server config information
-  void setConfigs(const ClientConfig& clientConfig, const ServerConfig& serverConfig);
-  
-  //sets the QPS
+  // sets the client and server config information
+  void setConfigs(const ClientConfig& clientConfig,
+                  const ServerConfig& serverConfig);
+
+  // sets the QPS
   void setQPS(double QPS);
 
-  //sets the QPS per core
+  // sets the QPS per core
   void setQPSPerCore(double QPSPerCore);
 
-  //sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
+  // sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
   void setLatencies(double percentileLatency50, double percentileLatency90,
-     double percentileLatency95, double percentileLatency99, double percentileLatency99Point9);
+                    double percentileLatency95, double percentileLatency99,
+                    double percentileLatency99Point9);
 
-  //sets the server and client, user and system times
-  void setTimes(double serverSystemTime, double serverUserTime, 
-    double clientSystemTime, double clientUserTime);
+  // sets the server and client, user and system times
+  void setTimes(double serverSystemTime, double serverUserTime,
+                double clientSystemTime, double clientUserTime);
 
-  //sends the data to the performancew database server
-  int sendData(std::string access_token, std::string test_name, std::string sys_info, std::string tag);
+  // sends the data to the performance database server
+  bool sendData(std::string access_token, std::string test_name,
+                std::string sys_info, std::string tag);
 
-private:
+ private:
   std::unique_ptr<PerfDbTransfer::Stub> stub_;
   ClientConfig clientConfig_;
   ServerConfig serverConfig_;
@@ -107,7 +111,5 @@ private:
   double clientUserTime_;
 };
 
-} //namespace testing
-} //namespace grpc
-
-
+}  // namespace testing
+}  // namespace grpc
