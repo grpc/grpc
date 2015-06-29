@@ -142,9 +142,15 @@ static void subchannel_destroy(grpc_subchannel *c);
 #else
 #define SUBCHANNEL_REF_LOCKED(p, r) subchannel_ref_locked((p))
 #define SUBCHANNEL_UNREF_LOCKED(p, r) subchannel_unref_locked((p))
-#define CONNECTION_REF_LOCKED(p, r) connection_ref_locked((p), __FILE__, __LINE__, (r))
-#define CONNECTION_UNREF_LOCKED(p, r) connection_unref_locked((p), __FILE__, __LINE__, (r))
+#define CONNECTION_REF_LOCKED(p, r) connection_ref_locked((p))
+#define CONNECTION_UNREF_LOCKED(p, r) connection_unref_locked((p))
 #define REF_PASS_ARGS
+#define REF_LOG(name, p) \
+  do {                   \
+  } while (0)
+#define UNREF_LOG(name, p) \
+  do {                     \
+  } while (0)
 #endif
 
 /*
@@ -332,8 +338,7 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *c,
     c->connecting = 1;
     /* released by connection */
     SUBCHANNEL_REF_LOCKED(c, "connecting");
-    grpc_connectivity_state_set(&c->state_tracker,
-                                compute_connectivity_locked(c));
+    connectivity_state_changed_locked(c);
   }
   gpr_mu_unlock(&c->mu);
   if (do_connect) {
@@ -348,8 +353,7 @@ void grpc_subchannel_process_transport_op(grpc_subchannel *c,
   gpr_mu_lock(&c->mu);
   if (op->disconnect) {
     c->disconnected = 1;
-    grpc_connectivity_state_set(&c->state_tracker,
-                                compute_connectivity_locked(c));
+    connectivity_state_changed_locked(c);
   }
   if (c->active != NULL) {
     con = c->active;
@@ -389,6 +393,8 @@ static void on_state_changed(void *p, int iomgr_success) {
     goto done;
   }
 
+  gpr_log(GPR_DEBUG, "TRANSPORT STATE: %d", sw->connectivity_state);
+
   switch (sw->connectivity_state) {
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_READY:
@@ -409,19 +415,22 @@ static void on_state_changed(void *p, int iomgr_success) {
         destroy_connection = sw->subchannel->active;
       }
       sw->subchannel->active = NULL;
+      grpc_connectivity_state_set(&c->state_tracker,
+                                  GRPC_CHANNEL_TRANSIENT_FAILURE);
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       /* things are starting to go wrong, reconnect but don't deactivate */
       /* released by connection */
       SUBCHANNEL_REF_LOCKED(c, "connecting");
+      grpc_connectivity_state_set(&c->state_tracker,
+                                  GRPC_CHANNEL_TRANSIENT_FAILURE);
       do_connect = 1;
       c->connecting = 1;
       break;
   }
 
 done:
-  grpc_connectivity_state_set(&c->state_tracker,
-                              compute_connectivity_locked(c));
+  connectivity_state_changed_locked(c);
   destroy = SUBCHANNEL_UNREF_LOCKED(c, "state_watcher");
   gpr_free(sw);
   gpr_mu_unlock(mu);
@@ -521,7 +530,7 @@ static void publish_transport(grpc_subchannel *c) {
 
 static void subchannel_connected(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
-  if (c->connecting_result.transport) {
+  if (c->connecting_result.transport != NULL) {
     publish_transport(c);
   } else {
     int destroy;
@@ -553,6 +562,7 @@ static grpc_connectivity_state compute_connectivity_locked(grpc_subchannel *c) {
 
 static void connectivity_state_changed_locked(grpc_subchannel *c) {
   grpc_connectivity_state current = compute_connectivity_locked(c);
+  gpr_log(GPR_DEBUG, "SUBCHANNEL constate=%d", current);
   grpc_connectivity_state_set(&c->state_tracker, current);
 }
 

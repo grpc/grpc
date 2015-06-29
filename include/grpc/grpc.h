@@ -120,14 +120,14 @@ typedef struct {
 
 /** Connectivity state of a channel. */
 typedef enum {
+  /** channel is idle */
+  GRPC_CHANNEL_IDLE,
   /** channel is connecting */
   GRPC_CHANNEL_CONNECTING,
   /** channel is ready for work */
   GRPC_CHANNEL_READY,
   /** channel has seen a failure but expects to recover */
   GRPC_CHANNEL_TRANSIENT_FAILURE,
-  /** channel is idle */
-  GRPC_CHANNEL_IDLE,
   /** channel has seen a failure that it cannot recover from */
   GRPC_CHANNEL_FATAL_FAILURE
 } grpc_connectivity_state;
