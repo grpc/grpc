@@ -77,7 +77,7 @@ void pf_destroy(grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   size_t i;
   for (i = 0; i < p->num_subchannels; i++) {
-    grpc_subchannel_unref(p->subchannels[i]);
+    GRPC_SUBCHANNEL_UNREF(p->subchannels[i], "pick_first");
   }
   gpr_free(p->subchannels);
   gpr_mu_destroy(&p->mu);
@@ -180,7 +180,7 @@ loop:
       p->checking_connectivity = grpc_subchannel_check_connectivity(
           p->subchannels[p->checking_subchannel]);
       p->num_subchannels--;
-      grpc_subchannel_unref(p->subchannels[p->num_subchannels]);
+      GRPC_SUBCHANNEL_UNREF(p->subchannels[p->num_subchannels], "pick_first");
       add_interested_parties_locked(p);
       if (p->num_subchannels == 0) {
         abort();
@@ -206,13 +206,13 @@ static void pf_broadcast(grpc_lb_policy *pol, grpc_transport_op *op) {
   subchannels = gpr_malloc(n * sizeof(*subchannels));
   for (i = 0; i < n; i++) {
     subchannels[i] = p->subchannels[i];
-    grpc_subchannel_ref(subchannels[i]);
+    GRPC_SUBCHANNEL_REF(subchannels[i], "pf_broadcast");
   }
   gpr_mu_unlock(&p->mu);
 
   for (i = 0; i < n; i++) {
     grpc_subchannel_process_transport_op(subchannels[i], op);
-    grpc_subchannel_unref(subchannels[i]);
+    GRPC_SUBCHANNEL_UNREF(subchannels[i], "pf_broadcast");
   }
   gpr_free(subchannels);
 }

@@ -459,7 +459,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
     case CALL_ACTIVE:
       subchannel_call = calld->subchannel_call;
       gpr_mu_unlock(&calld->mu_state);
-      grpc_subchannel_call_unref(subchannel_call);
+      GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call, "client_channel");
       break;
     case CALL_CREATED:
     case CALL_CANCELLED:

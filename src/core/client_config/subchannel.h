@@ -43,10 +43,26 @@ typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 
-void grpc_subchannel_ref(grpc_subchannel *channel);
-void grpc_subchannel_unref(grpc_subchannel *channel);
-void grpc_subchannel_call_ref(grpc_subchannel_call *call);
-void grpc_subchannel_call_unref(grpc_subchannel_call *call);
+#define GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+
+#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+#define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_REF_EXTRA_ARGS , const char *file, int line, const char *reason
+#else
+#define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
+#define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p))
+#define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
+#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p))
+#define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
+#endif
+
+void grpc_subchannel_ref(grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_unref(grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_ref(grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_unref(grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
