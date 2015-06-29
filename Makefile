@@ -3030,6 +3030,7 @@ LIBGRPC_SRC = \
     src/core/client_config/resolver_factory.c \
     src/core/client_config/resolver_registry.c \
     src/core/client_config/resolvers/dns_resolver.c \
+    src/core/client_config/resolvers/unix_resolver_posix.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/uri_parser.c \
@@ -3289,6 +3290,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/resolver_factory.c \
     src/core/client_config/resolver_registry.c \
     src/core/client_config/resolvers/dns_resolver.c \
+    src/core/client_config/resolvers/unix_resolver_posix.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/uri_parser.c \

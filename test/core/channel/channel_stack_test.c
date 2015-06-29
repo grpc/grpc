@@ -69,8 +69,7 @@ static void call_func(grpc_call_element *elem, grpc_transport_stream_op *op) {
   ++*(int *)(elem->call_data);
 }
 
-static void channel_func(grpc_channel_element *elem,
-                         grpc_channel_element *from_elem, grpc_channel_op *op) {
+static void channel_func(grpc_channel_element *elem, grpc_transport_op *op) {
   ++*(int *)(elem->channel_data);
 }
 

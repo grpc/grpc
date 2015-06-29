@@ -58,13 +58,6 @@ static void auth_start_transport_op(grpc_call_element *elem,
   grpc_call_next_op(elem, op);
 }
 
-/* Called on special channel events, such as disconnection or new incoming
-   calls on the server */
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  grpc_channel_next_op(elem, op);
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
@@ -122,6 +115,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
-    auth_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data), init_call_elem,
     destroy_call_elem, sizeof(channel_data), init_channel_elem,
     destroy_channel_elem, "server-auth"};

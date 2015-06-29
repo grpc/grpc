@@ -121,6 +121,9 @@
     <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.c">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -522,6 +525,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.h">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel.h">
