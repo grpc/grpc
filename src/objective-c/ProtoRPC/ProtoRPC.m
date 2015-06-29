@@ -33,7 +33,7 @@
 
 #import "ProtoRPC.h"
 
-#import <Protobuf/GPBProtocolBuffers.h>
+#import <GPBProtocolBuffers.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
