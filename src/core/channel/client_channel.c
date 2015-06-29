@@ -157,7 +157,7 @@ static void handle_op_after_cancellation(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   if (op->send_ops) {
     grpc_stream_ops_unref_owned_objects(op->send_ops->ops, op->send_ops->nops);
-    op->on_done_send(op->send_user_data, 0);
+    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
   }
   if (op->recv_ops) {
     char status[GPR_LTOA_MIN_BUFSIZE];
@@ -176,10 +176,10 @@ static void handle_op_after_cancellation(grpc_call_element *elem,
     mdb.deadline = gpr_inf_future;
     grpc_sopb_add_metadata(op->recv_ops, mdb);
     *op->recv_state = GRPC_STREAM_CLOSED;
-    op->on_done_recv(op->recv_user_data, 1);
+    op->on_done_recv->cb(op->on_done_recv->cb_arg, 1);
   }
   if (op->on_consumed) {
-    op->on_consumed(op->on_consumed_user_data, 0);
+    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
   }
 }
 
@@ -266,17 +266,15 @@ static void cc_start_transport_op(grpc_call_element *elem,
           calld->s.waiting_op.send_ops = op->send_ops;
           calld->s.waiting_op.is_last_send = op->is_last_send;
           calld->s.waiting_op.on_done_send = op->on_done_send;
-          calld->s.waiting_op.send_user_data = op->send_user_data;
         }
         if (op->recv_ops) {
           calld->s.waiting_op.recv_ops = op->recv_ops;
           calld->s.waiting_op.recv_state = op->recv_state;
           calld->s.waiting_op.on_done_recv = op->on_done_recv;
-          calld->s.waiting_op.recv_user_data = op->recv_user_data;
         }
         gpr_mu_unlock(&chand->mu);
         if (op->on_consumed) {
-          op->on_consumed(op->on_consumed_user_data, 0);
+          op->on_consumed->cb(op->on_consumed->cb_arg, 0);
         }
       }
       break;
