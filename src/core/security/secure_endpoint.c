@@ -101,9 +101,7 @@ static void call_read_cb(secure_endpoint *ep, gpr_slice *slices, size_t nslices,
   if (grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < nslices; i++) {
-      char *data =
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      char *data = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
       gpr_free(data);
     }
@@ -235,9 +233,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
 
   if (grpc_trace_secure_endpoint) {
     for (i = 0; i < nslices; i++) {
-      char *data =
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      char *data = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
       gpr_free(data);
     }
