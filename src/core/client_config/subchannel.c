@@ -241,10 +241,8 @@ static void start_connect(grpc_subchannel *c) {
 
 static void continue_creating_call(void *arg, int iomgr_success) {
   waiting_for_connect *w4c = arg;
-  grpc_subchannel_create_call(w4c->subchannel, 
-    &w4c->initial_op, 
-    w4c->target, 
-    w4c->notify);
+  grpc_subchannel_create_call(w4c->subchannel, &w4c->initial_op, w4c->target,
+                              w4c->notify);
   grpc_subchannel_unref(w4c->subchannel);
   gpr_free(w4c);
 }
@@ -344,7 +342,8 @@ static void on_state_changed(void *p, int iomgr_success) {
       memset(&op, 0, sizeof(op));
       op.connectivity_state = &sw->connectivity_state;
       op.on_connectivity_state_change = &sw->closure;
-      elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(c->active), 0);
+      elem = grpc_channel_stack_element(
+          CHANNEL_STACK_FROM_CONNECTION(c->active), 0);
       elem->filter->start_transport_op(elem, &op);
       /* early out */
       gpr_mu_unlock(mu);
@@ -433,7 +432,8 @@ static void publish_transport(grpc_subchannel *c) {
   memset(&op, 0, sizeof(op));
   op.connectivity_state = &sw->connectivity_state;
   op.on_connectivity_state_change = &sw->closure;
-  elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(c->active), 0);
+  elem =
+      grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(c->active), 0);
   elem->filter->start_transport_op(elem, &op);
 
   /* signal completion */
