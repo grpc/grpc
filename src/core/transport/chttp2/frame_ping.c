@@ -32,9 +32,11 @@
  */
 
 #include "src/core/transport/chttp2/frame_ping.h"
+#include "src/core/transport/chttp2/internal.h"
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes) {
@@ -67,12 +69,13 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice,
-    int is_last) {
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_ping_parser *p = parser;
+  grpc_chttp2_outstanding_ping *ping;
 
   while (p->byte != 8 && cur != end) {
     p->opaque_8bytes[p->byte] = *cur;
@@ -83,9 +86,18 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      state->process_ping_reply = 1;
+      for (ping = transport_parsing->pings.next;
+           ping != &transport_parsing->pings; ping = ping->next) {
+        if (0 == memcmp(p->opaque_8bytes, ping->id, 8)) {
+          grpc_iomgr_add_delayed_callback(ping->on_recv, 1);
+        }
+        ping->next->prev = ping->prev;
+        ping->prev->next = ping->next;
+        gpr_free(ping);
+      }
     } else {
-      state->send_ping_ack = 1;
+      gpr_slice_buffer_add(&transport_parsing->qbuf,
+                           grpc_chttp2_ping_create(1, p->opaque_8bytes));
     }
   }
 

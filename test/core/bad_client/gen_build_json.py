@@ -54,6 +54,15 @@ def main():
             'language': 'c',
             'src': [
               'test/core/bad_client/bad_client.c'
+            ],
+            'headers': [
+              'test/core/bad_client/bad_client.h'
+            ],
+            'deps': [
+              'grpc_test_util_unsecure',
+              'grpc_unsecure',
+              'gpr_test_util',
+              'gpr'
             ]
           }],
       'targets': [

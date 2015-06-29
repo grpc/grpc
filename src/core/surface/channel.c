@@ -64,6 +64,7 @@ struct grpc_channel {
   grpc_mdctx *metadata_context;
   /** mdstr for the grpc-status key */
   grpc_mdstr *grpc_status_string;
+  grpc_mdstr *grpc_compression_level_string;
   grpc_mdstr *grpc_message_string;
   grpc_mdstr *path_string;
   grpc_mdstr *authority_string;
@@ -98,6 +99,8 @@ grpc_channel *grpc_channel_create_from_filters(
   gpr_ref_init(&channel->refs, 1 + is_client);
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
+  channel->grpc_compression_level_string =
+      grpc_mdstr_from_string(mdctx, "grpc-compression-level");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
     char buf[GPR_LTOA_MIN_BUFSIZE];
@@ -187,8 +190,14 @@ grpc_call *grpc_channel_create_registered_call(
       grpc_mdelem_ref(rc->authority), deadline);
 }
 
-void grpc_channel_internal_ref(grpc_channel *channel) {
-  gpr_ref(&channel->refs);
+#ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
+void grpc_channel_internal_ref(grpc_channel *c, const char *reason) {
+  gpr_log(GPR_DEBUG, "CHANNEL:   ref %p %d -> %d [%s]", c, c->refs.count,
+          c->refs.count + 1, reason);
+#else
+void grpc_channel_internal_ref(grpc_channel *c) {
+#endif
+  gpr_ref(&c->refs);
 }
 
 static void destroy_channel(void *p, int ok) {
@@ -199,6 +208,7 @@ static void destroy_channel(void *p, int ok) {
     grpc_mdelem_unref(channel->grpc_status_elem[i]);
   }
   grpc_mdstr_unref(channel->grpc_status_string);
+  grpc_mdstr_unref(channel->grpc_compression_level_string);
   grpc_mdstr_unref(channel->grpc_message_string);
   grpc_mdstr_unref(channel->path_string);
   grpc_mdstr_unref(channel->authority_string);
@@ -214,7 +224,13 @@ static void destroy_channel(void *p, int ok) {
   gpr_free(channel);
 }
 
+#ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
+void grpc_channel_internal_unref(grpc_channel *channel, const char *reason) {
+  gpr_log(GPR_DEBUG, "CHANNEL: unref %p %d -> %d [%s]", channel,
+          channel->refs.count, channel->refs.count - 1, reason);
+#else
 void grpc_channel_internal_unref(grpc_channel *channel) {
+#endif
   if (gpr_unref(&channel->refs)) {
     channel->destroy_closure.cb = destroy_channel;
     channel->destroy_closure.cb_arg = channel;
@@ -238,11 +254,11 @@ void grpc_channel_destroy(grpc_channel *channel) {
   op.dir = GRPC_CALL_DOWN;
   elem->filter->channel_op(elem, NULL, &op);
 
-  grpc_channel_internal_unref(channel);
+  GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }
 
 void grpc_client_channel_closed(grpc_channel_element *elem) {
-  grpc_channel_internal_unref(CHANNEL_FROM_TOP_ELEM(elem));
+  GRPC_CHANNEL_INTERNAL_UNREF(CHANNEL_FROM_TOP_ELEM(elem), "closed");
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {
@@ -256,6 +272,11 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel) {
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel) {
   return channel->grpc_status_string;
 }
+
+grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel) {
+  return channel->grpc_compression_level_string;
+}
+
 
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
   if (i >= 0 && i < NUM_CACHED_STATUS_ELEMS) {

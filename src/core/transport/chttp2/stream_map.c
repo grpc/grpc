@@ -32,8 +32,12 @@
  */
 
 #include "src/core/transport/chttp2/stream_map.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map *map,
                                  size_t initial_capacity) {
@@ -92,6 +96,41 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, gpr_uint32 key,
   map->count = count + 1;
 }
 
+void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
+                                      grpc_chttp2_stream_map *dst) {
+  /* if src is empty we dont need to do anything */
+  if (src->count == src->free) {
+    return;
+  }
+  /* if dst is empty we simply need to swap */
+  if (dst->count == dst->free) {
+    GPR_SWAP(grpc_chttp2_stream_map, *src, *dst);
+    return;
+  }
+  /* the first element of src must be greater than the last of dst...
+   * however the maps may need compacting for this property to hold */
+  if (src->keys[0] <= dst->keys[dst->count - 1]) {
+    src->count = compact(src->keys, src->values, src->count);
+    src->free = 0;
+    dst->count = compact(dst->keys, dst->values, dst->count);
+    dst->free = 0;
+  }
+  GPR_ASSERT(src->keys[0] > dst->keys[dst->count - 1]);
+  /* if dst doesn't have capacity, resize */
+  if (dst->count + src->count > dst->capacity) {
+    dst->capacity = GPR_MAX(dst->capacity * 3 / 2, dst->count + src->count);
+    dst->keys = gpr_realloc(dst->keys, dst->capacity * sizeof(gpr_uint32));
+    dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(void *));
+  }
+  memcpy(dst->keys + dst->count, src->keys, src->count * sizeof(gpr_uint32));
+  memcpy(dst->values + dst->count, src->values,
+         src->count * sizeof(void*));
+  dst->count += src->count;
+  dst->free += src->free;
+  src->count = 0;
+  src->free = 0;
+}
+
 static void **find(grpc_chttp2_stream_map *map, gpr_uint32 key) {
   size_t min_idx = 0;
   size_t max_idx = map->count;
@@ -127,6 +166,11 @@ void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map,
     out = *pvalue;
     *pvalue = NULL;
     map->free += (out != NULL);
+    /* recognize complete emptyness and ensure we can skip
+     * defragmentation later */
+    if (map->free == map->count) {
+      map->free = map->count = 0;
+    }
   }
   return out;
 }

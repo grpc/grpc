@@ -72,14 +72,14 @@ typedef union {
   grpc_byte_buffer *send_message;
   struct {
     grpc_status_code code;
-    const char *details;
+    grpc_mdstr *details;
   } send_status;
 } grpc_ioreq_data;
 
 typedef struct {
   grpc_ioreq_op op;
   grpc_ioreq_data data;
-  gpr_uint32 flags;  /**< A copy of the write flags from grpc_op */
+  gpr_uint32 flags; /**< A copy of the write flags from grpc_op */
 } grpc_ioreq;
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
@@ -96,8 +96,10 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
-void grpc_call_internal_unref(grpc_call *call, const char *reason, int allow_immediate_deletion);
-#define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call, reason)
+void grpc_call_internal_unref(grpc_call *call, const char *reason,
+                              int allow_immediate_deletion);
+#define GRPC_CALL_INTERNAL_REF(call, reason) \
+  grpc_call_internal_ref(call, reason)
 #define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) \
   grpc_call_internal_unref(call, reason, allow_immediate_deletion)
 #else
@@ -125,8 +127,7 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
 
 void grpc_server_log_request_call(char *file, int line,
                                   gpr_log_severity severity,
-                                  grpc_server *server,
-                                  grpc_call **call,
+                                  grpc_server *server, grpc_call **call,
                                   grpc_call_details *details,
                                   grpc_metadata_array *initial_metadata,
                                   grpc_completion_queue *cq_bound_to_call,
@@ -135,16 +136,20 @@ void grpc_server_log_request_call(char *file, int line,
 
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
-void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value,
-                           void (*destroy)(void *value));
+void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
+                           void *value, void (*destroy)(void *value));
 /* Get a context pointer. */
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
 
-#define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notifications, tag) \
-  if (grpc_trace_batch) grpc_server_log_request_call(sev, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notifications, tag)
+#define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details,             \
+                                     initial_metadata, cq_bound_to_call,     \
+                                     cq_for_notifications, tag)              \
+  if (grpc_trace_batch)                                                      \
+  grpc_server_log_request_call(sev, server, call, details, initial_metadata, \
+                               cq_bound_to_call, cq_for_notifications, tag)
 
 gpr_uint8 grpc_call_is_client(grpc_call *call);
 

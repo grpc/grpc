@@ -33,12 +33,12 @@
 
 #import "ViewController.h"
 
-#import <gRPC/GRPCCall.h>
-#import <gRPC/GRPCMethodName.h>
-#import <gRPC/GRXWriter+Immediate.h>
-#import <gRPC/GRXWriteable.h>
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCMethodName.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
+#import <RxLibrary/GRXWriteable.h>
 
 @implementation ViewController
 
