@@ -331,6 +331,8 @@ HOST_LDLIBS = $(LDLIBS)
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
 
+HAS_PKG_CONFIG = $(shell command -v pkg-config >/dev/null 2>&1 && echo true || echo false)
+
 ifeq ($(SYSTEM),MINGW32)
 SHARED_EXT = dll
 endif
@@ -355,6 +357,13 @@ ifeq ($(SYSTEM),Darwin)
 OPENSSL_REQUIRES_DL = true
 endif
 
+ifeq ($(HAS_PKG_CONFIG),true)
+OPENSSL_ALPN_CHECK_CMD = pkg-config --atleast-version=1.0.2 openssl
+ZLIB_CHECK_CMD = pkg-config --exists zlib
+PERFTOOLS_CHECK_CMD = pkg-config --exists profiler
+PROTOBUF_CHECK_CMD = pkg-config --atleast-version=3.0.0-alpha-3 protobuf
+else # HAS_PKG_CONFIG
+
 ifeq ($(SYSTEM),MINGW32)
 OPENSSL_LIBS = ssl32 eay32
 else
@@ -365,14 +374,17 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-PROTOC_CHECK_CMD = which protoc > /dev/null
-PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
-DTRACE_CHECK_CMD = which dtrace > /dev/null
-SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
 endif
+
+endif # HAS_PKG_CONFIG
+
+PROTOC_CHECK_CMD = which protoc > /dev/null
+PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
+DTRACE_CHECK_CMD = which dtrace > /dev/null
+SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -442,9 +454,33 @@ LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 DEP_MISSING += zlib
 endif
+else
+ifeq ($(HAS_PKG_CONFIG),true)
+CPPFLAGS += $(shell pkg-config --cflags zlib)
+LDFLAGS += $(shell pkg-config --libs-only-L zlib)
+endif
 endif
 
-ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
+OPENSSL_PKG_CONFIG = false
+
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+ifeq ($(HAS_PKG_CONFIG),true)
+OPENSSL_PKG_CONFIG = true
+CPPFLAGS := $(shell pkg-config --cflags openssl) $(CPPFLAGS)
+LDFLAGS_OPENSSL_PKG_CONFIG = $(shell pkg-config --libs-only-L openssl)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
+LDFLAGS_OPENSSL_PKG_CONFIG += $(shell pkg-config --libs-only-L openssl | sed s/L/Wl,-rpath,/)
+endif
+endif
+LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
+else
+LIBS_SECURE = $(OPENSSL_LIBS)
+ifeq ($(OPENSSL_REQUIRES_DL),true)
+LIBS_SECURE += dl
+endif
+endif
+else
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
@@ -457,16 +493,28 @@ endif
 else
 NO_SECURE = true
 endif
+endif
+
+ifeq ($(OPENSSL_PKG_CONFIG),true)
+LDLIBS_SECURE += $(shell pkg-config --libs-only-l openssl)
 else
-LIBS_SECURE = $(OPENSSL_LIBS)
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE += dl
-endif
-endif
-
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+endif
 
-ifeq ($(HAS_SYSTEM_PROTOBUF),false)
+PROTOBUF_PKG_CONFIG = false
+
+ifeq ($(HAS_SYSTEM_PROTOBUF),true)
+ifeq ($(HAS_PKG_CONFIG),true)
+PROTOBUF_PKG_CONFIG = true
+CPPFLAGS := $(shell pkg-config --cflags protobuf) $(CPPFLAGS)
+LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell pkg-config --libs-only-L protobuf)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
+LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell pkg-config --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
+endif
+endif
+endif
+else
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
@@ -475,14 +523,18 @@ PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
 endif
-else
 endif
 
 LIBS_PROTOBUF = protobuf
 LIBS_PROTOC = protoc protobuf
 
-LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
+
+ifeq ($(PROTOBUF_PKG_CONFIG),true)
+LDLIBS_PROTOBUF += $(shell pkg-config --libs-only-l protobuf)
+else
+LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
+endif
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
@@ -3099,11 +3151,15 @@ LIBGRPC_SRC = \
     src/core/transport/chttp2/hpack_parser.c \
     src/core/transport/chttp2/hpack_table.c \
     src/core/transport/chttp2/huffsyms.c \
+    src/core/transport/chttp2/incoming_metadata.c \
+    src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_lists.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
     src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2/writing.c \
     src/core/transport/chttp2_transport.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
@@ -3345,11 +3401,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/chttp2/hpack_parser.c \
     src/core/transport/chttp2/hpack_table.c \
     src/core/transport/chttp2/huffsyms.c \
+    src/core/transport/chttp2/incoming_metadata.c \
+    src/core/transport/chttp2/parsing.c \
     src/core/transport/chttp2/status_conversion.c \
     src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_lists.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
     src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2/writing.c \
     src/core/transport/chttp2_transport.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \

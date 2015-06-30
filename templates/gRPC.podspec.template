@@ -137,7 +137,7 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC/RxLibrary'
 
     # Certificates, to be able to establish TLS connections:
-    ss.resource_bundles = { 'gRPC' => ['etc/roots.pem'] }
+    ss.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
   end
 
   # RPC library for ProtocolBuffers, based on gRPC

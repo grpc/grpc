@@ -65,7 +65,7 @@ void grpc_sopb_swap(grpc_stream_op_buffer *a, grpc_stream_op_buffer *b) {
   if (a->ops == a->inlined_ops) {
     if (b->ops == b->inlined_ops) {
       /* swap contents of inlined buffer */
-      gpr_slice temp[GRPC_SOPB_INLINE_ELEMENTS];
+      grpc_stream_op temp[GRPC_SOPB_INLINE_ELEMENTS];
       memcpy(temp, a->ops, b->nops * sizeof(grpc_stream_op));
       memcpy(a->ops, b->ops, a->nops * sizeof(grpc_stream_op));
       memcpy(b->ops, temp, b->nops * sizeof(grpc_stream_op));
@@ -161,6 +161,18 @@ void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
 
   memcpy(sopb->ops + orig_nops, ops, sizeof(grpc_stream_op) * nops);
   sopb->nops = new_nops;
+}
+
+void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst) {
+  if (src->nops == 0) {
+    return;
+  }
+  if (dst->nops == 0) {
+    grpc_sopb_swap(src, dst);
+    return;
+  }
+  grpc_sopb_append(dst, src->ops, src->nops);
+  src->nops = 0;
 }
 
 static void assert_valid_list(grpc_mdelem_list *list) {

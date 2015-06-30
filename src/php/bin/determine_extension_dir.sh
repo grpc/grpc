@@ -29,15 +29,15 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set -e
-default_extension_dir=$(php -i | grep extension_dir | sed 's/.*=> //g')
+default_extension_dir=$(php-config --extension-dir)
 if command -v brew >/dev/null && [ -d $(brew --prefix)/opt/grpc-php ]; then
   # homebrew and the grpc-php formula are installed
   extension_dir="-d extension_dir="$(brew --prefix)/opt/grpc-php
-elif [ ! -f $default_extension_dir/grpc.so ]; then
+elif [ ! -e $default_extension_dir/grpc.so ]; then
   # the grpc extension is not found in the default PHP extension dir
   # try the source modules directory
   module_dir=../ext/grpc/modules
-  if [ ! -f $module_dir/grpc.so ]; then
+  if [ ! -e $module_dir/grpc.so ]; then
     echo "Please run 'phpize && ./configure && make' from ext/grpc first"
     exit 1
   fi

@@ -73,7 +73,7 @@ static void test_unauthenticated_ssl_peer(void) {
   GPR_ASSERT(check_transport_security_type(ctx));
 
   tsi_peer_destruct(&peer);
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static int check_identity(const grpc_auth_context *ctx,
@@ -145,7 +145,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
 
   tsi_peer_destruct(&peer);
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
@@ -171,7 +171,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
 
   tsi_peer_destruct(&peer);
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
@@ -202,7 +202,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
 
   tsi_peer_destruct(&peer);
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
@@ -238,8 +238,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
 
   tsi_peer_destruct(&peer);
-  grpc_auth_context_unref(ctx);
-
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 int main(int argc, char **argv) {

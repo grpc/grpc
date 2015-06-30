@@ -64,23 +64,19 @@ typedef enum grpc_stream_state {
 
 /* Transport op: a set of operations to perform on a transport */
 typedef struct grpc_transport_op {
-  void (*on_consumed)(void *user_data, int success);
-  void *on_consumed_user_data;
+  grpc_iomgr_closure *on_consumed;
 
   grpc_stream_op_buffer *send_ops;
   int is_last_send;
-  void (*on_done_send)(void *user_data, int success);
-  void *send_user_data;
+  grpc_iomgr_closure *on_done_send;
 
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
-  void (*on_done_recv)(void *user_data, int success);
-  void *recv_user_data;
+  grpc_iomgr_closure *on_done_recv;
 
   grpc_pollset *bind_pollset;
 
   grpc_status_code cancel_with_status;
-  grpc_mdstr *cancel_message;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
@@ -167,11 +163,8 @@ void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
 
 /* Send a ping on a transport
 
-   Calls cb with user data when a response is received.
-   cb *MAY* be called with arbitrary transport level locks held. It is not safe
-   to call into the transport during cb. */
-void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
-                         void *user_data);
+   Calls cb with user data when a response is received. */
+void grpc_transport_ping(grpc_transport *transport, grpc_iomgr_closure *cb);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
