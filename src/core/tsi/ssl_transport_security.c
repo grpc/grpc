@@ -1321,6 +1321,12 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     return TSI_INVALID_ARGUMENT;
   }
 
+  if ((pem_client_root_certs == NULL) &&
+      (gpr_getenv("GRPC_SSL_VERIFY_FAIL_IF_NO_PEER_CERT") != NULL)) {
+    gpr_log(GPR_ERROR, "No client certs provided, but verification required.");
+    return TSI_INVALID_ARGUMENT;
+  }
+
   impl = calloc(1, sizeof(tsi_ssl_server_handshaker_factory));
   if (impl == NULL) return TSI_OUT_OF_RESOURCES;
   impl->base.create_handshaker =
