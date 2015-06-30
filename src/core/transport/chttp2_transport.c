@@ -935,7 +935,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
 
 static void reading_action(void *pt, int iomgr_success_ignored) {
   grpc_chttp2_transport *t = pt;
-  gpr_log(GPR_DEBUG, "reading_action");
   grpc_endpoint_notify_on_read(t->ep, recv_data, t);
 }
 
