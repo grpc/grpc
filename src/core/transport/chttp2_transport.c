@@ -50,8 +50,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-/* #define REFCOUNTING_DEBUG */
-
 #define DEFAULT_WINDOW 65535
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -436,6 +434,8 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   grpc_chttp2_data_parser_destroy(&s->parsing.data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.incoming_metadata);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->global.incoming_metadata);
+  grpc_chttp2_incoming_metadata_live_op_buffer_end(
+      &s->global.outstanding_metadata);
 
   UNREF_TRANSPORT(t, "stream");
 }
@@ -859,11 +859,22 @@ static void update_global_window(void *args, gpr_uint32 id, void *stream) {
   stream_global->outgoing_window += t->parsing.initial_window_update;
 }
 
+static void read_error_locked(grpc_chttp2_transport *t) {
+  t->endpoint_reading = 0;
+  if (!t->writing_active && t->ep) {
+    grpc_endpoint_destroy(t->ep);
+    t->ep = NULL;
+    /* safe as we still have a ref for read */
+    UNREF_TRANSPORT(t, "disconnect");
+  }
+}
+
 /* tcp read callback */
 static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
                       grpc_endpoint_cb_status error) {
   grpc_chttp2_transport *t = tp;
   size_t i;
+  int unref = 0;
 
   switch (error) {
     case GRPC_ENDPOINT_CB_SHUTDOWN:
@@ -871,15 +882,9 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
     case GRPC_ENDPOINT_CB_ERROR:
       lock(t);
       drop_connection(t);
-      t->endpoint_reading = 0;
-      if (!t->writing_active && t->ep) {
-        grpc_endpoint_destroy(t->ep);
-        t->ep = NULL;
-        UNREF_TRANSPORT(
-            t, "disconnect"); /* safe as we still have a ref for read */
-      }
+      read_error_locked(t);
       unlock(t);
-      UNREF_TRANSPORT(t, "recv_data");
+      unref = 1;
       for (i = 0; i < nslices; i++) gpr_slice_unref(slices[i]);
       break;
     case GRPC_ENDPOINT_CB_OK:
@@ -915,15 +920,22 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
       }
       if (i == nslices) {
         grpc_chttp2_schedule_closure(&t->global, &t->reading_action, 1);
+      } else {
+        read_error_locked(t);
+        unref = 1;
       }
       unlock(t);
       for (; i < nslices; i++) gpr_slice_unref(slices[i]);
       break;
   }
+  if (unref) {
+    UNREF_TRANSPORT(t, "recv_data");
+  }
 }
 
 static void reading_action(void *pt, int iomgr_success_ignored) {
   grpc_chttp2_transport *t = pt;
+  gpr_log(GPR_DEBUG, "reading_action");
   grpc_endpoint_notify_on_read(t->ep, recv_data, t);
 }
 
