@@ -163,7 +163,7 @@ static int decode_group(const unsigned char *codes, size_t num_codes,
   if (codes[2] == GRPC_BASE64_PAD_BYTE) {
     if (codes[3] == GRPC_BASE64_PAD_BYTE) {
       decode_one_char(codes, result, result_offset);
-      } else {
+    } else {
       gpr_log(GPR_ERROR, "Invalid padding detected.");
       return 0;
     }
