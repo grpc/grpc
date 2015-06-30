@@ -164,151 +164,6 @@ static grpc_subchannel *subchannel_factory_create_subchannel(grpc_subchannel_fac
 
 static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {subchannel_factory_ref, subchannel_factory_unref, subchannel_factory_create_subchannel};
 
-#if 0
-typedef struct setup setup;
-
-/* A single setup request (started via initiate) */
-typedef struct {
-  grpc_client_setup_request *cs_request;
-  setup *setup;
-  /* Resolved addresses, or null if resolution not yet completed. */
-  grpc_resolved_addresses *resolved;
-  /* which address in resolved should we pick for the next connection attempt */
-  size_t resolved_index;
-} request;
-
-struct setup {
-  grpc_channel_security_connector *security_connector;
-  const char *target;
-  grpc_transport_setup_callback setup_callback;
-  void *setup_user_data;
-};
-
-static int maybe_try_next_resolved(request *r);
-
-static void done(request *r, int was_successful) {
-  grpc_client_setup_request_finish(r->cs_request, was_successful);
-  if (r->resolved) {
-    grpc_resolved_addresses_destroy(r->resolved);
-  }
-  gpr_free(r);
-}
-
-static void on_secure_transport_setup_done(void *rp,
-                                           grpc_security_status status,
-                                           grpc_endpoint *secure_endpoint) {
-  request *r = rp;
-  if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
-    done(r, 0);
-  } else if (grpc_client_setup_cb_begin(r->cs_request,
-                                        "on_secure_transport_setup_done")) {
-    grpc_create_chttp2_transport(
-        r->setup->setup_callback, r->setup->setup_user_data,
-        grpc_client_setup_get_channel_args(r->cs_request), secure_endpoint,
-        NULL, 0, grpc_client_setup_get_mdctx(r->cs_request), 1);
-    grpc_client_setup_cb_end(r->cs_request, "on_secure_transport_setup_done");
-    done(r, 1);
-  } else {
-    done(r, 0);
-  }
-}
-
-/* connection callback: tcp is either valid, or null on error */
-static void on_connect(void *rp, grpc_endpoint *tcp) {
-  request *r = rp;
-
-  if (!grpc_client_setup_request_should_continue(r->cs_request,
-                                                 "on_connect.secure")) {
-    if (tcp) {
-      grpc_endpoint_shutdown(tcp);
-      grpc_endpoint_destroy(tcp);
-    }
-    done(r, 0);
-    return;
-  }
-
-  if (!tcp) {
-    if (!maybe_try_next_resolved(r)) {
-      done(r, 0);
-      return;
-    } else {
-      return;
-    }
-  } else {
-    grpc_setup_secure_transport(&r->setup->security_connector->base, tcp,
-                                on_secure_transport_setup_done, r);
-  }
-}
-
-/* attempt to connect to the next available resolved address */
-static int maybe_try_next_resolved(request *r) {
-  grpc_resolved_address *addr;
-  if (!r->resolved) return 0;
-  if (r->resolved_index == r->resolved->naddrs) return 0;
-  addr = &r->resolved->addrs[r->resolved_index++];
-  grpc_tcp_client_connect(
-      on_connect, r, grpc_client_setup_get_interested_parties(r->cs_request),
-      (struct sockaddr *)&addr->addr, addr->len,
-      grpc_client_setup_request_deadline(r->cs_request));
-  return 1;
-}
-
-/* callback for when our target address has been resolved */
-static void on_resolved(void *rp, grpc_resolved_addresses *resolved) {
-  request *r = rp;
-
-  /* if we're not still the active request, abort */
-  if (!grpc_client_setup_request_should_continue(r->cs_request,
-                                                 "on_resolved.secure")) {
-    if (resolved) {
-      grpc_resolved_addresses_destroy(resolved);
-    }
-    done(r, 0);
-    return;
-  }
-
-  if (!resolved) {
-    done(r, 0);
-    return;
-  } else {
-    r->resolved = resolved;
-    r->resolved_index = 0;
-    if (!maybe_try_next_resolved(r)) {
-      done(r, 0);
-    }
-  }
-}
-
-static void initiate_setup(void *sp, grpc_client_setup_request *cs_request) {
-  request *r = gpr_malloc(sizeof(request));
-  r->setup = sp;
-  r->cs_request = cs_request;
-  r->resolved = NULL;
-  r->resolved_index = 0;
-  /* TODO(klempner): Make grpc_resolve_address respect deadline */
-  grpc_resolve_address(r->setup->target, "https", on_resolved, r);
-}
-
-static void done_setup(void *sp) {
-  setup *s = sp;
-  gpr_free((void *)s->target);
-  grpc_security_connector_unref(&s->security_connector->base);
-  gpr_free(s);
-}
-
-static grpc_transport_setup_result complete_setup(void *channel_stack,
-                                                  grpc_transport *transport,
-                                                  grpc_mdctx *mdctx) {
-  static grpc_channel_filter const *extra_filters[] = {
-      &grpc_client_auth_filter, &grpc_http_client_filter};
-  return grpc_client_channel_transport_setup_complete(
-      channel_stack, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters),
-      mdctx);
-}
-
-#endif
-
 /* Create a secure client channel:
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
@@ -354,6 +209,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;
   gpr_ref_init(&f->refs, 1);
+  grpc_mdctx_ref(mdctx);
   f->mdctx = mdctx;
   f->security_connector = connector;
   f->merge_args = grpc_channel_args_copy(args_copy);
@@ -364,22 +220,12 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
 
   channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel), resolver);
-  grpc_resolver_unref(resolver);
+  GRPC_RESOLVER_UNREF(resolver, "create");
 
   grpc_channel_args_destroy(args_copy);
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(new_args_from_connector);
   }
-
-#if 0
-  s->target = gpr_strdup(target);
-  s->setup_callback = complete_setup;
-  s->setup_user_data = grpc_channel_get_channel_stack(channel);
-  s->security_connector = connector;
-  grpc_client_setup_create_and_attach(grpc_channel_get_channel_stack(channel),
-                                      args, mdctx, initiate_setup, done_setup,
-                                      s);
-#endif
 
   return channel;
 }
