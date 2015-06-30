@@ -79,8 +79,10 @@ int grpc_connectivity_state_notify_on_state_change(
   return tracker->current_state == GRPC_CHANNEL_IDLE;
 }
 
-void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
-                                 grpc_connectivity_state state) {
+void grpc_connectivity_state_set_with_scheduler(
+    grpc_connectivity_state_tracker *tracker, grpc_connectivity_state state,
+    void (*scheduler)(void *arg, grpc_iomgr_closure *closure),
+    void *arg) {
   grpc_connectivity_state_watcher *new = NULL;
   grpc_connectivity_state_watcher *w;
   /*gpr_log(GPR_DEBUG, "CS:%p:set:%d", tracker, state);*/
@@ -93,7 +95,7 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
 
     if (state != *w->current) {
       *w->current = state;
-      grpc_iomgr_add_callback(w->notify);
+      scheduler(arg, w->notify);
       gpr_free(w);
     } else {
       w->next = new;
@@ -101,4 +103,13 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
     }
   }
   tracker->watchers = new;
+}
+
+static void default_scheduler(void *ignored, grpc_iomgr_closure *closure) {
+  grpc_iomgr_add_callback(closure);
+}
+
+void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
+                                 grpc_connectivity_state state) {
+  grpc_connectivity_state_set_with_scheduler(tracker, state, default_scheduler, NULL);
 }

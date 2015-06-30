@@ -202,17 +202,85 @@ struct call_data {
   call_link links[CALL_LIST_COUNT];
 };
 
+typedef struct {
+  grpc_channel **channels;
+  size_t num_channels;
+} channel_broadcaster;
+
 #define SERVER_FROM_CALL_ELEM(elem) \
   (((channel_data *)(elem)->channel_data)->server)
 
 static void begin_call(grpc_server *server, call_data *calld,
                        requested_call *rc);
 static void fail_call(grpc_server *server, requested_call *rc);
-static void shutdown_channel(channel_data *chand, int send_goaway,
-                             int send_disconnect);
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
    hold mu_call */
 static void maybe_finish_shutdown(grpc_server *server);
+
+/* channel broadcaster */
+
+/* assumes server locked */
+static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
+  channel_data *c;
+  size_t count = 0;
+  for (c = s->root_channel_data.next; c != &s->root_channel_data;
+       c = c->next) {
+    count ++;
+  }
+  cb->num_channels = count;
+  cb->channels = gpr_malloc(sizeof(*cb->channels) * cb->num_channels);
+  count = 0;
+  for (c = s->root_channel_data.next; c != &s->root_channel_data;
+       c = c->next) {
+    cb->channels[count] = c->channel;
+    GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast");
+    count ++;
+  }
+}
+
+struct shutdown_cleanup_args {
+  grpc_iomgr_closure closure;
+  gpr_slice slice;
+};
+
+static void shutdown_cleanup(void *arg, int iomgr_status_ignored) {
+  struct shutdown_cleanup_args *a = arg;
+  gpr_slice_unref(a->slice);
+  gpr_free(a);
+}
+
+static void send_shutdown(grpc_channel *channel, int send_goaway, int send_disconnect) {
+  grpc_transport_op op;
+  struct shutdown_cleanup_args *sc;
+  grpc_channel_element *elem;
+
+  memset(&op, 0, sizeof(op));
+  gpr_log(GPR_DEBUG, "send_goaway:%d", send_goaway);
+  op.send_goaway = send_goaway;
+  sc = gpr_malloc(sizeof(*sc));
+  sc->slice = gpr_slice_from_copied_string("Server shutdown");
+  op.goaway_message = &sc->slice;
+  op.goaway_status = GRPC_STATUS_OK;
+  op.disconnect = send_disconnect;
+  grpc_iomgr_closure_init(&sc->closure, shutdown_cleanup, sc);
+  op.on_consumed = &sc->closure;
+
+  elem = grpc_channel_stack_element(
+      grpc_channel_get_channel_stack(channel), 0);
+  elem->filter->start_transport_op(elem, &op);
+}
+
+static void channel_broadcaster_shutdown(channel_broadcaster *cb, int send_goaway, int send_disconnect) {
+  size_t i;
+
+  for (i = 0; i < cb->num_channels; i++) {
+    send_shutdown(cb->channels[i], send_goaway, send_disconnect);
+    GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast");
+  }
+  gpr_free(cb->channels);
+}
+
+/* call list */
 
 static int call_list_join(call_data **root, call_data *call, call_list list) {
   GPR_ASSERT(!call->root[list]);
@@ -458,12 +526,14 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static void decrement_call_count(channel_data *chand) {
+static int decrement_call_count(channel_data *chand) {
+  int disconnect = 0;
   chand->num_calls--;
   if (0 == chand->num_calls && chand->server->shutdown) {
-    shutdown_channel(chand, 0, 1);
+    disconnect = 1;
   }
   maybe_finish_shutdown(chand->server);
+  return disconnect;
 }
 
 static void server_on_recv(void *ptr, int success) {
@@ -471,6 +541,7 @@ static void server_on_recv(void *ptr, int success) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   int remove_res;
+  int disconnect = 0;
 
   if (success && !calld->got_initial_metadata) {
     size_t i;
@@ -519,9 +590,16 @@ static void server_on_recv(void *ptr, int success) {
       gpr_mu_unlock(&chand->server->mu_call);
       gpr_mu_lock(&chand->server->mu_global);
       if (remove_res) {
-        decrement_call_count(chand);
+        disconnect = decrement_call_count(chand);
+        if (disconnect) {
+          GRPC_CHANNEL_INTERNAL_REF(chand->channel, "send-disconnect");
+        }
       }
       gpr_mu_unlock(&chand->server->mu_global);
+      if (disconnect) {
+        send_shutdown(chand->channel, 0, 1);
+        GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "send-disconnect");
+      }
       break;
   }
 
@@ -573,89 +651,6 @@ static void channel_connectivity_changed(void *cd, int iomgr_status_ignored) {
     gpr_mu_unlock(&server->mu_global);
     GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "connectivity");
   }
-}
-
-#if 0
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  channel_data *chand = elem->channel_data;
-  grpc_server *server = chand->server;
-
-  switch (op->type) {
-    case GRPC_ACCEPT_CALL:
-      /* create a call */
-      grpc_call_create(chand->channel, NULL,
-                       op->data.accept_call.transport_server_data, NULL, 0,
-                       gpr_inf_future);
-      break;
-    case GRPC_TRANSPORT_CLOSED:
-      /* if the transport is closed for a server channel, we destroy the
-         channel */
-      gpr_mu_lock(&server->mu_global);
-      server_ref(server);
-      destroy_channel(chand);
-      gpr_mu_unlock(&server->mu_global);
-      server_unref(server);
-      break;
-    case GRPC_TRANSPORT_GOAWAY:
-      gpr_slice_unref(op->data.goaway.message);
-      break;
-    default:
-      GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
-      grpc_channel_next_op(elem, op);
-      break;
-  }
-}
-#endif
-
-typedef struct {
-  channel_data *chand;
-  int send_goaway;
-  int send_disconnect;
-  grpc_iomgr_closure finish_shutdown_channel_closure;
-
-  /* for use during shutdown: the goaway message to send */
-  gpr_slice goaway_message;
-} shutdown_channel_args;
-
-static void destroy_shutdown_channel_args(void *p, int success) {
-  shutdown_channel_args *sca = p;
-  GRPC_CHANNEL_INTERNAL_UNREF(sca->chand->channel, "shutdown");
-  gpr_slice_unref(sca->goaway_message);
-  gpr_free(sca);
-}
-
-static void finish_shutdown_channel(void *p, int success) {
-  shutdown_channel_args *sca = p;
-  grpc_transport_op op;
-  memset(&op, 0, sizeof(op));
-
-  op.send_goaway = sca->send_goaway;
-  sca->goaway_message = gpr_slice_from_copied_string("Server shutdown");
-  op.goaway_message = &sca->goaway_message;
-  op.goaway_status = GRPC_STATUS_OK;
-  op.disconnect = sca->send_disconnect;
-  grpc_iomgr_closure_init(&sca->finish_shutdown_channel_closure,
-                          destroy_shutdown_channel_args, sca);
-  op.on_consumed = &sca->finish_shutdown_channel_closure;
-
-  grpc_channel_next_op(
-      grpc_channel_stack_element(
-          grpc_channel_get_channel_stack(sca->chand->channel), 0),
-      &op);
-}
-
-static void shutdown_channel(channel_data *chand, int send_goaway,
-                             int send_disconnect) {
-  shutdown_channel_args *sca;
-  GRPC_CHANNEL_INTERNAL_REF(chand->channel, "shutdown");
-  sca = gpr_malloc(sizeof(shutdown_channel_args));
-  sca->chand = chand;
-  sca->send_goaway = send_goaway;
-  sca->send_disconnect = send_disconnect;
-  sca->finish_shutdown_channel_closure.cb = finish_shutdown_channel;
-  sca->finish_shutdown_channel_closure.cb_arg = sca;
-  grpc_iomgr_add_callback(&sca->finish_shutdown_channel_closure);
 }
 
 static void init_call_elem(grpc_call_element *elem,
@@ -969,10 +964,10 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag) {
   listener *l;
   requested_call_array requested_calls;
-  channel_data *c;
   size_t i;
   registered_method *rm;
   shutdown_tag *sdt;
+  channel_broadcaster broadcaster;
 
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
@@ -988,10 +983,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
     return;
   }
 
-  for (c = server->root_channel_data.next; c != &server->root_channel_data;
-       c = c->next) {
-    shutdown_channel(c, 1, c->num_calls == 0);
-  }
+  channel_broadcaster_init(server, &broadcaster);
 
   /* collect all unregistered then registered calls */
   gpr_mu_lock(&server->mu_call);
@@ -1029,6 +1021,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   for (l = server->listeners; l; l = l->next) {
     l->destroy(server, l->arg);
   }
+
+  channel_broadcaster_shutdown(&broadcaster, 1, 0);
 }
 
 void grpc_server_listener_destroy_done(void *s) {

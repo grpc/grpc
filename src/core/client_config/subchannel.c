@@ -39,6 +39,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
+#include "src/core/iomgr/alarm.h"
 #include "src/core/transport/connectivity_state.h"
 
 typedef struct {
@@ -108,6 +109,15 @@ struct grpc_subchannel {
   waiting_for_connect *waiting;
   /** connectivity state tracking */
   grpc_connectivity_state_tracker state_tracker;
+
+  /** next connect attempt time */
+  gpr_timespec next_attempt;
+  /** amount to backoff each failure */
+  gpr_timespec backoff_delta;
+  /** do we have an active alarm? */
+  int have_alarm;
+  /** our alarm */
+  grpc_alarm alarm;
 };
 
 struct grpc_subchannel_call {
@@ -259,7 +269,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   return c;
 }
 
-static void start_connect(grpc_subchannel *c) {
+static void continue_connect(grpc_subchannel *c) {
   grpc_connect_in_args args;
 
   args.interested_parties = &c->pollset_set;
@@ -271,6 +281,14 @@ static void start_connect(grpc_subchannel *c) {
 
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->connected);
+}
+
+static void start_connect(grpc_subchannel *c) {
+  gpr_timespec now = gpr_now();
+  c->next_attempt = now;
+  c->backoff_delta = gpr_time_from_seconds(1);
+
+  continue_connect(c);
 }
 
 static void continue_creating_call(void *arg, int iomgr_success) {
@@ -350,10 +368,14 @@ void grpc_subchannel_process_transport_op(grpc_subchannel *c,
                                           grpc_transport_op *op) {
   connection *con = NULL;
   grpc_subchannel *destroy;
+  int cancel_alarm = 0;
   gpr_mu_lock(&c->mu);
   if (op->disconnect) {
     c->disconnected = 1;
     connectivity_state_changed_locked(c);
+    if (c->have_alarm) {
+      cancel_alarm = 1;
+    }
   }
   if (c->active != NULL) {
     con = c->active;
@@ -372,6 +394,10 @@ void grpc_subchannel_process_transport_op(grpc_subchannel *c,
     if (destroy) {
       subchannel_destroy(destroy);
     }
+  }
+
+  if (cancel_alarm) {
+    grpc_alarm_cancel(&c->alarm);
   }
 }
 
@@ -528,18 +554,30 @@ static void publish_transport(grpc_subchannel *c) {
   }
 }
 
+static void on_alarm(void *arg, int iomgr_success) {
+  grpc_subchannel *c = arg;
+  gpr_mu_lock(&c->mu);
+  c->have_alarm = 0;
+  gpr_mu_unlock(&c->mu);
+  if (iomgr_success) {
+    continue_connect(c);
+  } else {
+    GRPC_SUBCHANNEL_UNREF(c, "connecting");
+  }
+}
+
 static void subchannel_connected(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
   if (c->connecting_result.transport != NULL) {
     publish_transport(c);
   } else {
-    int destroy;
     gpr_mu_lock(&c->mu);
-    destroy = SUBCHANNEL_UNREF_LOCKED(c, "connecting");
+    GPR_ASSERT(!c->have_alarm);
+    c->have_alarm = 1;
+    c->next_attempt = gpr_time_add(c->next_attempt, c->backoff_delta);
+    c->backoff_delta = gpr_time_add(c->backoff_delta, c->backoff_delta);
+    grpc_alarm_init(&c->alarm, c->next_attempt, on_alarm, c, gpr_now());
     gpr_mu_unlock(&c->mu);
-    if (destroy) subchannel_destroy(c);
-    /* TODO(ctiller): retry after sleeping */
-    abort();
   }
 }
 

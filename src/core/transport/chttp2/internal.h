@@ -160,7 +160,8 @@ typedef struct {
   /** data to write next write */
   gpr_slice_buffer qbuf;
   /** queued callbacks */
-  grpc_iomgr_closure *pending_closures;
+  grpc_iomgr_closure *pending_closures_head;
+  grpc_iomgr_closure *pending_closures_tail;
 
   /** window available for us to send to peer */
   gpr_uint32 outgoing_window;

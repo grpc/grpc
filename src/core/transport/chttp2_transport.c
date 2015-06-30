@@ -117,6 +117,8 @@ static void add_to_pollset_locked(grpc_chttp2_transport *t,
 static void maybe_start_some_streams(
     grpc_chttp2_transport_global *transport_global);
 
+static void connectivity_state_set(grpc_chttp2_transport_global *transport_global, grpc_connectivity_state state);
+
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -328,7 +330,7 @@ static void destroy_transport(grpc_transport *gt) {
 static void close_transport_locked(grpc_chttp2_transport *t) {
   if (!t->closed) {
     t->closed = 1;
-    grpc_connectivity_state_set(&t->channel_callback.state_tracker,
+    connectivity_state_set(&t->global,
                                 GRPC_CHANNEL_FATAL_FAILURE);
     if (t->ep) {
       grpc_endpoint_shutdown(t->ep);
@@ -451,8 +453,9 @@ static void unlock(grpc_chttp2_transport *t) {
     grpc_chttp2_schedule_closure(&t->global, &t->writing_action, 1);
   }
 
-  run_closures = t->global.pending_closures;
-  t->global.pending_closures = NULL;
+  run_closures = t->global.pending_closures_head;
+  t->global.pending_closures_head = NULL;
+  t->global.pending_closures_tail = NULL;
 
   gpr_mu_unlock(&t->mu);
 
@@ -523,8 +526,8 @@ void grpc_chttp2_add_incoming_goaway(
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
-  grpc_connectivity_state_set(
-      &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
+  connectivity_state_set(
+      transport_global,
       GRPC_CHANNEL_FATAL_FAILURE);
 }
 
@@ -550,8 +553,7 @@ static void maybe_start_some_streams(
     transport_global->next_stream_id += 2;
 
     if (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      grpc_connectivity_state_set(&TRANSPORT_FROM_GLOBAL(transport_global)
-                                       ->channel_callback.state_tracker,
+      connectivity_state_set(transport_global,
                                   GRPC_CHANNEL_TRANSIENT_FAILURE);
     }
 
@@ -933,12 +935,30 @@ static void reading_action(void *pt, int iomgr_success_ignored) {
  * CALLBACK LOOP
  */
 
+static void schedule_closure_for_connectivity(void *a, grpc_iomgr_closure *closure) {
+  grpc_chttp2_schedule_closure(a, closure, 1);
+}
+
+static void connectivity_state_set(grpc_chttp2_transport_global *transport_global, grpc_connectivity_state state) {
+  grpc_connectivity_state_set_with_scheduler(
+    &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
+    state,
+    schedule_closure_for_connectivity,
+    transport_global);
+}
+
 void grpc_chttp2_schedule_closure(
     grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
     int success) {
   closure->success = success;
-  closure->next = transport_global->pending_closures;
-  transport_global->pending_closures = closure;
+  if (transport_global->pending_closures_tail == NULL) {
+    transport_global->pending_closures_head =
+        transport_global->pending_closures_tail = closure;
+  } else {
+    transport_global->pending_closures_tail->next = closure;
+    transport_global->pending_closures_tail = closure;
+  }
+  closure->next = NULL;
 }
 
 /*

@@ -59,6 +59,10 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
 
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state);
+void grpc_connectivity_state_set_with_scheduler(
+    grpc_connectivity_state_tracker *tracker, grpc_connectivity_state state,
+    void (*scheduler)(void *arg, grpc_iomgr_closure *closure),
+    void *arg);
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
