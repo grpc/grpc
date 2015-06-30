@@ -178,7 +178,6 @@ void grpc_iomgr_shutdown(void) {
 
 void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
   obj->name = gpr_strdup(name);
-  gpr_log(GPR_DEBUG, "register: %s %p", obj->name, obj);
   gpr_mu_lock(&g_mu);
   obj->next = &g_root_object;
   obj->prev = obj->next->prev;
@@ -187,7 +186,6 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
 }
 
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
-  gpr_log(GPR_DEBUG, "unregister: %s %p", obj->name, obj);
   gpr_mu_lock(&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;
