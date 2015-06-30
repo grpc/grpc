@@ -56,6 +56,7 @@ typedef struct {
   grpc_transport_op op;
   size_t op_md_idx;
   int sent_initial_metadata;
+  gpr_uint8 security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
 } call_data;
 
@@ -193,8 +194,26 @@ static void auth_start_transport_op(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   grpc_linked_mdelem *l;
   size_t i;
+  grpc_client_security_context* sec_ctx = NULL;
 
-  /* TODO(jboeuf): write the call auth context. */
+  if (calld->security_context_set == 0) {
+    calld->security_context_set = 1;
+    GPR_ASSERT(op->context);
+    if (op->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+      op->context[GRPC_CONTEXT_SECURITY].value =
+          grpc_client_security_context_create();
+      op->context[GRPC_CONTEXT_SECURITY].destroy =
+          grpc_client_security_context_destroy;
+    }
+    sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
+    if (sec_ctx->auth_context == NULL) {
+      sec_ctx->auth_context =
+          grpc_auth_context_ref(chand->security_connector->base.auth_context);
+    } else {
+      sec_ctx->auth_context->chained =
+          grpc_auth_context_ref(chand->security_connector->base.auth_context);
+    }
+  }
 
   if (op->send_ops && !calld->sent_initial_metadata) {
     size_t nops = op->send_ops->nops;
@@ -259,6 +278,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->host = NULL;
   calld->method = NULL;
   calld->sent_initial_metadata = 0;
+  calld->security_context_set = 0;
 
   GPR_ASSERT(!initial_op || !initial_op->send_ops);
 }
