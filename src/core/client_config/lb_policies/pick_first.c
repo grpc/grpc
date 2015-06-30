@@ -176,15 +176,20 @@ loop:
       del_interested_parties_locked(p);
       GPR_SWAP(grpc_subchannel *, p->subchannels[p->checking_subchannel],
                p->subchannels[p->num_subchannels - 1]);
-      p->checking_subchannel %= p->num_subchannels;
-      p->checking_connectivity = grpc_subchannel_check_connectivity(
-          p->subchannels[p->checking_subchannel]);
       p->num_subchannels--;
-      GRPC_SUBCHANNEL_UNREF(p->subchannels[p->num_subchannels], "pick_first");
-      add_interested_parties_locked(p);
       if (p->num_subchannels == 0) {
-        abort();
+        while ((pp = p->pending_picks)) {
+          p->pending_picks = pp->next;
+          *pp->target = NULL;
+          grpc_iomgr_add_delayed_callback(pp->on_complete, 1);
+          gpr_free(pp);
+        }
       } else {
+        p->checking_subchannel %= p->num_subchannels;
+        p->checking_connectivity = grpc_subchannel_check_connectivity(
+            p->subchannels[p->checking_subchannel]);
+        GRPC_SUBCHANNEL_UNREF(p->subchannels[p->num_subchannels], "pick_first");
+        add_interested_parties_locked(p);
         goto loop;
       }
   }

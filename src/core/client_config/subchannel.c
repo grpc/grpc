@@ -546,6 +546,7 @@ static void on_alarm(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
+  connectivity_state_changed_locked(c);
   gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
     continue_connect(c);
@@ -560,6 +561,7 @@ static void subchannel_connected(void *arg, int iomgr_success) {
     publish_transport(c);
   } else {
     gpr_mu_lock(&c->mu);
+    connectivity_state_changed_locked(c);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
     c->next_attempt = gpr_time_add(c->next_attempt, c->backoff_delta);
@@ -570,7 +572,7 @@ static void subchannel_connected(void *arg, int iomgr_success) {
 }
 
 static gpr_timespec compute_connect_deadline(grpc_subchannel *c) {
-  return gpr_time_add(gpr_now(), gpr_time_from_seconds(60));
+  return gpr_time_add(c->next_attempt, c->backoff_delta);
 }
 
 static grpc_connectivity_state compute_connectivity_locked(grpc_subchannel *c) {
@@ -578,6 +580,9 @@ static grpc_connectivity_state compute_connectivity_locked(grpc_subchannel *c) {
     return GRPC_CHANNEL_FATAL_FAILURE;
   }
   if (c->connecting) {
+    if (c->have_alarm) {
+      return GRPC_CHANNEL_TRANSIENT_FAILURE;
+    }
     return GRPC_CHANNEL_CONNECTING;
   }
   if (c->active) {

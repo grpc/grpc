@@ -115,7 +115,7 @@ static void destroy(grpc_fd *fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p  ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
+  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
           gpr_atm_no_barrier_load(&fd->refst),
           gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
 #else
@@ -159,6 +159,7 @@ void grpc_fd_global_shutdown(void) {
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
+  gpr_log(GPR_DEBUG, "FD %d %p create", r->fd, r);
   grpc_iomgr_register_object(&r->iomgr_object, name);
   return r;
 }

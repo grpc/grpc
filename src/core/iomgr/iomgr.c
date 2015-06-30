@@ -158,7 +158,7 @@ void grpc_iomgr_shutdown(void) {
                 "memory leaks are likely",
                 count_objects());
         for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
-          gpr_log(GPR_DEBUG, "LEAKED OBJECT: %s", obj->name);
+          gpr_log(GPR_DEBUG, "LEAKED OBJECT: %s %p", obj->name, obj);
         }
         break;
       }
@@ -177,8 +177,9 @@ void grpc_iomgr_shutdown(void) {
 }
 
 void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
-  gpr_mu_lock(&g_mu);
   obj->name = gpr_strdup(name);
+  gpr_log(GPR_DEBUG, "register: %s %p", obj->name, obj);
+  gpr_mu_lock(&g_mu);
   obj->next = &g_root_object;
   obj->prev = obj->next->prev;
   obj->next->prev = obj->prev->next = obj;
@@ -186,12 +187,13 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
 }
 
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
+  gpr_log(GPR_DEBUG, "unregister: %s %p", obj->name, obj);
   gpr_mu_lock(&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;
-  gpr_free(obj->name);
   gpr_cv_signal(&g_rcv);
   gpr_mu_unlock(&g_mu);
+  gpr_free(obj->name);
 }
 
 void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
