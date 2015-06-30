@@ -50,6 +50,7 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser *parser, gpr_uint32 length,
     gpr_uint8 flags);
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H */

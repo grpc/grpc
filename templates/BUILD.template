@@ -63,6 +63,12 @@ ${cc_library(lib)}
 % endif
 % endfor
 
+% for lib in libs:
+% if lib.name in ("grpc", "gpr"):
+${objc_library(lib)}
+% endif
+% endfor
+
 % for tgt in targets:
 % if tgt.build == 'protoc':
 ${cc_binary(tgt)}
@@ -97,6 +103,40 @@ cc_library(
 )
 </%def>
 
+<%def name="objc_library(lib)">
+objc_library(
+  name = "${lib.name}_objc",
+  srcs = [
+% for src in lib.src:
+    "${src}",
+% endfor
+  ],
+  hdrs = [
+% for hdr in lib.get("public_headers", []):
+    "${hdr}",
+% endfor
+% for hdr in lib.get("headers", []):
+    "${hdr}",
+% endfor
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+% for dep in lib.get("deps", []):
+    ":${dep}_objc",
+% endfor
+% if lib.get('secure', 'no') == 'yes':
+    "//external:libssl_objc",
+% endif
+  ],
+% if lib.get("baselib", false):
+  sdk_dylibs = ["libz"],
+% endif
+)
+</%def>
+
 <%def name="cc_binary(tgt)">
 cc_binary(
   name = "${tgt.name}",
@@ -112,3 +152,74 @@ cc_binary(
   ],
 )
 </%def>
+
+objc_path = "src/objective-c"
+
+rx_library_path = objc_path + "/RxLibrary"
+
+objc_library(
+  name = "rx_library",
+  hdrs = glob([
+    rx_library_path + "/*.h",
+    rx_library_path + "/transformations/*.h",
+  ]),
+  srcs = glob([
+    rx_library_path + "/*.m",
+    rx_library_path + "/transformations/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":rx_library_private",
+  ],
+)
+
+objc_library(
+  name = "rx_library_private",
+  hdrs = glob([rx_library_path + "/private/*.h"]),
+  srcs = glob([rx_library_path + "/private/*.m"]),
+  visibility = ["//visibility:private"],
+)
+
+objc_client_path = objc_path + "/GRPCClient"
+
+objc_library(
+  name = "grpc_client",
+  hdrs = glob([
+    objc_client_path + "/*.h",
+    objc_client_path + "/private/*.h",
+  ]),
+  srcs = glob([
+    objc_client_path + "/*.m",
+    objc_client_path + "/private/*.m",
+  ]),
+  includes = [objc_path],
+  bundles = [":gRPCCertificates"],
+  deps = [
+    ":grpc_objc",
+    ":rx_library",
+  ],
+)
+
+objc_bundle_library(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"],
+)
+
+proto_objc_rpc_path = objc_path + "/ProtoRPC"
+
+objc_library(
+  name = "proto_objc_rpc",
+  hdrs = glob([
+    proto_objc_rpc_path + "/*.h",
+  ]),
+  srcs = glob([
+    proto_objc_rpc_path + "/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":grpc_client",
+    ":rx_library",
+    "//external:protobuf_objc",
+  ],
+)

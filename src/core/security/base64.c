@@ -128,7 +128,7 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
   size_t num_codes = 0;
 
   while (b64_len--) {
-    unsigned char c = *b64++;
+    unsigned char c = (unsigned char)(*b64++);
     signed char code;
     if (c >= GPR_ARRAY_SIZE(base64_bytes)) continue;
     if (url_safe) {
@@ -149,7 +149,7 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
         goto fail;
       }
     } else {
-      codes[num_codes++] = code;
+      codes[num_codes++] = (unsigned char)code;
       if (num_codes == 4) {
         if (codes[0] == GRPC_BASE64_PAD_BYTE ||
             codes[1] == GRPC_BASE64_PAD_BYTE) {
@@ -159,7 +159,7 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
         if (codes[2] == GRPC_BASE64_PAD_BYTE) {
           if (codes[3] == GRPC_BASE64_PAD_BYTE) {
             /* Double padding. */
-            gpr_uint32 packed = (codes[0] << 2) | (codes[1] >> 4);
+            gpr_uint32 packed = (gpr_uint32)((codes[0] << 2) | (codes[1] >> 4));
             current[result_size++] = (unsigned char)packed;
           } else {
             gpr_log(GPR_ERROR, "Invalid padding detected.");
@@ -168,13 +168,13 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
         } else if (codes[3] == GRPC_BASE64_PAD_BYTE) {
           /* Single padding. */
           gpr_uint32 packed =
-              (codes[0] << 10) | (codes[1] << 4) | (codes[2] >> 2);
+              (gpr_uint32)((codes[0] << 10) | (codes[1] << 4) | (codes[2] >> 2));
           current[result_size++] = (unsigned char)(packed >> 8);
           current[result_size++] = (unsigned char)(packed);
         } else {
           /* No padding. */
           gpr_uint32 packed =
-              (codes[0] << 18) | (codes[1] << 12) | (codes[2] << 6) | codes[3];
+              (gpr_uint32)((codes[0] << 18) | (codes[1] << 12) | (codes[2] << 6) | codes[3]);
           current[result_size++] = (unsigned char)(packed >> 16);
           current[result_size++] = (unsigned char)(packed >> 8);
           current[result_size++] = (unsigned char)(packed);

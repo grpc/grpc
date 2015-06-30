@@ -46,4 +46,4 @@ size_t grpc_chttp2_num_alpn_versions(void);
  * grpc_chttp2_num_alpn_versions()) */
 const char *grpc_chttp2_get_alpn_version_index(size_t i);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_ALPN_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_ALPN_H */

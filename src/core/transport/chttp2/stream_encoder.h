@@ -90,4 +90,4 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
                         grpc_chttp2_hpack_compressor *compressor,
                         gpr_slice_buffer *output);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H */

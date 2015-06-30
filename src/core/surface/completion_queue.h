@@ -40,10 +40,14 @@
 #include <grpc/grpc.h>
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
-void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason);
-void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason);
-#define GRPC_CQ_INTERNAL_REF(cc, reason) grpc_cq_internal_ref(cc, reason)
-#define GRPC_CQ_INTERNAL_UNREF(cc, reason) grpc_cq_internal_unref(cc, reason)
+void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
+                          const char *file, int line);
+void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
+                            const char *file, int line);
+#define GRPC_CQ_INTERNAL_REF(cc, reason) \
+  grpc_cq_internal_ref(cc, reason, __FILE__, __LINE__)
+#define GRPC_CQ_INTERNAL_UNREF(cc, reason) \
+  grpc_cq_internal_unref(cc, reason, __FILE__, __LINE__)
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc);
 void grpc_cq_internal_unref(grpc_completion_queue *cc);

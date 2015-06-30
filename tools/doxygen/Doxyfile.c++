@@ -760,7 +760,43 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = include/grpc++/async_generic_service.h include/grpc++/async_unary_call.h include/grpc++/byte_buffer.h include/grpc++/channel_arguments.h include/grpc++/channel_interface.h include/grpc++/client_context.h include/grpc++/completion_queue.h include/grpc++/config.h include/grpc++/create_channel.h include/grpc++/credentials.h include/grpc++/generic_stub.h include/grpc++/impl/call.h include/grpc++/impl/client_unary_call.h include/grpc++/impl/grpc_library.h include/grpc++/impl/internal_stub.h include/grpc++/impl/rpc_method.h include/grpc++/impl/rpc_service_method.h include/grpc++/impl/service_type.h include/grpc++/impl/sync.h include/grpc++/impl/sync_cxx11.h include/grpc++/impl/sync_no_cxx11.h include/grpc++/impl/thd.h include/grpc++/impl/thd_cxx11.h include/grpc++/impl/thd_no_cxx11.h include/grpc++/server.h include/grpc++/server_builder.h include/grpc++/server_context.h include/grpc++/server_credentials.h include/grpc++/slice.h include/grpc++/status.h include/grpc++/status_code_enum.h include/grpc++/stream.h include/grpc++/thread_pool_interface.h include/grpc++/time.h
+INPUT                  = include/grpc++/async_generic_service.h \
+include/grpc++/async_unary_call.h \
+include/grpc++/byte_buffer.h \
+include/grpc++/channel_arguments.h \
+include/grpc++/channel_interface.h \
+include/grpc++/client_context.h \
+include/grpc++/completion_queue.h \
+include/grpc++/config.h \
+include/grpc++/config_protobuf.h \
+include/grpc++/create_channel.h \
+include/grpc++/credentials.h \
+include/grpc++/generic_stub.h \
+include/grpc++/impl/call.h \
+include/grpc++/impl/client_unary_call.h \
+include/grpc++/impl/grpc_library.h \
+include/grpc++/impl/internal_stub.h \
+include/grpc++/impl/proto_utils.h \
+include/grpc++/impl/rpc_method.h \
+include/grpc++/impl/rpc_service_method.h \
+include/grpc++/impl/serialization_traits.h \
+include/grpc++/impl/service_type.h \
+include/grpc++/impl/sync.h \
+include/grpc++/impl/sync_cxx11.h \
+include/grpc++/impl/sync_no_cxx11.h \
+include/grpc++/impl/thd.h \
+include/grpc++/impl/thd_cxx11.h \
+include/grpc++/impl/thd_no_cxx11.h \
+include/grpc++/server.h \
+include/grpc++/server_builder.h \
+include/grpc++/server_context.h \
+include/grpc++/server_credentials.h \
+include/grpc++/slice.h \
+include/grpc++/status.h \
+include/grpc++/status_code_enum.h \
+include/grpc++/stream.h \
+include/grpc++/thread_pool_interface.h \
+include/grpc++/time.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
