@@ -441,7 +441,7 @@ void grpc_channel_destroy(grpc_channel *channel);
    has been made. */
 
 /* Called by clients to cancel an RPC on the server.
-   Can be called multiple times, from any thread. 
+   Can be called multiple times, from any thread.
    THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
    are thread-safe, and can be called at any point before grpc_call_destroy
    is called.*/
@@ -457,7 +457,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                              grpc_status_code status,
                                              const char *description);
 
-/* Destroy a call. 
+/* Destroy a call.
    THREAD SAFETY: grpc_call_destroy is thread-compatible */
 void grpc_call_destroy(grpc_call *call);
 

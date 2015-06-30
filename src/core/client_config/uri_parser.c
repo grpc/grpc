@@ -39,7 +39,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-static grpc_uri *bad_uri(const char *uri_text, int pos, const char *section, int suppress_errors) {
+static grpc_uri *bad_uri(const char *uri_text, int pos, const char *section,
+                         int suppress_errors) {
   char *line_prefix;
   int pfx_len;
 

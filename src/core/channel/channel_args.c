@@ -139,8 +139,8 @@ grpc_compression_level grpc_channel_args_get_compression_level(
   return GRPC_COMPRESS_LEVEL_NONE;
 }
 
-void grpc_channel_args_set_compression_level(
-    grpc_channel_args **a, grpc_compression_level level) {
+void grpc_channel_args_set_compression_level(grpc_channel_args **a,
+                                             grpc_compression_level level) {
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
   tmp.key = GRPC_COMPRESSION_LEVEL_ARG;

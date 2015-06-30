@@ -75,9 +75,8 @@ static void state_unref(grpc_server_secure_state *state) {
   }
 }
 
-static void setup_transport(void *statep,
-                                                   grpc_transport *transport,
-                                                   grpc_mdctx *mdctx) {
+static void setup_transport(void *statep, grpc_transport *transport,
+                            grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
@@ -85,8 +84,7 @@ static void setup_transport(void *statep,
   grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), &connector_arg, 1);
   grpc_server_setup_transport(state->server, transport, extra_filters,
-                                       GPR_ARRAY_SIZE(extra_filters), mdctx,
-                                       args_copy);
+                              GPR_ARRAY_SIZE(extra_filters), mdctx, args_copy);
   grpc_channel_args_destroy(args_copy);
 }
 
@@ -101,8 +99,8 @@ static void on_secure_transport_setup_done(void *statep,
     if (!state->is_shutdown) {
       mdctx = grpc_mdctx_create();
       transport = grpc_create_chttp2_transport(
-          grpc_server_get_channel_args(state->server),
-          secure_endpoint, NULL, 0, mdctx, 0);
+          grpc_server_get_channel_args(state->server), secure_endpoint, NULL, 0,
+          mdctx, 0);
       setup_transport(state, transport, mdctx);
     } else {
       /* We need to consume this here, because the server may already have gone

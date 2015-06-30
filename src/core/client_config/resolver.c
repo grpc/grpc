@@ -34,16 +34,17 @@
 #include "src/core/client_config/resolver.h"
 
 void grpc_resolver_init(grpc_resolver *resolver,
-                         const grpc_resolver_vtable *vtable) {
+                        const grpc_resolver_vtable *vtable) {
   resolver->vtable = vtable;
   gpr_ref_init(&resolver->refs, 1);
 }
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
 void grpc_resolver_ref(grpc_resolver *resolver, const char *file, int line,
-                        const char *reason) {
+                       const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p   ref %d -> %d %s",
-          resolver, (int)resolver->refs.count, (int)resolver->refs.count + 1, reason);
+          resolver, (int)resolver->refs.count, (int)resolver->refs.count + 1,
+          reason);
 #else
 void grpc_resolver_ref(grpc_resolver *resolver) {
 #endif
@@ -52,9 +53,10 @@ void grpc_resolver_ref(grpc_resolver *resolver) {
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
 void grpc_resolver_unref(grpc_resolver *resolver, const char *file, int line,
-                          const char *reason) {
+                         const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p unref %d -> %d %s",
-          resolver, (int)resolver->refs.count, (int)resolver->refs.count - 1, reason);
+          resolver, (int)resolver->refs.count, (int)resolver->refs.count - 1,
+          reason);
 #else
 void grpc_resolver_unref(grpc_resolver *resolver) {
 #endif

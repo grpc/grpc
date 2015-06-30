@@ -138,7 +138,9 @@ typedef struct {
   grpc_call_element *elem;
 } waiting_call;
 
-static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_stream_op *op, int continuation);
+static void perform_transport_stream_op(grpc_call_element *elem,
+                                        grpc_transport_stream_op *op,
+                                        int continuation);
 
 static void continue_with_pick(void *arg, int iomgr_success) {
   waiting_call *wc = arg;
@@ -147,7 +149,8 @@ static void continue_with_pick(void *arg, int iomgr_success) {
   gpr_free(wc);
 }
 
-static void add_to_lb_policy_wait_queue_locked_state_config(grpc_call_element *elem) {
+static void add_to_lb_policy_wait_queue_locked_state_config(
+    grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   waiting_call *wc = gpr_malloc(sizeof(*wc));
   grpc_iomgr_closure_init(&wc->closure, continue_with_pick, wc);
@@ -182,7 +185,8 @@ static void started_call(void *arg, int iomgr_success) {
       calld->state = CALL_ACTIVE;
       gpr_mu_unlock(&calld->mu_state);
       if (have_waiting) {
-        grpc_subchannel_call_process_op(calld->subchannel_call, &calld->waiting_op);
+        grpc_subchannel_call_process_op(calld->subchannel_call,
+                                        &calld->waiting_op);
       }
     } else {
       calld->state = CALL_CANCELLED;
@@ -233,17 +237,16 @@ static void pick_target(grpc_lb_policy *lb_policy, call_data *calld) {
   initial_metadata = &op->send_ops->ops[0].data.metadata;
 
   grpc_iomgr_closure_init(&calld->async_setup_task, picked_target, calld);
-  grpc_lb_policy_pick(lb_policy, op->bind_pollset, 
-    initial_metadata, &calld->picked_channel, &calld->async_setup_task);
+  grpc_lb_policy_pick(lb_policy, op->bind_pollset, initial_metadata,
+                      &calld->picked_channel, &calld->async_setup_task);
 }
 
-static void merge_into_waiting_op(grpc_call_element *elem, grpc_transport_stream_op *new_op) {
+static void merge_into_waiting_op(grpc_call_element *elem,
+                                  grpc_transport_stream_op *new_op) {
   call_data *calld = elem->call_data;
   grpc_transport_stream_op *waiting_op = &calld->waiting_op;
-  GPR_ASSERT((waiting_op->send_ops == NULL) !=
-             (new_op->send_ops == NULL));
-  GPR_ASSERT((waiting_op->recv_ops == NULL) !=
-             (new_op->recv_ops == NULL));
+  GPR_ASSERT((waiting_op->send_ops == NULL) != (new_op->send_ops == NULL));
+  GPR_ASSERT((waiting_op->recv_ops == NULL) != (new_op->recv_ops == NULL));
   if (new_op->send_ops != NULL) {
     waiting_op->send_ops = new_op->send_ops;
     waiting_op->is_last_send = new_op->is_last_send;
@@ -263,7 +266,9 @@ static void merge_into_waiting_op(grpc_call_element *elem, grpc_transport_stream
   }
 }
 
-static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_stream_op *op, int continuation) {
+static void perform_transport_stream_op(grpc_call_element *elem,
+                                        grpc_transport_stream_op *op,
+                                        int continuation) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_subchannel_call *subchannel_call;
@@ -311,7 +316,7 @@ static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_
         }
         break;
       }
-      /* fall through */
+    /* fall through */
     case CALL_CREATED:
       if (op->cancel_with_status != GRPC_STATUS_OK) {
         calld->state = CALL_CANCELLED;
@@ -343,7 +348,7 @@ static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_
 }
 
 static void cc_start_transport_stream_op(grpc_call_element *elem,
-                                  grpc_transport_stream_op *op) {
+                                         grpc_transport_stream_op *op) {
   perform_transport_stream_op(elem, op, 0);
 }
 
@@ -382,12 +387,14 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
     GRPC_RESOLVER_REF(resolver, "channel-next");
     gpr_mu_unlock(&chand->mu_config);
     GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
-    grpc_resolver_next(chand->resolver, &chand->incoming_configuration, &chand->on_config_changed);
+    grpc_resolver_next(chand->resolver, &chand->incoming_configuration,
+                       &chand->on_config_changed);
     GRPC_RESOLVER_UNREF(resolver, "channel-next");
   } else {
     old_resolver = chand->resolver;
     chand->resolver = NULL;
-    grpc_connectivity_state_set(&chand->state_tracker, GRPC_CHANNEL_FATAL_FAILURE);
+    grpc_connectivity_state_set(&chand->state_tracker,
+                                GRPC_CHANNEL_FATAL_FAILURE);
     gpr_mu_unlock(&chand->mu_config);
     if (old_resolver != NULL) {
       grpc_resolver_shutdown(old_resolver);
@@ -404,7 +411,8 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   GRPC_CHANNEL_INTERNAL_UNREF(chand->master, "resolver");
 }
 
-static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op *op) {
+static void cc_start_transport_op(grpc_channel_element *elem,
+                                  grpc_transport_op *op) {
   grpc_lb_policy *lb_policy = NULL;
   channel_data *chand = elem->channel_data;
   grpc_resolver *destroy_resolver = NULL;
@@ -416,13 +424,16 @@ static void cc_start_transport_op(grpc_channel_element *elem, grpc_transport_op 
 
   gpr_mu_lock(&chand->mu_config);
   if (op->on_connectivity_state_change != NULL) {
-    grpc_connectivity_state_notify_on_state_change(&chand->state_tracker, op->connectivity_state, op->on_connectivity_state_change);
+    grpc_connectivity_state_notify_on_state_change(
+        &chand->state_tracker, op->connectivity_state,
+        op->on_connectivity_state_change);
     op->on_connectivity_state_change = NULL;
     op->connectivity_state = NULL;
   }
 
   if (op->disconnect && chand->resolver != NULL) {
-    grpc_connectivity_state_set(&chand->state_tracker, GRPC_CHANNEL_FATAL_FAILURE);
+    grpc_connectivity_state_set(&chand->state_tracker,
+                                GRPC_CHANNEL_FATAL_FAILURE);
     destroy_resolver = chand->resolver;
     chand->resolver = NULL;
   }
@@ -496,7 +507,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
@@ -510,7 +521,8 @@ static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
   gpr_mu_init(&chand->mu_config);
   chand->mdctx = metadata_context;
   chand->master = master;
-  grpc_iomgr_closure_init(&chand->on_config_changed, cc_on_config_changed, chand);
+  grpc_iomgr_closure_init(&chand->on_config_changed, cc_on_config_changed,
+                          chand);
 
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE);
 }
@@ -530,9 +542,15 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    cc_start_transport_stream_op, cc_start_transport_op,           sizeof(call_data),
-    init_call_elem,        destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem, "client-channel",
+    cc_start_transport_stream_op,
+    cc_start_transport_op,
+    sizeof(call_data),
+    init_call_elem,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    "client-channel",
 };
 
 void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
@@ -544,5 +562,6 @@ void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
   chand->resolver = resolver;
   GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
   GRPC_RESOLVER_REF(resolver, "channel");
-  grpc_resolver_next(resolver, &chand->incoming_configuration, &chand->on_config_changed);
+  grpc_resolver_next(resolver, &chand->incoming_configuration,
+                     &chand->on_config_changed);
 }

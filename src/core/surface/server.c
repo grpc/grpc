@@ -151,7 +151,7 @@ struct grpc_server {
      before mu_call. This is currently used in shutdown processing
      (grpc_server_shutdown_and_notify and maybe_finish_shutdown) */
   gpr_mu mu_global; /* mutex for server and channel state */
-  gpr_mu mu_call; /* mutex for call-specific state */
+  gpr_mu mu_call;   /* mutex for call-specific state */
 
   registered_method *registered_methods;
   requested_call_array requested_calls;
@@ -226,11 +226,10 @@ static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
   channel_data *c;
   size_t count = 0;
   size_t dc_count = 0;
-  for (c = s->root_channel_data.next; c != &s->root_channel_data;
-       c = c->next) {
-    count ++;
+  for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
+    count++;
     if (c->num_calls == 0) {
-      dc_count ++;
+      dc_count++;
     }
   }
   cb->num_channels = count;
@@ -239,8 +238,7 @@ static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
   cb->disconnects = gpr_malloc(sizeof(*cb->channels) * cb->num_disconnects);
   count = 0;
   dc_count = 0;
-  for (c = s->root_channel_data.next; c != &s->root_channel_data;
-       c = c->next) {
+  for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     cb->channels[count++] = c->channel;
     GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast");
     if (c->num_calls == 0) {
@@ -261,7 +259,8 @@ static void shutdown_cleanup(void *arg, int iomgr_status_ignored) {
   gpr_free(a);
 }
 
-static void send_shutdown(grpc_channel *channel, int send_goaway, int send_disconnect) {
+static void send_shutdown(grpc_channel *channel, int send_goaway,
+                          int send_disconnect) {
   grpc_transport_op op;
   struct shutdown_cleanup_args *sc;
   grpc_channel_element *elem;
@@ -277,12 +276,12 @@ static void send_shutdown(grpc_channel *channel, int send_goaway, int send_disco
   grpc_iomgr_closure_init(&sc->closure, shutdown_cleanup, sc);
   op.on_consumed = &sc->closure;
 
-  elem = grpc_channel_stack_element(
-      grpc_channel_get_channel_stack(channel), 0);
+  elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, &op);
 }
 
-static void channel_broadcaster_shutdown(channel_broadcaster *cb, int send_goaway, int send_disconnect) {
+static void channel_broadcaster_shutdown(channel_broadcaster *cb,
+                                         int send_goaway, int send_disconnect) {
   size_t i;
 
   for (i = 0; i < cb->num_channels; i++) {
@@ -721,7 +720,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
   server_unref(chand->server);
 }
 
-static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {

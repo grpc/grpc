@@ -99,7 +99,8 @@ typedef struct grpc_transport_op {
   gpr_slice *goaway_message;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures */
-  void (*set_accept_stream)(void *user_data, grpc_transport *transport, const void *server_data);
+  void (*set_accept_stream)(void *user_data, grpc_transport *transport,
+                            const void *server_data);
   void *set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset *bind_pollset;
@@ -154,10 +155,12 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
      stream    - the stream on which to send the operations. This must be
                  non-NULL and previously initialized by the same transport.
      op        - a grpc_transport_stream_op specifying the op to perform */
-void grpc_transport_perform_stream_op(grpc_transport *transport, grpc_stream *stream,
-                               grpc_transport_stream_op *op);
+void grpc_transport_perform_stream_op(grpc_transport *transport,
+                                      grpc_stream *stream,
+                                      grpc_transport_stream_op *op);
 
-void grpc_transport_perform_op(grpc_transport *transport, grpc_transport_op *op);
+void grpc_transport_perform_op(grpc_transport *transport,
+                               grpc_transport_op *op);
 
 /* Send a ping on a transport
 

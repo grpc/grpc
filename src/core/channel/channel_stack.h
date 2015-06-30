@@ -65,7 +65,7 @@ typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op)(grpc_call_element *elem,
-                             grpc_transport_stream_op *op);
+                                    grpc_transport_stream_op *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -96,8 +96,7 @@ typedef struct {
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining */
-  void (*init_channel_elem)(grpc_channel_element *elem,
-    grpc_channel *master,
+  void (*init_channel_elem)(grpc_channel_element *elem, grpc_channel *master,
                             const grpc_channel_args *args,
                             grpc_mdctx *metadata_context, int is_first,
                             int is_last);
@@ -152,7 +151,8 @@ size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
 void grpc_channel_stack_init(const grpc_channel_filter **filters,
-                             size_t filter_count, grpc_channel *master,const grpc_channel_args *args,
+                             size_t filter_count, grpc_channel *master,
+                             const grpc_channel_args *args,
                              grpc_mdctx *metadata_context,
                              grpc_channel_stack *stack);
 /* Destroy a channel stack */

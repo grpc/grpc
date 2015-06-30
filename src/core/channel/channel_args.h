@@ -47,7 +47,8 @@ grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
                                                   size_t num_to_add);
 
 /** Copy args from a then args from b into a new channel args */
-grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a, const grpc_channel_args *b);
+grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
+                                           const grpc_channel_args *b);
 
 /** Destroy arguments created by grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_channel_args *a);
@@ -62,7 +63,7 @@ grpc_compression_level grpc_channel_args_get_compression_level(
 
 /** Sets the compression level in \a a to \a level. Setting it to
  * GRPC_COMPRESS_LEVEL_NONE disables compression for the channel. */
-void grpc_channel_args_set_compression_level(
-    grpc_channel_args **a, grpc_compression_level level);
+void grpc_channel_args_set_compression_level(grpc_channel_args **a,
+                                             grpc_compression_level level);
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */

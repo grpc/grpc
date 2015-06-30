@@ -170,7 +170,7 @@ static const char *scheme_from_args(const grpc_channel_args *args) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   /* grab pointers to our data from the channel element */

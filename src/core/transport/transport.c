@@ -49,8 +49,9 @@ int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
                                         initial_op);
 }
 
-void grpc_transport_perform_stream_op(grpc_transport *transport, grpc_stream *stream,
-                               grpc_transport_stream_op *op) {
+void grpc_transport_perform_stream_op(grpc_transport *transport,
+                                      grpc_stream *stream,
+                                      grpc_transport_stream_op *op) {
   transport->vtable->perform_stream_op(transport, stream, op);
 }
 

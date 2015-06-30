@@ -199,7 +199,8 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
 }
 
 static int has_watchers(grpc_fd *fd) {
-  return fd->read_watcher != NULL || fd->write_watcher != NULL || fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
+  return fd->read_watcher != NULL || fd->write_watcher != NULL ||
+         fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
 }
 
 void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,

@@ -280,7 +280,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,grpc_channel *master,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
@@ -326,6 +326,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op,           sizeof(call_data),
+    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem,          destroy_call_elem,    sizeof(channel_data),
     init_channel_elem,       destroy_channel_elem, "client-auth"};

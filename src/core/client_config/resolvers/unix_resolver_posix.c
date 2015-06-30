@@ -136,7 +136,7 @@ static void unix_maybe_finish_next_locked(unix_resolver *r) {
 }
 
 static void unix_destroy(grpc_resolver *gr) {
-  unix_resolver *r = (unix_resolver*)gr;
+  unix_resolver *r = (unix_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_subchannel_factory_unref(r->subchannel_factory);
   gpr_free(r);

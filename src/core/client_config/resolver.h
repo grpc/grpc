@@ -59,14 +59,13 @@ struct grpc_resolver_vtable {
 };
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
-#define GRPC_RESOLVER_REF(p, r) \
-  grpc_resolver_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_RESOLVER_UNREF(p, r) \
   grpc_resolver_unref((p), __FILE__, __LINE__, (r))
 void grpc_resolver_ref(grpc_resolver *policy, const char *file, int line,
-                        const char *reason);
+                       const char *reason);
 void grpc_resolver_unref(grpc_resolver *policy, const char *file, int line,
-                          const char *reason);
+                         const char *reason);
 #else
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
 #define GRPC_RESOLVER_UNREF(p, r) grpc_resolver_unref((p))
@@ -75,7 +74,7 @@ void grpc_resolver_unref(grpc_resolver *policy);
 #endif
 
 void grpc_resolver_init(grpc_resolver *resolver,
-                         const grpc_resolver_vtable *vtable);
+                        const grpc_resolver_vtable *vtable);
 
 void grpc_resolver_shutdown(grpc_resolver *resolver);
 
