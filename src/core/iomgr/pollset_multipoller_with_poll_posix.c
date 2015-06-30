@@ -179,6 +179,9 @@ static void multipoll_with_poll_pollset_maybe_work(
       grpc_pollset_kick_consume(&pollset->kick_state, kfd);
     }
     for (i = 1; i < np; i++) {
+      if (h->watchers[i].fd == NULL) {
+        continue;
+      }
       if (h->pfds[i].revents & (POLLIN | POLLHUP | POLLERR)) {
         grpc_fd_become_readable(h->watchers[i].fd, allow_synchronous_callback);
       }
