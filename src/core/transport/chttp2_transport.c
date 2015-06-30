@@ -408,6 +408,8 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   grpc_chttp2_data_parser_destroy(&s->parsing.data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.incoming_metadata);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->global.incoming_metadata);
+  grpc_chttp2_incoming_metadata_live_op_buffer_end(
+      &s->global.outstanding_metadata);
 
   UNREF_TRANSPORT(t, "stream");
 }
