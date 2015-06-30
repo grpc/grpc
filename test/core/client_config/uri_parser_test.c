@@ -41,7 +41,7 @@
 
 static void test_succeeds(const char *uri_text, const char *scheme,
                           const char *authority, const char *path) {
-  grpc_uri *uri = grpc_uri_parse(uri_text);
+  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
   GPR_ASSERT(0 == strcmp(authority, uri->authority));
@@ -50,7 +50,7 @@ static void test_succeeds(const char *uri_text, const char *scheme,
 }
 
 static void test_fails(const char *uri_text) {
-  GPR_ASSERT(NULL == grpc_uri_parse(uri_text));
+  GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
 }
 
 int main(int argc, char **argv) {

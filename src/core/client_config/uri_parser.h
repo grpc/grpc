@@ -41,7 +41,7 @@ typedef struct {
 } grpc_uri;
 
 /** parse a uri, return NULL on failure */
-grpc_uri *grpc_uri_parse(const char *uri_text);
+grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
 
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri *uri);

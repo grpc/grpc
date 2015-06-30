@@ -242,6 +242,7 @@ static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_
   channel_data *chand = elem->channel_data;
   grpc_subchannel_call *subchannel_call;
   grpc_lb_policy *lb_policy;
+  grpc_transport_stream_op op2;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
@@ -263,8 +264,11 @@ static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_
       if (!continuation) {
         if (op->cancel_with_status != GRPC_STATUS_OK) {
           calld->state = CALL_CANCELLED;
+          op2 = calld->waiting_op;
+          memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
           gpr_mu_unlock(&calld->mu_state);
           handle_op_after_cancellation(elem, op);
+          handle_op_after_cancellation(elem, &op2);
         } else {
           GPR_ASSERT((calld->waiting_op.send_ops == NULL) !=
                      (op->send_ops == NULL));

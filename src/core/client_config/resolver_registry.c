@@ -100,18 +100,21 @@ grpc_resolver *grpc_resolver_create(
   grpc_resolver_factory *factory = NULL;
   grpc_resolver *resolver;
 
-  uri = grpc_uri_parse(name);
+  uri = grpc_uri_parse(name, 1);
   factory = lookup_factory(uri);
   if (factory == NULL && g_default_resolver_scheme != NULL) {
     grpc_uri_destroy(uri);
     gpr_asprintf(&tmp, "%s%s", g_default_resolver_scheme, name);
-    uri = grpc_uri_parse(tmp);
+    uri = grpc_uri_parse(tmp, 1);
     factory = lookup_factory(uri);
     if (factory == NULL) {
+      grpc_uri_destroy(grpc_uri_parse(name, 0));
+      grpc_uri_destroy(grpc_uri_parse(tmp, 0));
       gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", name, tmp);
     }
     gpr_free(tmp);
   } else if (factory == NULL) {
+    grpc_uri_destroy(grpc_uri_parse(name, 0));
     gpr_log(GPR_ERROR, "don't know how to resolve '%s'", name);
   }
   resolver =

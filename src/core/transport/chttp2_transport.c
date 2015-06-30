@@ -553,8 +553,7 @@ static void maybe_start_some_streams(
     transport_global->next_stream_id += 2;
 
     if (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      connectivity_state_set(transport_global,
-                                  GRPC_CHANNEL_TRANSIENT_FAILURE);
+      connectivity_state_set(transport_global, GRPC_CHANNEL_TRANSIENT_FAILURE);
     }
 
     stream_global->outgoing_window =
@@ -940,6 +939,7 @@ static void schedule_closure_for_connectivity(void *a, grpc_iomgr_closure *closu
 }
 
 static void connectivity_state_set(grpc_chttp2_transport_global *transport_global, grpc_connectivity_state state) {
+  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
   grpc_connectivity_state_set_with_scheduler(
     &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
     state,

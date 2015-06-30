@@ -409,7 +409,6 @@ static void on_state_changed(void *p, int iomgr_success) {
   grpc_transport_op op;
   grpc_channel_element *elem;
   connection *destroy_connection = NULL;
-  int do_connect = 0;
 
   gpr_mu_lock(mu);
 
@@ -436,6 +435,7 @@ static void on_state_changed(void *p, int iomgr_success) {
       gpr_mu_unlock(mu);
       return;
     case GRPC_CHANNEL_FATAL_FAILURE:
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
       /* things have gone wrong, deactivate and enter idle */
       if (sw->subchannel->active->refs == 0) {
         destroy_connection = sw->subchannel->active;
@@ -444,15 +444,6 @@ static void on_state_changed(void *p, int iomgr_success) {
       grpc_connectivity_state_set(&c->state_tracker,
                                   GRPC_CHANNEL_TRANSIENT_FAILURE);
       break;
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      /* things are starting to go wrong, reconnect but don't deactivate */
-      /* released by connection */
-      SUBCHANNEL_REF_LOCKED(c, "connecting");
-      grpc_connectivity_state_set(&c->state_tracker,
-                                  GRPC_CHANNEL_TRANSIENT_FAILURE);
-      do_connect = 1;
-      c->connecting = 1;
-      break;
   }
 
 done:
@@ -460,9 +451,6 @@ done:
   destroy = SUBCHANNEL_UNREF_LOCKED(c, "state_watcher");
   gpr_free(sw);
   gpr_mu_unlock(mu);
-  if (do_connect) {
-    start_connect(c);
-  }
   if (destroy) {
     subchannel_destroy(c);
   }

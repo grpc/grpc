@@ -204,7 +204,9 @@ struct call_data {
 
 typedef struct {
   grpc_channel **channels;
+  grpc_channel **disconnects;
   size_t num_channels;
+  size_t num_disconnects;
 } channel_broadcaster;
 
 #define SERVER_FROM_CALL_ELEM(elem) \
@@ -223,18 +225,28 @@ static void maybe_finish_shutdown(grpc_server *server);
 static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
   channel_data *c;
   size_t count = 0;
+  size_t dc_count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data;
        c = c->next) {
     count ++;
+    if (c->num_calls == 0) {
+      dc_count ++;
+    }
   }
   cb->num_channels = count;
+  cb->num_disconnects = dc_count;
   cb->channels = gpr_malloc(sizeof(*cb->channels) * cb->num_channels);
+  cb->disconnects = gpr_malloc(sizeof(*cb->channels) * cb->num_disconnects);
   count = 0;
+  dc_count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data;
        c = c->next) {
-    cb->channels[count] = c->channel;
+    cb->channels[count++] = c->channel;
     GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast");
-    count ++;
+    if (c->num_calls == 0) {
+      cb->disconnects[dc_count++] = c->channel;
+      GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast-disconnect");
+    }
   }
 }
 
@@ -274,10 +286,15 @@ static void channel_broadcaster_shutdown(channel_broadcaster *cb, int send_goawa
   size_t i;
 
   for (i = 0; i < cb->num_channels; i++) {
-    send_shutdown(cb->channels[i], send_goaway, send_disconnect);
+    send_shutdown(cb->channels[i], 1, 0);
     GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast");
   }
+  for (i = 0; i < cb->num_disconnects; i++) {
+    send_shutdown(cb->disconnects[i], 0, 1);
+    GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast-disconnect");
+  }
   gpr_free(cb->channels);
+  gpr_free(cb->disconnects);
 }
 
 /* call list */
