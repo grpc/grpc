@@ -117,6 +117,7 @@ static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
 static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
   subchannel_factory *f = (subchannel_factory *)scf;
   if (gpr_unref(&f->refs)) {
+    grpc_channel_args_destroy(f->merge_args);
     grpc_mdctx_unref(f->mdctx);
     gpr_free(f);
   }
