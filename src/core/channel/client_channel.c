@@ -237,6 +237,32 @@ static void pick_target(grpc_lb_policy *lb_policy, call_data *calld) {
     initial_metadata, &calld->picked_channel, &calld->async_setup_task);
 }
 
+static void merge_into_waiting_op(grpc_call_element *elem, grpc_transport_stream_op *new_op) {
+  call_data *calld = elem->call_data;
+  grpc_transport_stream_op *waiting_op = &calld->waiting_op;
+  GPR_ASSERT((waiting_op->send_ops == NULL) !=
+             (new_op->send_ops == NULL));
+  GPR_ASSERT((waiting_op->recv_ops == NULL) !=
+             (new_op->recv_ops == NULL));
+  if (new_op->send_ops != NULL) {
+    waiting_op->send_ops = new_op->send_ops;
+    waiting_op->is_last_send = new_op->is_last_send;
+    waiting_op->on_done_send = new_op->on_done_send;
+  }
+  if (new_op->recv_ops != NULL) {
+    waiting_op->recv_ops = new_op->recv_ops;
+    waiting_op->recv_state = new_op->recv_state;
+    waiting_op->on_done_recv = new_op->on_done_recv;
+  }
+  if (waiting_op->on_consumed == NULL) {
+    waiting_op->on_consumed = new_op->on_consumed;
+    new_op->on_consumed = NULL;
+  }
+  if (new_op->cancel_with_status != GRPC_STATUS_OK) {
+    waiting_op->cancel_with_status = new_op->cancel_with_status;
+  }
+}
+
 static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_stream_op *op, int continuation) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -266,24 +292,18 @@ static void perform_transport_stream_op(grpc_call_element *elem, grpc_transport_
           calld->state = CALL_CANCELLED;
           op2 = calld->waiting_op;
           memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
+          if (op->on_consumed) {
+            calld->waiting_op.on_consumed = op->on_consumed;
+            op->on_consumed = NULL;
+          } else if (op2.on_consumed) {
+            calld->waiting_op.on_consumed = op2.on_consumed;
+            op2.on_consumed = NULL;
+          }
           gpr_mu_unlock(&calld->mu_state);
           handle_op_after_cancellation(elem, op);
           handle_op_after_cancellation(elem, &op2);
         } else {
-          GPR_ASSERT((calld->waiting_op.send_ops == NULL) !=
-                     (op->send_ops == NULL));
-          GPR_ASSERT((calld->waiting_op.recv_ops == NULL) !=
-                     (op->recv_ops == NULL));
-          if (op->send_ops != NULL) {
-            calld->waiting_op.send_ops = op->send_ops;
-            calld->waiting_op.is_last_send = op->is_last_send;
-            calld->waiting_op.on_done_send = op->on_done_send;
-          }
-          if (op->recv_ops != NULL) {
-            calld->waiting_op.recv_ops = op->recv_ops;
-            calld->waiting_op.recv_state = op->recv_state;
-            calld->waiting_op.on_done_recv = op->on_done_recv;
-          }
+          merge_into_waiting_op(elem, op);
           gpr_mu_unlock(&calld->mu_state);
           if (op->on_consumed != NULL) {
             op->on_consumed->cb(op->on_consumed->cb_arg, 0);
