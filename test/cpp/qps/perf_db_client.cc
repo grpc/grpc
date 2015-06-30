@@ -39,7 +39,7 @@ namespace testing {
 // sets the client and server config information
 void PerfDbClient::setConfigs(const ClientConfig& client_config,
                               const ServerConfig& server_config) {
-  this->client_config_ = client_config;
+  client_config_ = client_config;
   this->server_config_ = server_config;
 }
 
@@ -76,13 +76,13 @@ void PerfDbClient::setTimes(double server_system_time, double server_user_time,
 }
 
 // sends the data to the performance database server
-bool PerfDbClient::sendData(std::string access_token, std::string test_name,
+bool PerfDbClient::sendData(std::string hashed_id, std::string test_name,
                             std::string sys_info, std::string tag) {
   // Data record request object
   SingleUserRecordRequest single_user_record_request;
 
   // setting access token, name of the test and the system information
-  single_user_record_request.set_access_token(access_token);
+  single_user_record_request.set_hashed_id(hashed_id);
   single_user_record_request.set_test_name(test_name);
   single_user_record_request.set_sys_info(sys_info);
   single_user_record_request.set_tag(tag);

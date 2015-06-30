@@ -57,7 +57,7 @@ message Metrics {
 
 // Request for storing a single user's data
 message SingleUserRecordRequest {
-  string access_token = 1;
+  string hashed_id = 1;
   string test_name = 2;
   string sys_info = 3;
   string tag = 4;

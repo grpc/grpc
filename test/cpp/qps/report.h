@@ -107,11 +107,11 @@ class GprLogReporter : public Reporter {
 /** Reporter for performance database tool */
 class PerfDbReporter : public Reporter {
  public:
-  PerfDbReporter(const string& name, const string& access_token,
+  PerfDbReporter(const string& name, const string& hashed_id,
                  const string& test_name, const string& sys_info,
                  const string& server_address, const string& tag)
       : Reporter(name),
-        access_token_(access_token),
+        hashed_id_(hashed_id),
         test_name_(test_name),
         sys_info_(sys_info),
         tag_(tag) {
@@ -122,7 +122,7 @@ class PerfDbReporter : public Reporter {
 
  private:
   PerfDbClient perf_db_client_;
-  std::string access_token_;
+  std::string hashed_id_;
   std::string test_name_;
   std::string sys_info_;
   std::string tag_;

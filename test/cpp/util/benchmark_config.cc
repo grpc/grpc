@@ -39,7 +39,7 @@ DEFINE_bool(enable_log_reporter, true,
 
 DEFINE_bool(report_metrics_db, false, "True if metrics to be reported to performance database");
 
-DEFINE_string(access_token, "", "Authorizing JSON string for leaderboard");
+DEFINE_string(hashed_id, "", "Hash of the user id");
 
 DEFINE_string(test_name, "", "Name of the test being executed");
 
@@ -71,7 +71,7 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   }
   if(FLAGS_report_metrics_db) {
     composite_reporter->add(
-      std::unique_ptr<Reporter>(new PerfDbReporter("PerfDbReporter", FLAGS_access_token, FLAGS_test_name, 
+      std::unique_ptr<Reporter>(new PerfDbReporter("PerfDbReporter", FLAGS_hashed_id, FLAGS_test_name, 
         FLAGS_sys_info, FLAGS_server_address, FLAGS_tag)));
   }
 

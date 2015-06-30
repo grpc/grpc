@@ -91,7 +91,7 @@ class PerfDbClient {
                 double client_system_time, double client_user_time);
 
   // sends the data to the performance database server
-  bool sendData(std::string access_token, std::string test_name,
+  bool sendData(std::string hashed_id, std::string test_name,
                 std::string sys_info, std::string tag);
 
  private:

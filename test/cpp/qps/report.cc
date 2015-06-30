@@ -172,7 +172,7 @@ void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
 void PerfDbReporter::SendData() {
   // send data to performance database
   bool data_state =
-      perf_db_client_.sendData(access_token_, test_name_, sys_info_, tag_);
+      perf_db_client_.sendData(hashed_id_, test_name_, sys_info_, tag_);
 
   // check state of data sending
   if (data_state) {
