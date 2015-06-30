@@ -552,7 +552,7 @@ static void writing_action(void *gt, int iomgr_success_ignored) {
 void grpc_chttp2_add_incoming_goaway(
     grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
     gpr_slice goaway_text) {
-  char *msg = gpr_dump_slice(goaway_text, GPR_DUMP_ASCII);
+  char *msg = gpr_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg);
   gpr_free(msg);
   if (transport_global->goaway_state == GRPC_CHTTP2_ERROR_STATE_NONE) {
