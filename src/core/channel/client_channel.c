@@ -476,7 +476,6 @@ static void destroy_call_elem(grpc_call_element *elem) {
      remove it from the in-flight requests tracked by the child_entry we
      picked */
   gpr_mu_lock(&calld->mu_state);
-  gpr_log(GPR_DEBUG, "call_elem destroy @ state %d", calld->state);
   switch (calld->state) {
     case CALL_ACTIVE:
       subchannel_call = calld->subchannel_call;
