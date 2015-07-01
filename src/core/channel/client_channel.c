@@ -252,10 +252,8 @@ static grpc_iomgr_closure *merge_into_waiting_op(
   call_data *calld = elem->call_data;
   grpc_iomgr_closure *consumed_op = NULL;
   grpc_transport_stream_op *waiting_op = &calld->waiting_op;
-  GPR_ASSERT((waiting_op->send_ops == NULL) != (new_op->send_ops == NULL) ||
-             waiting_op->send_ops == NULL);
-  GPR_ASSERT((waiting_op->recv_ops == NULL) != (new_op->recv_ops == NULL) ||
-             waiting_op->recv_ops == NULL);
+  GPR_ASSERT((waiting_op->send_ops != NULL) + (new_op->send_ops != NULL) <= 1);
+  GPR_ASSERT((waiting_op->recv_ops != NULL) + (new_op->recv_ops != NULL) <= 1);
   if (new_op->send_ops != NULL) {
     waiting_op->send_ops = new_op->send_ops;
     waiting_op->is_last_send = new_op->is_last_send;
