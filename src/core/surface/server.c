@@ -266,7 +266,6 @@ static void send_shutdown(grpc_channel *channel, int send_goaway,
   grpc_channel_element *elem;
 
   memset(&op, 0, sizeof(op));
-  gpr_log(GPR_DEBUG, "send_goaway:%d", send_goaway);
   op.send_goaway = send_goaway;
   sc = gpr_malloc(sizeof(*sc));
   sc->slice = gpr_slice_from_copied_string("Server shutdown");
