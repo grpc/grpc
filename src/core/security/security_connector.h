@@ -80,12 +80,23 @@ struct grpc_security_connector {
   grpc_auth_context *auth_context; /* Populated after the peer is checked. */
 };
 
-/* Increments the refcount. */
-grpc_security_connector *grpc_security_connector_ref(
-    grpc_security_connector *sc);
-
-/* Decrements the refcount and destroys the object if it reaches 0. */
-void grpc_security_connector_unref(grpc_security_connector *sc);
+/* Refcounting. */
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+#define GRPC_SECURITY_CONNECTOR_REF(p, r) \
+  grpc_security_connector_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) \
+  grpc_security_connector_unref((p), __FILE__, __LINE__, (r))
+grpc_security_connector *grpc_security_connector_ref(grpc_security_connector *policy,
+                                         const char *file, int line,
+                                         const char *reason);
+void grpc_security_connector_unref(grpc_security_connector *policy, const char *file,
+                             int line, const char *reason);
+#else
+#define GRPC_SECURITY_CONNECTOR_REF(p, r) grpc_security_connector_ref((p))
+#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) grpc_security_connector_unref((p))
+grpc_security_connector *grpc_security_connector_ref(grpc_security_connector *policy);
+void grpc_security_connector_unref(grpc_security_connector *policy);
+#endif
 
 /* Handshake creation. */
 grpc_security_status grpc_security_connector_create_handshaker(

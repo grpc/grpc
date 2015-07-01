@@ -70,7 +70,7 @@ static void state_unref(grpc_server_secure_state *state) {
     gpr_mu_lock(&state->mu);
     gpr_mu_unlock(&state->mu);
     /* clean up */
-    grpc_security_connector_unref(state->sc);
+    GRPC_SECURITY_CONNECTOR_UNREF(state->sc, "server");
     gpr_free(state);
   }
 }
@@ -220,7 +220,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 /* Error path: cleanup and return */
 error:
   if (sc) {
-    grpc_security_connector_unref(sc);
+    GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
   }
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);

@@ -77,6 +77,7 @@ typedef struct {
 
 typedef enum {
   CALL_CREATED,
+  CALL_WAITING_FOR_SEND,
   CALL_WAITING_FOR_CONFIG,
   CALL_WAITING_FOR_PICK,
   CALL_WAITING_FOR_CALL,
@@ -100,6 +101,9 @@ struct call_data {
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
 };
+
+static grpc_iomgr_closure *merge_into_waiting_op(grpc_call_element *elem,
+                                  grpc_transport_stream_op *new_op) GRPC_MUST_USE_RESULT;
 
 static void handle_op_after_cancellation(grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
@@ -241,12 +245,13 @@ static void pick_target(grpc_lb_policy *lb_policy, call_data *calld) {
                       &calld->picked_channel, &calld->async_setup_task);
 }
 
-static void merge_into_waiting_op(grpc_call_element *elem,
+static grpc_iomgr_closure *merge_into_waiting_op(grpc_call_element *elem,
                                   grpc_transport_stream_op *new_op) {
   call_data *calld = elem->call_data;
+  grpc_iomgr_closure *consumed_op = NULL;
   grpc_transport_stream_op *waiting_op = &calld->waiting_op;
-  GPR_ASSERT((waiting_op->send_ops == NULL) != (new_op->send_ops == NULL));
-  GPR_ASSERT((waiting_op->recv_ops == NULL) != (new_op->recv_ops == NULL));
+  GPR_ASSERT((waiting_op->send_ops == NULL) != (new_op->send_ops == NULL) || waiting_op->send_ops == NULL);
+  GPR_ASSERT((waiting_op->recv_ops == NULL) != (new_op->recv_ops == NULL) || waiting_op->recv_ops == NULL);
   if (new_op->send_ops != NULL) {
     waiting_op->send_ops = new_op->send_ops;
     waiting_op->is_last_send = new_op->is_last_send;
@@ -257,13 +262,16 @@ static void merge_into_waiting_op(grpc_call_element *elem,
     waiting_op->recv_state = new_op->recv_state;
     waiting_op->on_done_recv = new_op->on_done_recv;
   }
-  if (waiting_op->on_consumed == NULL) {
+  if (new_op->on_consumed != NULL) {
+    if (waiting_op->on_consumed != NULL) {
+      consumed_op = waiting_op->on_consumed;
+    }
     waiting_op->on_consumed = new_op->on_consumed;
-    new_op->on_consumed = NULL;
   }
   if (new_op->cancel_with_status != GRPC_STATUS_OK) {
     waiting_op->cancel_with_status = new_op->cancel_with_status;
   }
+  return consumed_op;
 }
 
 static void perform_transport_stream_op(grpc_call_element *elem,
@@ -274,6 +282,7 @@ static void perform_transport_stream_op(grpc_call_element *elem,
   grpc_subchannel_call *subchannel_call;
   grpc_lb_policy *lb_policy;
   grpc_transport_stream_op op2;
+  grpc_iomgr_closure *consumed_op = NULL;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
@@ -289,6 +298,17 @@ static void perform_transport_stream_op(grpc_call_element *elem,
       gpr_mu_unlock(&calld->mu_state);
       handle_op_after_cancellation(elem, op);
       break;
+    case CALL_WAITING_FOR_SEND:
+      GPR_ASSERT(!continuation);
+      consumed_op = merge_into_waiting_op(elem, op);
+      if (!calld->waiting_op.send_ops && calld->waiting_op.cancel_with_status == GRPC_STATUS_OK) {
+        gpr_mu_unlock(&calld->mu_state);
+        break;
+      }
+      *op = calld->waiting_op;
+      memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
+      continuation = 1;
+      /* fall through */
     case CALL_WAITING_FOR_CONFIG:
     case CALL_WAITING_FOR_PICK:
     case CALL_WAITING_FOR_CALL:
@@ -308,7 +328,7 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           handle_op_after_cancellation(elem, op);
           handle_op_after_cancellation(elem, &op2);
         } else {
-          merge_into_waiting_op(elem, op);
+          consumed_op = merge_into_waiting_op(elem, op);
           gpr_mu_unlock(&calld->mu_state);
           if (op->on_consumed != NULL) {
             op->on_consumed->cb(op->on_consumed->cb_arg, 0);
@@ -325,25 +345,36 @@ static void perform_transport_stream_op(grpc_call_element *elem,
       } else {
         calld->waiting_op = *op;
 
-        gpr_mu_lock(&chand->mu_config);
-        lb_policy = chand->lb_policy;
-        if (lb_policy) {
-          GRPC_LB_POLICY_REF(lb_policy, "pick");
-          gpr_mu_unlock(&chand->mu_config);
-          calld->state = CALL_WAITING_FOR_PICK;
+        if (op->send_ops == NULL) {
+          /* need to have some send ops before we can select the
+             lb target */
+          calld->state = CALL_WAITING_FOR_SEND;
           gpr_mu_unlock(&calld->mu_state);
-
-          pick_target(lb_policy, calld);
-
-          GRPC_LB_POLICY_UNREF(lb_policy, "pick");
         } else {
-          calld->state = CALL_WAITING_FOR_CONFIG;
-          add_to_lb_policy_wait_queue_locked_state_config(elem);
-          gpr_mu_unlock(&chand->mu_config);
-          gpr_mu_unlock(&calld->mu_state);
+          gpr_mu_lock(&chand->mu_config);
+          lb_policy = chand->lb_policy;
+          if (lb_policy) {
+            GRPC_LB_POLICY_REF(lb_policy, "pick");
+            gpr_mu_unlock(&chand->mu_config);
+            calld->state = CALL_WAITING_FOR_PICK;
+            gpr_mu_unlock(&calld->mu_state);
+
+            pick_target(lb_policy, calld);
+
+            GRPC_LB_POLICY_UNREF(lb_policy, "pick");
+          } else {
+            calld->state = CALL_WAITING_FOR_CONFIG;
+            add_to_lb_policy_wait_queue_locked_state_config(elem);
+            gpr_mu_unlock(&chand->mu_config);
+            gpr_mu_unlock(&calld->mu_state);
+          }
         }
       }
       break;
+  }
+
+  if (consumed_op != NULL) {
+    consumed_op->cb(consumed_op->cb_arg, 1);
   }
 }
 
@@ -503,6 +534,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
     case CALL_WAITING_FOR_PICK:
     case CALL_WAITING_FOR_CONFIG:
     case CALL_WAITING_FOR_CALL:
+    case CALL_WAITING_FOR_SEND:
       gpr_log(GPR_ERROR, "should never reach here");
       abort();
       break;

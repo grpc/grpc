@@ -124,24 +124,42 @@ grpc_security_status grpc_channel_security_connector_check_call_host(
   return sc->check_call_host(sc, host, cb, user_data);
 }
 
-void grpc_security_connector_unref(grpc_security_connector *sc) {
-  if (sc == NULL) return;
-  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
-}
-
-grpc_security_connector *grpc_security_connector_ref(
-    grpc_security_connector *sc) {
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+grpc_security_connector *grpc_security_connector_ref(grpc_security_connector *sc,
+                                         const char *file, int line,
+                                         const char *reason) {
   if (sc == NULL) return NULL;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "SECURITY_CONNECTOR:%p   ref %d -> %d %s", sc, (int)sc->refcount.count,
+          (int)sc->refcount.count + 1, reason);
+#else
+grpc_security_connector *grpc_security_connector_ref(grpc_security_connector *sc) {
+  if (sc == NULL) return NULL;
+#endif
   gpr_ref(&sc->refcount);
   return sc;
 }
 
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+void grpc_security_connector_unref(grpc_security_connector *sc, const char *file, int line,
+                             const char *reason) {
+  if (sc == NULL) return;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "SECURITY_CONNECTOR:%p unref %d -> %d %s", sc, (int)sc->refcount.count,
+          (int)sc->refcount.count - 1, reason);
+#else
+void grpc_security_connector_unref(grpc_security_connector *sc) {
+  if (sc == NULL) return;
+#endif
+  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
+}
+
 static void connector_pointer_arg_destroy(void *p) {
-  grpc_security_connector_unref(p);
+  GRPC_SECURITY_CONNECTOR_UNREF(p, "connector_pointer_arg");
 }
 
 static void *connector_pointer_arg_copy(void *p) {
-  return grpc_security_connector_ref(p);
+  return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg");
 }
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {

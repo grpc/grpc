@@ -297,7 +297,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   /* initialize members */
   GPR_ASSERT(sc->is_client_side);
   chand->security_connector =
-      (grpc_channel_security_connector *)grpc_security_connector_ref(sc);
+      (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(sc, "client_auth_filter");
   chand->md_ctx = metadata_context;
   chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority");
   chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
@@ -310,7 +310,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
   grpc_channel_security_connector *ctx = chand->security_connector;
-  if (ctx != NULL) grpc_security_connector_unref(&ctx->base);
+  if (ctx != NULL) GRPC_SECURITY_CONNECTOR_UNREF(&ctx->base, "client_auth_filter");
   if (chand->authority_string != NULL) {
     grpc_mdstr_unref(chand->authority_string);
   }

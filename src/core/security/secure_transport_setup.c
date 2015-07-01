@@ -74,7 +74,7 @@ static void secure_transport_setup_done(grpc_secure_transport_setup *s,
   if (s->handshaker != NULL) tsi_handshaker_destroy(s->handshaker);
   if (s->handshake_buffer != NULL) gpr_free(s->handshake_buffer);
   gpr_slice_buffer_destroy(&s->left_overs);
-  grpc_security_connector_unref(s->connector);
+  GRPC_SECURITY_CONNECTOR_UNREF(s->connector, "secure_transport_setup");
   gpr_free(s);
 }
 
@@ -275,7 +275,7 @@ void grpc_setup_secure_transport(grpc_security_connector *connector,
     secure_transport_setup_done(s, 0);
     return;
   }
-  s->connector = grpc_security_connector_ref(connector);
+  s->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "secure_transport_setup");
   s->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   s->handshake_buffer = gpr_malloc(s->handshake_buffer_size);
   s->endpoint = nonsecure_endpoint;

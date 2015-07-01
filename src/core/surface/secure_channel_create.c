@@ -142,6 +142,7 @@ static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
 static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
   subchannel_factory *f = (subchannel_factory *)scf;
   if (gpr_unref(&f->refs)) {
+    GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base, "subchannel_factory");
     grpc_channel_args_destroy(f->merge_args);
     grpc_mdctx_unref(f->mdctx);
     gpr_free(f);
@@ -218,6 +219,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   gpr_ref_init(&f->refs, 1);
   grpc_mdctx_ref(mdctx);
   f->mdctx = mdctx;
+  GRPC_SECURITY_CONNECTOR_REF(&connector->base, "subchannel_factory");
   f->security_connector = connector;
   f->merge_args = grpc_channel_args_copy(args_copy);
   resolver = grpc_resolver_create(target, &f->base);
@@ -229,6 +231,8 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
                                    resolver);
   GRPC_RESOLVER_UNREF(resolver, "create");
+  grpc_subchannel_factory_unref(&f->base);
+  GRPC_SECURITY_CONNECTOR_UNREF(&connector->base, "channel_create");
 
   grpc_channel_args_destroy(args_copy);
   if (new_args_from_connector != NULL) {
