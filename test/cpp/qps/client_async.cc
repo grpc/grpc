@@ -199,6 +199,15 @@ class AsyncClient : public Client {
         delete ClientRpcContext::detag(got_tag);
       }
     }
+    // Now clear out all the pre-allocated idle contexts
+    for (int ch = 0; ch < channel_count_; ch++) {
+      if (!contexts_[ch].empty()) {
+        // Get an idle context from the front of the list
+        auto* ctx = *(contexts_[ch].begin());
+        contexts_[ch].pop_front();
+        delete ctx;
+      }
+    }
   }
 
   bool ThreadFunc(Histogram* histogram,
