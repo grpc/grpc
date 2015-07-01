@@ -562,6 +562,9 @@ static void on_alarm(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
+  if (c->disconnected) {
+    iomgr_success = 0;
+  }
   connectivity_state_changed_locked(c);
   gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
@@ -609,7 +612,6 @@ static grpc_connectivity_state compute_connectivity_locked(grpc_subchannel *c) {
 
 static void connectivity_state_changed_locked(grpc_subchannel *c) {
   grpc_connectivity_state current = compute_connectivity_locked(c);
-  gpr_log(GPR_DEBUG, "SUBCHANNEL constate=%d", current);
   grpc_connectivity_state_set(&c->state_tracker, current);
 }
 

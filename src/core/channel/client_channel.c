@@ -436,6 +436,9 @@ static void cc_start_transport_op(grpc_channel_element *elem,
                                 GRPC_CHANNEL_FATAL_FAILURE);
     destroy_resolver = chand->resolver;
     chand->resolver = NULL;
+    if (chand->lb_policy != NULL) {
+      grpc_lb_policy_shutdown(chand->lb_policy);
+    }
   }
 
   if (!is_empty(op, sizeof(*op))) {

@@ -159,7 +159,6 @@ void grpc_fd_global_shutdown(void) {
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
-  gpr_log(GPR_DEBUG, "FD %d %p create", r->fd, r);
   grpc_iomgr_register_object(&r->iomgr_object, name);
   return r;
 }

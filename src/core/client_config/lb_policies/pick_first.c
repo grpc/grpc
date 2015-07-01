@@ -85,8 +85,16 @@ void pf_destroy(grpc_lb_policy *pol) {
 }
 
 void pf_shutdown(grpc_lb_policy *pol) {
-  /*	pick_first_lb_policy *p = (pick_first_lb_policy*)pol; */
-  abort();
+  pick_first_lb_policy *p = (pick_first_lb_policy*)pol;
+  pending_pick *pp;
+  gpr_mu_lock(&p->mu);
+  while ((pp = p->pending_picks)) {
+    p->pending_picks = pp->next;
+    *pp->target = NULL;
+    grpc_iomgr_add_delayed_callback(pp->on_complete, 0);
+    gpr_free(pp);
+  }
+  gpr_mu_unlock(&p->mu);
 }
 
 void pf_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
