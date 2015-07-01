@@ -55,19 +55,15 @@ typedef struct {
   unsigned char index;
 } spec;
 
-static const spec fields[] = {{"INDEXED_FIELD", 0X80, 1, 1},
-                              {"INDEXED_FIELD_X", 0X80, 1, 2},
-                              {"LITHDR_INCIDX", 0X40, 2, 1},
-                              {"LITHDR_INCIDX_X", 0X40, 2, 2},
-                              {"LITHDR_INCIDX_V", 0X40, 2, 0},
-                              {"LITHDR_NOTIDX", 0X00, 4, 1},
-                              {"LITHDR_NOTIDX_X", 0X00, 4, 2},
-                              {"LITHDR_NOTIDX_V", 0X00, 4, 0},
-                              {"LITHDR_NVRIDX", 0X10, 4, 1},
-                              {"LITHDR_NVRIDX_X", 0X10, 4, 2},
-                              {"LITHDR_NVRIDX_V", 0X10, 4, 0},
-                              {"MAX_TBL_SIZE", 0X20, 3, 1},
-                              {"MAX_TBL_SIZE_X", 0X20, 3, 2}, };
+static const spec fields[] = {
+    {"INDEXED_FIELD", 0X80, 1, 1},   {"INDEXED_FIELD_X", 0X80, 1, 2},
+    {"LITHDR_INCIDX", 0X40, 2, 1},   {"LITHDR_INCIDX_X", 0X40, 2, 2},
+    {"LITHDR_INCIDX_V", 0X40, 2, 0}, {"LITHDR_NOTIDX", 0X00, 4, 1},
+    {"LITHDR_NOTIDX_X", 0X00, 4, 2}, {"LITHDR_NOTIDX_V", 0X00, 4, 0},
+    {"LITHDR_NVRIDX", 0X10, 4, 1},   {"LITHDR_NVRIDX_X", 0X10, 4, 2},
+    {"LITHDR_NVRIDX_V", 0X10, 4, 0}, {"MAX_TBL_SIZE", 0X20, 3, 1},
+    {"MAX_TBL_SIZE_X", 0X20, 3, 2},
+};
 
 static const int num_fields = sizeof(fields) / sizeof(*fields);
 
@@ -129,13 +125,9 @@ static void generate_first_byte_lut(void) {
 #define MAXHUFFSTATES 1024
 
 /* represents a set of symbols as an array of booleans indicating inclusion */
-typedef struct {
-  char included[GRPC_CHTTP2_NUM_HUFFSYMS];
-} symset;
+typedef struct { char included[GRPC_CHTTP2_NUM_HUFFSYMS]; } symset;
 /* represents a lookup table indexed by a nibble */
-typedef struct {
-  int values[16];
-} nibblelut;
+typedef struct { int values[16]; } nibblelut;
 
 /* returns a symset that includes all possible symbols */
 static symset symset_all(void) {
@@ -268,8 +260,7 @@ static void build_dec_tbl(int state, int nibble, int nibbits, unsigned bitofs,
     /* recurse down for this bit */
     build_dec_tbl(state, (nibble << 1) | bit, nibbits + 1, bitofs + 1, emit,
                   nextsyms);
-  next:
-    ;
+  next:;
   }
 }
 

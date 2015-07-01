@@ -154,6 +154,7 @@
     <ClInclude Include="..\..\include\grpc++\client_context.h" />
     <ClInclude Include="..\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="..\..\include\grpc++\config.h" />
+    <ClInclude Include="..\..\include\grpc++\config_protobuf.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\credentials.h" />
     <ClInclude Include="..\..\include\grpc++\generic_stub.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="..\..\include\grpc++\impl\client_unary_call.h" />
     <ClInclude Include="..\..\include\grpc++\impl\grpc_library.h" />
     <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\proto_utils.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h" />
     <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h" />
@@ -186,10 +188,11 @@
     <ClInclude Include="..\..\src\cpp\client\secure_credentials.h" />
     <ClInclude Include="..\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="..\..\src\cpp\client\channel.h" />
-    <ClInclude Include="..\..\src\cpp\proto\proto_utils.h" />
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\cpp\client\secure_channel_arguments.cc">
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\secure_credentials.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\secure_server_credentials.cc">

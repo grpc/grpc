@@ -35,8 +35,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(dl)
 
-  PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(rt)
+  case $host in
+    *darwin*) ;;
+    *)
+      PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
+      PHP_ADD_LIBRARY(rt)
+      ;;
+  esac
 
   GRPC_LIBDIR=$GRPC_DIR/${GRPC_LIB_SUBDIR-lib}
 

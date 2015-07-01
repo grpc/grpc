@@ -191,9 +191,9 @@ struct call_data {
 
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
-  void (*on_done_recv)(void *user_data, int success);
-  void *recv_user_data;
+  grpc_iomgr_closure *on_done_recv;
 
+  grpc_iomgr_closure server_on_recv;
   grpc_iomgr_closure kill_zombie_closure;
 
   call_data **root[CALL_LIST_COUNT];
@@ -523,7 +523,7 @@ static void server_on_recv(void *ptr, int success) {
       break;
   }
 
-  calld->on_done_recv(calld->recv_user_data, success);
+  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }
 
 static void server_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
@@ -534,9 +534,7 @@ static void server_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
     calld->recv_ops = op->recv_ops;
     calld->recv_state = op->recv_state;
     calld->on_done_recv = op->on_done_recv;
-    calld->recv_user_data = op->recv_user_data;
-    op->on_done_recv = server_on_recv;
-    op->recv_user_data = elem;
+    op->on_done_recv = &calld->server_on_recv;
   }
 }
 
@@ -631,6 +629,8 @@ static void init_call_elem(grpc_call_element *elem,
   memset(calld, 0, sizeof(call_data));
   calld->deadline = gpr_inf_future;
   calld->call = grpc_call_from_top_element(elem);
+
+  grpc_iomgr_closure_init(&calld->server_on_recv, server_on_recv, elem);
 
   gpr_mu_lock(&chand->server->mu_call);
   call_list_join(&chand->server->lists[ALL_CALLS], calld, ALL_CALLS);

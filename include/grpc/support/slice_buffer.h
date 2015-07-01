@@ -84,6 +84,8 @@ void gpr_slice_buffer_pop(gpr_slice_buffer *sb);
 void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
 /* swap the contents of two slice buffers */
 void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b);
+/* move all of the elements of src into dst */
+void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst);
 
 #ifdef __cplusplus
 }

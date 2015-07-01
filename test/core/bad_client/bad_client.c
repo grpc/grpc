@@ -41,6 +41,7 @@
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2_transport.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
@@ -88,6 +89,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Add a debug log */
   gpr_log(GPR_INFO, "TEST: %s", hex);
+
+  gpr_free(hex);
 
   /* Init grpc */
   grpc_init();

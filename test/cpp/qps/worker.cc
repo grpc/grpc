@@ -40,7 +40,7 @@
 #include <grpc/support/time.h>
 #include <gflags/gflags.h>
 
-#include "qps_worker.h"
+#include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/util/test_config.h"
 
 DEFINE_int32(driver_port, 0, "Driver server port.");
