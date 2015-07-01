@@ -60,7 +60,8 @@ typedef struct {
   /** master channel */
   grpc_channel *master;
 
-  /** mutex protecting client configuration, resolution state */
+  /** mutex protecting client configuration, including all
+      variables below in this data structure */
   gpr_mu mu_config;
   /** currently active load balancer - guarded by mu_config */
   grpc_lb_policy *lb_policy;
