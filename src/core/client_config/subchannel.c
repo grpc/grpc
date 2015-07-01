@@ -79,7 +79,10 @@ struct grpc_subchannel {
   size_t addr_len;
   /** metadata context */
   grpc_mdctx *mdctx;
-  /** master channel */
+  /** master channel - the grpc_channel instance that ultimately owns
+      this channel_data via its channel stack.
+      We occasionally use this to bump the refcount on the master channel
+      to keep ourselves alive through an asynchronous operation. */
   grpc_channel *master;
   /** have we seen a disconnection? */
   int disconnected;
