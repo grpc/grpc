@@ -940,6 +940,19 @@ static void recv_data_error_locked(grpc_chttp2_transport *t, grpc_chttp2_stream 
   UNREF_TRANSPORT(t, "recv_data");
 }
 
+/** update window from a settings change */
+static void update_global_window(void *args, gpr_uint32 id, void *stream) {
+  grpc_chttp2_transport *t = args;
+  grpc_chttp2_stream *s = stream;
+  grpc_chttp2_transport_global *transport_global = &t->global;
+  grpc_chttp2_stream_global *stream_global = &s->global;
+
+  GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("settings", transport_global, stream_global,
+                                   outgoing_window,
+                                   t->parsing.initial_window_update);
+  stream_global->outgoing_window += t->parsing.initial_window_update;
+}
+
 static void finish_parsing_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *s_ignored, void *a) {
   size_t i = *(size_t *)a;
 
@@ -950,13 +963,15 @@ static void finish_parsing_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *
   grpc_chttp2_stream_map_move_into(&t->new_stream_map,
                                    &t->parsing_stream_map);
   t->global.concurrent_stream_count = grpc_chttp2_stream_map_size(&t->parsing_stream_map);
+  if (t->parsing.initial_window_update != 0) {
+    grpc_chttp2_stream_map_for_each(&t->parsing_stream_map,
+                                    update_global_window, t);
+  }
   /* handle higher level things */
   grpc_chttp2_publish_reads(&t->global, &t->parsing);
   t->executor.parsing_active = 0;
 
   for (; i < t->executor_parsing.nslices; i++) gpr_slice_unref(t->executor_parsing.slices[i]);
-
-  memset(&t->executor_parsing, 0, sizeof(t->executor_parsing));
 
   if (i == t->executor_parsing.nslices) {
     grpc_chttp2_schedule_closure(&t->global, &t->reading_action, 1);
@@ -964,6 +979,8 @@ static void finish_parsing_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *
     read_error_locked(t);
     UNREF_TRANSPORT(t, "recv_data");
   }
+
+  memset(&t->executor_parsing, 0, sizeof(t->executor_parsing));
 }
 
 static void parsing_action(void *pt, int iomgr_success_ignored) {
@@ -993,19 +1010,6 @@ static void recv_data_ok_locked(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
   }
 }
 
-/** update window from a settings change */
-static void update_global_window(void *args, gpr_uint32 id, void *stream) {
-  grpc_chttp2_transport *t = args;
-  grpc_chttp2_stream *s = stream;
-  grpc_chttp2_transport_global *transport_global = &t->global;
-  grpc_chttp2_stream_global *stream_global = &s->global;
-
-  GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("settings", transport_global, stream_global,
-                                   outgoing_window,
-                                   t->parsing.initial_window_update);
-  stream_global->outgoing_window += t->parsing.initial_window_update;
-}
-
 /* tcp read callback */
 static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
                       grpc_endpoint_cb_status error) {
@@ -1023,9 +1027,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
     case GRPC_ENDPOINT_CB_OK:
       grpc_chttp2_run_with_global_lock(t, NULL, recv_data_ok_locked, NULL, 0);
       break;
-  }
-  if (unref) {
-    UNREF_TRANSPORT(t, "recv_data");
   }
 }
 
