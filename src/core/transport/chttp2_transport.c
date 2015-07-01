@@ -431,6 +431,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   GPR_ASSERT(s->global.outgoing_sopb == NULL);
   GPR_ASSERT(s->global.publish_sopb == NULL);
   grpc_sopb_destroy(&s->writing.sopb);
+  grpc_sopb_destroy(&s->global.incoming_sopb);
   grpc_chttp2_data_parser_destroy(&s->parsing.data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.incoming_metadata);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->global.incoming_metadata);
@@ -935,7 +936,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
 
 static void reading_action(void *pt, int iomgr_success_ignored) {
   grpc_chttp2_transport *t = pt;
-  gpr_log(GPR_DEBUG, "reading_action");
   grpc_endpoint_notify_on_read(t->ep, recv_data, t);
 }
 
