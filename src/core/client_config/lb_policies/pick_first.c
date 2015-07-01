@@ -85,7 +85,7 @@ void pf_destroy(grpc_lb_policy *pol) {
 }
 
 void pf_shutdown(grpc_lb_policy *pol) {
-  pick_first_lb_policy *p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
   while ((pp = p->pending_picks)) {

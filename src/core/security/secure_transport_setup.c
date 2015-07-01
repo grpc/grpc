@@ -234,8 +234,9 @@ static void on_handshake_data_received_from_peer(
                          gpr_slice_split_tail(&slices[i], consumed_slice_size));
     gpr_slice_unref(slices[i]); /* split_tail above increments refcount. */
   }
-  gpr_slice_buffer_addn(&s->left_overs, &slices[i + 1],
-                        num_left_overs - (size_t)has_left_overs_in_current_slice);
+  gpr_slice_buffer_addn(
+      &s->left_overs, &slices[i + 1],
+      num_left_overs - (size_t)has_left_overs_in_current_slice);
   check_peer(s);
 }
 
@@ -275,7 +276,8 @@ void grpc_setup_secure_transport(grpc_security_connector *connector,
     secure_transport_setup_done(s, 0);
     return;
   }
-  s->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "secure_transport_setup");
+  s->connector =
+      GRPC_SECURITY_CONNECTOR_REF(connector, "secure_transport_setup");
   s->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   s->handshake_buffer = gpr_malloc(s->handshake_buffer_size);
   s->endpoint = nonsecure_endpoint;

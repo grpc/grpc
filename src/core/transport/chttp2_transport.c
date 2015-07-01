@@ -766,16 +766,20 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
   }
 
   if (!t->writing_active) {
-    while (grpc_chttp2_list_pop_cancelled_waiting_for_writing(transport_global, &stream_global)) {
-      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
+    while (grpc_chttp2_list_pop_cancelled_waiting_for_writing(transport_global,
+                                                              &stream_global)) {
+      grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                    stream_global);
     }
   }
 
   while (grpc_chttp2_list_pop_read_write_state_changed(transport_global,
                                                        &stream_global)) {
     if (stream_global->cancelled) {
-      if (t->writing_active && stream_global->write_state != GRPC_WRITE_STATE_SENT_CLOSE) {
-        grpc_chttp2_list_add_cancelled_waiting_for_writing(transport_global, stream_global);
+      if (t->writing_active &&
+          stream_global->write_state != GRPC_WRITE_STATE_SENT_CLOSE) {
+        grpc_chttp2_list_add_cancelled_waiting_for_writing(transport_global,
+                                                           stream_global);
       } else {
         stream_global->write_state = GRPC_WRITE_STATE_SENT_CLOSE;
         stream_global->read_closed = 1;

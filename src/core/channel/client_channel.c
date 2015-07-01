@@ -102,8 +102,9 @@ struct call_data {
   grpc_linked_mdelem details;
 };
 
-static grpc_iomgr_closure *merge_into_waiting_op(grpc_call_element *elem,
-                                  grpc_transport_stream_op *new_op) GRPC_MUST_USE_RESULT;
+static grpc_iomgr_closure *merge_into_waiting_op(
+    grpc_call_element *elem,
+    grpc_transport_stream_op *new_op) GRPC_MUST_USE_RESULT;
 
 static void handle_op_after_cancellation(grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
@@ -245,13 +246,15 @@ static void pick_target(grpc_lb_policy *lb_policy, call_data *calld) {
                       &calld->picked_channel, &calld->async_setup_task);
 }
 
-static grpc_iomgr_closure *merge_into_waiting_op(grpc_call_element *elem,
-                                  grpc_transport_stream_op *new_op) {
+static grpc_iomgr_closure *merge_into_waiting_op(
+    grpc_call_element *elem, grpc_transport_stream_op *new_op) {
   call_data *calld = elem->call_data;
   grpc_iomgr_closure *consumed_op = NULL;
   grpc_transport_stream_op *waiting_op = &calld->waiting_op;
-  GPR_ASSERT((waiting_op->send_ops == NULL) != (new_op->send_ops == NULL) || waiting_op->send_ops == NULL);
-  GPR_ASSERT((waiting_op->recv_ops == NULL) != (new_op->recv_ops == NULL) || waiting_op->recv_ops == NULL);
+  GPR_ASSERT((waiting_op->send_ops == NULL) != (new_op->send_ops == NULL) ||
+             waiting_op->send_ops == NULL);
+  GPR_ASSERT((waiting_op->recv_ops == NULL) != (new_op->recv_ops == NULL) ||
+             waiting_op->recv_ops == NULL);
   if (new_op->send_ops != NULL) {
     waiting_op->send_ops = new_op->send_ops;
     waiting_op->is_last_send = new_op->is_last_send;
@@ -301,14 +304,15 @@ static void perform_transport_stream_op(grpc_call_element *elem,
     case CALL_WAITING_FOR_SEND:
       GPR_ASSERT(!continuation);
       consumed_op = merge_into_waiting_op(elem, op);
-      if (!calld->waiting_op.send_ops && calld->waiting_op.cancel_with_status == GRPC_STATUS_OK) {
+      if (!calld->waiting_op.send_ops &&
+          calld->waiting_op.cancel_with_status == GRPC_STATUS_OK) {
         gpr_mu_unlock(&calld->mu_state);
         break;
       }
       *op = calld->waiting_op;
       memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
       continuation = 1;
-      /* fall through */
+    /* fall through */
     case CALL_WAITING_FOR_CONFIG:
     case CALL_WAITING_FOR_PICK:
     case CALL_WAITING_FOR_CALL:

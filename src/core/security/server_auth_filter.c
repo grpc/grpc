@@ -107,14 +107,16 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 
   /* initialize members */
   GPR_ASSERT(!sc->is_client_side);
-  chand->security_connector = GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
+  chand->security_connector =
+      GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
-  GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector, "server_auth_filter");
+  GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector,
+                                "server_auth_filter");
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {

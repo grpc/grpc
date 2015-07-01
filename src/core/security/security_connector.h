@@ -86,15 +86,17 @@ struct grpc_security_connector {
   grpc_security_connector_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SECURITY_CONNECTOR_UNREF(p, r) \
   grpc_security_connector_unref((p), __FILE__, __LINE__, (r))
-grpc_security_connector *grpc_security_connector_ref(grpc_security_connector *policy,
-                                         const char *file, int line,
-                                         const char *reason);
-void grpc_security_connector_unref(grpc_security_connector *policy, const char *file,
-                             int line, const char *reason);
+grpc_security_connector *grpc_security_connector_ref(
+    grpc_security_connector *policy, const char *file, int line,
+    const char *reason);
+void grpc_security_connector_unref(grpc_security_connector *policy,
+                                   const char *file, int line,
+                                   const char *reason);
 #else
 #define GRPC_SECURITY_CONNECTOR_REF(p, r) grpc_security_connector_ref((p))
 #define GRPC_SECURITY_CONNECTOR_UNREF(p, r) grpc_security_connector_unref((p))
-grpc_security_connector *grpc_security_connector_ref(grpc_security_connector *policy);
+grpc_security_connector *grpc_security_connector_ref(
+    grpc_security_connector *policy);
 void grpc_security_connector_unref(grpc_security_connector *policy);
 #endif
 
@@ -183,9 +185,9 @@ typedef struct {
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_credentials *request_metadata_creds,
-    const grpc_ssl_config *config, const char *target_name,
-    const char *overridden_target_name, grpc_channel_security_connector **sc);
+    grpc_credentials *request_metadata_creds, const grpc_ssl_config *config,
+    const char *target_name, const char *overridden_target_name,
+    grpc_channel_security_connector **sc);
 
 /* Gets the default ssl roots. */
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs);
@@ -211,8 +213,8 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     const grpc_ssl_server_config *config, grpc_security_connector **sc);
 
 /* Util. */
-const tsi_peer_property *tsi_peer_get_property_by_name(
-    const tsi_peer *peer, const char *name);
+const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
+                                                       const char *name);
 
 /* Exposed for testing only. */
 grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer);
