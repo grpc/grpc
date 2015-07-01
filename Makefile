@@ -204,13 +204,12 @@ CXX = $(CXX_$(CONFIG))
 LD = $(LD_$(CONFIG))
 LDXX = $(LDXX_$(CONFIG))
 AR = ar
+STRIP ?= strip
 ifeq ($(SYSTEM),Linux)
-STRIP = strip --strip-unneeded
+STRIP = $(STRIP) --strip-unneeded
 else
 ifeq ($(SYSTEM),Darwin)
-STRIP = strip -x
-else
-STRIP = strip
+STRIP = $(STRIP) -x
 endif
 endif
 INSTALL = install
