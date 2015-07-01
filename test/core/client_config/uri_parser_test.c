@@ -58,7 +58,12 @@ int main(int argc, char **argv) {
   test_succeeds("http://www.google.com", "http", "www.google.com", "");
   test_succeeds("dns:///foo", "dns", "", "/foo");
   test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
+  test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom");
+  test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom");
   test_fails("xyz");
   test_fails("http://www.google.com?why-are-you-using-queries");
+  test_fails("dns:foo.com#fragments-arent-supported-here");
+  test_fails("http:?huh");
+  test_fails("unix:#yeah-right");
   return 0;
 }
