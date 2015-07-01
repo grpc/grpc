@@ -168,7 +168,7 @@ class AsyncClient : public Client {
       if (!closed_loop_) {
         rpc_deadlines_.emplace_back();
         next_channel_.push_back(i % channel_count_);
-        issue_allowed_.push_back(true);
+        issue_allowed_.emplace_back(true);
 
         grpc_time next_issue;
         NextIssueTime(i, &next_issue);
@@ -233,12 +233,6 @@ class AsyncClient : public Client {
       default:
         GPR_ASSERT(false);
         break;
-    }
-    if ((closed_loop_ || !rpc_deadlines_[thread_idx].empty()) &&
-        grpc_time_source::now() > deadline) {
-      // we have missed some 1-second deadline, which is worth noting
-      gpr_log(GPR_INFO, "Missed an RPC deadline");
-      // Don't give up, as there might be some truly heavy tails
     }
     if (got_event) {
       ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
@@ -313,11 +307,20 @@ class AsyncClient : public Client {
   }
 
  private:
+  class boolean { // exists only to avoid data-race on vector<bool>
+   public:
+    boolean(): val_(false) {}
+    boolean(bool b): val_(b) {}
+    operator bool() const {return val_;}
+    boolean& operator=(bool b) {val_=b; return *this;}
+   private:
+    bool val_;
+  };
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
 
   std::vector<deadline_list> rpc_deadlines_;  // per thread deadlines
   std::vector<int> next_channel_;      // per thread round-robin channel ctr
-  std::vector<bool> issue_allowed_;    // may this thread attempt to issue
+  std::vector<boolean> issue_allowed_; // may this thread attempt to issue
   std::vector<grpc_time> next_issue_;  // when should it issue?
 
   std::vector<std::mutex> channel_lock_;

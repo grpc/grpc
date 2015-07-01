@@ -31,25 +31,32 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
-#define GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+#include <grpc/grpc.h>
+#include "test/core/util/test_config.h"
 
-#include <grpc++/config.h>
+int main(int argc, char **argv) {
+  grpc_completion_queue *cq1;
+  grpc_completion_queue *cq2;
+  grpc_server *server;
 
-struct grpc_byte_buffer;
-
-namespace grpc {
-
-// Serialize the msg into a buffer created inside the function. The caller
-// should destroy the returned buffer when done with it. If serialization fails,
-// false is returned and buffer is left unchanged.
-bool SerializeProto(const grpc::protobuf::Message& msg,
-                    grpc_byte_buffer** buffer);
-
-// The caller keeps ownership of buffer and msg.
-bool DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
-                      int max_message_size);
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+  grpc_test_init(argc, argv);
+  grpc_init();
+  cq1 = grpc_completion_queue_create();
+  cq2 = grpc_completion_queue_create();
+  server = grpc_server_create(NULL);
+  grpc_server_register_completion_queue(server, cq1);
+  grpc_server_add_http2_port(server, "[::]:0");
+  grpc_server_register_completion_queue(server, cq2);
+  grpc_server_start(server);
+  grpc_server_shutdown_and_notify(server, cq2, NULL);
+  grpc_completion_queue_next(cq2, gpr_inf_future);  /* cue queue hang */
+  grpc_completion_queue_shutdown(cq1);
+  grpc_completion_queue_shutdown(cq2);
+  grpc_completion_queue_next(cq1, gpr_inf_future);
+  grpc_completion_queue_next(cq2, gpr_inf_future);
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq1);
+  grpc_completion_queue_destroy(cq2);
+  grpc_shutdown();
+  return 0;
+}

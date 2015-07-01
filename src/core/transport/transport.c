@@ -112,8 +112,8 @@ void grpc_transport_op_add_cancellation(grpc_transport_op *op,
                                         grpc_mdstr *message) {
   if (op->cancel_with_status == GRPC_STATUS_OK) {
     op->cancel_with_status = status;
-    op->cancel_message = message;
-  } else if (message) {
+  }
+  if (message) {
     grpc_mdstr_unref(message);
   }
 }

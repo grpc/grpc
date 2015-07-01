@@ -136,5 +136,7 @@ RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
 
+RUN mkdir /var/local/jenkins
+
 # Define the default command.
 CMD ["bash"]

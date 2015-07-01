@@ -52,7 +52,7 @@ static void test_empty_context(void) {
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
   it = grpc_auth_context_find_properties_by_name(ctx, "foo");
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_simple_context(void) {
@@ -86,7 +86,7 @@ static void test_simple_context(void) {
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[1]);
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_chained_context(void) {
@@ -96,7 +96,7 @@ static void test_chained_context(void) {
   size_t i;
 
   gpr_log(GPR_INFO, "test_chained_context");
-  grpc_auth_context_unref(chained);
+  GRPC_AUTH_CONTEXT_UNREF(chained, "chained");
   chained->properties[0] =
       grpc_auth_property_init_from_cstring("name", "padapo");
   chained->properties[1] = grpc_auth_property_init_from_cstring("foo", "baz");
@@ -129,7 +129,7 @@ static void test_chained_context(void) {
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &chained->properties[0]);
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
-  grpc_auth_context_unref(ctx);
+  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 

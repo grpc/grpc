@@ -31,7 +31,7 @@
  *
  */
 
-#import "GRXWriter.h"
+#import "RxLibrary/GRXWriter.h"
 
 // A "proxy" writer that transforms all the values of its input writer by using a mapping function.
 @interface GRXMappingWriter : GRXWriter

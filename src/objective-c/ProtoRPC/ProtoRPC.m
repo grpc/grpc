@@ -33,10 +33,10 @@
 
 #import "ProtoRPC.h"
 
-#import <gRPC/GRXWriteable.h>
-#import <gRPC/GRXWriter.h>
-#import <gRPC/GRXWriter+Transformations.h>
-#import <Protobuf/GPBProtocolBuffers.h>
+#import <GPBProtocolBuffers.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
+#import <RxLibrary/GRXWriter+Transformations.h>
 
 @implementation ProtoRPC {
   id<GRXWriteable> _responseWriteable;
@@ -66,6 +66,8 @@
   // A writer that serializes the proto messages to send.
   id<GRXWriter> bytesWriter =
       [[[GRXWriter alloc] initWithWriter:requestsWriter] map:^id(GPBMessage *proto) {
+        // TODO(jcanizales): Fail with an understandable error message if the requestsWriter isn't
+        // sending GPBMessages.
         return [proto data];
       }];
   if ((self = [super initWithHost:host method:method requestsWriter:bytesWriter])) {

@@ -54,10 +54,10 @@ int grpc_chttp2_unlocking_check_writes(
       !transport_global->sent_local_settings) {
     gpr_slice_buffer_add(
         &transport_writing->outbuf,
-        grpc_chttp2_settings_create(transport_global->settings[SENT_SETTINGS],
-                                    transport_global->settings[LOCAL_SETTINGS],
-                                    transport_global->force_send_settings,
-                                    GRPC_CHTTP2_NUM_SETTINGS));
+        grpc_chttp2_settings_create(
+            transport_global->settings[GRPC_SENT_SETTINGS],
+            transport_global->settings[GRPC_LOCAL_SETTINGS],
+            transport_global->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
     transport_global->force_send_settings = 0;
     transport_global->dirtied_local_settings = 0;
     transport_global->sent_local_settings = 1;
@@ -84,16 +84,16 @@ int grpc_chttp2_unlocking_check_writes(
     transport_global->outgoing_window -= window_delta;
     stream_global->outgoing_window -= window_delta;
 
-    if (stream_global->write_state == WRITE_STATE_QUEUED_CLOSE &&
+    if (stream_global->write_state == GRPC_WRITE_STATE_QUEUED_CLOSE &&
         stream_global->outgoing_sopb->nops == 0) {
       if (!transport_global->is_client && !stream_global->read_closed) {
-        stream_writing->send_closed = SEND_CLOSED_WITH_RST_STREAM;
+        stream_writing->send_closed = GRPC_SEND_CLOSED_WITH_RST_STREAM;
       } else {
-        stream_writing->send_closed = SEND_CLOSED;
+        stream_writing->send_closed = GRPC_SEND_CLOSED;
       }
     }
     if (stream_writing->sopb.nops > 0 ||
-        stream_writing->send_closed != DONT_SEND_CLOSED) {
+        stream_writing->send_closed != GRPC_DONT_SEND_CLOSED) {
       grpc_chttp2_list_add_writing_stream(transport_writing, stream_writing);
     }
 
@@ -112,7 +112,7 @@ int grpc_chttp2_unlocking_check_writes(
   while (grpc_chttp2_list_pop_writable_window_update_stream(transport_global,
                                                             &stream_global)) {
     window_delta =
-        transport_global->settings[LOCAL_SETTINGS]
+        transport_global->settings[GRPC_LOCAL_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
         stream_global->incoming_window;
     if (!stream_global->read_closed && window_delta > 0) {
@@ -128,7 +128,7 @@ int grpc_chttp2_unlocking_check_writes(
   }
 
   /* if the grpc_chttp2_transport is ready to send a window update, do so here
-   * also */
+     also; 3/4 is a magic number that will likely get tuned soon */
   if (transport_global->incoming_window <
       transport_global->connection_window_target * 3 / 4) {
     window_delta = transport_global->connection_window_target -
@@ -174,11 +174,11 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
     grpc_chttp2_encode(stream_writing->sopb.ops, stream_writing->sopb.nops,
-                       stream_writing->send_closed != DONT_SEND_CLOSED,
+                       stream_writing->send_closed != GRPC_DONT_SEND_CLOSED,
                        stream_writing->id, &transport_writing->hpack_compressor,
                        &transport_writing->outbuf);
     stream_writing->sopb.nops = 0;
-    if (stream_writing->send_closed == SEND_CLOSED_WITH_RST_STREAM) {
+    if (stream_writing->send_closed == GRPC_SEND_CLOSED_WITH_RST_STREAM) {
       gpr_slice_buffer_add(&transport_writing->outbuf,
                            grpc_chttp2_rst_stream_create(stream_writing->id,
                                                          GRPC_CHTTP2_NO_ERROR));
@@ -201,8 +201,8 @@ void grpc_chttp2_cleanup_writing(
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
-    if (stream_writing->send_closed != DONT_SEND_CLOSED) {
-      stream_global->write_state = WRITE_STATE_SENT_CLOSE;
+    if (stream_writing->send_closed != GRPC_DONT_SEND_CLOSED) {
+      stream_global->write_state = GRPC_WRITE_STATE_SENT_CLOSE;
       if (!transport_global->is_client) {
         stream_global->read_closed = 1;
       }
