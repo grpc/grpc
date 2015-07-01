@@ -142,11 +142,6 @@ char *grpc_transport_op_string(grpc_transport_op *op) {
     first = 0;
     gpr_asprintf(&tmp, "CANCEL:%d", op->cancel_with_status);
     gpr_strvec_add(&b, tmp);
-    if (op->cancel_message) {
-      gpr_asprintf(&tmp, ";msg='%s'",
-                   grpc_mdstr_as_c_string(op->cancel_message));
-      gpr_strvec_add(&b, tmp);
-    }
   }
 
   out = gpr_strvec_flatten(&b, NULL);

@@ -282,6 +282,9 @@ class EchoTest(unittest.TestCase):
     self.assertIn(server_trailing_binary_metadata_key, metadata)
     self.assertEqual(server_trailing_binary_metadata_value,
                      metadata[server_trailing_binary_metadata_key])
+    self.assertSetEqual(set(key for key, _ in finish_accepted.metadata),
+                        set((server_trailing_metadata_key,
+                             server_trailing_binary_metadata_key,)))
 
     server_timeout_none_event = self.server_completion_queue.get(0)
     self.assertIsNone(server_timeout_none_event)

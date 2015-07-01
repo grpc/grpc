@@ -918,6 +918,23 @@
       ]
     },
     {
+      "name": "fd_conservation_posix_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/iomgr/fd_conservation_posix_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "platforms": [
+        "posix"
+      ]
+    },
+    {
       "name": "fd_posix_test",
       "build": "test",
       "language": "c",
@@ -1520,6 +1537,20 @@
       "language": "c",
       "src": [
         "test/core/surface/multi_init_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "multiple_server_queues_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/end2end/multiple_server_queues_test.c"
       ],
       "deps": [
         "grpc_test_util",

@@ -1259,3 +1259,21 @@ objc_bundle_library(
     name = "gRPCCertificates",
     resources = ["etc/roots.pem"],
 )
+
+proto_objc_rpc_path = objc_path + "/ProtoRPC"
+
+objc_library(
+  name = "proto_objc_rpc",
+  hdrs = glob([
+    proto_objc_rpc_path + "/*.h",
+  ]),
+  srcs = glob([
+    proto_objc_rpc_path + "/*.m",
+  ]),
+  includes = [objc_path],
+  deps = [
+    ":grpc_client",
+    ":rx_library",
+    "//external:protobuf_objc",
+  ],
+)

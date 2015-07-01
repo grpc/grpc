@@ -32,6 +32,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -118,7 +119,7 @@ PyObject *pygrpc_consume_event(grpc_event event) {
           tag->request_call_details.method, tag->request_call_details.host,
           pygrpc_cast_gpr_timespec_to_double(tag->request_call_details.deadline),
           GRPC_OP_RECV_INITIAL_METADATA,
-          pygrpc_cast_metadata_array_to_pylist(tag->request_metadata), Py_None,
+          pygrpc_cast_metadata_array_to_pyseq(tag->request_metadata), Py_None,
           Py_None, Py_None, Py_None,
           event.success ? Py_True : Py_False);
     } else {
@@ -172,7 +173,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
   c_op.flags = 0;
   switch (type) {
   case GRPC_OP_SEND_INITIAL_METADATA:
-    if (!pygrpc_cast_pylist_to_send_metadata(
+    if (!pygrpc_cast_pyseq_to_send_metadata(
             PyTuple_GetItem(op, INITIAL_METADATA_INDEX),
             &c_op.data.send_initial_metadata.metadata,
             &c_op.data.send_initial_metadata.count)) {
@@ -190,7 +191,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     /* Don't need to fill in any other fields. */
     break;
   case GRPC_OP_SEND_STATUS_FROM_SERVER:
-    if (!pygrpc_cast_pylist_to_send_metadata(
+    if (!pygrpc_cast_pyseq_to_send_metadata(
             PyTuple_GetItem(op, TRAILING_METADATA_INDEX),
             &c_op.data.send_status_from_server.trailing_metadata,
             &c_op.data.send_status_from_server.trailing_metadata_count)) {
@@ -247,8 +248,16 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
 }
 
 void pygrpc_discard_op(grpc_op op) {
+  size_t i;
   switch(op.op) {
   case GRPC_OP_SEND_INITIAL_METADATA:
+    /* Whenever we produce send-metadata, we allocate new strings (to handle
+       arbitrary sequence input as opposed to just lists or just tuples). We
+       thus must free those elements. */
+    for (i = 0; i < op.data.send_initial_metadata.count; ++i) {
+      gpr_free((void *)op.data.send_initial_metadata.metadata[i].key);
+      gpr_free((void *)op.data.send_initial_metadata.metadata[i].value);
+    }
     gpr_free(op.data.send_initial_metadata.metadata);
     break;
   case GRPC_OP_SEND_MESSAGE:
@@ -258,6 +267,16 @@ void pygrpc_discard_op(grpc_op op) {
     /* Don't need to free any fields. */
     break;
   case GRPC_OP_SEND_STATUS_FROM_SERVER:
+    /* Whenever we produce send-metadata, we allocate new strings (to handle
+       arbitrary sequence input as opposed to just lists or just tuples). We
+       thus must free those elements. */
+    for (i = 0; i < op.data.send_status_from_server.trailing_metadata_count;
+         ++i) {
+      gpr_free(
+          (void *)op.data.send_status_from_server.trailing_metadata[i].key);
+      gpr_free(
+          (void *)op.data.send_status_from_server.trailing_metadata[i].value);
+    }
     gpr_free(op.data.send_status_from_server.trailing_metadata);
     gpr_free((char *)op.data.send_status_from_server.status_details);
     break;
@@ -419,31 +438,41 @@ void pygrpc_discard_channel_args(grpc_channel_args args) {
   gpr_free(args.args);
 }
 
-int pygrpc_cast_pylist_to_send_metadata(
-    PyObject *pylist, grpc_metadata **metadata, size_t *count) {
+int pygrpc_cast_pyseq_to_send_metadata(
+    PyObject *pyseq, grpc_metadata **metadata, size_t *count) {
   size_t i;
   Py_ssize_t value_length;
-  *count = PyList_Size(pylist);
+  char *key;
+  char *value;
+  if (!PySequence_Check(pyseq)) {
+    return 0;
+  }
+  *count = PySequence_Size(pyseq);
   *metadata = gpr_malloc(sizeof(grpc_metadata) * *count);
   for (i = 0; i < *count; ++i) {
-    if (!PyArg_ParseTuple(
-        PyList_GetItem(pylist, i), "ss#",
-        &(*metadata)[i].key, &(*metadata)[i].value, &value_length)) {
+    PyObject *item = PySequence_GetItem(pyseq, i);
+    if (!PyArg_ParseTuple(item, "ss#", &key, &value, &value_length)) {
+      Py_DECREF(item);
       gpr_free(*metadata);
       *count = 0;
       *metadata = NULL;
       return 0;
+    } else {
+      (*metadata)[i].key = gpr_strdup(key);
+      (*metadata)[i].value = gpr_malloc(value_length);
+      memcpy((void *)(*metadata)[i].value, value, value_length);
+      Py_DECREF(item);
     }
     (*metadata)[i].value_length = value_length;
   }
   return 1;
 }
 
-PyObject *pygrpc_cast_metadata_array_to_pylist(grpc_metadata_array metadata) {
-  PyObject *result = PyList_New(metadata.count);
+PyObject *pygrpc_cast_metadata_array_to_pyseq(grpc_metadata_array metadata) {
+  PyObject *result = PyTuple_New(metadata.count);
   size_t i;
   for (i = 0; i < metadata.count; ++i) {
-    PyList_SetItem(
+    PyTuple_SetItem(
         result, i, Py_BuildValue(
             "ss#", metadata.metadata[i].key, metadata.metadata[i].value,
             (Py_ssize_t)metadata.metadata[i].value_length));
