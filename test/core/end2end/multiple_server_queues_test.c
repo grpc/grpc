@@ -55,6 +55,8 @@ int main(int argc, char **argv) {
   grpc_completion_queue_next(cq1, gpr_inf_future);
   grpc_completion_queue_next(cq2, gpr_inf_future);
   grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq1);
+  grpc_completion_queue_destroy(cq2);
   grpc_shutdown();
   return 0;
 }
