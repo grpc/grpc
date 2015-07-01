@@ -74,6 +74,7 @@ static void freelist_fd(grpc_fd *fd) {
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
+  grpc_iomgr_unregister_object(&fd->iomgr_object);
   gpr_mu_unlock(&fd_freelist_mu);
 }
 
@@ -139,7 +140,6 @@ static void unref_by(grpc_fd *fd, int n) {
 #endif
   old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    grpc_iomgr_unregister_object(&fd->iomgr_object);
     freelist_fd(fd);
   } else {
     GPR_ASSERT(old > n);
