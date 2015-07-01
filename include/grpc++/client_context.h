@@ -38,7 +38,6 @@
 #include <memory>
 #include <string>
 
-#include <grpc/census.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc++/config.h>
@@ -47,6 +46,7 @@
 
 struct grpc_call;
 struct grpc_completion_queue;
+struct census_context;
 
 namespace grpc {
 
