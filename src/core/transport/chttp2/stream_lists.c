@@ -282,6 +282,24 @@ int grpc_chttp2_list_pop_closed_waiting_for_parsing(
   return r;
 }
 
+void grpc_chttp2_list_add_cancelled_waiting_for_writing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global) {
+  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
+                  STREAM_FROM_GLOBAL(stream_global),
+                  GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING);
+}
+
+int grpc_chttp2_list_pop_cancelled_waiting_for_writing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global) {
+  grpc_chttp2_stream *stream;
+  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
+                          GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING);
+  *stream_global = &stream->global;
+  return r;
+}
+
 void grpc_chttp2_list_add_incoming_window_updated(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {

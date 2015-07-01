@@ -765,21 +765,31 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
     }
   }
 
+  if (!t->writing_active) {
+    while (grpc_chttp2_list_pop_cancelled_waiting_for_writing(transport_global, &stream_global)) {
+      grpc_chttp2_list_add_read_write_state_changed(transport_global, stream_global);
+    }
+  }
+
   while (grpc_chttp2_list_pop_read_write_state_changed(transport_global,
                                                        &stream_global)) {
     if (stream_global->cancelled) {
-      stream_global->write_state = GRPC_WRITE_STATE_SENT_CLOSE;
-      stream_global->read_closed = 1;
-      if (!stream_global->published_cancelled) {
-        char buffer[GPR_LTOA_MIN_BUFSIZE];
-        gpr_ltoa(stream_global->cancelled_status, buffer);
-        grpc_chttp2_incoming_metadata_buffer_add(
-            &stream_global->incoming_metadata,
-            grpc_mdelem_from_strings(t->metadata_context, "grpc-status",
-                                     buffer));
-        grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
-            &stream_global->incoming_metadata, &stream_global->incoming_sopb);
-        stream_global->published_cancelled = 1;
+      if (t->writing_active && stream_global->write_state != GRPC_WRITE_STATE_SENT_CLOSE) {
+        grpc_chttp2_list_add_cancelled_waiting_for_writing(transport_global, stream_global);
+      } else {
+        stream_global->write_state = GRPC_WRITE_STATE_SENT_CLOSE;
+        stream_global->read_closed = 1;
+        if (!stream_global->published_cancelled) {
+          char buffer[GPR_LTOA_MIN_BUFSIZE];
+          gpr_ltoa(stream_global->cancelled_status, buffer);
+          grpc_chttp2_incoming_metadata_buffer_add(
+              &stream_global->incoming_metadata,
+              grpc_mdelem_from_strings(t->metadata_context, "grpc-status",
+                                       buffer));
+          grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
+              &stream_global->incoming_metadata, &stream_global->incoming_sopb);
+          stream_global->published_cancelled = 1;
+        }
       }
     }
     if (stream_global->write_state == GRPC_WRITE_STATE_SENT_CLOSE &&

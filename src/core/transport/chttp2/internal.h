@@ -63,6 +63,7 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE,
   GRPC_CHTTP2_LIST_PARSING_SEEN,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
+  GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING,
   GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
@@ -523,6 +524,13 @@ void grpc_chttp2_list_add_closed_waiting_for_parsing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_closed_waiting_for_parsing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
+
+void grpc_chttp2_list_add_cancelled_waiting_for_writing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_cancelled_waiting_for_writing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
 
