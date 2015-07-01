@@ -202,6 +202,7 @@ static void started_call(void *arg, int iomgr_success) {
     }
   } else {
     GPR_ASSERT(calld->state == CALL_CANCELLED);
+    gpr_mu_unlock(&calld->mu_state);
   }
 }
 
