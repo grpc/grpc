@@ -6,7 +6,9 @@ def _lower_underscore_to_upper_camel(str):
   return "".join(humps)
 
 def objc_grpc_library(name, srcs, visibility=None):
-  basename = srcs[0].split('/')[-1]
+  src_path_elements = srcs[0].split('/')
+  src_dir = '/'.join(src_path_elements[:-1])
+  basename = src_path_elements[-1]
   filename = basename[:-6] # remove .proto suffix
   filename = _lower_underscore_to_upper_camel(filename)
 
@@ -17,24 +19,19 @@ def objc_grpc_library(name, srcs, visibility=None):
 
   # Messages
   protoc_messages_flags = "--objc_out=$(GENDIR)"
+  message_header = src_dir + '/' + filename + ".pbobjc.h"
+  message_implementation = src_dir + '/' + filename + ".pbobjc.m"
   native.genrule(
     name = name + "_mesages_codegen",
     srcs = srcs,
-    outs = [
-      filename + ".pbobjc.h",
-      filename + ".pbobjc.m",
-    ],
+    outs = [message_header, message_implementation],
     cmd = protoc_command + protoc_messages_flags + srcs_params,
   )
   native.objc_library(
     name = name + "_messages",
-    hdrs = [
-      ":" + filename + ".pbobjc.h",
-    ],
+    hdrs = [message_header],
     includes = ["."],
-    non_arc_srcs = [
-      ":" + filename + ".pbobjc.m",
-    ],
+    non_arc_srcs = [message_implementation],
     deps = [
       "//external:protobuf_objc",
     ],
@@ -42,24 +39,19 @@ def objc_grpc_library(name, srcs, visibility=None):
 
   # Services
   protoc_services_flags = "--grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(location //external:grpc_protoc_plugin_objc)"
+  service_header = src_dir + '/' + filename + ".pbrpc.h"
+  service_implementation = src_dir + '/' + filename + ".pbrpc.m"
   native.genrule(
     name = name + "_codegen",
     srcs = srcs + ["//external:grpc_protoc_plugin_objc"],
-    outs = [
-      filename + ".pbrpc.h",
-      filename + ".pbrpc.m",
-    ],
+    outs = [service_header, service_implementation],
     cmd = protoc_command + protoc_services_flags + srcs_params,
   )
   native.objc_library(
     name = name,
-    hdrs = [
-      ":" + filename + ".pbrpc.h",
-    ],
+    hdrs = [service_header],
     includes = ["."],
-    srcs = [
-      ":" + filename + ".pbrpc.m",
-    ],
+    srcs = [service_implementation],
     deps = [
       ":" + name + "_messages",
       "//external:proto_objc_rpc",
