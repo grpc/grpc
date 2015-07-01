@@ -336,8 +336,8 @@ HAS_PKG_CONFIG = $(shell command -v pkg-config >/dev/null 2>&1 && echo true || e
 PC_TEMPLATE = prefix=$(prefix)\nexec_prefix=\$${prefix}\nincludedir=\$${prefix}/include\nlibdir=\$${exec_prefix}/lib\n\nName: $(PC_NAME)\nDescription: $(PC_DESCRIPTION)\nVersion: $(VERSION)\nCflags: -I\$${includedir} $(PC_CFLAGS)\nRequires.private: $(PC_REQUIRES_PRIVATE)\nLibs: -L\$${libdir}\nLibs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
-PC_NAME = Google Public Runtime
-PC_DESCRIPTION = Google Public Runtime
+PC_NAME = gRPC Portable Runtime
+PC_DESCRIPTION = gRPC Portable Runtime
 PC_CFLAGS = -pthread
 PC_REQUIRES_PRIVATE =
 PC_LIBS_PRIVATE = -lpthread

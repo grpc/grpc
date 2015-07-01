@@ -361,8 +361,8 @@ Libs: -L${'\$${libdir}'}\n\
 Libs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
-PC_NAME = Google Public Runtime
-PC_DESCRIPTION = Google Public Runtime
+PC_NAME = gRPC Portable Runtime
+PC_DESCRIPTION = gRPC Portable Runtime
 PC_CFLAGS = -pthread
 PC_REQUIRES_PRIVATE =
 PC_LIBS_PRIVATE = -lpthread
