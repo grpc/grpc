@@ -34,6 +34,38 @@
 #ifndef GRPC_SUPPORT_PORT_PLATFORM_H
 #define GRPC_SUPPORT_PORT_PLATFORM_H
 
+/* Get windows.h included everywhere (we need it) */
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
+#define WIN32_LEAN_AND_MEAN
+#endif /* WIN32_LEAN_AND_MEAN */
+
+#ifndef NOMINMAX
+#define GRPC_NOMINMX_WAS_NOT_DEFINED
+#define NOMINMAX
+#endif /* NOMINMAX */
+
+#if defined(_WIN32_WINNT)
+#if _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif /* _WIN32_WINNT < 0x0600 */
+#endif /* defined(_WIN32_WINNT) */
+
+#include <windows.h>
+
+#ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
+#undef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
+#undef WIN32_LEAN_AND_MEAN
+#endif /* GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED */
+
+#ifdef GRPC_NOMINMAX_WAS_NOT_DEFINED
+#undef GRPC_NOMINMAX_WAS_NOT_DEFINED
+#undef NOMINMAX
+#endif /* GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED */
+#endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32) */
+
 /* Override this file with one for your platform if you need to redefine
    things.  */
 
