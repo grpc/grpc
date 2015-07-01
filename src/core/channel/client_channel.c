@@ -330,9 +330,6 @@ static void perform_transport_stream_op(grpc_call_element *elem,
         } else {
           consumed_op = merge_into_waiting_op(elem, op);
           gpr_mu_unlock(&calld->mu_state);
-          if (op->on_consumed != NULL) {
-            op->on_consumed->cb(op->on_consumed->cb_arg, 0);
-          }
         }
         break;
       }
@@ -362,11 +359,16 @@ static void perform_transport_stream_op(grpc_call_element *elem,
             pick_target(lb_policy, calld);
 
             GRPC_LB_POLICY_UNREF(lb_policy, "pick");
-          } else {
+          } else if (chand->resolver != NULL) {
             calld->state = CALL_WAITING_FOR_CONFIG;
             add_to_lb_policy_wait_queue_locked_state_config(elem);
             gpr_mu_unlock(&chand->mu_config);
             gpr_mu_unlock(&calld->mu_state);
+          } else {
+            calld->state = CALL_CANCELLED;
+            gpr_mu_unlock(&chand->mu_config);
+            gpr_mu_unlock(&calld->mu_state);
+            handle_op_after_cancellation(elem, op);
           }
         }
       }
@@ -402,7 +404,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   gpr_mu_lock(&chand->mu_config);
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
-  if (lb_policy != NULL) {
+  if (lb_policy != NULL || chand->resolver == NULL /* disconnected */) {
     wakeup_closures = chand->waiting_for_config_closures;
     chand->waiting_for_config_closures = NULL;
   }

@@ -146,6 +146,13 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, tmp);
   }
 
+  if (op->on_consumed != NULL) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_asprintf(&tmp, "ON_CONSUMED:%p", op->on_consumed);
+    gpr_strvec_add(&b, tmp);
+  }
+
   out = gpr_strvec_flatten(&b, NULL);
   gpr_strvec_destroy(&b);
 

@@ -166,13 +166,11 @@ static void on_writable(void *acp, int success) {
 
 finish:
   gpr_mu_lock(&ac->mu);
-  gpr_log(GPR_DEBUG, "ep=%p", ep);
   if (!ep) {
     grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
     grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
   }
   done = (--ac->refs == 0);
-  gpr_log(GPR_DEBUG, "refs=%d", ac->refs);
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
