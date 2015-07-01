@@ -179,7 +179,6 @@ static void subchannel_destroy(grpc_subchannel *c);
 
 static void connection_destroy(connection *c) {
   GPR_ASSERT(c->refs == 0);
-  gpr_log(GPR_DEBUG, "CONNECTION_DESTROY %p", c);
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CONNECTION(c));
   gpr_free(c);
 }
@@ -432,8 +431,6 @@ static void on_state_changed(void *p, int iomgr_success) {
   if (!iomgr_success || sw->subchannel->active_version != sw->version) {
     goto done;
   }
-
-  gpr_log(GPR_DEBUG, "TRANSPORT STATE: %d", sw->connectivity_state);
 
   switch (sw->connectivity_state) {
     case GRPC_CHANNEL_CONNECTING:
