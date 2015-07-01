@@ -241,10 +241,10 @@ double pygrpc_cast_gpr_timespec_to_double(gpr_timespec timespec);
 gpr_timespec pygrpc_cast_double_to_gpr_timespec(double seconds);
 
 /* Returns true on success, false on failure. */
-int pygrpc_cast_pylist_to_send_metadata(
-    PyObject *pylist, grpc_metadata **metadata, size_t *count);
+int pygrpc_cast_pyseq_to_send_metadata(
+    PyObject *pyseq, grpc_metadata **metadata, size_t *count);
 /* Returns a metadata array as a Python object on success, else NULL. */
-PyObject *pygrpc_cast_metadata_array_to_pylist(grpc_metadata_array metadata);
+PyObject *pygrpc_cast_metadata_array_to_pyseq(grpc_metadata_array metadata);
 
 /* Transliterate from a list of python channel arguments (2-tuples of string
    and string|integer|None) to a grpc_channel_args object. The strings placed

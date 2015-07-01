@@ -31,20 +31,33 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STATUS_CONVERSION_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STATUS_CONVERSION_H
+#include <sys/resource.h>
 
-#include <grpc/grpc.h>
-#include "src/core/transport/chttp2/http2_errors.h"
+#include <grpc/support/log.h>
 
-/* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
-grpc_chttp2_error_code grpc_chttp2_grpc_status_to_http2_error(
-    grpc_status_code status);
-grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
-    grpc_chttp2_error_code error);
+#include "test/core/util/test_config.h"
+#include "src/core/iomgr/endpoint_pair.h"
+#include "src/core/iomgr/iomgr.h"
 
-/* Conversion of HTTP status codes (:status) to grpc status codes */
-grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status);
-int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status);
+int main(int argc, char **argv) {
+	int i;
+	struct rlimit rlim;
+	grpc_endpoint_pair p;
+  grpc_test_init(argc, argv);
+  grpc_iomgr_init();
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STATUS_CONVERSION_H */
+  /* set max # of file descriptors to a low value, and
+     verify we can create and destroy many more than this number
+     of descriptors */
+  rlim.rlim_cur = rlim.rlim_max = 10;
+  GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
+
+  for (i = 0; i < 100; i++) {
+  	p = grpc_iomgr_create_endpoint_pair("test", 1);
+  	grpc_endpoint_destroy(p.client);
+  	grpc_endpoint_destroy(p.server);
+  }
+
+  grpc_iomgr_shutdown();
+  return 0;
+}
