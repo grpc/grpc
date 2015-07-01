@@ -38,7 +38,7 @@
 
 #include "src/core/client_config/resolver_factory.h"
 
-/** Create a dns resolver for \a name */
+/** Create a unix resolver factory */
 grpc_resolver_factory *grpc_unix_resolver_factory_create(void);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H */
