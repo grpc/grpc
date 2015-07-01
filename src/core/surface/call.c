@@ -1243,7 +1243,7 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     } else if (key == grpc_channel_get_message_string(call->channel)) {
       set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
     } else if (key ==
-               grpc_channel_get_compresssion_algorithm_string(call->channel)) {
+               grpc_channel_get_compression_algorithm_string(call->channel)) {
       set_compression_algorithm(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];

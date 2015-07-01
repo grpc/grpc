@@ -273,7 +273,7 @@ grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel) {
   return channel->grpc_status_string;
 }
 
-grpc_mdstr *grpc_channel_get_compresssion_algorithm_string(
+grpc_mdstr *grpc_channel_get_compression_algorithm_string(
     grpc_channel *channel) {
   return channel->grpc_compression_algorithm_string;
 }

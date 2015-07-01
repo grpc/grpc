@@ -226,10 +226,11 @@ static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
                     int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
-  request.set_message("Hello");
+  request.set_message("Hello hello hello hello");
 
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
+    context.set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());

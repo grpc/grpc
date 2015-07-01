@@ -45,6 +45,7 @@
 
 #include "test/core/end2end/cq_verifier.h"
 #include "src/core/channel/channel_args.h"
+#include "src/core/channel/compress_filter.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -240,6 +241,7 @@ static void request_with_payload_template(
 
   cq_verifier_destroy(cqv);
 
+  gpr_slice_unref(request_payload_slice);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);
 
@@ -279,13 +281,13 @@ static void test_invoke_request_with_compressed_payload_md_override(
   grpc_metadata gzip_compression_override;
   grpc_metadata none_compression_override;
 
-  gzip_compression_override.key = "grpc-encoding";
+  gzip_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
   gzip_compression_override.value = "gzip";
   gzip_compression_override.value_length = 4;
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
 
-  none_compression_override.key = "grpc-encoding";
+  none_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
   none_compression_override.value = "none";
   none_compression_override.value_length = 4;
   memset(&none_compression_override.internal_data, 0,

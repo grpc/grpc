@@ -36,6 +36,8 @@
 
 #include "src/core/channel/channel_stack.h"
 
+#define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "internal:grpc-encoding-request"
+
 /** Message-level compression filter.
  *
  * See <grpc/compression.h> for the available compression levels.

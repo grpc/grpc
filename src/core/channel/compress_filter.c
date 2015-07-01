@@ -50,7 +50,8 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  grpc_mdstr *mdstr_compression_algorithm_key;
+  grpc_mdstr *mdstr_request_compression_algorithm_key;
+  grpc_mdstr *mdstr_outgoing_compression_algorithm_key;
   grpc_mdelem *mdelem_compression_algorithms[GRPC_COMPRESS_ALGORITHMS_COUNT];
   grpc_compression_algorithm default_compression_algorithm;
 } channel_data;
@@ -72,14 +73,14 @@ static int compress_send_sb(grpc_compression_algorithm algorithm,
 }
 
 /** For each \a md element from the incoming metadata, filter out the entry for
- * "grpc-compression-algorithm", using its value to populate the call data's
+ * "grpc-encoding", using its value to populate the call data's
  * compression_algorithm field. */
 static grpc_mdelem* compression_md_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  if (md->key == channeld->mdstr_compression_algorithm_key) {
+  if (md->key == channeld->mdstr_request_compression_algorithm_key) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
     if (!grpc_compression_algorithm_parse(md_c_str,
                                           &calld->compression_algorithm)) {
@@ -184,7 +185,6 @@ static void process_send_ops(grpc_call_element *elem,
         break;
       case GRPC_OP_SLICE:
         if (did_compress) {
-          gpr_slice_unref(sop->data.slice);
           if (j < calld->slices.count) {
             sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
           }
@@ -259,7 +259,10 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->default_compression_algorithm =
       grpc_compression_algorithm_for_level(clevel);
 
-  channeld->mdstr_compression_algorithm_key =
+  channeld->mdstr_request_compression_algorithm_key =
+      grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY);
+
+  channeld->mdstr_outgoing_compression_algorithm_key =
       grpc_mdstr_from_string(mdctx, "grpc-encoding");
 
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
@@ -267,7 +270,8 @@ static void init_channel_elem(grpc_channel_element *elem,
     GPR_ASSERT(grpc_compression_algorithm_name(algo_idx, &algorith_name) != 0);
     channeld->mdelem_compression_algorithms[algo_idx] =
         grpc_mdelem_from_metadata_strings(
-            mdctx, grpc_mdstr_ref(channeld->mdstr_compression_algorithm_key),
+            mdctx,
+            grpc_mdstr_ref(channeld->mdstr_outgoing_compression_algorithm_key),
             grpc_mdstr_from_string(mdctx, algorith_name));
   }
 
@@ -283,7 +287,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
 
-  grpc_mdstr_unref(channeld->mdstr_compression_algorithm_key);
+  grpc_mdstr_unref(channeld->mdstr_request_compression_algorithm_key);
+  grpc_mdstr_unref(channeld->mdstr_outgoing_compression_algorithm_key);
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT;
        ++algo_idx) {
     grpc_mdelem_unref(channeld->mdelem_compression_algorithms[algo_idx]);

@@ -34,6 +34,10 @@
 #ifndef GRPC_COMPRESSION_H
 #define GRPC_COMPRESSION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** To be used in channel arguments */
 #define GRPC_COMPRESSION_LEVEL_ARG "grpc.compression_level"
 
@@ -75,5 +79,9 @@ grpc_compression_level grpc_compression_level_for_algorithm(
  * It abort()s for unknown levels . */
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
     grpc_compression_level level);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_COMPRESSION_H */
