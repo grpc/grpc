@@ -40,17 +40,17 @@ namespace testing {
 void PerfDbClient::setConfigs(const ClientConfig& client_config,
                               const ServerConfig& server_config) {
   client_config_ = client_config;
-  this->server_config_ = server_config;
+  server_config_ = server_config;
 }
 
 // sets the QPS
 void PerfDbClient::setQps(double qps) {
-  this->qps_ = qps;
+  qps_ = qps;
 }
 
 // sets the QPS per core
 void PerfDbClient::setQpsPerCore(double qps_per_core) {
-  this->qps_per_core_ = qps_per_core;
+  qps_per_core_ = qps_per_core;
 }
 
 // sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
@@ -59,20 +59,20 @@ void PerfDbClient::setLatencies(double perc_lat_50,
                                 double perc_lat_95,
                                 double perc_lat_99,
                                 double perc_lat_99_point_9) {
-  this->perc_lat_50_ = perc_lat_50;
-  this->perc_lat_90_ = perc_lat_90;
-  this->perc_lat_95_ = perc_lat_95;
-  this->perc_lat_99_ = perc_lat_99;
-  this->perc_lat_99_point_9_ = perc_lat_99_point_9;
+  perc_lat_50_ = perc_lat_50;
+  perc_lat_90_ = perc_lat_90;
+  perc_lat_95_ = perc_lat_95;
+  perc_lat_99_ = perc_lat_99;
+  perc_lat_99_point_9_ = perc_lat_99_point_9;
 }
 
 // sets the server and client, user and system times
 void PerfDbClient::setTimes(double server_system_time, double server_user_time,
                             double client_system_time, double client_user_time) {
-  this->server_system_time_ = server_system_time;
-  this->server_user_time_ = server_user_time;
-  this->client_system_time_ = client_system_time;
-  this->client_user_time_ = client_user_time;
+  server_system_time_ = server_system_time;
+  server_user_time_ = server_user_time;
+  client_system_time_ = client_system_time;
+  client_user_time_ = client_user_time;
 }
 
 // sends the data to the performance database server
@@ -88,44 +88,44 @@ bool PerfDbClient::sendData(std::string hashed_id, std::string test_name,
   single_user_record_request.set_tag(tag);
 
   // setting configs
-  *(single_user_record_request.mutable_client_config()) = this->client_config_;
-  *(single_user_record_request.mutable_server_config()) = this->server_config_;
+  *(single_user_record_request.mutable_client_config()) = client_config_;
+  *(single_user_record_request.mutable_server_config()) = server_config_;
 
   Metrics* metrics = single_user_record_request.mutable_metrics();
 
   // setting metrcs in data record request
   if (qps_ != DBL_MIN) {
-    metrics->set_qps(this->qps_);
+    metrics->set_qps(qps_);
   }
   if (qps_per_core_ != DBL_MIN) {
-    metrics->set_qps_per_core(this->qps_per_core_);
+    metrics->set_qps_per_core(qps_per_core_);
   }
   if (perc_lat_50_ != DBL_MIN) {
-    metrics->set_perc_lat_50(this->perc_lat_50_);
+    metrics->set_perc_lat_50(perc_lat_50_);
   }
   if (perc_lat_90_ != DBL_MIN) {
-    metrics->set_perc_lat_90(this->perc_lat_90_);
+    metrics->set_perc_lat_90(perc_lat_90_);
   }
   if (perc_lat_95_ != DBL_MIN) {
-    metrics->set_perc_lat_95(this->perc_lat_95_);
+    metrics->set_perc_lat_95(perc_lat_95_);
   }
   if (perc_lat_99_ != DBL_MIN) {
-    metrics->set_perc_lat_99(this->perc_lat_99_);
+    metrics->set_perc_lat_99(perc_lat_99_);
   }
   if (perc_lat_99_point_9_ != DBL_MIN) {
-    metrics->set_perc_lat_99_point_9(this->perc_lat_99_point_9_);
+    metrics->set_perc_lat_99_point_9(perc_lat_99_point_9_);
   }
   if (server_system_time_ != DBL_MIN) {
-    metrics->set_server_system_time(this->server_system_time_);
+    metrics->set_server_system_time(server_system_time_);
   }
   if (server_user_time_ != DBL_MIN) {
-    metrics->set_server_user_time(this->server_user_time_);
+    metrics->set_server_user_time(server_user_time_);
   }
   if (client_system_time_ != DBL_MIN) {
-    metrics->set_client_system_time(this->client_system_time_);
+    metrics->set_client_system_time(client_system_time_);
   }
   if (client_user_time_ != DBL_MIN) {
-    metrics->set_client_user_time(this->client_user_time_);
+    metrics->set_client_user_time(client_user_time_);
   }
 
   SingleUserRecordReply single_user_record_reply;
