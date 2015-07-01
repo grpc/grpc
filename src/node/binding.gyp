@@ -10,7 +10,7 @@
         '-pthread',
         '-pedantic',
         '-g',
-        '-zdefs'
+        '-zdefs',
         '-Werror'
       ],
       'ldflags': [
