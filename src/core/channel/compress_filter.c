@@ -67,7 +67,9 @@ static int compress_send_sb(grpc_compression_algorithm algorithm,
   gpr_slice_buffer tmp;
   gpr_slice_buffer_init(&tmp);
   did_compress = grpc_msg_compress(algorithm, slices, &tmp);
-  gpr_slice_buffer_swap(slices, &tmp);
+  if (did_compress) {
+    gpr_slice_buffer_swap(slices, &tmp);
+  }
   gpr_slice_buffer_destroy(&tmp);
   return did_compress;
 }
@@ -142,8 +144,9 @@ static void process_send_ops(grpc_call_element *elem,
       case GRPC_OP_SLICE:
         if (skip_compression(channeld, calld)) continue;
         GPR_ASSERT(calld->remaining_slice_bytes > 0);
-        /* add to calld->slices */
-        gpr_slice_buffer_add(&calld->slices, sop->data.slice);
+        /* We need to copy the input because gpr_slice_buffer_add takes
+         * ownership. However, we don't own sop->data.slice, the caller does. */
+        gpr_slice_buffer_add(&calld->slices, gpr_slice_ref(sop->data.slice));
         calld->remaining_slice_bytes -= GPR_SLICE_LENGTH(sop->data.slice);
         if (calld->remaining_slice_bytes == 0) {
           /* compress */
@@ -186,6 +189,8 @@ static void process_send_ops(grpc_call_element *elem,
       case GRPC_OP_SLICE:
         if (did_compress) {
           if (j < calld->slices.count) {
+            /* swap the input slices for their compressed counterparts */
+            gpr_slice_unref(sop->data.slice);
             sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
           }
         }

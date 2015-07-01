@@ -64,10 +64,11 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
   int port = grpc_pick_unused_port_or_die();
   fullstack_compression_fixture_data *ffd =
       gpr_malloc(sizeof(fullstack_compression_fixture_data));
-  memset(&f, 0, sizeof(f));
+  memset(ffd, 0, sizeof(fullstack_compression_fixture_data));
 
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
+  memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create();
 
@@ -77,6 +78,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
 void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *client_args) {
   fullstack_compression_fixture_data *ffd = f->fixture_data;
+  if (ffd->client_args_compression != NULL) {
+    grpc_channel_args_destroy(ffd->client_args_compression);
+  }
   ffd->client_args_compression = grpc_channel_args_set_compression_level(
       client_args, GRPC_COMPRESS_LEVEL_HIGH);
   f->client = grpc_channel_create(ffd->localaddr, ffd->client_args_compression);
@@ -85,6 +89,9 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
 void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *server_args) {
   fullstack_compression_fixture_data *ffd = f->fixture_data;
+  if (ffd->server_args_compression != NULL) {
+    grpc_channel_args_destroy(ffd->server_args_compression);
+  }
   ffd->server_args_compression = grpc_channel_args_set_compression_level(
       server_args, GRPC_COMPRESS_LEVEL_HIGH);
   if (f->server) {
