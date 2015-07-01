@@ -664,7 +664,6 @@
         "test/cpp/interop/interop_client.cc"
       ],
       "deps": [
-        "interop_client_helper",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -702,7 +701,6 @@
         "test/cpp/interop/server.cc"
       ],
       "deps": [
-        "interop_server_helper",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
