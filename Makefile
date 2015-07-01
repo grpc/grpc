@@ -338,11 +338,12 @@ PC_TEMPLATE = prefix=$(prefix)\nexec_prefix=\$${prefix}\nincludedir=\$${prefix}/
 # gpr .pc file
 PC_NAME = Google Public Runtime
 PC_DESCRIPTION = Google Public Runtime
-PC_CFLAGS = -pthread
+PC_CFLAGS =
 PC_REQUIRES_PRIVATE =
-PC_LIBS_PRIVATE = -lpthread
 ifeq ($(SYSTEM),Darwin)
-PC_LIBS_PRIVATE += -lrt
+PC_LIBS_PRIVATE = -lrt
+else
+PC_LIBS_PRIVATE =
 endif
 GPR_PC_FILE := $(PC_TEMPLATE)
 
