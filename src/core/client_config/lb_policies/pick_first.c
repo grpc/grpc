@@ -192,6 +192,7 @@ loop:
           grpc_iomgr_add_delayed_callback(pp->on_complete, 1);
           gpr_free(pp);
         }
+        unref = 1;
       } else {
         p->checking_subchannel %= p->num_subchannels;
         p->checking_connectivity = grpc_subchannel_check_connectivity(

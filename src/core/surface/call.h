@@ -94,8 +94,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
 void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
-#define GRPC_CALL_REF_COUNT_DEBUG
-
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
 void grpc_call_internal_unref(grpc_call *call, const char *reason,
