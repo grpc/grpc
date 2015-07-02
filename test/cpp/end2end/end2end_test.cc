@@ -31,6 +31,12 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_WIN32
+#define NOMINMAX                //windows max/min defines interfere with STL max()
+#endif /* GPR_WIN32 */
+
 #include <mutex>
 #include <thread>
 
@@ -787,5 +793,12 @@ TEST_F(End2endTest, ClientAuthContext) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef GPR_WIN32
+  WSADATA wsaData;
+  int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
+  GPR_ASSERT(status == 0);
+#endif /* GPR_WIN32 */
+
   return RUN_ALL_TESTS();
 }
