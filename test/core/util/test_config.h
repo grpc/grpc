@@ -52,11 +52,11 @@ extern "C" {
   (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR)
 
 #define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x) \
-  gpr_time_add(gpr_now(),                   \
+  gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),                   \
                gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e6 * (x)))
 
 #define GRPC_TIMEOUT_MILLIS_TO_DEADLINE(x) \
-  gpr_time_add(gpr_now(),                  \
+  gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),                  \
                gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)))
 
 #ifndef GRPC_TEST_CUSTOM_PICK_PORT

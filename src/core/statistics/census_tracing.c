@@ -94,7 +94,7 @@ census_op_id census_tracing_start_op(void) {
     g_id++;
     memcpy(&ret->id, &g_id, sizeof(census_op_id));
     ret->rpc_stats.cnt = 1;
-    ret->ts = gpr_now();
+    ret->ts = gpr_now(GPR_CLOCK_REALTIME);
     census_ht_insert(g_trace_store, op_id_as_key(&ret->id), (void*)ret);
     gpr_log(GPR_DEBUG, "Start tracing for id %lu", g_id);
     gpr_mu_unlock(&g_mu);
@@ -122,7 +122,7 @@ void census_tracing_print(census_op_id op_id, const char* anno_txt) {
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace != NULL) {
     census_trace_annotation* anno = gpr_malloc(sizeof(census_trace_annotation));
-    anno->ts = gpr_now();
+    anno->ts = gpr_now(GPR_CLOCK_REALTIME);
     {
       char* d = anno->txt;
       const char* s = anno_txt;
@@ -144,7 +144,7 @@ void census_tracing_end_op(census_op_id op_id) {
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace != NULL) {
     trace->rpc_stats.elapsed_time_ms =
-        gpr_timespec_to_micros(gpr_time_sub(gpr_now(), trace->ts));
+        gpr_timespec_to_micros(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), trace->ts));
     gpr_log(GPR_DEBUG, "End tracing for id %lu, method %s, latency %f us",
             op_id_2_uint64(&op_id), trace->method,
             trace->rpc_stats.elapsed_time_ms);

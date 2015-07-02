@@ -122,7 +122,7 @@ static void finish_shutdown(grpc_pollset *pollset) {
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0;
   }

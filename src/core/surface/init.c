@@ -33,6 +33,7 @@
 
 #include <grpc/census.h>
 #include <grpc/grpc.h>
+#include <grpc/support/time.h>
 #include "src/core/channel/channel_stack.h"
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
@@ -56,6 +57,7 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
+    gpr_time_init();
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);

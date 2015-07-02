@@ -94,7 +94,7 @@ static void setup_initiate(grpc_transport_setup *sp) {
   int in_alarm = 0;
 
   r->setup = s;
-  r->deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(60));
+  r->deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(60));
 
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->refs > 0);
@@ -221,7 +221,7 @@ void grpc_client_setup_create_and_attach(
 int grpc_client_setup_request_should_continue(grpc_client_setup_request *r,
                                               const char *reason) {
   int result;
-  if (gpr_time_cmp(gpr_now(), r->deadline) > 0) {
+  if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), r->deadline) > 0) {
     result = 0;
   } else {
     gpr_mu_lock(&r->setup->mu);
@@ -275,7 +275,7 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
     /* TODO(klempner): Replace these values with further consideration. 2x is
        probably too aggressive of a backoff. */
     gpr_timespec max_backoff = gpr_time_from_minutes(2);
-    gpr_timespec now = gpr_now();
+    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
     gpr_timespec deadline = gpr_time_add(s->current_backoff_interval, now);
     GPR_ASSERT(!s->in_alarm);
     s->in_alarm = 1;

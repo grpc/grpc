@@ -1190,7 +1190,7 @@ static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   }
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
-  grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now());
+  grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now(GPR_CLOCK_REALTIME));
 }
 
 /* we offset status by a small amount when storing it into transport metadata

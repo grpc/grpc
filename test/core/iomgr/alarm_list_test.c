@@ -51,7 +51,7 @@ static void cb(void *arg, int success) {
 }
 
 static void add_test(void) {
-  gpr_timespec start = gpr_now();
+  gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   int i;
   grpc_alarm alarms[20];
 

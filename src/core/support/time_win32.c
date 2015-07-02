@@ -58,7 +58,7 @@ void gpr_sleep_until(gpr_timespec until) {
   for (;;) {
     /* We could simplify by using clock_nanosleep instead, but it might be
      * slightly less portable. */
-    now = gpr_now();
+    now = gpr_now(GPR_CLOCK_REALTIME);
     if (gpr_time_cmp(until, now) <= 0) {
       return;
     }

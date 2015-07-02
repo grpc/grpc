@@ -207,7 +207,7 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   char now_str[GPR_LTOA_MIN_BUFSIZE];
   char expiration_str[GPR_LTOA_MIN_BUFSIZE];
