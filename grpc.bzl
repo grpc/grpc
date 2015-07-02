@@ -16,7 +16,7 @@ def _file_with_extension(src, ext):
   return "".join(elements[:-1] + [basename, ext])
 
 def _protoc_invocation(srcs, flags):
-  protoc_command = "protoc -I . "
+  protoc_command = "$(location //external:protoc) -I . "
   srcs_params = ""
   for src in srcs:
     srcs_params += " $(location %s)" % (src)
@@ -34,7 +34,7 @@ def objc_proto_library(name, srcs, visibility=None):
 
   native.genrule(
     name = name + "_codegen",
-    srcs = srcs,
+    srcs = srcs + ["//external:protoc"],
     outs = h_files + m_files,
     cmd = _protoc_invocation(srcs, protoc_flags),
   )
@@ -61,7 +61,10 @@ def objc_grpc_library(name, services, other_messages, visibility=None):
 
   native.genrule(
     name = name + "_codegen",
-    srcs = services + ["//external:grpc_protoc_plugin_objc"],
+    srcs = services + [
+      "//external:grpc_protoc_plugin_objc",
+      "//external:protoc",
+    ],
     outs = h_files + m_files,
     cmd = _protoc_invocation(services, protoc_flags),
   )
