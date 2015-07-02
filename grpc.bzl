@@ -5,22 +5,28 @@ def _lower_underscore_to_upper_camel(str):
     humps += [hump[0].upper() + hump[1:]]
   return "".join(humps)
 
-def objc_grpc_library(name, srcs, visibility=None):
-  src_path_elements = srcs[0].split('/')
-  src_dir = '/'.join(src_path_elements[:-1])
-  basename = src_path_elements[-1]
-  filename = basename[:-6] # remove .proto suffix
-  filename = _lower_underscore_to_upper_camel(filename)
+def _file_to_upper_camel(src):
+  elements = src.rpartition('/')
+  upper_camel = _lower_underscore_to_upper_camel(elements[-1])
+  return "".join(elements[:-1] + [upper_camel])
 
+def _file_with_extension(src, ext):
+  elements = src.rpartition('/')
+  basename = elements[-1].partition('.')[0]
+  return "".join(elements[:-1] + [basename, ext])
+
+def objc_grpc_library(name, srcs, visibility=None):
   protoc_command = "protoc -I . "
   srcs_params = ""
   for src in srcs:
     srcs_params += " $(location %s)" % (src)
 
+  src = _file_to_upper_camel(srcs[0])
+
   # Messages
   protoc_messages_flags = "--objc_out=$(GENDIR)"
-  message_header = src_dir + '/' + filename + ".pbobjc.h"
-  message_implementation = src_dir + '/' + filename + ".pbobjc.m"
+  message_header = _file_with_extension(src, ".pbobjc.h")
+  message_implementation = _file_with_extension(src, ".pbobjc.m")
   native.genrule(
     name = name + "_mesages_codegen",
     srcs = srcs,
@@ -39,8 +45,8 @@ def objc_grpc_library(name, srcs, visibility=None):
 
   # Services
   protoc_services_flags = "--grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(location //external:grpc_protoc_plugin_objc)"
-  service_header = src_dir + '/' + filename + ".pbrpc.h"
-  service_implementation = src_dir + '/' + filename + ".pbrpc.m"
+  service_header = _file_with_extension(src, ".pbrpc.h")
+  service_implementation = _file_with_extension(src, ".pbrpc.m")
   native.genrule(
     name = name + "_codegen",
     srcs = srcs + ["//external:grpc_protoc_plugin_objc"],
