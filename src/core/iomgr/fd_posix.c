@@ -368,6 +368,7 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
     watcher->fd = NULL;
     watcher->pollset = NULL;
     gpr_mu_unlock(&fd->watcher_mu);
+    GRPC_FD_UNREF(fd, "poll");
     return 0;
   }
   /* if there is nobody polling for read, but we need to, then start doing so */
