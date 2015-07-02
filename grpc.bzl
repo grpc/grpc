@@ -23,47 +23,53 @@ def _protoc_invocation(srcs, flags):
   return protoc_command + flags + srcs_params
 
 def objc_proto_library(name, srcs, visibility=None):
-  src = _file_to_upper_camel(srcs[0])
+  h_files = []
+  m_files = []
+  for src in srcs:
+    src = _file_to_upper_camel(src)
+    h_files += [_file_with_extension(src, ".pbobjc.h")]
+    m_files += [_file_with_extension(src, ".pbobjc.m")]
 
   protoc_flags = "--objc_out=$(GENDIR)"
-  message_header = _file_with_extension(src, ".pbobjc.h")
-  message_implementation = _file_with_extension(src, ".pbobjc.m")
+
   native.genrule(
     name = name + "_codegen",
     srcs = srcs,
-    outs = [message_header, message_implementation],
+    outs = h_files + m_files,
     cmd = _protoc_invocation(srcs, protoc_flags),
   )
   native.objc_library(
     name = name,
-    hdrs = [message_header],
+    hdrs = h_files,
     includes = ["."],
-    non_arc_srcs = [message_implementation],
-    deps = [
-      "//external:protobuf_objc",
-    ],
+    non_arc_srcs = m_files,
+    deps = ["//external:protobuf_objc"],
     visibility = visibility,
   )
 
-def objc_grpc_library(name, srcs, visibility=None):
-  objc_proto_library(name + "_messages", srcs, visibility)
+def objc_grpc_library(name, services, other_messages, visibility=None):
+  objc_proto_library(name + "_messages", services + other_messages)
 
-  src = _file_to_upper_camel(srcs[0])
+  h_files = []
+  m_files = []
+  for src in services:
+    src = _file_to_upper_camel(src)
+    h_files += [_file_with_extension(src, ".pbrpc.h")]
+    m_files += [_file_with_extension(src, ".pbrpc.m")]
 
   protoc_flags = "--grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(location //external:grpc_protoc_plugin_objc)"
-  service_header = _file_with_extension(src, ".pbrpc.h")
-  service_implementation = _file_with_extension(src, ".pbrpc.m")
+
   native.genrule(
     name = name + "_codegen",
-    srcs = srcs + ["//external:grpc_protoc_plugin_objc"],
-    outs = [service_header, service_implementation],
-    cmd = _protoc_invocation(srcs, protoc_flags),
+    srcs = services + ["//external:grpc_protoc_plugin_objc"],
+    outs = h_files + m_files,
+    cmd = _protoc_invocation(services, protoc_flags),
   )
   native.objc_library(
     name = name,
-    hdrs = [service_header],
+    hdrs = h_files,
     includes = ["."],
-    srcs = [service_implementation],
+    srcs = m_files,
     deps = [
       ":" + name + "_messages",
       "//external:proto_objc_rpc",
