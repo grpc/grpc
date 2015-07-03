@@ -1,6 +1,7 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
+pod 'Protobuf', :git => 'https://github.com/google/protobuf.git'
 pod 'gRPC', :path => "../../.."
 pod 'RemoteTest', :path => "../generated_libraries/RemoteTestClient"
 pod 'RouteGuide', :path => "../generated_libraries/RouteGuideClient"
