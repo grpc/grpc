@@ -43,7 +43,7 @@
 }
 
 - (instancetype)initWithHost:(NSString *)host
-                      method:(GRPCMethodName *)method
+                      method:(ProtoMethod *)method
               requestsWriter:(id<GRXWriter>)requestsWriter {
   return [self initWithHost:host
                      method:method
@@ -54,7 +54,7 @@
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
-                      method:(GRPCMethodName *)method
+                      method:(ProtoMethod *)method
               requestsWriter:(id<GRXWriter>)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable {

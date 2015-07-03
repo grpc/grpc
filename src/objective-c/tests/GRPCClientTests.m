@@ -35,7 +35,7 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCMethodName.h>
+#import <GRPCClient/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
@@ -47,9 +47,9 @@ static NSString * const kHostAddress = @"grpc-test.sandbox.google.com";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 
-static GRPCMethodName *kInexistentMethod;
-static GRPCMethodName *kEmptyCallMethod;
-static GRPCMethodName *kUnaryCallMethod;
+static ProtoMethod *kInexistentMethod;
+static ProtoMethod *kEmptyCallMethod;
+static ProtoMethod *kUnaryCallMethod;
 
 @interface GRPCClientTests : XCTestCase
 @end
@@ -58,13 +58,13 @@ static GRPCMethodName *kUnaryCallMethod;
 
 - (void)setUp {
   // This method isn't implemented by the remote server.
-  kInexistentMethod = [[GRPCMethodName alloc] initWithPackage:kPackage
+  kInexistentMethod = [[ProtoMethod alloc] initWithPackage:kPackage
                                                     interface:kService
                                                        method:@"Inexistent"];
-  kEmptyCallMethod = [[GRPCMethodName alloc] initWithPackage:kPackage
+  kEmptyCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
                                                    interface:kService
                                                       method:@"EmptyCall"];
-  kUnaryCallMethod = [[GRPCMethodName alloc] initWithPackage:kPackage
+  kUnaryCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
                                                    interface:kService
                                                       method:@"UnaryCall"];
 }

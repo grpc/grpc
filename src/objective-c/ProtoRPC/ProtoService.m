@@ -33,7 +33,7 @@
 
 #import "ProtoService.h"
 
-#import <GRPCClient/GRPCMethodName.h>
+#import <GRPCClient/ProtoMethod.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter.h>
 
@@ -69,7 +69,7 @@
            requestsWriter:(id<GRXWriter>)requestsWriter
             responseClass:(Class)responseClass
        responsesWriteable:(id<GRXWriteable>)responsesWriteable {
-  GRPCMethodName *methodName = [[GRPCMethodName alloc] initWithPackage:_packageName
+  ProtoMethod *methodName = [[ProtoMethod alloc] initWithPackage:_packageName
                                                              interface:_serviceName
                                                                 method:method];
   return [[ProtoRPC alloc] initWithHost:_host

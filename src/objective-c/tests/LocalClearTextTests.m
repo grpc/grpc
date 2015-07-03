@@ -35,7 +35,7 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCMethodName.h>
+#import <GRPCClient/ProtoMethod.h>
 #import <RouteGuide/RouteGuide.pbobjc.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
 #import <RxLibrary/GRXWriteable.h>
@@ -87,7 +87,7 @@ static NSString * const kService = @"RouteGuide";
   __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:kPackage
+  ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:kPackage
                                                          interface:kService
                                                             method:@"RecordRoute"];
 
@@ -115,7 +115,7 @@ static NSString * const kService = @"RouteGuide";
   __weak XCTestExpectation *response = [self expectationWithDescription:@"Response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:kPackage
+  ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:kPackage
                                                          interface:kService
                                                             method:@"GetFeature"];
 

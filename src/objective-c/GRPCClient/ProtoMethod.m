@@ -31,9 +31,9 @@
  *
  */
 
-#import "GRPCMethodName.h"
+#import "ProtoMethod.h"
 
-@implementation GRPCMethodName
+@implementation ProtoMethod
 - (instancetype)initWithPackage:(NSString *)package
                       interface:(NSString *)interface
                          method:(NSString *)method {

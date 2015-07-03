@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#import "GRPCMethodName.h"
+#import "ProtoMethod.h"
 #import "private/GRPCChannel.h"
 #import "private/GRPCCompletionQueue.h"
 #import "private/GRPCDelegateWrapper.h"
@@ -95,7 +95,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
-                      method:(GRPCMethodName *)method
+                      method:(ProtoMethod *)method
               requestsWriter:(id<GRXWriter>)requestWriter {
   if (!host || !method) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor method can be nil."];

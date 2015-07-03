@@ -39,7 +39,7 @@
 // implement multiple interfaces.
 // TODO(jcanizales): Move to ProtoRPC package.
 // TODO(jcanizales): Rename interface -> service.
-@interface GRPCMethodName : NSObject
+@interface ProtoMethod : NSObject
 @property(nonatomic, readonly) NSString *package;
 @property(nonatomic, readonly) NSString *interface;
 @property(nonatomic, readonly) NSString *method;
