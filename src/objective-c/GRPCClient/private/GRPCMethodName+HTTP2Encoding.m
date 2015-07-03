@@ -36,9 +36,9 @@
 @implementation ProtoMethod (HTTP2Encoding)
 - (NSString *)HTTP2Path {
   if (self.package) {
-    return [NSString stringWithFormat:@"/%@.%@/%@", self.package, self.interface, self.method];
+    return [NSString stringWithFormat:@"/%@.%@/%@", self.package, self.service, self.method];
   } else {
-    return [NSString stringWithFormat:@"/%@/%@", self.interface, self.method];
+    return [NSString stringWithFormat:@"/%@/%@", self.service, self.method];
   }
 }
 @end
