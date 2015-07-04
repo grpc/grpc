@@ -35,7 +35,7 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/ProtoMethod.h>
+#import <ProtoRPC/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
@@ -59,21 +59,21 @@ static ProtoMethod *kUnaryCallMethod;
 - (void)setUp {
   // This method isn't implemented by the remote server.
   kInexistentMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                    interface:kService
-                                                       method:@"Inexistent"];
+                                                   service:kService
+                                                    method:@"Inexistent"];
   kEmptyCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                   interface:kService
-                                                      method:@"EmptyCall"];
+                                                  service:kService
+                                                   method:@"EmptyCall"];
   kUnaryCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                   interface:kService
-                                                      method:@"UnaryCall"];
+                                                  service:kService
+                                                   method:@"UnaryCall"];
 }
 
 - (void)testConnectionToRemoteServer {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                           method:kInexistentMethod
+                                             path:kInexistentMethod.HTTP2Path
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -95,7 +95,7 @@ static ProtoMethod *kUnaryCallMethod;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                           method:kEmptyCallMethod
+                                             path:kEmptyCallMethod.HTTP2Path
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -123,7 +123,7 @@ static ProtoMethod *kUnaryCallMethod;
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                           method:kUnaryCallMethod
+                                             path:kUnaryCallMethod.HTTP2Path
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -153,7 +153,7 @@ static ProtoMethod *kUnaryCallMethod;
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                           method:kUnaryCallMethod
+                                             path:kUnaryCallMethod.HTTP2Path
                                    requestsWriter:requestsWriter];
 
   call.requestMetadata[@"Authorization"] = @"Bearer bogusToken";

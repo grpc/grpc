@@ -33,16 +33,16 @@
 
 #import <Foundation/Foundation.h>
 
-// See the README file for an introduction to this library.
-
-// A fully-qualified gRPC method name. Full qualification is needed because a gRPC endpoint can
-// implement multiple interfaces.
-// TODO(jcanizales): Move to ProtoRPC package.
+// A fully-qualified proto service method name. Full qualification is needed because a gRPC endpoint
+// can implement multiple services.
 @interface ProtoMethod : NSObject
 @property(nonatomic, readonly) NSString *package;
 @property(nonatomic, readonly) NSString *service;
 @property(nonatomic, readonly) NSString *method;
+
+@property(nonatomic, readonly) NSString *HTTP2Path;
+
 - (instancetype)initWithPackage:(NSString *)package
-                      interface:(NSString *)interface
+                        service:(NSString *)service
                          method:(NSString *)method;
 @end

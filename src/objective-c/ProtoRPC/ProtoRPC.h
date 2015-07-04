@@ -34,6 +34,8 @@
 #import <Foundation/Foundation.h>
 #import <GRPCClient/GRPCCall.h>
 
+#import "ProtoMethod.h"
+
 @interface ProtoRPC : GRPCCall
 
 - (instancetype)initWithHost:(NSString *)host

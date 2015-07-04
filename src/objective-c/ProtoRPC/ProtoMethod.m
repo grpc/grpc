@@ -35,13 +35,21 @@
 
 @implementation ProtoMethod
 - (instancetype)initWithPackage:(NSString *)package
-                      interface:(NSString *)interface
+                        service:(NSString *)service
                          method:(NSString *)method {
   if ((self = [super init])) {
     _package = [package copy];
-    _service = [interface copy];
+    _service = [service copy];
     _method = [method copy];
   }
   return self;
+}
+
+- (NSString *)HTTP2Path {
+  if (_package) {
+    return [NSString stringWithFormat:@"/%@.%@/%@", _package, _service, _method];
+  } else {
+    return [NSString stringWithFormat:@"/%@/%@", _service, _method];
+  }
 }
 @end

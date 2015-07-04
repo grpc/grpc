@@ -48,8 +48,6 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
-@class ProtoMethod;
-
 // Key used in |NSError|'s |userInfo| dictionary to store the response metadata sent by the server.
 extern id const kGRPCStatusMetadataKey;
 
@@ -90,7 +88,7 @@ extern id const kGRPCStatusMetadataKey;
 // the specific remote method called).
 // To finish a call right away, invoke cancel.
 - (instancetype)initWithHost:(NSString *)host
-                      method:(ProtoMethod *)method
+                        path:(NSString *)path
               requestsWriter:(id<GRXWriter>)requestsWriter NS_DESIGNATED_INITIALIZER;
 
 // Finishes the request side of this call, notifies the server that the RPC

@@ -35,7 +35,7 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/ProtoMethod.h>
+#import <ProtoRPC/ProtoMethod.h>
 #import <RouteGuide/RouteGuide.pbobjc.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
 #import <RxLibrary/GRXWriteable.h>
@@ -88,13 +88,13 @@ static NSString * const kService = @"RouteGuide";
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
   ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                         interface:kService
-                                                            method:@"RecordRoute"];
+                                                     service:kService
+                                                      method:@"RecordRoute"];
 
   id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
-                                           method:method
+                                             path:method.HTTP2Path
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -116,8 +116,8 @@ static NSString * const kService = @"RouteGuide";
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
   ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                         interface:kService
-                                                            method:@"GetFeature"];
+                                                     service:kService
+                                                      method:@"GetFeature"];
 
   RGDPoint *point = [RGDPoint message];
   point.latitude = 28E7;
@@ -125,7 +125,7 @@ static NSString * const kService = @"RouteGuide";
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
-                                           method:method
+                                             path:method.HTTP2Path
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {

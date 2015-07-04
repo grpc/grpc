@@ -42,15 +42,16 @@
   id<GRXWriteable> _responseWriteable;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-designated-initializers"
 - (instancetype)initWithHost:(NSString *)host
-                      method:(ProtoMethod *)method
+                        path:(NSString *)path
               requestsWriter:(id<GRXWriter>)requestsWriter {
-  return [self initWithHost:host
-                     method:method
-             requestsWriter:requestsWriter
-              responseClass:nil
-        responsesWriteable:nil];
+  [NSException raise:NSInvalidArgumentException
+              format:@"Please use ProtoRPC's designated initializer instead."];
+  return nil;
 }
+#pragma clang diagnostic pop
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
@@ -70,7 +71,7 @@
         // sending GPBMessages.
         return [proto data];
       }];
-  if ((self = [super initWithHost:host method:method requestsWriter:bytesWriter])) {
+  if ((self = [super initWithHost:host path:method.HTTP2Path requestsWriter:bytesWriter])) {
     // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
       [responsesWriteable writeValue:[responseClass parseFromData:value error:NULL]];
