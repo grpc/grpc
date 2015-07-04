@@ -40,7 +40,7 @@
 @property(nonatomic, readonly) NSString *service;
 @property(nonatomic, readonly) NSString *method;
 
-@property(nonatomic, readonly) NSString *HTTP2Path;
+@property(nonatomic, readonly) NSString *HTTPPath;
 
 - (instancetype)initWithPackage:(NSString *)package
                         service:(NSString *)service

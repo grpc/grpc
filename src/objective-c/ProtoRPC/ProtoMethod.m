@@ -45,7 +45,7 @@
   return self;
 }
 
-- (NSString *)HTTP2Path {
+- (NSString *)HTTPPath {
   if (_package) {
     return [NSString stringWithFormat:@"/%@.%@/%@", _package, _service, _method];
   } else {

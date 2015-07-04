@@ -71,7 +71,7 @@
         // sending GPBMessages.
         return [proto data];
       }];
-  if ((self = [super initWithHost:host path:method.HTTP2Path requestsWriter:bytesWriter])) {
+  if ((self = [super initWithHost:host path:method.HTTPPath requestsWriter:bytesWriter])) {
     // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
       [responsesWriteable writeValue:[responseClass parseFromData:value error:NULL]];

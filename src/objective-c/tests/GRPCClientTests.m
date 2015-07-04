@@ -73,7 +73,7 @@ static ProtoMethod *kUnaryCallMethod;
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kInexistentMethod.HTTP2Path
+                                             path:kInexistentMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -95,7 +95,7 @@ static ProtoMethod *kUnaryCallMethod;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kEmptyCallMethod.HTTP2Path
+                                             path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -123,7 +123,7 @@ static ProtoMethod *kUnaryCallMethod;
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kUnaryCallMethod.HTTP2Path
+                                             path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
@@ -153,7 +153,7 @@ static ProtoMethod *kUnaryCallMethod;
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kUnaryCallMethod.HTTP2Path
+                                             path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
   call.requestMetadata[@"Authorization"] = @"Bearer bogusToken";
