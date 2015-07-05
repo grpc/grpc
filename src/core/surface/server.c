@@ -114,7 +114,6 @@ typedef struct channel_registered_method {
 
 struct channel_data {
   grpc_server *server;
-  size_t num_calls;
   grpc_connectivity_state connectivity_state;
   grpc_channel *channel;
   grpc_mdstr *path_key;
@@ -183,10 +182,6 @@ typedef enum {
 struct call_data {
   grpc_call *call;
 
-  /** is this call counted towards the channels total
-      number of calls? */
-  gpr_uint8 active;
-
   call_state state;
   grpc_mdstr *path;
   grpc_mdstr *host;
@@ -208,9 +203,7 @@ struct call_data {
 
 typedef struct {
   grpc_channel **channels;
-  grpc_channel **disconnects;
   size_t num_channels;
-  size_t num_disconnects;
 } channel_broadcaster;
 
 #define SERVER_FROM_CALL_ELEM(elem) \
@@ -229,26 +222,15 @@ static void maybe_finish_shutdown(grpc_server *server);
 static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
   channel_data *c;
   size_t count = 0;
-  size_t dc_count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     count++;
-    if (c->num_calls == 0) {
-      dc_count++;
-    }
   }
   cb->num_channels = count;
-  cb->num_disconnects = dc_count;
   cb->channels = gpr_malloc(sizeof(*cb->channels) * cb->num_channels);
-  cb->disconnects = gpr_malloc(sizeof(*cb->channels) * cb->num_disconnects);
   count = 0;
-  dc_count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     cb->channels[count++] = c->channel;
     GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast");
-    if (c->num_calls == 0) {
-      cb->disconnects[dc_count++] = c->channel;
-      GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast-disconnect");
-    }
   }
 }
 
@@ -287,28 +269,11 @@ static void channel_broadcaster_shutdown(channel_broadcaster *cb,
                                          int send_goaway, int force_disconnect) {
   size_t i;
 
-  if (send_goaway) {
-    for (i = 0; i < cb->num_channels; i++) {
-      send_shutdown(cb->channels[i], 1, 0);
-    }
-  }
-  if (force_disconnect) {
-    for (i = 0; i < cb->num_channels; i++) {
-      send_shutdown(cb->channels[i], 0, 1);
-    }
-  } else {
-    for (i = 0; i < cb->num_disconnects; i++) {
-      send_shutdown(cb->disconnects[i], 0, 1);
-    }
-  }
   for (i = 0; i < cb->num_channels; i++) {
+    send_shutdown(cb->channels[i], send_goaway, force_disconnect);
     GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast");
   }
-  for (i = 0; i < cb->num_disconnects; i++) {
-    GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast-disconnect");
-  }
   gpr_free(cb->channels);
-  gpr_free(cb->disconnects);
 }
 
 /* call list */
@@ -548,22 +513,10 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static int decrement_call_count(channel_data *chand) {
-  int disconnect = 0;
-  chand->num_calls--;
-  if (0 == chand->num_calls && chand->server->shutdown) {
-    disconnect = 1;
-  }
-  maybe_finish_shutdown(chand->server);
-  return disconnect;
-}
-
 static void server_on_recv(void *ptr, int success) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  int remove_res;
-  int disconnect = 0;
 
   if (success && !calld->got_initial_metadata) {
     size_t i;
@@ -608,21 +561,7 @@ static void server_on_recv(void *ptr, int success) {
         grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_iomgr_add_callback(&calld->kill_zombie_closure);
       }
-      remove_res = calld->active;
-      calld->active = 0;
       gpr_mu_unlock(&chand->server->mu_call);
-      gpr_mu_lock(&chand->server->mu_global);
-      if (remove_res) {
-        disconnect = decrement_call_count(chand);
-        if (disconnect) {
-          GRPC_CHANNEL_INTERNAL_REF(chand->channel, "send-disconnect");
-        }
-      }
-      gpr_mu_unlock(&chand->server->mu_global);
-      if (disconnect) {
-        send_shutdown(chand->channel, 0, 1);
-        GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "send-disconnect");
-      }
       break;
   }
 
@@ -684,13 +623,8 @@ static void init_call_elem(grpc_call_element *elem,
   memset(calld, 0, sizeof(call_data));
   calld->deadline = gpr_inf_future;
   calld->call = grpc_call_from_top_element(elem);
-  calld->active = 1;
 
   grpc_iomgr_closure_init(&calld->server_on_recv, server_on_recv, elem);
-
-  gpr_mu_lock(&chand->server->mu_global);
-  chand->num_calls++;
-  gpr_mu_unlock(&chand->server->mu_global);
 
   server_ref(chand->server);
 
@@ -700,30 +634,13 @@ static void init_call_elem(grpc_call_element *elem,
 static void destroy_call_elem(grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  int disconnect = 0;
-  int active;
   size_t i;
 
   gpr_mu_lock(&chand->server->mu_call);
   for (i = 0; i < CALL_LIST_COUNT; i++) {
     call_list_remove(elem->call_data, i);
   }
-  active = calld->active;
-  calld->active = 0;
   gpr_mu_unlock(&chand->server->mu_call);
-  if (active) {
-    gpr_mu_lock(&chand->server->mu_global);
-    disconnect = decrement_call_count(chand);
-    if (disconnect) {
-      GRPC_CHANNEL_INTERNAL_REF(chand->channel, "send-disconnect");
-    }
-    gpr_mu_unlock(&chand->server->mu_global);
-  }
-
-  if (disconnect) {
-    send_shutdown(chand->channel, 0, 1);
-    GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "send-disconnect");
-  }
 
   if (calld->host) {
     grpc_mdstr_unref(calld->host);
@@ -743,7 +660,6 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(is_first);
   GPR_ASSERT(!is_last);
   chand->server = NULL;
-  chand->num_calls = 0;
   chand->channel = NULL;
   chand->path_key = grpc_mdstr_from_string(metadata_context, ":path");
   chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority");
