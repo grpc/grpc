@@ -36,6 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc++/credentials.h>
 #include <grpc++/time.h>
+#include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
 
@@ -73,6 +74,10 @@ void ClientContext::set_call(grpc_call* call,
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.");
   }
+}
+
+std::unique_ptr<const AuthContext> ClientContext::auth_context() const {
+  return CreateAuthContext(call_);
 }
 
 void ClientContext::TryCancel() {

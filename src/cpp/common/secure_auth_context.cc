@@ -31,32 +31,51 @@
  *
  */
 
-#ifndef GRPCXX_AUTH_CONTEXT_H
-#define GRPCXX_AUTH_CONTEXT_H
+#include "src/cpp/common/secure_auth_context.h"
 
-#include <vector>
-
-#include <grpc++/config.h>
+#include "src/core/security/security_context.h"
 
 namespace grpc {
 
-class AuthContext {
- public:
-  typedef std::pair<grpc::string, grpc::string> Property;
+SecureAuthContext::SecureAuthContext(grpc_auth_context* ctx)
+    : ctx_(grpc_auth_context_ref(ctx)) {}
 
-  virtual ~AuthContext() {}
+SecureAuthContext::~SecureAuthContext() { grpc_auth_context_unref(ctx_); }
 
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
-  virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
+std::vector<grpc::string> SecureAuthContext::GetPeerIdentity() const {
+  if (!ctx_) {
+    return std::vector<grpc::string>();
+  }
+  grpc_auth_property_iterator iter = grpc_auth_context_peer_identity(ctx_);
+  std::vector<grpc::string> identity;
+  const grpc_auth_property* property = nullptr;
+  while ((property = grpc_auth_property_iterator_next(&iter))) {
+    identity.push_back(grpc::string(property->value, property->value_length));
+  }
+  return identity;
+}
 
-  // Returns all the property values with the given name.
-  virtual std::vector<grpc::string> FindPropertyValues(
-      const grpc::string& name) const = 0;
-};
+grpc::string SecureAuthContext::GetPeerIdentityPropertyName() const {
+  if (!ctx_) {
+    return "";
+  }
+  const char* name = grpc_auth_context_peer_identity_property_name(ctx_);
+  return name == nullptr ? "" : name;
+}
+
+std::vector<grpc::string> SecureAuthContext::FindPropertyValues(
+    const grpc::string& name) const {
+  if (!ctx_) {
+    return std::vector<grpc::string>();
+  }
+  grpc_auth_property_iterator iter =
+      grpc_auth_context_find_properties_by_name(ctx_, name.c_str());
+  const grpc_auth_property* property = nullptr;
+  std::vector<grpc::string> values;
+  while ((property = grpc_auth_property_iterator_next(&iter))) {
+    values.push_back(grpc::string(property->value, property->value_length));
+  }
+  return values;
+}
 
 }  // namespace grpc
-
-#endif  // GRPCXX_AUTH_CONTEXT_H
-

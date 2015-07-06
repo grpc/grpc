@@ -40,6 +40,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc++/auth_context.h>
 #include <grpc++/config.h>
 #include <grpc++/status.h>
 #include <grpc++/time.h>
@@ -107,6 +108,8 @@ class ClientContext {
   void set_credentials(const std::shared_ptr<Credentials>& creds) {
     creds_ = creds;
   }
+
+  std::unique_ptr<const AuthContext> auth_context() const;
 
   void TryCancel();
 

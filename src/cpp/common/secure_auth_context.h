@@ -31,32 +31,31 @@
  *
  */
 
-#ifndef GRPCXX_AUTH_CONTEXT_H
-#define GRPCXX_AUTH_CONTEXT_H
+#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
-#include <vector>
-
-#include <grpc++/config.h>
+#include <grpc++/auth_context.h>
+#include "src/core/security/security_context.h"
 
 namespace grpc {
 
-class AuthContext {
+class SecureAuthContext : public AuthContext {
  public:
-  typedef std::pair<grpc::string, grpc::string> Property;
+  SecureAuthContext(grpc_auth_context* ctx);
 
-  virtual ~AuthContext() {}
+  ~SecureAuthContext() GRPC_OVERRIDE;
 
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
-  virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
+  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
 
-  // Returns all the property values with the given name.
-  virtual std::vector<grpc::string> FindPropertyValues(
-      const grpc::string& name) const = 0;
+  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
+
+  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
+      GRPC_OVERRIDE;
+
+ private:
+  grpc_auth_context* ctx_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_AUTH_CONTEXT_H
-
+#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H

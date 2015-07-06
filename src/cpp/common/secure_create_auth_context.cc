@@ -30,33 +30,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include <memory>
 
-#ifndef GRPCXX_AUTH_CONTEXT_H
-#define GRPCXX_AUTH_CONTEXT_H
-
-#include <vector>
-
-#include <grpc++/config.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc++/auth_context.h>
+#include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
 
-class AuthContext {
- public:
-  typedef std::pair<grpc::string, grpc::string> Property;
-
-  virtual ~AuthContext() {}
-
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
-  virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
-
-  // Returns all the property values with the given name.
-  virtual std::vector<grpc::string> FindPropertyValues(
-      const grpc::string& name) const = 0;
-};
+std::unique_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
+  grpc_auth_context* context = nullptr;
+  if (call) {
+    context = const_cast<grpc_auth_context*>(grpc_call_auth_context(call));
+  }
+  return std::unique_ptr<const AuthContext>(new SecureAuthContext(context));
+}
 
 }  // namespace grpc
-
-#endif  // GRPCXX_AUTH_CONTEXT_H
-

@@ -3378,6 +3378,8 @@ endif
 
 LIBGRPC++_SRC = \
     src/cpp/client/secure_credentials.cc \
+    src/cpp/common/secure_auth_context.cc \
+    src/cpp/common/secure_create_auth_context.cc \
     src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
@@ -3408,6 +3410,7 @@ LIBGRPC++_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/async_generic_service.h \
     include/grpc++/async_unary_call.h \
+    include/grpc++/auth_context.h \
     include/grpc++/byte_buffer.h \
     include/grpc++/channel_arguments.h \
     include/grpc++/channel_interface.h \
@@ -3667,6 +3670,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/test/cpp/util/messages
 
 
 LIBGRPC++_UNSECURE_SRC = \
+    src/cpp/common/insecure_create_auth_context.cc \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
@@ -3696,6 +3700,7 @@ LIBGRPC++_UNSECURE_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/async_generic_service.h \
     include/grpc++/async_unary_call.h \
+    include/grpc++/auth_context.h \
     include/grpc++/byte_buffer.h \
     include/grpc++/channel_arguments.h \
     include/grpc++/channel_interface.h \
