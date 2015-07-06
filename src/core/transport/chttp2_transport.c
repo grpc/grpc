@@ -876,11 +876,19 @@ static void update_global_window(void *args, gpr_uint32 id, void *stream) {
   grpc_chttp2_stream *s = stream;
   grpc_chttp2_transport_global *transport_global = &t->global;
   grpc_chttp2_stream_global *stream_global = &s->global;
+  int was_zero;
+  int is_zero;
 
   GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("settings", transport_global, stream_global,
                                    outgoing_window,
                                    t->parsing.initial_window_update);
+  was_zero = stream_global->outgoing_window <= 0;
   stream_global->outgoing_window += t->parsing.initial_window_update;
+  is_zero = stream_global->outgoing_window <= 0;
+
+  if (was_zero && !is_zero) {
+    grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
+  }
 }
 
 static void read_error_locked(grpc_chttp2_transport *t) {
