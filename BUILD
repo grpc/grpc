@@ -1,5 +1,5 @@
 # GRPC Bazel BUILD file.
-# This currently builds C and C++ code.
+# This currently builds C, C++ and Objective-C code.
 # This file has been automatically generated from a template file.
 # Please look at the templates directory instead.
 # This file can be regenerated from the template by running
