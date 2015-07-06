@@ -55,9 +55,7 @@ static int compute_engine_detection_done = 0;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 
-static void init_default_credentials(void) {
-  gpr_mu_init(&g_mu);
-}
+static void init_default_credentials(void) { gpr_mu_init(&g_mu); }
 
 typedef struct {
   grpc_pollset pollset;

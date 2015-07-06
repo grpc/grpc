@@ -84,6 +84,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "fd_conservation_posix_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "fd_posix_test", 
     "platforms": [
       "posix"
@@ -306,6 +314,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "grpc_security_connector_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "grpc_stream_op_test", 
     "platforms": [
       "windows", 
@@ -351,6 +368,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "httpcli_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "json_rewrite_test", 
     "platforms": [
       "windows", 
@@ -388,6 +413,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "multi_init_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "multiple_server_queues_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -590,6 +624,24 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "cxx_byte_buffer_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "cxx_slice_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "cxx_time_test", 
     "platforms": [
       "windows", 
@@ -627,6 +679,24 @@
     "flaky": false, 
     "language": "c++", 
     "name": "mock_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "qps_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "qps_test_openloop", 
     "platforms": [
       "windows", 
       "posix"
@@ -896,6 +966,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fake_security_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fake_security_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -1157,6 +1236,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -1395,6 +1483,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_request_with_flags_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_posix_request_with_large_metadata_test", 
     "platforms": [
       "posix"
@@ -1620,6 +1716,14 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_with_poll_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_flags_test", 
     "platforms": [
       "posix"
     ]
@@ -1882,6 +1986,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -2113,6 +2226,14 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_with_poll_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_request_with_flags_test", 
     "platforms": [
       "posix"
     ]
@@ -2367,6 +2488,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_flags_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2636,6 +2766,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -2889,6 +3028,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_flags_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -3158,6 +3306,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_with_grpc_trace_request_with_flags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_request_with_large_metadata_test", 
     "platforms": [
       "windows", 
@@ -3410,6 +3567,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_request_with_flags_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -3640,6 +3806,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_request_with_flags_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_posix_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "posix"
@@ -3857,6 +4031,14 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_with_poll_request_response_with_trailing_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_request_with_flags_unsecure_test", 
     "platforms": [
       "posix"
     ]
@@ -4102,6 +4284,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_request_with_flags_unsecure_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -4362,6 +4553,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_flags_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -4614,6 +4814,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_with_grpc_trace_request_with_flags_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_request_with_large_metadata_unsecure_test", 
     "platforms": [
       "windows", 
@@ -4669,6 +4878,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "connection_prefix_bad_client_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "initial_settings_frame_bad_client_test", 
     "platforms": [
       "windows", 
       "posix"

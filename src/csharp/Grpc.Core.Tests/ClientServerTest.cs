@@ -86,7 +86,7 @@ namespace Grpc.Core.Tests
             server.AddServiceDefinition(ServiceDefinition);
             int port = server.AddListeningPort(Host, Server.PickUnusedPort);
             server.Start();
-            channel = new Channel(Host + ":" + port);
+            channel = new Channel(Host, port);
         }
 
         [TearDown]
@@ -204,7 +204,7 @@ namespace Grpc.Core.Tests
             BenchmarkUtil.RunBenchmark(100, 100,
                                        () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
         }
-
+            
         [Test]
         public void UnknownMethodHandler()
         {

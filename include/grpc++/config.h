@@ -46,7 +46,7 @@
 #define GRPC_CXX0X_NO_OVERRIDE 1
 #define GRPC_CXX0X_NO_CHRONO 1
 #define GRPC_CXX0X_NO_THREAD 1
-#endif  
+#endif
 #endif  // Visual Studio
 
 #ifndef __clang__
@@ -77,14 +77,27 @@
 #define GRPC_OVERRIDE override
 #endif
 
-#ifndef GRPC_CUSTOM_PROTOBUF_INT64
-#include <google/protobuf/stubs/common.h>
-#define GRPC_CUSTOM_PROTOBUF_INT64 ::google::protobuf::int64
-#endif
+#ifdef GRPC_CXX0X_NO_NULLPTR
+#include <memory>
+const class {
+ public:
+  template <class T>
+  operator T *() const {
+    return static_cast<T *>(0);
+  }
+  template <class T>
+  operator std::unique_ptr<T>() const {
+    return std::unique_ptr<T>(static_cast<T *>(0));
+  }
+  template <class T>
+  operator std::shared_ptr<T>() const {
+    return std::shared_ptr<T>(static_cast<T *>(0));
+  }
+  operator bool() const { return false; }
 
-#ifndef GRPC_CUSTOM_MESSAGE
-#include <google/protobuf/message.h>
-#define GRPC_CUSTOM_MESSAGE ::google::protobuf::Message
+ private:
+  void operator&() const = delete;
+} nullptr = {};
 #endif
 
 #ifndef GRPC_CUSTOM_STRING
@@ -92,51 +105,9 @@
 #define GRPC_CUSTOM_STRING std::string
 #endif
 
-#ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM \
-  ::google::protobuf::io::ZeroCopyOutputStream
-#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
-  ::google::protobuf::io::ZeroCopyInputStream
-#define GRPC_CUSTOM_CODEDINPUTSTREAM \
-  ::google::protobuf::io::CodedInputStream
-#endif
-
-
-#ifdef GRPC_CXX0X_NO_NULLPTR
-#include <memory>
-const class {
-public:
-  template <class T> operator T*() const {return static_cast<T *>(0);}
-  template <class T> operator std::unique_ptr<T>() const {
-    return std::unique_ptr<T>(static_cast<T *>(0));
-  }
-  template <class T> operator std::shared_ptr<T>() const {
-    return std::shared_ptr<T>(static_cast<T *>(0));
-  }
-  operator bool() const {return false;}
-private:
-  void operator&() const = delete;
-} nullptr = {};
-#endif
-
 namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
-
-namespace protobuf {
-
-typedef GRPC_CUSTOM_MESSAGE Message;
-typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
-
-namespace io {
-typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
-typedef GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ZeroCopyInputStream;
-typedef GRPC_CUSTOM_CODEDINPUTSTREAM CodedInputStream;
-}  // namespace io
-
-}  // namespace protobuf
 
 }  // namespace grpc
 

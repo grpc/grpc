@@ -33,10 +33,10 @@
 
 #include <memory>
 
-#include "src/cpp/proto/proto_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo.grpc.pb.h"
+#include <grpc++/impl/proto_utils.h>
 #include <grpc++/async_generic_service.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/byte_buffer.h>
@@ -190,7 +190,7 @@ class GenericEnd2endTest : public ::testing::Test {
       client_ok(9);
 
       EXPECT_EQ(send_response.message(), recv_response.message());
-      EXPECT_TRUE(recv_status.IsOk());
+      EXPECT_TRUE(recv_status.ok());
     }
   }
 
@@ -273,7 +273,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   client_ok(10);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 }  // namespace

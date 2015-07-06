@@ -1,78 +1,101 @@
 # gRPC for Objective-C
 
 - [Install protoc with the gRPC plugin](#install)
-- [Use protoc to generate a gRPC library](#protoc)
-- [Integrate the generated gRPC library in your project](#cocoapods)
+- [Write your API declaration in proto format](#write-protos)
+- [Integrate a proto library in your project](#cocoapods)
 - [Use the generated library in your code](#use)
-- [Alternative methods](#alternatives)
-	- [Install protoc and the gRPC plugin without using Homebrew](#nohomebrew)
-	- [Integrate the generated gRPC library without using Cocoapods](#nococoapods)
+- [Use gRPC without Protobuf](#no-proto)
+- [Alternative installation methods](#alternatives)
+    - [Install protoc and the gRPC plugin without using Homebrew](#no-homebrew)
+    - [Integrate the generated gRPC library without using Cocoapods](#no-cocoapods)
+
+While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
+usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
+plugin for the Protobuf Compiler (_protoc_) to generate client libraries to communicate with gRPC
+services.
 
 <a name="install"></a>
 ## Install protoc with the gRPC plugin
 
 On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
 
-Run the following command to install the Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin:
+Run the following command to install _protoc_ and the gRPC _protoc_ plugin:
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -
 ```
-This will download and run the [gRPC install script][]. After the command completes, you're ready to proceed.
+This will download and run the [gRPC install script][]. After the command completes, you're ready to
+proceed.
 
-<a name="protoc"></a>
-## Use protoc to generate a gRPC library
+<a name="write-protos"></a>
+## Write your API declaration in proto format
 
-Run _protoc_ with the following flags to generate the client library for your `.proto` files:
-
-```sh
-protoc --objc_out=. --objcgrpc_out=. *.proto
-```
-
-This will generate a pair of `.pbobjc.h`/`.pbobjc.m` files for each `.proto` file, with the messages and enums defined in them. And a pair of `.pbrpc.h`/`.pbrpc.m` files for each `.proto` file with services defined. The latter contains the code to make remote calls to the specified API.
+For this you can consult the [Protocol Buffers][]' official documentation, or learn from a quick
+example [here](https://github.com/grpc/grpc-common#defining-a-service).
 
 <a name="cocoapods"></a>
-## Integrate the generated gRPC library in your project
+## Integrate a proto library in your project
 
 Install [Cocoapods](https://cocoapods.org/#install).
 
-You need to create a Podspec file for the generated library. You may simply copy the following example to the directory where the source files were generated, updating the name and other metadata of the Podspec as necessary:
+You need to create a Podspec file for your proto library. You may simply copy the following example
+to the directory where your `.proto` files are located, updating the name, version and license as
+necessary:
 
 ```ruby
 Pod::Spec.new do |s|
   s.name     = '<Podspec file name>'
-  s.version  = '...'
-  s.summary  = 'Client library to make RPCs to <my proto API>'
-  s.homepage = '...'
+  s.version  = '0.0.1'
   s.license  = '...'
-  s.authors  = { '<my name>' => '<my email>' }
 
   s.ios.deployment_target = '6.0'
   s.osx.deployment_target = '10.8'
 
-  s.subspec 'Messages' do |ms|
-    ms.source_files = '*.pbobjc.{h,m}', '**/*.pbobjc.{h,m}'
-    ms.header_mappings_dir = '.'
+  # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
+  # You can run this command manually if you later change your protos and need to regenerate.
+  s.prepare_command = "protoc --objc_out=. --objcgrpc_out=. *.proto"
+
+  # The --objc_out plugin generates a pair of .pbobjc.h/.pbobjc.m files for each .proto file.
+  s.subspec "Messages" do |ms|
+    ms.source_files = "*.pbobjc.{h,m}"
+    ms.header_mappings_dir = "."
     ms.requires_arc = false
-    ms.dependency 'Protobuf', '~> 3.0'
+    ms.dependency "Protobuf", "~> 3.0.0-alpha-3"
   end
 
-  s.subspec 'Services' do |ss|
-    ss.source_files = '*.pbrpc.{h,m}', '**/*.pbrpc.{h,m}'
-    ss.header_mappings_dir = '.'
+  # The --objcgrpc_out plugin generates a pair of .pbrpc.h/.pbrpc.m files for each .proto file with
+  # a service defined.
+  s.subspec "Services" do |ss|
+    ss.source_files = "*.pbrpc.{h,m}"
+    ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency 'gRPC', '~> 0.0'
-    ss.dependency '<Podspec file name>/Messages'
+    ss.dependency "gRPC", "~> 0.5"
+    ss.dependency "#{s.name}/Messages"
   end
 end
 ```
 
-The file should be named `<Podspec file name>.podspec`. You can refer to this [example Podspec][]. Once your library has a Podspec, Cocoapods can install it into any XCode project. For that, go into your project's directory and create a Podfile by running:
+The file should be named `<Podspec file name>.podspec`.
+
+Note: If your proto files are in a directory hierarchy, you might want to adjust the _globs_ used in
+the sample Podspec above. For example, you could use:
+
+```ruby
+  s.prepare_command = "protoc --objc_out=. --objcgrpc_out=. *.proto **/*.proto"
+  ...
+    ms.source_files = "*.pbobjc.{h,m}", "**/*.pbobjc.{h,m}"
+  ...
+    ss.source_files = "*.pbrpc.{h,m}", "**/*.pbrpc.{h,m}"
+```
+
+Once your library has a Podspec, Cocoapods can install it into any XCode project. For that, go into
+your project's directory and create a Podfile by running:
 
 ```sh
 pod init
 ```
 
-Next add a line to your Podfile to refer to your library's Podspec. Use `:path` as described [here](https://guides.cocoapods.org/using/the-podfile.html#using-the-files-from-a-folder-local-to-the-machine):
+Next add a line to your Podfile to refer to your library's Podspec. Use `:path` as described
+[here](https://guides.cocoapods.org/using/the-podfile.html#using-the-files-from-a-folder-local-to-the-machine):
 
 ```ruby
 pod '<Podspec file name>', :path => 'path/to/the/directory/of/your/podspec'
@@ -91,15 +114,25 @@ pod install
 
 Please check this [sample app][] for examples of how to use a generated gRPC library.
 
-<a name="alternatives"></a>
-## Alternative methods
+<a name="no-proto"></a>
+## Use gRPC without Protobuf
 
-<a name="nohomebrew"></a>
+The [sample app][] has an example of how to use the generic gRPC Objective-C client without
+generated files.
+
+<a name="alternatives"></a>
+## Alternative installation methods
+
+<a name="no-homebrew"></a>
 ### Install protoc and the gRPC plugin without using Homebrew
 
-First install v3 of the Protocol Buffers compiler (_protoc_), by cloning [its Git repository](https://github.com/google/protobuf) and following these [installation instructions](https://github.com/google/protobuf#c-installation---unix) (the ones titled C++; don't miss the note for Mac users).
+First install v3 of the Protocol Buffers compiler (_protoc_), by cloning
+[its Git repository](https://github.com/google/protobuf) and following these
+[installation instructions](https://github.com/google/protobuf#c-installation---unix)
+(the ones titled C++; don't miss the note for Mac users).
 
-Then clone this repository and execute the following commands from the root directory where it was cloned.
+Then clone this repository and execute the following commands from the root directory where it was
+cloned.
 
 Compile the gRPC plugins for _protoc_:
 ```sh
@@ -110,23 +143,32 @@ Create a symbolic link to the compiled plugin binary somewhere in your `$PATH`:
 ```sh
 ln -s `pwd`/bins/opt/grpc_objective_c_plugin /usr/local/bin/protoc-gen-objcgrpc
 ```
-(Notice that the name of the created link must begin with "protoc-gen-" for _protoc_ to recognize it as a plugin).
+(Notice that the name of the created link must begin with "protoc-gen-" for _protoc_ to recognize it
+as a plugin).
 
-If you don't want to create the symbolic link, you can alternatively copy the binary (with the appropriate name). Or you might prefer instead to specify the plugin's path as a flag when invoking _protoc_, in which case no system modification nor renaming is necessary.
+If you don't want to create the symbolic link, you can alternatively copy the binary (with the
+appropriate name). Or you might prefer instead to specify the plugin's path as a flag when invoking
+_protoc_, in which case no system modification nor renaming is necessary.
 
-<a name="nococoapods"></a>
+<a name="no-cocoapods"></a>
 ### Integrate the generated gRPC library without using Cocoapods
 
-You need to compile the generated `.pbpbjc.*` files (the enums and messages) without ARC support, and the generated `.pbrpc.*` files (the services) with ARC support. The generated code depends on v0.3+ of the Objective-C gRPC runtime library and v3.0+ of the Objective-C Protobuf runtime library.
+You need to compile the generated `.pbpbjc.*` files (the enums and messages) without ARC support,
+and the generated `.pbrpc.*` files (the services) with ARC support. The generated code depends on
+v0.5+ of the Objective-C gRPC runtime library and v3.0.0-alpha-3+ of the Objective-C Protobuf
+runtime library.
 
-These libraries need to be integrated into your project as described in their respective Podspec files:
+These libraries need to be integrated into your project as described in their respective Podspec
+files:
 
-* [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime library. This can be tedious to configure manually.
-* [Podspec](https://github.com/jcanizales/protobuf/blob/add-podspec/Protobuf.podspec) for the Objective-C Protobuf runtime library.
+* [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime
+library. This can be tedious to configure manually.
+* [Podspec](https://github.com/google/protobuf/blob/master/Protobuf.podspec) for the
+Objective-C Protobuf runtime library.
 
+[Protocol Buffers]:https://developers.google.com/protocol-buffers/
 [homebrew]:http://brew.sh
 [linuxbrew]:https://github.com/Homebrew/linuxbrew
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[example Podspec]:https://github.com/grpc/grpc/blob/master/src/objective-c/examples/Sample/RemoteTestClient/RemoteTest.podspec
 [example Podfile]:https://github.com/grpc/grpc/blob/master/src/objective-c/examples/Sample/Podfile
 [sample app]: https://github.com/grpc/grpc/tree/master/src/objective-c/examples/Sample

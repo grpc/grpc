@@ -58,11 +58,18 @@ typedef enum grpc_stream_op_code {
   GRPC_OP_SLICE
 } grpc_stream_op_code;
 
-/* Arguments for GRPC_OP_BEGIN */
+/** Internal bit flag for grpc_begin_message's \a flags signaling the use of
+ * compression for the message */
+#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
+/** Mask of all valid internal flags. */
+#define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
+
+/* Arguments for GRPC_OP_BEGIN_MESSAGE */
 typedef struct grpc_begin_message {
   /* How many bytes of data will this message contain */
   gpr_uint32 length;
-  /* Write flags for the message: see grpc.h GRPC_WRITE_xxx */
+  /* Write flags for the message: see grpc.h GRPC_WRITE_* for the public bits,
+   * GRPC_WRITE_INTERNAL_* for the internal ones. */
   gpr_uint32 flags;
 } grpc_begin_message;
 
@@ -78,29 +85,62 @@ typedef struct grpc_mdelem_list {
 } grpc_mdelem_list;
 
 typedef struct grpc_metadata_batch {
+  /** Metadata elements in this batch */
   grpc_mdelem_list list;
+  /** Elements that have been removed from the batch, but have
+      not yet been unreffed - used to allow collecting garbage
+      under a single metadata context lock */
   grpc_mdelem_list garbage;
+  /** Used to calculate grpc-timeout at the point of sending,
+      or gpr_inf_future if this batch does not need to send a
+      grpc-timeout */
   gpr_timespec deadline;
 } grpc_metadata_batch;
 
-void grpc_metadata_batch_init(grpc_metadata_batch *comd);
-void grpc_metadata_batch_destroy(grpc_metadata_batch *comd);
+void grpc_metadata_batch_init(grpc_metadata_batch *batch);
+void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
                                grpc_metadata_batch *add);
 
-void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
+/** Add \a storage to the beginning of \a batch. storage->md is
+    assumed to be valid. 
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call. */
+void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
                                    grpc_linked_mdelem *storage);
-void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
+/** Add \a storage to the end of \a batch. storage->md is
+    assumed to be valid.
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call. */
+void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
                                    grpc_linked_mdelem *storage);
 
-void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
+/** Add \a elem_to_add as the first element in \a batch, using
+    \a storage as backing storage for the linked list element.
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call.
+    Takes ownership of \a elem_to_add */
+void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
                                   grpc_mdelem *elem_to_add);
-void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
+/** Add \a elem_to_add as the last element in \a batch, using
+    \a storage as backing storage for the linked list element.
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call.
+    Takes ownership of \a elem_to_add */
+void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
                                   grpc_mdelem *elem_to_add);
 
-void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
+/** For each element in \a batch, execute \a filter.
+    The return value from \a filter will be substituted for the
+    grpc_mdelem passed to \a filter. If \a filter returns NULL,
+    the element will be moved to the garbage list. */
+void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
                                 grpc_mdelem *(*filter)(void *user_data,
                                                        grpc_mdelem *elem),
                                 void *user_data);
@@ -126,10 +166,8 @@ typedef struct grpc_stream_op {
   } data;
 } grpc_stream_op;
 
-/* A stream op buffer is a wrapper around stream operations that is dynamically
-   extendable.
-   TODO(ctiller): inline a few elements into the struct, to avoid common case
-                  per-call allocations. */
+/** A stream op buffer is a wrapper around stream operations that is
+ * dynamically extendable. */
 typedef struct grpc_stream_op_buffer {
   grpc_stream_op *ops;
   size_t nops;
@@ -160,6 +198,8 @@ void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
+
+void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst);
 
 char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
 

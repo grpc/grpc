@@ -66,7 +66,7 @@ static void json_writer_output_indent(
       "                "
       "                ";
 
-  unsigned spaces = writer->depth * writer->indent;
+  unsigned spaces = (unsigned)(writer->depth * writer->indent);
 
   if (writer->indent == 0) return;
 
@@ -78,7 +78,7 @@ static void json_writer_output_indent(
   while (spaces >= (sizeof(spacesstr) - 1)) {
     json_writer_output_string_with_len(writer, spacesstr,
                                        sizeof(spacesstr) - 1);
-    spaces -= (sizeof(spacesstr) - 1);
+    spaces -= (unsigned)(sizeof(spacesstr) - 1);
   }
 
   if (spaces == 0) return;
@@ -119,7 +119,7 @@ static void json_writer_escape_string(grpc_json_writer* writer,
       break;
     } else if ((c >= 32) && (c <= 126)) {
       if ((c == '\\') || (c == '"')) json_writer_output_char(writer, '\\');
-      json_writer_output_char(writer, c);
+      json_writer_output_char(writer, (char)c);
     } else if ((c < 32) || (c == 127)) {
       switch (c) {
         case '\b':
@@ -160,7 +160,7 @@ static void json_writer_escape_string(grpc_json_writer* writer,
       }
       for (i = 0; i < extra; i++) {
         utf32 <<= 6;
-        c = *string++;
+        c = (gpr_uint8)(*string++);
         /* Breaks out and bail on any invalid UTF-8 sequence, including \0. */
         if ((c & 0xc0) != 0x80) {
           valid = 0;
@@ -193,10 +193,10 @@ static void json_writer_escape_string(grpc_json_writer* writer,
          * That range is exactly 20 bits.
          */
         utf32 -= 0x10000;
-        json_writer_escape_utf16(writer, 0xd800 | (utf32 >> 10));
-        json_writer_escape_utf16(writer, 0xdc00 | (utf32 & 0x3ff));
+        json_writer_escape_utf16(writer, (gpr_uint16)(0xd800 | (utf32 >> 10)));
+        json_writer_escape_utf16(writer, (gpr_uint16)(0xdc00 | (utf32 & 0x3ff)));
       } else {
-        json_writer_escape_utf16(writer, utf32);
+        json_writer_escape_utf16(writer, (gpr_uint16)utf32);
       }
     }
   }

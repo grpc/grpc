@@ -40,6 +40,7 @@
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 
@@ -227,7 +228,7 @@ static void value_state(gpr_cmdline *cl, char *arg) {
                 cl->cur_arg->name);
         print_usage_and_die(cl);
       }
-      *(int *)cl->cur_arg->value = intval;
+      *(int *)cl->cur_arg->value = (int)intval;
       break;
     case ARGTYPE_BOOL:
       if (0 == strcmp(arg, "1") || 0 == strcmp(arg, "true")) {
@@ -286,8 +287,8 @@ static void normal_state(gpr_cmdline *cl, char *arg) {
     eq = strchr(arg, '=');
     if (eq != NULL) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = arg_name = gpr_malloc(eq - arg + 1);
-      memcpy(arg_name, arg, eq - arg);
+      tmp = arg_name = gpr_malloc((size_t)(eq - arg + 1));
+      memcpy(arg_name, arg, (size_t)(eq - arg));
       arg_name[eq - arg] = 0;
     } else {
       arg_name = arg;

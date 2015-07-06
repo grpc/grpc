@@ -34,33 +34,47 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import <gRPC/GRPCCall.h>
-#import <gRPC/GRPCMethodName.h>
-#import <gRPC/GRXWriter+Immediate.h>
-#import <gRPC/GRXWriteable.h>
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCMethodName.h>
 #import <RemoteTest/Messages.pbobjc.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
 
 // These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
 // rather than a generated proto library on top of it.
+
+static NSString * const kHostAddress = @"grpc-test.sandbox.google.com";
+static NSString * const kPackage = @"grpc.testing";
+static NSString * const kService = @"TestService";
+
+static GRPCMethodName *kInexistentMethod;
+static GRPCMethodName *kEmptyCallMethod;
+static GRPCMethodName *kUnaryCallMethod;
 
 @interface GRPCClientTests : XCTestCase
 @end
 
 @implementation GRPCClientTests
 
+- (void)setUp {
+  // This method isn't implemented by the remote server.
+  kInexistentMethod = [[GRPCMethodName alloc] initWithPackage:kPackage
+                                                    interface:kService
+                                                       method:@"Inexistent"];
+  kEmptyCallMethod = [[GRPCMethodName alloc] initWithPackage:kPackage
+                                                   interface:kService
+                                                      method:@"EmptyCall"];
+  kUnaryCallMethod = [[GRPCMethodName alloc] initWithPackage:kPackage
+                                                   interface:kService
+                                                      method:@"UnaryCall"];
+}
+
 - (void)testConnectionToRemoteServer {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
 
-  // This method isn't implemented by the remote server.
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
-                                                         interface:@"TestService"
-                                                            method:@"Nonexistent"];
-
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
-
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
-                                           method:method
-                                   requestsWriter:requestsWriter];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                           method:kInexistentMethod
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTFail(@"Received unexpected response: %@", value);
@@ -80,15 +94,9 @@
   __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
-                                                         interface:@"TestService"
-                                                            method:@"EmptyCall"];
-
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
-
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
-                                           method:method
-                                   requestsWriter:requestsWriter];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                           method:kEmptyCallMethod
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTAssertNotNil(value, @"nil value received as response.");
@@ -105,37 +113,62 @@
 }
 
 - (void)testSimpleProtoRPC {
-  __weak XCTestExpectation *response = [self expectationWithDescription:@"Response received."];
-  __weak XCTestExpectation *expectedResponse =
-  [self expectationWithDescription:@"Expected response."];
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Expected response."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
-                                                         interface:@"TestService"
-                                                            method:@"UnaryCall"];
-
-  RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseSize = 100;
   request.fillUsername = YES;
   request.fillOauthScope = YES;
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
-                                           method:method
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                           method:kUnaryCallMethod
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTAssertNotNil(value, @"nil value received as response.");
-    [response fulfill];
     XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
-    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
+    RMTSimpleResponse *responseProto = [RMTSimpleResponse parseFromData:value error:NULL];
     // We expect empty strings, not nil:
-    XCTAssertNotNil(response.username, @"Response's username is nil.");
-    XCTAssertNotNil(response.oauthScope, @"Response's OAuth scope is nil.");
-    [expectedResponse fulfill];
+    XCTAssertNotNil(responseProto.username, @"Response's username is nil.");
+    XCTAssertNotNil(responseProto.oauthScope, @"Response's OAuth scope is nil.");
+    [response fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
     [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2. handler:nil];
+}
+
+- (void)testMetadata {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
+                                           method:kUnaryCallMethod
+                                   requestsWriter:requestsWriter];
+
+  call.requestMetadata[@"Authorization"] = @"Bearer bogusToken";
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTFail(@"Received unexpected response: %@", value);
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNotNil(errorOrNil, @"Finished without error!");
+    XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
+    XCTAssertEqualObjects(call.responseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
+                          @"Metadata in the NSError object and call object differ.");
+    NSString *challengeHeader = call.responseMetadata[@"www-authenticate"];
+    XCTAssertGreaterThan(challengeHeader.length, 0,
+                         @"No challenge in response headers %@", call.responseMetadata);
+    [expectation fulfill];
   }];
 
   [call startWithWriteable:responsesWriteable];

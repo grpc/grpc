@@ -63,6 +63,7 @@
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -107,6 +108,7 @@ struct grpc_tcp_server {
   /* destroyed port count: how many ports are completely destroyed */
   size_t destroyed_ports;
 
+  /* is this server shutting down? (boolean) */
   int shutdown;
 
   /* all listening ports */
@@ -118,7 +120,9 @@ struct grpc_tcp_server {
   void (*shutdown_complete)(void *);
   void *shutdown_complete_arg;
 
+  /* all pollsets interested in new connections */
   grpc_pollset **pollsets;
+  /* number of pollsets in the pollsets array */
   size_t pollset_count;
 };
 
@@ -159,6 +163,9 @@ static void destroyed_port(void *server, int success) {
 
 static void dont_care_about_shutdown_completion(void *ignored) {}
 
+/* called when all listening endpoints have been shutdown, so no further
+   events will be received on them - at this point it's safe to destroy
+   things */
 static void deactivated_all_ports(grpc_tcp_server *s) {
   size_t i;
 
@@ -335,9 +342,8 @@ static void on_read(void *arg, int success) {
     for (i = 0; i < sp->server->pollset_count; i++) {
       grpc_pollset_add_fd(sp->server->pollsets[i], fdobj);
     }
-    sp->server->cb(
-        sp->server->cb_arg,
-        grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    sp->server->cb(sp->server->cb_arg,
+                   grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
 
     gpr_free(name);
     gpr_free(addr_str);

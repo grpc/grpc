@@ -51,7 +51,7 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 static gpr_timespec gpr_from_timespec(struct timespec ts) {
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
-  rv.tv_nsec = ts.tv_nsec;
+  rv.tv_nsec = (int)ts.tv_nsec;
   return rv;
 }
 

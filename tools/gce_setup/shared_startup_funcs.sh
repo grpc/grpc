@@ -413,6 +413,9 @@ grpc_dockerfile_install() {
   [[ $image_label == "grpc/java_base" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'java_base_ssh_key' || return 1;
   }
+  [[ $image_label == "grpc/java" ]] && {
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
   [[ $image_label == "grpc/ruby" ]] && {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;

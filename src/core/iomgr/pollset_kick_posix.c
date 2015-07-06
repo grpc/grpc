@@ -73,7 +73,7 @@ static grpc_kick_fd_info *allocate_wfd(void) {
   return info;
 }
 
-static void destroy_wfd(grpc_kick_fd_info* wfd) {
+static void destroy_wfd(grpc_kick_fd_info *wfd) {
   grpc_wakeup_fd_destroy(&wfd->wakeup_fd);
   gpr_free(wfd);
 }
@@ -104,7 +104,8 @@ void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state) {
   GPR_ASSERT(kick_state->fd_list.next == &kick_state->fd_list);
 }
 
-grpc_kick_fd_info *grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state) {
+grpc_kick_fd_info *grpc_pollset_kick_pre_poll(
+    grpc_pollset_kick_state *kick_state) {
   grpc_kick_fd_info *fd_info;
   gpr_mu_lock(&kick_state->mu);
   if (kick_state->kicked) {
@@ -120,11 +121,13 @@ grpc_kick_fd_info *grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_stat
   return fd_info;
 }
 
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state, grpc_kick_fd_info *fd_info) {
+void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state,
+                               grpc_kick_fd_info *fd_info) {
   grpc_wakeup_fd_consume_wakeup(&fd_info->wakeup_fd);
 }
 
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state, grpc_kick_fd_info *fd_info) {
+void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state,
+                                 grpc_kick_fd_info *fd_info) {
   gpr_mu_lock(&kick_state->mu);
   fd_info->next->prev = fd_info->prev;
   fd_info->prev->next = fd_info->next;
@@ -162,5 +165,4 @@ void grpc_pollset_kick_global_destroy(void) {
   gpr_mu_destroy(&fd_freelist_mu);
 }
 
-
-#endif  /* GPR_POSIX_SOCKET */
+#endif /* GPR_POSIX_SOCKET */

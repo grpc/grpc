@@ -46,7 +46,10 @@ namespace Grpc.Core.Internal
         static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCompletionType grpcsharp_completion_queue_next_with_callback(CompletionQueueSafeHandle cq);
+        static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
@@ -60,9 +63,14 @@ namespace Grpc.Core.Internal
             return grpcsharp_completion_queue_create();
         }
 
-        public GRPCCompletionType NextWithCallback()
+        public CompletionQueueEvent Next()
         {
-            return grpcsharp_completion_queue_next_with_callback(this);
+            return grpcsharp_completion_queue_next(this);
+        }
+
+        public CompletionQueueEvent Pluck(IntPtr tag)
+        {
+            return grpcsharp_completion_queue_pluck(this, tag);
         }
 
         public void Shutdown()

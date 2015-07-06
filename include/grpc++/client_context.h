@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc++/config.h>
+#include <grpc++/status.h>
 #include <grpc++/time.h>
 
 struct grpc_call;
@@ -48,12 +49,10 @@ struct grpc_completion_queue;
 
 namespace grpc {
 
-class CallOpBuffer;
 class ChannelInterface;
 class CompletionQueue;
 class Credentials;
 class RpcMethod;
-class Status;
 template <class R>
 class ClientReader;
 template <class W>
@@ -115,7 +114,8 @@ class ClientContext {
   ClientContext(const ClientContext&);
   ClientContext& operator=(const ClientContext&);
 
-  friend class CallOpBuffer;
+  friend class CallOpClientRecvStatus;
+  friend class CallOpRecvInitialMetadata;
   friend class Channel;
   template <class R>
   friend class ::grpc::ClientReader;
@@ -131,6 +131,12 @@ class ClientContext {
   friend class ::grpc::ClientAsyncReaderWriter;
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
+  template <class InputMessage, class OutputMessage>
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
+                                  ClientContext* context,
+                                  const InputMessage& request,
+                                  OutputMessage* result);
 
   grpc_call* call() { return call_; }
   void set_call(grpc_call* call,

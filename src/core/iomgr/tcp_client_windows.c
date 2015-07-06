@@ -52,7 +52,7 @@
 #include "src/core/iomgr/socket_windows.h"
 
 typedef struct {
-  void(*cb)(void *arg, grpc_endpoint *tcp);
+  void (*cb)(void *arg, grpc_endpoint *tcp);
   void *cb_arg;
   gpr_mu mu;
   grpc_winsocket *socket;
@@ -86,7 +86,7 @@ static void on_connect(void *acp, int from_iocp) {
   SOCKET sock = ac->socket->socket;
   grpc_endpoint *ep = NULL;
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
-  void(*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
+  void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
   int aborted;
 
@@ -99,8 +99,7 @@ static void on_connect(void *acp, int from_iocp) {
     DWORD transfered_bytes = 0;
     DWORD flags;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                              &transfered_bytes, FALSE,
-                                              &flags);
+                                              &transfered_bytes, FALSE, &flags);
     info->outstanding = 0;
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
@@ -176,9 +175,9 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
 
   /* Grab the function pointer for ConnectEx for that specific socket.
      It may change depending on the interface. */
-  status = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
-                    &guid, sizeof(guid), &ConnectEx, sizeof(ConnectEx),
-                    &ioctl_num_bytes, NULL, NULL);
+  status =
+      WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
+               &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
     message = "Unable to retrieve ConnectEx pointer: %s";
@@ -187,8 +186,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status = bind(sock, (struct sockaddr *) &local_address,
-                sizeof(local_address));
+  status = bind(sock, (struct sockaddr *)&local_address, sizeof(local_address));
   if (status != 0) {
     message = "Unable to bind socket: %s";
     goto failure;
@@ -234,4 +232,4 @@ failure:
   cb(arg, NULL);
 }
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */

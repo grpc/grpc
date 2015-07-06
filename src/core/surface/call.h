@@ -72,13 +72,14 @@ typedef union {
   grpc_byte_buffer *send_message;
   struct {
     grpc_status_code code;
-    const char *details;
+    grpc_mdstr *details;
   } send_status;
 } grpc_ioreq_data;
 
 typedef struct {
   grpc_ioreq_op op;
   grpc_ioreq_data data;
+  gpr_uint32 flags; /**< A copy of the write flags from grpc_op */
 } grpc_ioreq;
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,

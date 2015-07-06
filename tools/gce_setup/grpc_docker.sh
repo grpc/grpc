@@ -1274,8 +1274,7 @@ grpc_cloud_prod_gen_go_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_java_cmd() {
     local cmd_prefix="sudo docker run grpc/java";
-    local test_script="/var/local/git/grpc-java/run-test-client.sh";
-    local test_script+=" --use_test_ca=true --use_tls=true"
+    local test_script="/var/local/git/grpc-java/run-test-client.sh --use_test_ca=true --use_tls=true";
     local the_cmd="$cmd_prefix $test_script $@";
     echo $the_cmd
 }
@@ -1287,10 +1286,37 @@ grpc_interop_gen_java_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_gen_java_cmd() {
     local cmd_prefix="sudo docker run grpc/java";
-    local test_script="/var/local/git/grpc-java/run-test-client.sh";
-    local test_script+=" --use_tls=true"
+    local test_script="/var/local/git/grpc-java/run-test-client.sh --use_tls=true";
     local gfe_flags=$(_grpc_prod_gfe_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+    echo $the_cmd
+}
+
+# constructs the full dockerized java service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_java_cmd() {
+    local cmd_prefix="sudo docker run grpc/java";
+    local test_script="/var/local/git/grpc-java/run-test-client.sh --use_tls=true";
+    local gfe_flags=$(_grpc_prod_gfe_flags)
+    local added_gfe_flags=$(_grpc_svc_acc_test_flags)
+    local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+    echo $the_cmd
+}
+
+# constructs the full dockerized java gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_java_cmd() {
+    local cmd_prefix="sudo docker run grpc/java";
+    local test_script="/var/local/git/grpc-java/run-test-client.sh --use_tls=true";
+    local gfe_flags=$(_grpc_prod_gfe_flags)
+    local added_gfe_flags=$(_grpc_gce_test_flags)
+    local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
     echo $the_cmd
 }
 

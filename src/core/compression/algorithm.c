@@ -31,7 +31,8 @@
  *
  */
 
-#include "src/core/compression/algorithm.h"
+#include <stdlib.h>
+#include <grpc/compression.h>
 
 const char *grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm) {
@@ -46,4 +47,21 @@ const char *grpc_compression_algorithm_name(
       return "error";
   }
   return "error";
+}
+
+/* TODO(dgq): Add the ability to specify parameters to the individual
+ * compression algorithms */
+grpc_compression_algorithm grpc_compression_algorithm_for_level(
+    grpc_compression_level level) {
+  switch (level) {
+    case GRPC_COMPRESS_LEVEL_NONE:
+      return GRPC_COMPRESS_NONE;
+    case GRPC_COMPRESS_LEVEL_LOW:
+    case GRPC_COMPRESS_LEVEL_MED:
+    case GRPC_COMPRESS_LEVEL_HIGH:
+      return GRPC_COMPRESS_DEFLATE;
+    default:
+      /* we shouldn't be making it here */
+      abort();
+  }
 }

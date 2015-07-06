@@ -51,13 +51,8 @@ namespace Grpc.Core.Internal
         readonly Func<TWrite, byte[]> serializer;
         readonly Func<byte[], TRead> deserializer;
 
-        protected readonly CompletionCallbackDelegate sendFinishedHandler;
-        protected readonly CompletionCallbackDelegate readFinishedHandler;
-        protected readonly CompletionCallbackDelegate halfclosedHandler;
-
         protected readonly object myLock = new object();
 
-        protected GCHandle gchandle;
         protected CallSafeHandle call;
         protected bool disposed;
 
@@ -77,10 +72,6 @@ namespace Grpc.Core.Internal
         {
             this.serializer = Preconditions.CheckNotNull(serializer);
             this.deserializer = Preconditions.CheckNotNull(deserializer);
-  
-            this.sendFinishedHandler = CreateBatchCompletionCallback(HandleSendFinished);
-            this.readFinishedHandler = CreateBatchCompletionCallback(HandleReadFinished);
-            this.halfclosedHandler = CreateBatchCompletionCallback(HandleHalfclosed);
         }
 
         /// <summary>
@@ -121,9 +112,6 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                // Make sure this object and the delegated held by it will not be garbage collected
-                // before we release this handle.
-                gchandle = GCHandle.Alloc(this);
                 this.call = call;
             }
         }
@@ -141,7 +129,7 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendMessage(payload, sendFinishedHandler);
+                call.StartSendMessage(payload, HandleSendFinished);
                 sendCompletionDelegate = completionDelegate;
             }
         }
@@ -157,7 +145,7 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckReadingAllowed();
 
-                call.StartReceiveMessage(readFinishedHandler);
+                call.StartReceiveMessage(HandleReadFinished);
                 readCompletionDelegate = completionDelegate;
             }
         }
@@ -197,7 +185,6 @@ namespace Grpc.Core.Internal
             {
                 call.Dispose();
             }
-            gchandle.Free();
             disposed = true;
         }
 
@@ -282,29 +269,9 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Creates completion callback delegate that wraps the batch completion handler in a try catch block to
-        /// prevent propagating exceptions accross managed/unmanaged boundary.
-        /// </summary>
-        protected CompletionCallbackDelegate CreateBatchCompletionCallback(Action<bool, BatchContextSafeHandleNotOwned> handler)
-        {
-            return new CompletionCallbackDelegate((success, batchContextPtr) =>
-            {
-                try
-                {
-                    var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
-                    handler(success, ctx);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Caught exception in a native handler: " + e);
-                }
-            });
-        }
-
-        /// <summary>
         /// Handles send completion.
         /// </summary>
-        private void HandleSendFinished(bool success, BatchContextSafeHandleNotOwned ctx)
+        protected void HandleSendFinished(bool success, BatchContextSafeHandle ctx)
         {
             AsyncCompletionDelegate<object> origCompletionDelegate = null;
             lock (myLock)
@@ -328,7 +295,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles halfclose completion.
         /// </summary>
-        private void HandleHalfclosed(bool success, BatchContextSafeHandleNotOwned ctx)
+        protected void HandleHalfclosed(bool success, BatchContextSafeHandle ctx)
         {
             AsyncCompletionDelegate<object> origCompletionDelegate = null;
             lock (myLock)
@@ -353,7 +320,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles streaming read completion.
         /// </summary>
-        private void HandleReadFinished(bool success, BatchContextSafeHandleNotOwned ctx)
+        protected void HandleReadFinished(bool success, BatchContextSafeHandle ctx)
         {
             var payload = ctx.GetReceivedMessage();
 

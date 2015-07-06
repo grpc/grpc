@@ -84,6 +84,7 @@ END2END_TESTS = {
     'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
     'request_with_large_metadata': default_test_options,
     'request_with_payload': default_test_options,
+    'request_with_flags': default_test_options,
     'server_finishes_request': default_test_options,
     'simple_delayed_request': default_test_options,
     'simple_request': default_test_options,
@@ -92,6 +93,19 @@ END2END_TESTS = {
 
 
 def main():
+  sec_deps = [
+    'end2end_certs',
+    'grpc_test_util',
+    'grpc',
+    'gpr_test_util',
+    'gpr'
+  ]
+  unsec_deps = [
+    'grpc_test_util_unsecure',
+    'grpc_unsecure',
+    'gpr_test_util',
+    'gpr'
+  ]
   json = {
       '#': 'generated with test/end2end/gen_build_json.py',
       'libs': [
@@ -101,7 +115,9 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
               'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': [ 'posix' ] if f.endswith('_posix') else [ 'windows', 'posix' ],
+              'platforms': [ 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
+              'deps': sec_deps if END2END_FIXTURES[f].secure else unsec_deps,
+              'headers': ['test/core/end2end/end2end_tests.h'],
           }
           for f in sorted(END2END_FIXTURES.keys())] + [
           {
@@ -110,7 +126,9 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_TESTS[t].secure else 'no',
               'src': ['test/core/end2end/tests/%s.c' % t],
-              'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
+              'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
+                          'test/core/end2end/end2end_tests.h'],
+              'deps': sec_deps if END2END_TESTS[t].secure else unsec_deps
           }
           for t in sorted(END2END_TESTS.keys())] + [
           {
@@ -134,13 +152,7 @@ def main():
               'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
-                  'end2end_test_%s' % t,
-                  'end2end_certs',
-                  'grpc_test_util',
-                  'grpc',
-                  'gpr_test_util',
-                  'gpr'
-              ]
+                  'end2end_test_%s' % t] + sec_deps
           }
       for f in sorted(END2END_FIXTURES.keys())
       for t in sorted(END2END_TESTS.keys())] + [
@@ -154,12 +166,7 @@ def main():
               'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
-                  'end2end_test_%s' % t,
-                  'grpc_test_util_unsecure',
-                  'grpc_unsecure',
-                  'gpr_test_util',
-                  'gpr'
-              ]
+                  'end2end_test_%s' % t] + unsec_deps
           }
       for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f].secure
       for t in sorted(END2END_TESTS.keys()) if not END2END_TESTS[t].secure]}

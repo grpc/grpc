@@ -54,6 +54,7 @@ namespace Grpc.Core
         static volatile GrpcEnvironment instance;
 
         readonly GrpcThreadPool threadPool;
+        readonly CompletionRegistry completionRegistry;
         bool isClosed;
 
         /// <summary>
@@ -105,6 +106,19 @@ namespace Grpc.Core
             }
         }
 
+        internal static CompletionRegistry CompletionRegistry
+        {
+            get
+            {
+                var inst = instance;
+                if (inst == null)
+                {
+                    throw new InvalidOperationException("GRPC environment not initialized");
+                }
+                return inst.completionRegistry;
+            }
+        }
+
         /// <summary>
         /// Creates gRPC environment.
         /// </summary>
@@ -112,6 +126,7 @@ namespace Grpc.Core
         {
             GrpcLog.RedirectNativeLogs(Console.Error);
             grpcsharp_init();
+            completionRegistry = new CompletionRegistry();
             threadPool = new GrpcThreadPool(THREAD_POOL_SIZE);
             threadPool.Start();
             // TODO: use proper logging here
@@ -139,14 +154,24 @@ namespace Grpc.Core
         {
             var remainingClientCalls = DebugStats.ActiveClientCalls.Count;
             if (remainingClientCalls != 0)
-            {
-                Console.WriteLine("Warning: Detected {0} client calls that weren't disposed properly.", remainingClientCalls);
+            {                
+                DebugWarning(string.Format("Detected {0} client calls that weren't disposed properly.", remainingClientCalls));
             }
             var remainingServerCalls = DebugStats.ActiveServerCalls.Count;
             if (remainingServerCalls != 0)
             {
-                Console.WriteLine("Warning: Detected {0} server calls that weren't disposed properly.", remainingServerCalls);
+                DebugWarning(string.Format("Detected {0} server calls that weren't disposed properly.", remainingServerCalls));
             }
+            var pendingBatchCompletions = DebugStats.PendingBatchCompletions.Count;
+            if (pendingBatchCompletions != 0)
+            {
+                DebugWarning(string.Format("Detected {0} pending batch completions.", pendingBatchCompletions));
+            }
+        }
+
+        private static void DebugWarning(string message)
+        {
+            throw new Exception("Shutdown check: " + message);
         }
     }
 }

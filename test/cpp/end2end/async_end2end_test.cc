@@ -167,7 +167,7 @@ class AsyncEnd2endTest : public ::testing::Test {
       Verifier().Expect(4, true).Verify(cq_.get());
 
       EXPECT_EQ(send_response.message(), recv_response.message());
-      EXPECT_TRUE(recv_status.IsOk());
+      EXPECT_TRUE(recv_status.ok());
     }
   }
 
@@ -227,7 +227,7 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
   Verifier().Expect(4, true).Verify(cq_.get(), std::chrono::system_clock::time_point::max());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 // Two pings and a final pong.
@@ -280,7 +280,7 @@ TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
   Verifier().Expect(10, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 // One ping, two pongs.
@@ -330,7 +330,7 @@ TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
   cli_stream->Finish(&recv_status, tag(9));
   Verifier().Expect(9, true).Verify(cq_.get());
 
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 // One ping, one pong.
@@ -382,7 +382,7 @@ TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
   cli_stream->Finish(&recv_status, tag(10));
   Verifier().Expect(10, true).Verify(cq_.get());
 
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 // Metadata tests
@@ -426,7 +426,7 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   Verifier().Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
@@ -473,7 +473,7 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   Verifier().Expect(6, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
 }
 
 TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
@@ -513,7 +513,7 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   response_reader->Finish(&recv_response, &recv_status, tag(5));
   Verifier().Expect(5, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
   auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
   EXPECT_EQ(meta1.second, server_trailing_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, server_trailing_metadata.find(meta2.first)->second);
@@ -586,7 +586,7 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   response_reader->Finish(&recv_response, &recv_status, tag(6));
   Verifier().Expect(6, true).Verify(cq_.get());
   EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+  EXPECT_TRUE(recv_status.ok());
   auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
   EXPECT_EQ(meta5.second, server_trailing_metadata.find(meta5.first)->second);
   EXPECT_EQ(meta6.second, server_trailing_metadata.find(meta6.first)->second);

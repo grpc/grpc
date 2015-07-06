@@ -112,12 +112,26 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void RunHandlerLoop()
         {
-            GRPCCompletionType completionType;
+            CompletionQueueEvent ev;
             do
             {
-                completionType = cq.NextWithCallback();
+                ev = cq.Next();
+                if (ev.type == GRPCCompletionType.OpComplete)
+                {
+                    bool success = (ev.success != 0);
+                    IntPtr tag = ev.tag;
+                    try
+                    {
+                        var callback = GrpcEnvironment.CompletionRegistry.Extract(tag);
+                        callback(success);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+                    }
+                }
             }
-            while (completionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN);
+            while (ev.type != GRPCCompletionType.Shutdown);
             Console.WriteLine("Completion queue has shutdown successfully, thread " + Thread.CurrentThread.Name + " exiting.");
         }
     }

@@ -30,83 +30,121 @@
 
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
-syntax = "proto2";
+syntax = "proto3";
 
 package grpc.testing;
 
 enum PayloadType {
   // Compressable text format.
-  COMPRESSABLE= 1;
+  COMPRESSABLE = 0;
 
   // Uncompressable binary format.
-  UNCOMPRESSABLE = 2;
+  UNCOMPRESSABLE = 1;
 
   // Randomly chosen from all other formats defined in this enum.
-  RANDOM = 3;
+  RANDOM = 2;
 }
 
 message StatsRequest {
   // run number
-  optional int32 test_num = 1;
+  int32 test_num = 1;
 }
 
 message ServerStats {
   // wall clock time
-  required double time_elapsed = 1;
+  double time_elapsed = 1;
 
   // user time used by the server process and threads
-  required double time_user = 2;
+  double time_user = 2;
 
   // server time used by the server process and all threads
-  required double time_system = 3;
+  double time_system = 3;
 }
 
 message Payload {
   // The type of data in body.
-  optional PayloadType type = 1;
+  PayloadType type = 1;
   // Primary contents of payload.
-  optional bytes body = 2;
+  bytes body = 2;
 }
 
 message HistogramData {
   repeated uint32 bucket = 1;
-  required double min_seen = 2;
-  required double max_seen = 3;
-  required double sum = 4;
-  required double sum_of_squares = 5;
-  required double count = 6;
+  double min_seen = 2;
+  double max_seen = 3;
+  double sum = 4;
+  double sum_of_squares = 5;
+  double count = 6;
 }
 
 enum ClientType {
-  SYNCHRONOUS_CLIENT = 1;
-  ASYNC_CLIENT = 2;
+  SYNCHRONOUS_CLIENT = 0;
+  ASYNC_CLIENT = 1;
 }
 
 enum ServerType {
-  SYNCHRONOUS_SERVER = 1;
-  ASYNC_SERVER = 2;
+  SYNCHRONOUS_SERVER = 0;
+  ASYNC_SERVER = 1;
 }
 
 enum RpcType {
-  UNARY = 1;
-  STREAMING = 2;
+  UNARY = 0;
+  STREAMING = 1;
+}
+
+enum LoadType {
+  CLOSED_LOOP = 0;
+  POISSON = 1;
+  UNIFORM = 2;
+  DETERMINISTIC = 3;
+  PARETO = 4;
+}
+
+message PoissonParams {
+  double offered_load = 1;
+}
+
+message UniformParams {
+  double interarrival_lo = 1;
+  double interarrival_hi = 2;
+}
+
+message DeterministicParams {
+  double offered_load = 1;
+}
+
+message ParetoParams {
+  double interarrival_base = 1;
+  double alpha = 2;
+}
+
+message LoadParams {
+  oneof load {
+    PoissonParams poisson = 1;
+    UniformParams uniform = 2;
+    DeterministicParams determ = 3;
+    ParetoParams pareto = 4;
+  };
 }
 
 message ClientConfig {
   repeated string server_targets = 1;
-  required ClientType client_type = 2;
-  optional bool enable_ssl = 3 [default=false];
-  required int32 outstanding_rpcs_per_channel = 4;
-  required int32 client_channels = 5;
-  required int32 payload_size = 6;
+  ClientType client_type = 2;
+  bool enable_ssl = 3;
+  int32 outstanding_rpcs_per_channel = 4;
+  int32 client_channels = 5;
+  int32 payload_size = 6;
   // only for async client:
-  optional int32 async_client_threads = 7;
-  optional RpcType rpc_type = 8 [default=UNARY];
-  optional string host = 9;
+  int32 async_client_threads = 7;
+  RpcType rpc_type = 8;
+  string host = 9;
+  LoadType load_type = 10;
+  LoadParams load_params = 11;
 }
 
 // Request current stats
-message Mark {}
+message Mark {
+}
 
 message ClientArgs {
   oneof argtype {
@@ -116,21 +154,21 @@ message ClientArgs {
 }
 
 message ClientStats {
-  required HistogramData latencies = 1;
-  required double time_elapsed = 3;
-  required double time_user = 4;
-  required double time_system = 5;
+  HistogramData latencies = 1;
+  double time_elapsed = 2;
+  double time_user = 3;
+  double time_system = 4;
 }
 
 message ClientStatus {
-  optional ClientStats stats = 1;
+  ClientStats stats = 1;
 }
 
 message ServerConfig {
-  required ServerType server_type = 1;
-  optional int32 threads = 2 [default=1];
-  optional bool enable_ssl = 3 [default=false];
-  optional string host = 4;
+  ServerType server_type = 1;
+  int32 threads = 2;
+  bool enable_ssl = 3;
+  string host = 4;
 }
 
 message ServerArgs {
@@ -141,25 +179,25 @@ message ServerArgs {
 }
 
 message ServerStatus {
-  optional ServerStats stats = 1;
-  required int32 port = 2;
+  ServerStats stats = 1;
+  int32 port = 2;
 }
 
 message SimpleRequest {
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
-  optional PayloadType response_type = 1 [default=COMPRESSABLE];
+  PayloadType response_type = 1;
 
   // Desired payload size in the response from the server.
   // If response_type is COMPRESSABLE, this denotes the size before compression.
-  optional int32 response_size = 2 [default=0];
+  int32 response_size = 2;
 
   // Optional input payload sent along with the request.
-  optional Payload payload = 3;
+  Payload payload = 3;
 }
 
 message SimpleResponse {
-  optional Payload payload = 1;
+  Payload payload = 1;
 }
 
 service TestService {

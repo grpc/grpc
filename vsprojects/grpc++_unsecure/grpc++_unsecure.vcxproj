@@ -154,6 +154,7 @@
     <ClInclude Include="..\..\include\grpc++\client_context.h" />
     <ClInclude Include="..\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="..\..\include\grpc++\config.h" />
+    <ClInclude Include="..\..\include\grpc++\config_protobuf.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\credentials.h" />
     <ClInclude Include="..\..\include\grpc++\generic_stub.h" />
@@ -161,8 +162,10 @@
     <ClInclude Include="..\..\include\grpc++\impl\client_unary_call.h" />
     <ClInclude Include="..\..\include\grpc++\impl\grpc_library.h" />
     <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\proto_utils.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h" />
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h" />
     <ClInclude Include="..\..\include\grpc++\impl\sync.h" />
     <ClInclude Include="..\..\include\grpc++\impl\sync_cxx11.h" />
@@ -183,7 +186,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cpp\client\channel.h" />
-    <ClInclude Include="..\..\src\cpp\proto\proto_utils.h" />
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h" />
   </ItemGroup>
   <ItemGroup>
@@ -192,8 +194,6 @@
     <ClCompile Include="..\..\src\cpp\client\channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\client_context.cc">
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\client\client_unary_call.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
     </ClCompile>
@@ -214,6 +214,8 @@
     <ClCompile Include="..\..\src\cpp\proto\proto_utils.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\async_generic_service.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>

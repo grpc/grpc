@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/support/string.h"
 
@@ -57,7 +58,8 @@ gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
     goto end;
   }
   fseek(file, 0, SEEK_END);
-  contents_size = ftell(file);
+  /* Converting to size_t on the assumption that it will not fail */
+  contents_size = (size_t)ftell(file);
   fseek(file, 0, SEEK_SET);
   contents = gpr_malloc(contents_size + (add_null_terminator ? 1 : 0));
   bytes_read = fread(contents, 1, contents_size, file);

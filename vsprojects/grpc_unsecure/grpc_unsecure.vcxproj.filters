@@ -253,10 +253,19 @@
     <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\incoming_metadata.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\status_conversion.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_encoder.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_lists.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_map.c">
@@ -266,6 +275,9 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\writing.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
@@ -297,6 +309,9 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\compression.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -310,6 +325,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\core\census\grpc_context.h">
       <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\census_filter.h">
+      <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
@@ -329,6 +347,9 @@
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\context.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -337,9 +358,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\noop_filter.h">
       <Filter>src\core\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\compression\algorithm.h">
-      <Filter>src\core\compression</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
@@ -384,6 +402,9 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h">
@@ -519,6 +540,12 @@
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\incoming_metadata.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\internal.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\status_conversion.h">
