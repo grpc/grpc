@@ -342,7 +342,7 @@ PC_CFLAGS = -pthread
 PC_REQUIRES_PRIVATE =
 PC_LIBS_PRIVATE = -lpthread
 PC_LIB = -lgpr
-ifeq ($(SYSTEM),Darwin)
+ifneq ($(SYSTEM),Darwin)
 PC_LIBS_PRIVATE += -lrt
 endif
 GPR_PC_FILE := $(PC_TEMPLATE)
