@@ -25,14 +25,14 @@
             ['has_pkg_config == "true"', {
               'link_settings': {
                 'libraries': [
-                  '<!@(pkg-config --libs-only-l grpc)'
+                  '<!@(pkg-config --libs-only-l --static grpc)'
                 ]
               },
               'cflags': [
                 '<!@(pkg-config --cflags grpc)'
               ],
               'libraries': [
-                '<!@(pkg-config --libs-only-L grpc)'
+                '<!@(pkg-config --libs-only-L --static grpc)'
               ]
               }, {
                 'link_settings': {
