@@ -143,8 +143,8 @@ void census_tracing_end_op(census_op_id op_id) {
   gpr_mu_lock(&g_mu);
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace != NULL) {
-    trace->rpc_stats.elapsed_time_ms =
-        gpr_timespec_to_micros(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), trace->ts));
+    trace->rpc_stats.elapsed_time_ms = gpr_timespec_to_micros(
+        gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), trace->ts));
     gpr_log(GPR_DEBUG, "End tracing for id %lu, method %s, latency %f us",
             op_id_2_uint64(&op_id), trace->method,
             trace->rpc_stats.elapsed_time_ms);
@@ -194,8 +194,8 @@ const char* census_get_trace_method_name(const census_trace_obj* trace) {
 
 static census_trace_annotation* dup_annotation_chain(
     census_trace_annotation* from) {
-  census_trace_annotation *ret = NULL;
-  census_trace_annotation **to = &ret;
+  census_trace_annotation* ret = NULL;
+  census_trace_annotation** to = &ret;
   for (; from != NULL; from = from->next) {
     *to = gpr_malloc(sizeof(census_trace_annotation));
     memcpy(*to, from, sizeof(census_trace_annotation));
@@ -223,9 +223,9 @@ census_trace_obj** census_get_active_ops(int* num_active_ops) {
     size_t n = 0;
     census_ht_kv* all_kvs = census_ht_get_all_elements(g_trace_store, &n);
     *num_active_ops = (int)n;
-    if (n != 0 ) {
+    if (n != 0) {
       size_t i = 0;
-      ret = gpr_malloc(sizeof(census_trace_obj *) * n);
+      ret = gpr_malloc(sizeof(census_trace_obj*) * n);
       for (i = 0; i < n; i++) {
         ret[i] = trace_obj_dup((census_trace_obj*)all_kvs[i].v);
       }

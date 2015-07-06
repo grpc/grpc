@@ -384,7 +384,8 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
     if (c->cached.service_url != NULL &&
         strcmp(c->cached.service_url, service_url) == 0 &&
         c->cached.jwt_md != NULL &&
-        (gpr_time_cmp(gpr_time_sub(c->cached.jwt_expiration, gpr_now(GPR_CLOCK_REALTIME)),
+        (gpr_time_cmp(gpr_time_sub(c->cached.jwt_expiration,
+                                   gpr_now(GPR_CLOCK_REALTIME)),
                       refresh_threshold) > 0)) {
       jwt_md = grpc_credentials_md_store_ref(c->cached.jwt_md);
     }
@@ -401,7 +402,8 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
       char *md_value;
       gpr_asprintf(&md_value, "Bearer %s", jwt);
       gpr_free(jwt);
-      c->cached.jwt_expiration = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c->jwt_lifetime);
+      c->cached.jwt_expiration =
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c->jwt_lifetime);
       c->cached.service_url = gpr_strdup(service_url);
       c->cached.jwt_md = grpc_credentials_md_store_create(1);
       grpc_credentials_md_store_add_cstrings(
@@ -586,7 +588,8 @@ static void on_oauth2_token_fetcher_http_response(
   status = grpc_oauth2_token_fetcher_credentials_parse_server_response(
       response, &c->access_token_md, &token_lifetime);
   if (status == GRPC_CREDENTIALS_OK) {
-    c->token_expiration = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime);
+    c->token_expiration =
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime);
     r->cb(r->user_data, c->access_token_md->entries,
           c->access_token_md->num_entries, status);
   } else {
@@ -608,8 +611,9 @@ static void oauth2_token_fetcher_get_request_metadata(
   {
     gpr_mu_lock(&c->mu);
     if (c->access_token_md != NULL &&
-        (gpr_time_cmp(gpr_time_sub(c->token_expiration, gpr_now(GPR_CLOCK_REALTIME)),
-                      refresh_threshold) > 0)) {
+        (gpr_time_cmp(
+             gpr_time_sub(c->token_expiration, gpr_now(GPR_CLOCK_REALTIME)),
+             refresh_threshold) > 0)) {
       cached_access_token_md =
           grpc_credentials_md_store_ref(c->access_token_md);
     }

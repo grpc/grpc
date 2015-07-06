@@ -104,9 +104,10 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_init(&context);
 
-  grpc_httpcli_get(&context, &detector.pollset, &request,
-                   gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
-                   on_compute_engine_detection_http_response, &detector);
+  grpc_httpcli_get(
+      &context, &detector.pollset, &request,
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
+      on_compute_engine_detection_http_response, &detector);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */

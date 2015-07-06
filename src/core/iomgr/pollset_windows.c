@@ -86,8 +86,6 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   return 1 /* GPR_TRUE */;
 }
 
-void grpc_pollset_kick(grpc_pollset *p) {
-  gpr_cv_signal(&p->cv);
-}
+void grpc_pollset_kick(grpc_pollset *p) { gpr_cv_signal(&p->cv); }
 
 #endif /* GPR_WINSOCK_SOCKET */

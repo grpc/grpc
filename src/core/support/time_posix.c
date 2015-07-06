@@ -56,10 +56,7 @@ static gpr_timespec gpr_from_timespec(struct timespec ts) {
 }
 
 /** maps gpr_clock_type --> clockid_t for clock_gettime */
-static clockid_t clockid_for_gpr_clock[] = {
-  CLOCK_MONOTONIC,
-  CLOCK_REALTIME
-};
+static clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC, CLOCK_REALTIME};
 
 void gpr_time_init(void) {}
 
@@ -79,7 +76,7 @@ static double g_time_scale;
 static uint64_t g_time_start;
 
 void gpr_time_init(void) {
-  mach_timebase_info_data_t tb = { 0, 1 };
+  mach_timebase_info_data_t tb = {0, 1};
   mach_timebase_info(&tb);
   g_time_scale = tb.numer;
   g_time_scale /= tb.denom;

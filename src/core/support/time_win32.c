@@ -64,7 +64,8 @@ void gpr_sleep_until(gpr_timespec until) {
     }
 
     delta = gpr_time_sub(until, now);
-    sleep_millis = (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+    sleep_millis =
+        (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
     Sleep(sleep_millis);
   }
 }

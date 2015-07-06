@@ -218,8 +218,8 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   gpr_ltoa(now.tv_sec, now_str);
   gpr_ltoa(expiration.tv_sec, expiration_str);
 
-  child = create_child(NULL, json, "iss", json_key->client_email,
-                       GRPC_JSON_STRING);
+  child =
+      create_child(NULL, json, "iss", json_key->client_email, GRPC_JSON_STRING);
   if (scope != NULL) {
     child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
   } else {
@@ -396,4 +396,3 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token) {
     refresh_token->refresh_token = NULL;
   }
 }
-

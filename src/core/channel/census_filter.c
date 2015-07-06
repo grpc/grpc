@@ -175,8 +175,8 @@ static void server_init_call_elem(grpc_call_element* elem,
 static void server_destroy_call_elem(grpc_call_element* elem) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
-  d->stats.elapsed_time_ms =
-      gpr_timespec_to_micros(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), d->start_ts));
+  d->stats.elapsed_time_ms = gpr_timespec_to_micros(
+      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), d->start_ts));
   census_record_rpc_server_stats(d->op_id, &d->stats);
   census_tracing_end_op(d->op_id);
 }
@@ -200,11 +200,23 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 }
 
 const grpc_channel_filter grpc_client_census_filter = {
-    client_start_transport_op, channel_op, sizeof(call_data),
-    client_init_call_elem, client_destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "census-client"};
+    client_start_transport_op,
+    channel_op,
+    sizeof(call_data),
+    client_init_call_elem,
+    client_destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
-    server_start_transport_op, channel_op, sizeof(call_data),
-    server_init_call_elem, server_destroy_call_elem, sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "census-server"};
+    server_start_transport_op,
+    channel_op,
+    sizeof(call_data),
+    server_init_call_elem,
+    server_destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    "census-server"};

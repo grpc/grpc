@@ -170,4 +170,4 @@ void census_window_stats_get_sums(const struct census_window_stats* wstats,
    assertion failure). This function is thread-compatible. */
 void census_window_stats_destroy(struct census_window_stats* wstats);
 
-#endif  /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */
+#endif /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */
