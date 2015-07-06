@@ -19,10 +19,10 @@
       "conditions": [
         ['OS != "win"', {
           'variables': {
-            'has_pkg_config': '<!(command -v pkg-config >/dev/null 2>&1 && echo true || echo false)'
+            'pkg_config_grpc': '<!(pkg-config --exists grpc >/dev/null 2>&1 && echo true || echo false)'
           },
           'conditions': [
-            ['has_pkg_config == "true"', {
+            ['pkg_config_grpc == "true"', {
               'link_settings': {
                 'libraries': [
                   '<!@(pkg-config --libs-only-l --static grpc)'
