@@ -2291,6 +2291,19 @@
       ]
     },
     {
+      "name": "secure_auth_context_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/common/secure_auth_context_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
       "name": "server_crash_test",
       "build": "test",
       "language": "c++",
