@@ -201,8 +201,8 @@ static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 
 static void init_transport(grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
-                           grpc_endpoint *ep, gpr_slice *slices, size_t nslices,
-                           grpc_mdctx *mdctx, int is_client) {
+                           grpc_endpoint *ep, grpc_mdctx *mdctx,
+                           int is_client) {
   size_t i;
   int j;
 
@@ -311,9 +311,6 @@ static void init_transport(grpc_chttp2_transport *t,
       }
     }
   }
-
-  REF_TRANSPORT(t, "recv_data"); /* matches unref inside recv_data */
-  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
 }
 
 static void destroy_transport(grpc_transport *gt) {
@@ -1043,9 +1040,16 @@ static const grpc_transport_vtable vtable = {
     perform_transport_op,       destroy_stream, destroy_transport};
 
 grpc_transport *grpc_create_chttp2_transport(
-    const grpc_channel_args *channel_args, grpc_endpoint *ep, gpr_slice *slices,
-    size_t nslices, grpc_mdctx *mdctx, int is_client) {
+    const grpc_channel_args *channel_args, grpc_endpoint *ep, grpc_mdctx *mdctx,
+    int is_client) {
   grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
-  init_transport(t, channel_args, ep, slices, nslices, mdctx, is_client);
+  init_transport(t, channel_args, ep, mdctx, is_client);
   return &t->base;
+}
+
+void grpc_chttp2_transport_start_reading(grpc_transport *transport,
+                                         gpr_slice *slices, size_t nslices) {
+  grpc_chttp2_transport *t = (grpc_chttp2_transport *)transport;
+  REF_TRANSPORT(t, "recv_data"); /* matches unref inside recv_data */
+  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
 }
