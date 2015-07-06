@@ -933,6 +933,7 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
         if (t->parsing.initial_window_update != 0) {
           grpc_chttp2_stream_map_for_each(&t->parsing_stream_map,
                                           update_global_window, t);
+          t->parsing.initial_window_update = 0;
         }
         /* handle higher level things */
         grpc_chttp2_publish_reads(&t->global, &t->parsing);
