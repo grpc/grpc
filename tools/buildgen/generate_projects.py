@@ -62,7 +62,9 @@ for root, dirs, files in os.walk('templates'):
 			if test is None:
 				cmd.append(out)
 			else:
-				test[out] = tempfile.mkstemp()
+				tf = tempfile.mkstemp()
+				test[out] = tf[1]
+				os.close(tf[0])
 				cmd.append(test[out])
 			cmd.append(root + '/' + f)
 			jobs.append(jobset.JobSpec(cmd, shortname=out))
