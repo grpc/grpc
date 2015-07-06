@@ -45,4 +45,4 @@ typedef struct {
 
 extern const grpc_chttp2_huffsym grpc_chttp2_huffsyms[GRPC_CHTTP2_NUM_HUFFSYMS];
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HUFFSYMS_H */

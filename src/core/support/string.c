@@ -94,7 +94,7 @@ char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags) {
     if (len) hexout_append(&out, ' ');
     hexout_append(&out, '\'');
     for (cur = beg; cur != end; ++cur) {
-      hexout_append(&out, isprint(*cur) ? *cur : '.');
+      hexout_append(&out, isprint(*cur) ? *(char*)cur : '.');
     }
     hexout_append(&out, '\'');
   }
@@ -113,7 +113,7 @@ int gpr_parse_bytes_to_uint32(const char *buf, size_t len, gpr_uint32 *result) {
 
   for (i = 0; i < len; i++) {
     if (buf[i] < '0' || buf[i] > '9') return 0; /* bad char */
-    new = 10 * out + (buf[i] - '0');
+    new = 10 * out + (gpr_uint32)(buf[i] - '0');
     if (new < out) return 0; /* overflow */
     out = new;
   }
@@ -143,7 +143,7 @@ int gpr_ltoa(long value, char *string) {
 
   if (neg) value = -value;
   while (value) {
-    string[i++] = '0' + value % 10;
+    string[i++] = (char)('0' + value % 10);
     value /= 10;
   }
   if (neg) string[i++] = '-';

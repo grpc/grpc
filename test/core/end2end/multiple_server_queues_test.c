@@ -31,34 +31,32 @@
  *
  */
 
-#include <grpc++/impl/client_unary_call.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/status.h>
-#include <grpc/support/log.h>
+#include <grpc/grpc.h>
+#include "test/core/util/test_config.h"
 
-namespace grpc {
+int main(int argc, char **argv) {
+  grpc_completion_queue *cq1;
+  grpc_completion_queue *cq2;
+  grpc_server *server;
 
-// Wrapper that performs a blocking unary call
-Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                         ClientContext* context,
-                         const grpc::protobuf::Message& request,
-                         grpc::protobuf::Message* result) {
-  CompletionQueue cq;
-  Call call(channel->CreateCall(method, context, &cq));
-  CallOpBuffer buf;
-  Status status;
-  buf.AddSendInitialMetadata(context);
-  buf.AddSendMessage(request);
-  buf.AddRecvInitialMetadata(context);
-  buf.AddRecvMessage(result);
-  buf.AddClientSendClose();
-  buf.AddClientRecvStatus(context, &status);
-  call.PerformOps(&buf);
-  GPR_ASSERT((cq.Pluck(&buf) && buf.got_message) || !status.ok());
-  return status;
+  grpc_test_init(argc, argv);
+  grpc_init();
+  cq1 = grpc_completion_queue_create();
+  cq2 = grpc_completion_queue_create();
+  server = grpc_server_create(NULL);
+  grpc_server_register_completion_queue(server, cq1);
+  grpc_server_add_http2_port(server, "[::]:0");
+  grpc_server_register_completion_queue(server, cq2);
+  grpc_server_start(server);
+  grpc_server_shutdown_and_notify(server, cq2, NULL);
+  grpc_completion_queue_next(cq2, gpr_inf_future);  /* cue queue hang */
+  grpc_completion_queue_shutdown(cq1);
+  grpc_completion_queue_shutdown(cq2);
+  grpc_completion_queue_next(cq1, gpr_inf_future);
+  grpc_completion_queue_next(cq2, gpr_inf_future);
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq1);
+  grpc_completion_queue_destroy(cq2);
+  grpc_shutdown();
+  return 0;
 }
-
-}  // namespace grpc

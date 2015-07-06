@@ -5,16 +5,28 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Pre-Alpha : This gRPC PHP implementation is work-in-progress and is not expected to work yet.
+Alpha : Ready for early adopters
 
 ## ENVIRONMENT
 
-Install `php5` and `php5-dev`.
+Prerequisite: PHP 5.5 or later, `phpunit`, `pecl`
 
-To run the tests, additionally install `phpunit`.
+Linux:
 
-Alternatively, build and install PHP 5.5 or later from source with standard
-configuration options.
+```sh
+$ sudo apt-get install php5 php5-dev phpunit php-pear
+```
+
+OS X:
+
+```sh
+$ curl https://phar.phpunit.de/phpunit.phar -o phpunit.phar
+$ chmod +x phpunit.phar
+$ sudo mv phpunit.phar /usr/local/bin/phpunit
+
+$ curl -O http://pear.php.net/go-pear.phar
+$ sudo php -d detect_unicode=0 go-pear.phar
+```
 
 ## Build from Homebrew
 
@@ -48,7 +60,7 @@ $ make check
 $ sudo make install
 ```
 
-Build and install the gRPC C core
+Build and install the gRPC C core libraries
 
 ```sh
 $ cd grpc
@@ -56,7 +68,13 @@ $ make
 $ sudo make install
 ```
 
-Build the gRPC PHP extension
+Install the gRPC PHP extension
+
+```sh
+$ sudo pecl install grpc
+```
+
+OR
 
 ```sh
 $ cd grpc/src/php/ext/grpc
@@ -125,4 +143,3 @@ $ ./bin/run_gen_code_test.sh
 [linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples
-

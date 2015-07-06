@@ -96,8 +96,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
   f.fixture_data = sfd;
-  f.client_cq = grpc_completion_queue_create();
-  f.server_cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create();
 
   *sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
@@ -120,7 +119,7 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
   grpc_endpoint_pair *sfd = f->fixture_data;
   GPR_ASSERT(!f->server);
   f->server = grpc_server_create_from_filters(NULL, 0, server_args);
-  grpc_server_register_completion_queue(f->server, f->server_cq);
+  grpc_server_register_completion_queue(f->server, f->cq);
   grpc_server_start(f->server);
   grpc_create_chttp2_transport(server_setup_transport, f, server_args,
                                sfd->server, NULL, 0, grpc_mdctx_create(), 0);

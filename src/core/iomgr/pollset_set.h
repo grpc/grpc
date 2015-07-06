@@ -31,19 +31,29 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_SET_H
 
-// See the README file for an introduction to this library.
+#include "src/core/iomgr/pollset.h"
 
-// A fully-qualified gRPC method name. Full qualification is needed because a gRPC endpoint can
-// implement multiple interfaces.
-// TODO(jcanizales): Move to ProtoRPC package.
-// TODO(jcanizales): Rename interface -> service.
-@interface GRPCMethodName : NSObject
-@property(nonatomic, readonly) NSString *package;
-@property(nonatomic, readonly) NSString *interface;
-@property(nonatomic, readonly) NSString *method;
-- (instancetype)initWithPackage:(NSString *)package
-                      interface:(NSString *)interface
-                         method:(NSString *)method;
-@end
+/* A grpc_pollset_set is a set of pollsets that are interested in an
+   action. Adding a pollset to a pollset_set automatically adds any
+   fd's (etc) that have been registered with the set_set with that pollset.
+   Registering fd's automatically adds them to all current pollsets. */
+
+#ifdef GPR_POSIX_SOCKET
+#include "src/core/iomgr/pollset_set_posix.h"
+#endif
+
+#ifdef GPR_WIN32
+#include "src/core/iomgr/pollset_set_windows.h"
+#endif
+
+void grpc_pollset_set_init(grpc_pollset_set *pollset_set);
+void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set);
+void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset);
+void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set,
+                                  grpc_pollset *pollset);
+
+#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

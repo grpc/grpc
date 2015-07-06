@@ -32,12 +32,14 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <gRPC/GRPCCall.h>
+#import <GRPCClient/GRPCCall.h>
+
+#import "ProtoMethod.h"
 
 @interface ProtoRPC : GRPCCall
 
 - (instancetype)initWithHost:(NSString *)host
-                      method:(GRPCMethodName *)method
+                      method:(ProtoMethod *)method
               requestsWriter:(id<GRXWriter>)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;

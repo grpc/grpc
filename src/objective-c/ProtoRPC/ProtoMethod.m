@@ -31,10 +31,25 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#import "ProtoMethod.h"
 
-#import "GRPCMethodName.h"
+@implementation ProtoMethod
+- (instancetype)initWithPackage:(NSString *)package
+                        service:(NSString *)service
+                         method:(NSString *)method {
+  if ((self = [super init])) {
+    _package = [package copy];
+    _service = [service copy];
+    _method = [method copy];
+  }
+  return self;
+}
 
-@interface GRPCMethodName (HTTP2Encoding)
-- (NSString *)HTTP2Path;
+- (NSString *)HTTPPath {
+  if (_package) {
+    return [NSString stringWithFormat:@"/%@.%@/%@", _package, _service, _method];
+  } else {
+    return [NSString stringWithFormat:@"/%@/%@", _service, _method];
+  }
+}
 @end

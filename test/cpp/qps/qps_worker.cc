@@ -31,7 +31,7 @@
  *
  */
 
-#include "qps_worker.h"
+#include "test/cpp/qps/qps_worker.h"
 
 #include <cassert>
 #include <memory>

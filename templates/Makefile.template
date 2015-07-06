@@ -2,6 +2,8 @@
 # This currently builds C and C++ code.
 # This file has been automatically generated from a template file.
 # Please look at the templates directory instead.
+# This file can be regenerated from the template by running
+# tools/buildgen/generate_projects.sh
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -157,7 +159,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -169,7 +171,7 @@ LD_asan = clang
 LDXX_asan = clang++
 CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS_asan = -fsanitize=address
-DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
+DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -180,7 +182,7 @@ LDXX_msan = clang++-libc++
 CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
-DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
+DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -191,7 +193,7 @@ LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
 OPENSSL_CFLAGS_ubsan = -DPURIFY
 LDFLAGS_ubsan = -fsanitize=undefined
-DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
+DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
 VALID_CONFIG_gcov = 1
 CC_gcov = gcc
@@ -343,6 +345,32 @@ HOST_LDLIBS = $(LDLIBS)
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
 
+HAS_PKG_CONFIG = $(shell command -v pkg-config >/dev/null 2>&1 && echo true || echo false)
+
+PC_TEMPLATE = prefix=$(prefix)\n\
+exec_prefix=${'\$${prefix}'}\n\
+includedir=${'\$${prefix}'}/include\n\
+libdir=${'\$${exec_prefix}'}/lib\n\
+\n\
+Name: $(PC_NAME)\n\
+Description: $(PC_DESCRIPTION)\n\
+Version: $(VERSION)\n\
+Cflags: -I${'\$${includedir}'} $(PC_CFLAGS)\n\
+Requires.private: $(PC_REQUIRES_PRIVATE)\n\
+Libs: -L${'\$${libdir}'}\n\
+Libs.private: $(PC_LIBS_PRIVATE)
+
+# gpr .pc file
+PC_NAME = gRPC Portable Runtime
+PC_DESCRIPTION = gRPC Portable Runtime
+PC_CFLAGS = -pthread
+PC_REQUIRES_PRIVATE =
+PC_LIBS_PRIVATE = -lpthread
+ifeq ($(SYSTEM),Darwin)
+PC_LIBS_PRIVATE += -lrt
+endif
+GPR_PC_FILE := $(PC_TEMPLATE)
+
 ifeq ($(SYSTEM),MINGW32)
 SHARED_EXT = dll
 endif
@@ -367,6 +395,13 @@ ifeq ($(SYSTEM),Darwin)
 OPENSSL_REQUIRES_DL = true
 endif
 
+ifeq ($(HAS_PKG_CONFIG),true)
+OPENSSL_ALPN_CHECK_CMD = pkg-config --atleast-version=1.0.2 openssl
+ZLIB_CHECK_CMD = pkg-config --exists zlib
+PERFTOOLS_CHECK_CMD = pkg-config --exists profiler
+PROTOBUF_CHECK_CMD = pkg-config --atleast-version=3.0.0-alpha-3 protobuf
+else # HAS_PKG_CONFIG
+
 ifeq ($(SYSTEM),MINGW32)
 OPENSSL_LIBS = ssl32 eay32
 else
@@ -377,14 +412,17 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
-PROTOC_CHECK_CMD = which protoc > /dev/null
-PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
-DTRACE_CHECK_CMD = which dtrace > /dev/null
-SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
 endif
+
+endif # HAS_PKG_CONFIG
+
+PROTOC_CHECK_CMD = which protoc > /dev/null
+PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
+DTRACE_CHECK_CMD = which dtrace > /dev/null
+SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -446,6 +484,9 @@ else
 HAS_EMBEDDED_PROTOBUF = true
 endif
 
+PC_REQUIRES_GRPC = gpr
+PC_LIBS_GRPC =
+
 ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB),true)
 ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
@@ -454,9 +495,41 @@ LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 DEP_MISSING += zlib
 endif
+else
+ifeq ($(HAS_PKG_CONFIG),true)
+CPPFLAGS += $(shell pkg-config --cflags zlib)
+LDFLAGS += $(shell pkg-config --libs-only-L zlib)
+PC_REQUIRES_GRPC += zlib
+else
+PC_LIBS_GRPC += -lz
+endif
 endif
 
-ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
+OPENSSL_PKG_CONFIG = false
+
+PC_REQUIRES_SECURE =
+PC_LIBS_SECURE =
+
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+ifeq ($(HAS_PKG_CONFIG),true)
+OPENSSL_PKG_CONFIG = true
+PC_REQUIRES_SECURE = openssl
+CPPFLAGS := $(shell pkg-config --cflags openssl) $(CPPFLAGS)
+LDFLAGS_OPENSSL_PKG_CONFIG = $(shell pkg-config --libs-only-L openssl)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
+LDFLAGS_OPENSSL_PKG_CONFIG += $(shell pkg-config --libs-only-L openssl | sed s/L/Wl,-rpath,/)
+endif
+endif
+LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
+else
+LIBS_SECURE = $(OPENSSL_LIBS)
+ifeq ($(OPENSSL_REQUIRES_DL),true)
+LIBS_SECURE += dl
+PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
+endif
+endif
+else
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
@@ -469,16 +542,50 @@ endif
 else
 NO_SECURE = true
 endif
+endif
+
+ifeq ($(OPENSSL_PKG_CONFIG),true)
+LDLIBS_SECURE += $(shell pkg-config --libs-only-l openssl)
 else
-LIBS_SECURE = $(OPENSSL_LIBS)
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE += dl
-endif
-endif
-
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+endif
 
-ifeq ($(HAS_SYSTEM_PROTOBUF),false)
+# grpc .pc file
+PC_NAME = gRPC
+PC_DESCRIPTION = high performance general RPC framework
+PC_CFLAGS =
+PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
+GRPC_PC_FILE := $(PC_TEMPLATE)
+
+# gprc_unsecure .pc file
+PC_NAME = gRPC unsecure
+PC_DESCRIPTION = high performance general RPC framework without SSL
+PC_CFLAGS =
+PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
+GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+
+PROTOBUF_PKG_CONFIG = false
+
+PC_REQUIRES_GRPCXX =
+PC_LIBS_GRPCXX =
+
+ifeq ($(HAS_SYSTEM_PROTOBUF),true)
+ifeq ($(HAS_PKG_CONFIG),true)
+PROTOBUF_PKG_CONFIG = true
+PC_REQUIRES_GRPCXX = protobuf
+CPPFLAGS := $(shell pkg-config --cflags protobuf) $(CPPFLAGS)
+LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell pkg-config --libs-only-L protobuf)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
+LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell pkg-config --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
+endif
+endif
+else
+PC_LIBS_GRPCXX = -lprotobuf
+endif
+else
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
@@ -487,14 +594,34 @@ PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
 endif
-else
 endif
 
 LIBS_PROTOBUF = protobuf
 LIBS_PROTOC = protoc protobuf
 
-LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
+
+ifeq ($(PROTOBUF_PKG_CONFIG),true)
+LDLIBS_PROTOBUF += $(shell pkg-config --libs-only-l protobuf)
+else
+LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
+endif
+
+# grpc++ .pc file
+PC_NAME = gRPC++
+PC_DESCRIPTION = C++ wrapper for gRPC
+PC_CFLAGS =
+PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
+PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+GRPCXX_PC_FILE := $(PC_TEMPLATE)
+
+# grpc++_unsecure .pc file
+PC_NAME = gRPC++ unsecure
+PC_DESCRIPTION = C++ wrapper for gRPC without SSL
+PC_CFLAGS =
+PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
+PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
@@ -686,7 +813,7 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: \
+static_c: pc_c pc_c_unsecure \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c':
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -694,7 +821,7 @@ static_c: \
 % endfor
 
 
-static_cxx: \
+static_cxx: pc_cxx pc_cxx_unsecure pc_gpr\
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c++':
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -704,7 +831,7 @@ static_cxx: \
 
 shared: shared_c shared_cxx
 
-shared_c: \
+shared_c: pc_c pc_c_unsecure pc_gpr\
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c':
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -712,7 +839,7 @@ shared_c: \
 % endfor
 
 
-shared_cxx: \
+shared_cxx: pc_cxx pc_cxx_unsecure \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c++':
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -740,6 +867,15 @@ privatelibs_c: \
 % endif
 % endfor
 
+pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
+
+pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+
+pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+
+pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
+
+pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 privatelibs_cxx: \
 % for lib in libs:
@@ -812,9 +948,20 @@ test_python: static_c
 	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
 
 
-tools: privatelibs\
+tools: tools_c tools_cxx
+
+
+tools_c: privatelibs_c\
 % for tgt in targets:
-% if tgt.build == 'tool':
+% if tgt.build == 'tool' and not tgt.language=='c++':
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
+% endif
+% endfor
+
+
+tools_cxx: privatelibs_cxx\
+% for tgt in targets:
+% if tgt.build == 'tool' and tgt.language=='c++':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
@@ -901,6 +1048,31 @@ ifeq ($(CONFIG),opt)
 % endfor
 endif
 
+$(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
+	$(E) "[MAKE]    Generating $@"
+	$(Q) mkdir -p $(@D)
+	$(Q) echo -e "$(GPR_PC_FILE)" >$@
+
+$(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
+	$(E) "[MAKE]    Generating $@"
+	$(Q) mkdir -p $(@D)
+	$(Q) echo -e "$(GRPC_PC_FILE)" >$@
+
+$(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
+	$(E) "[MAKE]    Generating $@"
+	$(Q) mkdir -p $(@D)
+	$(Q) echo -e "$(GRPC_UNSECURE_PC_FILE)" >$@
+
+$(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
+	$(E) "[MAKE]    Generating $@"
+	$(Q) mkdir -p $(@D)
+	$(Q) echo -e "$(GRPCXX_PC_FILE)" >$@
+
+$(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
+	$(E) "[MAKE]    Generating $@"
+	$(Q) mkdir -p $(@D)
+	$(Q) echo -e "$(GRPCXX_UNSECURE_PC_FILE)" >$@
+
 % for p in protos:
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/${p}.pb.cc: protoc_dep_error
@@ -975,7 +1147,7 @@ install-headers_cxx:
 
 install-static: install-static_c install-static_cxx
 
-install-static_c: static_c strip-static_c
+install-static_c: static_c strip-static_c install-pkg-config_c
 % for lib in libs:
 % if lib.language == "c":
 % if lib.build == "all":
@@ -986,7 +1158,7 @@ install-static_c: static_c strip-static_c
 % endif
 % endfor
 
-install-static_cxx: static_cxx strip-static_cxx
+install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 % for lib in libs:
 % if lib.language == "c++":
 % if lib.build == "all":
@@ -1025,10 +1197,10 @@ endif
 endif
 </%def>
 
-install-shared_c: shared_c strip-shared_c
+install-shared_c: shared_c strip-shared_c install-pkg-config_c
 ${install_shared("c")}
 
-install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c
+install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-config_cxx
 ${install_shared("c++")}
 
 install-shared_csharp: shared_csharp strip-shared_csharp
@@ -1046,6 +1218,19 @@ else
 % endif
 % endfor
 endif
+
+install-pkg-config_c: pc_gpr pc_c pc_c_unsecure
+	$(E) "[INSTALL] Installing C pkg-config files"
+	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+
+install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
+	$(E) "[INSTALL] Installing C++ pkg-config files"
+	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
 
 install-certs: etc/roots.pem
 	$(E) "[INSTALL] Installing root certificates"

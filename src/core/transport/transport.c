@@ -73,9 +73,8 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
   transport->vtable->destroy_stream(transport, stream);
 }
 
-void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
-                         void *user_data) {
-  transport->vtable->ping(transport, cb, user_data);
+void grpc_transport_ping(grpc_transport *transport, grpc_iomgr_closure *cb) {
+  transport->vtable->ping(transport, cb);
 }
 
 void grpc_transport_setup_cancel(grpc_transport_setup *setup) {
@@ -86,12 +85,25 @@ void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
   setup->vtable->initiate(setup);
 }
 
+void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset) {
+  setup->vtable->add_interested_party(setup, pollset);
+}
+
+void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup,
+                                               grpc_pollset *pollset) {
+  setup->vtable->del_interested_party(setup, pollset);
+}
+
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
   if (op->send_ops) {
-    op->on_done_send(op->send_user_data, 0);
+    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
   }
   if (op->recv_ops) {
-    op->on_done_recv(op->recv_user_data, 0);
+    op->on_done_recv->cb(op->on_done_recv->cb_arg, 0);
+  }
+  if (op->on_consumed) {
+    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
   }
 }
 
@@ -100,8 +112,8 @@ void grpc_transport_op_add_cancellation(grpc_transport_op *op,
                                         grpc_mdstr *message) {
   if (op->cancel_with_status == GRPC_STATUS_OK) {
     op->cancel_with_status = status;
-    op->cancel_message = message;
-  } else if (message) {
+  }
+  if (message) {
     grpc_mdstr_unref(message);
   }
 }

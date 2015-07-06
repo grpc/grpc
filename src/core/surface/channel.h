@@ -53,12 +53,26 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel,
                                                  int status_code);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
+grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 
 void grpc_client_channel_closed(grpc_channel_element *elem);
 
+#ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
+void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);
+void grpc_channel_internal_unref(grpc_channel *channel, const char *reason);
+#define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
+  grpc_channel_internal_ref(channel, reason)
+#define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
+  grpc_channel_internal_unref(channel, reason)
+#else
 void grpc_channel_internal_ref(grpc_channel *channel);
 void grpc_channel_internal_unref(grpc_channel *channel);
+#define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
+  grpc_channel_internal_ref(channel)
+#define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
+  grpc_channel_internal_unref(channel)
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */

@@ -31,18 +31,18 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H
+#import <Foundation/Foundation.h>
 
-#include <grpc/support/sync.h>
+// A fully-qualified proto service method name. Full qualification is needed because a gRPC endpoint
+// can implement multiple services.
+@interface ProtoMethod : NSObject
+@property(nonatomic, readonly) NSString *package;
+@property(nonatomic, readonly) NSString *service;
+@property(nonatomic, readonly) NSString *method;
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. */
+@property(nonatomic, readonly) NSString *HTTPPath;
 
-struct grpc_kick_fd_info;
-
-typedef struct grpc_pollset_kick_state {
-  int unused;
-} grpc_pollset_kick_state;
-
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_WINDOWS_H */
+- (instancetype)initWithPackage:(NSString *)package
+                        service:(NSString *)service
+                         method:(NSString *)method;
+@end
