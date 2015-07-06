@@ -532,10 +532,10 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   if (md->key == chand->path_key) {
-    calld->path = grpc_mdstr_ref(md->value);
+    calld->path = GRPC_MDSTR_REF(md->value);
     return NULL;
   } else if (md->key == chand->authority_key) {
-    calld->host = grpc_mdstr_ref(md->value);
+    calld->host = GRPC_MDSTR_REF(md->value);
     return NULL;
   }
   return md;
@@ -710,10 +710,10 @@ static void destroy_call_elem(grpc_call_element *elem) {
   }
 
   if (calld->host) {
-    grpc_mdstr_unref(calld->host);
+    GRPC_MDSTR_UNREF(calld->host);
   }
   if (calld->path) {
-    grpc_mdstr_unref(calld->path);
+    GRPC_MDSTR_UNREF(calld->path);
   }
 
   server_unref(chand->server);
@@ -744,10 +744,10 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       if (chand->registered_methods[i].method) {
-        grpc_mdstr_unref(chand->registered_methods[i].method);
+        GRPC_MDSTR_UNREF(chand->registered_methods[i].method);
       }
       if (chand->registered_methods[i].host) {
-        grpc_mdstr_unref(chand->registered_methods[i].host);
+        GRPC_MDSTR_UNREF(chand->registered_methods[i].host);
       }
     }
     gpr_free(chand->registered_methods);
@@ -759,8 +759,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
     chand->next = chand->prev = chand;
     maybe_finish_shutdown(chand->server);
     gpr_mu_unlock(&chand->server->mu_global);
-    grpc_mdstr_unref(chand->path_key);
-    grpc_mdstr_unref(chand->authority_key);
+    GRPC_MDSTR_UNREF(chand->path_key);
+    GRPC_MDSTR_UNREF(chand->authority_key);
     server_unref(chand->server);
   }
 }
