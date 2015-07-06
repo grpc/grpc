@@ -494,9 +494,9 @@ Pod::Spec.new do |s|
     BAD_TIME="$DIR_TIME/time.h"
     GOOD_TIME="$DIR_TIME/grpc_time.h"
     grep -rl "$BAD_TIME" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
-    if [ -f "include/$BAD_TIME" ];
+    if [ -f "$BAD_TIME" ];
     then
-      mv -f "include/$BAD_TIME" "include/$GOOD_TIME"
+      mv -f "$BAD_TIME" "$GOOD_TIME"
     fi
 
     DIR_STRING="src/core/support"

@@ -89,7 +89,7 @@ $CFLAGS << ' -Wno-return-type '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -pedantic '
 
-$LDFLAGS << ' -lgrpc -lgpr -ldl'
+$LDFLAGS << ' -lgrpc -lgpr -lz -ldl'
 
 crash('need grpc lib') unless have_library('grpc', 'grpc_channel_destroy')
 have_library('grpc', 'grpc_channel_destroy')
