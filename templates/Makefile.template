@@ -357,7 +357,7 @@ Description: $(PC_DESCRIPTION)\n\
 Version: $(VERSION)\n\
 Cflags: -I${'\$${includedir}'} $(PC_CFLAGS)\n\
 Requires.private: $(PC_REQUIRES_PRIVATE)\n\
-Libs: -L${'\$${libdir}'}\n\
+Libs: -L${'\$${libdir}'} $(PC_LIB)\n\
 Libs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
@@ -366,6 +366,7 @@ PC_DESCRIPTION = gRPC Portable Runtime
 PC_CFLAGS = -pthread
 PC_REQUIRES_PRIVATE =
 PC_LIBS_PRIVATE = -lpthread
+PC_LIB = -lgpr
 ifeq ($(SYSTEM),Darwin)
 PC_LIBS_PRIVATE += -lrt
 endif
@@ -556,6 +557,7 @@ PC_DESCRIPTION = high performance general RPC framework
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
+PC_LIB = -lgrpc
 GRPC_PC_FILE := $(PC_TEMPLATE)
 
 # gprc_unsecure .pc file
@@ -564,6 +566,7 @@ PC_DESCRIPTION = high performance general RPC framework without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
+PC_LIB = -lgrpc
 GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 PROTOBUF_PKG_CONFIG = false
@@ -613,6 +616,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+PC_LIB = -lgrpc++
 GRPCXX_PC_FILE := $(PC_TEMPLATE)
 
 # grpc++_unsecure .pc file
@@ -621,6 +625,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+PC_LIB = -lgrpc++
 GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
