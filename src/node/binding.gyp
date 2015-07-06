@@ -16,27 +16,51 @@
       'ldflags': [
         '-g'
       ],
-      'link_settings': {
-        'libraries': [
-          '-lpthread',
-          '-lgrpc',
-          '-lgpr'
-        ]
-      },
       "conditions": [
+        ['OS != "win"', {
+          'variables': {
+            'has_pkg_config': '<!(command -v pkg-config >/dev/null 2>&1 && echo true || echo false)'
+          },
+          'conditions': [
+            ['has_pkg_config == "true"', {
+              'link_settings': {
+                'libraries': [
+                  '<!@(pkg-config --libs-only-l grpc)'
+                ]
+              },
+              'cflags': [
+                '<!@(pkg-config --cflags grpc)'
+              ],
+              'libraries': [
+                '<!@(pkg-config --libs-only-L grpc)'
+              ]
+              }, {
+                'link_settings': {
+                  'libraries': [
+                    '-lpthread',
+                    '-lgrpc',
+                    '-lgpr'
+                  ],
+                },
+                'conditions':[
+                  ['OS != "mac"', {
+                    'link_settings': {
+                      'libraries': [
+                        '-lrt'
+                      ]
+                    }
+                  }]
+                ]
+              }
+           ]
+          ]
+        }],
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9',
             'OTHER_CFLAGS': [
               '-std=c++11',
               '-stdlib=libc++'
-            ]
-          }
-        }],
-        ['OS != "mac"', {
-          'link_settings': {
-            'libraries': [
-              '-lrt'
             ]
           }
         }]
