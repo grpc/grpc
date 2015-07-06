@@ -58,12 +58,12 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
   double now_dbl;
   switch (clock) {
     case GPR_CLOCK_REALTIME:
-	    _ftime_s(&now_tb);
-	    now_tv.tv_sec = now_tb.time;
-	    now_tv.tv_nsec = now_tb.millitm * 1000000;
-	    break;
-	  case GPR_CLOCK_MONOTONIC:
-	    QueryPerformanceCounter(&timestamp);
+      _ftime_s(&now_tb);
+      now_tv.tv_sec = now_tb.time;
+      now_tv.tv_nsec = now_tb.millitm * 1000000;
+      break;
+    case GPR_CLOCK_MONOTONIC:
+      QueryPerformanceCounter(&timestamp);
       now_dbl = (timestamp.QuadPart - g_start_time.QuadPart) * g_time_scale;
       now_tv.tv_sec = (time_t)now_dbl;
       now_tv.tv_nsec = (int)((now_dbl - (double)now_tv.tv_sec) * 1e9);
