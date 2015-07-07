@@ -34,7 +34,6 @@
 #ifndef GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 #define GRPC_INTERNAL_CORE_CHTTP2_INTERNAL_H
 
-#include "src/core/transport/transport_impl.h"
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/transport/chttp2/frame_data.h"
@@ -47,6 +46,8 @@
 #include "src/core/transport/chttp2/incoming_metadata.h"
 #include "src/core/transport/chttp2/stream_encoder.h"
 #include "src/core/transport/chttp2/stream_map.h"
+#include "src/core/transport/connectivity_state.h"
+#include "src/core/transport/transport_impl.h"
 
 typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 typedef struct grpc_chttp2_stream grpc_chttp2_stream;
@@ -62,6 +63,7 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE,
   GRPC_CHTTP2_LIST_PARSING_SEEN,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
+  GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING,
   GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED,
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
@@ -134,12 +136,6 @@ typedef struct {
   grpc_chttp2_stream *prev;
 } grpc_chttp2_stream_link;
 
-typedef enum {
-  GRPC_CHTTP2_ERROR_STATE_NONE,
-  GRPC_CHTTP2_ERROR_STATE_SEEN,
-  GRPC_CHTTP2_ERROR_STATE_NOTIFIED
-} grpc_chttp2_error_state;
-
 /* We keep several sets of connection wide parameters */
 typedef enum {
   /* The settings our peer has asked for (and we have acked) */
@@ -165,7 +161,8 @@ typedef struct {
   /** data to write next write */
   gpr_slice_buffer qbuf;
   /** queued callbacks */
-  grpc_iomgr_closure *pending_closures;
+  grpc_iomgr_closure *pending_closures_head;
+  grpc_iomgr_closure *pending_closures_tail;
 
   /** window available for us to send to peer */
   gpr_uint32 outgoing_window;
@@ -173,6 +170,9 @@ typedef struct {
   gpr_uint32 incoming_window;
   /** how much window would we like to have for incoming_window */
   gpr_uint32 connection_window_target;
+
+  /** have we seen a goaway */
+  gpr_uint8 seen_goaway;
 
   /** is this transport a client? */
   gpr_uint8 is_client;
@@ -184,10 +184,6 @@ typedef struct {
   gpr_uint32 force_send_settings;
   /** settings values */
   gpr_uint32 settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
-
-  /** has there been a connection level error, and have we notified
-      anyone about it? */
-  grpc_chttp2_error_state error_state;
 
   /** what is the next stream id to be allocated by this peer?
       copied to next_stream_id in parsing when parsing commences */
@@ -204,13 +200,6 @@ typedef struct {
   /** concurrent stream count: updated when not parsing,
       so this is a strict over-estimation on the client */
   gpr_uint32 concurrent_stream_count;
-
-  /** is there a goaway available? (boolean) */
-  grpc_chttp2_error_state goaway_state;
-  /** what is the debug text of the goaway? */
-  gpr_slice goaway_text;
-  /** what is the status code of the goaway? */
-  grpc_status_code goaway_error;
 } grpc_chttp2_transport_global;
 
 typedef struct {
@@ -343,14 +332,13 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream **accepting_stream;
 
   struct {
-    /** is a thread currently performing channel callbacks */
-    gpr_uint8 executing;
-    /** transport channel-level callback */
-    const grpc_transport_callbacks *cb;
-    /** user data for cb calls */
-    void *cb_user_data;
-    /** closure for notifying transport closure */
-    grpc_iomgr_closure notify_closed;
+    /* accept stream callback */
+    void (*accept_stream)(void *user_data, grpc_transport *transport,
+                          const void *server_data);
+    void *accept_stream_user_data;
+
+    /** connectivity tracking */
+    grpc_connectivity_state_tracker state_tracker;
   } channel_callback;
 };
 
@@ -536,6 +524,13 @@ void grpc_chttp2_list_add_closed_waiting_for_parsing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_closed_waiting_for_parsing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global **stream_global);
+
+void grpc_chttp2_list_add_cancelled_waiting_for_writing(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
+int grpc_chttp2_list_pop_cancelled_waiting_for_writing(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
 

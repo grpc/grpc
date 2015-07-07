@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/subchannel_factory.h"
 
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t count,
@@ -56,8 +57,6 @@ grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
-
-void grpc_client_channel_closed(grpc_channel_element *elem);
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

@@ -34,8 +34,8 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_WIN32_H
 #define GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_WIN32_H
 
-#include <ws2tcpip.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #include <mswsock.h>
 
 #ifdef __MINGW32__
