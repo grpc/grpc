@@ -34,12 +34,15 @@
 #include <assert.h>
 #include <string.h>
 
-#include "src/core/channel/compress_filter.h"
-#include "src/core/channel/channel_args.h"
-#include "src/core/compression/message_compress.h"
 #include <grpc/compression.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
+
+
+#include "src/core/channel/compress_filter.h"
+#include "src/core/channel/channel_args.h"
+#include "src/core/compression/message_compress.h"
+
 
 typedef struct call_data {
   gpr_slice_buffer slices;
@@ -108,11 +111,81 @@ static int skip_compression(channel_data *channeld, call_data *calld) {
   return channeld->default_compression_algorithm == GRPC_COMPRESS_NONE;
 }
 
+static void compressed_sopb(grpc_stream_op_buffer *send_ops,
+                            grpc_call_element *elem) {
+  size_t i, j;
+  call_data *calld = elem->call_data;
+  channel_data *channeld = elem->channel_data;
+
+  /* The following loop is akin to a selective reset + update */
+  for (i = 0, j = 0; i < send_ops->nops; ++i) {
+    grpc_stream_op *sop = &send_ops->ops[i];
+    switch (sop->type) {
+      case GRPC_OP_BEGIN_MESSAGE:
+        sop->data.begin_message.length = calld->slices.length;
+        sop->data.begin_message.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+        break;
+      case GRPC_OP_METADATA:
+        grpc_metadata_batch_add_head(
+            &(sop->data.metadata), &calld->compression_algorithm_storage,
+            grpc_mdelem_ref(channeld->mdelem_compression_algorithms
+                                [calld->compression_algorithm]));
+        break;
+      case GRPC_OP_SLICE:
+        gpr_slice_unref(sop->data.slice);
+        /* replace only up to the number of available compressed slices */
+        if (j < calld->slices.count) {
+          sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
+        }
+      case GRPC_NO_OP:
+        ;  /* fallthrough */
+    }
+  }
+
+  /* in case compressed slices remain to be added to the output */
+  while (j < calld->slices.count) {
+    grpc_sopb_add_slice(send_ops, gpr_slice_ref(calld->slices.slices[j++]));
+  }
+}
+
+/* even if the filter isn't producing compressed output, it may need to update
+ * the input. For example, compression may have een requested but somehow it was
+ * decided not to honor the request: the compression flags need to be reset and
+ * the fact that no compression was performed in the end signaled */
+static void not_compressed_sopb(grpc_stream_op_buffer *send_ops,
+                                grpc_call_element *elem) {
+  size_t i;
+  call_data *calld = elem->call_data;
+  channel_data *channeld = elem->channel_data;
+
+  for (i = 0; i < send_ops->nops; ++i) {
+    grpc_stream_op *sop = &send_ops->ops[i];
+    switch (sop->type) {
+      case GRPC_OP_BEGIN_MESSAGE:
+        /* either because the user requested the exception or because
+         * compressing would have resulted in a larger output */
+        calld->compression_algorithm = GRPC_COMPRESS_NONE;
+        /* reset the flag compression bit */
+        sop->data.begin_message.flags &= ~GRPC_WRITE_INTERNAL_COMPRESS;
+        break;
+      case GRPC_OP_METADATA:
+        grpc_metadata_batch_add_head(
+            &(sop->data.metadata), &calld->compression_algorithm_storage,
+            grpc_mdelem_ref(
+                channeld->mdelem_compression_algorithms[GRPC_COMPRESS_NONE]));
+        break;
+      case GRPC_OP_SLICE:
+      case GRPC_NO_OP:
+        ;  /* fallthrough */
+    }
+  }
+}
+
 static void process_send_ops(grpc_call_element *elem,
                              grpc_stream_op_buffer *send_ops) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
-  size_t i, j;
+  size_t i;
   int did_compress = 0;
 
   /* buffer up slices until we've processed all the expected ones (as given by
@@ -159,46 +232,9 @@ static void process_send_ops(grpc_call_element *elem,
     }
   }
 
-  /* We need to:
-   * - (OP_SLICE) If compression happened, replace the input slices with the
-   *   compressed ones.
-   * - (BEGIN_MESSAGE) Update the message info (size, flags).
-   * - (OP_METADATA) Convey the compression configuration */
-  for (i = 0, j = 0; i < send_ops->nops; ++i) {
-    grpc_stream_op *sop = &send_ops->ops[i];
-    switch (sop->type) {
-      case GRPC_OP_BEGIN_MESSAGE:
-        if (did_compress) {
-          sop->data.begin_message.length = calld->slices.length;
-          sop->data.begin_message.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
-        } else {
-          /* either because the user requested the exception or because
-           * compressing would have resulted in a larger output */
-          calld->compression_algorithm = GRPC_COMPRESS_NONE;
-          /* reset the flag compression bit */
-          sop->data.begin_message.flags &= ~GRPC_WRITE_INTERNAL_COMPRESS;
-        }
-        break;
-      case GRPC_OP_METADATA:
-        grpc_metadata_batch_add_head(
-            &(sop->data.metadata), &calld->compression_algorithm_storage,
-            grpc_mdelem_ref(channeld->mdelem_compression_algorithms
-                                [did_compress ? calld->compression_algorithm
-                                              : GRPC_COMPRESS_NONE]));
-        break;
-      case GRPC_OP_SLICE:
-        if (did_compress) {
-          if (j < calld->slices.count) {
-            /* swap the input slices for their compressed counterparts */
-            gpr_slice_unref(sop->data.slice);
-            sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
-          }
-        }
-        break;
-      case GRPC_NO_OP:
-        ;  /* fallthrough */
-    }
-  }
+  /* Modify the send_ops stream_op_buffer depending on whether compression was
+   * carried out */
+  (did_compress ? compressed_sopb : not_compressed_sopb)(send_ops, elem);
 }
 
 /* Called either:
