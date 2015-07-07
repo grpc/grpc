@@ -94,7 +94,8 @@ static void setup_initiate(grpc_transport_setup *sp) {
   int in_alarm = 0;
 
   r->setup = s;
-  r->deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(60));
+  r->deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(60));
 
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->refs > 0);
@@ -231,7 +232,7 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r,
   return result;
 }
 
-static void backoff_alarm_done(void *arg /* grpc_client_setup_request */, 
+static void backoff_alarm_done(void *arg /* grpc_client_setup_request */,
                                int success) {
   grpc_client_setup_request *r = arg;
   grpc_client_setup *s = r->setup;

@@ -464,8 +464,7 @@ static int need_more_data(grpc_call *call) {
          (is_op_live(call, GRPC_IOREQ_RECV_CLOSE) &&
           grpc_bbq_empty(&call->incoming_queue)) ||
          (call->write_state == WRITE_STATE_INITIAL && !call->is_client) ||
-         (call->cancel_with_status != GRPC_STATUS_OK) ||
-         call->destroy_called;
+         (call->cancel_with_status != GRPC_STATUS_OK) || call->destroy_called;
 }
 
 static void unlock(grpc_call *call) {
@@ -1155,7 +1154,8 @@ static void execute_op(grpc_call *call, grpc_transport_op *op) {
     } else {
       finished_loose_op_allocated_args *args = gpr_malloc(sizeof(*args));
       args->call = call;
-      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated, args);
+      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated,
+                              args);
       op->on_consumed = &args->closure;
     }
   }
@@ -1190,7 +1190,8 @@ static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   }
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
-  grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&call->alarm, deadline, call_alarm, call,
+                  gpr_now(GPR_CLOCK_REALTIME));
 }
 
 /* we offset status by a small amount when storing it into transport metadata
@@ -1229,13 +1230,13 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   } else {
     gpr_uint32 parsed_clevel_bytes;
     if (gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
-                                   GPR_SLICE_LENGTH(md->value->slice),
-                                   &parsed_clevel_bytes)) {
+                                  GPR_SLICE_LENGTH(md->value->slice),
+                                  &parsed_clevel_bytes)) {
       /* the following cast is safe, as a gpr_uint32 should be able to hold all
        * possible values of the grpc_compression_level enum */
-      clevel = (grpc_compression_level) parsed_clevel_bytes;
+      clevel = (grpc_compression_level)parsed_clevel_bytes;
     } else {
-      clevel = GRPC_COMPRESS_LEVEL_NONE;  /* could not parse, no compression */
+      clevel = GRPC_COMPRESS_LEVEL_NONE; /* could not parse, no compression */
     }
     grpc_mdelem_set_user_data(md, destroy_compression,
                               (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
@@ -1258,7 +1259,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
       set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
-    } else if (key == grpc_channel_get_compresssion_level_string(call->channel)) {
+    } else if (key ==
+               grpc_channel_get_compresssion_level_string(call->channel)) {
       set_decode_compression_level(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];

@@ -67,7 +67,8 @@ static void background_callback_executor(void *ignored) {
       gpr_mu_unlock(&g_mu);
       closure->cb(closure->cb_arg, closure->success);
       gpr_mu_lock(&g_mu);
-    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_REALTIME), &deadline)) {
+    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_REALTIME),
+                                &deadline)) {
     } else {
       gpr_mu_unlock(&g_mu);
       gpr_sleep_until(gpr_time_min(short_deadline, deadline));
