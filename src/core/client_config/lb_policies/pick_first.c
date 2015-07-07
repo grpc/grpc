@@ -155,8 +155,6 @@ loop:
   switch (p->checking_connectivity) {
     case GRPC_CHANNEL_READY:
       p->selected = p->subchannels[p->checking_subchannel];
-      GPR_ASSERT(grpc_subchannel_check_connectivity(p->selected) ==
-                 GRPC_CHANNEL_READY);
       while ((pp = p->pending_picks)) {
         p->pending_picks = pp->next;
         *pp->target = p->selected;
@@ -185,6 +183,7 @@ loop:
       GPR_SWAP(grpc_subchannel *, p->subchannels[p->checking_subchannel],
                p->subchannels[p->num_subchannels - 1]);
       p->num_subchannels--;
+      GRPC_SUBCHANNEL_UNREF(p->subchannels[p->num_subchannels], "pick_first");
       if (p->num_subchannels == 0) {
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
@@ -197,7 +196,6 @@ loop:
         p->checking_subchannel %= p->num_subchannels;
         p->checking_connectivity = grpc_subchannel_check_connectivity(
             p->subchannels[p->checking_subchannel]);
-        GRPC_SUBCHANNEL_UNREF(p->subchannels[p->num_subchannels], "pick_first");
         add_interested_parties_locked(p);
         goto loop;
       }

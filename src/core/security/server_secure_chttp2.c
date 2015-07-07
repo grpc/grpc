@@ -99,9 +99,10 @@ static void on_secure_transport_setup_done(void *statep,
     if (!state->is_shutdown) {
       mdctx = grpc_mdctx_create();
       transport = grpc_create_chttp2_transport(
-          grpc_server_get_channel_args(state->server), secure_endpoint, NULL, 0,
-          mdctx, 0);
+          grpc_server_get_channel_args(state->server), secure_endpoint, mdctx,
+          0);
       setup_transport(state, transport, mdctx);
+      grpc_chttp2_transport_start_reading(transport, NULL, 0);
     } else {
       /* We need to consume this here, because the server may already have gone
        * away. */

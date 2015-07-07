@@ -249,7 +249,8 @@ static void basic_do_promote(void *args, int success) {
   pollset->in_flight_cbs--;
   if (pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
-    if (pollset->in_flight_cbs == 0 && pollset->counter == 0) {
+    if (pollset->in_flight_cbs == 0 && pollset->counter == 0 && !pollset->called_shutdown) {
+      pollset->called_shutdown = 1;
       do_shutdown_cb = 1;
     }
   } else if (grpc_fd_is_orphaned(fd)) {
