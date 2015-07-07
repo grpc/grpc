@@ -78,8 +78,8 @@ typedef union {
 
 typedef struct {
   grpc_ioreq_op op;
-  grpc_ioreq_data data;
   gpr_uint32 flags; /**< A copy of the write flags from grpc_op */
+  grpc_ioreq_data data;
 } grpc_ioreq;
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,

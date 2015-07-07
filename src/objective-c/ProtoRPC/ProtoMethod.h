@@ -33,8 +33,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCClient/GRPCMethodName.h"
+// A fully-qualified proto service method name. Full qualification is needed because a gRPC endpoint
+// can implement multiple services.
+@interface ProtoMethod : NSObject
+@property(nonatomic, readonly) NSString *package;
+@property(nonatomic, readonly) NSString *service;
+@property(nonatomic, readonly) NSString *method;
 
-@interface GRPCMethodName (HTTP2Encoding)
-- (NSString *)HTTP2Path;
+@property(nonatomic, readonly) NSString *HTTPPath;
+
+- (instancetype)initWithPackage:(NSString *)package
+                        service:(NSString *)service
+                         method:(NSString *)method;
 @end
