@@ -63,6 +63,7 @@ typedef struct {
   grpc_alarm alarm;
   int refs;
   grpc_iomgr_closure write_closure;
+  grpc_pollset_set *interested_parties;
 } async_connect;
 
 static int prepare_socket(const struct sockaddr *addr, int fd) {
@@ -152,6 +153,7 @@ static void on_writable(void *acp, int success) {
         goto finish;
       }
     } else {
+      grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
       ep = grpc_tcp_create(ac->fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
       goto finish;
     }
@@ -165,6 +167,7 @@ static void on_writable(void *acp, int success) {
 finish:
   gpr_mu_lock(&ac->mu);
   if (!ep) {
+    grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
     grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
   }
   done = (--ac->refs == 0);
@@ -240,6 +243,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->cb = cb;
   ac->cb_arg = arg;
   ac->fd = fdobj;
+  ac->interested_parties = interested_parties;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   ac->write_closure.cb = on_writable;

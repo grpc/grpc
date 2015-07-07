@@ -97,12 +97,8 @@ int grpc_chttp2_unlocking_check_writes(
       grpc_chttp2_list_add_writing_stream(transport_writing, stream_writing);
     }
 
-    /* we should either exhaust window or have no ops left, but not both */
-    if (stream_global->outgoing_sopb->nops == 0) {
-      stream_global->outgoing_sopb = NULL;
-      grpc_chttp2_schedule_closure(transport_global,
-                                   stream_global->send_done_closure, 1);
-    } else if (stream_global->outgoing_window > 0) {
+    if (stream_global->outgoing_window > 0 &&
+        stream_global->outgoing_sopb->nops != 0) {
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
   }
@@ -201,6 +197,11 @@ void grpc_chttp2_cleanup_writing(
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
+    if (stream_global->outgoing_sopb->nops == 0) {
+      stream_global->outgoing_sopb = NULL;
+      grpc_chttp2_schedule_closure(transport_global,
+                                   stream_global->send_done_closure, 1);
+    }
     if (stream_writing->send_closed != GRPC_DONT_SEND_CLOSED) {
       stream_global->write_state = GRPC_WRITE_STATE_SENT_CLOSE;
       if (!transport_global->is_client) {

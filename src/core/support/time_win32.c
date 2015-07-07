@@ -39,7 +39,6 @@
 
 #include <grpc/support/time.h>
 #include <sys/timeb.h>
-#include <windows.h>
 
 static LARGE_INTEGER g_start_time;
 static double g_time_scale;

@@ -116,7 +116,7 @@ static void destroy(grpc_fd *fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p  ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
+  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
           gpr_atm_no_barrier_load(&fd->refst),
           gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
 #else
@@ -198,7 +198,8 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
 }
 
 static int has_watchers(grpc_fd *fd) {
-  return fd->read_watcher != NULL || fd->write_watcher != NULL || fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
+  return fd->read_watcher != NULL || fd->write_watcher != NULL ||
+         fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
 }
 
 void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,

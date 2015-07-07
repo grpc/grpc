@@ -31,10 +31,14 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/census.h>
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/resolver_registry.h"
+#include "src/core/client_config/resolvers/dns_resolver.h"
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/profiling/timers.h"
@@ -42,6 +46,10 @@
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
+
+#ifdef GPR_POSIX_SOCKET
+#include "src/core/client_config/resolvers/unix_resolver_posix.h"
+#endif
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
@@ -58,6 +66,11 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    grpc_resolver_registry_init("dns:///");
+    grpc_register_resolver_type("dns", grpc_dns_resolver_factory_create());
+#ifdef GPR_POSIX_SOCKET
+    grpc_register_resolver_type("unix", grpc_unix_resolver_factory_create());
+#endif
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);
@@ -81,6 +94,7 @@ void grpc_shutdown(void) {
     census_shutdown();
     grpc_timers_global_destroy();
     grpc_tracer_shutdown();
+    grpc_resolver_registry_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
 }
