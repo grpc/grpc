@@ -36,11 +36,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#import "GRPCMethodName.h"
 #import "private/GRPCChannel.h"
 #import "private/GRPCCompletionQueue.h"
 #import "private/GRPCDelegateWrapper.h"
-#import "private/GRPCMethodName+HTTP2Encoding.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
@@ -90,14 +88,14 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 @synthesize state = _state;
 
 - (instancetype)init {
-  return [self initWithHost:nil method:nil requestsWriter:nil];
+  return [self initWithHost:nil path:nil requestsWriter:nil];
 }
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
-                      method:(GRPCMethodName *)method
+                        path:(NSString *)path
               requestsWriter:(id<GRXWriter>)requestWriter {
-  if (!host || !method) {
+  if (!host || !path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor method can be nil."];
   }
   if (requestWriter.state != GRXWriterStateNotStarted) {
@@ -114,7 +112,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     _channel = [GRPCChannel channelToHost:host];
 
     _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel
-                                                     method:method.HTTP2Path
+                                                       path:path
                                                        host:host];
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
