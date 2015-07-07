@@ -41,9 +41,9 @@
 typedef struct grpc_alarm {
   gpr_timespec deadline;
   gpr_uint32 heap_index; /* INVALID_HEAP_INDEX if not in heap */
+  int triggered;
   struct grpc_alarm *next;
   struct grpc_alarm *prev;
-  int triggered;
   grpc_iomgr_cb_func cb;
   void *cb_arg;
 } grpc_alarm;
