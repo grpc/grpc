@@ -42,3 +42,19 @@ Their behavior is specified by a set of grpc channel filters defined at their
 construction. To customize this behavior, resolvers build grpc_subchannel_factory 
 objects, which use the decorator pattern to customize construction arguments for 
 concrete grpc_subchannel instances.
+
+
+Naming for GRPC
+===============
+
+Names in GRPC are represented by a URI.
+
+The following schemes are currently supported:
+
+dns:///host:port - dns schemes are currently supported so long as authority is
+                   empty (authority based dns resolution is expected in a future
+                   release)
+
+unix:path        - the unix scheme is used to create and connect to unix domain 
+                   sockets - the authority must be empty, and the path represents
+                   the absolute or relative path to the desired socket

@@ -72,7 +72,8 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   grpc_iomgr_closure *notify;
   if (tcp != NULL) {
     c->result->transport = grpc_create_chttp2_transport(
-        c->args.channel_args, tcp, NULL, 0, c->args.metadata_context, 1);
+        c->args.channel_args, tcp, c->args.metadata_context, 1);
+    grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0);
     GPR_ASSERT(c->result->transport);
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *));
     c->result->filters[0] = &grpc_http_client_filter;
