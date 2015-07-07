@@ -76,14 +76,14 @@ typedef struct {
 typedef struct {
   /* Overall status of the operation: starts OK, may degrade to
      non-OK */
-  int success;
-  /* Completion function to call at the end of the operation */
-  grpc_ioreq_completion_func on_complete;
-  void *user_data;
+  gpr_uint8 success;
   /* a bit mask of which request ops are needed (1u << opid) */
   gpr_uint16 need_mask;
   /* a bit mask of which request ops are now completed */
   gpr_uint16 complete_mask;
+  /* Completion function to call at the end of the operation */
+  grpc_ioreq_completion_func on_complete;
+  void *user_data;
 } reqinfo_master;
 
 /* Status data for a request can come from several sources; this

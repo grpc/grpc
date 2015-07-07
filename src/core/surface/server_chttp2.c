@@ -61,8 +61,9 @@ static void new_transport(void *server, grpc_endpoint *tcp) {
    */
   grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_transport *transport = grpc_create_chttp2_transport(
-      grpc_server_get_channel_args(server), tcp, NULL, 0, mdctx, 0);
+      grpc_server_get_channel_args(server), tcp, mdctx, 0);
   setup_transport(server, transport, mdctx);
+  grpc_chttp2_transport_start_reading(transport, NULL, 0);
 }
 
 /* Server callback: start listening on our ports */

@@ -109,9 +109,6 @@ void grpc_chttp2_publish_reads(
         transport_parsing->incoming_stream_id;
   }
 
-  /* TODO(ctiller): re-implement */
-  GPR_ASSERT(transport_parsing->initial_window_update == 0);
-
   /* copy parsing qbuf to global qbuf */
   gpr_slice_buffer_move_into(&transport_parsing->qbuf, &transport_global->qbuf);
 
