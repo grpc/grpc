@@ -42,7 +42,6 @@
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/channel.h"
-#include "src/core/surface/client.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>

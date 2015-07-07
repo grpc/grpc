@@ -41,6 +41,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
+#include "test/cpp/qps/perf_db_client.h"
 
 namespace grpc {
 namespace testing {
@@ -101,6 +102,35 @@ class GprLogReporter : public Reporter {
   void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+};
+
+/** Reporter for performance database tool */
+class PerfDbReporter : public Reporter {
+ public:
+  PerfDbReporter(const string& name, const string& hashed_id,
+                 const string& test_name, const string& sys_info,
+                 const string& server_address, const string& tag)
+      : Reporter(name),
+        hashed_id_(hashed_id),
+        test_name_(test_name),
+        sys_info_(sys_info),
+        tag_(tag) {
+    perf_db_client_.init(grpc::CreateChannel(
+        server_address, grpc::InsecureCredentials(), ChannelArguments()));
+  }
+  ~PerfDbReporter() GRPC_OVERRIDE { SendData(); };
+
+ private:
+  PerfDbClient perf_db_client_;
+  std::string hashed_id_;
+  std::string test_name_;
+  std::string sys_info_;
+  std::string tag_;
+  void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
+  void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+  void SendData();
 };
 
 }  // namespace testing
