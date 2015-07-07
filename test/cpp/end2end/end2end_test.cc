@@ -83,6 +83,17 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
+template <typename T>
+void CheckAuthContext(T* context) {
+  std::unique_ptr<const AuthContext> auth_ctx = context->auth_context();
+  std::vector<grpc::string> fake =
+      auth_ctx->FindPropertyValues("transport_security_type");
+  EXPECT_EQ(1, fake.size());
+  EXPECT_EQ("fake", fake[0]);
+  EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
+  EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
+}
+
 }  // namespace
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
@@ -122,6 +133,9 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
            iter != client_metadata.end(); ++iter) {
         context->AddTrailingMetadata((*iter).first, (*iter).second);
       }
+    }
+    if (request->has_param() && request->param().check_auth_context()) {
+      CheckAuthContext(context);
     }
     return Status::OK;
   }
@@ -724,6 +738,21 @@ TEST_F(End2endTest, RequestStreamServerEarlyCancelTest) {
   stream->WritesDone();
   Status s = stream->Finish();
   EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
+}
+
+TEST_F(End2endTest, ClientAuthContext) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_check_auth_context(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+
+  CheckAuthContext(&context);
 }
 
 }  // namespace testing
