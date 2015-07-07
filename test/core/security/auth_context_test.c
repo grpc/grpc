@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 
 static void test_empty_context(void) {
-  grpc_auth_context *ctx = grpc_auth_context_create(NULL, 0);
+  grpc_auth_context *ctx = grpc_auth_context_create(NULL);
   grpc_auth_property_iterator it;
 
   gpr_log(GPR_INFO, "test_empty_context");
@@ -52,86 +52,97 @@ static void test_empty_context(void) {
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
   it = grpc_auth_context_find_properties_by_name(ctx, "foo");
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(ctx, "bar") ==
+             0);
+  GPR_ASSERT(grpc_auth_context_peer_identity_property_name(ctx) == NULL);
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_simple_context(void) {
-  grpc_auth_context *ctx = grpc_auth_context_create(NULL, 3);
+  grpc_auth_context *ctx = grpc_auth_context_create(NULL);
   grpc_auth_property_iterator it;
   size_t i;
 
   gpr_log(GPR_INFO, "test_simple_context");
   GPR_ASSERT(ctx != NULL);
-  GPR_ASSERT(ctx->property_count == 3);
-  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-  ctx->peer_identity_property_name = ctx->properties[0].name;
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapi");
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapo");
+  grpc_auth_context_add_cstring_property(ctx, "foo", "bar");
+  GPR_ASSERT(ctx->properties.count == 3);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(ctx, "name") ==
+             1);
 
   GPR_ASSERT(
       strcmp(grpc_auth_context_peer_identity_property_name(ctx), "name") == 0);
   it = grpc_auth_context_property_iterator(ctx);
-  for (i = 0; i < ctx->property_count; i++) {
+  for (i = 0; i < ctx->properties.count; i++) {
     const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
-    GPR_ASSERT(p == &ctx->properties[i]);
+    GPR_ASSERT(p == &ctx->properties.array[i]);
   }
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
   it = grpc_auth_context_find_properties_by_name(ctx, "foo");
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[2]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &ctx->properties.array[2]);
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
   it = grpc_auth_context_peer_identity(ctx);
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[0]);
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[1]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &ctx->properties.array[0]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &ctx->properties.array[1]);
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
 
 static void test_chained_context(void) {
-  grpc_auth_context *chained = grpc_auth_context_create(NULL, 2);
-  grpc_auth_context *ctx = grpc_auth_context_create(chained, 3);
+  grpc_auth_context *chained = grpc_auth_context_create(NULL);
+  grpc_auth_context *ctx = grpc_auth_context_create(chained);
   grpc_auth_property_iterator it;
   size_t i;
 
   gpr_log(GPR_INFO, "test_chained_context");
   GRPC_AUTH_CONTEXT_UNREF(chained, "chained");
-  chained->properties[0] =
-      grpc_auth_property_init_from_cstring("name", "padapo");
-  chained->properties[1] = grpc_auth_property_init_from_cstring("foo", "baz");
-  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-  ctx->peer_identity_property_name = ctx->properties[0].name;
+  grpc_auth_context_add_cstring_property(chained, "name", "padapo");
+  grpc_auth_context_add_cstring_property(chained, "foo", "baz");
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapi");
+  grpc_auth_context_add_cstring_property(ctx, "name", "chap0");
+  grpc_auth_context_add_cstring_property(ctx, "foo", "bar");
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(ctx, "name") ==
+             1);
 
   GPR_ASSERT(
       strcmp(grpc_auth_context_peer_identity_property_name(ctx), "name") == 0);
   it = grpc_auth_context_property_iterator(ctx);
-  for (i = 0; i < ctx->property_count; i++) {
+  for (i = 0; i < ctx->properties.count; i++) {
     const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
-    GPR_ASSERT(p == &ctx->properties[i]);
+    GPR_ASSERT(p == &ctx->properties.array[i]);
   }
-  for (i = 0; i < chained->property_count; i++) {
+  for (i = 0; i < chained->properties.count; i++) {
     const grpc_auth_property *p = grpc_auth_property_iterator_next(&it);
-    GPR_ASSERT(p == &chained->properties[i]);
+    GPR_ASSERT(p == &chained->properties.array[i]);
   }
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
   it = grpc_auth_context_find_properties_by_name(ctx, "foo");
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[2]);
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &chained->properties[1]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &ctx->properties.array[2]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &chained->properties.array[1]);
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
   it = grpc_auth_context_peer_identity(ctx);
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[0]);
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &ctx->properties[1]);
-  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == &chained->properties[0]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &ctx->properties.array[0]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &ctx->properties.array[1]);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) ==
+             &chained->properties.array[0]);
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
 
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
-
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

@@ -100,8 +100,8 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
-  grpc_credentials *oauth2_creds =
-      grpc_fake_oauth2_credentials_create("Bearer aaslkfjs424535asdf", 1);
+  grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
+      "Authorization", "Bearer aaslkfjs424535asdf", 1);
   grpc_credentials *ssl_oauth2_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,

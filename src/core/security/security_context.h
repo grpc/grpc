@@ -34,11 +34,13 @@
 #ifndef GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
 #define GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
 
+#include "src/core/iomgr/pollset.h"
 #include "src/core/security/credentials.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* --- grpc_auth_ticket --- */
+struct grpc_auth_ticket {
+  grpc_pollset *pollset;
+};
 
 /* --- grpc_auth_context ---
 
@@ -46,17 +48,18 @@ extern "C" {
 
 /* Property names are always NULL terminated. */
 
+typedef struct {
+  grpc_auth_property *array;
+  size_t count;
+  size_t capacity;
+} grpc_auth_property_array;
+
 struct grpc_auth_context {
   struct grpc_auth_context *chained;
-  grpc_auth_property *properties;
-  size_t property_count;
+  grpc_auth_property_array properties;
   gpr_refcount refcount;
   const char *peer_identity_property_name;
 };
-
-/* Constructor. */
-grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained,
-                                            size_t property_count);
 
 /* Refcounting. */
 #ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
@@ -75,12 +78,6 @@ void grpc_auth_context_unref(grpc_auth_context *policy, const char *file,
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
 void grpc_auth_context_unref(grpc_auth_context *policy);
 #endif
-
-grpc_auth_property grpc_auth_property_init_from_cstring(const char *name,
-                                                        const char *value);
-
-grpc_auth_property grpc_auth_property_init(const char *name, const char *value,
-                                           size_t value_length);
 
 void grpc_auth_property_reset(grpc_auth_property *property);
 
@@ -107,9 +104,10 @@ typedef struct {
 grpc_server_security_context *grpc_server_security_context_create(void);
 void grpc_server_security_context_destroy(void *ctx);
 
-#ifdef __cplusplus
-}
-#endif
+/* --- Auth metadata processing. --- */
+
+grpc_process_auth_metadata_func
+grpc_server_auth_context_get_process_metadata_func(void);
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
 
