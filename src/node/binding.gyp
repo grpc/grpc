@@ -33,6 +33,9 @@
               ],
               'libraries': [
                 '<!@(pkg-config --libs-only-L --static grpc)'
+              ],
+              'ldflags': [
+                '<!@(pkg-config --libs-only-other --static grpc)'
               ]
               }, {
                 'link_settings': {
