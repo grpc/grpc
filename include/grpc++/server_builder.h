@@ -121,8 +121,8 @@ class ServerBuilder {
   };
 
   int max_message_size_;
-  std::vector<NamedService<RpcService>> services_;
-  std::vector<NamedService<AsynchronousService>> async_services_;
+  std::vector<std::unique_ptr<NamedService<RpcService>>> services_;
+  std::vector<std::unique_ptr<NamedService<AsynchronousService>>> async_services_;
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
