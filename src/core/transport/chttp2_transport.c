@@ -684,7 +684,7 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
     grpc_chttp2_goaway_append(
         t->global.last_incoming_stream_id,
         grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
-        *op->goaway_message, &t->global.qbuf);
+        gpr_slice_ref(*op->goaway_message), &t->global.qbuf);
   }
 
   if (op->set_accept_stream != NULL) {
