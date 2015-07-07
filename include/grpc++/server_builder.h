@@ -69,6 +69,19 @@ class ServerBuilder {
   // Register a generic service.
   void RegisterAsyncGenericService(AsyncGenericService* service);
 
+  // Register a service. This call does not take ownership of the service.
+  // The service must exist for the lifetime of the Server instance returned by
+  // BuildAndStart().
+  void RegisterService(const grpc::string& host, 
+                       SynchronousService* service);
+
+  // Register an asynchronous service. New calls will be delevered to cq.
+  // This call does not take ownership of the service or completion queue.
+  // The service and completion queuemust exist for the lifetime of the Server
+  // instance returned by BuildAndStart().
+  void RegisterAsyncService(const grpc::string& host, 
+                            AsynchronousService* service);
+
   // Set max message size in bytes.
   void SetMaxMessageSize(int max_message_size) {
     max_message_size_ = max_message_size;
@@ -98,9 +111,18 @@ class ServerBuilder {
     int* selected_port;
   };
 
+  typedef std::unique_ptr<grpc::string> HostString;
+  template <class T> struct NamedService {
+    explicit NamedService(T* s) : service(s) {}
+    explicit NamedService(const grpc::string& h, T *s)
+        : host(new grpc::string(h)), service(s) {}
+    HostString host;
+    T* service;
+  };
+
   int max_message_size_;
-  std::vector<RpcService*> services_;
-  std::vector<AsynchronousService*> async_services_;
+  std::vector<NamedService<RpcService>> services_;
+  std::vector<NamedService<AsynchronousService>> async_services_;
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
