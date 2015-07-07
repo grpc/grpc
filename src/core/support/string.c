@@ -153,6 +153,12 @@ int gpr_ltoa(long value, char *string) {
 }
 
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
+  return gpr_strjoin_sep(strs, nstrs, "", final_length);
+}
+
+char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
+                      size_t *final_length) {
+  const size_t sep_len = strlen(sep);
   size_t out_length = 0;
   size_t i;
   char *out;
@@ -160,12 +166,19 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
     out_length += strlen(strs[i]);
   }
   out_length += 1;  /* null terminator */
+  if (nstrs > 0) {
+    out_length += sep_len * (nstrs - 1);  /* separators */
+  }
   out = gpr_malloc(out_length);
   out_length = 0;
   for (i = 0; i < nstrs; i++) {
-    size_t slen = strlen(strs[i]);
+    const size_t slen = strlen(strs[i]);
     memcpy(out + out_length, strs[i], slen);
     out_length += slen;
+    if (sep_len > 0 && nstrs > 0 && i < nstrs - 1) {
+      memcpy(out + out_length, sep, sep_len);
+      out_length += sep_len;
+    }
   }
   out[out_length] = 0;
   if (final_length != NULL) {
