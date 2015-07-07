@@ -198,7 +198,7 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
                GRPC_SECURITY_OK);
     grpc_setup_secure_transport(&sc->base, tcp, on_secure_transport_setup_done,
                                 req);
-    grpc_security_connector_unref(&sc->base);
+    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
   } else {
     start_write(req);
   }

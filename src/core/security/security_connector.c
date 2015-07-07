@@ -84,12 +84,12 @@ static const char *ssl_cipher_suites(void) {
 /* -- Common methods. -- */
 
 /* Returns the first property with that name. */
-const tsi_peer_property *tsi_peer_get_property_by_name(
-    const tsi_peer *peer, const char *name) {
+const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
+                                                       const char *name) {
   size_t i;
   if (peer == NULL) return NULL;
   for (i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property* property = &peer->properties[i];
+    const tsi_peer_property *property = &peer->properties[i];
     if (name == NULL && property->name == NULL) {
       return property;
     }
@@ -124,24 +124,44 @@ grpc_security_status grpc_channel_security_connector_check_call_host(
   return sc->check_call_host(sc, host, cb, user_data);
 }
 
-void grpc_security_connector_unref(grpc_security_connector *sc) {
-  if (sc == NULL) return;
-  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
-}
-
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+grpc_security_connector *grpc_security_connector_ref(
+    grpc_security_connector *sc, const char *file, int line,
+    const char *reason) {
+  if (sc == NULL) return NULL;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "SECURITY_CONNECTOR:%p   ref %d -> %d %s", sc,
+          (int)sc->refcount.count, (int)sc->refcount.count + 1, reason);
+#else
 grpc_security_connector *grpc_security_connector_ref(
     grpc_security_connector *sc) {
   if (sc == NULL) return NULL;
+#endif
   gpr_ref(&sc->refcount);
   return sc;
 }
 
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+void grpc_security_connector_unref(grpc_security_connector *sc,
+                                   const char *file, int line,
+                                   const char *reason) {
+  if (sc == NULL) return;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "SECURITY_CONNECTOR:%p unref %d -> %d %s", sc,
+          (int)sc->refcount.count, (int)sc->refcount.count - 1, reason);
+#else
+void grpc_security_connector_unref(grpc_security_connector *sc) {
+  if (sc == NULL) return;
+#endif
+  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
+}
+
 static void connector_pointer_arg_destroy(void *p) {
-  grpc_security_connector_unref(p);
+  GRPC_SECURITY_CONNECTOR_UNREF(p, "connector_pointer_arg");
 }
 
 static void *connector_pointer_arg_copy(void *p) {
-  return grpc_security_connector_ref(p);
+  return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg");
 }
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
@@ -580,7 +600,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
       config->pem_private_key, config->pem_private_key_size,
       config->pem_cert_chain, config->pem_cert_chain_size, pem_root_certs,
       pem_root_certs_size, ssl_cipher_suites(), alpn_protocol_strings,
-      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols, &c->handshaker_factory);
+      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
+      &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -633,8 +654,8 @@ grpc_security_status grpc_ssl_server_security_connector_create(
       (const unsigned char **)config->pem_cert_chains,
       config->pem_cert_chains_sizes, config->num_key_cert_pairs,
       config->pem_root_certs, config->pem_root_certs_size, ssl_cipher_suites(),
-      alpn_protocol_strings, alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
-      &c->handshaker_factory);
+      alpn_protocol_strings, alpn_protocol_string_lengths,
+      (uint16_t)num_alpn_protocols, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));

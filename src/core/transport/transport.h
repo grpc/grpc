@@ -43,7 +43,6 @@
 
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
-typedef struct grpc_transport_callbacks grpc_transport_callbacks;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe
    opaque pointer for whatever data the transport wants to track
@@ -62,8 +61,9 @@ typedef enum grpc_stream_state {
   GRPC_STREAM_CLOSED
 } grpc_stream_state;
 
-/* Transport op: a set of operations to perform on a transport */
-typedef struct grpc_transport_op {
+/* Transport stream op: a set of operations to perform on a transport
+   against a single stream */
+typedef struct grpc_transport_stream_op {
   grpc_iomgr_closure *on_consumed;
 
   grpc_stream_op_buffer *send_ops;
@@ -80,32 +80,32 @@ typedef struct grpc_transport_op {
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
+} grpc_transport_stream_op;
+
+/** Transport op: a set of operations to perform on a transport as a whole */
+typedef struct grpc_transport_op {
+  /** called when processing of this op is done */
+  grpc_iomgr_closure *on_consumed;
+  /** connectivity monitoring */
+  grpc_iomgr_closure *on_connectivity_state_change;
+  grpc_connectivity_state *connectivity_state;
+  /** should the transport be disconnected */
+  int disconnect;
+  /** should we send a goaway? */
+  int send_goaway;
+  /** what should the goaway contain? */
+  grpc_status_code goaway_status;
+  gpr_slice *goaway_message;
+  /** set the callback for accepting new streams;
+      this is a permanent callback, unlike the other one-shot closures */
+  void (*set_accept_stream)(void *user_data, grpc_transport *transport,
+                            const void *server_data);
+  void *set_accept_stream_user_data;
+  /** add this transport to a pollset */
+  grpc_pollset *bind_pollset;
+  /** send a ping, call this back if not NULL */
+  grpc_iomgr_closure *send_ping;
 } grpc_transport_op;
-
-/* Callbacks made from the transport to the upper layers of grpc. */
-struct grpc_transport_callbacks {
-  /* Initialize a new stream on behalf of the transport.
-     Must result in a call to
-     grpc_transport_init_stream(transport, ..., request) in the same call
-     stack.
-     Must not result in any other calls to the transport.
-
-     Arguments:
-       user_data     - the transport user data set at transport creation time
-       transport     - the grpc_transport instance making this call
-       request       - request parameters for this stream (owned by the caller)
-       server_data   - opaque transport dependent argument that should be passed
-                       to grpc_transport_init_stream
-     */
-  void (*accept_stream)(void *user_data, grpc_transport *transport,
-                        const void *server_data);
-
-  void (*goaway)(void *user_data, grpc_transport *transport,
-                 grpc_status_code status, gpr_slice debug);
-
-  /* The transport has been closed */
-  void (*closed)(void *user_data, grpc_transport *transport);
-};
 
 /* Returns the amount of memory required to store a grpc_stream for this
    transport */
@@ -122,7 +122,7 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
                                const void *server_data,
-                               grpc_transport_op *initial_op);
+                               grpc_transport_stream_op *initial_op);
 
 /* Destroy transport data for a stream.
 
@@ -137,17 +137,13 @@ int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
 void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream);
 
-void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
+void grpc_transport_stream_op_finish_with_failure(grpc_transport_stream_op *op);
 
-void grpc_transport_op_add_cancellation(grpc_transport_op *op,
-                                        grpc_status_code status,
-                                        grpc_mdstr *message);
+void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
+                                               grpc_status_code status,
+                                               grpc_mdstr *message);
 
-/* TODO(ctiller): remove this */
-void grpc_transport_add_to_pollset(grpc_transport *transport,
-                                   grpc_pollset *pollset);
-
-char *grpc_transport_op_string(grpc_transport_op *op);
+char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 
 /* Send a batch of operations on a transport
 
@@ -157,8 +153,12 @@ char *grpc_transport_op_string(grpc_transport_op *op);
      transport - the transport on which to initiate the stream
      stream    - the stream on which to send the operations. This must be
                  non-NULL and previously initialized by the same transport.
-     op        - a grpc_transport_op specifying the op to perform */
-void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
+     op        - a grpc_transport_stream_op specifying the op to perform */
+void grpc_transport_perform_stream_op(grpc_transport *transport,
+                                      grpc_stream *stream,
+                                      grpc_transport_stream_op *op);
+
+void grpc_transport_perform_op(grpc_transport *transport,
                                grpc_transport_op *op);
 
 /* Send a ping on a transport
@@ -175,53 +175,5 @@ void grpc_transport_close(grpc_transport *transport);
 
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_transport *transport);
-
-/* Return type for grpc_transport_setup_callback */
-typedef struct grpc_transport_setup_result {
-  void *user_data;
-  const grpc_transport_callbacks *callbacks;
-} grpc_transport_setup_result;
-
-/* Given a transport, return callbacks for that transport. Used to finalize
-   setup as a transport is being created */
-typedef grpc_transport_setup_result (*grpc_transport_setup_callback)(
-    void *setup_arg, grpc_transport *transport, grpc_mdctx *mdctx);
-
-typedef struct grpc_transport_setup grpc_transport_setup;
-typedef struct grpc_transport_setup_vtable grpc_transport_setup_vtable;
-
-struct grpc_transport_setup_vtable {
-  void (*initiate)(grpc_transport_setup *setup);
-  void (*add_interested_party)(grpc_transport_setup *setup,
-                               grpc_pollset *pollset);
-  void (*del_interested_party)(grpc_transport_setup *setup,
-                               grpc_pollset *pollset);
-  void (*cancel)(grpc_transport_setup *setup);
-};
-
-/* Transport setup is an asynchronous utility interface for client channels to
-   establish connections. It's transport agnostic. */
-struct grpc_transport_setup {
-  const grpc_transport_setup_vtable *vtable;
-};
-
-/* Initiate transport setup: e.g. for TCP+DNS trigger a resolve of the name
-   given at transport construction time, create the tcp connection, perform
-   handshakes, and call some grpc_transport_setup_result function provided at
-   setup construction time.
-   This *may* be implemented as a no-op if the setup process monitors something
-   continuously. */
-void grpc_transport_setup_initiate(grpc_transport_setup *setup);
-
-void grpc_transport_setup_add_interested_party(grpc_transport_setup *setup,
-                                               grpc_pollset *pollset);
-void grpc_transport_setup_del_interested_party(grpc_transport_setup *setup,
-                                               grpc_pollset *pollset);
-
-/* Cancel transport setup. After this returns, no new transports should be
-   created, and all pending transport setup callbacks should be completed.
-   After this call completes, setup should be considered invalid (this can be
-   used as a destruction call by setup). */
-void grpc_transport_setup_cancel(grpc_transport_setup *setup);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */

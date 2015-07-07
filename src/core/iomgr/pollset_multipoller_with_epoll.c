@@ -54,17 +54,25 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
   pollset_hdr *h = pollset->data.ptr;
   struct epoll_event ev;
   int err;
+  grpc_fd_watcher watcher;
 
-  ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-  ev.data.ptr = fd;
-  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
-  if (err < 0) {
-    /* FDs may be added to a pollset multiple times, so EEXIST is normal. */
-    if (errno != EEXIST) {
-      gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", fd->fd,
-              strerror(errno));
+  /* We pretend to be polling whilst adding an fd to keep the fd from being
+     closed during the add. This may result in a spurious wakeup being assigned
+     to this pollset whilst adding, but that should be benign. */
+  GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, 0, 0, &watcher) == 0);
+  if (watcher.fd != NULL) {
+    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+    ev.data.ptr = fd;
+    err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
+    if (err < 0) {
+      /* FDs may be added to a pollset multiple times, so EEXIST is normal. */
+      if (errno != EEXIST) {
+        gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", fd->fd,
+                strerror(errno));
+      }
     }
   }
+  grpc_fd_end_poll(&watcher, 0, 0);
 }
 
 static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,
