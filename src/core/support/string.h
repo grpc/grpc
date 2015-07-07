@@ -72,6 +72,12 @@ void gpr_reverse_bytes(char *str, int len);
    if it is non-null. */
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
 
+/* Join a set of strings using a separator, returning the resulting string.
+   Total combined length (excluding null terminator) is returned in total_length
+   if it is non-null. */
+char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
+                      size_t *total_length);
+
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
   char **strs;

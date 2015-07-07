@@ -145,11 +145,53 @@ static void test_asprintf(void) {
   }
 }
 
+static void test_strjoin(void) {
+  const char *parts[4] = {"one", "two", "three", "four"};
+  size_t joined_len;
+  char *joined;
+
+  LOG_TEST_NAME("test_strjoin");
+
+  joined = gpr_strjoin(parts, 4, &joined_len);
+  GPR_ASSERT(0 == strcmp("onetwothreefour", joined));
+  gpr_free(joined);
+
+  joined = gpr_strjoin(parts, 0, &joined_len);
+  GPR_ASSERT(0 == strcmp("", joined));
+  gpr_free(joined);
+
+  joined = gpr_strjoin(parts, 1, &joined_len);
+  GPR_ASSERT(0 == strcmp("one", joined));
+  gpr_free(joined);
+}
+
+static void test_strjoin_sep(void) {
+  const char *parts[4] = {"one", "two", "three", "four"};
+  size_t joined_len;
+  char *joined;
+
+  LOG_TEST_NAME("test_strjoin_sep");
+
+  joined = gpr_strjoin_sep(parts, 4, ", ", &joined_len);
+  GPR_ASSERT(0 == strcmp("one, two, three, four", joined));
+  gpr_free(joined);
+
+  joined = gpr_strjoin_sep(parts, 0, ", ", &joined_len);
+  GPR_ASSERT(0 == strcmp("", joined));
+  gpr_free(joined);
+
+  joined = gpr_strjoin_sep(parts, 1, ", ", &joined_len);
+  GPR_ASSERT(0 == strcmp("one", joined));
+  gpr_free(joined);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
   test_hexdump();
   test_parse_uint32();
   test_asprintf();
+  test_strjoin();
+  test_strjoin_sep();
   return 0;
 }
