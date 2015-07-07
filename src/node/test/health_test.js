@@ -80,11 +80,11 @@ describe('Health Checking', function() {
                          done();
                        });
   });
-  it('should respond with UNSPECIFIED for an unknown service', function(done) {
+  it('should respond with UNKNOWN for an unknown service', function(done) {
     healthClient.check({service: 'unknown.service.Name'},
                        function(err, response) {
                          assert.ifError(err);
-                         assert.strictEqual(response.status, 'UNSPECIFIED');
+                         assert.strictEqual(response.status, 'UNKNOWN');
                          done();
                        });
   });

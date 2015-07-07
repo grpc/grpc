@@ -51,7 +51,7 @@ HealthImplementation.prototype.setStatus = function(service, status) {
 
 HealthImplementation.prototype.check = function(call, callback){
   var service = call.request.service;
-  callback(null, {status: _.get(this.statusMap, service, 'UNSPECIFIED')});
+  callback(null, {status: _.get(this.statusMap, service, 'UNKNOWN')});
 };
 
 module.exports = {
