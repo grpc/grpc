@@ -194,52 +194,69 @@ static void test_strjoin_sep(void) {
 
 static void test_strsplit(void) {
   gpr_slice_buffer* parts;
+  gpr_slice str;
+  gpr_slice sep;
+
   LOG_TEST_NAME("test_strsplit");
 
-  parts = gpr_strsplit("one, two, three, four", ", ");
+  parts = gpr_malloc(sizeof(gpr_slice_buffer));
+  gpr_slice_buffer_init(parts);
+
+  str = gpr_slice_from_copied_string("one, two, three, four");
+  sep = gpr_slice_from_copied_string(", ");
+  gpr_slice_split(str, sep, parts);
   GPR_ASSERT(4 == parts->count);
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "one"));
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], "two"));
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[2], "three"));
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[3], "four"));
-  gpr_slice_buffer_destroy(parts);
-  gpr_free(parts);
+  gpr_slice_buffer_reset_and_unref(parts);
+  gpr_slice_unref(str);
 
   /* separator not present in string */
-  parts = gpr_strsplit("one two three four", ", ");
+  str = gpr_slice_from_copied_string("one two three four");
+  gpr_slice_split(str, sep, parts);
   GPR_ASSERT(1 == parts->count);
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "one two three four"));
-  gpr_slice_buffer_destroy(parts);
-  gpr_free(parts);
+  gpr_slice_buffer_reset_and_unref(parts);
+  gpr_slice_unref(str);
 
   /* separator at the end */
-  parts = gpr_strsplit("foo,", ",");
+  str = gpr_slice_from_copied_string("foo, ");
+  gpr_slice_split(str, sep, parts);
   GPR_ASSERT(2 == parts->count);
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "foo"));
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], ""));
-  gpr_slice_buffer_destroy(parts);
-  gpr_free(parts);
+  gpr_slice_buffer_reset_and_unref(parts);
+  gpr_slice_unref(str);
 
   /* separator at the beginning */
-  parts = gpr_strsplit(",foo", ",");
+  str = gpr_slice_from_copied_string(", foo");
+  gpr_slice_split(str, sep, parts);
   GPR_ASSERT(2 == parts->count);
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], "foo"));
-  gpr_slice_buffer_destroy(parts);
-  gpr_free(parts);
+  gpr_slice_buffer_reset_and_unref(parts);
+  gpr_slice_unref(str);
 
   /* standalone separator */
-  parts = gpr_strsplit(",", ",");
+  str = gpr_slice_from_copied_string(", ");
+  gpr_slice_split(str, sep, parts);
   GPR_ASSERT(2 == parts->count);
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], ""));
-  gpr_slice_buffer_destroy(parts);
-  gpr_free(parts);
+  gpr_slice_buffer_reset_and_unref(parts);
+  gpr_slice_unref(str);
 
   /* empty input */
-  parts = gpr_strsplit("", ",");
+  str = gpr_slice_from_copied_string("");
+  gpr_slice_split(str, sep, parts);
   GPR_ASSERT(1 == parts->count);
   GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
+  gpr_slice_buffer_reset_and_unref(parts);
+  gpr_slice_unref(str);
+
+  gpr_slice_unref(sep);
   gpr_slice_buffer_destroy(parts);
   gpr_free(parts);
 }
