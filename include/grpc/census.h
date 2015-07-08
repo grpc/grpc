@@ -61,6 +61,10 @@ enum census_functions {
 int census_initialize(int functions);
 void census_shutdown();
 
+/* If any census feature has been initialized, this funtion will return a
+ * non-zero value. */
+int census_available();
+
 /* Internally, Census relies on a context, which should be propagated across
  * RPC's. From the RPC subsystems viewpoint, this is an opaque data structure.
  * A context must be used as the first argument to all other census
