@@ -51,12 +51,12 @@
 
 /* -- Common. -- */
 
-typedef struct {
+struct grpc_credentials_metadata_request {
   grpc_credentials *creds;
   grpc_credentials_metadata_cb cb;
   grpc_iomgr_closure *on_simulated_token_fetch_done_closure;
   void *user_data;
-} grpc_credentials_metadata_request;
+};
 
 static grpc_credentials_metadata_request *
 grpc_credentials_metadata_request_create(grpc_credentials *creds,
@@ -150,16 +150,6 @@ grpc_security_status grpc_server_credentials_create_security_connector(
 }
 
 /* -- Ssl credentials. -- */
-
-typedef struct {
-  grpc_credentials base;
-  grpc_ssl_config config;
-} grpc_ssl_credentials;
-
-typedef struct {
-  grpc_server_credentials base;
-  grpc_ssl_server_config config;
-} grpc_ssl_server_credentials;
 
 static void ssl_destroy(grpc_credentials *creds) {
   grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
@@ -325,22 +315,6 @@ grpc_server_credentials *grpc_ssl_server_credentials_create(
 
 /* -- Jwt credentials -- */
 
-typedef struct {
-  grpc_credentials base;
-
-  /* Have a simple cache for now with just 1 entry. We could have a map based on
-     the service_url for a more sophisticated one. */
-  gpr_mu cache_mu;
-  struct {
-    grpc_credentials_md_store *jwt_md;
-    char *service_url;
-    gpr_timespec jwt_expiration;
-  } cached;
-
-  grpc_auth_json_key key;
-  gpr_timespec jwt_lifetime;
-} grpc_jwt_credentials;
-
 static void jwt_reset_cache(grpc_jwt_credentials *c) {
   if (c->cached.jwt_md != NULL) {
     grpc_credentials_md_store_unref(c->cached.jwt_md);
@@ -449,25 +423,6 @@ grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
 }
 
 /* -- Oauth2TokenFetcher credentials -- */
-
-/* This object is a base for credentials that need to acquire an oauth2 token
-   from an http service. */
-
-typedef void (*grpc_fetch_oauth2_func)(grpc_credentials_metadata_request *req,
-                                       grpc_httpcli_context *http_context,
-                                       grpc_pollset *pollset,
-                                       grpc_httpcli_response_cb response_cb,
-                                       gpr_timespec deadline);
-
-typedef struct {
-  grpc_credentials base;
-  gpr_mu mu;
-  grpc_credentials_md_store *access_token_md;
-  gpr_timespec token_expiration;
-  grpc_httpcli_context httpcli_context;
-  grpc_pollset_set pollset_set;
-  grpc_fetch_oauth2_func fetch_func;
-} grpc_oauth2_token_fetcher_credentials;
 
 static void oauth2_token_fetcher_destroy(grpc_credentials *creds) {
   grpc_oauth2_token_fetcher_credentials *c =
@@ -674,13 +629,6 @@ grpc_credentials *grpc_compute_engine_credentials_create(void) {
 
 /* -- ServiceAccount credentials. -- */
 
-typedef struct {
-  grpc_oauth2_token_fetcher_credentials base;
-  grpc_auth_json_key key;
-  char *scope;
-  gpr_timespec token_lifetime;
-} grpc_service_account_credentials;
-
 static void service_account_destroy(grpc_credentials *creds) {
   grpc_service_account_credentials *c =
       (grpc_service_account_credentials *)creds;
@@ -751,11 +699,6 @@ grpc_credentials *grpc_service_account_credentials_create(
 
 /* -- RefreshToken credentials. -- */
 
-typedef struct {
-  grpc_oauth2_token_fetcher_credentials base;
-  grpc_auth_refresh_token refresh_token;
-} grpc_refresh_token_credentials;
-
 static void refresh_token_destroy(grpc_credentials *creds) {
   grpc_refresh_token_credentials *c = (grpc_refresh_token_credentials *)creds;
   grpc_auth_refresh_token_destruct(&c->refresh_token);
@@ -813,12 +756,6 @@ grpc_credentials *grpc_refresh_token_credentials_create(
 }
 
 /* -- Fake Oauth2 credentials. -- */
-
-typedef struct {
-  grpc_credentials base;
-  grpc_credentials_md_store *access_token_md;
-  int is_async;
-} grpc_fake_oauth2_credentials;
 
 static void fake_oauth2_destroy(grpc_credentials *creds) {
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
@@ -950,12 +887,6 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 }
 
 /* -- Composite credentials. -- */
-
-typedef struct {
-  grpc_credentials base;
-  grpc_credentials_array inner;
-  grpc_credentials *connector_creds;
-} grpc_composite_credentials;
 
 typedef struct {
   grpc_composite_credentials *composite_creds;
@@ -1186,11 +1117,6 @@ grpc_credentials *grpc_credentials_contains_type(
 }
 
 /* -- IAM credentials. -- */
-
-typedef struct {
-  grpc_credentials base;
-  grpc_credentials_md_store *iam_md;
-} grpc_iam_credentials;
 
 static void iam_destroy(grpc_credentials *creds) {
   grpc_iam_credentials *c = (grpc_iam_credentials *)creds;

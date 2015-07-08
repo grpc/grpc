@@ -51,6 +51,11 @@ typedef struct grpc_credentials grpc_credentials;
    The creator of the credentials object is responsible for its release. */
 void grpc_credentials_release(grpc_credentials *creds);
 
+/* Environment variable that points to the google default application
+   credentials json key or refresh token. Used in the
+   grpc_google_default_credentials_create function. */
+#define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
+
 /* Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */

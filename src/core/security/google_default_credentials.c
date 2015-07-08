@@ -46,7 +46,6 @@
 /* -- Constants. -- */
 
 #define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal"
-#define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
 
 /* -- Default credentials. -- */
 
@@ -160,23 +159,6 @@ end:
   return result;
 }
 
-/* Takes ownership of creds_path if not NULL. */
-static grpc_credentials *create_refresh_token_creds_from_path(
-    char *creds_path) {
-  grpc_credentials *result = NULL;
-  gpr_slice creds_data;
-  int file_ok = 0;
-  if (creds_path == NULL) return NULL;
-  creds_data = gpr_load_file(creds_path, 1, &file_ok);
-  gpr_free(creds_path);
-  if (file_ok) {
-    result = grpc_refresh_token_credentials_create(
-        (const char *)GPR_SLICE_START_PTR(creds_data));
-    gpr_slice_unref(creds_data);
-  }
-  return result;
-}
-
 grpc_credentials *grpc_google_default_credentials_create(void) {
   grpc_credentials *result = NULL;
   int serving_cached_credentials = 0;
@@ -196,7 +178,7 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
   if (result != NULL) goto end;
 
   /* Then the well-known file. */
-  result = create_refresh_token_creds_from_path(
+  result = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path());
   if (result != NULL) goto end;
 
@@ -214,11 +196,24 @@ end:
   if (!serving_cached_credentials && result != NULL) {
     /* Blend with default ssl credentials and add a global reference so that it
        can be cached and re-served. */
-    result = grpc_composite_credentials_create(
-        grpc_ssl_credentials_create(NULL, NULL), result);
-    GPR_ASSERT(result != NULL);
-    default_credentials = grpc_credentials_ref(result);
+    grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
+    default_credentials = grpc_credentials_ref(grpc_composite_credentials_create(
+        ssl_creds, result));
+    GPR_ASSERT(default_credentials != NULL);
+    grpc_credentials_unref(ssl_creds);
+    grpc_credentials_unref(result);
+    result = default_credentials;
   }
   gpr_mu_unlock(&g_mu);
   return result;
+}
+
+void grpc_flush_cached_google_default_credentials(void) {
+  gpr_once_init(&g_once, init_default_credentials);
+  gpr_mu_lock(&g_mu);
+  if (default_credentials != NULL) {
+    grpc_credentials_unref(default_credentials);
+    default_credentials = NULL;
+  }
+  gpr_mu_unlock(&g_mu);
 }
