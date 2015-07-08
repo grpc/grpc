@@ -11,7 +11,7 @@ headers.
 It assumes you know the basics on how to make gRPC API calls using the Objective-C client library,
 as shown in the [Hello World](https://github.com/grpc/grpc-common/tree/master/objective-c/helloworld)
 or [Route Guide](https://github.com/grpc/grpc-common/tree/master/objective-c/route_guide) tutorials,
-and familiarity with OAuth2 concepts like _access token_.
+and are familiar with OAuth2 concepts like _access token_.
 
 - [Example code and setup](#setup)
 - [Try it out!](#try)
@@ -42,9 +42,9 @@ access token obtained by the first view.
 
 Note: OAuth2 libraries need the application to register and obtain an ID from the identity provider
 (in the case of this example app, Google). The app's XCode project is configured using that ID, so
-you shouldn't copy this project as is for your own app: It would result in your app being identified
-in the consent screen as "gRPC-AuthSample", and not having access to real Google services. Instead,
-configure your XCode project following the [instructions here](https://developers.google.com/identity/sign-in/ios/).
+you shouldn't copy this project "as is" for your own app: it would result in your app being
+identified in the consent screen as "gRPC-AuthSample", and not having access to real Google
+services. Instead, configure your own XCode project following the [instructions here](https://developers.google.com/identity/sign-in/ios/).
 
 As with the other examples, you also should have [Cocoapods](https://cocoapods.org/#install)
 installed, as well as the relevant tools to generate the client library code. You can obtain the
@@ -74,7 +74,7 @@ give the "gRPC-AuthSample" app the following permissions:
 - "Test scope for access to the Zoo service".
 
 This last permission, corresponding to the scope `https://www.googleapis.com/auth/xapi.zoo` doesn't
-grant any real capability: It's only used for testing. You can log out at any moment.
+grant any real capability: it's only used for testing. You can log out at any time.
 
 The second view, `MakeRPCViewController.h/m`, makes a gRPC request to a test server at
 https://grpc-test.sandbox.google.com, sending the access token along with the request. The test
@@ -102,8 +102,8 @@ service TestService {
 }
 ```
 
-A `unaryCallWithRequest:handler:` method is generated, with which you're already familiar, is
-generated for the `AUTHTestService` class:
+A `unaryCallWithRequest:handler:` method, with which you're already familiar, is generated for the
+`AUTHTestService` class:
 
 ```objective-c
 [client unaryCallWithRequest:request handler:^(AUTHResponse *response, NSError *error) {
@@ -111,7 +111,7 @@ generated for the `AUTHTestService` class:
 }];
 ```
 
-And a second `RPCToUnaryCallWithRequest:handler:` method is generated, which returns a
+In addition, an `RPCToUnaryCallWithRequest:handler:` method is generated, which returns a
 not-yet-started RPC object:
 
 ```objective-c
@@ -156,8 +156,8 @@ If you have an access token, OAuth2 specifies it is to be sent in this format:
 <a name="response-metadata"></a>
 ## Get response metadata of a call: Auth challenge header
 
-Analogously to the request metadata, the `ProtoRPC` class has a `responseMetadata` property defined
-this way:
+The `ProtoRPC` class also has a `responseMetadata` property, analogous to the request metadata we
+just looked at. It's defined like this:
 
 ```objective-c
 @property(atomic, readonly) NSDictionary *responseMetadata;
