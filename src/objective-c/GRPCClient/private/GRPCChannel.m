@@ -60,7 +60,7 @@
 }
 
 - (instancetype)initWithHost:(NSString *)host {
-  if (![host containsString:@"://"]) {
+  if (![host rangeOfString:@"://"].length) {
     // No scheme provided; assume https.
     host = [@"https://" stringByAppendingString:host];
   }

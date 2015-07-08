@@ -382,7 +382,9 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   GPR_ASSERT(s->global.published_state == GRPC_STREAM_CLOSED ||
              s->global.id == 0);
   GPR_ASSERT(!s->global.in_stream_map);
-  grpc_chttp2_unregister_stream(t, s);
+  if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
+    close_transport_locked(t);
+  }
   if (!t->parsing_active && s->global.id) {
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->parsing_stream_map,
                                            s->global.id) == NULL);
@@ -680,10 +682,14 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
   }
 
   if (op->send_goaway) {
+    t->global.sent_goaway = 1;
     grpc_chttp2_goaway_append(
         t->global.last_incoming_stream_id,
         grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
         gpr_slice_ref(*op->goaway_message), &t->global.qbuf);
+    if (!grpc_chttp2_has_streams(t)) {
+      close_transport_locked(t);
+    }
   }
 
   if (op->set_accept_stream != NULL) {
@@ -731,6 +737,9 @@ static void remove_stream(grpc_chttp2_transport *t, gpr_uint32 id) {
   if (t->parsing.incoming_stream == &s->parsing) {
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(&t->parsing);
+  }
+  if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
+    close_transport_locked(t);
   }
 
   new_stream_count = grpc_chttp2_stream_map_size(&t->parsing_stream_map) +

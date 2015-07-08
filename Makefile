@@ -215,6 +215,7 @@ endif
 endif
 INSTALL = install
 RM = rm -f
+PKG_CONFIG = pkg-config
 
 ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
@@ -331,9 +332,9 @@ HOST_LDLIBS = $(LDLIBS)
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
 
-HAS_PKG_CONFIG = $(shell command -v pkg-config >/dev/null 2>&1 && echo true || echo false)
+HAS_PKG_CONFIG = $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
 
-PC_TEMPLATE = prefix=$(prefix)\nexec_prefix=\$${prefix}\nincludedir=\$${prefix}/include\nlibdir=\$${exec_prefix}/lib\n\nName: $(PC_NAME)\nDescription: $(PC_DESCRIPTION)\nVersion: $(VERSION)\nCflags: -I\$${includedir} $(PC_CFLAGS)\nRequires.private: $(PC_REQUIRES_PRIVATE)\nLibs: -L\$${libdir}\nLibs.private: $(PC_LIBS_PRIVATE)
+PC_TEMPLATE = prefix=$(prefix)\nexec_prefix=\$${prefix}\nincludedir=\$${prefix}/include\nlibdir=\$${exec_prefix}/lib\n\nName: $(PC_NAME)\nDescription: $(PC_DESCRIPTION)\nVersion: $(VERSION)\nCflags: -I\$${includedir} $(PC_CFLAGS)\nRequires.private: $(PC_REQUIRES_PRIVATE)\nLibs: -L\$${libdir} $(PC_LIB)\nLibs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
 PC_NAME = gRPC Portable Runtime
@@ -341,7 +342,8 @@ PC_DESCRIPTION = gRPC Portable Runtime
 PC_CFLAGS = -pthread
 PC_REQUIRES_PRIVATE =
 PC_LIBS_PRIVATE = -lpthread
-ifeq ($(SYSTEM),Darwin)
+PC_LIB = -lgpr
+ifneq ($(SYSTEM),Darwin)
 PC_LIBS_PRIVATE += -lrt
 endif
 GPR_PC_FILE := $(PC_TEMPLATE)
@@ -371,11 +373,11 @@ OPENSSL_REQUIRES_DL = true
 endif
 
 ifeq ($(HAS_PKG_CONFIG),true)
-OPENSSL_ALPN_CHECK_CMD = pkg-config --atleast-version=1.0.2 openssl
-OPENSSL_NPN_CHECK_CMD = pkg-config --alteast-version=1.0.1 openssl
-ZLIB_CHECK_CMD = pkg-config --exists zlib
-PERFTOOLS_CHECK_CMD = pkg-config --exists profiler
-PROTOBUF_CHECK_CMD = pkg-config --atleast-version=3.0.0-alpha-3 protobuf
+OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
+OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
+ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
+PERFTOOLS_CHECK_CMD = $(PKG_CONFIG) --exists profiler
+PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
 else # HAS_PKG_CONFIG
 
 ifeq ($(SYSTEM),MINGW32)
@@ -484,8 +486,8 @@ DEP_MISSING += zlib
 endif
 else
 ifeq ($(HAS_PKG_CONFIG),true)
-CPPFLAGS += $(shell pkg-config --cflags zlib)
-LDFLAGS += $(shell pkg-config --libs-only-L zlib)
+CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
 PC_REQUIRES_GRPC += zlib
 else
 PC_LIBS_GRPC += -lz
@@ -501,11 +503,11 @@ ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_PKG_CONFIG = true
 PC_REQUIRES_SECURE = openssl
-CPPFLAGS := $(shell pkg-config --cflags openssl) $(CPPFLAGS)
-LDFLAGS_OPENSSL_PKG_CONFIG = $(shell pkg-config --libs-only-L openssl)
+CPPFLAGS := $(shell $(PKG_CONFIG) --cflags openssl) $(CPPFLAGS)
+LDFLAGS_OPENSSL_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L openssl)
 ifeq ($(SYSTEM),Linux)
 ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
-LDFLAGS_OPENSSL_PKG_CONFIG += $(shell pkg-config --libs-only-L openssl | sed s/L/Wl,-rpath,/)
+LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
 endif
 endif
 LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
@@ -542,7 +544,7 @@ endif
 endif
 
 ifeq ($(OPENSSL_PKG_CONFIG),true)
-LDLIBS_SECURE += $(shell pkg-config --libs-only-l openssl)
+LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
 else
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 endif
@@ -553,6 +555,7 @@ PC_DESCRIPTION = high performance general RPC framework
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
+PC_LIB = -lgrpc
 GRPC_PC_FILE := $(PC_TEMPLATE)
 
 # gprc_unsecure .pc file
@@ -561,6 +564,7 @@ PC_DESCRIPTION = high performance general RPC framework without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
+PC_LIB = -lgrpc
 GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 PROTOBUF_PKG_CONFIG = false
@@ -572,11 +576,11 @@ ifeq ($(HAS_SYSTEM_PROTOBUF),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 PROTOBUF_PKG_CONFIG = true
 PC_REQUIRES_GRPCXX = protobuf
-CPPFLAGS := $(shell pkg-config --cflags protobuf) $(CPPFLAGS)
-LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell pkg-config --libs-only-L protobuf)
+CPPFLAGS := $(shell $(PKG_CONFIG) --cflags protobuf) $(CPPFLAGS)
+LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
 ifeq ($(SYSTEM),Linux)
 ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
-LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell pkg-config --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
+LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
 endif
 endif
 else
@@ -599,7 +603,7 @@ LIBS_PROTOC = protoc protobuf
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 ifeq ($(PROTOBUF_PKG_CONFIG),true)
-LDLIBS_PROTOBUF += $(shell pkg-config --libs-only-l protobuf)
+LDLIBS_PROTOBUF += $(shell $(PKG_CONFIG) --libs-only-l protobuf)
 else
 LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
 endif
@@ -610,6 +614,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+PC_LIB = -lgrpc++
 GRPCXX_PC_FILE := $(PC_TEMPLATE)
 
 # grpc++_unsecure .pc file
@@ -618,6 +623,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+PC_LIB = -lgrpc++
 GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
@@ -5744,7 +5750,7 @@ FD_CONSERVATION_POSIX_TEST_SRC = \
 FD_CONSERVATION_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FD_CONSERVATION_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/fd_conservation_posix_test: openssl_dep_error
 
@@ -7078,7 +7084,7 @@ MULTIPLE_SERVER_QUEUES_TEST_SRC = \
 MULTIPLE_SERVER_QUEUES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MULTIPLE_SERVER_QUEUES_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/multiple_server_queues_test: openssl_dep_error
 
@@ -7542,7 +7548,7 @@ URI_PARSER_TEST_SRC = \
 URI_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_PARSER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/uri_parser_test: openssl_dep_error
 
