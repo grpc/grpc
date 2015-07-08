@@ -85,7 +85,7 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 
 template <typename T>
 void CheckAuthContext(T* context) {
-  std::unique_ptr<const AuthContext> auth_ctx = context->auth_context();
+  std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string> fake =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1, fake.size());

@@ -39,12 +39,13 @@
 
 namespace grpc {
 
-std::unique_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
-  grpc_auth_context* context = nullptr;
-  if (call) {
-    context = const_cast<grpc_auth_context*>(grpc_call_auth_context(call));
+std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
+  if (call == nullptr) {
+    return std::shared_ptr<const AuthContext>();
   }
-  return std::unique_ptr<const AuthContext>(new SecureAuthContext(context));
+  grpc_auth_context* context =
+      const_cast<grpc_auth_context*>(grpc_call_auth_context(call));
+  return std::shared_ptr<const AuthContext>(new SecureAuthContext(context));
 }
 
 }  // namespace grpc

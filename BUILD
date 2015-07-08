@@ -717,7 +717,6 @@ cc_library(
 cc_library(
   name = "grpc++_unsecure",
   srcs = [
-    "src/cpp/common/insecure_auth_context.h",
     "src/cpp/client/channel.h",
     "src/cpp/common/create_auth_context.h",
     "src/cpp/server/thread_pool.h",

@@ -39,7 +39,7 @@
 
 namespace grpc {
 
-class SecureAuthContext : public AuthContext {
+class SecureAuthContext GRPC_FINAL : public AuthContext {
  public:
   SecureAuthContext(grpc_auth_context* ctx);
 

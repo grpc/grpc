@@ -76,8 +76,11 @@ void ClientContext::set_call(grpc_call* call,
   }
 }
 
-std::unique_ptr<const AuthContext> ClientContext::auth_context() const {
-  return CreateAuthContext(call_);
+std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
+  if (auth_context_.get() == nullptr) {
+    auth_context_ = CreateAuthContext(call_);
+  }
+  return auth_context_;
 }
 
 void ClientContext::TryCancel() {

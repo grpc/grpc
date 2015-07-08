@@ -9666,7 +9666,6 @@
       "include/grpc++/time.h", 
       "src/cpp/client/channel.h", 
       "src/cpp/common/create_auth_context.h", 
-      "src/cpp/common/insecure_auth_context.h", 
       "src/cpp/server/thread_pool.h"
     ], 
     "language": "c++", 
@@ -9722,7 +9721,6 @@
       "src/cpp/common/call.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/create_auth_context.h", 
-      "src/cpp/common/insecure_auth_context.h", 
       "src/cpp/common/insecure_create_auth_context.cc", 
       "src/cpp/common/rpc_method.cc", 
       "src/cpp/proto/proto_utils.cc", 

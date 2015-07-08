@@ -186,7 +186,6 @@
     <ClInclude Include="..\..\include\grpc++\time.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\cpp\common\insecure_auth_context.h" />
     <ClInclude Include="..\..\src\cpp\client\channel.h" />
     <ClInclude Include="..\..\src\cpp\common\create_auth_context.h" />
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h" />

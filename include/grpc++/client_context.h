@@ -108,7 +108,7 @@ class ClientContext {
     creds_ = creds;
   }
 
-  std::unique_ptr<const AuthContext> auth_context() const;
+  std::shared_ptr<const AuthContext> auth_context() const;
 
   void TryCancel();
 
@@ -157,6 +157,7 @@ class ClientContext {
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;
+  mutable std::shared_ptr<const AuthContext> auth_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;

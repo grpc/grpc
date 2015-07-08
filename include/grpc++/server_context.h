@@ -99,7 +99,9 @@ class ServerContext {
     return client_metadata_;
   }
 
-  std::unique_ptr<const AuthContext> auth_context() const;
+  std::shared_ptr<const AuthContext> auth_context() const {
+    return auth_context_;
+  }
 
  private:
   friend class ::grpc::Server;
@@ -137,12 +139,15 @@ class ServerContext {
   ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                 size_t metadata_count);
 
+  void set_call(grpc_call* call);
+
   CompletionOp* completion_op_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
+  std::shared_ptr<const AuthContext> auth_context_;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;

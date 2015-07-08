@@ -619,9 +619,6 @@
       "name": "grpc++_unsecure",
       "build": "all",
       "language": "c++",
-      "headers": [
-        "src/cpp/common/insecure_auth_context.h"
-      ],
       "src": [
         "src/cpp/common/insecure_create_auth_context.cc"
       ],

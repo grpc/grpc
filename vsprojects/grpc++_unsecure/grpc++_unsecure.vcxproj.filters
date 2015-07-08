@@ -194,9 +194,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\cpp\common\insecure_auth_context.h">
-      <Filter>src\cpp\common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
     </ClInclude>

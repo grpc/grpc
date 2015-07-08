@@ -148,8 +148,9 @@ bool ServerContext::IsCancelled() {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
 }
 
-std::unique_ptr<const AuthContext> ServerContext::auth_context() const {
-  return CreateAuthContext(call_);
+void ServerContext::set_call(grpc_call* call) {
+  call_ = call;
+  auth_context_ = CreateAuthContext(call);
 }
 
 }  // namespace grpc
