@@ -61,14 +61,14 @@ typedef struct {
   size_t capacity;
   size_t length;
   char *data;
-} hexout;
+} dump_out;
 
-static hexout hexout_create(void) {
-  hexout r = {0, 0, NULL};
+static dump_out dump_out_create(void) {
+  dump_out r = {0, 0, NULL};
   return r;
 }
 
-static void hexout_append(hexout *out, char c) {
+static void dump_out_append(dump_out *out, char c) {
   if (out->length == out->capacity) {
     out->capacity = GPR_MAX(8, 2 * out->capacity);
     out->data = gpr_realloc(out->data, out->capacity);
@@ -76,33 +76,54 @@ static void hexout_append(hexout *out, char c) {
   out->data[out->length++] = c;
 }
 
-char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags) {
+static void hexdump(dump_out *out, const char *buf, size_t len) {
   static const char hex[16] = "0123456789abcdef";
-  hexout out = hexout_create();
 
   const gpr_uint8 *const beg = (const gpr_uint8 *)buf;
   const gpr_uint8 *const end = beg + len;
   const gpr_uint8 *cur;
 
   for (cur = beg; cur != end; ++cur) {
-    if (cur != beg) hexout_append(&out, ' ');
-    hexout_append(&out, hex[*cur >> 4]);
-    hexout_append(&out, hex[*cur & 0xf]);
+    if (cur != beg) dump_out_append(out, ' ');
+    dump_out_append(out, hex[*cur >> 4]);
+    dump_out_append(out, hex[*cur & 0xf]);
   }
+}
 
-  if (flags & GPR_HEXDUMP_PLAINTEXT) {
-    if (len) hexout_append(&out, ' ');
-    hexout_append(&out, '\'');
-    for (cur = beg; cur != end; ++cur) {
-      hexout_append(&out, isprint(*cur) ? *(char*)cur : '.');
-    }
-    hexout_append(&out, '\'');
+static void asciidump(dump_out *out, const char *buf, size_t len) {
+  const gpr_uint8 *const beg = (const gpr_uint8 *)buf;
+  const gpr_uint8 *const end = beg + len;
+  const gpr_uint8 *cur;
+  int out_was_empty = (out->length == 0);
+  if (!out_was_empty) {
+    dump_out_append(out, ' ');
+    dump_out_append(out, '\'');
   }
+  for (cur = beg; cur != end; ++cur) {
+    dump_out_append(out, isprint(*cur) ? *(char *)cur : '.');
+  }
+  if (!out_was_empty) {
+    dump_out_append(out, '\'');
+  }
+}
 
-  hexout_append(&out, 0);
-
+char *gpr_dump(const char *buf, size_t len, gpr_uint32 flags) {
+  dump_out out = dump_out_create();
+  if (flags & GPR_DUMP_HEX) {
+    hexdump(&out, buf, len);
+  }
+  if (flags & GPR_DUMP_ASCII) {
+    asciidump(&out, buf, len);
+  }
+  dump_out_append(&out, 0);
   return out.data;
 }
+
+char *gpr_dump_slice(gpr_slice s, gpr_uint32 flags) {
+  return gpr_dump((const char *)GPR_SLICE_START_PTR(s), GPR_SLICE_LENGTH(s),
+                  flags);
+}
+
 
 int gpr_parse_bytes_to_uint32(const char *buf, size_t len, gpr_uint32 *result) {
   gpr_uint32 out = 0;
