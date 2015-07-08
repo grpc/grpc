@@ -54,12 +54,6 @@ LIB_DIRS = [
   LIBDIR
 ]
 
-$CFLAGS << ' -Wno-implicit-function-declaration '
-$CFLAGS << ' -Wno-pointer-sign '
-$CFLAGS << ' -Wno-return-type '
-$CFLAGS << ' -Wall '
-$CFLAGS << ' -pedantic '
-
 grpc_pkg_config = system('pkg-config --exists grpc')
 
 if grpc_pkg_config
@@ -100,5 +94,10 @@ else
   end
 end
 
+$CFLAGS << ' -std=c99 '
+$CFLAGS << ' -Wall '
+$CFLAGS << ' -Wextra '
+$CFLAGS << ' -pedantic '
+$CFLAGS << ' -Werror '
 
 create_makefile('grpc/grpc')
