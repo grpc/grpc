@@ -40,13 +40,18 @@ var health = require('../health_check/health.js');
 var grpc = require('../');
 
 describe('Health Checking', function() {
+  var statusMap = {
+    '': {
+      '': 'SERVING',
+      'grpc.test.TestService': 'NOT_SERVING',
+    },
+    virtual_host: {
+      'grpc.test.TestService': 'SERVING'
+    }
+  };
   var HealthServer = grpc.buildServer([health.service]);
   var healthServer = new HealthServer({
-    'grpc.health.v1alpha.Health': new health.Implementation({
-      '': 'SERVING',
-      'grpc.health.v1alpha.Health': 'SERVING',
-      'not.serving.Service': 'NOT_SERVING'
-    })
+    'grpc.health.v1alpha.Health': new health.Implementation(statusMap)
   });
   var healthClient;
   before(function() {
@@ -57,34 +62,41 @@ describe('Health Checking', function() {
   after(function() {
     healthServer.shutdown();
   });
-  it('should respond with SERVING with no service specified', function(done) {
-    healthClient.check({}, function(err, response) {
+  it('should say an enabled service is SERVING', function(done) {
+    healthClient.check({service: ''}, function(err, response) {
       assert.ifError(err);
       assert.strictEqual(response.status, 'SERVING');
       done();
     });
   });
-  it('should respond that the health check service is SERVING', function(done) {
-    healthClient.check({service: 'grpc.health.v1alpha.Health'},
-                       function(err, response) {
-                         assert.ifError(err);
-                         assert.strictEqual(response.status, 'SERVING');
-                         done();
-                       });
-  });
-  it('should respond that a disabled service is NOT_SERVING', function(done) {
-    healthClient.check({service: 'not.serving.Service'},
+  it('should say that a disabled service is NOT_SERVING', function(done) {
+    healthClient.check({service: 'grpc.test.TestService'},
                        function(err, response) {
                          assert.ifError(err);
                          assert.strictEqual(response.status, 'NOT_SERVING');
                          done();
                        });
   });
-  it('should respond with UNKNOWN for an unknown service', function(done) {
-    healthClient.check({service: 'unknown.service.Name'},
+  it('should say that a service on another host is SERVING', function(done) {
+    healthClient.check({host: 'virtual_host', service: 'grpc.test.TestService'},
                        function(err, response) {
                          assert.ifError(err);
-                         assert.strictEqual(response.status, 'UNKNOWN');
+                         assert.strictEqual(response.status, 'SERVING');
+                         done();
+                       });
+  });
+  it('should get NOT_FOUND if the service is not registered', function(done) {
+    healthClient.check({service: 'not_registered'}, function(err, response) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.NOT_FOUND);
+      done();
+    });
+  });
+  it('should get NOT_FOUND if the host is not registered', function(done) {
+    healthClient.check({host: 'wrong_host', service: 'grpc.test.TestService'},
+                       function(err, response) {
+                         assert(err);
+                         assert.strictEqual(err.code, grpc.status.NOT_FOUND);
                          done();
                        });
   });

@@ -32,7 +32,8 @@ syntax = "proto3";
 package grpc.health.v1alpha;
 
 message HealthCheckRequest {
-  string service = 1;
+  string host = 1;
+  string service = 2;
 }
 
 message HealthCheckResponse {
