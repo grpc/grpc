@@ -48,3 +48,5 @@ int census_initialize(int functions) {
 }
 
 void census_shutdown() { census_fns_enabled = CENSUS_NONE; }
+
+int census_available() { return (census_fns_enabled != CENSUS_NONE); }
