@@ -58,27 +58,32 @@ class ServerBuilder {
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance returned by
   // BuildAndStart().
+  // Matches requests with any :authority
   void RegisterService(SynchronousService* service);
 
-  // Register an asynchronous service. New calls will be delevered to cq.
+  // Register an asynchronous service.
   // This call does not take ownership of the service or completion queue.
   // The service and completion queuemust exist for the lifetime of the Server
   // instance returned by BuildAndStart().
+  // Matches requests with any :authority
   void RegisterAsyncService(AsynchronousService* service);
 
   // Register a generic service.
+  // Matches requests with any :authority
   void RegisterAsyncGenericService(AsyncGenericService* service);
 
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance returned by
   // BuildAndStart().
+  // Only matches requests with :authority \a host
   void RegisterService(const grpc::string& host, 
                        SynchronousService* service);
 
-  // Register an asynchronous service. New calls will be delevered to cq.
+  // Register an asynchronous service.
   // This call does not take ownership of the service or completion queue.
   // The service and completion queuemust exist for the lifetime of the Server
   // instance returned by BuildAndStart().
+  // Only matches requests with :authority \a host
   void RegisterAsyncService(const grpc::string& host, 
                             AsynchronousService* service);
 
