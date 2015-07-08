@@ -46,8 +46,8 @@ static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
     gpr_strvec_add(b, gpr_strdup(md[i].key));
 
     gpr_strvec_add(b, gpr_strdup(" value="));
-    gpr_strvec_add(b, gpr_hexdump(md[i].value, md[i].value_length,
-                                  GPR_HEXDUMP_PLAINTEXT));
+    gpr_strvec_add(b, gpr_dump(md[i].value, md[i].value_length,
+                               GPR_DUMP_HEX | GPR_DUMP_ASCII));
   }
 }
 

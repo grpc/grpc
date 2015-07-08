@@ -41,7 +41,7 @@
 #include "src/core/transport/metadata.h"
 
 /* this many stream ops are inlined into a sopb before allocating */
-#define GRPC_SOPB_INLINE_ELEMENTS 16
+#define GRPC_SOPB_INLINE_ELEMENTS 4
 
 /* Operations that can be performed on a stream.
    Used by grpc_stream_op. */
