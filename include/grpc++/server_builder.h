@@ -119,7 +119,7 @@ class ServerBuilder {
   typedef std::unique_ptr<grpc::string> HostString;
   template <class T> struct NamedService {
     explicit NamedService(T* s) : service(s) {}
-    explicit NamedService(const grpc::string& h, T *s)
+    NamedService(const grpc::string& h, T *s)
         : host(new grpc::string(h)), service(s) {}
     HostString host;
     T* service;
