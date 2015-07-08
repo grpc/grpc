@@ -325,3 +325,10 @@ int gpr_slice_str_cmp(gpr_slice a, const char *b) {
   if (d != 0) return d;
   return memcmp(GPR_SLICE_START_PTR(a), b, b_length);
 }
+
+char *gpr_slice_to_cstring(gpr_slice slice) {
+  char *result = gpr_malloc(GPR_SLICE_LENGTH(slice) + 1);
+  memcpy(result, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice));
+  result[GPR_SLICE_LENGTH(slice)] = '\0';
+  return result;
+}

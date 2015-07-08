@@ -44,10 +44,8 @@ static int all_ok = 1;
 static void expect_slice_eq(gpr_slice expected, gpr_slice slice, char *debug,
                             int line) {
   if (0 != gpr_slice_cmp(slice, expected)) {
-    char *hs = gpr_hexdump((const char *)GPR_SLICE_START_PTR(slice),
-                           GPR_SLICE_LENGTH(slice), GPR_HEXDUMP_PLAINTEXT);
-    char *he = gpr_hexdump((const char *)GPR_SLICE_START_PTR(expected),
-                           GPR_SLICE_LENGTH(expected), GPR_HEXDUMP_PLAINTEXT);
+    char *hs = gpr_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *he = gpr_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
             he);
     gpr_free(hs);
@@ -83,12 +81,9 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
   gpr_slice expect = grpc_chttp2_huffman_compress(base64);
   gpr_slice got = grpc_chttp2_base64_encode_and_huffman_compress(input);
   if (0 != gpr_slice_cmp(expect, got)) {
-    char *t = gpr_hexdump((const char *)GPR_SLICE_START_PTR(input),
-                          GPR_SLICE_LENGTH(input), GPR_HEXDUMP_PLAINTEXT);
-    char *e = gpr_hexdump((const char *)GPR_SLICE_START_PTR(expect),
-                          GPR_SLICE_LENGTH(expect), GPR_HEXDUMP_PLAINTEXT);
-    char *g = gpr_hexdump((const char *)GPR_SLICE_START_PTR(got),
-                          GPR_SLICE_LENGTH(got), GPR_HEXDUMP_PLAINTEXT);
+    char *t = gpr_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *e = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *g = gpr_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "FAILED:%d:\ntest: %s\ngot:  %s\nwant: %s", t, g, e);
     gpr_free(t);
     gpr_free(e);
