@@ -85,7 +85,7 @@ else
     end
     unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
       print "Building internal gRPC\n"
-      system("make -C #{root} static_c CONFIG=#{config}")
+      system("make -C #{grpc_root} static_c CONFIG=#{grpc_config}")
     end
     $CFLAGS << ' -I' + File.join(grpc_root, 'include')
     $LDFLAGS << ' -L' + grpc_lib_dir
