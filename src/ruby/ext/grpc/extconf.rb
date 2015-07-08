@@ -54,45 +54,6 @@ LIB_DIRS = [
   LIBDIR
 ]
 
-def crash(msg)
-  print(" extconf failure: #{msg}\n")
-  exit 1
-end
-
-def build_local_c(grpc_lib_dir, root, config)
-  grpc_already_built = File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
-  system("make -C #{root} static_c CONFIG=#{config}") unless grpc_already_built
-end
-
-def local_fallback(msg)
-  # Check to see if GRPC_ROOT is defined or available
-  grpc_root = ENV['GRPC_ROOT']
-  if grpc_root.nil?
-    r = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
-    grpc_root = r if File.exist?(File.join(r, 'include/grpc/grpc.h'))
-  end
-
-  # Stop if there is still no grpc_root
-  crash(msg) if grpc_root.nil?
-
-  grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  if ENV.key?('GRPC_LIB_DIR')
-    grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
-  else
-    grpc_lib_dir = File.join(File.join(grpc_root, 'libs'), grpc_config)
-  end
-  build_local_c(grpc_lib_dir, grpc_root, grpc_config)
-  HEADER_DIRS.unshift File.join(grpc_root, 'include')
-  LIB_DIRS.unshift grpc_lib_dir
-
-  dir_config('grpc', HEADER_DIRS, LIB_DIRS)
-  have_library('grpc', 'grpc_channel_destroy')
-  create_makefile('grpc/grpc')
-  exit 0
-end
-
-dir_config('grpc', HEADER_DIRS, LIB_DIRS)
-
 $CFLAGS << ' -Wno-implicit-function-declaration '
 $CFLAGS << ' -Wno-pointer-sign '
 $CFLAGS << ' -Wno-return-type '
@@ -105,12 +66,39 @@ if grpc_pkg_config
   $CFLAGS << ' ' + `pkg-config --static --cflags grpc`.strip + ' '
   $LDFLAGS << ' ' + `pkg-config --static --libs grpc`.strip + ' '
 else
-  $LDFLAGS << ' -lgrpc -lgpr -lz -ldl'
+  dir_config('grpc', HEADER_DIRS, LIB_DIRS)
+  raise "libdl not found" unless have_library('dl', 'dlopen')
+  raise "zlib not found" unless have_library('z', 'inflate')
+  begin
+    raise "Fail" unless have_library('gpr', 'gpr_now')
+    raise "Fail" unless have_library('grpc', 'grpc_channel_destroy')
+  rescue
+    # Check to see if GRPC_ROOT is defined or available
+    grpc_root = ENV['GRPC_ROOT']
+    if grpc_root.nil?
+      r = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
+      grpc_root = r if File.exist?(File.join(r, 'include/grpc/grpc.h'))
+    end
+
+    # Stop if there is still no grpc_root
+    exit 1 if grpc_root.nil?
+
+    grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+    if ENV.key?('GRPC_LIB_DIR')
+      grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
+    else
+      grpc_lib_dir = File.join(File.join(grpc_root, 'libs'), grpc_config)
+    end
+    unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
+      print "Building internal gRPC\n"
+      system("make -C #{root} static_c CONFIG=#{config}")
+    end
+    $CFLAGS << ' -I' + File.join(grpc_root, 'include')
+    $LDFLAGS << ' -L' + grpc_lib_dir
+    raise "gpr not found" unless have_library('gpr', 'gpr_now')
+    raise "grpc not found" unless have_library('grpc', 'grpc_channel_destroy')
+  end
 end
 
-local_fallback('need gpr lib') unless have_library('gpr', 'gpr_now')
-unless have_library('grpc', 'grpc_channel_destroy')
-  local_fallback('need grpc lib')
-end
-have_library('grpc', 'grpc_channel_destroy')
+
 create_makefile('grpc/grpc')
