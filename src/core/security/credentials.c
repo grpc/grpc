@@ -41,7 +41,6 @@
 #include "src/core/json/json.h"
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/iomgr/iomgr.h"
-#include "src/core/security/json_token.h"
 #include "src/core/support/string.h"
 
 #include <grpc/support/alloc.h>
@@ -424,10 +423,9 @@ static grpc_credentials_vtable jwt_vtable = {
     jwt_destroy, jwt_has_request_metadata, jwt_has_request_metadata_only,
     jwt_get_request_metadata, NULL};
 
-grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
-                                              gpr_timespec token_lifetime) {
+grpc_credentials *grpc_jwt_credentials_create_from_auth_json_key(
+    grpc_auth_json_key key, gpr_timespec token_lifetime) {
   grpc_jwt_credentials *c;
-  grpc_auth_json_key key = grpc_auth_json_key_create_from_string(json_key);
   if (!grpc_auth_json_key_is_valid(&key)) {
     gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
     return NULL;
@@ -442,6 +440,12 @@ grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
   gpr_mu_init(&c->cache_mu);
   jwt_reset_cache(c);
   return &c->base;
+}
+
+grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
+                                              gpr_timespec token_lifetime) {
+  return grpc_jwt_credentials_create_from_auth_json_key(
+      grpc_auth_json_key_create_from_string(json_key), token_lifetime);
 }
 
 /* -- Oauth2TokenFetcher credentials -- */
@@ -787,12 +791,9 @@ static void refresh_token_fetch_oauth2(
   gpr_free(body);
 }
 
-grpc_credentials *grpc_refresh_token_credentials_create(
-    const char *json_refresh_token) {
+grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
+    grpc_auth_refresh_token refresh_token) {
   grpc_refresh_token_credentials *c;
-  grpc_auth_refresh_token refresh_token =
-      grpc_auth_refresh_token_create_from_string(json_refresh_token);
-
   if (!grpc_auth_refresh_token_is_valid(&refresh_token)) {
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
     return NULL;
@@ -803,6 +804,12 @@ grpc_credentials *grpc_refresh_token_credentials_create(
   c->base.base.vtable = &refresh_token_vtable;
   c->refresh_token = refresh_token;
   return &c->base.base;
+}
+
+grpc_credentials *grpc_refresh_token_credentials_create(
+    const char *json_refresh_token) {
+  return grpc_refresh_token_credentials_create_from_auth_refresh_token(
+      grpc_auth_refresh_token_create_from_string(json_refresh_token));
 }
 
 /* -- Fake Oauth2 credentials. -- */

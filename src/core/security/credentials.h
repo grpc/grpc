@@ -39,6 +39,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/security/json_token.h"
 #include "src/core/security/security_connector.h"
 
 struct grpc_httpcli_response;
@@ -182,6 +183,16 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(
     const char *token_md_value, int is_async);
+
+/* Private constructor for jwt credentials from an already parsed json key.
+   Takes ownership of the key. */
+grpc_credentials *grpc_jwt_credentials_create_from_auth_json_key(
+    grpc_auth_json_key key, gpr_timespec token_lifetime);
+
+/* Private constructor for refresh token credentials from an already parsed
+   refresh token. Takes ownership of the refresh token. */
+grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
+    grpc_auth_refresh_token token);
 
 /* --- grpc_server_credentials. --- */
 

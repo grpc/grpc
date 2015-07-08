@@ -123,19 +123,40 @@ static int is_stack_running_on_compute_engine(void) {
 }
 
 /* Takes ownership of creds_path if not NULL. */
-static grpc_credentials *create_jwt_creds_from_path(char *creds_path) {
+static grpc_credentials *create_default_creds_from_path(char *creds_path) {
+  grpc_json *json = NULL;
+  grpc_auth_json_key key;
+  grpc_auth_refresh_token token;
   grpc_credentials *result = NULL;
-  gpr_slice creds_data;
+  gpr_slice creds_data = gpr_empty_slice();
   int file_ok = 0;
-  if (creds_path == NULL) return NULL;
-  creds_data = gpr_load_file(creds_path, 1, &file_ok);
-  gpr_free(creds_path);
-  if (file_ok) {
-    result = grpc_jwt_credentials_create(
-        (const char *)GPR_SLICE_START_PTR(creds_data),
-        grpc_max_auth_token_lifetime);
-    gpr_slice_unref(creds_data);
+  if (creds_path == NULL) goto end;
+  creds_data = gpr_load_file(creds_path, 0, &file_ok);
+  if (!file_ok) goto end;
+  json = grpc_json_parse_string_with_len(
+      (char *)GPR_SLICE_START_PTR(creds_data), GPR_SLICE_LENGTH(creds_data));
+  if (json == NULL) goto end;
+
+  /* First, try an auth json key. */
+  key = grpc_auth_json_key_create_from_json(json);
+  if (grpc_auth_json_key_is_valid(&key)) {
+    result = grpc_jwt_credentials_create_from_auth_json_key(
+        key, grpc_max_auth_token_lifetime);
+    goto end;
   }
+
+  /* Then try a refresh token if the auth json key was invalid. */
+  token = grpc_auth_refresh_token_create_from_json(json);
+  if (grpc_auth_refresh_token_is_valid(&token)) {
+    result =
+        grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
+    goto end;
+  }
+
+end:
+  if (creds_path != NULL) gpr_free(creds_path);
+  gpr_slice_unref(creds_data);
+  if (json != NULL) grpc_json_destroy(json);
   return result;
 }
 
@@ -170,8 +191,8 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
   }
 
   /* First, try the environment variable. */
-  result =
-      create_jwt_creds_from_path(gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR));
+  result = create_default_creds_from_path(
+      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR));
   if (result != NULL) goto end;
 
   /* Then the well-known file. */
