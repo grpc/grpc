@@ -95,28 +95,21 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
     return
   message.old_tag = tag
   message.old_msg = msg
-  if platform.system() == 'Windows':
+  if platform.system() == 'Windows' or not sys.stdout.isatty():
     if explanatory_text:
       print explanatory_text
     print '%s: %s' % (tag, msg)
     return
   try:
-    if sys.stdout.isatty():
-        sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-            _BEGINNING_OF_LINE,
-            _CLEAR_LINE,
-            '\n%s' % explanatory_text if explanatory_text is not None else '',
-            _COLORS[_TAG_COLOR[tag]][1],
-            _COLORS[_TAG_COLOR[tag]][0],
-            tag,
-            msg,
-            '\n' if do_newline or explanatory_text is not None else ''))
-    else:
-        sys.stdout.write('%s%s: %s%s' % (
-            '\n%s' % explanatory_text if explanatory_text is not None else '',
-            tag,
-            msg,
-            '\n'))
+    sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+        _BEGINNING_OF_LINE,
+        _CLEAR_LINE,
+        '\n%s' % explanatory_text if explanatory_text is not None else '',
+        _COLORS[_TAG_COLOR[tag]][1],
+        _COLORS[_TAG_COLOR[tag]][0],
+        tag,
+        msg,
+        '\n' if do_newline or explanatory_text is not None else ''))
     sys.stdout.flush()
   except:
     pass
