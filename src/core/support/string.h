@@ -37,6 +37,7 @@
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/slice_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +78,9 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
    if it is non-null. */
 char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
                       size_t *total_length);
+
+/** Split \a str at separator \a sep. */
+gpr_slice_buffer *gpr_strsplit(const char *str, const char *sep);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {

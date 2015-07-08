@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
 
@@ -185,6 +186,27 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
     *final_length = out_length;
   }
   return out;
+}
+
+static void do_nothing(void *ignored) {}
+gpr_slice_buffer *gpr_strsplit(const char *str, const char *sep) {
+  const size_t sep_len = strlen(sep);
+  const char *splitpoint = str;
+  gpr_slice_buffer *parts;
+
+  GPR_ASSERT(sep_len > 0);
+
+  parts = gpr_malloc(sizeof(gpr_slice_buffer));
+  gpr_slice_buffer_init(parts);
+
+  for (; (splitpoint = strstr(str, sep)) != NULL; splitpoint += sep_len) {
+    gpr_slice_buffer_add(
+        parts, gpr_slice_new((void *)str, splitpoint - str, do_nothing));
+    str += (splitpoint - str + sep_len);
+  }
+  gpr_slice_buffer_add(parts,
+                       gpr_slice_new((void *)str, strlen(str), do_nothing));
+  return parts;
 }
 
 void gpr_strvec_init(gpr_strvec *sv) {

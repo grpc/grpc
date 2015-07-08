@@ -192,6 +192,58 @@ static void test_strjoin_sep(void) {
   gpr_free(joined);
 }
 
+static void test_strsplit(void) {
+  gpr_slice_buffer* parts;
+  LOG_TEST_NAME("test_strsplit");
+
+  parts = gpr_strsplit("one, two, three, four", ", ");
+  GPR_ASSERT(4 == parts->count);
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "one"));
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], "two"));
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[2], "three"));
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[3], "four"));
+  gpr_slice_buffer_destroy(parts);
+  gpr_free(parts);
+
+  /* separator not present in string */
+  parts = gpr_strsplit("one two three four", ", ");
+  GPR_ASSERT(1 == parts->count);
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "one two three four"));
+  gpr_slice_buffer_destroy(parts);
+  gpr_free(parts);
+
+  /* separator at the end */
+  parts = gpr_strsplit("foo,", ",");
+  GPR_ASSERT(2 == parts->count);
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], "foo"));
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], ""));
+  gpr_slice_buffer_destroy(parts);
+  gpr_free(parts);
+
+  /* separator at the beginning */
+  parts = gpr_strsplit(",foo", ",");
+  GPR_ASSERT(2 == parts->count);
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], "foo"));
+  gpr_slice_buffer_destroy(parts);
+  gpr_free(parts);
+
+  /* standalone separator */
+  parts = gpr_strsplit(",", ",");
+  GPR_ASSERT(2 == parts->count);
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[1], ""));
+  gpr_slice_buffer_destroy(parts);
+  gpr_free(parts);
+
+  /* empty input */
+  parts = gpr_strsplit("", ",");
+  GPR_ASSERT(1 == parts->count);
+  GPR_ASSERT(0 == gpr_slice_str_cmp(parts->slices[0], ""));
+  gpr_slice_buffer_destroy(parts);
+  gpr_free(parts);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
@@ -200,5 +252,6 @@ int main(int argc, char **argv) {
   test_asprintf();
   test_strjoin();
   test_strjoin_sep();
+  test_strsplit();
   return 0;
 }
