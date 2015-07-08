@@ -5744,7 +5744,7 @@ FD_CONSERVATION_POSIX_TEST_SRC = \
 FD_CONSERVATION_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FD_CONSERVATION_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/fd_conservation_posix_test: openssl_dep_error
 
@@ -7078,7 +7078,7 @@ MULTIPLE_SERVER_QUEUES_TEST_SRC = \
 MULTIPLE_SERVER_QUEUES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MULTIPLE_SERVER_QUEUES_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/multiple_server_queues_test: openssl_dep_error
 
@@ -7542,7 +7542,7 @@ URI_PARSER_TEST_SRC = \
 URI_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_PARSER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/uri_parser_test: openssl_dep_error
 
