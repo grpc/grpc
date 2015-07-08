@@ -313,9 +313,7 @@ static void call_read_cb(grpc_tcp *tcp, gpr_slice *slices, size_t nslices,
     size_t i;
     gpr_log(GPR_DEBUG, "read: status=%d", status);
     for (i = 0; i < nslices; i++) {
-      char *dump =
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      char *dump = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ: %s", dump);
       gpr_free(dump);
     }
@@ -540,9 +538,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
     size_t i;
 
     for (i = 0; i < nslices; i++) {
-      char *data =
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      char *data = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p: %s", tcp, data);
       gpr_free(data);
     }
