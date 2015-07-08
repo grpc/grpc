@@ -114,7 +114,7 @@ void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd) {
     if (pollset_set->fds[i] == fd) {
       pollset_set->fd_count--;
       GPR_SWAP(grpc_fd *, pollset_set->fds[i],
-               pollset_set->fds[pollset_set->pollset_count]);
+               pollset_set->fds[pollset_set->fd_count]);
       GRPC_FD_UNREF(fd, "pollset_set");
       break;
     }

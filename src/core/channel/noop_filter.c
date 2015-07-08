@@ -45,7 +45,8 @@ typedef struct channel_data {
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
 
-static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void noop_mutate_op(grpc_call_element *elem,
+                           grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -61,35 +62,18 @@ static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void noop_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+static void noop_start_transport_stream_op(grpc_call_element *elem,
+                                           grpc_transport_stream_op *op) {
   noop_mutate_op(elem, op);
 
   /* pass control down the stack */
   grpc_call_next_op(elem, op);
 }
 
-/* Called on special channel events, such as disconnection or new incoming
-   calls on the server */
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  /* grab pointers to our data from the channel element */
-  channel_data *channeld = elem->channel_data;
-
-  ignore_unused(channeld);
-
-  switch (op->type) {
-    default:
-      /* pass control up or down the stack depending on op->dir */
-      grpc_channel_next_op(elem, op);
-      break;
-  }
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -111,7 +95,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   /* grab pointers to our data from the channel element */
@@ -135,7 +119,12 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   ignore_unused(channeld);
 }
 
-const grpc_channel_filter grpc_no_op_filter = {
-    noop_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "no-op"};
+const grpc_channel_filter grpc_no_op_filter = {noop_start_transport_stream_op,
+                                               grpc_channel_next_op,
+                                               sizeof(call_data),
+                                               init_call_elem,
+                                               destroy_call_elem,
+                                               sizeof(channel_data),
+                                               init_channel_elem,
+                                               destroy_channel_elem,
+                                               "no-op"};

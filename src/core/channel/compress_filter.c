@@ -38,11 +38,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 
-
 #include "src/core/channel/compress_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/compression/message_compress.h"
-
 
 typedef struct call_data {
   gpr_slice_buffer slices;
@@ -251,8 +249,8 @@ static void process_send_ops(grpc_call_element *elem,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void compress_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+static void compress_start_transport_stream_op(grpc_call_element *elem,
+                                               grpc_transport_stream_op *op) {
   if (op->send_ops && op->send_ops->nops > 0) {
     process_send_ops(elem, op->send_ops);
   }
@@ -261,21 +259,10 @@ static void compress_start_transport_op(grpc_call_element *elem,
   grpc_call_next_op(elem, op);
 }
 
-/* Called on special channel events, such as disconnection or new incoming
-   calls on the server */
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  switch (op->type) {
-    default:
-      grpc_channel_next_op(elem, op);
-      break;
-  }
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
 
@@ -299,7 +286,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   channel_data *channeld = elem->channel_data;
@@ -326,10 +313,6 @@ static void init_channel_elem(grpc_channel_element *elem,
             grpc_mdstr_from_string(mdctx, algorith_name));
   }
 
-  /* The first and the last filters tend to be implemented differently to
-     handle the case that there's no 'next' filter to call on the up or down
-     path */
-  GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
 }
 
@@ -346,7 +329,12 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   }
 }
 
-const grpc_channel_filter grpc_compress_filter = {
-    compress_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "compress"};
+const grpc_channel_filter grpc_compress_filter = {compress_start_transport_stream_op,
+                                                  grpc_channel_next_op,
+                                                  sizeof(call_data),
+                                                  init_call_elem,
+                                                  destroy_call_elem,
+                                                  sizeof(channel_data),
+                                                  init_channel_elem,
+                                                  destroy_channel_elem,
+                                                  "compress"};
