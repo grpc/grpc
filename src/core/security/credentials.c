@@ -225,7 +225,7 @@ static grpc_security_status ssl_create_security_connector(
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_HTTP2_SCHEME;
   arg.value.string = "https";
-  *new_args = grpc_channel_args_copy_and_add(args, &arg);
+  *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   return status;
 }
 

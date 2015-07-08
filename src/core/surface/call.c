@@ -76,14 +76,14 @@ typedef struct {
 typedef struct {
   /* Overall status of the operation: starts OK, may degrade to
      non-OK */
-  int success;
-  /* Completion function to call at the end of the operation */
-  grpc_ioreq_completion_func on_complete;
-  void *user_data;
+  gpr_uint8 success;
   /* a bit mask of which request ops are needed (1u << opid) */
   gpr_uint16 need_mask;
   /* a bit mask of which request ops are now completed */
   gpr_uint16 complete_mask;
+  /* Completion function to call at the end of the operation */
+  grpc_ioreq_completion_func on_complete;
+  void *user_data;
 } reqinfo_master;
 
 /* Status data for a request can come from several sources; this
@@ -160,6 +160,8 @@ struct grpc_call {
   gpr_uint8 bound_pollset;
   /* is an error status set */
   gpr_uint8 error_status_set;
+  /** should the alarm be cancelled */
+  gpr_uint8 cancel_alarm;
 
   /* flags with bits corresponding to write states allowing us to determine
      what was sent */
@@ -260,8 +262,8 @@ struct grpc_call {
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline);
 static void call_on_done_recv(void *call, int success);
 static void call_on_done_send(void *call, int success);
-static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
-static void execute_op(grpc_call *call, grpc_transport_op *op);
+static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op);
+static void execute_op(grpc_call *call, grpc_transport_stream_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
@@ -277,8 +279,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline) {
   size_t i;
-  grpc_transport_op initial_op;
-  grpc_transport_op *initial_op_ptr = NULL;
+  grpc_transport_stream_op initial_op;
+  grpc_transport_stream_op *initial_op_ptr = NULL;
   grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack(channel);
   grpc_call *call =
       gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
@@ -296,8 +298,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   if (call->is_client) {
     call->request_set[GRPC_IOREQ_SEND_TRAILING_METADATA] = REQSET_DONE;
     call->request_set[GRPC_IOREQ_SEND_STATUS] = REQSET_DONE;
-    call->context[GRPC_CONTEXT_TRACING].value = grpc_census_context_create();
-    call->context[GRPC_CONTEXT_TRACING].destroy = grpc_census_context_destroy;
   }
   GPR_ASSERT(add_initial_metadata_count < MAX_SEND_INITIAL_METADATA_COUNT);
   for (i = 0; i < add_initial_metadata_count; i++) {
@@ -462,22 +462,25 @@ static int need_more_data(grpc_call *call) {
          (is_op_live(call, GRPC_IOREQ_RECV_CLOSE) &&
           grpc_bbq_empty(&call->incoming_queue)) ||
          (call->write_state == WRITE_STATE_INITIAL && !call->is_client) ||
-         (call->cancel_with_status != GRPC_STATUS_OK) ||
-         call->destroy_called;
+         (call->cancel_with_status != GRPC_STATUS_OK) || call->destroy_called;
 }
 
 static void unlock(grpc_call *call) {
-  grpc_transport_op op;
+  grpc_transport_stream_op op;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int completing_requests = 0;
   int start_op = 0;
   int i;
+  int cancel_alarm = 0;
 
   memset(&op, 0, sizeof(op));
 
   op.cancel_with_status = call->cancel_with_status;
   start_op = op.cancel_with_status != GRPC_STATUS_OK;
   call->cancel_with_status = GRPC_STATUS_OK; /* reset */
+
+  cancel_alarm = call->cancel_alarm;
+  call->cancel_alarm = 0;
 
   if (!call->receiving && need_more_data(call)) {
     op.recv_ops = &call->recv_ops;
@@ -512,6 +515,10 @@ static void unlock(grpc_call *call) {
   }
 
   gpr_mu_unlock(&call->mu);
+
+  if (cancel_alarm) {
+    grpc_alarm_cancel(&call->alarm);
+  }
 
   if (start_op) {
     execute_op(call, &op);
@@ -805,10 +812,7 @@ static void call_on_done_recv(void *pc, int success) {
     if (call->recv_state == GRPC_STREAM_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
-      if (call->have_alarm) {
-        grpc_alarm_cancel(&call->alarm);
-        call->have_alarm = 0;
-      }
+      call->cancel_alarm |= call->have_alarm;
       GRPC_CALL_INTERNAL_UNREF(call, "closed", 0);
     }
     finish_read_ops(call);
@@ -881,7 +885,7 @@ static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
   }
 }
 
-static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
+static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
   grpc_ioreq_data data;
   gpr_uint32 flags;
   grpc_metadata_batch mdb;
@@ -987,7 +991,7 @@ static void finish_read_ops(grpc_call *call) {
 
   switch (call->read_state) {
     case READ_STATE_STREAM_CLOSED:
-      if (empty) {
+      if (empty && !call->have_alarm) {
         finish_ioreq_op(call, GRPC_IOREQ_RECV_CLOSE, 1);
       }
     /* fallthrough */
@@ -1085,10 +1089,7 @@ void grpc_call_destroy(grpc_call *c) {
   lock(c);
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
-  if (c->have_alarm) {
-    grpc_alarm_cancel(&c->alarm);
-    c->have_alarm = 0;
-  }
+  c->cancel_alarm |= c->have_alarm;
   cancel = c->read_state != READ_STATE_STREAM_CLOSED;
   unlock(c);
   if (cancel) grpc_call_cancel(c);
@@ -1140,7 +1141,7 @@ static void finished_loose_op_allocated(void *alloc, int success) {
   gpr_free(args);
 }
 
-static void execute_op(grpc_call *call, grpc_transport_op *op) {
+static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
   grpc_call_element *elem;
 
   GPR_ASSERT(op->on_consumed == NULL);
@@ -1151,14 +1152,15 @@ static void execute_op(grpc_call *call, grpc_transport_op *op) {
     } else {
       finished_loose_op_allocated_args *args = gpr_malloc(sizeof(*args));
       args->call = call;
-      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated, args);
+      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated,
+                              args);
       op->on_consumed = &args->closure;
     }
   }
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
   op->context = call->context;
-  elem->filter->start_transport_op(elem, op);
+  elem->filter->start_transport_stream_op(elem, op);
 }
 
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
@@ -1167,12 +1169,14 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
 
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
+  lock(call);
+  call->have_alarm = 0;
   if (success) {
-    lock(call);
     cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
                        "Deadline Exceeded");
-    unlock(call);
   }
+  finish_read_ops(call);
+  unlock(call);
   GRPC_CALL_INTERNAL_UNREF(call, "alarm", 1);
 }
 
@@ -1223,13 +1227,13 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   } else {
     gpr_uint32 parsed_clevel_bytes;
     if (gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
-                                   GPR_SLICE_LENGTH(md->value->slice),
-                                   &parsed_clevel_bytes)) {
+                                  GPR_SLICE_LENGTH(md->value->slice),
+                                  &parsed_clevel_bytes)) {
       /* the following cast is safe, as a gpr_uint32 should be able to hold all
        * possible values of the grpc_compression_level enum */
-      clevel = (grpc_compression_level) parsed_clevel_bytes;
+      clevel = (grpc_compression_level)parsed_clevel_bytes;
     } else {
-      clevel = GRPC_COMPRESS_LEVEL_NONE;  /* could not parse, no compression */
+      clevel = GRPC_COMPRESS_LEVEL_NONE; /* could not parse, no compression */
     }
     grpc_mdelem_set_user_data(md, destroy_compression,
                               (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
@@ -1252,7 +1256,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
       set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
-    } else if (key == grpc_channel_get_compresssion_level_string(call->channel)) {
+    } else if (key ==
+               grpc_channel_get_compresssion_level_string(call->channel)) {
       set_decode_compression_level(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];

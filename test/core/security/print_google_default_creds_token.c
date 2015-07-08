@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include "src/core/security/credentials.h"
+#include "src/core/support/string.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -56,9 +57,11 @@ static void on_metadata_response(void *user_data,
   if (status == GRPC_CREDENTIALS_ERROR) {
     fprintf(stderr, "Fetching token failed.\n");
   } else {
+    char *token;
     GPR_ASSERT(num_md == 1);
-    printf("\nGot token: %s\n\n",
-           (const char *)GPR_SLICE_START_PTR(md_elems[0].value));
+    token = gpr_dump_slice(md_elems[0].value, GPR_DUMP_ASCII);
+    printf("\nGot token: %s\n\n", token);
+    gpr_free(token);
   }
   gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
   sync->is_done = 1;
