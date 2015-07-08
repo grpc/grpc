@@ -86,8 +86,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
 
-  hex =
-      gpr_hexdump(client_payload, client_payload_length, GPR_HEXDUMP_PLAINTEXT);
+  hex = gpr_dump(client_payload, client_payload_length,
+                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
 
   /* Add a debug log */
   gpr_log(GPR_INFO, "TEST: %s", hex);
@@ -108,8 +108,9 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   a.validator = validator;
   grpc_server_register_completion_queue(a.server, a.cq);
   grpc_server_start(a.server);
-  transport = grpc_create_chttp2_transport(NULL, sfd.server, NULL, 0, mdctx, 0);
+  transport = grpc_create_chttp2_transport(NULL, sfd.server, mdctx, 0);
   server_setup_transport(&a, transport, mdctx);
+  grpc_chttp2_transport_start_reading(transport, NULL, 0);
 
   /* Bind everything into the same pollset */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(a.cq));

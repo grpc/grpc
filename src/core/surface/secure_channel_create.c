@@ -82,9 +82,9 @@ static void on_secure_transport_setup_done(void *arg,
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
   } else {
-    c->result->transport =
-        grpc_create_chttp2_transport(c->args.channel_args, secure_endpoint,
-                                     NULL, 0, c->args.metadata_context, 1);
+    c->result->transport = grpc_create_chttp2_transport(
+        c->args.channel_args, secure_endpoint, c->args.metadata_context, 1);
+    grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0);
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);
     c->result->filters[0] = &grpc_client_auth_filter;
     c->result->filters[1] = &grpc_http_client_filter;
