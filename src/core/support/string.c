@@ -173,12 +173,12 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
   out_length = 0;
   for (i = 0; i < nstrs; i++) {
     const size_t slen = strlen(strs[i]);
-    memcpy(out + out_length, strs[i], slen);
-    out_length += slen;
-    if (sep_len > 0 && nstrs > 0 && i < nstrs - 1) {
+    if (i != 0) {
       memcpy(out + out_length, sep, sep_len);
       out_length += sep_len;
     }
+    memcpy(out + out_length, strs[i], slen);
+    out_length += slen;
   }
   out[out_length] = 0;
   if (final_length != NULL) {

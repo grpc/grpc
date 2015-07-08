@@ -176,10 +176,17 @@ static void test_strjoin_sep(void) {
   GPR_ASSERT(0 == strcmp("one, two, three, four", joined));
   gpr_free(joined);
 
+  /* empty separator */
+  joined = gpr_strjoin_sep(parts, 4, "", &joined_len);
+  GPR_ASSERT(0 == strcmp("onetwothreefour", joined));
+  gpr_free(joined);
+
+  /* degenerated case specifying zero input parts */
   joined = gpr_strjoin_sep(parts, 0, ", ", &joined_len);
   GPR_ASSERT(0 == strcmp("", joined));
   gpr_free(joined);
 
+  /* single part should have no separator */
   joined = gpr_strjoin_sep(parts, 1, ", ", &joined_len);
   GPR_ASSERT(0 == strcmp("one", joined));
   gpr_free(joined);
