@@ -374,6 +374,7 @@ endif
 
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
+OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
 PERFTOOLS_CHECK_CMD = $(PKG_CONFIG) --exists profiler
 PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
