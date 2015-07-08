@@ -1005,7 +1005,7 @@ void grpc_server_add_listener(grpc_server *server, void *arg,
 static grpc_call_error queue_call_request(grpc_server *server,
                                           requested_call *rc) {
   call_data *calld = NULL;
-  requested_call **requests;
+  requested_call **requests = NULL;
   gpr_mu_lock(&server->mu_call);
   if (server->shutdown) {
     gpr_mu_unlock(&server->mu_call);
