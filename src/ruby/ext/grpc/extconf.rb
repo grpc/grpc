@@ -54,6 +54,15 @@ LIB_DIRS = [
   LIBDIR
 ]
 
+def check_grpc_root
+  grpc_root = ENV['GRPC_ROOT']
+  if grpc_root.nil?
+    r = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
+    grpc_root = r if File.exist?(File.join(r, 'include/grpc/grpc.h'))
+  end
+  grpc_root
+end
+
 grpc_pkg_config = system('pkg-config --exists grpc')
 
 if grpc_pkg_config
@@ -61,18 +70,14 @@ if grpc_pkg_config
   $LDFLAGS << ' ' + `pkg-config --static --libs grpc`.strip + ' '
 else
   dir_config('grpc', HEADER_DIRS, LIB_DIRS)
-  raise "libdl not found" unless have_library('dl', 'dlopen')
-  raise "zlib not found" unless have_library('z', 'inflate')
+  fail 'libdl not found' unless have_library('dl', 'dlopen')
+  fail 'zlib not found' unless have_library('z', 'inflate')
   begin
-    raise "Fail" unless have_library('gpr', 'gpr_now')
-    raise "Fail" unless have_library('grpc', 'grpc_channel_destroy')
+    fail 'Fail' unless have_library('gpr', 'gpr_now')
+    fail 'Fail' unless have_library('grpc', 'grpc_channel_destroy')
   rescue
     # Check to see if GRPC_ROOT is defined or available
-    grpc_root = ENV['GRPC_ROOT']
-    if grpc_root.nil?
-      r = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
-      grpc_root = r if File.exist?(File.join(r, 'include/grpc/grpc.h'))
-    end
+    grpc_root = check_grpc_root
 
     # Stop if there is still no grpc_root
     exit 1 if grpc_root.nil?
@@ -89,8 +94,8 @@ else
     end
     $CFLAGS << ' -I' + File.join(grpc_root, 'include')
     $LDFLAGS << ' -L' + grpc_lib_dir
-    raise "gpr not found" unless have_library('gpr', 'gpr_now')
-    raise "grpc not found" unless have_library('grpc', 'grpc_channel_destroy')
+    raise 'gpr not found' unless have_library('gpr', 'gpr_now')
+    raise 'grpc not found' unless have_library('grpc', 'grpc_channel_destroy')
   end
 end
 
