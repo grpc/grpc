@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env python2.7
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +29,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import glob
+import os
+import sys
+import tempfile
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests'))
 
-set -e
+assert sys.argv[1:], 'run generate_projects.sh instead of this directly'
 
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+import jobset
 
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '..', '..'))
+json = sys.argv[1:]
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
+test = {} if 'TEST' in os.environ else None
 
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
-fi
+plugins = sorted(glob.glob('tools/buildgen/plugins/*.py'))
 
-. tools/buildgen/generate_build_additions.sh
+jobs = []
+for root, dirs, files in os.walk('templates'):
+	for f in files:
+		if os.path.splitext(f)[1] == '.template':
+			out = '.' + root[len('templates'):] + '/' + os.path.splitext(f)[0]
+			cmd = ['tools/buildgen/mako_renderer.py']
+			for plugin in plugins:
+				cmd.append('-p')
+				cmd.append(plugin)
+			for js in json:
+				cmd.append('-d')
+				cmd.append(js)
+			cmd.append('-o')
+			if test is None:
+				cmd.append(out)
+			else:
+				tf = tempfile.mkstemp()
+				test[out] = tf[1]
+				os.close(tf[0])
+				cmd.append(test[out])
+			cmd.append(root + '/' + f)
+			jobs.append(jobset.JobSpec(cmd, shortname=out))
 
-tools/buildgen/generate_projects.py build.json $gen_build_files
+jobset.run(jobs)
 
-rm $gen_build_files
+if test is not None:
+	for s, g in test.iteritems():
+		assert(0 == os.system('diff %s %s' % (s, g)))
+		os.unlink(g)
