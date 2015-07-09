@@ -875,6 +875,59 @@ grpc_credentials *grpc_fake_oauth2_credentials_create(
   return &c->base;
 }
 
+/* -- Oauth2 Access Token credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_md_store *access_token_md;
+} grpc_access_token_credentials;
+
+static void access_token_destroy(grpc_credentials *creds) {
+  grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
+  grpc_credentials_md_store_unref(c->access_token_md);
+  gpr_free(c);
+}
+
+static int access_token_has_request_metadata(const grpc_credentials *creds) {
+  return 1;
+}
+
+static int access_token_has_request_metadata_only(
+    const grpc_credentials *creds) {
+  return 1;
+}
+
+static void access_token_get_request_metadata(grpc_credentials *creds,
+                                             grpc_pollset *pollset,
+                                             const char *service_url,
+                                             grpc_credentials_metadata_cb cb,
+                                             void *user_data) {
+  grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
+  cb(user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
+}
+
+static grpc_credentials_vtable access_token_vtable = {
+    access_token_destroy, access_token_has_request_metadata,
+    access_token_has_request_metadata_only, access_token_get_request_metadata,
+    NULL};
+
+grpc_credentials *grpc_access_token_credentials_create(
+    const char *access_token) {
+  grpc_access_token_credentials *c =
+      gpr_malloc(sizeof(grpc_access_token_credentials));
+  char *token_md_value;
+  memset(c, 0, sizeof(grpc_access_token_credentials));
+  c->base.type = GRPC_CREDENTIALS_TYPE_OAUTH2;
+  c->base.vtable = &access_token_vtable;
+  gpr_ref_init(&c->base.refcount, 1);
+  c->access_token_md = grpc_credentials_md_store_create(1);
+  gpr_asprintf(&token_md_value, "Bearer %s", access_token);
+  grpc_credentials_md_store_add_cstrings(
+      c->access_token_md, GRPC_AUTHORIZATION_METADATA_KEY, token_md_value);
+  gpr_free(token_md_value);
+  return &c->base;
+}
+
 /* -- Fake transport security credentials. -- */
 
 static void fake_transport_security_credentials_destroy(
