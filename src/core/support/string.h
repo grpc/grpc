@@ -86,7 +86,7 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
 
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */
-void gpr_slice_split(gpr_slice str, gpr_slice sep, gpr_slice_buffer *dst);
+void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
