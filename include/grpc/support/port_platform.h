@@ -165,6 +165,9 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#ifdef _DEBUG
+#define GPR_USE_MTRACE 1
+#endif
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
 #ifndef _BSD_SOURCE
@@ -285,6 +288,10 @@
         defined(GPR_CUSTOM_TLS) !=                                            \
     1
 #error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
+#endif
+
+#ifndef GPR_USE_MTRACE
+#define GPR_USE_MTRACE 0
 #endif
 
 typedef int16_t gpr_int16;
