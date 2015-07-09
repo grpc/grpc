@@ -139,7 +139,8 @@ The `ProtoRPC` class has a `requestMetadata` property defined like this:
 ```
 
 Setting it to a dictionary of metadata keys and values will have them sent on the wire when the call
-is started.
+is started. gRPC metadata are pieces of information about the call sent by the client to the server
+(and vice versa). They take the form of key-value pairs and are essentially opaque to gRPC itself.
 
 ```objective-c
 call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
