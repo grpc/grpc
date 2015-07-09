@@ -215,21 +215,20 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
  *
  * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
 static int slice_find_separator_offset(const gpr_slice str,
-                                       const gpr_slice sep,
+                                       const char *sep,
                                        const size_t read_offset,
                                        size_t *begin,
                                        size_t *end) {
   size_t i;
   const gpr_uint8 *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
-  const gpr_uint8 *sep_ptr = GPR_SLICE_START_PTR(sep);
   const size_t str_len = GPR_SLICE_LENGTH(str) - read_offset;
-  const size_t sep_len = GPR_SLICE_LENGTH(sep);
+  const size_t sep_len = strlen(sep);
   if (str_len < sep_len) {
     return 0;
   }
 
   for (i = 0; i <= str_len - sep_len; i++) {
-    if (memcmp(str_ptr + i, sep_ptr, sep_len) == 0) {
+    if (memcmp(str_ptr + i, sep, sep_len) == 0) {
       *begin = read_offset;
       *end = read_offset + i;
       return 1;
@@ -238,8 +237,8 @@ static int slice_find_separator_offset(const gpr_slice str,
   return 0;
 }
 
-void gpr_slice_split(gpr_slice str, gpr_slice sep, gpr_slice_buffer *dst) {
-  const size_t sep_len = GPR_SLICE_LENGTH(sep);
+void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst) {
+  const size_t sep_len = strlen(sep);
   size_t begin, end;
 
   GPR_ASSERT(sep_len > 0);
