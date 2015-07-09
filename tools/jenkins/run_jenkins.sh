@@ -51,11 +51,8 @@ then
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave
 
-  if [ "$ghprbPullId" != "" ]
-  then
-    # if we are building a pull request, grab corresponding refs.
-    FETCH_PULL_REQUEST_CMD="&& git fetch $GIT_URL refs/pull/$ghprbPullId/merge refs/pull/$ghprbPullId/head"
-  fi
+  # Create a local branch so the child Docker script won't complain
+  git branch jenkins-docker
 
   # Make sure the CID file is gone.
   rm -f docker.cid
