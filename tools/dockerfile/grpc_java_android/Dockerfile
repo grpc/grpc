@@ -43,27 +43,20 @@ ENV PATH $PATH:$ANDROID_HOME/platform-tools
 # Some old Docker versions consider '/' as HOME
 ENV HOME /root
 
-# Update sdk for android 5.1 (API level 22)
-RUN echo y | android update sdk --all --filter platform-tools,build-tools-22.0.1,sys-img-armeabi-v7a-addon-google_apis-google-22,sys-img-armeabi-v7a-addon-google_apis-google-21,sys-img-armeabi-v7a-android-19,addon-google_apis-google-22,addon-google_apis-google-21,addon-google_apis-google-19,extra-android-m2repository,extra-google-m2repository --no-ui --force
+# Update sdk for android API level 19 (4.4), 21 (5.0), 22 (5.1).
+RUN echo y | android update sdk --all --filter platform-tools,build-tools-22.0.1,sys-img-armeabi-v7a-addon-google_apis-google-22,sys-img-armeabi-v7a-addon-google_apis-google-21,sys-img-armeabi-v7a-android-19,android-22,android-21,android-19,addon-google_apis-google-22,addon-google_apis-google-21,addon-google_apis-google-19,extra-android-m2repository,extra-google-m2repository --no-ui --force
 
 
-# Create an AVD with API level 22
-RUN echo no | android create avd --force -n avd-google-api-22 -t "Google Inc.:Google APIs:22" --abi google_apis/armeabi-v7a
-RUN echo no | android create avd --force -n avd-google-api-21 -t "Google Inc.:Google APIs:21" --abi google_apis/armeabi-v7a
-RUN echo no | android create avd --force -n avd-google-api-19 -t "Google Inc.:Google APIs:19" --abi default/armeabi-v7a
+# Create AVDs with API level 19,21,22
+RUN echo no | android create avd --force -n avd-google-api-22 -t "Google Inc.:Google APIs:22" --abi google_apis/armeabi-v7a && \
+  echo no | android create avd --force -n avd-google-api-21 -t "Google Inc.:Google APIs:21" --abi google_apis/armeabi-v7a && \
+  echo no | android create avd --force -n avd-google-api-19 -t "Google Inc.:Google APIs:19" --abi default/armeabi-v7a
 
 # Pull gRPC Java and trigger download of needed Maven and Gradle artifacts.
 RUN git clone --depth 1 https://github.com/grpc/grpc-java.git /var/local/git/grpc-java && \
   cd /var/local/git/grpc-java && \
-  ./gradlew grpc-core:install grpc-stub:install grpc-okhttp:install grpc-protobuf-nano:install && \
-  rm -r "$(pwd)"
+  ./gradlew grpc-core:install grpc-stub:install grpc-okhttp:install grpc-protobuf-nano:install grpc-compiler:install
 
-# Pull gRPC Android integration test App
-RUN git clone --depth 1 https://github.com/madongfly/grpc-android-test.git /var/local/git/grpc-android-test
-
-# Config android sdk for gradle
-RUN cd /var/local/git/grpc-android-test && echo "sdk.dir=/usr/local/android-sdk-linux" > local.properties
-
-# Build apks to trigger download of needed Maven and Gradle artifacts.
-RUN cd /var/local/git/grpc-android-test && ./gradlew assembleDebug
-RUN cd /var/local/git/grpc-android-test && ./gradlew assembleDebugAndroidTest
+# Config android sdk for gradle and build apk to trigger download of needed Maven and Gradle artifacts.
+RUN cd /var/local/git/grpc-java/android-interop-testing && echo "sdk.dir=/usr/local/android-sdk-linux" > local.properties && \
+  ../gradlew assembleDebug
