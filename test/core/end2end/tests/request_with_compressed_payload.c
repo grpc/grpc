@@ -129,7 +129,7 @@ static void request_with_payload_template(
   cq_verifier *cqv;
   char str[1024];
 
-  memset(&str[0], 1023, 'x'); str[1023] = '\0';
+  memset(str, 'x', 1023); str[1023] = '\0';
   request_payload_slice = gpr_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
