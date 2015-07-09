@@ -197,7 +197,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
   if (chand->path_str != NULL) {
-    grpc_mdstr_unref(chand->path_str);
+    GRPC_MDSTR_UNREF(chand->path_str);
   }
 }
 

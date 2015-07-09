@@ -58,21 +58,49 @@ static void test_strdup(void) {
   GPR_ASSERT(NULL == gpr_strdup(NULL));
 }
 
-static void expect_hexdump(const char *buf, size_t len, gpr_uint32 flags,
-                           const char *result) {
-  char *got = gpr_hexdump(buf, len, flags);
+static void expect_dump(const char *buf, size_t len, gpr_uint32 flags,
+                        const char *result) {
+  char *got = gpr_dump(buf, len, flags);
   GPR_ASSERT(0 == strcmp(got, result));
   gpr_free(got);
 }
 
-static void test_hexdump(void) {
-  LOG_TEST_NAME("test_hexdump");
-  expect_hexdump("\x01", 1, 0, "01");
-  expect_hexdump("\x01", 1, GPR_HEXDUMP_PLAINTEXT, "01 '.'");
-  expect_hexdump("\x01\x02", 2, 0, "01 02");
-  expect_hexdump("\x01\x23\x45\x67\x89\xab\xcd\xef", 8, 0,
+static void test_dump(void) {
+  LOG_TEST_NAME("test_dump");
+  expect_dump("\x01", 1, GPR_DUMP_HEX, "01");
+  expect_dump("\x01", 1, GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
+  expect_dump("\x01\x02", 2, GPR_DUMP_HEX, "01 02");
+  expect_dump("\x01\x23\x45\x67\x89\xab\xcd\xef", 8, GPR_DUMP_HEX,
                  "01 23 45 67 89 ab cd ef");
-  expect_hexdump("ab", 2, GPR_HEXDUMP_PLAINTEXT, "61 62 'ab'");
+  expect_dump("ab", 2, GPR_DUMP_HEX | GPR_DUMP_ASCII, "61 62 'ab'");
+}
+
+static void expect_slice_dump(gpr_slice slice, gpr_uint32 flags,
+                              const char *result) {
+  char *got = gpr_dump_slice(slice, flags);
+  GPR_ASSERT(0 == strcmp(got, result));
+  gpr_free(got);
+  gpr_slice_unref(slice);
+}
+
+static void test_dump_slice(void) {
+  static const char *text = "HELLO WORLD!";
+  static const char *long_text =
+      "It was a bright cold day in April, and the clocks were striking "
+      "thirteen. Winston Smith, his chin nuzzled into his breast in an effort "
+      "to escape the vile wind, slipped quickly through the glass doors of "
+      "Victory Mansions, though not quickly enough to prevent a swirl of "
+      "gritty dust from entering along with him.";
+
+  LOG_TEST_NAME("test_dump_slice");
+
+  expect_slice_dump(gpr_slice_from_copied_string(text), GPR_DUMP_ASCII, text);
+  expect_slice_dump(gpr_slice_from_copied_string(long_text), GPR_DUMP_ASCII,
+                    long_text);
+  expect_slice_dump(gpr_slice_from_copied_buffer("\x01", 1), GPR_DUMP_HEX,
+                    "01");
+  expect_slice_dump(gpr_slice_from_copied_buffer("\x01", 1),
+                    GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
 }
 
 static void test_pu32_fail(const char *s) {
@@ -148,7 +176,8 @@ static void test_asprintf(void) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
-  test_hexdump();
+  test_dump();
+  test_dump_slice();
   test_parse_uint32();
   test_asprintf();
   return 0;

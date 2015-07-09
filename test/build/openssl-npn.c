@@ -31,31 +31,15 @@
  *
  */
 
-#include <grpc/census.h>
-#include "src/core/census/grpc_context.h"
+/* This is just a compilation test, to see if we have a version of OpenSSL with
+   NPN support installed. It's not meant to be run, and all of the values and
+   function calls there are non-sensical. The code is only meant to test the
+   presence of symbols, and we're expecting a compilation failure otherwise. */
 
-static void grpc_census_context_destroy(void *context) {
-  census_context_destroy((census_context *)context);
-}
+#include <stdlib.h>
+#include <openssl/ssl.h>
 
-void grpc_census_call_set_context(grpc_call *call, census_context *context) {
-  if (!census_available()) {
-    return;
-  }
-  if (context == NULL) {
-    if (grpc_call_is_client(call)) {
-      census_context *context_ptr;
-      census_context_deserialize(NULL, &context_ptr);
-      grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context_ptr,
-                            grpc_census_context_destroy);
-    } else {
-      /* TODO(aveitch): server side context code to be implemented. */
-    }
-  } else {
-    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
-  }
-}
-
-census_context *grpc_census_call_get_context(grpc_call *call) {
-  return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
+int main() {
+  SSL_get0_next_proto_negotiated(NULL, NULL, NULL);
+  return OPENSSL_NPN_UNSUPPORTED;
 }

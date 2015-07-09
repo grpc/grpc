@@ -538,6 +538,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "grpc_jwt_verifier_test", 
+    "src": [
+      "test/core/security/jwt_verifier_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "grpc_print_google_default_creds_token", 
     "src": [
       "test/core/security/print_google_default_creds_token.c"
@@ -569,6 +583,20 @@
     "name": "grpc_stream_op_test", 
     "src": [
       "test/core/transport/stream_op_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc_verify_jwt", 
+    "src": [
+      "test/core/security/verify_jwt.c"
     ]
   }, 
   {
@@ -8743,6 +8771,7 @@
       "src/core/security/base64.h", 
       "src/core/security/credentials.h", 
       "src/core/security/json_token.h", 
+      "src/core/security/jwt_verifier.h", 
       "src/core/security/secure_endpoint.h", 
       "src/core/security/secure_transport_setup.h", 
       "src/core/security/security_connector.h", 
@@ -8944,6 +8973,8 @@
       "src/core/security/google_default_credentials.c", 
       "src/core/security/json_token.c", 
       "src/core/security/json_token.h", 
+      "src/core/security/jwt_verifier.c", 
+      "src/core/security/jwt_verifier.h", 
       "src/core/security/secure_endpoint.c", 
       "src/core/security/secure_endpoint.h", 
       "src/core/security/secure_transport_setup.c", 

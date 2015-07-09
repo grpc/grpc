@@ -87,12 +87,16 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  TestServiceImpl() : signal_client_(false) {}
+  TestServiceImpl() : signal_client_(false), host_(nullptr) {}
+  explicit TestServiceImpl(const grpc::string& host) : signal_client_(false), host_(new grpc::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
     response->set_message(request->message());
     MaybeEchoDeadline(context, request, response);
+    if (host_) {
+      response->mutable_param()->set_host(*host_);
+    }
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {
         std::unique_lock<std::mutex> lock(mu_);
@@ -191,6 +195,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  private:
   bool signal_client_;
   std::mutex mu_;
+  std::unique_ptr<grpc::string> host_;
 };
 
 class TestServiceImplDupPkg
@@ -205,7 +210,7 @@ class TestServiceImplDupPkg
 
 class End2endTest : public ::testing::Test {
  protected:
-  End2endTest() : kMaxMessageSize_(8192), thread_pool_(2) {}
+  End2endTest() : kMaxMessageSize_(8192), special_service_("special"), thread_pool_(2) {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -215,6 +220,7 @@ class End2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              FakeTransportSecurityServerCredentials());
     builder.RegisterService(&service_);
+    builder.RegisterService("special", &special_service_);
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
@@ -236,6 +242,7 @@ class End2endTest : public ::testing::Test {
   std::ostringstream server_address_;
   const int kMaxMessageSize_;
   TestServiceImpl service_;
+  TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   ThreadPool thread_pool_;
 };
@@ -252,6 +259,22 @@ static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
   }
+}
+
+TEST_F(End2endTest, SimpleRpcWithHost) {
+  ResetStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  context.set_authority("special");
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(response.has_param());
+  EXPECT_EQ(response.param().host(), "special");
+  EXPECT_TRUE(s.ok());
 }
 
 TEST_F(End2endTest, SimpleRpc) {

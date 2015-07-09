@@ -211,10 +211,10 @@ void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
 void grpc_metadata_batch_destroy(grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    grpc_mdelem_unref(l->md);
+    GRPC_MDELEM_UNREF(l->md);
   }
   for (l = batch->garbage.head; l; l = l->next) {
-    grpc_mdelem_unref(l->md);
+    GRPC_MDELEM_UNREF(l->md);
   }
 }
 
@@ -315,7 +315,7 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
       assert_valid_list(&batch->list);
       link_head(&batch->garbage, l);
     } else if (filt != orig) {
-      grpc_mdelem_unref(orig);
+      GRPC_MDELEM_UNREF(orig);
       l->md = filt;
     }
   }

@@ -95,7 +95,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
     return
   message.old_tag = tag
   message.old_msg = msg
-  if platform.system() == 'Windows':
+  if platform.system() == 'Windows' or not sys.stdout.isatty():
     if explanatory_text:
       print explanatory_text
     print '%s: %s' % (tag, msg)
