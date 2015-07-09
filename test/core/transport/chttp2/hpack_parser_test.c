@@ -53,7 +53,7 @@ static void onhdr(void *ud, grpc_mdelem *md) {
   GPR_ASSERT(evalue);
   GPR_ASSERT(gpr_slice_str_cmp(md->key->slice, ekey) == 0);
   GPR_ASSERT(gpr_slice_str_cmp(md->value->slice, evalue) == 0);
-  grpc_mdelem_unref(md);
+  GRPC_MDELEM_UNREF(md);
 }
 
 static void test_vector(grpc_chttp2_hpack_parser *parser,

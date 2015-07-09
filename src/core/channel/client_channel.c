@@ -427,7 +427,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
     GRPC_RESOLVER_REF(resolver, "channel-next");
     gpr_mu_unlock(&chand->mu_config);
     GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
-    grpc_resolver_next(chand->resolver, &chand->incoming_configuration,
+    grpc_resolver_next(resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
     GRPC_RESOLVER_UNREF(resolver, "channel-next");
   } else {

@@ -262,7 +262,7 @@ static void chk_hdr(void *p, grpc_mdelem *el) {
   GPR_ASSERT(0 == gpr_slice_str_cmp(el->key->slice, st->key));
   GPR_ASSERT(0 == gpr_slice_str_cmp(el->value->slice, st->value));
   st->got_hdr = 1;
-  grpc_mdelem_unref(el);
+  GRPC_MDELEM_UNREF(el);
 }
 
 static void test_decode_random_headers_inner(int max_len) {
