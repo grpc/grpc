@@ -108,13 +108,13 @@ static void hc_mutate_op(grpc_call_element *elem,
       /* Send : prefixed headers, which have to be before any application
          layer headers. */
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->method,
-                                   grpc_mdelem_ref(channeld->method));
+                                   GRPC_MDELEM_REF(channeld->method));
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->scheme,
-                                   grpc_mdelem_ref(channeld->scheme));
+                                   GRPC_MDELEM_REF(channeld->scheme));
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->te_trailers,
-                                   grpc_mdelem_ref(channeld->te_trailers));
+                                   GRPC_MDELEM_REF(channeld->te_trailers));
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
-                                   grpc_mdelem_ref(channeld->content_type));
+                                   GRPC_MDELEM_REF(channeld->content_type));
       break;
     }
   }
@@ -196,11 +196,11 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
-  grpc_mdelem_unref(channeld->te_trailers);
-  grpc_mdelem_unref(channeld->method);
-  grpc_mdelem_unref(channeld->scheme);
-  grpc_mdelem_unref(channeld->content_type);
-  grpc_mdelem_unref(channeld->status);
+  GRPC_MDELEM_UNREF(channeld->te_trailers);
+  GRPC_MDELEM_UNREF(channeld->method);
+  GRPC_MDELEM_UNREF(channeld->scheme);
+  GRPC_MDELEM_UNREF(channeld->content_type);
+  GRPC_MDELEM_UNREF(channeld->status);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

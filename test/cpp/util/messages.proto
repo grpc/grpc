@@ -47,6 +47,7 @@ message EchoRequest {
 
 message ResponseParams {
   optional int64 request_deadline = 1;
+  optional string host = 2;
 }
 
 message EchoResponse {
