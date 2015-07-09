@@ -167,7 +167,7 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
                                                  const char *value) {
   grpc_mdelem *md = grpc_mdelem_from_strings(tbl->mdctx, key, value);
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
-  grpc_mdelem_unref(md);
+  GRPC_MDELEM_UNREF(md);
   return r;
 }
 
