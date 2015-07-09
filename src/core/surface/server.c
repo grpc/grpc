@@ -267,7 +267,8 @@ static void send_shutdown(grpc_channel *channel, int send_goaway,
 }
 
 static void channel_broadcaster_shutdown(channel_broadcaster *cb,
-                                         int send_goaway, int force_disconnect) {
+                                         int send_goaway,
+                                         int force_disconnect) {
   size_t i;
 
   for (i = 0; i < cb->num_channels; i++) {
@@ -484,13 +485,9 @@ static void maybe_finish_shutdown(grpc_server *server) {
   server->shutdown_published = 1;
   for (i = 0; i < server->num_shutdown_tags; i++) {
     server_ref(server);
-    grpc_cq_end_op(server->shutdown_tags[i].cq, 
-                   server->shutdown_tags[i].tag,
-                   1,
-                   done_shutdown_event,
-                   server,
-                   &server->shutdown_tags[i].completion
-                   );
+    grpc_cq_end_op(server->shutdown_tags[i].cq, server->shutdown_tags[i].tag, 1,
+                   done_shutdown_event, server,
+                   &server->shutdown_tags[i].completion);
   }
 }
 
@@ -1167,8 +1164,7 @@ static void begin_call(grpc_server *server, call_data *calld,
   }
 
   GRPC_CALL_INTERNAL_REF(calld->call, "server");
-  grpc_call_start_ioreq_and_call_back(calld->call, req, r - req, publish,
-                                      rc);
+  grpc_call_start_ioreq_and_call_back(calld->call, req, r - req, publish, rc);
 }
 
 static void done_request_event(void *req, grpc_cq_completion *c) {
@@ -1185,7 +1181,8 @@ static void fail_call(grpc_server *server, requested_call *rc) {
       rc->data.registered.initial_metadata->count = 0;
       break;
   }
-  grpc_cq_end_op(rc->cq_for_notification, rc->tag, 0, done_request_event, rc, &rc->completion);
+  grpc_cq_end_op(rc->cq_for_notification, rc->tag, 0, done_request_event, rc,
+                 &rc->completion);
 }
 
 static void publish_registered_or_batch(grpc_call *call, int success,
@@ -1194,7 +1191,8 @@ static void publish_registered_or_batch(grpc_call *call, int success,
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   requested_call *rc = prc;
   call_data *calld = elem->call_data;
-  grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc, &rc->completion);
+  grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc,
+                 &rc->completion);
   GRPC_CALL_INTERNAL_UNREF(call, "server", 0);
 }
 

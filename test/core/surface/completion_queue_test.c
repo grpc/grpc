@@ -139,7 +139,8 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc);
-    grpc_cq_end_op(cc, tags[i], 1, do_nothing_end_completion, NULL, &completions[i]);
+    grpc_cq_end_op(cc, tags[i], 1, do_nothing_end_completion, NULL,
+                   &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -149,7 +150,8 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc);
-    grpc_cq_end_op(cc, tags[i], 1, do_nothing_end_completion, NULL, &completions[i]);
+    grpc_cq_end_op(cc, tags[i], 1, do_nothing_end_completion, NULL,
+                   &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -201,7 +203,8 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_end_op(opt->cc, (void *)(gpr_intptr)1, 1, free_completion, NULL, gpr_malloc(sizeof(grpc_cq_completion)));
+    grpc_cq_end_op(opt->cc, (void *)(gpr_intptr)1, 1, free_completion, NULL,
+                   gpr_malloc(sizeof(grpc_cq_completion)));
     opt->events_triggered++;
   }
 

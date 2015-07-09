@@ -1342,15 +1342,13 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
 }
 
 static void finish_batch(grpc_call *call, int success, void *tag) {
-  grpc_cq_end_op(call->cq, 
-    tag, success, done_completion, call,
-    allocate_completion(call));
+  grpc_cq_end_op(call->cq, tag, success, done_completion, call,
+                 allocate_completion(call));
 }
 
 static void finish_batch_with_close(grpc_call *call, int success, void *tag) {
-  grpc_cq_end_op(call->cq, 
-    tag, 1, done_completion, call,
-    allocate_completion(call));
+  grpc_cq_end_op(call->cq, tag, 1, done_completion, call,
+                 allocate_completion(call));
 }
 
 static int are_write_flags_valid(gpr_uint32 flags) {
@@ -1375,7 +1373,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   if (nops == 0) {
     grpc_cq_begin_op(call->cq);
     GRPC_CALL_INTERNAL_REF(call, "completion");
-    grpc_cq_end_op(call->cq, tag, 1, done_completion, call, allocate_completion(call));
+    grpc_cq_end_op(call->cq, tag, 1, done_completion, call,
+                   allocate_completion(call));
     return GRPC_CALL_OK;
   }
 

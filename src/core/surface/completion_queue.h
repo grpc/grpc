@@ -40,7 +40,7 @@
 #include <grpc/grpc.h>
 
 typedef struct grpc_cq_completion {
-	/** user supplied tag */
+  /** user supplied tag */
   void *tag;
   /** done callback - called when this queue element is no longer
       needed by the completion queue */
@@ -71,13 +71,9 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc);
 void grpc_cq_begin_op(grpc_completion_queue *cc);
 
 /* Queue a GRPC_OP_COMPLETED operation */
-void grpc_cq_end_op(
-		grpc_completion_queue *cc, 
-		void *tag, 
-		int success, 
-		void (*done)(void *done_arg, grpc_cq_completion *storage), 
-		void *done_arg,
-		grpc_cq_completion *storage);
+void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
+                    void (*done)(void *done_arg, grpc_cq_completion *storage),
+                    void *done_arg, grpc_cq_completion *storage);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
