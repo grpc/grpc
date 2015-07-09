@@ -84,8 +84,8 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
          int max_message_size);
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
-  bool RegisterService(RpcService* service);
-  bool RegisterAsyncService(AsynchronousService* service);
+  bool RegisterService(const grpc::string *host, RpcService* service);
+  bool RegisterAsyncService(const grpc::string *host, AsynchronousService* service);
   void RegisterAsyncGenericService(AsyncGenericService* service);
   // Add a listening port. Can be called multiple times.
   int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);

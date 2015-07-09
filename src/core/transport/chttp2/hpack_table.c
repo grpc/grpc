@@ -122,10 +122,10 @@ void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl) {
   size_t i;
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem_unref(tbl->static_ents[i]);
+    GRPC_MDELEM_UNREF(tbl->static_ents[i]);
   }
   for (i = 0; i < tbl->num_ents; i++) {
-    grpc_mdelem_unref(
+    GRPC_MDELEM_UNREF(
         tbl->ents[(tbl->first_ent + i) % GRPC_CHTTP2_MAX_TABLE_COUNT]);
   }
 }
@@ -155,7 +155,7 @@ static void evict1(grpc_chttp2_hptbl *tbl) {
                    GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   tbl->first_ent = (tbl->first_ent + 1) % GRPC_CHTTP2_MAX_TABLE_COUNT;
   tbl->num_ents--;
-  grpc_mdelem_unref(first_ent);
+  GRPC_MDELEM_UNREF(first_ent);
 }
 
 void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {

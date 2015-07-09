@@ -85,7 +85,7 @@ typedef struct grpc_httpcli_response {
   char *body;
 } grpc_httpcli_response;
 
-/* Callback for grpc_httpcli_get */
+/* Callback for grpc_httpcli_get and grpc_httpcli_post. */
 typedef void (*grpc_httpcli_response_cb)(void *user_data,
                                          const grpc_httpcli_response *response);
 
@@ -100,8 +100,6 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
    'deadline' contains a deadline for the request (or gpr_inf_future)
-   'em' points to a caller owned event manager that must be alive for the
-     lifetime of the request
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
 void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,

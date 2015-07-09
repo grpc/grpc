@@ -393,18 +393,18 @@ static void destroy_call(void *call, int ignored_success) {
   gpr_mu_destroy(&c->mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (c->status[i].details) {
-      grpc_mdstr_unref(c->status[i].details);
+      GRPC_MDSTR_UNREF(c->status[i].details);
     }
   }
   for (i = 0; i < c->owned_metadata_count; i++) {
-    grpc_mdelem_unref(c->owned_metadata[i]);
+    GRPC_MDELEM_UNREF(c->owned_metadata[i]);
   }
   gpr_free(c->owned_metadata);
   for (i = 0; i < GPR_ARRAY_SIZE(c->buffered_metadata); i++) {
     gpr_free(c->buffered_metadata[i].metadata);
   }
   for (i = 0; i < c->send_initial_metadata_count; i++) {
-    grpc_mdelem_unref(c->send_initial_metadata[i].md);
+    GRPC_MDELEM_UNREF(c->send_initial_metadata[i].md);
   }
   for (i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (c->context[i].destroy) {
@@ -461,7 +461,7 @@ static void set_decode_compression_level(grpc_call *call,
 static void set_status_details(grpc_call *call, status_source source,
                                grpc_mdstr *status) {
   if (call->status[source].details != NULL) {
-    grpc_mdstr_unref(call->status[source].details);
+    GRPC_MDSTR_UNREF(call->status[source].details);
   }
   call->status[source].details = status;
 }
@@ -640,7 +640,7 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
         case GRPC_IOREQ_SEND_STATUS:
           if (call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details !=
               NULL) {
-            grpc_mdstr_unref(
+            GRPC_MDSTR_UNREF(
                 call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details);
             call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
                 NULL;
@@ -969,7 +969,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
                 &mdb, &call->details_link,
                 grpc_mdelem_from_metadata_strings(
                     call->metadata_context,
-                    grpc_mdstr_ref(
+                    GRPC_MDSTR_REF(
                         grpc_channel_get_message_string(call->channel)),
                     data.send_status.details));
             call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
@@ -1077,7 +1077,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                       reqs[i].data.send_status.code);
       if (reqs[i].data.send_status.details) {
         set_status_details(call, STATUS_FROM_SERVER_STATUS,
-                           grpc_mdstr_ref(reqs[i].data.send_status.details));
+                           GRPC_MDSTR_REF(reqs[i].data.send_status.details));
       }
     }
     have_ops |= 1u << op;
@@ -1281,7 +1281,7 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     if (key == grpc_channel_get_status_string(call->channel)) {
       set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
-      set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
+      set_status_details(call, STATUS_FROM_WIRE, GRPC_MDSTR_REF(md->value));
     } else if (key ==
                grpc_channel_get_compresssion_level_string(call->channel)) {
       set_decode_compression_level(call, decode_compression(md));
@@ -1317,10 +1317,10 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
 
   grpc_mdctx_lock(mdctx);
   for (l = md->list.head; l; l = l->next) {
-    if (l->md) grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+    if (l->md) GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
   }
   for (l = md->garbage.head; l; l = l->next) {
-    grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+    GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
   }
   grpc_mdctx_unlock(mdctx);
 }
