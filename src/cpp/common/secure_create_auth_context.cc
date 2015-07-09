@@ -43,9 +43,8 @@ std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
   if (call == nullptr) {
     return std::shared_ptr<const AuthContext>();
   }
-  grpc_auth_context* context =
-      const_cast<grpc_auth_context*>(grpc_call_auth_context(call));
-  return std::shared_ptr<const AuthContext>(new SecureAuthContext(context));
+  return std::shared_ptr<const AuthContext>(
+      new SecureAuthContext(grpc_call_auth_context(call)));
 }
 
 }  // namespace grpc
