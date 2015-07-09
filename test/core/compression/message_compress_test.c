@@ -119,7 +119,6 @@ static compressability get_compressability(
   if (algorithm == GRPC_COMPRESS_NONE) return SHOULD_NOT_COMPRESS;
   switch (id) {
     case ONE_A:
-      return SHOULD_NOT_COMPRESS;
     case ONE_KB_A:
     case ONE_MB_A:
       return SHOULD_COMPRESS;

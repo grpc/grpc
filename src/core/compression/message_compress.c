@@ -101,7 +101,7 @@ static int zlib_compress(gpr_slice_buffer *input, gpr_slice_buffer *output,
     gpr_log(GPR_ERROR, "deflateInit2 returns %d", r);
     return 0;
   }
-  r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
+  r = zlib_body(&zs, input, output, deflate);
   if (!r) {
     for (i = count_before; i < output->count; i++) {
       gpr_slice_unref(output->slices[i]);
