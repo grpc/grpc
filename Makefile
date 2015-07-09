@@ -8806,7 +8806,7 @@ SECURE_AUTH_CONTEXT_TEST_SRC = \
 SECURE_AUTH_CONTEXT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SECURE_AUTH_CONTEXT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/secure_auth_context_test: openssl_dep_error
 
