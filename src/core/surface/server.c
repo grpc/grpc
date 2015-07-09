@@ -441,7 +441,7 @@ static void start_new_rpc(grpc_call_element *elem) {
     /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
     hash = GRPC_MDSTR_KV_HASH(calld->host->hash, calld->path->hash);
-    for (i = 0; i < chand->registered_method_max_probes; i++) {
+    for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
       if (!rm) break;
