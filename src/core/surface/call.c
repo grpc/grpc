@@ -135,6 +135,7 @@ struct grpc_call {
   grpc_mdctx *metadata_context;
   /* TODO(ctiller): share with cq if possible? */
   gpr_mu mu;
+  gpr_mu completion_mu;
 
   /* how far through the stream have we read? */
   read_state read_state;
@@ -291,6 +292,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
       gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
   memset(call, 0, sizeof(grpc_call));
   gpr_mu_init(&call->mu);
+  gpr_mu_init(&call->completion_mu);
   call->channel = channel;
   call->cq = cq;
   if (cq) {
@@ -356,11 +358,13 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
 
 grpc_cq_completion *allocate_completion(grpc_call *call) {
   gpr_uint8 i;
+  gpr_mu_lock(&call->completion_mu);
   for (i = 0; i < GPR_ARRAY_SIZE(call->completions); i++) {
     if (call->allocated_completions & (1u << i)) {
       continue;
     }
     call->allocated_completions |= 1u << i;
+    gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
   gpr_log(GPR_ERROR, "should never reach here");
@@ -369,9 +373,9 @@ grpc_cq_completion *allocate_completion(grpc_call *call) {
 
 void done_completion(void *call, grpc_cq_completion *completion) {
   grpc_call *c = call;
-  gpr_mu_lock(&c->mu);
+  gpr_mu_lock(&c->completion_mu);
   c->allocated_completions &= ~(1u << (completion - c->completions));
-  gpr_mu_unlock(&c->mu);
+  gpr_mu_unlock(&c->completion_mu);
   GRPC_CALL_INTERNAL_UNREF(c, "completion", 1);
 }
 
@@ -391,6 +395,7 @@ static void destroy_call(void *call, int ignored_success) {
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
   GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
   gpr_mu_destroy(&c->mu);
+  gpr_mu_destroy(&c->completion_mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (c->status[i].details) {
       GRPC_MDSTR_UNREF(c->status[i].details);
