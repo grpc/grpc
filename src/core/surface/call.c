@@ -445,7 +445,10 @@ static void set_accept_encoding(grpc_call *call,
   gpr_slice_buffer_init(&accept_encoding_parts);
   gpr_slice_split(accept_encoding_slice, ", ", &accept_encoding_parts);
 
-  memset(call->accept_encoding, 0, sizeof(call->accept_encoding));
+  /* No need to zero call->accept_encoding: grpc_call_create already zeroes the
+   * whole grpc_call */
+  /* Always support no compression */
+  call->accept_encoding[GRPC_COMPRESS_NONE] = 1;  /* GPR_TRUE */
   for (i = 0; i < accept_encoding_parts.count; i++) {
     const gpr_slice* slice = &accept_encoding_parts.slices[i];
     if (grpc_compression_algorithm_parse(
