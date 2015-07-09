@@ -31,62 +31,32 @@
  *
  */
 
-#include <grpc++/client_context.h>
+#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
-#include <grpc/grpc.h>
-#include <grpc++/credentials.h>
-#include <grpc++/time.h>
-#include "src/cpp/common/create_auth_context.h"
+#include <grpc++/auth_context.h>
+
+struct grpc_auth_context;
 
 namespace grpc {
 
-ClientContext::ClientContext()
-    : initial_metadata_received_(false),
-      call_(nullptr),
-      cq_(nullptr),
-      deadline_(gpr_inf_future) {}
+class SecureAuthContext GRPC_FINAL : public AuthContext {
+ public:
+  SecureAuthContext(grpc_auth_context* ctx);
 
-ClientContext::~ClientContext() {
-  if (call_) {
-    grpc_call_destroy(call_);
-  }
-  if (cq_) {
-    // Drain cq_.
-    grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
-      ;
-    grpc_completion_queue_destroy(cq_);
-  }
-}
+  ~SecureAuthContext() GRPC_OVERRIDE;
 
-void ClientContext::AddMetadata(const grpc::string& meta_key,
-                                const grpc::string& meta_value) {
-  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
-}
+  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
-  GPR_ASSERT(call_ == nullptr);
-  call_ = call;
-  channel_ = channel;
-  if (creds_ && !creds_->ApplyToCall(call_)) {
-    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.");
-  }
-}
+  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
 
-std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
-  if (auth_context_.get() == nullptr) {
-    auth_context_ = CreateAuthContext(call_);
-  }
-  return auth_context_;
-}
+  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
+      GRPC_OVERRIDE;
 
-void ClientContext::TryCancel() {
-  if (call_) {
-    grpc_call_cancel(call_);
-  }
-}
+ private:
+  grpc_auth_context* ctx_;
+};
 
 }  // namespace grpc
+
+#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H

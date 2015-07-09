@@ -31,62 +31,32 @@
  *
  */
 
-#include <grpc++/client_context.h>
+#ifndef GRPCXX_AUTH_CONTEXT_H
+#define GRPCXX_AUTH_CONTEXT_H
 
-#include <grpc/grpc.h>
-#include <grpc++/credentials.h>
-#include <grpc++/time.h>
-#include "src/cpp/common/create_auth_context.h"
+#include <vector>
+
+#include <grpc++/config.h>
 
 namespace grpc {
 
-ClientContext::ClientContext()
-    : initial_metadata_received_(false),
-      call_(nullptr),
-      cq_(nullptr),
-      deadline_(gpr_inf_future) {}
+class AuthContext {
+ public:
+  typedef std::pair<grpc::string, grpc::string> Property;
 
-ClientContext::~ClientContext() {
-  if (call_) {
-    grpc_call_destroy(call_);
-  }
-  if (cq_) {
-    // Drain cq_.
-    grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
-      ;
-    grpc_completion_queue_destroy(cq_);
-  }
-}
+  virtual ~AuthContext() {}
 
-void ClientContext::AddMetadata(const grpc::string& meta_key,
-                                const grpc::string& meta_value) {
-  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
-}
+  // A peer identity, in general is one or more properties (in which case they
+  // have the same name).
+  virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
+  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
-  GPR_ASSERT(call_ == nullptr);
-  call_ = call;
-  channel_ = channel;
-  if (creds_ && !creds_->ApplyToCall(call_)) {
-    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.");
-  }
-}
-
-std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
-  if (auth_context_.get() == nullptr) {
-    auth_context_ = CreateAuthContext(call_);
-  }
-  return auth_context_;
-}
-
-void ClientContext::TryCancel() {
-  if (call_) {
-    grpc_call_cancel(call_);
-  }
-}
+  // Returns all the property values with the given name.
+  virtual std::vector<grpc::string> FindPropertyValues(
+      const grpc::string& name) const = 0;
+};
 
 }  // namespace grpc
+
+#endif  // GRPCXX_AUTH_CONTEXT_H
+
