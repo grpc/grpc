@@ -243,8 +243,12 @@ const char *grpc_auth_context_peer_identity_property_name(
 /* Returns 1 if the peer is authenticated, 0 otherwise. */
 int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx);
 
-/* Gets the auth context from the call. */
-const grpc_auth_context *grpc_call_auth_context(grpc_call *call);
+/* Gets the auth context from the call. Caller needs to call
+   grpc_auth_context_release on the returned context. */
+grpc_auth_context *grpc_call_auth_context(grpc_call *call);
+
+/* Releases the auth context returned from grpc_call_auth_context. */
+void grpc_auth_context_release(grpc_auth_context *context);
 
 #ifdef __cplusplus
 }

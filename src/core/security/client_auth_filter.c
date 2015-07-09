@@ -212,15 +212,9 @@ static void auth_start_transport_op(grpc_call_element *elem,
           grpc_client_security_context_destroy;
     }
     sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
-    if (sec_ctx->auth_context == NULL) {
-      sec_ctx->auth_context =
-          GRPC_AUTH_CONTEXT_REF(chand->security_connector->base.auth_context,
-                                "client_auth_filter");
-    } else {
-      sec_ctx->auth_context->chained =
-          GRPC_AUTH_CONTEXT_REF(chand->security_connector->base.auth_context,
-                                "client_auth_filter chained");
-    }
+    GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
+    sec_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
+        chand->security_connector->base.auth_context, "client_auth_filter");
   }
 
   if (op->bind_pollset) {

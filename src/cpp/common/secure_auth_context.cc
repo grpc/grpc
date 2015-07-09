@@ -33,16 +33,13 @@
 
 #include "src/cpp/common/secure_auth_context.h"
 
-#include "src/core/security/security_context.h"
+#include <grpc/grpc_security.h>
 
 namespace grpc {
 
-SecureAuthContext::SecureAuthContext(grpc_auth_context* ctx)
-    : ctx_(GRPC_AUTH_CONTEXT_REF(ctx, "SecureAuthContext")) {}
+SecureAuthContext::SecureAuthContext(grpc_auth_context* ctx) : ctx_(ctx) {}
 
-SecureAuthContext::~SecureAuthContext() {
-  GRPC_AUTH_CONTEXT_UNREF(ctx_, "SecureAuthContext");
-}
+SecureAuthContext::~SecureAuthContext() { grpc_auth_context_release(ctx_); }
 
 std::vector<grpc::string> SecureAuthContext::GetPeerIdentity() const {
   if (!ctx_) {

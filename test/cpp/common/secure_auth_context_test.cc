@@ -66,8 +66,6 @@ TEST_F(SecureAuthContextTest, Properties) {
   std::vector<grpc::string> bar = context.FindPropertyValues("foo");
   EXPECT_EQ(1, bar.size());
   EXPECT_EQ("bar", bar[0]);
-
-  GRPC_AUTH_CONTEXT_UNREF(ctx, "SecureAuthContextTest");
 }
 
 }  // namespace
