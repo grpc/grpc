@@ -53,7 +53,7 @@ typedef struct grpc_json {
 } grpc_json;
 
 /* The next two functions are going to parse the input string, and
- * destroy it in the process, in order to use its space to store
+ * modify it in the process, in order to use its space to store
  * all of the keys and values for the returned object tree.
  *
  * They assume UTF-8 input stream, and will output UTF-8 encoded

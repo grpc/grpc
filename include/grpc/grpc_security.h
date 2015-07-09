@@ -126,12 +126,17 @@ grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
 grpc_credentials *grpc_refresh_token_credentials_create(
     const char *json_refresh_token);
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_credentials *grpc_fake_transport_security_credentials_create(void);
+/* Creates an Oauth2 Access Token credentials with an access token that was
+   aquired by an out of band mechanism. */
+grpc_credentials *grpc_access_token_credentials_create(
+    const char *access_token);
 
 /* Creates an IAM credentials object. */
 grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
                                               const char *authority_selector);
+
+/* Creates a fake transport security credentials object for testing. */
+grpc_credentials *grpc_fake_transport_security_credentials_create(void);
 
 /* --- Secure channel creation. --- */
 
