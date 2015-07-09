@@ -172,14 +172,18 @@ static void finish_not_compressed_sopb(grpc_stream_op_buffer *send_ops,
         sop->data.begin_message.flags &= ~GRPC_WRITE_INTERNAL_COMPRESS;
         break;
       case GRPC_OP_METADATA:
-        grpc_metadata_batch_add_head(
-            &(sop->data.metadata), &calld->compression_algorithm_storage,
-            grpc_mdelem_ref(
-                channeld->mdelem_compression_algorithms[GRPC_COMPRESS_NONE]));
+        if (!calld->seen_initial_metadata) {
+          grpc_metadata_batch_add_head(
+              &(sop->data.metadata), &calld->compression_algorithm_storage,
+              grpc_mdelem_ref(
+                  channeld->mdelem_compression_algorithms[GRPC_COMPRESS_NONE]));
+          calld->seen_initial_metadata = 1; /* GPR_TRUE */
+        }
         break;
       case GRPC_OP_SLICE:
+        break;
       case GRPC_NO_OP:
-        ;  /* fallthrough */
+        break;
     }
   }
 }
