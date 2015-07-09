@@ -37,11 +37,15 @@
 
 int grpc_compression_algorithm_parse(const char* name,
                                      grpc_compression_algorithm *algorithm) {
-  if (strcmp(name, "none") == 0) {
+  /* we use strncmp not only because it's safer (even though in this case it
+   * doesn't matter, given that we are comparing against string literals, but
+   * because this way we needn't have "name" nil-terminated (useful for slice
+   * data, for example) */
+  if (strncmp(name, "none", 4) == 0) {
     *algorithm = GRPC_COMPRESS_NONE;
-  } else if (strcmp(name, "gzip") == 0) {
+  } else if (strncmp(name, "gzip", 4) == 0) {
     *algorithm = GRPC_COMPRESS_GZIP;
-  } else if (strcmp(name, "deflate") == 0) {
+  } else if (strncmp(name, "deflate", 7) == 0) {
     *algorithm = GRPC_COMPRESS_DEFLATE;
   } else {
     return 0;

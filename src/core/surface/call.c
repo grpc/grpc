@@ -225,6 +225,9 @@ struct grpc_call {
   /* Compression algorithm for the call */
   grpc_compression_algorithm compression_algorithm;
 
+  /* Supported encodings (compression algorithms) */
+  gpr_uint8 accept_encoding[GRPC_COMPRESS_ALGORITHMS_COUNT];
+
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
 
@@ -433,15 +436,37 @@ static void set_compression_algorithm(grpc_call *call,
   call->compression_algorithm = algo;
 }
 
+static void set_accept_encoding(grpc_call *call,
+                                const gpr_slice accept_encoding_slice) {
+  size_t i;
+  grpc_compression_algorithm algorithm;
+  gpr_slice_buffer accept_encoding_parts;
+
+  gpr_slice_buffer_init(&accept_encoding_parts);
+  gpr_slice_split(accept_encoding_slice, ", ", &accept_encoding_parts);
+
+  memset(call->accept_encoding, 0, sizeof(call->accept_encoding));
+  for (i = 0; i < accept_encoding_parts.count; i++) {
+    const gpr_slice* slice = &accept_encoding_parts.slices[i];
+    if (grpc_compression_algorithm_parse(
+            (const char *)GPR_SLICE_START_PTR(*slice), &algorithm)) {
+      call->accept_encoding[algorithm] = 1;  /* GPR_TRUE */
+    } else {
+      /* TODO(dgq): it'd be nice to have a slice-to-cstr function to easily
+       * print the offending entry */
+      gpr_log(GPR_ERROR,
+              "Invalid entry in accept encoding metadata. Ignoring.");
+    }
+  }
+}
+
 static void set_status_details(grpc_call *call, status_source source,
                                grpc_mdstr *status) {
   if (call->status[source].details != NULL) {
     grpc_mdstr_unref(call->status[source].details);
   }
   call->status[source].details = status;
-}
-
-static int is_op_live(grpc_call *call, grpc_ioreq_op op) {
+} static int is_op_live(grpc_call *call, grpc_ioreq_op op) {
   gpr_uint8 set = call->request_set[op];
   reqinfo_master *master;
   if (set >= GRPC_IOREQ_OP_COUNT) return 0;
@@ -1279,6 +1304,9 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     } else if (key ==
                grpc_channel_get_compression_algorithm_string(call->channel)) {
       set_compression_algorithm(call, decode_compression(md));
+    } else if (key ==
+               grpc_channel_get_accept_encoding_string(call->channel)) {
+      set_accept_encoding(call, md->value->slice);
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {
