@@ -37,7 +37,6 @@
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
 #include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

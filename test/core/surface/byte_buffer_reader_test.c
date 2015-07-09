@@ -160,6 +160,30 @@ static void test_read_deflate_compressed_slice(void) {
   read_compressed_slice(GRPC_COMPRESS_DEFLATE, INPUT_SIZE);
 }
 
+static void test_byte_buffer_from_reader(void) {
+  gpr_slice slice;
+  grpc_byte_buffer *buffer, *buffer_from_reader;
+  grpc_byte_buffer_reader reader;
+
+  LOG_TEST("test_byte_buffer_from_reader");
+  slice = gpr_slice_malloc(4);
+  memcpy(GPR_SLICE_START_PTR(slice), "test", 4);
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  gpr_slice_unref(slice);
+  grpc_byte_buffer_reader_init(&reader, buffer);
+
+  buffer_from_reader = grpc_raw_byte_buffer_from_reader(&reader);
+  GPR_ASSERT(buffer->type == buffer_from_reader->type);
+  GPR_ASSERT(buffer_from_reader->data.raw.compression == GRPC_COMPRESS_NONE);
+  GPR_ASSERT(buffer_from_reader->data.raw.slice_buffer.count == 1);
+  GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(
+                        buffer_from_reader->data.raw.slice_buffer.slices[0]),
+                    "test", 4) == 0);
+
+  grpc_byte_buffer_destroy(buffer);
+  grpc_byte_buffer_destroy(buffer_from_reader);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_read_one_slice();
@@ -167,6 +191,7 @@ int main(int argc, char **argv) {
   test_read_none_compressed_slice();
   test_read_gzip_compressed_slice();
   test_read_deflate_compressed_slice();
+  test_byte_buffer_from_reader();
 
   return 0;
 }

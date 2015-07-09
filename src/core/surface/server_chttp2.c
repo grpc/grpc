@@ -42,14 +42,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-static grpc_transport_setup_result setup_transport(void *server,
-                                                   grpc_transport *transport,
-                                                   grpc_mdctx *mdctx) {
+static void setup_transport(void *server, grpc_transport *transport,
+                            grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
-  return grpc_server_setup_transport(server, transport, extra_filters,
-                                     GPR_ARRAY_SIZE(extra_filters), mdctx,
-                                     grpc_server_get_channel_args(server));
+  grpc_server_setup_transport(server, transport, extra_filters,
+                              GPR_ARRAY_SIZE(extra_filters), mdctx,
+                              grpc_server_get_channel_args(server));
 }
 
 static void new_transport(void *server, grpc_endpoint *tcp) {
@@ -60,9 +59,11 @@ static void new_transport(void *server, grpc_endpoint *tcp) {
    * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
    * case.
    */
-  grpc_create_chttp2_transport(setup_transport, server,
-                               grpc_server_get_channel_args(server), tcp, NULL,
-                               0, grpc_mdctx_create(), 0);
+  grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_transport *transport = grpc_create_chttp2_transport(
+      grpc_server_get_channel_args(server), tcp, mdctx, 0);
+  setup_transport(server, transport, mdctx);
+  grpc_chttp2_transport_start_reading(transport, NULL, 0);
 }
 
 /* Server callback: start listening on our ports */

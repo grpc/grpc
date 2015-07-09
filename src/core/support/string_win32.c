@@ -37,7 +37,6 @@
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

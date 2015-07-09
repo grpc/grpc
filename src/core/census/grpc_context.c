@@ -34,12 +34,28 @@
 #include <grpc/census.h>
 #include "src/core/census/grpc_context.h"
 
-void *grpc_census_context_create() {
-  census_context *context;
-  census_context_deserialize(NULL, &context);
-  return (void *)context;
+static void grpc_census_context_destroy(void *context) {
+  census_context_destroy((census_context *)context);
 }
 
-void grpc_census_context_destroy(void *context) {
-  census_context_destroy((census_context *)context);
+void grpc_census_call_set_context(grpc_call *call, census_context *context) {
+  if (!census_available()) {
+    return;
+  }
+  if (context == NULL) {
+    if (grpc_call_is_client(call)) {
+      census_context *context_ptr;
+      census_context_deserialize(NULL, &context_ptr);
+      grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context_ptr,
+                            grpc_census_context_destroy);
+    } else {
+      /* TODO(aveitch): server side context code to be implemented. */
+    }
+  } else {
+    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
+  }
+}
+
+census_context *grpc_census_call_get_context(grpc_call *call) {
+  return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
 }

@@ -314,6 +314,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "grpc_jwt_verifier_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "grpc_security_connector_test", 
     "platforms": [
       "windows", 
@@ -553,6 +562,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "transport_security_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "uri_parser_test", 
     "platforms": [
       "windows", 
       "posix"

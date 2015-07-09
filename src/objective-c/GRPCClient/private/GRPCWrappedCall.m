@@ -225,13 +225,13 @@
 }
 
 - (instancetype)init {
-  return [self initWithChannel:nil method:nil host:nil];
+  return [self initWithChannel:nil path:nil host:nil];
 }
 
 - (instancetype)initWithChannel:(GRPCChannel *)channel
-                         method:(NSString *)method
+                           path:(NSString *)path
                            host:(NSString *)host {
-  if (!channel || !method || !host) {
+  if (!channel || !path || !host) {
     [NSException raise:NSInvalidArgumentException
                 format:@"channel, method, and host cannot be nil."];
   }
@@ -247,7 +247,7 @@
       return nil;
     }
     _call = grpc_channel_create_call(channel.unmanagedChannel, _queue.unmanagedQueue,
-                                     method.UTF8String, host.UTF8String, gpr_inf_future);
+                                     path.UTF8String, host.UTF8String, gpr_inf_future);
     if (_call == NULL) {
       return nil;
     }
