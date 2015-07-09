@@ -139,7 +139,7 @@ static void destruct_transport(grpc_chttp2_transport *t) {
   grpc_chttp2_hpack_parser_destroy(&t->parsing.hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->parsing.goaway_parser);
 
-  grpc_mdstr_unref(t->parsing.str_grpc_timeout);
+  GRPC_MDSTR_UNREF(t->parsing.str_grpc_timeout);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
     GPR_ASSERT(t->lists[i].head == NULL);
