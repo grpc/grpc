@@ -31,62 +31,47 @@
  *
  */
 
-#include <grpc++/client_context.h>
-
-#include <grpc/grpc.h>
-#include <grpc++/credentials.h>
-#include <grpc++/time.h>
-#include "src/cpp/common/create_auth_context.h"
+#include <grpc++/auth_context.h>
+#include <gtest/gtest.h>
+#include "src/cpp/common/secure_auth_context.h"
+#include "src/core/security/security_context.h"
 
 namespace grpc {
+namespace {
 
-ClientContext::ClientContext()
-    : initial_metadata_received_(false),
-      call_(nullptr),
-      cq_(nullptr),
-      deadline_(gpr_inf_future) {}
+class SecureAuthContextTest : public ::testing::Test {};
 
-ClientContext::~ClientContext() {
-  if (call_) {
-    grpc_call_destroy(call_);
-  }
-  if (cq_) {
-    // Drain cq_.
-    grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
-      ;
-    grpc_completion_queue_destroy(cq_);
-  }
+// Created with nullptr
+TEST_F(SecureAuthContextTest, EmptyContext) {
+  SecureAuthContext context(nullptr);
+  EXPECT_TRUE(context.GetPeerIdentity().empty());
+  EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
+  EXPECT_TRUE(context.FindPropertyValues("").empty());
+  EXPECT_TRUE(context.FindPropertyValues("whatever").empty());
 }
 
-void ClientContext::AddMetadata(const grpc::string& meta_key,
-                                const grpc::string& meta_value) {
-  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
+TEST_F(SecureAuthContextTest, Properties) {
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL, 3);
+  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
+  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
+  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
+  ctx->peer_identity_property_name = ctx->properties[0].name;
+
+  SecureAuthContext context(ctx);
+  std::vector<grpc::string> peer_identity = context.GetPeerIdentity();
+  EXPECT_EQ(2, peer_identity.size());
+  EXPECT_EQ("chapi", peer_identity[0]);
+  EXPECT_EQ("chapo", peer_identity[1]);
+  EXPECT_EQ("name", context.GetPeerIdentityPropertyName());
+  std::vector<grpc::string> bar = context.FindPropertyValues("foo");
+  EXPECT_EQ(1, bar.size());
+  EXPECT_EQ("bar", bar[0]);
 }
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
-  GPR_ASSERT(call_ == nullptr);
-  call_ = call;
-  channel_ = channel;
-  if (creds_ && !creds_->ApplyToCall(call_)) {
-    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.");
-  }
-}
-
-std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
-  if (auth_context_.get() == nullptr) {
-    auth_context_ = CreateAuthContext(call_);
-  }
-  return auth_context_;
-}
-
-void ClientContext::TryCancel() {
-  if (call_) {
-    grpc_call_cancel(call_);
-  }
-}
-
+}  // namespace
 }  // namespace grpc
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
