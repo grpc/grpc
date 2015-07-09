@@ -127,11 +127,25 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data);
 
 /* Reference counting */
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s), __FILE__, __LINE__)
+#define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s), __FILE__, __LINE__)
+#define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
+#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
+grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s, const char *file, int line);
+void grpc_mdstr_unref(grpc_mdstr *s, const char *file, int line);
+grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md, const char *file, int line);
+void grpc_mdelem_unref(grpc_mdelem *md, const char *file, int line);
+#else
+#define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s))
+#define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s))
+#define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
+#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s);
 void grpc_mdstr_unref(grpc_mdstr *s);
-
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
 void grpc_mdelem_unref(grpc_mdelem *md);
+#endif
 
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
@@ -147,8 +161,18 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 /* Lock the metadata context: it's only safe to call _locked_ functions against
    this context from the calling thread until grpc_mdctx_unlock is called */
 void grpc_mdctx_lock(grpc_mdctx *ctx);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
+  grpc_mdctx_locked_mdelem_unref((ctx), (elem), __FILE__, __LINE__)
+/* Unref a metadata element */
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem,
+                                    const char *file, int line);
+#else
+#define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
+  grpc_mdctx_locked_mdelem_unref((ctx), (elem))
 /* Unref a metadata element */
 void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem);
+#endif
 /* Unlock the metadata context */
 void grpc_mdctx_unlock(grpc_mdctx *ctx);
 
