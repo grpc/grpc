@@ -30,6 +30,7 @@
       "public_headers": [
         "include/grpc++/async_generic_service.h",
         "include/grpc++/async_unary_call.h",
+        "include/grpc++/auth_context.h",
         "include/grpc++/byte_buffer.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
@@ -68,6 +69,7 @@
       ],
       "headers": [
         "src/cpp/client/channel.h",
+        "src/cpp/common/create_auth_context.h",
         "src/cpp/server/thread_pool.h"
       ],
       "src": [
@@ -451,6 +453,7 @@
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
         "src/core/security/json_token.h",
+        "src/core/security/jwt_verifier.h",
         "src/core/security/secure_endpoint.h",
         "src/core/security/secure_transport_setup.h",
         "src/core/security/security_connector.h",
@@ -473,6 +476,7 @@
         "src/core/security/credentials_win32.c",
         "src/core/security/google_default_credentials.c",
         "src/core/security/json_token.c",
+        "src/core/security/jwt_verifier.c",
         "src/core/security/secure_endpoint.c",
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_connector.c",
@@ -557,11 +561,14 @@
       "language": "c++",
       "headers": [
         "src/cpp/client/secure_credentials.h",
+        "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h"
       ],
       "src": [
         "src/cpp/client/secure_channel_arguments.cc",
         "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/server/secure_server_credentials.cc"
       ],
       "deps": [
@@ -614,6 +621,9 @@
       "name": "grpc++_unsecure",
       "build": "all",
       "language": "c++",
+      "src": [
+        "src/cpp/common/insecure_create_auth_context.cc"
+      ],
       "deps": [
         "gpr",
         "grpc_unsecure"
@@ -1357,6 +1367,20 @@
       ]
     },
     {
+      "name": "grpc_jwt_verifier_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/security/jwt_verifier_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_print_google_default_creds_token",
       "build": "tool",
       "language": "c",
@@ -1390,6 +1414,20 @@
       "language": "c",
       "src": [
         "test/core/transport/stream_op_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_verify_jwt",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "test/core/security/verify_jwt.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -2311,6 +2349,19 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "secure_auth_context_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/common/secure_auth_context_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
+        "gpr"
       ]
     },
     {

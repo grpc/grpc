@@ -118,7 +118,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
           has_request_payload_(mrd->has_request_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
-      ctx_.call_ = mrd->call_;
+      ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
       mrd->in_flight_ = false;
@@ -207,10 +207,11 @@ Server::~Server() {
   delete sync_methods_;
 }
 
-bool Server::RegisterService(RpcService* service) {
+bool Server::RegisterService(const grpc::string *host, RpcService* service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
     RpcServiceMethod* method = service->GetMethod(i);
-    void* tag = grpc_server_register_method(server_, method->name(), nullptr);
+    void* tag = grpc_server_register_method(
+        server_, method->name(), host ? host->c_str() : nullptr);
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
@@ -222,14 +223,14 @@ bool Server::RegisterService(RpcService* service) {
   return true;
 }
 
-bool Server::RegisterAsyncService(AsynchronousService* service) {
+bool Server::RegisterAsyncService(const grpc::string *host, AsynchronousService* service) {
   GPR_ASSERT(service->server_ == nullptr &&
              "Can only register an asynchronous service against one server.");
   service->server_ = this;
   service->request_args_ = new void*[service->method_count_];
   for (size_t i = 0; i < service->method_count_; ++i) {
     void* tag = grpc_server_register_method(server_, service->method_names_[i],
-                                            nullptr);
+                                            host ? host->c_str() : nullptr);
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               service->method_names_[i]);
@@ -325,7 +326,7 @@ bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);
-  context_->call_ = call_;
+  context_->set_call(call_);
   context_->cq_ = call_cq_;
   Call call(call_, server_, call_cq_, server_->max_message_size_);
   if (*status && call_) {

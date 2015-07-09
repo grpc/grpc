@@ -30,63 +30,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-#include <grpc++/client_context.h>
+#include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc++/credentials.h>
-#include <grpc++/time.h>
-#include "src/cpp/common/create_auth_context.h"
+#include <grpc++/auth_context.h>
 
 namespace grpc {
 
-ClientContext::ClientContext()
-    : initial_metadata_received_(false),
-      call_(nullptr),
-      cq_(nullptr),
-      deadline_(gpr_inf_future) {}
-
-ClientContext::~ClientContext() {
-  if (call_) {
-    grpc_call_destroy(call_);
-  }
-  if (cq_) {
-    // Drain cq_.
-    grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
-      ;
-    grpc_completion_queue_destroy(cq_);
-  }
-}
-
-void ClientContext::AddMetadata(const grpc::string& meta_key,
-                                const grpc::string& meta_value) {
-  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
-}
-
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
-  GPR_ASSERT(call_ == nullptr);
-  call_ = call;
-  channel_ = channel;
-  if (creds_ && !creds_->ApplyToCall(call_)) {
-    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.");
-  }
-}
-
-std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
-  if (auth_context_.get() == nullptr) {
-    auth_context_ = CreateAuthContext(call_);
-  }
-  return auth_context_;
-}
-
-void ClientContext::TryCancel() {
-  if (call_) {
-    grpc_call_cancel(call_);
-  }
-}
+std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
 
 }  // namespace grpc
