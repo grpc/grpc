@@ -124,6 +124,7 @@ void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
     sopb->ops[i].data.metadata.list.tail =
         (void *)(delta + (gpr_intptr)sopb->ops[i].data.metadata.list.tail);
   }
+  src->count = 0;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(

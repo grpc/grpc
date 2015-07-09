@@ -39,7 +39,6 @@
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/surface/channel.h"
-#include "src/core/surface/client.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
@@ -74,6 +73,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *client_args) {
   fullstack_fixture_data *ffd = f->fixture_data;
   f->client = grpc_channel_create(ffd->localaddr, client_args);
+  GPR_ASSERT(f->client);
 }
 
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,

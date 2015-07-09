@@ -1329,12 +1329,9 @@ static int parse_value_string_with_literal_key(grpc_chttp2_hpack_parser *p,
 /* PUBLIC INTERFACE */
 
 static void on_header_not_set(void *user_data, grpc_mdelem *md) {
-  char *keyhex =
-      gpr_hexdump(grpc_mdstr_as_c_string(md->key),
-                  GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT);
+  char *keyhex = gpr_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char *valuehex =
-      gpr_hexdump(grpc_mdstr_as_c_string(md->value),
-                  GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT);
+      gpr_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_ERROR, "on_header callback not set; key=%s value=%s", keyhex,
           valuehex);
   gpr_free(keyhex);

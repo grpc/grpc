@@ -39,7 +39,6 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
-#include "src/core/surface/client.h"
 #include "src/core/surface/init.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -94,9 +93,8 @@ grpc_channel *grpc_channel_create_from_filters(
   grpc_channel *channel = gpr_malloc(size);
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
-  /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if
-   * is_client */
-  gpr_ref_init(&channel->refs, 1 + is_client);
+  /* decremented by grpc_channel_destroy */
+  gpr_ref_init(&channel->refs, 1);
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_compression_algorithm_string =
@@ -111,8 +109,6 @@ grpc_channel *grpc_channel_create_from_filters(
   }
   channel->path_string = grpc_mdstr_from_string(mdctx, ":path");
   channel->authority_string = grpc_mdstr_from_string(mdctx, ":authority");
-  grpc_channel_stack_init(filters, num_filters, args, channel->metadata_context,
-                          CHANNEL_STACK_FROM_CHANNEL(channel));
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
 
@@ -132,6 +128,10 @@ grpc_channel *grpc_channel_create_from_filters(
       }
     }
   }
+
+  grpc_channel_stack_init(filters, num_filters, channel, args,
+                          channel->metadata_context,
+                          CHANNEL_STACK_FROM_CHANNEL(channel));
 
   return channel;
 }
@@ -239,26 +239,14 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
-  grpc_channel_op op;
+  grpc_transport_op op;
   grpc_channel_element *elem;
-
+  memset(&op, 0, sizeof(op));
+  op.disconnect = 1;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
-
-  op.type = GRPC_CHANNEL_GOAWAY;
-  op.dir = GRPC_CALL_DOWN;
-  op.data.goaway.status = GRPC_STATUS_OK;
-  op.data.goaway.message = gpr_slice_from_copied_string("Client disconnect");
-  elem->filter->channel_op(elem, NULL, &op);
-
-  op.type = GRPC_CHANNEL_DISCONNECT;
-  op.dir = GRPC_CALL_DOWN;
-  elem->filter->channel_op(elem, NULL, &op);
+  elem->filter->start_transport_op(elem, &op);
 
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
-}
-
-void grpc_client_channel_closed(grpc_channel_element *elem) {
-  GRPC_CHANNEL_INTERNAL_UNREF(CHANNEL_FROM_TOP_ELEM(elem), "closed");
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {

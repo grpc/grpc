@@ -49,16 +49,16 @@ typedef struct {
 
 typedef struct { grpc_mdctx *mdctx; } channel_data;
 
-static void lame_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+static void lame_start_transport_stream_op(grpc_call_element *elem,
+                                           grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  if (op->send_ops) {
+  if (op->send_ops != NULL) {
     grpc_stream_ops_unref_owned_objects(op->send_ops->ops, op->send_ops->nops);
     op->on_done_send->cb(op->on_done_send->cb_arg, 0);
   }
-  if (op->recv_ops) {
+  if (op->recv_ops != NULL) {
     char tmp[GPR_LTOA_MIN_BUFSIZE];
     grpc_metadata_batch mdb;
     gpr_ltoa(GRPC_STATUS_UNKNOWN, tmp);
@@ -77,36 +77,35 @@ static void lame_start_transport_op(grpc_call_element *elem,
     *op->recv_state = GRPC_STREAM_CLOSED;
     op->on_done_recv->cb(op->on_done_recv->cb_arg, 1);
   }
-  if (op->on_consumed) {
+  if (op->on_consumed != NULL) {
     op->on_consumed->cb(op->on_consumed->cb_arg, 0);
   }
 }
 
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  switch (op->type) {
-    case GRPC_CHANNEL_GOAWAY:
-      gpr_slice_unref(op->data.goaway.message);
-      break;
-    case GRPC_CHANNEL_DISCONNECT:
-      grpc_client_channel_closed(elem);
-      break;
-    default:
-      break;
+static void lame_start_transport_op(grpc_channel_element *elem,
+                                    grpc_transport_op *op) {
+  if (op->on_connectivity_state_change) {
+    GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE);
+    *op->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+    op->on_connectivity_state_change->cb(
+        op->on_connectivity_state_change->cb_arg, 1);
+  }
+  if (op->on_consumed != NULL) {
+    op->on_consumed->cb(op->on_consumed->cb_arg, 1);
   }
 }
 
 static void init_call_elem(grpc_call_element *elem,
                            const void *transport_server_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   if (initial_op) {
-    grpc_transport_op_finish_with_failure(initial_op);
+    grpc_transport_stream_op_finish_with_failure(initial_op);
   }
 }
 
 static void destroy_call_elem(grpc_call_element *elem) {}
 
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   channel_data *chand = elem->channel_data;
@@ -118,9 +117,15 @@ static void init_channel_elem(grpc_channel_element *elem,
 static void destroy_channel_elem(grpc_channel_element *elem) {}
 
 static const grpc_channel_filter lame_filter = {
-    lame_start_transport_op, channel_op,           sizeof(call_data),
-    init_call_elem,          destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,       destroy_channel_elem, "lame-client",
+    lame_start_transport_stream_op,
+    lame_start_transport_op,
+    sizeof(call_data),
+    init_call_elem,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    "lame-client",
 };
 
 grpc_channel *grpc_lame_client_channel_create(void) {

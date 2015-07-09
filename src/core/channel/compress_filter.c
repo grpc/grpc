@@ -38,16 +38,15 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 
-
 #include "src/core/channel/compress_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/compression/message_compress.h"
-
 
 typedef struct call_data {
   gpr_slice_buffer slices;
   grpc_linked_mdelem compression_algorithm_storage;
   int remaining_slice_bytes;
+  int seen_initial_metadata;
   grpc_compression_algorithm compression_algorithm;
   gpr_uint8 has_compression_algorithm;
 } call_data;
@@ -111,8 +110,8 @@ static int skip_compression(channel_data *channeld, call_data *calld) {
   return channeld->default_compression_algorithm == GRPC_COMPRESS_NONE;
 }
 
-static void compressed_sopb(grpc_stream_op_buffer *send_ops,
-                            grpc_call_element *elem) {
+static void finish_compressed_sopb(grpc_stream_op_buffer *send_ops,
+                                   grpc_call_element *elem) {
   size_t i, j;
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -126,10 +125,13 @@ static void compressed_sopb(grpc_stream_op_buffer *send_ops,
         sop->data.begin_message.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         break;
       case GRPC_OP_METADATA:
-        grpc_metadata_batch_add_head(
-            &(sop->data.metadata), &calld->compression_algorithm_storage,
-            grpc_mdelem_ref(channeld->mdelem_compression_algorithms
-                                [calld->compression_algorithm]));
+        if (!calld->seen_initial_metadata) {
+          grpc_metadata_batch_add_head(
+              &(sop->data.metadata), &calld->compression_algorithm_storage,
+              grpc_mdelem_ref(channeld->mdelem_compression_algorithms
+                                  [calld->compression_algorithm]));
+          calld->seen_initial_metadata = 1; /* GPR_TRUE */
+        }
         break;
       case GRPC_OP_SLICE:
         gpr_slice_unref(sop->data.slice);
@@ -137,8 +139,9 @@ static void compressed_sopb(grpc_stream_op_buffer *send_ops,
         if (j < calld->slices.count) {
           sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
         }
+        break;
       case GRPC_NO_OP:
-        ;  /* fallthrough */
+        break;
     }
   }
 
@@ -152,8 +155,8 @@ static void compressed_sopb(grpc_stream_op_buffer *send_ops,
  * the input. For example, compression may have een requested but somehow it was
  * decided not to honor the request: the compression flags need to be reset and
  * the fact that no compression was performed in the end signaled */
-static void not_compressed_sopb(grpc_stream_op_buffer *send_ops,
-                                grpc_call_element *elem) {
+static void finish_not_compressed_sopb(grpc_stream_op_buffer *send_ops,
+                                       grpc_call_element *elem) {
   size_t i;
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -234,7 +237,11 @@ static void process_send_ops(grpc_call_element *elem,
 
   /* Modify the send_ops stream_op_buffer depending on whether compression was
    * carried out */
-  (did_compress ? compressed_sopb : not_compressed_sopb)(send_ops, elem);
+  if (did_compress) {
+    finish_compressed_sopb(send_ops, elem);
+  } else {
+    finish_not_compressed_sopb(send_ops, elem);
+  }
 }
 
 /* Called either:
@@ -242,8 +249,8 @@ static void process_send_ops(grpc_call_element *elem,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void compress_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+static void compress_start_transport_stream_op(grpc_call_element *elem,
+                                               grpc_transport_stream_op *op) {
   if (op->send_ops && op->send_ops->nops > 0) {
     process_send_ops(elem, op->send_ops);
   }
@@ -252,27 +259,17 @@ static void compress_start_transport_op(grpc_call_element *elem,
   grpc_call_next_op(elem, op);
 }
 
-/* Called on special channel events, such as disconnection or new incoming
-   calls on the server */
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  switch (op->type) {
-    default:
-      grpc_channel_next_op(elem, op);
-      break;
-  }
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
 
   /* initialize members */
   gpr_slice_buffer_init(&calld->slices);
   calld->has_compression_algorithm = 0;
+  calld->seen_initial_metadata = 0; /* GPR_FALSE */
 
   if (initial_op) {
     if (initial_op->send_ops && initial_op->send_ops->nops > 0) {
@@ -289,7 +286,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   channel_data *channeld = elem->channel_data;
@@ -316,10 +313,6 @@ static void init_channel_elem(grpc_channel_element *elem,
             grpc_mdstr_from_string(mdctx, algorith_name));
   }
 
-  /* The first and the last filters tend to be implemented differently to
-     handle the case that there's no 'next' filter to call on the up or down
-     path */
-  GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
 }
 
@@ -336,7 +329,12 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   }
 }
 
-const grpc_channel_filter grpc_compress_filter = {
-    compress_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "compress"};
+const grpc_channel_filter grpc_compress_filter = {compress_start_transport_stream_op,
+                                                  grpc_channel_next_op,
+                                                  sizeof(call_data),
+                                                  init_call_elem,
+                                                  destroy_call_elem,
+                                                  sizeof(channel_data),
+                                                  init_channel_elem,
+                                                  destroy_channel_elem,
+                                                  "compress"};
