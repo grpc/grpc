@@ -1195,6 +1195,7 @@ static void publish_registered_or_batch(grpc_call *call, int success,
   requested_call *rc = prc;
   call_data *calld = elem->call_data;
   grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc, &rc->completion);
+  GRPC_CALL_INTERNAL_UNREF(call, "server", 0);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {
