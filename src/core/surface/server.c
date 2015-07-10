@@ -51,7 +51,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-typedef enum { PENDING_START, ALL_CALLS, CALL_LIST_COUNT } call_list;
+typedef enum { PENDING_START, CALL_LIST_COUNT } call_list;
 
 typedef struct listener {
   void *arg;
@@ -114,7 +114,6 @@ typedef struct channel_registered_method {
 
 struct channel_data {
   grpc_server *server;
-  size_t num_calls;
   grpc_connectivity_state connectivity_state;
   grpc_channel *channel;
   grpc_mdstr *path_key;
@@ -183,7 +182,11 @@ typedef enum {
 struct call_data {
   grpc_call *call;
 
+  /** protects state */
+  gpr_mu mu_state;
+  /** the current state of a call - see call_state */
   call_state state;
+
   grpc_mdstr *path;
   grpc_mdstr *host;
   gpr_timespec deadline;
@@ -204,9 +207,7 @@ struct call_data {
 
 typedef struct {
   grpc_channel **channels;
-  grpc_channel **disconnects;
   size_t num_channels;
-  size_t num_disconnects;
 } channel_broadcaster;
 
 #define SERVER_FROM_CALL_ELEM(elem) \
@@ -225,26 +226,15 @@ static void maybe_finish_shutdown(grpc_server *server);
 static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
   channel_data *c;
   size_t count = 0;
-  size_t dc_count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     count++;
-    if (c->num_calls == 0) {
-      dc_count++;
-    }
   }
   cb->num_channels = count;
-  cb->num_disconnects = dc_count;
   cb->channels = gpr_malloc(sizeof(*cb->channels) * cb->num_channels);
-  cb->disconnects = gpr_malloc(sizeof(*cb->channels) * cb->num_disconnects);
   count = 0;
-  dc_count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     cb->channels[count++] = c->channel;
     GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast");
-    if (c->num_calls == 0) {
-      cb->disconnects[dc_count++] = c->channel;
-      GRPC_CHANNEL_INTERNAL_REF(c->channel, "broadcast-disconnect");
-    }
   }
 }
 
@@ -280,19 +270,14 @@ static void send_shutdown(grpc_channel *channel, int send_goaway,
 }
 
 static void channel_broadcaster_shutdown(channel_broadcaster *cb,
-                                         int send_goaway, int send_disconnect) {
+                                         int send_goaway, int force_disconnect) {
   size_t i;
 
   for (i = 0; i < cb->num_channels; i++) {
-    send_shutdown(cb->channels[i], 1, 0);
+    send_shutdown(cb->channels[i], send_goaway, force_disconnect);
     GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast");
   }
-  for (i = 0; i < cb->num_disconnects; i++) {
-    send_shutdown(cb->disconnects[i], 0, 1);
-    GRPC_CHANNEL_INTERNAL_UNREF(cb->channels[i], "broadcast-disconnect");
-  }
   gpr_free(cb->channels);
-  gpr_free(cb->disconnects);
 }
 
 /* call list */
@@ -422,19 +407,23 @@ static void destroy_channel(channel_data *chand) {
   grpc_iomgr_add_callback(&chand->finish_destroy_channel_closure);
 }
 
-static void finish_start_new_rpc_and_unlock(grpc_server *server,
-                                            grpc_call_element *elem,
-                                            call_data **pending_root,
-                                            requested_call_array *array) {
+static void finish_start_new_rpc(grpc_server *server, grpc_call_element *elem,
+                                 call_data **pending_root,
+                                 requested_call_array *array) {
   requested_call rc;
   call_data *calld = elem->call_data;
+  gpr_mu_lock(&server->mu_call);
   if (array->count == 0) {
+    gpr_mu_lock(&calld->mu_state);
     calld->state = PENDING;
+    gpr_mu_unlock(&calld->mu_state);
     call_list_join(pending_root, calld, PENDING_START);
     gpr_mu_unlock(&server->mu_call);
   } else {
     rc = array->calls[--array->count];
+    gpr_mu_lock(&calld->mu_state);
     calld->state = ACTIVATED;
+    gpr_mu_unlock(&calld->mu_state);
     gpr_mu_unlock(&server->mu_call);
     begin_call(server, calld, &rc);
   }
@@ -448,20 +437,18 @@ static void start_new_rpc(grpc_call_element *elem) {
   gpr_uint32 hash;
   channel_registered_method *rm;
 
-  gpr_mu_lock(&server->mu_call);
   if (chand->registered_methods && calld->path && calld->host) {
     /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
     hash = GRPC_MDSTR_KV_HASH(calld->host->hash, calld->path->hash);
-    for (i = 0; i < chand->registered_method_max_probes; i++) {
+    for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
       if (!rm) break;
       if (rm->host != calld->host) continue;
       if (rm->method != calld->path) continue;
-      finish_start_new_rpc_and_unlock(server, elem,
-                                      &rm->server_registered_method->pending,
-                                      &rm->server_registered_method->requested);
+      finish_start_new_rpc(server, elem, &rm->server_registered_method->pending,
+                           &rm->server_registered_method->requested);
       return;
     }
     /* check for a wildcard method definition (no host set) */
@@ -472,14 +459,13 @@ static void start_new_rpc(grpc_call_element *elem) {
       if (!rm) break;
       if (rm->host != NULL) continue;
       if (rm->method != calld->path) continue;
-      finish_start_new_rpc_and_unlock(server, elem,
-                                      &rm->server_registered_method->pending,
-                                      &rm->server_registered_method->requested);
+      finish_start_new_rpc(server, elem, &rm->server_registered_method->pending,
+                           &rm->server_registered_method->requested);
       return;
     }
   }
-  finish_start_new_rpc_and_unlock(server, elem, &server->lists[PENDING_START],
-                                  &server->requested_calls);
+  finish_start_new_rpc(server, elem, &server->lists[PENDING_START],
+                       &server->requested_calls);
 }
 
 static void kill_zombie(void *elem, int success) {
@@ -500,15 +486,6 @@ static void maybe_finish_shutdown(grpc_server *server) {
   if (!server->shutdown || server->shutdown_published) {
     return;
   }
-
-  gpr_mu_lock(&server->mu_call);
-  if (server->lists[ALL_CALLS] != NULL) {
-    gpr_log(GPR_DEBUG,
-            "Waiting for all calls to finish before destroying server");
-    gpr_mu_unlock(&server->mu_call);
-    return;
-  }
-  gpr_mu_unlock(&server->mu_call);
 
   if (server->root_channel_data.next != &server->root_channel_data) {
     gpr_log(GPR_DEBUG,
@@ -532,31 +509,19 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
   if (md->key == chand->path_key) {
-    calld->path = grpc_mdstr_ref(md->value);
+    calld->path = GRPC_MDSTR_REF(md->value);
     return NULL;
   } else if (md->key == chand->authority_key) {
-    calld->host = grpc_mdstr_ref(md->value);
+    calld->host = GRPC_MDSTR_REF(md->value);
     return NULL;
   }
   return md;
-}
-
-static int decrement_call_count(channel_data *chand) {
-  int disconnect = 0;
-  chand->num_calls--;
-  if (0 == chand->num_calls && chand->server->shutdown) {
-    disconnect = 1;
-  }
-  maybe_finish_shutdown(chand->server);
-  return disconnect;
 }
 
 static void server_on_recv(void *ptr, int success) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  int remove_res;
-  int disconnect = 0;
 
   if (success && !calld->got_initial_metadata) {
     size_t i;
@@ -581,39 +546,33 @@ static void server_on_recv(void *ptr, int success) {
     case GRPC_STREAM_SEND_CLOSED:
       break;
     case GRPC_STREAM_RECV_CLOSED:
-      gpr_mu_lock(&chand->server->mu_call);
+      gpr_mu_lock(&calld->mu_state);
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
+        gpr_mu_unlock(&calld->mu_state);
         grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_iomgr_add_callback(&calld->kill_zombie_closure);
+      } else {
+        gpr_mu_unlock(&calld->mu_state);
       }
-      gpr_mu_unlock(&chand->server->mu_call);
       break;
     case GRPC_STREAM_CLOSED:
-      gpr_mu_lock(&chand->server->mu_call);
+      gpr_mu_lock(&calld->mu_state);
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
+        gpr_mu_unlock(&calld->mu_state);
         grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_iomgr_add_callback(&calld->kill_zombie_closure);
       } else if (calld->state == PENDING) {
-        call_list_remove(calld, PENDING_START);
         calld->state = ZOMBIED;
+        gpr_mu_unlock(&calld->mu_state);
+        gpr_mu_lock(&chand->server->mu_call);
+        call_list_remove(calld, PENDING_START);
+        gpr_mu_unlock(&chand->server->mu_call);
         grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_iomgr_add_callback(&calld->kill_zombie_closure);
-      }
-      remove_res = call_list_remove(calld, ALL_CALLS);
-      gpr_mu_unlock(&chand->server->mu_call);
-      gpr_mu_lock(&chand->server->mu_global);
-      if (remove_res) {
-        disconnect = decrement_call_count(chand);
-        if (disconnect) {
-          GRPC_CHANNEL_INTERNAL_REF(chand->channel, "send-disconnect");
-        }
-      }
-      gpr_mu_unlock(&chand->server->mu_global);
-      if (disconnect) {
-        send_shutdown(chand->channel, 0, 1);
-        GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "send-disconnect");
+      } else {
+        gpr_mu_unlock(&calld->mu_state);
       }
       break;
   }
@@ -676,16 +635,9 @@ static void init_call_elem(grpc_call_element *elem,
   memset(calld, 0, sizeof(call_data));
   calld->deadline = gpr_inf_future;
   calld->call = grpc_call_from_top_element(elem);
+  gpr_mu_init(&calld->mu_state);
 
   grpc_iomgr_closure_init(&calld->server_on_recv, server_on_recv, elem);
-
-  gpr_mu_lock(&chand->server->mu_call);
-  call_list_join(&chand->server->lists[ALL_CALLS], calld, ALL_CALLS);
-  gpr_mu_unlock(&chand->server->mu_call);
-
-  gpr_mu_lock(&chand->server->mu_global);
-  chand->num_calls++;
-  gpr_mu_unlock(&chand->server->mu_global);
 
   server_ref(chand->server);
 
@@ -695,26 +647,21 @@ static void init_call_elem(grpc_call_element *elem,
 static void destroy_call_elem(grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  int removed[CALL_LIST_COUNT];
-  size_t i;
 
-  gpr_mu_lock(&chand->server->mu_call);
-  for (i = 0; i < CALL_LIST_COUNT; i++) {
-    removed[i] = call_list_remove(elem->call_data, i);
-  }
-  gpr_mu_unlock(&chand->server->mu_call);
-  if (removed[ALL_CALLS]) {
-    gpr_mu_lock(&chand->server->mu_global);
-    decrement_call_count(chand);
-    gpr_mu_unlock(&chand->server->mu_global);
+  if (calld->state == PENDING) {
+    gpr_mu_lock(&chand->server->mu_call);
+    call_list_remove(elem->call_data, PENDING_START);
+    gpr_mu_unlock(&chand->server->mu_call);
   }
 
   if (calld->host) {
-    grpc_mdstr_unref(calld->host);
+    GRPC_MDSTR_UNREF(calld->host);
   }
   if (calld->path) {
-    grpc_mdstr_unref(calld->path);
+    GRPC_MDSTR_UNREF(calld->path);
   }
+
+  gpr_mu_destroy(&calld->mu_state);
 
   server_unref(chand->server);
 }
@@ -727,7 +674,6 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(is_first);
   GPR_ASSERT(!is_last);
   chand->server = NULL;
-  chand->num_calls = 0;
   chand->channel = NULL;
   chand->path_key = grpc_mdstr_from_string(metadata_context, ":path");
   chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority");
@@ -744,10 +690,10 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       if (chand->registered_methods[i].method) {
-        grpc_mdstr_unref(chand->registered_methods[i].method);
+        GRPC_MDSTR_UNREF(chand->registered_methods[i].method);
       }
       if (chand->registered_methods[i].host) {
-        grpc_mdstr_unref(chand->registered_methods[i].host);
+        GRPC_MDSTR_UNREF(chand->registered_methods[i].host);
       }
     }
     gpr_free(chand->registered_methods);
@@ -759,8 +705,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
     chand->next = chand->prev = chand;
     maybe_finish_shutdown(chand->server);
     gpr_mu_unlock(&chand->server->mu_global);
-    grpc_mdstr_unref(chand->path_key);
-    grpc_mdstr_unref(chand->authority_key);
+    GRPC_MDSTR_UNREF(chand->path_key);
+    GRPC_MDSTR_UNREF(chand->authority_key);
     server_unref(chand->server);
   }
 }
@@ -1049,47 +995,13 @@ void grpc_server_listener_destroy_done(void *s) {
 }
 
 void grpc_server_cancel_all_calls(grpc_server *server) {
-  call_data *calld;
-  grpc_call **calls;
-  size_t call_count;
-  size_t call_capacity;
-  int is_first = 1;
-  size_t i;
+  channel_broadcaster broadcaster;
 
-  gpr_mu_lock(&server->mu_call);
+  gpr_mu_lock(&server->mu_global);
+  channel_broadcaster_init(server, &broadcaster);
+  gpr_mu_unlock(&server->mu_global);
 
-  GPR_ASSERT(server->shutdown);
-
-  if (!server->lists[ALL_CALLS]) {
-    gpr_mu_unlock(&server->mu_call);
-    return;
-  }
-
-  call_capacity = 8;
-  call_count = 0;
-  calls = gpr_malloc(sizeof(grpc_call *) * call_capacity);
-
-  for (calld = server->lists[ALL_CALLS];
-       calld != server->lists[ALL_CALLS] || is_first;
-       calld = calld->links[ALL_CALLS].next) {
-    if (call_count == call_capacity) {
-      call_capacity *= 2;
-      calls = gpr_realloc(calls, sizeof(grpc_call *) * call_capacity);
-    }
-    calls[call_count++] = calld->call;
-    GRPC_CALL_INTERNAL_REF(calld->call, "cancel_all");
-    is_first = 0;
-  }
-
-  gpr_mu_unlock(&server->mu_call);
-
-  for (i = 0; i < call_count; i++) {
-    grpc_call_cancel_with_status(calls[i], GRPC_STATUS_UNAVAILABLE,
-                                 "Unavailable");
-    GRPC_CALL_INTERNAL_UNREF(calls[i], "cancel_all", 1);
-  }
-
-  gpr_free(calls);
+  channel_broadcaster_shutdown(&broadcaster, 0, 1);
 }
 
 void grpc_server_destroy(grpc_server *server) {
@@ -1145,10 +1057,12 @@ static grpc_call_error queue_call_request(grpc_server *server,
       requested_calls = &rc->data.registered.registered_method->requested;
       break;
   }
-  if (calld) {
+  if (calld != NULL) {
+    gpr_mu_unlock(&server->mu_call);
+    gpr_mu_lock(&calld->mu_state);
     GPR_ASSERT(calld->state == PENDING);
     calld->state = ACTIVATED;
-    gpr_mu_unlock(&server->mu_call);
+    gpr_mu_unlock(&calld->mu_state);
     begin_call(server, calld, rc);
     return GRPC_CALL_OK;
   } else {

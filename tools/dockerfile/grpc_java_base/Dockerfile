@@ -44,20 +44,11 @@ RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true 
       && \
   apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
 
-# Install maven
-RUN wget -O - http://mirror.olnevhost.net/pub/apache/maven/binaries/apache-maven-3.2.1-bin.tar.gz | \
-  tar xz -C /var/local
-
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
-ENV M2_HOME /var/local/apache-maven-3.2.1
-ENV PATH $PATH:$JAVA_HOME/bin:$M2_HOME/bin
-ENV LD_LIBRARY_PATH /usr/local/lib
+ENV PATH $PATH:$JAVA_HOME/bin
 
-# Trigger download of as many Maven and Gradle artifacts as possible. We don't build grpc-java
-# because we don't want to install netty
+# Trigger download of as many Gradle artifacts as possible.
 RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
-  cd grpc-java/lib/netty && \
-  mvn -pl codec-http2 -am -DskipTests verify && \
-  cd ../.. && \
-  ./gradlew && \
+  cd grpc-java && \
+  ./gradlew build -PskipCodegen=true && \
   rm -r "$(pwd)"

@@ -173,6 +173,8 @@ typedef struct {
 
   /** have we seen a goaway */
   gpr_uint8 seen_goaway;
+  /** have we sent a goaway */
+  gpr_uint8 sent_goaway;
 
   /** is this transport a client? */
   gpr_uint8 is_client;
@@ -569,8 +571,10 @@ void grpc_chttp2_add_incoming_goaway(
 
 void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
                                  grpc_chttp2_stream *s);
-void grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
-                                   grpc_chttp2_stream *s);
+/* returns 1 if this is the last stream, 0 otherwise */
+int grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
+                                  grpc_chttp2_stream *s) GRPC_MUST_USE_RESULT;
+int grpc_chttp2_has_streams(grpc_chttp2_transport *t);
 void grpc_chttp2_for_all_streams(
     grpc_chttp2_transport_global *transport_global, void *user_data,
     void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,

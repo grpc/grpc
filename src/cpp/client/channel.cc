@@ -39,6 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
+#include "src/core/census/grpc_context.h"
 #include "src/core/profiling/timers.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
@@ -59,7 +60,7 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
   auto c_call =
-      method.channel_tag()
+      method.channel_tag() && context->authority().empty()
           ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
                                                 method.channel_tag(),
                                                 context->raw_deadline())
@@ -68,6 +69,7 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                                          ? target_.c_str()
                                          : context->authority().c_str(),
                                      context->raw_deadline());
+  grpc_census_call_set_context(c_call, context->get_census_context());
   GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
   context->set_call(c_call, shared_from_this());
   return Call(c_call, this, cq);

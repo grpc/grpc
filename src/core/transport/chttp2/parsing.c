@@ -470,7 +470,7 @@ static grpc_chttp2_parse_error skip_parser(
   return GRPC_CHTTP2_PARSE_OK;
 }
 
-static void skip_header(void *tp, grpc_mdelem *md) { grpc_mdelem_unref(md); }
+static void skip_header(void *tp, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
 
 static int init_skip_frame_parser(
     grpc_chttp2_transport_parsing *transport_parsing, int is_header) {
@@ -607,7 +607,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &stream_parsing->incoming_metadata,
         gpr_time_add(gpr_now(), *cached_timeout));
-    grpc_mdelem_unref(md);
+    GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata,
                                              md);
