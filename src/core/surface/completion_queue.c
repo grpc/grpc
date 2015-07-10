@@ -129,6 +129,7 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
     cc->completed_tail->next =
         ((gpr_uintptr)storage) | (1u & (gpr_uintptr)cc->completed_tail->next);
     cc->completed_tail = storage;
+    grpc_pollset_kick(&cc->pollset);
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   } else {
     gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
