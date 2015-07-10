@@ -332,7 +332,15 @@ HOST_LDLIBS = $(LDLIBS)
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
 
-HAS_PKG_CONFIG = $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
+-include cache.mk
+
+CACHE_MK =
+
+HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
+
+ifeq ($(HAS_PKG_CONFIG), true)
+CACHE_MK += HAS_PKG_CONFIG = true\n
+endif
 
 PC_TEMPLATE = prefix=$(prefix)\nexec_prefix=\$${prefix}\nincludedir=\$${prefix}/include\nlibdir=\$${exec_prefix}/lib\n\nName: $(PC_NAME)\nDescription: $(PC_DESCRIPTION)\nVersion: $(VERSION)\nCflags: -I\$${includedir} $(PC_CFLAGS)\nRequires.private: $(PC_REQUIRES_PRIVATE)\nLibs: -L\$${libdir} $(PC_LIB)\nLibs.private: $(PC_LIBS_PRIVATE)
 
@@ -405,23 +413,34 @@ DTRACE_CHECK_CMD = which dtrace > /dev/null
 SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
 DEFINES += GRPC_HAVE_PERFTOOLS
 LIBS += profiler
+CACHE_MK += HAS_SYSTEM_PERFTOOLS = true\n
 endif
 endif
 
 HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 HAS_SYSTEM_OPENSSL_NPN = true
+CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true\n
 else
-HAS_SYSTEM_OPENSSL_NPN = $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 endif
-HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_SYSTEM_PROTOBUF = $(HAS_SYSTEM_PROTOBUF_VERIFY)
+ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true\n
+endif
+HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_SYSTEM_ZLIB),true)
+CACHE_MK += HAS_SYSTEM_ZLIB = true\n
+endif
+HAS_SYSTEM_PROTOBUF ?= $(HAS_SYSTEM_PROTOBUF_VERIFY)
+ifeq ($(HAS_SYSTEM_PROTOBUF),true)
+CACHE_MK += HAS_SYSTEM_PROTOBUF = true\n
+endif
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
@@ -430,9 +449,13 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
-HAS_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
+CACHE_MK += HAS_PROTOC = true\n
+HAS_VALID_PROTOC ?= $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_VALID_PROTOC),true)
+CACHE_MK += HAS_VALID_PROTOC = true\n
+endif
 else
 HAS_VALID_PROTOC = false
 endif
@@ -440,6 +463,7 @@ endif
 # Check for Systemtap (https://sourceware.org/systemtap/), first by making sure <sys/sdt.h> is present
 # in the system and secondly by checking for the "dtrace" binary (on Linux, this is part of the Systemtap
 # distribution. It's part of the base system on BSD/Solaris machines).
+ifndef HAS_SYSTEMTAP
 HAS_SYSTEMTAP_HEADERS = $(shell $(SYSTEMTAP_HEADERS_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_DTRACE = $(shell $(DTRACE_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEMTAP = false
@@ -447,6 +471,11 @@ ifeq ($(HAS_SYSTEMTAP_HEADERS),true)
 ifeq ($(HAS_DTRACE),true)
 HAS_SYSTEMTAP = true
 endif
+endif
+endif
+
+ifeq ($(HAS_SYSTEMTAP),true)
+CACHE_MK += HAS_SYSTEMTAP = true\n
 endif
 
 # Note that for testing purposes, one can do:
@@ -1391,15 +1420,15 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 
-static_cxx: pc_cxx pc_cxx_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+static_cxx: pc_cxx pc_cxx_unsecure pc_gpr cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+shared_c: pc_c pc_c_unsecure pc_gpr  cache.mk $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 
-shared_cxx: pc_cxx pc_cxx_unsecure  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 grpc_csharp_ext: shared_csharp
@@ -2640,6 +2669,10 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 endif
 
+cache.mk::
+	$(E) "[MAKE]    Generating $@"
+	$(Q) echo -e "$(CACHE_MK)" >$@
+
 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
@@ -3073,7 +3106,7 @@ endif
 
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
-	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
+	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR) cache.mk
 
 
 # The various libraries
