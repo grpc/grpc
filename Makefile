@@ -3100,6 +3100,7 @@ LIBGPR_SRC = \
     src/core/support/murmur_hash.c \
     src/core/support/slice.c \
     src/core/support/slice_buffer.c \
+    src/core/support/stack_lockfree.c \
     src/core/support/string.c \
     src/core/support/string_posix.c \
     src/core/support/string_win32.c \
