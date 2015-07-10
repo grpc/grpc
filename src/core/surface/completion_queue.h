@@ -39,6 +39,17 @@
 #include "src/core/iomgr/pollset.h"
 #include <grpc/grpc.h>
 
+typedef struct grpc_cq_completion {
+  /** user supplied tag */
+  void *tag;
+  /** done callback - called when this queue element is no longer
+      needed by the completion queue */
+  void (*done)(void *done_arg, struct grpc_cq_completion *c);
+  void *done_arg;
+  /** next pointer; low bit is used to indicate success or not */
+  gpr_uintptr next;
+} grpc_cq_completion;
+
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line);
@@ -57,11 +68,12 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc);
 
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made */
-void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call);
+void grpc_cq_begin_op(grpc_completion_queue *cc);
 
 /* Queue a GRPC_OP_COMPLETED operation */
-void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                    int success);
+void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
+                    void (*done)(void *done_arg, grpc_cq_completion *storage),
+                    void *done_arg, grpc_cq_completion *storage);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
