@@ -499,6 +499,10 @@ endif
 endif
 endif
 
+ifeq ($(HAS_SYSTEMTAP),true)
+CACHE_MK += HAS_SYSTEMTAP = true\n
+endif
+
 # Note that for testing purposes, one can do:
 #   make HAS_EMBEDDED_OPENSSL_ALPN=false
 # to emulate the fact we do not have OpenSSL in the third_party folder.
