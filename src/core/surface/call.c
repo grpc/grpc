@@ -49,6 +49,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+/** The maximum number of completions possible.
+    Based upon the maximum number of individually queueable ops in the batch
+   api:
+      - initial metadata send
+      - message send
+      - status/close send (depending on client/server)
+      - initial metadata recv
+      - message recv
+      - status/close recv (depending on client/server) */
+#define MAX_CONCURRENT_COMPLETIONS 6
+
 typedef enum { REQ_INITIAL = 0, REQ_READY, REQ_DONE } req_state;
 
 typedef enum {
@@ -255,7 +266,7 @@ struct grpc_call {
   grpc_iomgr_closure on_done_bind;
 
   /** completion events - for completion queue use */
-  grpc_cq_completion completions[6];
+  grpc_cq_completion completions[MAX_CONCURRENT_COMPLETIONS];
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
