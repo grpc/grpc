@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,24 +26,3 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-set -e
-
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
-
-
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
-
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
-fi
-
-. tools/buildgen/generate_build_additions.sh
-
-tools/buildgen/generate_projects.py build.json $gen_build_files
-
-rm $gen_build_files

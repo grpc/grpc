@@ -111,10 +111,13 @@ void grpc_iomgr_shutdown(void) {
   grpc_iomgr_closure *closure;
   gpr_timespec shutdown_deadline =
       gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
+  gpr_timespec last_warning_time = gpr_now();
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
   while (g_cbs_head != NULL || g_root_object.next != &g_root_object) {
+    if (gpr_time_cmp(gpr_time_sub(gpr_now(), last_warning_time),
+                     gpr_time_from_seconds(1)) >= 0) {
     if (g_cbs_head != NULL && g_root_object.next != &g_root_object) {
       gpr_log(GPR_DEBUG,
               "Waiting for %d iomgr objects to be destroyed and executing "
@@ -125,6 +128,8 @@ void grpc_iomgr_shutdown(void) {
     } else {
       gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed",
               count_objects());
+    }
+    last_warning_time = gpr_now();
     }
     if (g_cbs_head) {
       do {

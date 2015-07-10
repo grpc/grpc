@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-set -e
-
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+from grpc._cython._cygrpc cimport grpc
 
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
+cdef class ClientCredentials:
 
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
-fi
+  cdef grpc.grpc_credentials *c_credentials
+  cdef grpc.grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
+  cdef list references
 
-. tools/buildgen/generate_build_additions.sh
 
-tools/buildgen/generate_projects.py build.json $gen_build_files
+cdef class ServerCredentials:
 
-rm $gen_build_files
+  cdef grpc.grpc_server_credentials *c_credentials
+  cdef grpc.grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references

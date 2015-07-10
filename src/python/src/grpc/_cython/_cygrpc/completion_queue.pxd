@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-set -e
-
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+from grpc._cython._cygrpc cimport grpc
 
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
+cdef class CompletionQueue:
 
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
-fi
-
-. tools/buildgen/generate_build_additions.sh
-
-tools/buildgen/generate_projects.py build.json $gen_build_files
-
-rm $gen_build_files
+  cdef grpc.grpc_completion_queue *c_completion_queue
+  cdef object poll_condition
+  cdef bint is_polling
+  cdef bint is_shutting_down
+  cdef bint is_shutdown

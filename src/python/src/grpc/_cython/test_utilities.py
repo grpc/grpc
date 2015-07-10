@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import threading
 
-set -e
-
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+from grpc._cython._cygrpc import completion_queue
 
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
+class CompletionQueuePollFuture:
 
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
-fi
+  def __init__(self, completion_queue, deadline):
+    def poller_function():
+      self._event_result = completion_queue.poll(deadline)
+    self._event_result = None
+    self._thread = threading.Thread(target=poller_function)
+    self._thread.start()
 
-. tools/buildgen/generate_build_additions.sh
-
-tools/buildgen/generate_projects.py build.json $gen_build_files
-
-rm $gen_build_files
+  def result(self):
+    self._thread.join()
+    return self._event_result

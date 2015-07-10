@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-set -e
-
-if [ "x$TEST" = "x" ] ; then
-  TEST=false
-fi
+from grpc._cython._cygrpc cimport grpc
+from grpc._cython._cygrpc cimport completion_queue
 
 
-cd `dirname $0`/../..
-mako_renderer=tools/buildgen/mako_renderer.py
+cdef class Server:
 
-if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
-fi
+  cdef grpc.grpc_server *c_server
+  cdef bint is_started  # start has been called
+  cdef bint is_shutting_down  # shutdown has been called
+  cdef bint is_shutdown  # notification of complete shutdown received
+  # used at dealloc when user forgets to shutdown
+  cdef completion_queue.CompletionQueue backup_shutdown_queue
+  cdef list references
+  cdef list registered_completion_queues
 
-. tools/buildgen/generate_build_additions.sh
-
-tools/buildgen/generate_projects.py build.json $gen_build_files
-
-rm $gen_build_files
+  cdef notify_shutdown_complete(self)
