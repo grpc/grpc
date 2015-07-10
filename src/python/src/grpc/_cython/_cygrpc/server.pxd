@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,13 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from grpc._cython._cygrpc cimport grpc
+from grpc._cython._cygrpc cimport completion_queue
 
-# change to grpc repo root
-cd $(dirname $0)/../..
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
-source "python"$PYVER"_virtual_environment"/bin/activate
-"python"$PYVER -B $*
+cdef class Server:
+
+  cdef grpc.grpc_server *c_server
+  cdef bint is_started  # start has been called
+  cdef bint is_shutting_down  # shutdown has been called
+  cdef bint is_shutdown  # notification of complete shutdown received
+  # used at dealloc when user forgets to shutdown
+  cdef completion_queue.CompletionQueue backup_shutdown_queue
+  cdef list references
+  cdef list registered_completion_queues
+
+  cdef notify_shutdown_complete(self)

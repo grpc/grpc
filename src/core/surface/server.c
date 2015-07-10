@@ -163,6 +163,9 @@ struct grpc_server {
   listener *listeners;
   int listeners_destroyed;
   gpr_refcount internal_refcount;
+
+  /** when did we print the last shutdown progress message */
+  gpr_timespec last_shutdown_message_time;
 };
 
 typedef enum {
@@ -466,20 +469,35 @@ static void done_shutdown_event(void *server, grpc_cq_completion *completion) {
   server_unref(server);
 }
 
+static int num_channels(grpc_server *server) {
+  channel_data *chand;
+  int n = 0;
+  for (chand = server->root_channel_data.next;
+       chand != &server->root_channel_data; chand = chand->next) {
+    n++;
+  }
+  return n;
+}
+
 static void maybe_finish_shutdown(grpc_server *server) {
   size_t i;
   if (!server->shutdown || server->shutdown_published) {
     return;
   }
 
-  if (server->root_channel_data.next != &server->root_channel_data) {
-    gpr_log(GPR_DEBUG,
-            "Waiting for all channels to close before destroying server");
-    return;
-  }
-  if (server->listeners_destroyed < num_listeners(server)) {
-    gpr_log(GPR_DEBUG, "Waiting for all listeners to be destroyed (@ %d/%d)",
-            server->listeners_destroyed, num_listeners(server));
+  if (server->root_channel_data.next != &server->root_channel_data ||
+      server->listeners_destroyed < num_listeners(server)) {
+    if (gpr_time_cmp(
+            gpr_time_sub(gpr_now(), server->last_shutdown_message_time),
+            gpr_time_from_seconds(1)) >= 0) {
+      server->last_shutdown_message_time = gpr_now();
+      gpr_log(GPR_DEBUG,
+              "Waiting for %d channels and %d/%d listeners to be destroyed"
+              " before shutting down server",
+              num_channels(server),
+              num_listeners(server) - server->listeners_destroyed,
+              num_listeners(server));
+    }
     return;
   }
   server->shutdown_published = 1;
@@ -929,6 +947,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
     gpr_mu_unlock(&server->mu_global);
     return;
   }
+
+  server->last_shutdown_message_time = gpr_now();
 
   channel_broadcaster_init(server, &broadcaster);
 

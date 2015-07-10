@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,13 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import threading
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from grpc._cython._cygrpc import completion_queue
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
-source "python"$PYVER"_virtual_environment"/bin/activate
-"python"$PYVER -B $*
+
+class CompletionQueuePollFuture:
+
+  def __init__(self, completion_queue, deadline):
+    def poller_function():
+      self._event_result = completion_queue.poll(deadline)
+    self._event_result = None
+    self._thread = threading.Thread(target=poller_function)
+    self._thread.start()
+
+  def result(self):
+    self._thread.join()
+    return self._event_result

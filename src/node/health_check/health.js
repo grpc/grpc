@@ -31,30 +31,40 @@
  *
  */
 
-#include "test/core/util/grpc_profiler.h"
+'use strict';
 
-#if GRPC_HAVE_PERFTOOLS
-#include <gperftools/profiler.h>
+var grpc = require('../');
 
-void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
+var _ = require('lodash');
 
-void grpc_profiler_stop() { ProfilerStop(); }
-#else
-#include <grpc/support/log.h>
+var health_proto = grpc.load(__dirname + '/health.proto');
 
-void grpc_profiler_start(const char *filename) {
-  static int printed_warning = 0;
-  if (!printed_warning) {
-    gpr_log(GPR_DEBUG,
-            "You do not have google-perftools installed, profiling is disabled "
-            "[for %s]",
-            filename);
-    gpr_log(GPR_DEBUG,
-            "To install on ubuntu: sudo apt-get install google-perftools "
-            "libgoogle-perftools-dev");
-    printed_warning = 1;
-  }
+var HealthClient = health_proto.grpc.health.v1alpha.Health;
+
+function HealthImplementation(statusMap) {
+  this.statusMap = _.clone(statusMap);
 }
 
-void grpc_profiler_stop(void) {}
-#endif
+HealthImplementation.prototype.setStatus = function(host, service, status) {
+  if (!this.statusMap[host]) {
+    this.statusMap[host] = {};
+  }
+  this.statusMap[host][service] = status;
+};
+
+HealthImplementation.prototype.check = function(call, callback){
+  var host = call.request.host;
+  var service = call.request.service;
+  var status = _.get(this.statusMap, [host, service], null);
+  if (status === null) {
+    callback({code:grpc.status.NOT_FOUND});
+  } else {
+    callback(null, {status: status});
+  }
+};
+
+module.exports = {
+  Client: HealthClient,
+  service: HealthClient.service,
+  Implementation: HealthImplementation
+};

@@ -189,27 +189,55 @@ class PythonLanguage(object):
   def __init__(self):
     with open('tools/run_tests/python_tests.json') as f:
       self._tests = json.load(f)
+    self._build_python_versions = set([
+        python_version
+        for test in self._tests
+        for python_version in test['pythonVersions']])
+    self._has_python_versions = []
 
   def test_specs(self, config, travis):
-    modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']],
-                               None,
-                               environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                               shortname=test['module'])
-               for test in self._tests if 'module' in test]
-    files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']],
-                             None,
-                             environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                             shortname=test['file'])
-            for test in self._tests if 'file' in test]
-    return files + modules
+    job_specifications = []
+    for test in self._tests:
+      command = None
+      short_name = None
+      if 'module' in test:
+        command = ['tools/run_tests/run_python.sh', '-m', test['module']]
+        short_name = test['module']
+      elif 'file' in test:
+        command = ['tools/run_tests/run_python.sh', test['file']]
+        short_name = test['file']
+      else:
+        raise ValueError('expected input to be a module or file to run '
+                         'unittests from')
+      for python_version in test['pythonVersions']:
+        if python_version in self._has_python_versions:
+          environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+          environment['PYVER'] = python_version
+          job_specifications.append(config.job_spec(
+              command, None, environ=environment, shortname=short_name))
+        else:
+          jobset.message(
+              'WARNING',
+              'Could not find Python {}; skipping test'.format(python_version),
+              '{}\n'.format(command), do_newline=True)
+    return job_specifications
 
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh']]
+    commands = []
+    for python_version in self._build_python_versions:
+      try:
+        with open(os.devnull, 'w') as output:
+          subprocess.check_call(['which', 'python' + python_version],
+                                stdout=output, stderr=output)
+        commands.append(['tools/run_tests/build_python.sh', python_version])
+        self._has_python_versions.append(python_version)
+      except:
+        jobset.message('WARNING', 'Missing Python ' + python_version,
+                       do_newline=True)
+    return commands
 
   def supports_multi_config(self):
     return False
