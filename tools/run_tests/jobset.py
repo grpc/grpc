@@ -206,7 +206,7 @@ class Job(object):
                 do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > 300:
+    elif self._state == _RUNNING and time.time() - self._start > 600:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)

@@ -88,7 +88,7 @@ void CheckAuthContext(T* context) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string> fake =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1, fake.size());
+  EXPECT_EQ(1u, fake.size());
   EXPECT_EQ("fake", fake[0]);
   EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
