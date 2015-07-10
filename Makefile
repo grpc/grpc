@@ -3283,6 +3283,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/tcp_server_windows.c \
     src/core/iomgr/tcp_windows.c \
     src/core/iomgr/time_averaged_stats.c \
+    src/core/iomgr/udp_server.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
@@ -3543,6 +3544,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/tcp_server_windows.c \
     src/core/iomgr/tcp_windows.c \
     src/core/iomgr/time_averaged_stats.c \
+    src/core/iomgr/udp_server.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
