@@ -105,7 +105,6 @@ static void tcp_ref(grpc_tcp *tcp) {
 static void tcp_unref(grpc_tcp *tcp) {
   if (gpr_unref(&tcp->refcount)) {
     gpr_slice_buffer_destroy(&tcp->write_slices);
-    grpc_winsocket_orphan(tcp->socket);
     gpr_mu_destroy(&tcp->mu);
     gpr_free(tcp);
   }
@@ -379,6 +378,7 @@ static void win_shutdown(grpc_endpoint *ep) {
   tcp->shutting_down = 1;
   extra_refs = grpc_winsocket_shutdown(tcp->socket);
   while (extra_refs--) tcp_ref(tcp);
+  grpc_winsocket_orphan(tcp->socket);
   gpr_mu_unlock(&tcp->mu);
 }
 
