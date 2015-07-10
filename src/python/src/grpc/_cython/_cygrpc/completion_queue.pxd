@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,13 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from grpc._cython._cygrpc cimport grpc
 
-# change to grpc repo root
-cd $(dirname $0)/../..
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
-source "python"$PYVER"_virtual_environment"/bin/activate
-"python"$PYVER -B $*
+cdef class CompletionQueue:
+
+  cdef grpc.grpc_completion_queue *c_completion_queue
+  cdef object poll_condition
+  cdef bint is_polling
+  cdef bint is_shutting_down
+  cdef bint is_shutdown

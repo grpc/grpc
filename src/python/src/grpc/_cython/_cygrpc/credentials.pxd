@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,13 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from grpc._cython._cygrpc cimport grpc
 
-# change to grpc repo root
-cd $(dirname $0)/../..
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
-source "python"$PYVER"_virtual_environment"/bin/activate
-"python"$PYVER -B $*
+cdef class ClientCredentials:
+
+  cdef grpc.grpc_credentials *c_credentials
+  cdef grpc.grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
+  cdef list references
+
+
+cdef class ServerCredentials:
+
+  cdef grpc.grpc_server_credentials *c_credentials
+  cdef grpc.grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references
