@@ -90,9 +90,8 @@ grpc_completion_queue *grpc_completion_queue_create(void) {
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
                           const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %d -> %d %s",
-          cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count + 1,
-          reason);
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p   ref %d -> %d %s", cc,
+          (int)cc->owning_refs.count, (int)cc->owning_refs.count + 1, reason);
 #else
 void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 #endif
@@ -107,9 +106,8 @@ static void on_pollset_destroy_done(void *arg) {
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_unref(grpc_completion_queue *cc, const char *reason,
                             const char *file, int line) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %d -> %d %s",
-          cc, (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1,
-          reason);
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "CQ:%p unref %d -> %d %s", cc,
+          (int)cc->owning_refs.count, (int)cc->owning_refs.count - 1, reason);
 #else
 void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif
@@ -324,8 +322,8 @@ grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
 void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   grpc_pollset_kick(&cc->pollset);
-  grpc_pollset_work(&cc->pollset,
-                    gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
+  grpc_pollset_work(&cc->pollset, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                               gpr_time_from_millis(100)));
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 

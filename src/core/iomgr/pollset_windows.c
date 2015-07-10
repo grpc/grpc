@@ -70,7 +70,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   gpr_timespec now;
-  now = gpr_now();
+  now = gpr_now(GPR_CLOCK_REALTIME);
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0 /* GPR_FALSE */;
   }
@@ -86,8 +86,6 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   return 1 /* GPR_TRUE */;
 }
 
-void grpc_pollset_kick(grpc_pollset *p) {
-  gpr_cv_signal(&p->cv);
-}
+void grpc_pollset_kick(grpc_pollset *p) { gpr_cv_signal(&p->cv); }
 
 #endif /* GPR_WINSOCK_SOCKET */
