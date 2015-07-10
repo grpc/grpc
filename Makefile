@@ -3313,6 +3313,7 @@ LIBGRPC_SRC = \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
     src/core/surface/surface_trace.c \
+    src/core/surface/version.c \
     src/core/transport/chttp2/alpn.c \
     src/core/transport/chttp2/bin_encoder.c \
     src/core/transport/chttp2/frame_data.c \
@@ -3573,6 +3574,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
     src/core/surface/surface_trace.c \
+    src/core/surface/version.c \
     src/core/transport/chttp2/alpn.c \
     src/core/transport/chttp2/bin_encoder.c \
     src/core/transport/chttp2/frame_data.c \
