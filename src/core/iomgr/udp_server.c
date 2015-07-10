@@ -382,17 +382,14 @@ void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
   fprintf(stderr, "grpc_udp_server_start Started UDP server\n");
 }
 
-/*
-void grpc_udp_server_write(server_port *sp,
-                           const char *buffer,
-                           size_t buf_len,
-                           const struct sockaddr* peer_address) {
+/* TODO(rjshade): Add a test for this method. */
+void grpc_udp_server_write(server_port *sp, const char *buffer, size_t buf_len,
+                           const struct sockaddr *peer_address) {
   int rc;
   rc = sendto(sp->fd, buffer, buf_len, 0, peer_address, sizeof(peer_address));
   if (rc < 0) {
     gpr_log(GPR_ERROR, "Unable to send data: %s", strerror(errno));
   }
 }
-*/
 
 #endif
