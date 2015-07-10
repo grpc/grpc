@@ -177,7 +177,7 @@ typedef struct test_thread_options {
 } test_thread_options;
 
 gpr_timespec ten_seconds_time(void) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
 }
 
 static void free_completion(void *arg, grpc_cq_completion *completion) {
