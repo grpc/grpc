@@ -84,9 +84,6 @@ struct grpc_udp_server {
   /* shutdown callback */
   void (*shutdown_complete)(void *);
   void *shutdown_complete_arg;
-
-  /* Called when there is data to read from the underlying FD. */
-  grpc_udp_server_read_cb read_cb;
 };
 
 grpc_udp_server *grpc_udp_server_create(void) {
@@ -233,7 +230,8 @@ static void on_read(void *arg, int success) {
   server_port *sp = arg;
 
   /* Tell the registered callback that data is available to read. */
-  sp->server->read_cb(sp->fd, sp->server->cb, sp->server->cb_arg);
+  GPR_ASSERT(sp->read_cb);
+  sp->read_cb(sp->fd, sp->server->cb, sp->server->cb_arg);
 
   /* Re-arm the notification event so we get another chance to read. */
   grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
