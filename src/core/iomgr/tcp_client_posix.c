@@ -114,6 +114,7 @@ static void on_writable(void *acp, int success) {
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
 
+  gpr_mu_lock(&ac->mu);
   if (success) {
     do {
       so_error_size = sizeof(so_error);
@@ -139,6 +140,7 @@ static void on_writable(void *acp, int success) {
            opened too many network connections.  The "easy" fix:
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
+        gpr_mu_unlock(&ac->mu);
         grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
         return;
       } else {
@@ -165,10 +167,11 @@ static void on_writable(void *acp, int success) {
   abort();
 
 finish:
-  gpr_mu_lock(&ac->mu);
-  if (!ep) {
+  if (ep == NULL) {
     grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
     grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
+  } else {
+    ac->fd = NULL;
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);

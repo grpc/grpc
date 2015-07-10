@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2015-06-16</date>
- <time>20:12:55</time>
+ <date>2015-07-09</date>
+ <time>21:47:27</time>
  <version>
-  <release>0.5.0</release>
-  <api>0.5.0</api>
+  <release>0.5.1</release>
+  <api>0.5.1</api>
  </version>
  <stability>
   <release>alpha</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-First alpha release
+Update to wrap gRPC C Core version 0.10.0
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -34,15 +34,15 @@ First alpha release
    <file baseinstalldir="/" md5sum="f1b66029daeced20b47cf00cc6523fc8" name="channel.h" role="src" />
    <file baseinstalldir="/" md5sum="81a1193e93d8b6602add8ac360de565b" name="completion_queue.c" role="src" />
    <file baseinstalldir="/" md5sum="f10b5bb232d74a6878e829e2e76cdaa2" name="completion_queue.h" role="src" />
-   <file baseinstalldir="/" md5sum="a9181ed994a072ac5f41e7c9705c170f" name="config.m4" role="src" />
+   <file baseinstalldir="/" md5sum="a22f8eac0164761058cc4d9eb2ceb069" name="config.m4" role="src" />
    <file baseinstalldir="/" md5sum="8c3f1e11dac623001378bfd53b554f08" name="credentials.c" role="src" />
    <file baseinstalldir="/" md5sum="6988d6e97c19c8f8e3eb92371cf8246b" name="credentials.h" role="src" />
    <file baseinstalldir="/" md5sum="38a1bc979d810c36ebc2a52d4b7b5319" name="CREDITS" role="doc" />
    <file baseinstalldir="/" md5sum="3f35b472bbdef5a788cd90617d7d0847" name="LICENSE" role="doc" />
    <file baseinstalldir="/" md5sum="6aaa7a290122d230f2d8c4e4e05da4a9" name="php_grpc.c" role="src" />
    <file baseinstalldir="/" md5sum="673b07859d9f69232f8a754c56780686" name="php_grpc.h" role="src" />
-   <file baseinstalldir="/" md5sum="4d4d3382f8d10cae2e4378468e5516b9" name="README.md" role="doc" />
-   <file baseinstalldir="/" md5sum="53fda0ee6937f6ddc8e271886018d441" name="server.c" role="src" />
+   <file baseinstalldir="/" md5sum="c1d0b42fd77b7d6740bf7744bee90af5" name="README.md" role="doc" />
+   <file baseinstalldir="/" md5sum="30997dd423403e1f8ad09dcee598e5c4" name="server.c" role="src" />
    <file baseinstalldir="/" md5sum="4b730f06d14cbbb0642bdbd194749595" name="server.h" role="src" />
    <file baseinstalldir="/" md5sum="f6930beafb6c0e061899262f2f077e98" name="server_credentials.c" role="src" />
    <file baseinstalldir="/" md5sum="9c4b4cc06356a8a39a16a085a9b85996" name="server_credentials.h" role="src" />
@@ -76,6 +76,21 @@ First alpha release
    <license>BSD</license>
    <notes>
 First alpha release
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.5.1</release>
+    <api>0.5.1</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2015-07-09</date>
+   <license>BSD</license>
+   <notes>
+Update to wrap gRPC C Core version 0.10.0
    </notes>
   </release>
  </changelog>

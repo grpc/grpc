@@ -37,12 +37,17 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/security/json_token.h"
+#include "src/core/support/env.h"
+#include "src/core/support/file.h"
 #include "src/core/support/string.h"
+
+#include "test/core/util/test_config.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include "test/core/util/test_config.h"
+
 #include <openssl/rsa.h>
 
 static const char test_iam_authorization_token[] = "blahblahblhahb";
@@ -868,6 +873,68 @@ static void test_jwt_creds_signing_failure(void) {
   grpc_jwt_encode_and_sign_set_override(NULL);
 }
 
+static void set_google_default_creds_env_var_with_file_contents(
+    const char *file_prefix, const char *contents) {
+  size_t contents_len = strlen(contents);
+  char *creds_file_name;
+  FILE *creds_file = gpr_tmpfile(file_prefix, &creds_file_name);
+  GPR_ASSERT(creds_file_name != NULL);
+  GPR_ASSERT(creds_file != NULL);
+  GPR_ASSERT(fwrite(contents, 1, contents_len, creds_file) == contents_len);
+  fclose(creds_file);
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, creds_file_name);
+  gpr_free(creds_file_name);
+}
+
+static grpc_credentials *composite_inner_creds(grpc_credentials *creds,
+                                               const char *inner_creds_type) {
+  size_t i;
+  grpc_composite_credentials *composite;
+  GPR_ASSERT(strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0);
+  composite = (grpc_composite_credentials *)creds;
+  for (i = 0; i < composite->inner.num_creds; i++) {
+    grpc_credentials *c = composite->inner.creds_array[i];
+    if (strcmp(c->type, inner_creds_type) == 0) return c;
+  }
+  GPR_ASSERT(0); /* Not found. */
+}
+
+static void test_google_default_creds_auth_key(void) {
+  grpc_jwt_credentials *jwt;
+  grpc_credentials *creds;
+  char *json_key = test_json_key_str();
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "json_key_google_default_creds", json_key);
+  gpr_free(json_key);
+  creds = grpc_google_default_credentials_create();
+  GPR_ASSERT(creds != NULL);
+  jwt = (grpc_jwt_credentials *)composite_inner_creds(
+      creds, GRPC_CREDENTIALS_TYPE_JWT);
+  GPR_ASSERT(
+      strcmp(jwt->key.client_id,
+             "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
+      0);
+  grpc_credentials_unref(creds);
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+}
+
+static void test_google_default_creds_access_token(void) {
+  grpc_refresh_token_credentials *refresh;
+  grpc_credentials *creds;
+  grpc_flush_cached_google_default_credentials();
+  set_google_default_creds_env_var_with_file_contents(
+      "refresh_token_google_default_creds", test_refresh_token_str);
+  creds = grpc_google_default_credentials_create();
+  GPR_ASSERT(creds != NULL);
+  refresh = (grpc_refresh_token_credentials *)composite_inner_creds(
+      creds, GRPC_CREDENTIALS_TYPE_OAUTH2);
+  GPR_ASSERT(strcmp(refresh->refresh_token.client_id,
+                    "32555999999.apps.googleusercontent.com") == 0);
+  grpc_credentials_unref(creds);
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_empty_md_store();
@@ -896,5 +963,7 @@ int main(int argc, char **argv) {
   test_service_account_creds_signing_failure();
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();
+  test_google_default_creds_auth_key();
+  test_google_default_creds_access_token();
   return 0;
 }

@@ -2,14 +2,14 @@
 <package>
   <metadata>
     <id>grpc.native.csharp_ext</id>
-    <version>0.9.1</version>
+    <version>0.10.0</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>http://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Native extension needed by gRPC C# library. This is not the package you are looking for, it is only meant to be used as a dependency.</description>
-    <releaseNotes>Release of gRPC C core 0.9.1 libraries.</releaseNotes>
+    <releaseNotes>Release of gRPC C core 0.10.0 libraries.</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <title>gRPC C# Native Extension</title>
     <summary>Native library required by gRPC C#</summary>

@@ -31,47 +31,40 @@
  *
  */
 
-#include <grpc++/auth_context.h>
-#include <gtest/gtest.h>
-#include "src/cpp/common/secure_auth_context.h"
-#include "src/core/security/security_context.h"
+'use strict';
 
-namespace grpc {
-namespace {
+var grpc = require('../');
 
-class SecureAuthContextTest : public ::testing::Test {};
+var _ = require('lodash');
 
-// Created with nullptr
-TEST_F(SecureAuthContextTest, EmptyContext) {
-  SecureAuthContext context(nullptr);
-  EXPECT_TRUE(context.GetPeerIdentity().empty());
-  EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
-  EXPECT_TRUE(context.FindPropertyValues("").empty());
-  EXPECT_TRUE(context.FindPropertyValues("whatever").empty());
+var health_proto = grpc.load(__dirname + '/health.proto');
+
+var HealthClient = health_proto.grpc.health.v1alpha.Health;
+
+function HealthImplementation(statusMap) {
+  this.statusMap = _.clone(statusMap);
 }
 
-TEST_F(SecureAuthContextTest, Properties) {
-  grpc_auth_context* ctx = grpc_auth_context_create(NULL, 3);
-  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-  ctx->peer_identity_property_name = ctx->properties[0].name;
+HealthImplementation.prototype.setStatus = function(host, service, status) {
+  if (!this.statusMap[host]) {
+    this.statusMap[host] = {};
+  }
+  this.statusMap[host][service] = status;
+};
 
-  SecureAuthContext context(ctx);
-  std::vector<grpc::string> peer_identity = context.GetPeerIdentity();
-  EXPECT_EQ(2u, peer_identity.size());
-  EXPECT_EQ("chapi", peer_identity[0]);
-  EXPECT_EQ("chapo", peer_identity[1]);
-  EXPECT_EQ("name", context.GetPeerIdentityPropertyName());
-  std::vector<grpc::string> bar = context.FindPropertyValues("foo");
-  EXPECT_EQ(1u, bar.size());
-  EXPECT_EQ("bar", bar[0]);
-}
+HealthImplementation.prototype.check = function(call, callback){
+  var host = call.request.host;
+  var service = call.request.service;
+  var status = _.get(this.statusMap, [host, service], null);
+  if (status === null) {
+    callback({code:grpc.status.NOT_FOUND});
+  } else {
+    callback(null, {status: status});
+  }
+};
 
-}  // namespace
-}  // namespace grpc
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+module.exports = {
+  Client: HealthClient,
+  service: HealthClient.service,
+  Implementation: HealthImplementation
+};
