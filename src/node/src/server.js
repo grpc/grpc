@@ -634,7 +634,8 @@ function makeServerConstructor(service_attr_map) {
         }
         var serialize = attrs.responseSerialize;
         var deserialize = attrs.requestDeserialize;
-        server.register(attrs.path, service_handlers[service_name][name],
+        server.register(attrs.path, _.bind(service_handlers[service_name][name],
+                                           service_handlers[service_name]),
                         serialize, deserialize, method_type);
       });
     }, this);

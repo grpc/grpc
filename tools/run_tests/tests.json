@@ -723,6 +723,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "secure_auth_context_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "server_crash_test", 
     "platforms": [
       "windows", 

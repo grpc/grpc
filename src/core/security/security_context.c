@@ -69,12 +69,20 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-const grpc_auth_context *grpc_call_auth_context(grpc_call *call) {
+grpc_auth_context *grpc_call_auth_context(grpc_call *call) {
   void *sec_ctx = grpc_call_context_get(call, GRPC_CONTEXT_SECURITY);
   if (sec_ctx == NULL) return NULL;
   return grpc_call_is_client(call)
-             ? ((grpc_client_security_context *)sec_ctx)->auth_context
-             : ((grpc_server_security_context *)sec_ctx)->auth_context;
+             ? GRPC_AUTH_CONTEXT_REF(
+                   ((grpc_client_security_context *)sec_ctx)->auth_context,
+                   "grpc_call_auth_context client")
+             : GRPC_AUTH_CONTEXT_REF(
+                   ((grpc_server_security_context *)sec_ctx)->auth_context,
+                   "grpc_call_auth_context server");
+}
+
+void grpc_auth_context_release(grpc_auth_context *context) {
+  GRPC_AUTH_CONTEXT_UNREF(context, "grpc_auth_context_unref");
 }
 
 /* --- grpc_client_security_context --- */

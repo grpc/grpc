@@ -112,20 +112,26 @@ void grpc_iomgr_shutdown(void) {
   grpc_iomgr_closure *closure;
   gpr_timespec shutdown_deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10));
+  gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
   while (g_cbs_head != NULL || g_root_object.next != &g_root_object) {
-    if (g_cbs_head != NULL && g_root_object.next != &g_root_object) {
-      gpr_log(GPR_DEBUG,
-              "Waiting for %d iomgr objects to be destroyed and executing "
-              "final callbacks",
-              count_objects());
-    } else if (g_cbs_head != NULL) {
-      gpr_log(GPR_DEBUG, "Executing final iomgr callbacks");
-    } else {
-      gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed",
-              count_objects());
+    if (gpr_time_cmp(
+            gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
+            gpr_time_from_seconds(1)) >= 0) {
+      if (g_cbs_head != NULL && g_root_object.next != &g_root_object) {
+        gpr_log(GPR_DEBUG,
+                "Waiting for %d iomgr objects to be destroyed and executing "
+                "final callbacks",
+                count_objects());
+      } else if (g_cbs_head != NULL) {
+        gpr_log(GPR_DEBUG, "Executing final iomgr callbacks");
+      } else {
+        gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed",
+                count_objects());
+      }
+      last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
     if (g_cbs_head) {
       do {

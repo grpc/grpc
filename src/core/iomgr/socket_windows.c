@@ -45,11 +45,14 @@
 #include "src/core/iomgr/socket_windows.h"
 
 grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
+  char *final_name;
   grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  grpc_iomgr_register_object(&r->iomgr_object, name);
+  gpr_asprintf(&final_name, "%s:socket=0x%p", name, r);
+  grpc_iomgr_register_object(&r->iomgr_object, final_name);
+  gpr_free(final_name);
   grpc_iocp_add_socket(r);
   return r;
 }
