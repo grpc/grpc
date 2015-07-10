@@ -48,7 +48,7 @@
 static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 
-static void on_connect(void *arg, grpc_endpoint *tcp) {
+static void on_connect(void *arg, grpc_endpoint *udp) {
 }
 
 static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
