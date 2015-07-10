@@ -173,7 +173,7 @@ static void request_response_with_payload_and_call_creds(
   size_t details_capacity = 0;
   int was_cancelled = 2;
   grpc_credentials *creds = NULL;
-  const grpc_auth_context *s_auth_context = NULL;
+  grpc_auth_context *s_auth_context = NULL;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
                                deadline);
@@ -239,6 +239,7 @@ static void request_response_with_payload_and_call_creds(
   s_auth_context = grpc_call_auth_context(s);
   GPR_ASSERT(s_auth_context != NULL);
   print_auth_context(0, s_auth_context);
+  grpc_auth_context_release(s_auth_context);
 
   /* Cannot set creds on the server call object. */
   GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
