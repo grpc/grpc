@@ -84,6 +84,7 @@
 #define GPR_MSVC_TLS 1
 #endif
 #elif defined(_WIN32) || defined(WIN32)
+#define GPR_PLATFORM_STRING "windows"
 #define GPR_ARCH_32 1
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
