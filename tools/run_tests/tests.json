@@ -570,6 +570,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "udp_server_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "uri_parser_test", 
     "platforms": [
       "windows", 
