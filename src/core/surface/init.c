@@ -35,6 +35,7 @@
 
 #include <grpc/census.h>
 #include <grpc/grpc.h>
+#include <grpc/support/time.h>
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/client_config/resolvers/dns_resolver.h"
@@ -64,6 +65,7 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
+    gpr_time_init();
     grpc_resolver_registry_init("dns:///");
     grpc_register_resolver_type("dns", grpc_dns_resolver_factory_create());
 #ifdef GPR_POSIX_SOCKET

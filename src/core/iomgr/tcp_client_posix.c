@@ -253,7 +253,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->write_closure.cb_arg = ac;
 
   gpr_mu_lock(&ac->mu);
-  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
+  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
+                  gpr_now(GPR_CLOCK_REALTIME));
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 

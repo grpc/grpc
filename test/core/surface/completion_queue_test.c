@@ -69,7 +69,7 @@ static void test_wait_empty(void) {
   LOG_TEST("test_wait_empty");
 
   cc = grpc_completion_queue_create();
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_now()).type ==
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_now(GPR_CLOCK_REALTIME)).type ==
              GRPC_QUEUE_TIMEOUT);
   shutdown_and_destroy(cc);
 }
