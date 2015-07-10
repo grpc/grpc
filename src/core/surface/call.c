@@ -367,7 +367,7 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
   return call->cq;
 }
 
-grpc_cq_completion *allocate_completion(grpc_call *call) {
+static grpc_cq_completion *allocate_completion(grpc_call *call) {
   gpr_uint8 i;
   gpr_mu_lock(&call->completion_mu);
   for (i = 0; i < GPR_ARRAY_SIZE(call->completions); i++) {
@@ -382,7 +382,7 @@ grpc_cq_completion *allocate_completion(grpc_call *call) {
   abort();
 }
 
-void done_completion(void *call, grpc_cq_completion *completion) {
+static void done_completion(void *call, grpc_cq_completion *completion) {
   grpc_call *c = call;
   gpr_mu_lock(&c->completion_mu);
   c->allocated_completions &= ~(1u << (completion - c->completions));
