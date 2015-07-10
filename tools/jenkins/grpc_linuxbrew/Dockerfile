@@ -33,50 +33,30 @@ FROM debian:jessie
 
 # Core dependencies
 RUN apt-get update && apt-get install -y \
-  bzip2 curl g++ gawk git m4 make patch ruby tcl wget
+  bzip2 curl git ruby wget
 
 # Install linuxbrew
-WORKDIR /home/linuxbrew
 ENV PATH /home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
-ENV SHELL /bin/bash
 RUN git clone https://github.com/Homebrew/linuxbrew.git /home/linuxbrew/.linuxbrew
 RUN brew doctor || true
 
-# Install gRPC via linuxbrew
-RUN curl -fsSL https://goo.gl/getgrpc | bash -
-
+# Python dependency
+RUN apt-get update && apt-get install -y python-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
 # NodeJS dependency
-RUN curl -sL https://deb.nodesource.com/setup | bash -
-RUN apt-get install -y nodejs
-
-# Install gRPC NodeJS via linuxbrew
-RUN curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
-
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 0.12"
 
 # Ruby dependency
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 RUN /bin/bash -l -c "\curl -sSL https://get.rvm.io | bash -s stable"
 RUN /bin/bash -l -c "rvm install ruby-2.1"
-RUN /bin/bash -l -c "echo 'export PATH=/home/linuxbrew/.linuxbrew/bin:$PATH' > ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
-
-# Install gRPC Ruby via linuxbrew
-RUN /bin/bash -l -c "curl -fsSL https://goo.gl/getgrpc | bash -s ruby"
-
 
 # PHP dependency
-RUN apt-get update && apt-get install -y \
-  php5 php5-dev phpunit unzip
+RUN apt-get update && apt-get install -y php5 php5-dev phpunit unzip
 
-# Install gRPC PHP via linuxbrew
-RUN curl -fsSL https://goo.gl/getgrpc | bash -s php
+RUN /bin/bash -l -c "echo 'export PATH=/home/linuxbrew/.linuxbrew/bin:\$PATH' >> ~/.bashrc"
 
-
-# Python dependency
-RUN apt-get update && apt-get install -y \
-  python-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python
-
-# Install gRPC Python via linuxbrew
-RUN curl -fsSL https://goo.gl/getgrpc | bash -s python
+CMD ["bash"]

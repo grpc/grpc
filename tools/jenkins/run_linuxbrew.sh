@@ -28,14 +28,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by Jenkins and triggers a test run based on
-# env variable settings.
+# This script is invoked by Jenkins and triggers a test run of
+# linuxbrew installation of a selected language
 set -ex
 
 sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
 DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
 
-docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew \
-  >> report.xml || DOCKER_FAILED="true"
+docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
 
-echo "finished"
+supported="python nodejs ruby php"
+
+if [ "$language" == "core" ]; then
+  command="curl -fsSL https://goo.gl/getgrpc | bash -"
+elif [[ "$supported" =~ "$language" ]]; then
+  command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
+else
+  echo "unsupported language $language"
+  exit 1
+fi
+
+docker run $DOCKER_IMAGE_NAME bash -l \
+  -c "nvm use 0.12; \
+      npm set unsafe-perm true; \
+      rvm use ruby-2.1; \
+      $command"
