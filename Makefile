@@ -318,8 +318,8 @@ CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
 
 LDFLAGS += $(ARCH_FLAGS)
-LDLIBS += $(addprefix -l, $(LIBS))
-LDLIBSXX += $(addprefix -l, $(LIBSXX))
+LDLIBS += $(addprefix -l, $(LIBS)) -lzookeeper_mt
+LDLIBSXX += $(addprefix -l, $(LIBSXX)) -lzookeeper_mt
 
 HOST_CPPFLAGS = $(CPPFLAGS)
 HOST_CFLAGS = $(CFLAGS)

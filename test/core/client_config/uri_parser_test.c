@@ -57,6 +57,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_succeeds("http://www.google.com", "http", "www.google.com", "");
   test_succeeds("dns:///foo", "dns", "", "/foo");
+  test_succeeds("zookeeper://127.0.0.1:2181/foo", "zookeeper", "127.0.0.1:2181", "/foo");
   test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
   test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom");
   test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom");

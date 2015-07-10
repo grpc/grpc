@@ -50,6 +50,8 @@
 #include "src/core/client_config/resolvers/unix_resolver_posix.h"
 #endif
 
+#include "src/core/client_config/resolvers/zookeeper_resolver.h"
+
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 static int g_initializations;
@@ -69,6 +71,7 @@ void grpc_init(void) {
 #ifdef GPR_POSIX_SOCKET
     grpc_register_resolver_type("unix", grpc_unix_resolver_factory_create());
 #endif
+    grpc_register_resolver_type("zookeeper", grpc_zookeeper_resolver_factory_create());
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);
