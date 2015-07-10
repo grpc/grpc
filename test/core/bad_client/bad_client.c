@@ -86,8 +86,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
 
-  hex =
-      gpr_hexdump(client_payload, client_payload_length, GPR_HEXDUMP_PLAINTEXT);
+  hex = gpr_dump(client_payload, client_payload_length,
+                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
 
   /* Add a debug log */
   gpr_log(GPR_INFO, "TEST: %s", hex);

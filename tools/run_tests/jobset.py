@@ -81,6 +81,7 @@ _CLEAR_LINE = '\x1b[2K'
 
 _TAG_COLOR = {
     'FAILED': 'red',
+    'WARNING': 'yellow',
     'TIMEOUT': 'red',
     'PASSED': 'green',
     'START': 'gray',
@@ -95,7 +96,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
     return
   message.old_tag = tag
   message.old_msg = msg
-  if platform.system() == 'Windows':
+  if platform.system() == 'Windows' or not sys.stdout.isatty():
     if explanatory_text:
       print explanatory_text
     print '%s: %s' % (tag, msg)

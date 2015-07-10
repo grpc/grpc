@@ -622,7 +622,7 @@ static const gpr_uint8 inverse_base64[256] = {
 static void on_hdr(grpc_chttp2_hpack_parser *p, grpc_mdelem *md,
                    int add_to_table) {
   if (add_to_table) {
-    grpc_mdelem_ref(md);
+    GRPC_MDELEM_REF(md);
     grpc_chttp2_hptbl_add(&p->table, md);
   }
   p->on_header(p->on_header_user_data, md);
@@ -711,7 +711,7 @@ static int parse_stream_dep0(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
 static int finish_indexed_field(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  grpc_mdelem_ref(md);
+  GRPC_MDELEM_REF(md);
   on_hdr(p, md, 0);
   return parse_begin(p, cur, end);
 }
@@ -740,7 +740,7 @@ static int finish_lithdr_incidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              grpc_mdstr_ref(md->key),
+                                              GRPC_MDSTR_REF(md->key),
                                               take_string(p, &p->value)),
          1);
   return parse_begin(p, cur, end);
@@ -793,7 +793,7 @@ static int finish_lithdr_notidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              grpc_mdstr_ref(md->key),
+                                              GRPC_MDSTR_REF(md->key),
                                               take_string(p, &p->value)),
          0);
   return parse_begin(p, cur, end);
@@ -846,7 +846,7 @@ static int finish_lithdr_nvridx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              grpc_mdstr_ref(md->key),
+                                              GRPC_MDSTR_REF(md->key),
                                               take_string(p, &p->value)),
          0);
   return parse_begin(p, cur, end);
@@ -1329,17 +1329,14 @@ static int parse_value_string_with_literal_key(grpc_chttp2_hpack_parser *p,
 /* PUBLIC INTERFACE */
 
 static void on_header_not_set(void *user_data, grpc_mdelem *md) {
-  char *keyhex =
-      gpr_hexdump(grpc_mdstr_as_c_string(md->key),
-                  GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT);
+  char *keyhex = gpr_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char *valuehex =
-      gpr_hexdump(grpc_mdstr_as_c_string(md->value),
-                  GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT);
+      gpr_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_ERROR, "on_header callback not set; key=%s value=%s", keyhex,
           valuehex);
   gpr_free(keyhex);
   gpr_free(valuehex);
-  grpc_mdelem_unref(md);
+  GRPC_MDELEM_UNREF(md);
   abort();
 }
 

@@ -31,7 +31,7 @@
  *
  */
 
-#include<string.h>
+#include <string.h>
 
 #include "src/core/security/security_context.h"
 #include "src/core/support/string.h"

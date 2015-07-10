@@ -336,6 +336,27 @@ static void test_iam_creds(void) {
                                         check_iam_metadata, creds);
 }
 
+static void check_access_token_metadata(void *user_data,
+                                        grpc_credentials_md *md_elems,
+                                        size_t num_md,
+                                        grpc_credentials_status status) {
+  grpc_credentials *c = (grpc_credentials *)user_data;
+  expected_md emd[] = {{GRPC_AUTHORIZATION_METADATA_KEY, "Bearer blah"}};
+  GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
+  GPR_ASSERT(num_md == 1);
+  check_metadata(emd, md_elems, num_md);
+  grpc_credentials_unref(c);
+}
+
+static void test_access_token_creds(void) {
+  grpc_credentials *creds = grpc_access_token_credentials_create("blah");
+  GPR_ASSERT(grpc_credentials_has_request_metadata(creds));
+  GPR_ASSERT(grpc_credentials_has_request_metadata_only(creds));
+  GPR_ASSERT(strcmp(creds->type, GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
+  grpc_credentials_get_request_metadata(creds, NULL, test_service_url,
+                                        check_access_token_metadata, creds);
+}
+
 static void check_ssl_oauth2_composite_metadata(
     void *user_data, grpc_credentials_md *md_elems, size_t num_md,
     grpc_credentials_status status) {
@@ -930,6 +951,7 @@ int main(int argc, char **argv) {
   test_oauth2_token_fetcher_creds_parsing_missing_token_type();
   test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime();
   test_iam_creds();
+  test_access_token_creds();
   test_ssl_oauth2_composite_creds();
   test_ssl_oauth2_iam_composite_creds();
   test_compute_engine_creds_success();

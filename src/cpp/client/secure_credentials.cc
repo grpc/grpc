@@ -117,6 +117,13 @@ std::shared_ptr<Credentials> RefreshTokenCredentials(
       grpc_refresh_token_credentials_create(json_refresh_token.c_str()));
 }
 
+// Builds access token credentials.
+std::shared_ptr<Credentials> AccessTokenCredentials(
+    const grpc::string& access_token) {
+  return WrapCredentials(
+      grpc_access_token_credentials_create(access_token.c_str()));
+}
+
 // Builds IAM credentials.
 std::shared_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,

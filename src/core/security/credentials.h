@@ -262,7 +262,6 @@ typedef struct {
   grpc_credentials_md_store *access_token_md;
   gpr_timespec token_expiration;
   grpc_httpcli_context httpcli_context;
-  grpc_pollset_set pollset_set;
   grpc_fetch_oauth2_func fetch_func;
 } grpc_oauth2_token_fetcher_credentials;
 
@@ -281,6 +280,13 @@ typedef struct {
   grpc_oauth2_token_fetcher_credentials base;
   grpc_auth_refresh_token refresh_token;
 } grpc_refresh_token_credentials;
+
+/* -- Oauth2 Access Token credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_md_store *access_token_md;
+} grpc_access_token_credentials;
 
 /* -- Fake Oauth2 credentials. -- */
 

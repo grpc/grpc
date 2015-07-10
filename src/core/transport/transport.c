@@ -85,6 +85,6 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
     op->cancel_with_status = status;
   }
   if (message) {
-    grpc_mdstr_unref(message);
+    GRPC_MDSTR_UNREF(message);
   }
 }
