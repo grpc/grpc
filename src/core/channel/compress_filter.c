@@ -222,7 +222,7 @@ static void process_send_ops(grpc_call_element *elem,
         }
         break;
       case GRPC_OP_SLICE:
-        if (skip_compression(channeld, calld)) continue;
+        if (skip_compression(channeld, calld)) goto done;
         GPR_ASSERT(calld->remaining_slice_bytes > 0);
         /* We need to copy the input because gpr_slice_buffer_add takes
          * ownership. However, we don't own sop->data.slice, the caller does. */
@@ -235,10 +235,11 @@ static void process_send_ops(grpc_call_element *elem,
         }
         break;
       case GRPC_NO_OP:
-        ;  /* fallthrough */
+        break;
     }
   }
 
+done:
   /* Modify the send_ops stream_op_buffer depending on whether compression was
    * carried out */
   if (did_compress) {
