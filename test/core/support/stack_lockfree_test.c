@@ -33,20 +33,23 @@
 
 #include "src/core/support/stack_lockfree.h"
 
-#include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
 #include "test/core/util/test_config.h"
 
-void test_serial() {
-  gpr_stack_lockfree *stack = gpr_stack_lockfree_create(128);
+/* max stack size supported */
+#define MAX_STACK_SIZE 65534
+
+#define MAX_THREADS 32
+
+static void test_serial_sized(int size) {
+  gpr_stack_lockfree *stack = gpr_stack_lockfree_create(size);
   int i;
-  
+
   /* First try popping empty */
   GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
 
@@ -54,22 +57,98 @@ void test_serial() {
   gpr_stack_lockfree_push(stack, 3);
   GPR_ASSERT(gpr_stack_lockfree_pop(stack) == 3);
   GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
-  
+
   /* Now add repeatedly more items and check them */
-  for (i=0; i<128; i++) {
+  for (i=1; i<size; i*=2) {
     int j;
     for (j=0; j<=i; j++) {
       gpr_stack_lockfree_push(stack, j);
     }
     for (j=0; j<=i; j++) {
-      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == i-j);      
+      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == i-j);
     }
     GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
+  }
+
+  gpr_stack_lockfree_destroy(stack);
+}
+
+static void test_serial() {
+  int i;
+  for (i=128; i<MAX_STACK_SIZE; i*=2) {
+    test_serial_sized(i);
+  }
+  test_serial_sized(MAX_STACK_SIZE);
+}
+
+struct test_arg {
+  gpr_stack_lockfree *stack;
+  int stack_size;
+  int nthreads;
+  int rank;
+  int sum;
+};
+
+static void test_mt_body(void *v) {
+  struct test_arg *arg = (struct test_arg *)v;
+  int lo, hi;
+  int i;
+  int res;
+  lo = arg->rank*arg->stack_size/arg->nthreads;
+  hi = (arg->rank+1)*arg->stack_size/arg->nthreads;
+  for (i=lo; i<hi; i++) {
+    gpr_stack_lockfree_push(arg->stack, i);
+    if ((res = gpr_stack_lockfree_pop(arg->stack)) != -1) {
+      arg->sum += res;
+    }
+  }
+  while ((res = gpr_stack_lockfree_pop(arg->stack)) != -1) {
+    arg->sum += res;
+  }
+}
+
+static void test_mt_sized(int size, int nth) {
+  gpr_stack_lockfree *stack;
+  struct test_arg args[MAX_THREADS];
+  gpr_thd_id thds[MAX_THREADS];
+  int sum;
+  int i;
+  gpr_thd_options options = gpr_thd_options_default();
+
+  stack = gpr_stack_lockfree_create(size);
+  for (i=0; i<nth; i++) {
+    args[i].stack = stack;
+    args[i].stack_size = size;
+    args[i].nthreads = nth;
+    args[i].rank = i;
+    args[i].sum = 0;
+  }
+  gpr_thd_options_set_joinable(&options);
+  for (i = 0; i < nth; i++) {
+    GPR_ASSERT(gpr_thd_new(&thds[i], test_mt_body, &args[i], &options));
+  }
+  sum = 0;
+  for (i = 0; i < nth; i++) {
+    gpr_thd_join(thds[i]);
+    sum = sum + args[i].sum;
+  }
+  GPR_ASSERT((unsigned)sum == ((unsigned)size*(size-1))/2);
+  gpr_stack_lockfree_destroy(stack);
+}
+
+static void test_mt() {
+  int size, nth;
+  for (nth=1; nth < MAX_THREADS; nth++) {
+    for (size=128; size < MAX_STACK_SIZE; size*=2) {
+      test_mt_sized(size,nth);
+    }
+    test_mt_sized(MAX_STACK_SIZE,nth);
   }
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_serial();
+  test_mt();
   return 0;
 }
