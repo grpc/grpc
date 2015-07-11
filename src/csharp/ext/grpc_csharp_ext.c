@@ -379,7 +379,7 @@ grpcsharp_channel_args_destroy(grpc_channel_args *args) {
 
 /* Timespec */
 
-GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(void) { return gpr_now(); }
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(void) { return gpr_now(GPR_CLOCK_REALTIME); }
 
 GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_future(void) {
   return gpr_inf_future;

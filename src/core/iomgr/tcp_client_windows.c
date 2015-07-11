@@ -215,7 +215,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
   ac->refs = 2;
   ac->aborted = 0;
 
-  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
+  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
+                  gpr_now(GPR_CLOCK_REALTIME));
   socket->write_info.outstanding = 1;
   grpc_socket_notify_on_write(socket, on_connect, ac);
   return;

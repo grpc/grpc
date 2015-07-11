@@ -241,7 +241,8 @@ int main(int argc, char **argv) {
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
+        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(1000000)));
     s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:

@@ -41,7 +41,7 @@
 Timer::Timer() : start_(Sample()) {}
 
 double Timer::Now() {
-  auto ts = gpr_now();
+  auto ts = gpr_now(GPR_CLOCK_REALTIME);
   return ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
 
