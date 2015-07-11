@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # This script is invoked by run_jekins.sh when piggy-backing into docker.
-set -e
+set -ex
 
 export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
