@@ -70,7 +70,8 @@ then
   DOCKER_CID=`cat docker.cid`
   docker kill $DOCKER_CID
   docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
-  docker rm $DOCKER_CID
+  sleep 4
+  docker rm $DOCKER_CID || true
 
 elif [ "$platform" == "windows" ]
 then
