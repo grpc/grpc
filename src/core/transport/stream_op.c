@@ -286,6 +286,12 @@ void grpc_metadata_batch_merge(grpc_metadata_batch *target,
   }
 }
 
+void grpc_metadata_batch_move(grpc_metadata_batch *dst,
+                               grpc_metadata_batch *src) {
+  *dst = *src;
+  memset(src, 0, sizeof(grpc_metadata_batch));
+}
+
 void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
                                 grpc_mdelem *(*filter)(void *user_data,
                                                        grpc_mdelem *elem),
