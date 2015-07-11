@@ -51,7 +51,7 @@ for root, dirs, files in os.walk('templates'):
   for f in files:
     if os.path.splitext(f)[1] == '.template':
       out = '.' + root[len('templates'):] + '/' + os.path.splitext(f)[0]
-      cmd = ['tools/buildgen/mako_renderer.py']
+      cmd = ['python', 'tools/buildgen/mako_renderer.py']
       for plugin in plugins:
         cmd.append('-p')
         cmd.append(plugin)
