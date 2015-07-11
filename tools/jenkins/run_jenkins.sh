@@ -37,6 +37,16 @@
 # NOTE: No empty lines should appear in this file before igncr is set!
 set -ex -o igncr || set -ex
 
+# Grabbing the machine's architecture
+arch=`uname -m`
+
+case $platform in
+  i386)
+    arch="i386"
+    platform="linux"
+    ;;
+esac
+
 if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
@@ -61,6 +71,7 @@ then
   docker run \
     -e "config=$config" \
     -e "language=$language" \
+    -e "arch=$arch" \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
     --cidfile=docker.cid \
