@@ -76,7 +76,7 @@ cdef extern from "grpc/support/time.h":
   cdef gpr_timespec gpr_inf_future
   cdef gpr_timespec gpr_inf_past
 
-  gpr_timespec gpr_now(gpr_clock_type)
+  gpr_timespec gpr_now(gpr_clock_type clock_type)
 
 
 cdef extern from "grpc/status.h":
