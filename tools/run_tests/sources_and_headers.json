@@ -338,6 +338,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "gpr_stack_lockfree_test", 
+    "src": [
+      "test/core/support/stack_lockfree_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "gpr_string_test", 
     "src": [
       "test/core/support/string_test.c"

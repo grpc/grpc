@@ -197,6 +197,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "gpr_stack_lockfree_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "gpr_string_test", 
     "platforms": [
       "windows", 

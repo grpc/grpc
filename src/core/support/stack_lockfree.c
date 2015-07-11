@@ -83,6 +83,7 @@ gpr_stack_lockfree *gpr_stack_lockfree_create(int entries) {
                                       ENTRY_ALIGNMENT_BITS);
   /* Clear out all entries */
   memset(stack->entries, 0, entries * sizeof(stack->entries[0]));
+  memset(&stack->head, 0, sizeof(stack->head));
 
   /* Point the head at reserved dummy entry */
   stack->head.contents.index = INVALID_ENTRY_INDEX;
@@ -121,10 +122,11 @@ int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
     if (head.contents.index == INVALID_ENTRY_INDEX) {
       return -1;
     }
-    newhead.contents.index = stack->entries[head.contents.index].contents.index;
+    newhead.atm =
+        gpr_atm_no_barrier_load(&(stack->entries[head.contents.index].atm));
 
   } while (!gpr_atm_no_barrier_cas(&(stack->head.atm),
                                    head.atm,
                                    newhead.atm));
-  return newhead.contents.index;
+  return head.contents.index;
 }
