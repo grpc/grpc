@@ -64,6 +64,10 @@ cdef extern from "grpc/support/port_platform.h":
 
 cdef extern from "grpc/support/time.h":
 
+  ctypedef enum gpr_clock_type:
+    GPR_CLOCK_REALTIME
+    GPR_CLOCK_MONOTONIC
+
   ctypedef struct gpr_timespec:
     libc.time.time_t seconds "tv_sec"
     int nanoseconds "tv_nsec"
@@ -72,7 +76,7 @@ cdef extern from "grpc/support/time.h":
   cdef gpr_timespec gpr_inf_future
   cdef gpr_timespec gpr_inf_past
 
-  gpr_timespec gpr_now()
+  gpr_timespec gpr_now(gpr_clock_type)
 
 
 cdef extern from "grpc/status.h":
