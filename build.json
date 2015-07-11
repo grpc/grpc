@@ -1163,6 +1163,18 @@
       ]
     },
     {
+      "name": "gpr_stack_lockfree_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/stack_lockfree_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "gpr_string_test",
       "build": "test",
       "language": "c",
