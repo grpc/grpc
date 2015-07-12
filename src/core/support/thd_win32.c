@@ -106,7 +106,7 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
 }
 
 gpr_thd_id gpr_thd_currentid(void) {
-  return (gpr_thd_id)g_thd_info;
+  return (gpr_thd_id)GetCurrentThreadId();
 }
 
 void gpr_thd_join(gpr_thd_id t) {
