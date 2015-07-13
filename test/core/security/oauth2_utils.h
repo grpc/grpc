@@ -31,25 +31,21 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
-#define GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
+#ifndef GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
+#define GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 
-#include <memory>
+#include "src/core/security/credentials.h"
 
-#include <grpc++/config.h>
-#include <grpc++/channel_interface.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace grpc {
-namespace testing {
+/* Fetch oauth2 access token with a credentials object. Does not take ownership.
+   Returns NULL on a failure. The caller should call gpr_free on the token. */
+char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds);
 
-grpc::string GetServiceAccountJsonKey();
+#ifdef __cplusplus
+}
+#endif
 
-grpc::string GetOauth2AccessToken();
-
-std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
-    const grpc::string& test_case);
-
-}  // namespace testing
-}  // namespace grpc
-
-#endif  // GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
+#endif /* GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H */
