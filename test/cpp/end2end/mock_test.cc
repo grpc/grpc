@@ -86,7 +86,9 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
     msg->set_message(last_message_);
     return true;
   }
-  bool Write(const EchoRequest& msg) GRPC_OVERRIDE {
+
+  bool Write(const EchoRequest& msg,
+             const WriteOptions& options) GRPC_OVERRIDE {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
     return true;
