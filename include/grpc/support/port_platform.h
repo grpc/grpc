@@ -82,6 +82,7 @@
 #define GPR_WIN32_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
+#define GPR_WINDOWS_CRASH_HANDLER 1
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
 #define GPR_WIN32 1
@@ -94,6 +95,7 @@
 #define GPR_WIN32_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
+#define GPR_WINDOWS_CRASH_HANDLER 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
