@@ -31,5 +31,5 @@
 set -e
 cd $(dirname $0)
 source ./determine_extension_dir.sh
-php $extension_dir -d extension=grpc.so \
+php $extension_dir \
   ../tests/interop/interop_client.php $@ 1>&2
