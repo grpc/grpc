@@ -205,7 +205,8 @@ void grpc_chttp2_publish_reads(
     }
     if (stream_parsing->saw_rst_stream) {
       stream_global->cancelled = 1;
-      stream_global->cancelled_status = grpc_chttp2_http2_error_to_grpc_status(stream_parsing->rst_stream_reason);
+      stream_global->cancelled_status = grpc_chttp2_http2_error_to_grpc_status(
+          stream_parsing->rst_stream_reason);
       if (stream_parsing->rst_stream_reason == GRPC_CHTTP2_NO_ERROR) {
         stream_global->published_cancelled = 1;
       }
@@ -599,7 +600,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
     }
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &stream_parsing->incoming_metadata,
-        gpr_time_add(gpr_now(), *cached_timeout));
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), *cached_timeout));
     GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata,

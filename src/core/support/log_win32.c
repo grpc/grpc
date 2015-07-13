@@ -82,7 +82,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 /* Simple starter implementation */
 void gpr_default_log(gpr_log_func_args *args) {
   char time_buffer[64];
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
 
   if (localtime_s(&tm, &now.tv_sec)) {
