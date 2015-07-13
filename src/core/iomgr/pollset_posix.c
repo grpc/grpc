@@ -191,7 +191,7 @@ int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                          gpr_timespec now) {
   gpr_timespec timeout;
   static const int max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
+  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
     return -1;
   }
   if (gpr_time_cmp(

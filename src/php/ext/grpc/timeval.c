@@ -228,7 +228,8 @@ PHP_METHOD(Timeval, zero) {
  * @return Timeval Infinite future time value
  */
 PHP_METHOD(Timeval, infFuture) {
-  zval *grpc_php_timeval_inf_future = grpc_php_wrap_timeval(gpr_inf_future);
+  zval *grpc_php_timeval_inf_future =
+      grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_future);
 }
 
@@ -237,7 +238,8 @@ PHP_METHOD(Timeval, infFuture) {
  * @return Timeval Infinite past time value
  */
 PHP_METHOD(Timeval, infPast) {
-  zval *grpc_php_timeval_inf_past = grpc_php_wrap_timeval(gpr_inf_past);
+  zval *grpc_php_timeval_inf_past =
+      grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_past);
 }
 

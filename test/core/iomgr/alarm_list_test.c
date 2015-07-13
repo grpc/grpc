@@ -107,24 +107,30 @@ static void add_test(void) {
   grpc_alarm_list_shutdown();
 }
 
+static gpr_timespec tfm(int m) {
+  gpr_timespec t = gpr_time_from_millis(m);
+  t.clock_type = GPR_CLOCK_REALTIME;
+  return t;
+}
+
 /* Cleaning up a list with pending alarms. */
 void destruction_test(void) {
   grpc_alarm alarms[5];
 
-  grpc_alarm_list_init(gpr_time_0);
+  grpc_alarm_list_init(gpr_time_0(GPR_CLOCK_REALTIME));
   memset(cb_called, 0, sizeof(cb_called));
 
-  grpc_alarm_init(&alarms[0], gpr_time_from_millis(100), cb,
-                  (void *)(gpr_intptr)0, gpr_time_0);
-  grpc_alarm_init(&alarms[1], gpr_time_from_millis(3), cb,
-                  (void *)(gpr_intptr)1, gpr_time_0);
-  grpc_alarm_init(&alarms[2], gpr_time_from_millis(100), cb,
-                  (void *)(gpr_intptr)2, gpr_time_0);
-  grpc_alarm_init(&alarms[3], gpr_time_from_millis(3), cb,
-                  (void *)(gpr_intptr)3, gpr_time_0);
-  grpc_alarm_init(&alarms[4], gpr_time_from_millis(1), cb,
-                  (void *)(gpr_intptr)4, gpr_time_0);
-  GPR_ASSERT(1 == grpc_alarm_check(NULL, gpr_time_from_millis(2), NULL));
+  grpc_alarm_init(&alarms[0], tfm(100), cb, (void *)(gpr_intptr)0,
+                  gpr_time_0(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&alarms[1], tfm(3), cb, (void *)(gpr_intptr)1,
+                  gpr_time_0(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&alarms[2], tfm(100), cb, (void *)(gpr_intptr)2,
+                  gpr_time_0(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&alarms[3], tfm(3), cb, (void *)(gpr_intptr)3,
+                  gpr_time_0(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&alarms[4], tfm(1), cb, (void *)(gpr_intptr)4,
+                  gpr_time_0(GPR_CLOCK_REALTIME));
+  GPR_ASSERT(1 == grpc_alarm_check(NULL, tfm(2), NULL));
   GPR_ASSERT(1 == cb_called[4][1]);
   grpc_alarm_cancel(&alarms[0]);
   grpc_alarm_cancel(&alarms[3]);

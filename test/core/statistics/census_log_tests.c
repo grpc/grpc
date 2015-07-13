@@ -310,7 +310,7 @@ static void multiple_writers_single_reader(int circular_log) {
   /* Wait for writers to finish. */
   gpr_mu_lock(&writers_mu);
   while (writers_count != 0) {
-    gpr_cv_wait(&writers_done, &writers_mu, gpr_inf_future);
+    gpr_cv_wait(&writers_done, &writers_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&writers_mu);
   gpr_mu_destroy(&writers_mu);
@@ -323,7 +323,7 @@ static void multiple_writers_single_reader(int circular_log) {
   }
   /* wait for reader to finish */
   while (reader.running) {
-    gpr_cv_wait(&reader_done, &reader_mu, gpr_inf_future);
+    gpr_cv_wait(&reader_done, &reader_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   if (circular_log) {
     /* Assert that there were no out-of-space errors. */

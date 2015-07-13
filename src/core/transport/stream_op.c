@@ -205,7 +205,7 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
 void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
   batch->list.head = batch->list.tail = batch->garbage.head = batch->garbage.tail =
       NULL;
-  batch->deadline = gpr_inf_future;
+  batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 void grpc_metadata_batch_destroy(grpc_metadata_batch *batch) {

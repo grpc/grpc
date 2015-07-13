@@ -55,7 +55,8 @@ struct test {
 static void thd_body(void *v) {
   struct test *t = v;
   gpr_mu_lock(&t->mu);
-  while (!gpr_cv_cancellable_wait(&t->cv, &t->mu, gpr_inf_future, &t->cancel)) {
+  while (!gpr_cv_cancellable_wait(
+      &t->cv, &t->mu, gpr_inf_future(GPR_CLOCK_REALTIME), &t->cancel)) {
   }
   t->n--;
   if (t->n == 0) {
@@ -125,7 +126,7 @@ static void test(void) {
   GPR_ASSERT(gpr_cancellable_is_cancelled(&t.cancel));
 
   /* Wait for threads to finish. */
-  gpr_event_wait(&t.done, gpr_inf_future);
+  gpr_event_wait(&t.done, gpr_inf_future(GPR_CLOCK_REALTIME));
   GPR_ASSERT(t.n == 0);
 
   /* Test timeout on cv wait for cancelled gpr_cancellable */

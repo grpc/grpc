@@ -235,11 +235,11 @@ static void Init_grpc_time_consts() {
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_FUTURE",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_inf_future));
+                            (void *)&gpr_inf_future(GPR_CLOCK_REALTIME)));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_PAST",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_inf_past));
+                            (void *)&gpr_inf_past(GPR_CLOCK_REALTIME)));
   rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
   rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);

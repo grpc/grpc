@@ -549,7 +549,8 @@ static void server_on_recv(void *ptr, int success) {
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA) continue;
       grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
-      if (0 != gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future)) {
+      if (0 != gpr_time_cmp(op->data.metadata.deadline,
+                            gpr_inf_future(GPR_CLOCK_REALTIME))) {
         calld->deadline = op->data.metadata.deadline;
       }
       calld->got_initial_metadata = 1;
@@ -623,7 +624,7 @@ static void accept_stream(void *cd, grpc_transport *transport,
   channel_data *chand = cd;
   /* create a call */
   grpc_call_create(chand->channel, NULL, transport_server_data, NULL, 0,
-                   gpr_inf_future);
+                   gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 static void channel_connectivity_changed(void *cd, int iomgr_status_ignored) {
@@ -651,7 +652,7 @@ static void init_call_elem(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
-  calld->deadline = gpr_inf_future;
+  calld->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
   calld->call = grpc_call_from_top_element(elem);
   gpr_mu_init(&calld->mu_state);
 

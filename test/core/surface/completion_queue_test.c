@@ -52,7 +52,7 @@ static void *create_test_tag(void) {
 static void shutdown_and_destroy(grpc_completion_queue *cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
-  ev = grpc_completion_queue_next(cc, gpr_inf_past);
+  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME));
   GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
@@ -86,7 +86,7 @@ static void test_cq_end_op(void) {
   grpc_cq_begin_op(cc, NULL);
   grpc_cq_end_op(cc, tag, NULL, 1);
 
-  ev = grpc_completion_queue_next(cc, gpr_inf_past);
+  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME));
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag);
   GPR_ASSERT(ev.success);
@@ -100,8 +100,8 @@ static void test_shutdown_then_next_polling(void) {
 
   cc = grpc_completion_queue_create();
   grpc_completion_queue_shutdown(cc);
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_past).type ==
-             GRPC_QUEUE_SHUTDOWN);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME))
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
 
@@ -111,8 +111,8 @@ static void test_shutdown_then_next_with_timeout(void) {
 
   cc = grpc_completion_queue_create();
   grpc_completion_queue_shutdown(cc);
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_future).type ==
-             GRPC_QUEUE_SHUTDOWN);
+  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_future(GPR_CLOCK_REALTIME))
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
 
@@ -139,7 +139,8 @@ static void test_pluck(void) {
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    ev = grpc_completion_queue_pluck(cc, tags[i], gpr_inf_past);
+    ev = grpc_completion_queue_pluck(cc, tags[i],
+                                     gpr_inf_past(GPR_CLOCK_REALTIME));
     GPR_ASSERT(ev.tag == tags[i]);
   }
 
@@ -150,7 +151,7 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     ev = grpc_completion_queue_pluck(cc, tags[GPR_ARRAY_SIZE(tags) - i - 1],
-                                     gpr_inf_past);
+                                     gpr_inf_past(GPR_CLOCK_REALTIME));
     GPR_ASSERT(ev.tag == tags[GPR_ARRAY_SIZE(tags) - i - 1]);
   }
 

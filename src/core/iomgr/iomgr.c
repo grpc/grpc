@@ -57,7 +57,7 @@ static grpc_iomgr_object g_root_object;
 static void background_callback_executor(void *ignored) {
   gpr_mu_lock(&g_mu);
   while (!g_shutdown) {
-    gpr_timespec deadline = gpr_inf_future;
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     gpr_timespec short_deadline =
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100));
     if (g_cbs_head) {
@@ -145,7 +145,7 @@ void grpc_iomgr_shutdown(void) {
       } while (g_cbs_head);
       continue;
     }
-    if (grpc_alarm_check(&g_mu, gpr_inf_future, NULL)) {
+    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)) {
       gpr_log(GPR_DEBUG, "got late alarm");
       continue;
     }
@@ -174,7 +174,8 @@ void grpc_iomgr_shutdown(void) {
   gpr_mu_unlock(&g_mu);
 
   grpc_kick_poller();
-  gpr_event_wait(&g_background_callback_executor_done, gpr_inf_future);
+  gpr_event_wait(&g_background_callback_executor_done,
+                 gpr_inf_future(GPR_CLOCK_REALTIME));
 
   grpc_alarm_list_shutdown();
 

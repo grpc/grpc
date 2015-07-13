@@ -147,7 +147,7 @@ int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout) {
     gpr_uint32 xp = x * 10 + *p - '0';
     have_digit = 1;
     if (xp < x) {
-      *timeout = gpr_inf_future;
+      *timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
       return 1;
     }
     x = xp;

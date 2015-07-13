@@ -124,7 +124,8 @@ void test_decoding(void) {
   decode_suite('S', gpr_time_from_seconds);
   decode_suite('M', gpr_time_from_minutes);
   decode_suite('H', gpr_time_from_hours);
-  assert_decodes_as("1000000000000000000000u", gpr_inf_future);
+  assert_decodes_as("1000000000000000000000u",
+                    gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 void test_decoding_fails(void) {
