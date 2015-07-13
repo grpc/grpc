@@ -59,6 +59,7 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
   to->tv_sec = secs.count();
   to->tv_nsec = nsecs.count();
+  to->clock_type = GPR_CLOCK_REALTIME;
 }
 
 void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
@@ -74,6 +75,7 @@ void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
   nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
   to->tv_sec = secs.count();
   to->tv_nsec = nsecs.count();
+  to->clock_type = GPR_CLOCK_REALTIME;
 }
 
 system_clock::time_point Timespec2Timepoint(gpr_timespec t) {

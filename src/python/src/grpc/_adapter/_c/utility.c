@@ -390,6 +390,7 @@ gpr_timespec pygrpc_cast_double_to_gpr_timespec(double seconds) {
   } else {
     result.tv_sec = (time_t)seconds;
     result.tv_nsec = ((seconds - result.tv_sec) * 1e9);
+    result.clock_type = GPR_CLOCK_REALTIME;
   }
   return result;
 }
