@@ -34,9 +34,32 @@ set -ex
 cd $(dirname $0)/../..
 
 root=`pwd`
-rm -rf python2.7_virtual_environment
-virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-source python2.7_virtual_environment/bin/activate
-pip install -r src/python/requirements.txt
-CFLAGS="-I$root/include -std=c89 -Werror" LDFLAGS=-L$root/libs/$CONFIG pip install src/python/src
-pip install src/python/interop
+
+make_virtualenv() {
+  virtualenv_name="python"$1"_virtual_environment"
+  if [ ! -d $virtualenv_name ]
+  then
+    # Build the entire virtual environment
+    virtualenv -p `which "python"$1` $virtualenv_name
+    source $virtualenv_name/bin/activate
+    pip install -r src/python/requirements.txt
+    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/src
+    pip install src/python/interop
+  else
+    source $virtualenv_name/bin/activate
+    # Uninstall and re-install the packages we care about. Don't use
+    # --force-reinstall or --ignore-installed to avoid propagating this
+    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
+    # dependency upgrades.
+    (yes | pip uninstall grpcio) || true
+    (yes | pip uninstall interop) || true
+    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/src) || (
+      # Fall back to rebuilding the entire environment
+      rm -rf $virtualenv_name
+      make_virtualenv $1
+    )
+    pip install src/python/interop
+  fi
+}
+
+make_virtualenv $1

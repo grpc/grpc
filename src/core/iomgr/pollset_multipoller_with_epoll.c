@@ -105,9 +105,10 @@ static void multipoll_with_epoll_pollset_maybe_work(
    * here.
    */
 
-  timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
   pollset->counter += 1;
   gpr_mu_unlock(&pollset->mu);
+
+  timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 
   do {
     ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);

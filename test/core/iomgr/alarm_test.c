@@ -113,7 +113,7 @@ static void test_grpc_alarm(void) {
   gpr_event_init(&arg.fcb_arg);
 
   grpc_alarm_init(&alarm, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100), alarm_cb, &arg,
-                  gpr_now());
+                  gpr_now(GPR_CLOCK_REALTIME));
 
   alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
   gpr_mu_lock(&arg.mu);
@@ -165,7 +165,7 @@ static void test_grpc_alarm(void) {
   gpr_event_init(&arg2.fcb_arg);
 
   grpc_alarm_init(&alarm_to_cancel, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100),
-                  alarm_cb, &arg2, gpr_now());
+                  alarm_cb, &arg2, gpr_now(GPR_CLOCK_REALTIME));
   grpc_alarm_cancel(&alarm_to_cancel);
 
   alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);

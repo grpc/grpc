@@ -82,7 +82,7 @@ struct grpc_precise_clock {
   gpr_timespec clock;
 };
 static void grpc_precise_clock_now(grpc_precise_clock* clk) {
-  clk->clock = gpr_now();
+  clk->clock = gpr_now(GPR_CLOCK_REALTIME);
 }
 #define GRPC_PRECISE_CLOCK_FORMAT "%ld.%09d"
 #define GRPC_PRECISE_CLOCK_PRINTF_ARGS(clk) \

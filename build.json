@@ -30,6 +30,7 @@
       "public_headers": [
         "include/grpc++/async_generic_service.h",
         "include/grpc++/async_unary_call.h",
+        "include/grpc++/auth_context.h",
         "include/grpc++/byte_buffer.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
@@ -68,6 +69,7 @@
       ],
       "headers": [
         "src/cpp/client/channel.h",
+        "src/cpp/common/create_auth_context.h",
         "src/cpp/server/thread_pool.h"
       ],
       "src": [
@@ -285,6 +287,7 @@
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
         "src/core/surface/surface_trace.c",
+        "src/core/surface/version.c",
         "src/core/transport/chttp2/alpn.c",
         "src/core/transport/chttp2/bin_encoder.c",
         "src/core/transport/chttp2/frame_data.c",
@@ -559,11 +562,14 @@
       "language": "c++",
       "headers": [
         "src/cpp/client/secure_credentials.h",
+        "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h"
       ],
       "src": [
         "src/cpp/client/secure_channel_arguments.cc",
         "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/server/secure_server_credentials.cc"
       ],
       "deps": [
@@ -616,6 +622,9 @@
       "name": "grpc++_unsecure",
       "build": "all",
       "language": "c++",
+      "src": [
+        "src/cpp/common/insecure_create_auth_context.cc"
+      ],
       "deps": [
         "gpr",
         "grpc_unsecure"
@@ -2286,11 +2295,11 @@
       ]
     },
     {
-      "name": "qps_test",
+      "name": "qps_openloop_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "test/cpp/qps/qps_test.cc"
+        "test/cpp/qps/qps_openloop_test.cc"
       ],
       "deps": [
         "qps",
@@ -2304,11 +2313,11 @@
       ]
     },
     {
-      "name": "qps_test_openloop",
+      "name": "qps_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "test/cpp/qps/qps_test_openloop.cc"
+        "test/cpp/qps/qps_test.cc"
       ],
       "deps": [
         "qps",
@@ -2341,6 +2350,19 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "secure_auth_context_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/common/secure_auth_context_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
+        "gpr"
       ]
     },
     {

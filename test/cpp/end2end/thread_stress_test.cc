@@ -96,14 +96,14 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       }
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
-            gpr_now(),
+            gpr_now(GPR_CLOCK_REALTIME),
             gpr_time_from_micros(request->param().client_cancel_after_us())));
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
-          gpr_now(),
+          gpr_now(GPR_CLOCK_REALTIME),
           gpr_time_from_micros(request->param().server_cancel_after_us())));
       return Status::CANCELLED;
     } else {
