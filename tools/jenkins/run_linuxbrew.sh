@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -26,32 +27,29 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# This script is invoked by Jenkins and triggers a test run of
+# linuxbrew installation of a selected language
+set -ex
 
-"""A setup module for the GRPC Python interop testing package."""
+sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
+DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
 
-import setuptools
+docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
 
-_PACKAGES = (
-    'interop',
-)
+supported="python nodejs ruby php"
 
-_PACKAGE_DIRECTORIES = {
-    'interop': 'interop',
-}
+if [ "$language" == "core" ]; then
+  command="curl -fsSL https://goo.gl/getgrpc | bash -"
+elif [[ "$supported" =~ "$language" ]]; then
+  command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
+else
+  echo "unsupported language $language"
+  exit 1
+fi
 
-_PACKAGE_DATA = {
-    'interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
-}
-
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
-
-setuptools.setup(
-    name='interop',
-    version='0.0.1',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES
-)
+docker run $DOCKER_IMAGE_NAME bash -l \
+  -c "nvm use 0.12; \
+      npm set unsafe-perm true; \
+      rvm use ruby-2.1; \
+      $command"

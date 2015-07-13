@@ -1,18 +1,5 @@
 [
   {
-    "module": "grpc._cython.cygrpc_test",
-    "pythonVersions": [
-      "2.7",
-      "3.4"
-    ]
-  },
-  {
-    "module": "grpc._cython.adapter_low_test",
-    "pythonVersions": [
-      "2.7"
-    ]
-  },
-  {
     "module": "grpc._adapter._c_test",
     "pythonVersions": [
       "2.7"

@@ -51,6 +51,12 @@ LIBS=$(OPENSSL_LIBS) $(ZLIB_LIBS) $(GENERAL_LIBS) $(WINSOCK_LIBS)
 
 all: buildtests
 
+tools:
+
+tools_c:
+
+tools_cxx:
+
 $(OUT_DIR):
 	mkdir $(OUT_DIR)
 

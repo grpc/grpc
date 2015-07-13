@@ -1423,9 +1423,9 @@
     ], 
     "headers": [], 
     "language": "c++", 
-    "name": "qps_test", 
+    "name": "qps_openloop_test", 
     "src": [
-      "test/cpp/qps/qps_test.cc"
+      "test/cpp/qps/qps_openloop_test.cc"
     ]
   }, 
   {
@@ -1441,9 +1441,9 @@
     ], 
     "headers": [], 
     "language": "c++", 
-    "name": "qps_test_openloop", 
+    "name": "qps_test", 
     "src": [
-      "test/cpp/qps/qps_test_openloop.cc"
+      "test/cpp/qps/qps_test.cc"
     ]
   }, 
   {
@@ -9011,6 +9011,7 @@
       "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.c", 
       "src/core/surface/surface_trace.h", 
+      "src/core/surface/version.c", 
       "src/core/transport/chttp2/alpn.c", 
       "src/core/transport/chttp2/alpn.h", 
       "src/core/transport/chttp2/bin_encoder.c", 
@@ -9412,6 +9413,7 @@
       "src/core/surface/server_create.c", 
       "src/core/surface/surface_trace.c", 
       "src/core/surface/surface_trace.h", 
+      "src/core/surface/version.c", 
       "src/core/transport/chttp2/alpn.c", 
       "src/core/transport/chttp2/alpn.h", 
       "src/core/transport/chttp2/bin_encoder.c", 
