@@ -112,7 +112,7 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
   } while (!gpr_atm_rel_cas(&(stack->head.atm),
                             head.atm, newhead.atm));
   /* Use rel_cas above to make sure that entry index is set properly */
-  return head.atm == INVALID_ENTRY_INDEX;
+  return head.contents.index == INVALID_ENTRY_INDEX;
 }
 
 int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
