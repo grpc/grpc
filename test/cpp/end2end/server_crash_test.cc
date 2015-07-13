@@ -84,8 +84,8 @@ class ServiceImpl GRPC_FINAL
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       response.set_message(request.message());
       stream->Write(response);
-      gpr_sleep_until(
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(1)));
+      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
     }
     return Status::OK;
   }
@@ -99,8 +99,8 @@ class ServiceImpl GRPC_FINAL
       msg << "Hello " << i;
       response.set_message(msg.str());
       if (!writer->Write(response)) break;
-      gpr_sleep_until(
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(1)));
+      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
     }
     return Status::OK;
   }
@@ -147,8 +147,8 @@ class CrashTest : public ::testing::Test {
 TEST_F(CrashTest, ResponseStream) {
   auto server = CreateServerAndClient("response");
 
-  gpr_sleep_until(
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
   GPR_ASSERT(HadOneResponseStream());
@@ -157,8 +157,8 @@ TEST_F(CrashTest, ResponseStream) {
 TEST_F(CrashTest, BidiStream) {
   auto server = CreateServerAndClient("bidi");
 
-  gpr_sleep_until(
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
   GPR_ASSERT(HadOneBidiStream());

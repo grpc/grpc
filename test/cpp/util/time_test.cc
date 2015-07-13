@@ -46,7 +46,7 @@ class TimeTest : public ::testing::Test {};
 
 TEST_F(TimeTest, AbsolutePointTest) {
   long us = 10000000L;
-  gpr_timespec ts = gpr_time_from_micros(us);
+  gpr_timespec ts = gpr_time_from_micros(us, GPR_TIMESPAN);
   ts.clock_type = GPR_CLOCK_REALTIME;
   system_clock::time_point tp{microseconds(us)};
   system_clock::time_point tp_converted = Timespec2Timepoint(ts);
