@@ -48,7 +48,18 @@ static int seed(void) { return getpid(); }
 static int seed(void) { return _getpid(); }
 #endif
 
+#if GPR_USE_MTRACE
+#include <mcheck.h>
+static void setup_mem_checks() {
+  mtrace();
+  atexit(muntrace);
+}
+#else
+static void setup_mem_checks() { }
+#endif
+
 void grpc_test_init(int argc, char **argv) {
+  setup_mem_checks();
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
           (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,
           (double)GRPC_TEST_SLOWDOWN_BUILD_FACTOR,
