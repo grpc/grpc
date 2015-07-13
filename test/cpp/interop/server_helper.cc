@@ -58,5 +58,9 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
   }
 }
 
+InteropContextInspector::InteropContextInspector(
+    const ::grpc::ServerContext& context)
+    : context_(context) {}
+
 }  // namespace testing
 }  // namespace grpc
