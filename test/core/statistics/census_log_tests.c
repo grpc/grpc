@@ -237,7 +237,8 @@ static void reader_thread(void* arg) {
   gpr_timespec interval;
   int counter = 0;
   printf("   Reader starting\n");
-  interval = gpr_time_from_micros(args->read_iteration_interval_in_msec * 1000);
+  interval = gpr_time_from_micros(args->read_iteration_interval_in_msec * 1000,
+                                  GPR_TIMESPAN);
   gpr_mu_lock(args->mu);
   while (!args->stop_flag && records_read < args->total_records) {
     gpr_cv_wait(&args->stop, args->mu, interval);

@@ -46,7 +46,8 @@ gpr_timespec MillisecondsToTimespec(double millis) {
   } else if (millis == -std::numeric_limits<double>::infinity()) {
     return gpr_inf_past(GPR_CLOCK_REALTIME);
   } else {
-    return gpr_time_from_micros(static_cast<int64_t>(millis * 1000));
+    return gpr_time_from_micros(static_cast<int64_t>(millis * 1000),
+                                GPR_CLOCK_REALTIME);
   }
 }
 

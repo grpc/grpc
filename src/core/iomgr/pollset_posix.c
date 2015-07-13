@@ -194,14 +194,14 @@ int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
   if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
     return -1;
   }
-  if (gpr_time_cmp(
-          deadline,
-          gpr_time_add(now, gpr_time_from_micros(max_spin_polling_us))) <= 0) {
+  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
+                                                   max_spin_polling_us,
+                                                   GPR_TIMESPAN))) <= 0) {
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(
-      gpr_time_add(timeout, gpr_time_from_nanos(GPR_NS_PER_SEC - 1)));
+  return gpr_time_to_millis(gpr_time_add(
+      timeout, gpr_time_from_nanos(GPR_NS_PER_SEC - 1, GPR_TIMESPAN)));
 }
 
 /*

@@ -347,8 +347,8 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {
   grpc_jwt_credentials *c = (grpc_jwt_credentials *)creds;
-  gpr_timespec refresh_threshold =
-      gpr_time_from_seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS);
+  gpr_timespec refresh_threshold = gpr_time_from_seconds(
+      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
   /* See if we can return a cached jwt. */
   grpc_credentials_md_store *jwt_md = NULL;
@@ -565,8 +565,8 @@ static void oauth2_token_fetcher_get_request_metadata(
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_oauth2_token_fetcher_credentials *c =
       (grpc_oauth2_token_fetcher_credentials *)creds;
-  gpr_timespec refresh_threshold =
-      gpr_time_from_seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS);
+  gpr_timespec refresh_threshold = gpr_time_from_seconds(
+      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
   grpc_credentials_md_store *cached_access_token_md = NULL;
   {
     gpr_mu_lock(&c->mu);

@@ -245,8 +245,8 @@ static void test(const char *name, void (*body)(void *m),
   struct test *m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
-  gpr_timespec deadline =
-      gpr_time_add(start, gpr_time_from_micros(timeout_s * 1000000));
+  gpr_timespec deadline = gpr_time_add(
+      start, gpr_time_from_micros(timeout_s * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     iterations <<= 1;
@@ -324,8 +324,8 @@ static void inc_with_1ms_delay(void *v /*=m*/) {
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
     gpr_mu_lock(&m->mu);
-    deadline =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                            gpr_time_from_micros(1000, GPR_TIMESPAN));
     while (!gpr_cv_wait(&m->cv, &m->mu, deadline)) {
     }
     m->counter++;
@@ -341,8 +341,8 @@ static void inc_with_1ms_delay_event(void *v /*=m*/) {
   gpr_int64 i;
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
-    deadline =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                            gpr_time_from_micros(1000, GPR_TIMESPAN));
     GPR_ASSERT(gpr_event_wait(&m->event, deadline) == NULL);
     gpr_mu_lock(&m->mu);
     m->counter++;
@@ -385,9 +385,10 @@ static void consumer(void *v /*=m*/) {
   gpr_mu_lock(&m->mu);
   m->counter = n;
   gpr_mu_unlock(&m->mu);
-  GPR_ASSERT(!queue_remove(&m->q, &value,
-                           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                        gpr_time_from_micros(1000000))));
+  GPR_ASSERT(
+      !queue_remove(&m->q, &value,
+                    gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1000000, GPR_TIMESPAN))));
   mark_thread_done(m);
 }
 

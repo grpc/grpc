@@ -487,9 +487,9 @@ static void maybe_finish_shutdown(grpc_server *server) {
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
-    if (gpr_time_cmp(
-            gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), server->last_shutdown_message_time),
-            gpr_time_from_seconds(1)) >= 0) {
+    if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
+                                  server->last_shutdown_message_time),
+                     gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       server->last_shutdown_message_time = gpr_now(GPR_CLOCK_REALTIME);
       gpr_log(GPR_DEBUG,
               "Waiting for %d channels and %d/%d listeners to be destroyed"

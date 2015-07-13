@@ -94,12 +94,12 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
 /* Return a timespec representing a given number of time units. LONG_MIN is
    interpreted as gpr_inf_past, and LONG_MAX as gpr_inf_future.  */
-gpr_timespec gpr_time_from_micros(long x);
-gpr_timespec gpr_time_from_nanos(long x);
-gpr_timespec gpr_time_from_millis(long x);
-gpr_timespec gpr_time_from_seconds(long x);
-gpr_timespec gpr_time_from_minutes(long x);
-gpr_timespec gpr_time_from_hours(long x);
+gpr_timespec gpr_time_from_micros(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_nanos(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_millis(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_seconds(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_minutes(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_hours(long x, gpr_clock_type clock_type);
 
 gpr_int32 gpr_time_to_millis(gpr_timespec timespec);
 

@@ -91,7 +91,7 @@ static int is_stack_running_on_compute_engine(void) {
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  gpr_timespec max_detection_delay = gpr_time_from_seconds(1);
+  gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
   grpc_pollset_init(&detector.pollset);
   detector.is_done = 0;

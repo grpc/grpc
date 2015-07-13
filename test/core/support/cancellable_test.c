@@ -83,24 +83,29 @@ static void test(void) {
 
   /* Test timeout on event wait for uncancelled gpr_cancellable */
   interval = gpr_now(GPR_CLOCK_REALTIME);
-  gpr_event_cancellable_wait(&t.ev, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                                 gpr_time_from_micros(1000000)),
-                             &t.cancel);
+  gpr_event_cancellable_wait(
+      &t.ev, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                          gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+      &t.cancel);
   interval = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), interval);
-  GPR_ASSERT(gpr_time_cmp(interval, gpr_time_from_micros(500000)) >= 0);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_from_micros(2000000), interval) >= 0);
+  GPR_ASSERT(
+      gpr_time_cmp(interval, gpr_time_from_micros(500000, GPR_TIMESPAN)) >= 0);
+  GPR_ASSERT(
+      gpr_time_cmp(gpr_time_from_micros(2000000, GPR_TIMESPAN), interval) >= 0);
 
   /* Test timeout on cv wait for uncancelled gpr_cancellable */
   gpr_mu_lock(&t.mu);
   interval = gpr_now(GPR_CLOCK_REALTIME);
   while (!gpr_cv_cancellable_wait(
-      &t.cv, &t.mu,
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000000)),
+      &t.cv, &t.mu, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1000000, GPR_TIMESPAN)),
       &t.cancel)) {
   }
   interval = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), interval);
-  GPR_ASSERT(gpr_time_cmp(interval, gpr_time_from_micros(500000)) >= 0);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_from_micros(2000000), interval) >= 0);
+  GPR_ASSERT(
+      gpr_time_cmp(interval, gpr_time_from_micros(500000, GPR_TIMESPAN)) >= 0);
+  GPR_ASSERT(
+      gpr_time_cmp(gpr_time_from_micros(2000000, GPR_TIMESPAN), interval) >= 0);
   gpr_mu_unlock(&t.mu);
 
   /* Create some threads.  They all wait until cancelled; the last to finish
@@ -114,8 +119,9 @@ static void test(void) {
 
   /* Wait a second, and check that no threads have finished waiting. */
   gpr_mu_lock(&t.mu);
-  gpr_cv_wait(&t.cv, &t.mu, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                         gpr_time_from_micros(1000000)));
+  gpr_cv_wait(&t.cv, &t.mu,
+              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                           gpr_time_from_micros(1000000, GPR_TIMESPAN)));
   GPR_ASSERT(t.n == n);
   gpr_mu_unlock(&t.mu);
 
@@ -133,21 +139,24 @@ static void test(void) {
   gpr_mu_lock(&t.mu);
   interval = gpr_now(GPR_CLOCK_REALTIME);
   while (!gpr_cv_cancellable_wait(
-      &t.cv, &t.mu,
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000000)),
+      &t.cv, &t.mu, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1000000, GPR_TIMESPAN)),
       &t.cancel)) {
   }
   interval = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), interval);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_from_micros(100000), interval) >= 0);
+  GPR_ASSERT(
+      gpr_time_cmp(gpr_time_from_micros(100000, GPR_TIMESPAN), interval) >= 0);
   gpr_mu_unlock(&t.mu);
 
   /* Test timeout on event wait for cancelled gpr_cancellable */
   interval = gpr_now(GPR_CLOCK_REALTIME);
-  gpr_event_cancellable_wait(&t.ev, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                                 gpr_time_from_micros(1000000)),
-                             &t.cancel);
+  gpr_event_cancellable_wait(
+      &t.ev, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                          gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+      &t.cancel);
   interval = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), interval);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_from_micros(100000), interval) >= 0);
+  GPR_ASSERT(
+      gpr_time_cmp(gpr_time_from_micros(100000, GPR_TIMESPAN), interval) >= 0);
 
   gpr_mu_destroy(&t.mu);
   gpr_cv_destroy(&t.cv);

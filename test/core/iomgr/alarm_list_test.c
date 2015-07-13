@@ -60,45 +60,51 @@ static void add_test(void) {
 
   /* 10 ms alarms.  will expire in the current epoch */
   for (i = 0; i < 10; i++) {
-    grpc_alarm_init(&alarms[i], gpr_time_add(start, gpr_time_from_millis(10)),
+    grpc_alarm_init(&alarms[i],
+                    gpr_time_add(start, gpr_time_from_millis(10, GPR_TIMESPAN)),
                     cb, (void *)(gpr_intptr)i, start);
   }
 
   /* 1010 ms alarms.  will expire in the next epoch */
   for (i = 10; i < 20; i++) {
-    grpc_alarm_init(&alarms[i], gpr_time_add(start, gpr_time_from_millis(1010)),
+    grpc_alarm_init(&alarms[i], gpr_time_add(start, gpr_time_from_millis(
+                                                        1010, GPR_TIMESPAN)),
                     cb, (void *)(gpr_intptr)i, start);
   }
 
   /* collect alarms.  Only the first batch should be ready. */
-  GPR_ASSERT(10 ==
-             grpc_alarm_check(
-                 NULL, gpr_time_add(start, gpr_time_from_millis(500)), NULL));
+  GPR_ASSERT(10 == grpc_alarm_check(NULL,
+                                    gpr_time_add(start, gpr_time_from_millis(
+                                                            500, GPR_TIMESPAN)),
+                                    NULL));
   for (i = 0; i < 20; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
     GPR_ASSERT(cb_called[i][0] == 0);
   }
 
-  GPR_ASSERT(0 ==
-             grpc_alarm_check(
-                 NULL, gpr_time_add(start, gpr_time_from_millis(600)), NULL));
+  GPR_ASSERT(0 == grpc_alarm_check(
+                      NULL, gpr_time_add(
+                                start, gpr_time_from_millis(600, GPR_TIMESPAN)),
+                      NULL));
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
     GPR_ASSERT(cb_called[i][0] == 0);
   }
 
   /* collect the rest of the alarms */
-  GPR_ASSERT(10 ==
-             grpc_alarm_check(
-                 NULL, gpr_time_add(start, gpr_time_from_millis(1500)), NULL));
+  GPR_ASSERT(
+      10 == grpc_alarm_check(NULL, gpr_time_add(start, gpr_time_from_millis(
+                                                           1500, GPR_TIMESPAN)),
+                             NULL));
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
   }
 
-  GPR_ASSERT(0 ==
-             grpc_alarm_check(
-                 NULL, gpr_time_add(start, gpr_time_from_millis(1600)), NULL));
+  GPR_ASSERT(0 == grpc_alarm_check(NULL,
+                                   gpr_time_add(start, gpr_time_from_millis(
+                                                           1600, GPR_TIMESPAN)),
+                                   NULL));
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
@@ -108,7 +114,7 @@ static void add_test(void) {
 }
 
 static gpr_timespec tfm(int m) {
-  gpr_timespec t = gpr_time_from_millis(m);
+  gpr_timespec t = gpr_time_from_millis(m, GPR_TIMESPAN);
   t.clock_type = GPR_CLOCK_REALTIME;
   return t;
 }
