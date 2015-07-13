@@ -1,0 +1,10 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+target 'AuthSample' do
+  # Depend on the generated AuthTestService library.
+  pod 'AuthTestService', :path => '.'
+
+  # Depend on Google's OAuth2 library
+  pod 'Google/SignIn'
+end

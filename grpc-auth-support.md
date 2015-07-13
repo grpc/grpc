@@ -114,6 +114,22 @@ var channel = new Channel("localhost:50051", credentials);
 var client = new Greeter.GreeterClient(channel);
 ```
 
+###SSL/TLS for server authentication and encryption (Objective-C)
+
+The default for Objective-C is to use SSL/TLS, as that's the most common use case when accessing
+remote APIs.
+
+```objective-c
+// Base case - With server authentication SSL/TLS
+HLWGreeter *client = [[HLWGreeter alloc] initWithHost:@"localhost:50051"];
+// Same as using @"https://localhost:50051".
+...
+
+// No encryption
+HLWGreeter *client = [[HLWGreeter alloc] initWithHost:@"http://localhost:50051"];
+// Specifying the HTTP scheme explicitly forces no encryption.
+```
+
 ###Authenticating with Google (Ruby)
 ```ruby
 # Base case - No encryption/authorization
@@ -195,3 +211,43 @@ $client = new helloworld\GreeterClient(
   new Grpc\BaseStub('localhost:50051', $opts));
 
 ```
+
+###Authenticating with Google (Objective-C)
+
+This example uses the [Google iOS Sign-In library](https://developers.google.com/identity/sign-in/ios/),
+but it's easily extrapolated to any other OAuth2 library.
+
+```objective-c
+// Base case - No authentication
+[client sayHelloWithRequest:request handler:^(HLWHelloReply *response, NSError *error) {
+  ...
+}];
+
+...
+
+// Authenticating with Google
+
+// When signing the user in, ask her for the relevant scopes.
+GIDSignIn.sharedInstance.scopes = @[@"https://www.googleapis.com/auth/grpc-testing"];
+
+...
+
+#import <gRPC/ProtoRPC.h>
+
+// Create a not-yet-started RPC. We want to set the request headers on this object before starting
+// it.
+ProtoRPC *call =
+    [client RPCToSayHelloWithRequest:request handler:^(HLWHelloReply *response, NSError *error) {
+      ...
+    }];
+
+// Set the access token to be used.
+NSString *accessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
+call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
+    @{@"Authorization": [@"Bearer " stringByAppendingString:accessToken]}];
+
+// Start the RPC.
+[call start];
+```
+
+You can see a working example app, with a more detailed explanation, [here](https://github.com/grpc/grpc-common/tree/master/objective-c/auth_sample).
