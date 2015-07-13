@@ -60,6 +60,8 @@ typedef enum {
 typedef struct gpr_timespec {
   time_t tv_sec;
   int tv_nsec;
+  /** Against which clock was this time measured? (or GPR_TIMESPAN if
+      this is a relative time meaure) */
   gpr_clock_type clock_type;
 } gpr_timespec;
 
