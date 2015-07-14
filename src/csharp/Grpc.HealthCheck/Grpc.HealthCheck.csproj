@@ -49,6 +49,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Grpc.Core\Version.cs">
+      <Link>Version.cs</Link>
+    </Compile>
     <Compile Include="HealthServiceImpl.cs" />
     <Compile Include="Health.cs" />
     <Compile Include="HealthGrpc.cs" />
