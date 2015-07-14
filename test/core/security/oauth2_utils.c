@@ -48,11 +48,11 @@ typedef struct {
   grpc_pollset pollset;
   int is_done;
   char *token;
-} synchronizer;
+} oauth2_request;
 
 static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
                                size_t num_md, grpc_credentials_status status) {
-  synchronizer *sync = user_data;
+  oauth2_request *request = user_data;
   char *token = NULL;
   gpr_slice token_slice;
   if (status == GRPC_CREDENTIALS_ERROR) {
@@ -65,28 +65,28 @@ static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
            GPR_SLICE_LENGTH(token_slice));
     token[GPR_SLICE_LENGTH(token_slice)] = '\0';
   }
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
-  sync->is_done = 1;
-  sync->token = token;
-  grpc_pollset_kick(&sync->pollset);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
+  gpr_mu_lock(GRPC_POLLSET_MU(&request->pollset));
+  request->is_done = 1;
+  request->token = token;
+  grpc_pollset_kick(&request->pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&request->pollset));
 }
 
 static void do_nothing(void *unused) {}
 
 char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
-  synchronizer sync;
-  grpc_pollset_init(&sync.pollset);
-  sync.is_done = 0;
+  oauth2_request request;
+  grpc_pollset_init(&request.pollset);
+  request.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, &sync.pollset, "",
-                                        on_oauth2_response, &sync);
+  grpc_credentials_get_request_metadata(creds, &request.pollset, "",
+                                        on_oauth2_response, &request);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  while (!sync.is_done) grpc_pollset_work(&sync.pollset, gpr_inf_future);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+  gpr_mu_lock(GRPC_POLLSET_MU(&request.pollset));
+  while (!request.is_done) grpc_pollset_work(&request.pollset, gpr_inf_future);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&request.pollset));
 
-  grpc_pollset_shutdown(&sync.pollset, do_nothing, NULL);
-  grpc_pollset_destroy(&sync.pollset);
-  return sync.token;
+  grpc_pollset_shutdown(&request.pollset, do_nothing, NULL);
+  grpc_pollset_destroy(&request.pollset);
+  return request.token;
 }
