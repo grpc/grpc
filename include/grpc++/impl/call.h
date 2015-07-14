@@ -127,9 +127,6 @@ class WriteOptions {
   }
 
   WriteOptions& operator=(const WriteOptions& rhs) {
-    if (this == &rhs) {
-      return *this;
-    }
     flags_ = rhs.flags_;
     return *this;
   }
