@@ -68,6 +68,9 @@
     <Reference Include="System.Net.Http.WebRequest" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Grpc.Core\Version.cs">
+      <Link>Version.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GoogleCredential.cs" />
     <Compile Include="OAuth2InterceptorFactory.cs" />
