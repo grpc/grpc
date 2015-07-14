@@ -98,7 +98,7 @@ void CheckAuthContext(T* context) {
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  TestServiceImpl() : signal_client_(false), host_(nullptr) {}
+  TestServiceImpl() : signal_client_(false), host_() {}
   explicit TestServiceImpl(const grpc::string& host) : signal_client_(false), host_(new grpc::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
