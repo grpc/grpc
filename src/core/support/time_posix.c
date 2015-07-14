@@ -92,6 +92,7 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
   struct timeval now_tv;
   double now_dbl;
 
+  now.clock_type = clock;
   switch (clock) {
     case GPR_CLOCK_REALTIME:
       gettimeofday(&now_tv, NULL);
