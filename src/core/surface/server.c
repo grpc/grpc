@@ -317,7 +317,9 @@ static void request_matcher_zombify_all_pending_calls(
   while (request_matcher->pending_head) {
     call_data *calld = request_matcher->pending_head;
     request_matcher->pending_head = calld->pending_next;
+    gpr_mu_lock(&calld->mu_state);
     calld->state = ZOMBIED;
+    gpr_mu_unlock(&calld->mu_state);
     grpc_iomgr_closure_init(
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
@@ -1117,7 +1119,7 @@ static grpc_call_error queue_call_request(grpc_server *server,
         GPR_ASSERT(calld->state == PENDING);
         calld->state = ACTIVATED;
         gpr_mu_unlock(&calld->mu_state);
-        begin_call(server, calld, rc);
+        begin_call(server, calld, &server->requested_calls[request_id]);
       }
       gpr_mu_lock(&server->mu_call);
     }
