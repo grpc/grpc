@@ -11,6 +11,7 @@
     <AssemblyName>Grpc.HealthCheck</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <DocumentationFile>bin\$(Configuration)\Grpc.HealthCheck.Xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -54,6 +55,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.HealthCheck.nuspec" />
     <None Include="packages.config" />
     <None Include="proto\health.proto" />
   </ItemGroup>

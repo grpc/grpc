@@ -5,7 +5,7 @@
     <title>gRPC C# Healthchecking</title>
     <summary>Implementation of gRPC health service</summary>
     <description>Example implementation of grpc.health.v1alpha service that can be used for health-checking.</description>
-    <version>0.6.0</version>
+    <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
@@ -15,7 +15,7 @@
     <tags>gRPC health check</tags>
 	<dependencies>
 	  <dependency id="Google.ProtocolBuffers" version="2.4.1.555" />
-	  <dependency id="Grpc.Core" version="0.6.0" />
+	  <dependency id="Grpc.Core" version="$version$" />
 	  <dependency id="Ix-Async" version="1.2.3" />
     </dependencies>
   </metadata>

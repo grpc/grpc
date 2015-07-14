@@ -104,6 +104,7 @@
     <Compile Include="ChannelOptions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.Core.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Choose>
