@@ -17,7 +17,7 @@
 	<dependencies>
 	  <dependency id="System.Collections.Immutable" version="1.1.36" />
 	  <dependency id="Ix-Async" version="1.2.3" />
-	  <dependency id="grpc.native.csharp_ext" version="0.10.0" />
+	  <dependency id="grpc.native.csharp_ext" version="$GrpcNativeCsharpExtVersion$" />
     </dependencies>
   </metadata>
   <files>
