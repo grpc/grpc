@@ -98,6 +98,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   const char *tstr = interval ? "time interval" : "time";
   const char *want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
 
+  t.clock_type = GPR_CLOCK_REALTIME;
   switch (TYPE(time)) {
     case T_DATA:
       if (CLASS_OF(time) == grpc_rb_cTimeVal) {
