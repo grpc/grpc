@@ -30,7 +30,7 @@
 set -e
 default_extension_dir=$(php-config --extension-dir)
 if command -v brew > /dev/null && \
-   brew ls --versions | grep php5[5\|6]-grpc > /dev/null; then
+   brew ls --versions | grep php5[56]-grpc > /dev/null; then
   # the grpc php extension was installed by homebrew
   :
 elif [ ! -e $default_extension_dir/grpc.so ]; then
