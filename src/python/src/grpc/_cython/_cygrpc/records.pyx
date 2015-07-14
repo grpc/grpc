@@ -83,11 +83,16 @@ class OperationType:
   receive_close_on_server = grpc.GRPC_OP_RECV_CLOSE_ON_SERVER
 
 
+class ClockType:
+  realtime = grpc.GRPC_CLOCK_REALTIME
+  monotonic = grpc.GRPC_CLOCK_MONOTONIC
+
+
 cdef class Timespec:
 
   def __cinit__(self, time):
     if time is None:
-      self.c_time = grpc.gpr_now()
+      self.c_time = grpc.gpr_now(ClockType.realtime)
     elif isinstance(time, float):
       if time == float("+inf"):
         self.c_time = grpc.gpr_inf_future
