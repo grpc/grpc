@@ -179,10 +179,11 @@ class DeserializeFunc {
 };
 
 template <class R>
-class DeserializeFuncType : public DeserializeFunc {
+class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
  public:
   DeserializeFuncType(R* message) : message_(message) {}
-  Status Deserialize(grpc_byte_buffer* buf, int max_message_size) {
+  Status Deserialize(grpc_byte_buffer* buf,
+                     int max_message_size) GRPC_OVERRIDE {
     return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
   }
 
