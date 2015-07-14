@@ -8,8 +8,9 @@ requests) and instead do some form of exponential backoff.
 We have several parameters:
  1. INITIAL_BACKOFF (how long to wait after the first failure before retrying)
  2. MULTIPLIER (factor with which to multiply backoff after a failed retry)
- 3. MAX_BACKOFF (Upper bound on backoff)
- 4. MIN_CONNECTION_TIMEOUT
+ 3. MAX_BACKOFF (upper bound on backoff)
+ 4. MIN_CONNECT_TIMEOUT (minimum time we're willing to give a connection to
+    complete)
 
 ## Proposed Backoff Algorithm
 
@@ -20,7 +21,7 @@ MAX_BACKOFF, with jitter.
 ConnectWithBackoff()
   current_backoff = INITIAL_BACKOFF
   current_deadline = now() + INITIAL_BACKOFF
-  while (TryConnect(Max(current_deadline, MIN_CONNECT_TIMEOUT))
+  while (TryConnect(Max(current_deadline, now() + MIN_CONNECT_TIMEOUT))
          != SUCCESS)
     SleepUntil(current_deadline)
     current_backoff = Min(current_backoff * MULTIPLIER, MAX_BACKOFF)
