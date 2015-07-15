@@ -12,20 +12,25 @@
     if t.name == name:
       target = t
   if not configuration_type and target:
+    print target.name
     if target.build == 'test' or target.build == 'tool':
       configuration_type = 'Application'
   if not configuration_type:
     configuration_type = 'StaticLibrary'
   if not project_guid:
     project_guid = project.vs_project_guid
-  if configuration_type == 'Application':
-    if target.build == 'protoc':
-      props.extend(['protoc'])
-    else:
-      props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
-    if target.language == 'c++':
-      props.extend(['protobuf'])
-  props.extend(['global'])
+  if target.build == 'test' and target.language == 'c++':
+    props.extend(['cpptest'])
+  else:
+    if configuration_type == 'Application':
+      print target.build
+      if target.build == 'protoc':
+        props.extend(['protoc'])
+      else:
+        props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
+      if target.language == 'c++':
+        props.extend(['protobuf'])
+    props.extend(['global'])
 %>\
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
