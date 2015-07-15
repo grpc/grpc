@@ -84,6 +84,11 @@ struct grpc_udp_server {
   /* shutdown callback */
   void (*shutdown_complete)(void *);
   void *shutdown_complete_arg;
+
+  /* all pollsets interested in new connections */
+  grpc_pollset **pollsets;
+  /* number of pollsets in the pollsets array */
+  size_t pollset_count;
 };
 
 grpc_udp_server *grpc_udp_server_create(void) {
@@ -368,6 +373,7 @@ void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
   GPR_ASSERT(s->active_ports == 0);
   s->cb = new_transport_cb;
   s->cb_arg = cb_arg;
+  s->pollsets = pollsets;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
       grpc_pollset_add_fd(pollsets[j], s->ports[i].emfd);
