@@ -52,4 +52,13 @@
     b = x;               \
   } while (0)
 
+/** Set the \a n-th bit of \a i */
+#define GPR_BITSET(i, n) (i |= (1u << n))
+
+/** Clear the \a n-th bit of \a i */
+#define GPR_BITCLEAR(i, n) (i &= ~(1u << n))
+
+/** Get the \a n-th bit of \a i */
+#define GPR_BITGET(i, n) ((i & (1u << n)) != 0)
+
 #endif  /* GRPC_SUPPORT_USEFUL_H */
