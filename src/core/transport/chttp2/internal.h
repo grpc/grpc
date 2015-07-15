@@ -403,6 +403,8 @@ typedef struct {
   grpc_stream_op_buffer sopb;
   /** how strongly should we indicate closure with the next write */
   grpc_chttp2_send_closed send_closed;
+  /** how much window should we announce? */
+  gpr_uint32 announce_window;
 } grpc_chttp2_stream_writing;
 
 struct grpc_chttp2_stream_parsing {
@@ -513,7 +515,9 @@ void grpc_chttp2_list_add_writable_window_update_stream(
     grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_writable_window_update_stream(
     grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global);
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_global **stream_global,
+    grpc_chttp2_stream_writing **stream_writing);
 void grpc_chttp2_list_remove_writable_window_update_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
