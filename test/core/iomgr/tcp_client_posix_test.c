@@ -79,6 +79,8 @@ void test_succeeds(void) {
   int r;
   int connections_complete_before;
 
+  gpr_log(GPR_DEBUG, "test_succeeds");
+
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
 
@@ -120,6 +122,8 @@ void test_fails(void) {
   socklen_t addr_len = sizeof(addr);
   int connections_complete_before;
 
+  gpr_log(GPR_DEBUG, "test_fails");
+
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
 
@@ -146,12 +150,14 @@ void test_times_out(void) {
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   int svr_fd;
-#define NUM_CLIENT_CONNECTS 10
+#define NUM_CLIENT_CONNECTS 100
   int client_fd[NUM_CLIENT_CONNECTS];
   int i;
   int r;
   int connections_complete_before;
   gpr_timespec connect_deadline;
+
+  gpr_log(GPR_DEBUG, "test_times_out");
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
