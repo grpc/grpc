@@ -4,8 +4,8 @@ gens
 libs
 objs
 
-# Python virtual environment (pre-3.4 only)
-python2.7_virtual_environment
+# Python virtual environments
+python*_virtual_environment
 
 # gcov coverage data
 coverage
@@ -31,3 +31,5 @@ coverage
 # vim temp files
 .*.swp
 
+# Makefile's cache
+cache.mk

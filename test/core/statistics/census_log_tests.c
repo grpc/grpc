@@ -568,7 +568,7 @@ void test_performance(void) {
     double write_time_micro = 0.0;
     int nrecords = 0;
     setup_test(0);
-    start_time = gpr_now();
+    start_time = gpr_now(GPR_CLOCK_REALTIME);
     while (1) {
       void* record = census_log_start_write(write_size);
       if (record == NULL) {
@@ -577,7 +577,7 @@ void test_performance(void) {
       census_log_end_write(record, write_size);
       nrecords++;
     }
-    write_time = gpr_time_sub(gpr_now(), start_time);
+    write_time = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time);
     write_time_micro = write_time.tv_sec * 1000000 + write_time.tv_nsec / 1000;
     census_log_shutdown();
     printf(

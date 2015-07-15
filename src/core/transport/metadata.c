@@ -48,6 +48,20 @@
 #define INITIAL_STRTAB_CAPACITY 4
 #define INITIAL_MDTAB_CAPACITY 4
 
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#define DEBUG_ARGS , const char *file, int line
+#define FWD_DEBUG_ARGS , file, line
+#define INTERNAL_STRING_REF(s) internal_string_ref((s), __FILE__, __LINE__)
+#define INTERNAL_STRING_UNREF(s) internal_string_unref((s), __FILE__, __LINE__)
+#define REF_MD_LOCKED(s) ref_md_locked((s), __FILE__, __LINE__)
+#else
+#define DEBUG_ARGS
+#define FWD_DEBUG_ARGS
+#define INTERNAL_STRING_REF(s) internal_string_ref((s))
+#define INTERNAL_STRING_UNREF(s) internal_string_unref((s))
+#define REF_MD_LOCKED(s) ref_md_locked((s))
+#endif
+
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
   gpr_slice slice;
@@ -73,6 +87,7 @@ typedef struct internal_metadata {
   gpr_atm refcnt;
 
   /* private only data */
+  gpr_mu mu_user_data;
   void *user_data;
   void (*destroy_user_data)(void *user_data);
 
@@ -96,8 +111,8 @@ struct grpc_mdctx {
   size_t mdtab_capacity;
 };
 
-static void internal_string_ref(internal_string *s);
-static void internal_string_unref(internal_string *s);
+static void internal_string_ref(internal_string *s DEBUG_ARGS);
+static void internal_string_unref(internal_string *s DEBUG_ARGS);
 static void discard_metadata(grpc_mdctx *ctx);
 static void gc_mdtab(grpc_mdctx *ctx);
 static void metadata_context_destroy_locked(grpc_mdctx *ctx);
@@ -132,7 +147,15 @@ static void unlock(grpc_mdctx *ctx) {
   gpr_mu_unlock(&ctx->mu);
 }
 
-static void ref_md_locked(internal_metadata *md) {
+static void ref_md_locked(internal_metadata *md DEBUG_ARGS) {
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
+          gpr_atm_no_barrier_load(&md->refcnt),
+          gpr_atm_no_barrier_load(&md->refcnt) + 1,
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+#endif
   if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
     md->context->mdtab_free--;
   }
@@ -161,7 +184,7 @@ grpc_mdctx *grpc_mdctx_create(void) {
   /* This seed is used to prevent remote connections from controlling hash table
    * collisions. It needs to be somewhat unpredictable to a remote connection.
    */
-  return grpc_mdctx_create_with_seed(gpr_now().tv_nsec);
+  return grpc_mdctx_create_with_seed(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 }
 
 static void discard_metadata(grpc_mdctx *ctx) {
@@ -173,11 +196,12 @@ static void discard_metadata(grpc_mdctx *ctx) {
     while (cur) {
       GPR_ASSERT(gpr_atm_acq_load(&cur->refcnt) == 0);
       next = cur->bucket_next;
-      internal_string_unref(cur->key);
-      internal_string_unref(cur->value);
+      INTERNAL_STRING_UNREF(cur->key);
+      INTERNAL_STRING_UNREF(cur->value);
       if (cur->user_data) {
         cur->destroy_user_data(cur->user_data);
       }
+      gpr_mu_destroy(&cur->mu_user_data);
       gpr_free(cur);
       cur = next;
       ctx->mdtab_free--;
@@ -248,9 +272,19 @@ static void internal_destroy_string(internal_string *is) {
   gpr_free(is);
 }
 
-static void internal_string_ref(internal_string *s) { ++s->refs; }
+static void internal_string_ref(internal_string *s DEBUG_ARGS) {
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR   REF:%p:%d->%d: '%s'", s,
+          s->refs, s->refs + 1, grpc_mdstr_as_c_string((grpc_mdstr *)s));
+#endif
+  ++s->refs;
+}
 
-static void internal_string_unref(internal_string *s) {
+static void internal_string_unref(internal_string *s DEBUG_ARGS) {
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR UNREF:%p:%d->%d: '%s'", s,
+          s->refs, s->refs - 1, grpc_mdstr_as_c_string((grpc_mdstr *)s));
+#endif
   GPR_ASSERT(s->refs > 0);
   if (0 == --s->refs) {
     internal_destroy_string(s);
@@ -262,7 +296,7 @@ static void slice_ref(void *p) {
       (internal_string *)((char *)p - offsetof(internal_string, refcount));
   grpc_mdctx *ctx = is->context;
   lock(ctx);
-  internal_string_ref(is);
+  INTERNAL_STRING_REF(is);
   unlock(ctx);
 }
 
@@ -271,7 +305,7 @@ static void slice_unref(void *p) {
       (internal_string *)((char *)p - offsetof(internal_string, refcount));
   grpc_mdctx *ctx = is->context;
   lock(ctx);
-  internal_string_unref(is);
+  INTERNAL_STRING_UNREF(is);
   unlock(ctx);
 }
 
@@ -297,7 +331,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
   for (s = ctx->strtab[hash % ctx->strtab_capacity]; s; s = s->bucket_next) {
     if (s->hash == hash && GPR_SLICE_LENGTH(s->slice) == length &&
         0 == memcmp(buf, GPR_SLICE_START_PTR(s->slice), length)) {
-      internal_string_ref(s);
+      INTERNAL_STRING_REF(s);
       unlock(ctx);
       return (grpc_mdstr *)s;
     }
@@ -353,8 +387,8 @@ static void gc_mdtab(grpc_mdctx *ctx) {
     for (md = ctx->mdtab[i]; md; md = next) {
       next = md->bucket_next;
       if (gpr_atm_acq_load(&md->refcnt) == 0) {
-        internal_string_unref(md->key);
-        internal_string_unref(md->value);
+        INTERNAL_STRING_UNREF(md->key);
+        INTERNAL_STRING_UNREF(md->value);
         if (md->user_data) {
           md->destroy_user_data(md->user_data);
         }
@@ -418,9 +452,9 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   /* search for an existing pair */
   for (md = ctx->mdtab[hash % ctx->mdtab_capacity]; md; md = md->bucket_next) {
     if (md->key == key && md->value == value) {
-      ref_md_locked(md);
-      internal_string_unref(key);
-      internal_string_unref(value);
+      REF_MD_LOCKED(md);
+      INTERNAL_STRING_UNREF(key);
+      INTERNAL_STRING_UNREF(value);
       unlock(ctx);
       return (grpc_mdelem *)md;
     }
@@ -435,6 +469,13 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   md->user_data = NULL;
   md->destroy_user_data = NULL;
   md->bucket_next = ctx->mdtab[hash % ctx->mdtab_capacity];
+  gpr_mu_init(&md->mu_user_data);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(GPR_DEBUG, "ELM   NEW:%p:%d: '%s' = '%s'", md,
+          gpr_atm_no_barrier_load(&md->refcnt),
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+#endif
   ctx->mdtab[hash % ctx->mdtab_capacity] = md;
   ctx->mdtab_count++;
 
@@ -469,8 +510,16 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
       grpc_mdstr_from_buffer(ctx, value, value_length));
 }
 
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd) {
+grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
   internal_metadata *md = (internal_metadata *)gmd;
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
+          gpr_atm_no_barrier_load(&md->refcnt),
+          gpr_atm_no_barrier_load(&md->refcnt) + 1,
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+#endif
   /* we can assume the ref count is >= 1 as the application is calling
      this function - meaning that no adjustment to mdtab_free is necessary,
      simplifying the logic here to be just an atomic increment */
@@ -480,10 +529,18 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd) {
   return gmd;
 }
 
-void grpc_mdelem_unref(grpc_mdelem *gmd) {
+void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
   internal_metadata *md = (internal_metadata *)gmd;
   grpc_mdctx *ctx = md->context;
   lock(ctx);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
+          gpr_atm_no_barrier_load(&md->refcnt),
+          gpr_atm_no_barrier_load(&md->refcnt) - 1,
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+#endif
   assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
   if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
     ctx->mdtab_free++;
@@ -495,20 +552,20 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s) {
   return (const char *)GPR_SLICE_START_PTR(s->slice);
 }
 
-grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs) {
+grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   grpc_mdctx *ctx = s->context;
   lock(ctx);
-  internal_string_ref(s);
+  internal_string_ref(s FWD_DEBUG_ARGS);
   unlock(ctx);
   return gs;
 }
 
-void grpc_mdstr_unref(grpc_mdstr *gs) {
+void grpc_mdstr_unref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   grpc_mdctx *ctx = s->context;
   lock(ctx);
-  internal_string_unref(s);
+  internal_string_unref(s FWD_DEBUG_ARGS);
   unlock(ctx);
 }
 
@@ -527,18 +584,29 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *ctx) {
 void *grpc_mdelem_get_user_data(grpc_mdelem *md,
                                 void (*if_destroy_func)(void *)) {
   internal_metadata *im = (internal_metadata *)md;
-  return im->destroy_user_data == if_destroy_func ? im->user_data : NULL;
+  void *result;
+  gpr_mu_lock(&im->mu_user_data);
+  result = im->destroy_user_data == if_destroy_func ? im->user_data : NULL;
+  gpr_mu_unlock(&im->mu_user_data);
+  return result;
 }
 
 void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data) {
   internal_metadata *im = (internal_metadata *)md;
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
+  gpr_mu_lock(&im->mu_user_data);
   if (im->destroy_user_data) {
-    im->destroy_user_data(im->user_data);
+    /* user data can only be set once */
+    gpr_mu_unlock(&im->mu_user_data);
+    if (destroy_func != NULL) {
+      destroy_func(user_data);
+    }
+    return;
   }
   im->destroy_user_data = destroy_func;
   im->user_data = user_data;
+  gpr_mu_unlock(&im->mu_user_data);
 }
 
 gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
@@ -558,10 +626,19 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
 
 void grpc_mdctx_lock(grpc_mdctx *ctx) { lock(ctx); }
 
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *gmd) {
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx,
+                                    grpc_mdelem *gmd DEBUG_ARGS) {
   internal_metadata *md = (internal_metadata *)gmd;
   grpc_mdctx *elem_ctx = md->context;
   GPR_ASSERT(ctx == elem_ctx);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
+          gpr_atm_no_barrier_load(&md->refcnt),
+          gpr_atm_no_barrier_load(&md->refcnt) - 1,
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
+          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+#endif
   assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
   if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
     ctx->mdtab_free++;

@@ -164,6 +164,7 @@
     <ClInclude Include="..\..\src\core\security\base64.h" />
     <ClInclude Include="..\..\src\core\security\credentials.h" />
     <ClInclude Include="..\..\src\core\security\json_token.h" />
+    <ClInclude Include="..\..\src\core\security\jwt_verifier.h" />
     <ClInclude Include="..\..\src\core\security\secure_endpoint.h" />
     <ClInclude Include="..\..\src\core\security\secure_transport_setup.h" />
     <ClInclude Include="..\..\src\core\security\security_connector.h" />
@@ -294,6 +295,8 @@
     <ClCompile Include="..\..\src\core\security\google_default_credentials.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\jwt_verifier.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\secure_endpoint.c">
     </ClCompile>
@@ -480,6 +483,8 @@
     <ClCompile Include="..\..\src\core\surface\server_create.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\surface_trace.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\version.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>

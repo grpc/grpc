@@ -37,6 +37,7 @@ message RequestParams {
   optional int32 client_cancel_after_us = 2;
   optional int32 server_cancel_after_us = 3;
   optional bool echo_metadata = 4;
+  optional bool check_auth_context = 5;
 }
 
 message EchoRequest {
@@ -46,6 +47,7 @@ message EchoRequest {
 
 message ResponseParams {
   optional int64 request_deadline = 1;
+  optional string host = 2;
 }
 
 message EchoResponse {

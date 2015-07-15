@@ -40,6 +40,7 @@
 #include <grpc++/time.h>
 
 #include "src/core/channel/compress_filter.h"
+#include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
 
@@ -164,6 +165,18 @@ void ServerContext::set_compression_algorithm(
   }
   GPR_ASSERT(algorithm_name != NULL);
   AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
+}
+
+void ServerContext::set_call(grpc_call* call) {
+  call_ = call;
+  auth_context_ = CreateAuthContext(call);
+}
+
+std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
+  if (auth_context_.get() == nullptr) {
+    auth_context_ = CreateAuthContext(call_);
+  }
+  return auth_context_;
 }
 
 }  // namespace grpc
