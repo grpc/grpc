@@ -208,7 +208,7 @@ PHP_METHOD(Timeval, similar) {
  * @return Timeval The current time
  */
 PHP_METHOD(Timeval, now) {
-  zval *now = grpc_php_wrap_timeval(gpr_now());
+  zval *now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(now);
 }
 

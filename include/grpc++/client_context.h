@@ -41,6 +41,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc++/auth_context.h>
 #include <grpc++/config.h>
 #include <grpc++/status.h>
 #include <grpc++/time.h>
@@ -119,6 +120,8 @@ class ClientContext {
   }
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
+  std::shared_ptr<const AuthContext> auth_context() const;
+
   // Get and set census context
   void set_census_context(census_context* ccp) { census_context_ = ccp; }
   census_context* get_census_context() const { return census_context_; }
@@ -170,6 +173,7 @@ class ClientContext {
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;
+  mutable std::shared_ptr<const AuthContext> auth_context_;
   census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;

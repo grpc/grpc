@@ -35,9 +35,13 @@ cd $(dirname $0)
 PLUGIN=protoc-gen-grpc=../../bins/opt/grpc_csharp_plugin
 EXAMPLES_DIR=Grpc.Examples
 INTEROP_DIR=Grpc.IntegrationTesting
+HEALTHCHECK_DIR=Grpc.HealthCheck
 
 protoc --plugin=$PLUGIN --grpc_out=$EXAMPLES_DIR \
     -I $EXAMPLES_DIR/proto $EXAMPLES_DIR/proto/math.proto
 
 protoc --plugin=$PLUGIN --grpc_out=$INTEROP_DIR \
     -I $INTEROP_DIR/proto $INTEROP_DIR/proto/test.proto
+	
+protoc --plugin=$PLUGIN --grpc_out=$HEALTHCHECK_DIR \
+    -I $HEALTHCHECK_DIR/proto $HEALTHCHECK_DIR/proto/health.proto

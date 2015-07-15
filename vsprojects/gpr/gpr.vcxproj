@@ -179,6 +179,7 @@
     <ClInclude Include="..\..\src\core\support\env.h" />
     <ClInclude Include="..\..\src\core\support\file.h" />
     <ClInclude Include="..\..\src\core\support\murmur_hash.h" />
+    <ClInclude Include="..\..\src\core\support\stack_lockfree.h" />
     <ClInclude Include="..\..\src\core\support\string.h" />
     <ClInclude Include="..\..\src\core\support\string_win32.h" />
     <ClInclude Include="..\..\src\core\support\thd_internal.h" />
@@ -229,6 +230,8 @@
     <ClCompile Include="..\..\src\core\support\slice.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\stack_lockfree.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\string.c">
     </ClCompile>

@@ -419,6 +419,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\surface_trace.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\version.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\bin_encoder.c">

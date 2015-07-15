@@ -4,7 +4,7 @@ gRPC PHP Extension
 # Requirements
 
  * PHP 5.5+
- * [gRPC core library](https://github.com/grpc/grpc) 0.9.1
+ * [gRPC core library](https://github.com/grpc/grpc) 0.10.0
 
 # Installation
 
@@ -55,7 +55,7 @@ $ sudo pecl install grpc
 Note: before a stable release, you may need to do
 
 ```sh
-$ sudo pecl install grpc-0.5.0
+$ sudo pecl install grpc-0.5.1
 ```
 
 OR

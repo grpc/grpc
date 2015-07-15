@@ -73,12 +73,6 @@ namespace Grpc.Core.Tests
         Server server;
         Channel channel;
 
-        [TestFixtureSetUp]
-        public void InitClass()
-        {
-            GrpcEnvironment.Initialize();
-        }
-
         [SetUp]
         public void Init()
         {
