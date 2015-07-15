@@ -59,12 +59,12 @@ TEST_F(SecureAuthContextTest, Properties) {
 
   SecureAuthContext context(ctx);
   std::vector<grpc::string> peer_identity = context.GetPeerIdentity();
-  EXPECT_EQ(2, peer_identity.size());
+  EXPECT_EQ(2u, peer_identity.size());
   EXPECT_EQ("chapi", peer_identity[0]);
   EXPECT_EQ("chapo", peer_identity[1]);
   EXPECT_EQ("name", context.GetPeerIdentityPropertyName());
   std::vector<grpc::string> bar = context.FindPropertyValues("foo");
-  EXPECT_EQ(1, bar.size());
+  EXPECT_EQ(1u, bar.size());
   EXPECT_EQ("bar", bar[0]);
 }
 
