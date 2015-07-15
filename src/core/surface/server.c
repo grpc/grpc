@@ -980,6 +980,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   channel_broadcaster broadcaster;
   request_killer reqkill;
 
+  GRPC_SERVER_LOG_SHUTDOWN(GPR_INFO, server, cq, tag);
+
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
   grpc_cq_begin_op(cq);
