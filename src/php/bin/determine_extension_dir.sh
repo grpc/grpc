@@ -46,4 +46,6 @@ elif [ ! -e $default_extension_dir/grpc.so ]; then
     ln -s $f $module_dir/$(basename $f) &> /dev/null || true
   done
   extension_dir="-d extension_dir=${module_dir} -d extension=grpc.so"
+else
+  extension_dir="-d extension=grpc.so"
 fi
