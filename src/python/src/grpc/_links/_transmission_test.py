@@ -98,8 +98,8 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
     # since implementations are allowed to add to what is sent (in any position)
     keys, _ = zip(*original_metadata)
     self.assertSequenceEqual(
-        original_metadata, 
-        (x for x in transmitted_metadata if x[0] in keys))
+        original_metadata,
+        [x for x in transmitted_metadata if x[0] in keys])
 
 
 class RoundTripTest(unittest.TestCase):
