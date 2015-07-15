@@ -182,13 +182,13 @@
     <ClInclude Include="..\..\include\grpc++\status.h" />
     <ClInclude Include="..\..\include\grpc++\status_code_enum.h" />
     <ClInclude Include="..\..\include\grpc++\stream.h" />
+    <ClInclude Include="..\..\include\grpc++\thread_pool.h" />
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h" />
     <ClInclude Include="..\..\include\grpc++\time.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cpp\client\channel.h" />
     <ClInclude Include="..\..\src\cpp\common\create_auth_context.h" />
-    <ClInclude Include="..\..\src\cpp\server\thread_pool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\cpp\common\insecure_create_auth_context.cc">

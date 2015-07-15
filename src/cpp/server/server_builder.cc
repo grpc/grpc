@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include "src/cpp/server/thread_pool.h"
+#include <grpc++/thread_pool.h>
 
 namespace grpc {
 

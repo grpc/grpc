@@ -3749,6 +3749,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/status.h \
     include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
+    include/grpc++/thread_pool.h \
     include/grpc++/thread_pool_interface.h \
     include/grpc++/time.h \
 
@@ -3990,6 +3991,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/status.h \
     include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
+    include/grpc++/thread_pool.h \
     include/grpc++/thread_pool_interface.h \
     include/grpc++/time.h \
 

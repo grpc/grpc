@@ -796,6 +796,7 @@ include/grpc++/slice.h \
 include/grpc++/status.h \
 include/grpc++/status_code_enum.h \
 include/grpc++/stream.h \
+include/grpc++/thread_pool.h \
 include/grpc++/thread_pool_interface.h \
 include/grpc++/time.h \
 src/cpp/client/secure_credentials.h \
@@ -803,7 +804,6 @@ src/cpp/common/secure_auth_context.h \
 src/cpp/server/secure_server_credentials.h \
 src/cpp/client/channel.h \
 src/cpp/common/create_auth_context.h \
-src/cpp/server/thread_pool.h \
 src/cpp/client/secure_channel_arguments.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/common/secure_auth_context.cc \

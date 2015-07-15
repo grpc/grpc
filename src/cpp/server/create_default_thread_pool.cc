@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/cpu.h>
-#include "src/cpp/server/thread_pool.h"
+#include <grpc++/thread_pool.h>
 
 #ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
 
@@ -41,7 +41,7 @@ namespace grpc {
 ThreadPoolInterface* CreateDefaultThreadPool() {
    int cores = gpr_cpu_num_cores();
    if (!cores) cores = 4;
-   return new ThreadPool(cores);
+   return new FixedSizeThreadPool(cores);
 }
 
 }  // namespace grpc

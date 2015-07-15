@@ -35,7 +35,6 @@
 #include <thread>
 
 #include "src/core/security/credentials.h"
-#include "src/cpp/server/thread_pool.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
@@ -52,6 +51,7 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include <grpc++/thread_pool.h>
 #include <grpc++/time.h>
 #include <gtest/gtest.h>
 
@@ -260,7 +260,7 @@ class End2endTest : public ::testing::Test {
   TestServiceImpl service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  ThreadPool thread_pool_;
+  FixedSizeThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,

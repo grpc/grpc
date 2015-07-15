@@ -35,7 +35,7 @@
 #include <functional>
 #include <mutex>
 
-#include "src/cpp/server/thread_pool.h"
+#include <grpc++/thread_pool.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -45,7 +45,7 @@ class ThreadPoolTest : public ::testing::Test {
   ThreadPoolTest() : thread_pool_(4) {}
 
  protected:
-  ThreadPool thread_pool_;
+  FixedSizeThreadPool thread_pool_;
 };
 
 void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {

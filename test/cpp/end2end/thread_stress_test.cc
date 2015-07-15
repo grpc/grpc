@@ -38,7 +38,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -50,6 +49,7 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include <grpc++/thread_pool.h>
 #include <grpc++/time.h>
 #include <gtest/gtest.h>
 
@@ -206,7 +206,7 @@ class End2endTest : public ::testing::Test {
   const int kMaxMessageSize_;
   TestServiceImpl service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  ThreadPool thread_pool_;
+  FixedSizeThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
