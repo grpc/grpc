@@ -362,7 +362,7 @@ namespace Grpc.IntegrationTesting
                 Console.WriteLine("running cancel_after_begin");
 
                 var cts = new CancellationTokenSource();
-                using (var call = client.StreamingInputCall(cts.Token))
+                using (var call = client.StreamingInputCall(cancellationToken: cts.Token))
                 {
                     // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
                     await Task.Delay(1000);
@@ -389,7 +389,7 @@ namespace Grpc.IntegrationTesting
                 Console.WriteLine("running cancel_after_first_response");
 
                 var cts = new CancellationTokenSource();
-                using (var call = client.FullDuplexCall(cts.Token))
+                using (var call = client.FullDuplexCall(cancellationToken: cts.Token))
                 {
                     await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                         .SetResponseType(PayloadType.COMPRESSABLE)

@@ -269,7 +269,7 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
       out->Print(
-          "$response$ $methodname$($request$ request, CancellationToken token = default(CancellationToken));\n",
+          "$response$ $methodname$($request$ request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
@@ -280,7 +280,7 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     out->Print(
-        "$returntype$ $methodname$($request_maybe$CancellationToken token = default(CancellationToken));\n",
+        "$returntype$ $methodname$($request_maybe$Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
@@ -332,16 +332,16 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
       out->Print(
-          "public $response$ $methodname$($request$ request, CancellationToken token = default(CancellationToken))\n",
+          "public $response$ $methodname$($request$ request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("var call = CreateCall($servicenamefield$, $methodfield$);\n",
+      out->Print("var call = CreateCall($servicenamefield$, $methodfield$, headers);\n",
                  "servicenamefield", GetServiceNameFieldName(), "methodfield",
                  GetMethodFieldName(method));
-      out->Print("return Calls.BlockingUnaryCall(call, request, token);\n");
+      out->Print("return Calls.BlockingUnaryCall(call, request, cancellationToken);\n");
       out->Outdent();
       out->Print("}\n");
     }
@@ -351,28 +351,28 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     out->Print(
-        "public $returntype$ $methodname$($request_maybe$CancellationToken token = default(CancellationToken))\n",
+        "public $returntype$ $methodname$($request_maybe$Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    out->Print("var call = CreateCall($servicenamefield$, $methodfield$);\n",
+    out->Print("var call = CreateCall($servicenamefield$, $methodfield$, headers);\n",
                "servicenamefield", GetServiceNameFieldName(), "methodfield",
                GetMethodFieldName(method));
     switch (GetMethodType(method)) {
       case METHODTYPE_NO_STREAMING:
-        out->Print("return Calls.AsyncUnaryCall(call, request, token);\n");
+        out->Print("return Calls.AsyncUnaryCall(call, request, cancellationToken);\n");
         break;
       case METHODTYPE_CLIENT_STREAMING:
-        out->Print("return Calls.AsyncClientStreamingCall(call, token);\n");
+        out->Print("return Calls.AsyncClientStreamingCall(call, cancellationToken);\n");
         break;
       case METHODTYPE_SERVER_STREAMING:
         out->Print(
-            "return Calls.AsyncServerStreamingCall(call, request, token);\n");
+            "return Calls.AsyncServerStreamingCall(call, request, cancellationToken);\n");
         break;
       case METHODTYPE_BIDI_STREAMING:
-        out->Print("return Calls.AsyncDuplexStreamingCall(call, token);\n");
+        out->Print("return Calls.AsyncDuplexStreamingCall(call, cancellationToken);\n");
         break;
       default:
         GOOGLE_LOG(FATAL)<< "Can't get here.";
