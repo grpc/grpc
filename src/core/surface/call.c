@@ -433,6 +433,11 @@ static void set_compression_algorithm(grpc_call *call,
   call->compression_algorithm = algo;
 }
 
+grpc_compression_algorithm grpc_call_get_compression_algorithm(
+    const grpc_call *call) {
+  return call->compression_algorithm;
+}
+
 static void set_status_details(grpc_call *call, status_source source,
                                grpc_mdstr *status) {
   if (call->status[source].details != NULL) {
@@ -712,7 +717,8 @@ static void finish_message(grpc_call *call) {
     /* some aliases for readability */
     gpr_slice *slices = call->incoming_message.slices;
     const size_t nslices = call->incoming_message.count;
-    if (call->compression_algorithm > GRPC_COMPRESS_NONE) {
+    if ((call->incoming_message_flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
+        (call->compression_algorithm > GRPC_COMPRESS_NONE)) {
       byte_buffer = grpc_raw_compressed_byte_buffer_create(
           slices, nslices, call->compression_algorithm);
     } else {
@@ -743,14 +749,15 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
       (call->compression_algorithm == GRPC_COMPRESS_NONE)) {
     char *message = NULL;
     char *alg_name;
-    if (!grpc_compression_algorithm_name(call->compression_algorithm, &alg_name)) {
+    if (!grpc_compression_algorithm_name(call->compression_algorithm,
+                                         &alg_name)) {
       /* This shouldn't happen, other than due to data corruption */
       alg_name = "<unknown>";
     }
     gpr_asprintf(&message,
                  "Invalid compression algorithm (%s) for compressed message.",
                  alg_name);
-    cancel_with_status(call, GRPC_STATUS_FAILED_PRECONDITION, message);
+    cancel_with_status(call, GRPC_STATUS_INTERNAL, message);
   }
   /* stash away parameters, and prepare for incoming slices */
   if (msg.length > grpc_channel_get_max_message_length(call->channel)) {
