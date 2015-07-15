@@ -107,6 +107,7 @@ int grpc_chttp2_unlocking_check_writes(
                                                             transport_writing,
                                                             &stream_global,
                                                             &stream_writing)) {
+    stream_writing->id = stream_global->id;
     if (!stream_global->read_closed && stream_global->unannounced_incoming_window > 0) {
       stream_writing->announce_window = stream_global->unannounced_incoming_window;
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("write", transport_global, stream_global,
@@ -204,7 +205,8 @@ void grpc_chttp2_cleanup_writing(
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {
-    if (stream_global->outgoing_sopb->nops == 0) {
+    if (stream_global->outgoing_sopb != NULL &&
+        stream_global->outgoing_sopb->nops == 0) {
       stream_global->outgoing_sopb = NULL;
       grpc_chttp2_schedule_closure(transport_global,
                                    stream_global->send_done_closure, 1);

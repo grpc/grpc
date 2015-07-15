@@ -629,18 +629,21 @@ static void perform_stream_op_locked(
     stream_global->publish_state = op->recv_state;
     if (stream_global->max_recv_bytes < op->max_recv_bytes) {
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("op", transport_global, stream_global,
-          unannounced_incoming_window, op->max_recv_bytes - stream_global->max_recv_bytes);
-      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("op", transport_global, stream_global,
           max_recv_bytes, op->max_recv_bytes - stream_global->max_recv_bytes);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "op", transport_global, stream_global, unannounced_incoming_window,
+          op->max_recv_bytes - stream_global->max_recv_bytes);
       stream_global->unannounced_incoming_window += op->max_recv_bytes - stream_global->max_recv_bytes;
       stream_global->max_recv_bytes = op->max_recv_bytes;
     }
     grpc_chttp2_incoming_metadata_live_op_buffer_end(
         &stream_global->outstanding_metadata);
-    grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                  stream_global);
-    grpc_chttp2_list_add_writable_window_update_stream(transport_global,
-                                                       stream_global);
+    if (stream_global->id != 0) {
+      grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                    stream_global);
+      grpc_chttp2_list_add_writable_window_update_stream(transport_global,
+                                                         stream_global);
+    }
   }
 
   if (op->bind_pollset) {
@@ -1053,7 +1056,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,
     identifier = gpr_strdup(context_scope);
   }
   gpr_log(GPR_INFO,
-          "FLOWCTL: %s %-10s %8s %-23s %8lld %c %8lld = %8lld %-10s [%s:%d]",
+          "FLOWCTL: %s %-10s %8s %-27s %8lld %c %8lld = %8lld %-10s [%s:%d]",
           is_client ? "client" : "server", identifier, context_thread, var,
           current_value, delta < 0 ? '-' : '+', delta < 0 ? -delta : delta,
           current_value + delta, reason, file, line);
