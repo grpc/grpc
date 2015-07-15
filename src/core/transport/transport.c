@@ -38,34 +38,26 @@ size_t grpc_transport_stream_size(grpc_transport *transport) {
   return transport->vtable->sizeof_stream;
 }
 
-void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
-                           gpr_slice message) {
-  transport->vtable->goaway(transport, status, message);
-}
-
-void grpc_transport_close(grpc_transport *transport) {
-  transport->vtable->close(transport);
-}
-
 void grpc_transport_destroy(grpc_transport *transport) {
   transport->vtable->destroy(transport);
 }
 
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
                                const void *server_data,
-                               grpc_transport_op *initial_op) {
+                               grpc_transport_stream_op *initial_op) {
   return transport->vtable->init_stream(transport, stream, server_data,
                                         initial_op);
 }
 
-void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
-                               grpc_transport_op *op) {
-  transport->vtable->perform_op(transport, stream, op);
+void grpc_transport_perform_stream_op(grpc_transport *transport,
+                                      grpc_stream *stream,
+                                      grpc_transport_stream_op *op) {
+  transport->vtable->perform_stream_op(transport, stream, op);
 }
 
-void grpc_transport_add_to_pollset(grpc_transport *transport,
-                                   grpc_pollset *pollset) {
-  transport->vtable->add_to_pollset(transport, pollset);
+void grpc_transport_perform_op(grpc_transport *transport,
+                               grpc_transport_op *op) {
+  transport->vtable->perform_op(transport, op);
 }
 
 void grpc_transport_destroy_stream(grpc_transport *transport,
@@ -73,35 +65,26 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
   transport->vtable->destroy_stream(transport, stream);
 }
 
-void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
-                         void *user_data) {
-  transport->vtable->ping(transport, cb, user_data);
-}
-
-void grpc_transport_setup_cancel(grpc_transport_setup *setup) {
-  setup->vtable->cancel(setup);
-}
-
-void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
-  setup->vtable->initiate(setup);
-}
-
-void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
+void grpc_transport_stream_op_finish_with_failure(
+    grpc_transport_stream_op *op) {
   if (op->send_ops) {
-    op->on_done_send(op->send_user_data, 0);
+    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
   }
   if (op->recv_ops) {
-    op->on_done_recv(op->recv_user_data, 0);
+    op->on_done_recv->cb(op->on_done_recv->cb_arg, 0);
+  }
+  if (op->on_consumed) {
+    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
   }
 }
 
-void grpc_transport_op_add_cancellation(grpc_transport_op *op,
-                                        grpc_status_code status,
-                                        grpc_mdstr *message) {
+void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
+                                               grpc_status_code status,
+                                               grpc_mdstr *message) {
   if (op->cancel_with_status == GRPC_STATUS_OK) {
     op->cancel_with_status = status;
-    op->cancel_message = message;
-  } else if (message) {
-    grpc_mdstr_unref(message);
+  }
+  if (message) {
+    GRPC_MDSTR_UNREF(message);
   }
 }

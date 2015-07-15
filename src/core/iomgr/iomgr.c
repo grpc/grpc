@@ -112,13 +112,20 @@ void grpc_iomgr_shutdown(void) {
   gpr_timespec shutdown_deadline =
       gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
 
-
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
-  while (g_cbs_head || g_root_object.next != &g_root_object) {
-    size_t nobjs = count_objects();
-    gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed%s", nobjs,
-            g_cbs_head ? " and executing final callbacks" : "");
+  while (g_cbs_head != NULL || g_root_object.next != &g_root_object) {
+    if (g_cbs_head != NULL && g_root_object.next != &g_root_object) {
+      gpr_log(GPR_DEBUG,
+              "Waiting for %d iomgr objects to be destroyed and executing "
+              "final callbacks",
+              count_objects());
+    } else if (g_cbs_head != NULL) {
+      gpr_log(GPR_DEBUG, "Executing final iomgr callbacks");
+    } else {
+      gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed",
+              count_objects());
+    }
     if (g_cbs_head) {
       do {
         closure = g_cbs_head;
@@ -131,10 +138,14 @@ void grpc_iomgr_shutdown(void) {
       } while (g_cbs_head);
       continue;
     }
-    if (nobjs > 0) {
+    if (grpc_alarm_check(&g_mu, gpr_inf_future, NULL)) {
+      gpr_log(GPR_DEBUG, "got late alarm");
+      continue;
+    }
+    if (g_root_object.next != &g_root_object) {
       int timeout = 0;
-      gpr_timespec short_deadline = gpr_time_add(gpr_now(),
-                                                 gpr_time_from_millis(100));
+      gpr_timespec short_deadline =
+          gpr_time_add(gpr_now(), gpr_time_from_millis(100));
       while (gpr_cv_wait(&g_rcv, &g_mu, short_deadline) && g_cbs_head == NULL) {
         if (gpr_time_cmp(gpr_now(), shutdown_deadline) > 0) {
           timeout = 1;
@@ -147,7 +158,7 @@ void grpc_iomgr_shutdown(void) {
                 "memory leaks are likely",
                 count_objects());
         for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
-          gpr_log(GPR_DEBUG, "LEAKED OBJECT: %s", obj->name);
+          gpr_log(GPR_DEBUG, "LEAKED OBJECT: %s %p", obj->name, obj);
         }
         break;
       }
@@ -158,8 +169,9 @@ void grpc_iomgr_shutdown(void) {
   grpc_kick_poller();
   gpr_event_wait(&g_background_callback_executor_done, gpr_inf_future);
 
-  grpc_iomgr_platform_shutdown();
   grpc_alarm_list_shutdown();
+
+  grpc_iomgr_platform_shutdown();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_rcv);
 }
@@ -174,14 +186,13 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
 }
 
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
-  gpr_free(obj->name);
   gpr_mu_lock(&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;
   gpr_cv_signal(&g_rcv);
   gpr_mu_unlock(&g_mu);
+  gpr_free(obj->name);
 }
-
 
 void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
                              void *cb_arg) {
@@ -190,9 +201,21 @@ void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
   closure->next = NULL;
 }
 
+static void assert_not_scheduled_locked(grpc_iomgr_closure *closure) {
+#ifndef NDEBUG
+  grpc_iomgr_closure *c;
+
+  for (c = g_cbs_head; c; c = c->next) {
+    GPR_ASSERT(c != closure);
+  }
+#endif
+}
+
 void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
   closure->success = success;
+  GPR_ASSERT(closure->cb);
   gpr_mu_lock(&g_mu);
+  assert_not_scheduled_locked(closure);
   closure->next = NULL;
   if (!g_cbs_tail) {
     g_cbs_head = g_cbs_tail = closure;
@@ -200,14 +223,15 @@ void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
     g_cbs_tail->next = closure;
     g_cbs_tail = closure;
   }
+  if (g_shutdown) {
+    gpr_cv_signal(&g_rcv);
+  }
   gpr_mu_unlock(&g_mu);
 }
-
 
 void grpc_iomgr_add_callback(grpc_iomgr_closure *closure) {
   grpc_iomgr_add_delayed_callback(closure, 1 /* GPR_TRUE */);
 }
-
 
 int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
   int n = 0;

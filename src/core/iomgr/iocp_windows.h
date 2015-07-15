@@ -34,7 +34,6 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H
 #define GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H
 
-#include <windows.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/iomgr/socket_windows.h"

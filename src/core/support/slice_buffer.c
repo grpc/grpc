@@ -81,7 +81,7 @@ gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned n) {
   if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
     goto add_new;
   out = back->data.inlined.bytes + back->data.inlined.length;
-  back->data.inlined.length += n;
+  back->data.inlined.length = (gpr_uint8)(back->data.inlined.length + n);
   return out;
 
 add_new:
@@ -89,7 +89,7 @@ add_new:
   back = &sb->slices[sb->count];
   sb->count++;
   back->refcount = NULL;
-  back->data.inlined.length = n;
+  back->data.inlined.length = (gpr_uint8)n;
   return back->data.inlined.bytes;
 }
 
@@ -116,7 +116,7 @@ void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice s) {
           GPR_SLICE_INLINED_SIZE) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, s.data.inlined.length);
-        back->data.inlined.length += s.data.inlined.length;
+        back->data.inlined.length = (gpr_uint8)(back->data.inlined.length + s.data.inlined.length);
       } else {
         size_t cp1 = GPR_SLICE_INLINED_SIZE - back->data.inlined.length;
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
@@ -126,7 +126,7 @@ void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice s) {
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = NULL;
-        back->data.inlined.length = s.data.inlined.length - cp1;
+        back->data.inlined.length = (gpr_uint8)(s.data.inlined.length - cp1);
         memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1,
                s.data.inlined.length - cp1);
       }
@@ -189,4 +189,20 @@ void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
     /* no inlining: easy swap */
     GPR_SWAP(gpr_slice *, a->slices, b->slices);
   }
+}
+
+void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst) {
+  /* anything to move? */
+  if (src->count == 0) {
+    return;
+  }
+  /* anything in dst? */
+  if (dst->count == 0) {
+    gpr_slice_buffer_swap(src, dst);
+    return;
+  }
+  /* both buffers have data - copy, and reset src */
+  gpr_slice_buffer_addn(dst, src->slices, src->count);
+  src->count = 0;
+  src->length = 0;
 }

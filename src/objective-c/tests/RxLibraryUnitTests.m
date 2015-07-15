@@ -34,9 +34,9 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import <gRPC/GRXBufferedPipe.h>
-#import <gRPC/GRXWriter.h>
-#import <gRPC/GRXWriteable.h>
+#import <RxLibrary/GRXBufferedPipe.h>
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
 
 // A mock of a GRXSingleValueHandler block that can be queried for how many times it was called and
 // what were the last values passed to it.

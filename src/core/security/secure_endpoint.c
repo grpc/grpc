@@ -101,9 +101,7 @@ static void call_read_cb(secure_endpoint *ep, gpr_slice *slices, size_t nslices,
   if (grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < nslices; i++) {
-      char *data =
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      char *data = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
       gpr_free(data);
     }
@@ -116,7 +114,7 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
                     grpc_endpoint_cb_status error) {
   unsigned i;
   gpr_uint8 keep_looping = 0;
-  int input_buffer_count = 0;
+  size_t input_buffer_count = 0;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)user_data;
   gpr_uint8 *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
@@ -129,7 +127,7 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
     size_t message_size = GPR_SLICE_LENGTH(encrypted);
 
     while (message_size > 0 || keep_looping) {
-      size_t unprotected_buffer_size_written = end - cur;
+      size_t unprotected_buffer_size_written = (size_t)(end - cur);
       size_t processed_message_size = message_size;
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_unprotect(ep->protector, message_bytes,
@@ -166,7 +164,7 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
         &ep->input_buffer,
         gpr_slice_split_head(
             &ep->read_staging_buffer,
-            cur - GPR_SLICE_START_PTR(ep->read_staging_buffer)));
+            (size_t)(cur - GPR_SLICE_START_PTR(ep->read_staging_buffer))));
   }
 
   /* TODO(yangg) experiment with moving this block after read_cb to see if it
@@ -225,7 +223,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
                                                  grpc_endpoint_write_cb cb,
                                                  void *user_data) {
   unsigned i;
-  int output_buffer_count = 0;
+  size_t output_buffer_count = 0;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   gpr_uint8 *cur = GPR_SLICE_START_PTR(ep->write_staging_buffer);
@@ -235,9 +233,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
 
   if (grpc_trace_secure_endpoint) {
     for (i = 0; i < nslices; i++) {
-      char *data =
-          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      char *data = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
       gpr_free(data);
     }
@@ -248,7 +244,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
     gpr_uint8 *message_bytes = GPR_SLICE_START_PTR(plain);
     size_t message_size = GPR_SLICE_LENGTH(plain);
     while (message_size > 0) {
-      size_t protected_buffer_size_to_send = end - cur;
+      size_t protected_buffer_size_to_send = (size_t)(end - cur);
       size_t processed_message_size = message_size;
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_protect(ep->protector, message_bytes,
@@ -273,7 +269,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
   if (result == TSI_OK) {
     size_t still_pending_size;
     do {
-      size_t protected_buffer_size_to_send = end - cur;
+      size_t protected_buffer_size_to_send = (size_t)(end - cur);
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_protect_flush(ep->protector, cur,
                                                  &protected_buffer_size_to_send,
@@ -290,7 +286,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
           &ep->output_buffer,
           gpr_slice_split_head(
               &ep->write_staging_buffer,
-              cur - GPR_SLICE_START_PTR(ep->write_staging_buffer)));
+              (size_t)(cur - GPR_SLICE_START_PTR(ep->write_staging_buffer))));
     }
   }
 

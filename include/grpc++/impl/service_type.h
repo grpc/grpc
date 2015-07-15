@@ -35,6 +35,8 @@
 #define GRPCXX_IMPL_SERVICE_TYPE_H
 
 #include <grpc++/config.h>
+#include <grpc++/impl/serialization_traits.h>
+#include <grpc++/server.h>
 #include <grpc++/status.h>
 
 namespace grpc {
@@ -65,20 +67,8 @@ class ServerAsyncStreamingInterface {
 
 class AsynchronousService {
  public:
-  // this is Server, but in disguise to avoid a link dependency
-  class DispatchImpl {
-   public:
-    virtual void RequestAsyncCall(void* registered_method,
-                                  ServerContext* context,
-                                  ::grpc::protobuf::Message* request,
-                                  ServerAsyncStreamingInterface* stream,
-                                  CompletionQueue* call_cq,
-                                  ServerCompletionQueue* notification_cq,
-                                  void* tag) = 0;
-  };
-
   AsynchronousService(const char** method_names, size_t method_count)
-      : dispatch_impl_(nullptr),
+      : server_(nullptr),
         method_names_(method_names),
         method_count_(method_count),
         request_args_(nullptr) {}
@@ -86,42 +76,43 @@ class AsynchronousService {
   ~AsynchronousService() { delete[] request_args_; }
 
  protected:
-  void RequestAsyncUnary(int index, ServerContext* context,
-                         grpc::protobuf::Message* request,
+  template <class Message>
+  void RequestAsyncUnary(int index, ServerContext* context, Message* request,
                          ServerAsyncStreamingInterface* stream,
                          CompletionQueue* call_cq,
                          ServerCompletionQueue* notification_cq, void* tag) {
-    dispatch_impl_->RequestAsyncCall(request_args_[index], context, request,
-                                     stream, call_cq, notification_cq, tag);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag, request);
   }
   void RequestClientStreaming(int index, ServerContext* context,
                               ServerAsyncStreamingInterface* stream,
                               CompletionQueue* call_cq,
                               ServerCompletionQueue* notification_cq,
                               void* tag) {
-    dispatch_impl_->RequestAsyncCall(request_args_[index], context, nullptr,
-                                     stream, call_cq, notification_cq, tag);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag);
   }
+  template <class Message>
   void RequestServerStreaming(int index, ServerContext* context,
-                              grpc::protobuf::Message* request,
+                              Message* request,
                               ServerAsyncStreamingInterface* stream,
                               CompletionQueue* call_cq,
                               ServerCompletionQueue* notification_cq,
                               void* tag) {
-    dispatch_impl_->RequestAsyncCall(request_args_[index], context, request,
-                                     stream, call_cq, notification_cq, tag);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag, request);
   }
   void RequestBidiStreaming(int index, ServerContext* context,
                             ServerAsyncStreamingInterface* stream,
                             CompletionQueue* call_cq,
                             ServerCompletionQueue* notification_cq, void* tag) {
-    dispatch_impl_->RequestAsyncCall(request_args_[index], context, nullptr,
-                                     stream, call_cq, notification_cq, tag);
+    server_->RequestAsyncCall(request_args_[index], context, stream, call_cq,
+                              notification_cq, tag);
   }
 
  private:
   friend class Server;
-  DispatchImpl* dispatch_impl_;
+  Server* server_;
   const char** const method_names_;
   size_t method_count_;
   void** request_args_;

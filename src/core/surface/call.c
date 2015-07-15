@@ -76,14 +76,14 @@ typedef struct {
 typedef struct {
   /* Overall status of the operation: starts OK, may degrade to
      non-OK */
-  int success;
-  /* Completion function to call at the end of the operation */
-  grpc_ioreq_completion_func on_complete;
-  void *user_data;
+  gpr_uint8 success;
   /* a bit mask of which request ops are needed (1u << opid) */
   gpr_uint16 need_mask;
   /* a bit mask of which request ops are now completed */
   gpr_uint16 complete_mask;
+  /* Completion function to call at the end of the operation */
+  grpc_ioreq_completion_func on_complete;
+  void *user_data;
 } reqinfo_master;
 
 /* Status data for a request can come from several sources; this
@@ -99,6 +99,8 @@ typedef enum {
   /* Status came from 'the wire' - or somewhere below the surface
      layer */
   STATUS_FROM_WIRE,
+  /* Status came from the server sending status */
+  STATUS_FROM_SERVER_STATUS,
   STATUS_SOURCE_COUNT
 } status_source;
 
@@ -148,13 +150,24 @@ struct grpc_call {
   gpr_uint8 receiving;
   /* are we currently completing requests */
   gpr_uint8 completing;
+  /** has grpc_call_destroy been called */
+  gpr_uint8 destroy_called;
   /* pairs with completed_requests */
   gpr_uint8 num_completed_requests;
   /* are we currently reading a message? */
   gpr_uint8 reading_message;
+  /* have we bound a pollset yet? */
+  gpr_uint8 bound_pollset;
+  /* is an error status set */
+  gpr_uint8 error_status_set;
+  /** should the alarm be cancelled */
+  gpr_uint8 cancel_alarm;
+
   /* flags with bits corresponding to write states allowing us to determine
      what was sent */
   gpr_uint16 last_send_contains;
+  /* cancel with this status on the next outgoing transport op */
+  grpc_status_code cancel_with_status;
 
   /* Active ioreqs.
      request_set and request_data contain one element per active ioreq
@@ -208,6 +221,9 @@ struct grpc_call {
   /* Received call statuses from various sources */
   received_status status[STATUS_SOURCE_COUNT];
 
+  /* Compression level for the call */
+  grpc_compression_level compression_level;
+
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
 
@@ -231,6 +247,9 @@ struct grpc_call {
   gpr_uint32 incoming_message_length;
   gpr_uint32 incoming_message_flags;
   grpc_iomgr_closure destroy_closure;
+  grpc_iomgr_closure on_done_recv;
+  grpc_iomgr_closure on_done_send;
+  grpc_iomgr_closure on_done_bind;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -243,13 +262,16 @@ struct grpc_call {
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline);
 static void call_on_done_recv(void *call, int success);
 static void call_on_done_send(void *call, int success);
-static int fill_send_ops(grpc_call *call, grpc_transport_op *op);
-static void execute_op(grpc_call *call, grpc_transport_op *op);
+static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op);
+static void execute_op(grpc_call *call, grpc_transport_stream_op *op);
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *metadata);
 static void finish_read_ops(grpc_call *call);
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
-                                          const char *description,
-                                          gpr_uint8 locked);
+                                          const char *description);
+static void finished_loose_op(void *call, int success);
+
+static void lock(grpc_call *call);
+static void unlock(grpc_call *call);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data,
@@ -257,8 +279,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline) {
   size_t i;
-  grpc_transport_op initial_op;
-  grpc_transport_op *initial_op_ptr = NULL;
+  grpc_transport_stream_op initial_op;
+  grpc_transport_stream_op *initial_op_ptr = NULL;
   grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack(channel);
   grpc_call *call =
       gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
@@ -266,6 +288,9 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   gpr_mu_init(&call->mu);
   call->channel = channel;
   call->cq = cq;
+  if (cq) {
+    GRPC_CQ_INTERNAL_REF(cq, "bind");
+  }
   call->is_client = server_transport_data == NULL;
   for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
     call->request_set[i] = REQSET_EMPTY;
@@ -273,8 +298,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   if (call->is_client) {
     call->request_set[GRPC_IOREQ_SEND_TRAILING_METADATA] = REQSET_DONE;
     call->request_set[GRPC_IOREQ_SEND_STATUS] = REQSET_DONE;
-    call->context[GRPC_CONTEXT_TRACING].value = grpc_census_context_create();
-    call->context[GRPC_CONTEXT_TRACING].destroy = grpc_census_context_destroy;
   }
   GPR_ASSERT(add_initial_metadata_count < MAX_SEND_INITIAL_METADATA_COUNT);
   for (i = 0; i < add_initial_metadata_count; i++) {
@@ -282,21 +305,23 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   call->send_initial_metadata_count = add_initial_metadata_count;
   call->send_deadline = send_deadline;
-  grpc_channel_internal_ref(channel);
+  GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   call->metadata_context = grpc_channel_get_metadata_context(channel);
   grpc_sopb_init(&call->send_ops);
   grpc_sopb_init(&call->recv_ops);
   gpr_slice_buffer_init(&call->incoming_message);
-  /* dropped in destroy */
-  gpr_ref_init(&call->internal_refcount, 1);
+  grpc_iomgr_closure_init(&call->on_done_recv, call_on_done_recv, call);
+  grpc_iomgr_closure_init(&call->on_done_send, call_on_done_send, call);
+  grpc_iomgr_closure_init(&call->on_done_bind, finished_loose_op, call);
+  /* dropped in destroy and when READ_STATE_STREAM_CLOSED received */
+  gpr_ref_init(&call->internal_refcount, 2);
   /* server hack: start reads immediately so we can get initial metadata.
      TODO(ctiller): figure out a cleaner solution */
   if (!call->is_client) {
     memset(&initial_op, 0, sizeof(initial_op));
     initial_op.recv_ops = &call->recv_ops;
     initial_op.recv_state = &call->recv_state;
-    initial_op.on_done_recv = call_on_done_recv;
-    initial_op.recv_user_data = call;
+    initial_op.on_done_recv = &call->on_done_recv;
     initial_op.context = call->context;
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
@@ -312,7 +337,12 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
 
 void grpc_call_set_completion_queue(grpc_call *call,
                                     grpc_completion_queue *cq) {
+  lock(call);
   call->cq = cq;
+  if (cq) {
+    GRPC_CQ_INTERNAL_REF(cq, "bind");
+  }
+  unlock(call);
 }
 
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
@@ -333,22 +363,22 @@ static void destroy_call(void *call, int ignored_success) {
   size_t i;
   grpc_call *c = call;
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
-  grpc_channel_internal_unref(c->channel);
+  GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
   gpr_mu_destroy(&c->mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (c->status[i].details) {
-      grpc_mdstr_unref(c->status[i].details);
+      GRPC_MDSTR_UNREF(c->status[i].details);
     }
   }
   for (i = 0; i < c->owned_metadata_count; i++) {
-    grpc_mdelem_unref(c->owned_metadata[i]);
+    GRPC_MDELEM_UNREF(c->owned_metadata[i]);
   }
   gpr_free(c->owned_metadata);
   for (i = 0; i < GPR_ARRAY_SIZE(c->buffered_metadata); i++) {
     gpr_free(c->buffered_metadata[i].metadata);
   }
   for (i = 0; i < c->send_initial_metadata_count; i++) {
-    grpc_mdelem_unref(c->send_initial_metadata[i].md);
+    GRPC_MDELEM_UNREF(c->send_initial_metadata[i].md);
   }
   for (i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (c->context[i].destroy) {
@@ -359,6 +389,9 @@ static void destroy_call(void *call, int ignored_success) {
   grpc_sopb_destroy(&c->recv_ops);
   grpc_bbq_destroy(&c->incoming_queue);
   gpr_slice_buffer_destroy(&c->incoming_message);
+  if (c->cq) {
+    GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
+  }
   gpr_free(c);
 }
 
@@ -383,18 +416,26 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
 
 static void set_status_code(grpc_call *call, status_source source,
                             gpr_uint32 status) {
+  if (call->status[source].is_set) return;
+
   call->status[source].is_set = 1;
   call->status[source].code = status;
+  call->error_status_set = status != GRPC_STATUS_OK;
 
   if (status != GRPC_STATUS_OK && !grpc_bbq_empty(&call->incoming_queue)) {
     grpc_bbq_flush(&call->incoming_queue);
   }
 }
 
+static void set_decode_compression_level(grpc_call *call,
+                                         grpc_compression_level clevel) {
+  call->compression_level = clevel;
+}
+
 static void set_status_details(grpc_call *call, status_source source,
                                grpc_mdstr *status) {
   if (call->status[source].details != NULL) {
-    grpc_mdstr_unref(call->status[source].details);
+    GRPC_MDSTR_UNREF(call->status[source].details);
   }
   call->status[source].details = status;
 }
@@ -411,6 +452,7 @@ static void lock(grpc_call *call) { gpr_mu_lock(&call->mu); }
 
 static int need_more_data(grpc_call *call) {
   if (call->read_state == READ_STATE_STREAM_CLOSED) return 0;
+  /* TODO(ctiller): this needs some serious cleanup */
   return is_op_live(call, GRPC_IOREQ_RECV_INITIAL_METADATA) ||
          (is_op_live(call, GRPC_IOREQ_RECV_MESSAGE) &&
           grpc_bbq_empty(&call->incoming_queue)) ||
@@ -419,23 +461,31 @@ static int need_more_data(grpc_call *call) {
          is_op_live(call, GRPC_IOREQ_RECV_STATUS_DETAILS) ||
          (is_op_live(call, GRPC_IOREQ_RECV_CLOSE) &&
           grpc_bbq_empty(&call->incoming_queue)) ||
-         (call->write_state == WRITE_STATE_INITIAL && !call->is_client);
+         (call->write_state == WRITE_STATE_INITIAL && !call->is_client) ||
+         (call->cancel_with_status != GRPC_STATUS_OK) || call->destroy_called;
 }
 
 static void unlock(grpc_call *call) {
-  grpc_transport_op op;
+  grpc_transport_stream_op op;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int completing_requests = 0;
   int start_op = 0;
   int i;
+  int cancel_alarm = 0;
 
   memset(&op, 0, sizeof(op));
+
+  op.cancel_with_status = call->cancel_with_status;
+  start_op = op.cancel_with_status != GRPC_STATUS_OK;
+  call->cancel_with_status = GRPC_STATUS_OK; /* reset */
+
+  cancel_alarm = call->cancel_alarm;
+  call->cancel_alarm = 0;
 
   if (!call->receiving && need_more_data(call)) {
     op.recv_ops = &call->recv_ops;
     op.recv_state = &call->recv_state;
-    op.on_done_recv = call_on_done_recv;
-    op.recv_user_data = call;
+    op.on_done_recv = &call->on_done_recv;
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
     start_op = 1;
@@ -449,6 +499,12 @@ static void unlock(grpc_call *call) {
     }
   }
 
+  if (!call->bound_pollset && call->cq && (!call->is_client || start_op)) {
+    call->bound_pollset = 1;
+    op.bind_pollset = grpc_cq_pollset(call->cq);
+    start_op = 1;
+  }
+
   if (!call->completing && call->num_completed_requests != 0) {
     completing_requests = call->num_completed_requests;
     memcpy(completed_requests, call->completed_requests,
@@ -459,6 +515,10 @@ static void unlock(grpc_call *call) {
   }
 
   gpr_mu_unlock(&call->mu);
+
+  if (cancel_alarm) {
+    grpc_alarm_cancel(&call->alarm);
+  }
 
   if (start_op) {
     execute_op(call, &op);
@@ -551,10 +611,18 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
             call->write_state = WRITE_STATE_WRITE_CLOSED;
           }
           break;
+        case GRPC_IOREQ_SEND_STATUS:
+          if (call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details !=
+              NULL) {
+            GRPC_MDSTR_UNREF(
+                call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details);
+            call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
+                NULL;
+          }
+          break;
         case GRPC_IOREQ_RECV_CLOSE:
         case GRPC_IOREQ_SEND_INITIAL_METADATA:
         case GRPC_IOREQ_SEND_TRAILING_METADATA:
-        case GRPC_IOREQ_SEND_STATUS:
         case GRPC_IOREQ_SEND_CLOSE:
           break;
         case GRPC_IOREQ_RECV_STATUS:
@@ -637,13 +705,13 @@ static void call_on_done_send(void *pc, int success) {
 }
 
 static void finish_message(grpc_call *call) {
-  /* TODO(ctiller): this could be a lot faster if coded directly */
-  grpc_byte_buffer *byte_buffer = grpc_raw_byte_buffer_create(
-      call->incoming_message.slices, call->incoming_message.count);
+  if (call->error_status_set == 0) {
+    /* TODO(ctiller): this could be a lot faster if coded directly */
+    grpc_byte_buffer *byte_buffer = grpc_raw_byte_buffer_create(
+        call->incoming_message.slices, call->incoming_message.count);
+    grpc_bbq_push(&call->incoming_queue, byte_buffer);
+  }
   gpr_slice_buffer_reset_and_unref(&call->incoming_message);
-
-  grpc_bbq_push(&call->incoming_queue, byte_buffer);
-
   GPR_ASSERT(call->incoming_message.count == 0);
   call->reading_message = 0;
 }
@@ -655,7 +723,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
     gpr_asprintf(
         &message, "Message terminated early; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
     gpr_free(message);
     return 0;
   }
@@ -666,7 +734,7 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
         &message,
         "Maximum message length of %d exceeded by a message of length %d",
         grpc_channel_get_max_message_length(call->channel), msg.length);
-    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
     gpr_free(message);
     return 0;
   } else if (msg.length > 0) {
@@ -688,7 +756,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
     cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT,
-                       "Received payload data while not reading a message", 1);
+                       "Received payload data while not reading a message");
     return 0;
   }
   /* append the slice to the incoming buffer */
@@ -699,7 +767,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
     gpr_asprintf(
         &message, "Receiving message overflow; read %d bytes, expected %d",
         (int)call->incoming_message.length, (int)call->incoming_message_length);
-    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message, 1);
+    cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT, message);
     gpr_free(message);
     return 0;
   } else if (call->incoming_message.length == call->incoming_message_length) {
@@ -744,10 +812,8 @@ static void call_on_done_recv(void *pc, int success) {
     if (call->recv_state == GRPC_STREAM_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
-      if (call->have_alarm) {
-        grpc_alarm_cancel(&call->alarm);
-        call->have_alarm = 0;
-      }
+      call->cancel_alarm |= call->have_alarm;
+      GRPC_CALL_INTERNAL_UNREF(call, "closed", 0);
     }
     finish_read_ops(call);
   } else {
@@ -819,7 +885,7 @@ static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
   }
 }
 
-static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
+static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
   grpc_ioreq_data data;
   gpr_uint32 flags;
   grpc_metadata_batch mdb;
@@ -841,7 +907,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
       }
       grpc_sopb_add_metadata(&call->send_ops, mdb);
       op->send_ops = &call->send_ops;
-      op->bind_pollset = grpc_cq_pollset(call->cq);
       call->last_send_contains |= 1 << GRPC_IOREQ_SEND_INITIAL_METADATA;
       call->send_initial_metadata_count = 0;
     /* fall through intended */
@@ -878,10 +943,11 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
                 &mdb, &call->details_link,
                 grpc_mdelem_from_metadata_strings(
                     call->metadata_context,
-                    grpc_mdstr_ref(
+                    GRPC_MDSTR_REF(
                         grpc_channel_get_message_string(call->channel)),
-                    grpc_mdstr_from_string(call->metadata_context,
-                                           data.send_status.details)));
+                    data.send_status.details));
+            call->request_data[GRPC_IOREQ_SEND_STATUS].send_status.details =
+                NULL;
           }
           grpc_sopb_add_metadata(&call->send_ops, mdb);
         }
@@ -891,8 +957,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
       break;
   }
   if (op->send_ops) {
-    op->on_done_send = call_on_done_send;
-    op->send_user_data = call;
+    op->on_done_send = &call->on_done_send;
   }
   return op->send_ops != NULL;
 }
@@ -926,7 +991,7 @@ static void finish_read_ops(grpc_call *call) {
 
   switch (call->read_state) {
     case READ_STATE_STREAM_CLOSED:
-      if (empty) {
+      if (empty && !call->have_alarm) {
         finish_ioreq_op(call, GRPC_IOREQ_RECV_CLOSE, 1);
       }
     /* fallthrough */
@@ -981,6 +1046,14 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                  GRPC_CALL_ERROR_INVALID_METADATA);
       }
     }
+    if (op == GRPC_IOREQ_SEND_STATUS) {
+      set_status_code(call, STATUS_FROM_SERVER_STATUS,
+                      reqs[i].data.send_status.code);
+      if (reqs[i].data.send_status.details) {
+        set_status_details(call, STATUS_FROM_SERVER_STATUS,
+                           GRPC_MDSTR_REF(reqs[i].data.send_status.details));
+      }
+    }
     have_ops |= 1u << op;
 
     call->request_data[op] = data;
@@ -1014,10 +1087,9 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
 void grpc_call_destroy(grpc_call *c) {
   int cancel;
   lock(c);
-  if (c->have_alarm) {
-    grpc_alarm_cancel(&c->alarm);
-    c->have_alarm = 0;
-  }
+  GPR_ASSERT(!c->destroy_called);
+  c->destroy_called = 1;
+  c->cancel_alarm |= c->have_alarm;
   cancel = c->read_state != READ_STATE_STREAM_CLOSED;
   unlock(c);
   if (cancel) grpc_call_cancel(c);
@@ -1031,38 +1103,64 @@ grpc_call_error grpc_call_cancel(grpc_call *call) {
 grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
                                              grpc_status_code status,
                                              const char *description) {
-  return cancel_with_status(c, status, description, 0);
+  grpc_call_error r;
+  lock(c);
+  r = cancel_with_status(c, status, description);
+  unlock(c);
+  return r;
 }
 
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
-                                          const char *description,
-                                          gpr_uint8 locked) {
-  grpc_transport_op op;
+                                          const char *description) {
   grpc_mdstr *details =
       description ? grpc_mdstr_from_string(c->metadata_context, description)
                   : NULL;
-  memset(&op, 0, sizeof(op));
-  op.cancel_with_status = status;
 
-  if (locked == 0) {
-    lock(c);
-  }
+  GPR_ASSERT(status != GRPC_STATUS_OK);
+
   set_status_code(c, STATUS_FROM_API_OVERRIDE, status);
   set_status_details(c, STATUS_FROM_API_OVERRIDE, details);
-  if (locked == 0) {
-    unlock(c);
-  }
 
-  execute_op(c, &op);
+  c->cancel_with_status = status;
 
   return GRPC_CALL_OK;
 }
 
-static void execute_op(grpc_call *call, grpc_transport_op *op) {
+static void finished_loose_op(void *call, int success_ignored) {
+  GRPC_CALL_INTERNAL_UNREF(call, "loose-op", 0);
+}
+
+typedef struct {
+  grpc_call *call;
+  grpc_iomgr_closure closure;
+} finished_loose_op_allocated_args;
+
+static void finished_loose_op_allocated(void *alloc, int success) {
+  finished_loose_op_allocated_args *args = alloc;
+  finished_loose_op(args->call, success);
+  gpr_free(args);
+}
+
+static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
   grpc_call_element *elem;
+
+  GPR_ASSERT(op->on_consumed == NULL);
+  if (op->cancel_with_status != GRPC_STATUS_OK || op->bind_pollset) {
+    GRPC_CALL_INTERNAL_REF(call, "loose-op");
+    if (op->bind_pollset) {
+      op->on_consumed = &call->on_done_bind;
+    } else {
+      finished_loose_op_allocated_args *args = gpr_malloc(sizeof(*args));
+      args->call = call;
+      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated,
+                              args);
+      op->on_consumed = &args->closure;
+    }
+  }
+
   elem = CALL_ELEM_FROM_CALL(call, 0);
   op->context = call->context;
-  elem->filter->start_transport_op(elem, op);
+  elem->filter->start_transport_stream_op(elem, op);
 }
 
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
@@ -1071,14 +1169,14 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
 
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
+  lock(call);
+  call->have_alarm = 0;
   if (success) {
-    if (call->is_client) {
-      cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
-                         "Deadline Exceeded", 0);
-    } else {
-      grpc_call_cancel(call);
-    }
+    cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                       "Deadline Exceeded");
   }
+  finish_read_ops(call);
+  unlock(call);
   GRPC_CALL_INTERNAL_UNREF(call, "alarm", 1);
 }
 
@@ -1116,6 +1214,33 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   return status;
 }
 
+/* just as for status above, we need to offset: metadata userdata can't hold a
+ * zero (null), which in this case is used to signal no compression */
+#define COMPRESS_OFFSET 1
+static void destroy_compression(void *ignored) {}
+
+static gpr_uint32 decode_compression(grpc_mdelem *md) {
+  grpc_compression_level clevel;
+  void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
+  if (user_data) {
+    clevel = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+  } else {
+    gpr_uint32 parsed_clevel_bytes;
+    if (gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
+                                  GPR_SLICE_LENGTH(md->value->slice),
+                                  &parsed_clevel_bytes)) {
+      /* the following cast is safe, as a gpr_uint32 should be able to hold all
+       * possible values of the grpc_compression_level enum */
+      clevel = (grpc_compression_level)parsed_clevel_bytes;
+    } else {
+      clevel = GRPC_COMPRESS_LEVEL_NONE; /* could not parse, no compression */
+    }
+    grpc_mdelem_set_user_data(md, destroy_compression,
+                              (void *)(gpr_intptr)(clevel + COMPRESS_OFFSET));
+  }
+  return clevel;
+}
+
 static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
   grpc_linked_mdelem *l;
   grpc_metadata_array *dest;
@@ -1130,7 +1255,10 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     if (key == grpc_channel_get_status_string(call->channel)) {
       set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
-      set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
+      set_status_details(call, STATUS_FROM_WIRE, GRPC_MDSTR_REF(md->value));
+    } else if (key ==
+               grpc_channel_get_compresssion_level_string(call->channel)) {
+      set_decode_compression_level(call, decode_compression(md));
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {
@@ -1163,10 +1291,10 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
 
   grpc_mdctx_lock(mdctx);
   for (l = md->list.head; l; l = l->next) {
-    if (l->md) grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+    if (l->md) GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
   }
   for (l = md->garbage.head; l; l = l->next) {
-    grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+    GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
   }
   grpc_mdctx_unlock(mdctx);
 }
@@ -1235,7 +1363,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->flags = op->flags;
         break;
       case GRPC_OP_SEND_MESSAGE:
-        if (!are_write_flags_valid(op->flags)){
+        if (!are_write_flags_valid(op->flags)) {
           return GRPC_CALL_ERROR_INVALID_FLAGS;
         }
         req = &reqs[out++];
@@ -1270,7 +1398,11 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->op = GRPC_IOREQ_SEND_STATUS;
         req->data.send_status.code = op->data.send_status_from_server.status;
         req->data.send_status.details =
-            op->data.send_status_from_server.status_details;
+            op->data.send_status_from_server.status_details != NULL
+                ? grpc_mdstr_from_string(
+                      call->metadata_context,
+                      op->data.send_status_from_server.status_details)
+                : NULL;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_CLOSE;
         break;
