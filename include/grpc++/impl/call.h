@@ -172,17 +172,34 @@ class CallOpRecvMessage {
   grpc_byte_buffer* recv_buf_;
 };
 
+namespace CallOpGenericRecvMessageHelper {
+class DeserializeFunc {
+ public:
+  virtual Status Deserialize(grpc_byte_buffer* buf, int max_message_size) = 0;
+};
+
+template <class R>
+class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
+ public:
+  DeserializeFuncType(R* message) : message_(message) {}
+  Status Deserialize(grpc_byte_buffer* buf,
+                     int max_message_size) GRPC_OVERRIDE {
+    return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
+  }
+
+ private:
+  R* message_;  // Not a managed pointer because management is external to this
+};
+}  // namespace CallOpGenericRecvMessageHelper
+
 class CallOpGenericRecvMessage {
  public:
   CallOpGenericRecvMessage() : got_message(false) {}
 
   template <class R>
   void RecvMessage(R* message) {
-    deserialize_ = [message](grpc_byte_buffer* buf,
-                             int max_message_size) -> Status {
-      return SerializationTraits<R>::Deserialize(buf, message,
-                                                 max_message_size);
-    };
+    deserialize_.reset(
+        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message));
   }
 
   bool got_message;
@@ -201,7 +218,7 @@ class CallOpGenericRecvMessage {
     if (recv_buf_) {
       if (*status) {
         got_message = true;
-        *status = deserialize_(recv_buf_, max_message_size).ok();
+        *status = deserialize_->Deserialize(recv_buf_, max_message_size).ok();
       } else {
         got_message = false;
         grpc_byte_buffer_destroy(recv_buf_);
@@ -210,12 +227,11 @@ class CallOpGenericRecvMessage {
       got_message = false;
       *status = false;
     }
-    deserialize_ = DeserializeFunc();
+    deserialize_.reset();
   }
 
  private:
-  typedef std::function<Status(grpc_byte_buffer*, int)> DeserializeFunc;
-  DeserializeFunc deserialize_;
+  std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
   grpc_byte_buffer* recv_buf_;
 };
 
