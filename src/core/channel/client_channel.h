@@ -52,4 +52,11 @@ extern const grpc_channel_filter grpc_client_channel_filter;
 void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
                                       grpc_resolver *resolver);
 
+grpc_connectivity_state grpc_client_channel_check_connectivity_state(
+    grpc_channel_element *elem, int try_to_connect);
+
+void grpc_client_channel_watch_connectivity_state(
+    grpc_channel_element *elem, grpc_connectivity_state *state,
+    grpc_iomgr_closure *on_complete);
+
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_CHANNEL_H */

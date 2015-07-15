@@ -59,6 +59,9 @@ struct grpc_lb_policy_vtable {
                grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
                grpc_iomgr_closure *on_complete);
 
+  /** try to enter a READY connectivity state */
+  void (*exit_idle)(grpc_lb_policy *policy);
+
   /** broadcast a transport op to all subchannels */
   void (*broadcast)(grpc_lb_policy *policy, grpc_transport_op *op);
 
@@ -105,5 +108,7 @@ void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_iomgr_closure *on_complete);
 
 void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op);
+
+void grpc_lb_policy_exit_idle(grpc_lb_policy *policy);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */

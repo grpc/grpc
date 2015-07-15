@@ -77,6 +77,8 @@ typedef struct {
   grpc_iomgr_closure on_config_changed;
   /** connectivity state being tracked */
   grpc_connectivity_state_tracker state_tracker;
+  /** when an lb_policy arrives, should we try to exit idle */
+  int exit_idle_when_lb_policy_arrives;
 } channel_data;
 
 typedef enum {
@@ -398,6 +400,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   grpc_lb_policy *old_lb_policy;
   grpc_resolver *old_resolver;
   grpc_iomgr_closure *wakeup_closures = NULL;
+  int exit_idle = 0;
 
   if (chand->incoming_configuration != NULL) {
     lb_policy = grpc_client_config_get_lb_policy(chand->incoming_configuration);
@@ -415,7 +418,17 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
     wakeup_closures = chand->waiting_for_config_closures;
     chand->waiting_for_config_closures = NULL;
   }
+  if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives) {
+    GRPC_LB_POLICY_REF(lb_policy, "exit_idle");
+    exit_idle = 1;
+    chand->exit_idle_when_lb_policy_arrives = 0;
+  }
   gpr_mu_unlock(&chand->mu_config);
+
+  if (exit_idle) {
+    grpc_lb_policy_exit_idle(lb_policy);
+    GRPC_LB_POLICY_UNREF(lb_policy, "exit_idle");
+  }
 
   if (old_lb_policy) {
     GRPC_LB_POLICY_UNREF(old_lb_policy, "channel");
@@ -608,4 +621,31 @@ void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
   GRPC_RESOLVER_REF(resolver, "channel");
   grpc_resolver_next(resolver, &chand->incoming_configuration,
                      &chand->on_config_changed);
+}
+
+grpc_connectivity_state grpc_client_channel_check_connectivity_state(
+    grpc_channel_element *elem, int try_to_connect) {
+  channel_data *chand = elem->channel_data;
+  grpc_connectivity_state out;
+  gpr_mu_lock(&chand->mu_config);
+  out = grpc_connectivity_state_check(&chand->state_tracker);
+  if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
+    if (chand->lb_policy != NULL) {
+      grpc_lb_policy_exit_idle(chand->lb_policy);
+    } else {
+      chand->exit_idle_when_lb_policy_arrives = 1;
+    }
+  }
+  gpr_mu_unlock(&chand->mu_config);
+  return out;
+}
+
+void grpc_client_channel_watch_connectivity_state(
+    grpc_channel_element *elem, grpc_connectivity_state *state,
+    grpc_iomgr_closure *on_complete) {
+  channel_data *chand = elem->channel_data;
+  gpr_mu_lock(&chand->mu_config);
+  grpc_connectivity_state_notify_on_state_change(&chand->state_tracker, state,
+                                                 on_complete);
+  gpr_mu_unlock(&chand->mu_config);
 }

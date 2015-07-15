@@ -461,6 +461,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\completion_queue.c">

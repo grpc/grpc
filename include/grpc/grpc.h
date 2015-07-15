@@ -392,6 +392,25 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
    drained and no threads are executing grpc_completion_queue_next */
 void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
+/** Check the connectivity state of a channel. */
+grpc_connectivity_state grpc_channel_check_connectivity_state(
+    grpc_channel *channel, int try_to_connect);
+
+/** Watch for a change in connectivity state.
+    Once the channel connectivity state is different from last_observed_state,
+    tag will be enqueued on cq with success=1.
+    If deadline expires BEFORE the state is changed, tag will be enqueued on cq
+    with success=0.
+    If optional_new_state is non-NULL, it will be set to the newly observed
+   connectivity
+    state of the channel at the same point as tag is enqueued onto the
+   completion
+    queue. */
+void grpc_channel_watch_connectivity_state(
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    grpc_connectivity_state *optional_new_state, gpr_timespec deadline,
+    grpc_completion_queue *cq, void *tag);
+
 /* Create a call given a grpc_channel, in order to call 'method'. All
    completions are sent to 'completion_queue'. 'method' and 'host' need only
    live through the invocation of this function. */

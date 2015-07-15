@@ -77,3 +77,7 @@ void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
 void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op) {
   policy->vtable->broadcast(policy, op);
 }
+
+void grpc_lb_policy_exit_idle(grpc_lb_policy *policy) {
+  policy->vtable->exit_idle(policy);
+}

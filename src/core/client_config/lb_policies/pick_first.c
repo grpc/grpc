@@ -97,6 +97,25 @@ void pf_shutdown(grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
+static void start_picking(pick_first_lb_policy *p) {
+  p->started_picking = 1;
+  p->checking_subchannel = 0;
+  p->checking_connectivity = GRPC_CHANNEL_IDLE;
+  GRPC_LB_POLICY_REF(&p->base, "pick_first_connectivity");
+  grpc_subchannel_notify_on_state_change(p->subchannels[p->checking_subchannel],
+                                         &p->checking_connectivity,
+                                         &p->connectivity_changed);
+}
+
+void pf_exit_idle(grpc_lb_policy *pol) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
+  gpr_mu_lock(&p->mu);
+  if (!p->started_picking) {
+    start_picking(p);
+  }
+  gpr_mu_unlock(&p->mu);
+}
+
 void pf_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
              grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
              grpc_iomgr_closure *on_complete) {
@@ -109,13 +128,7 @@ void pf_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
     on_complete->cb(on_complete->cb_arg, 1);
   } else {
     if (!p->started_picking) {
-      p->started_picking = 1;
-      p->checking_subchannel = 0;
-      p->checking_connectivity = GRPC_CHANNEL_IDLE;
-      GRPC_LB_POLICY_REF(pol, "pick_first_connectivity");
-      grpc_subchannel_notify_on_state_change(
-          p->subchannels[p->checking_subchannel], &p->checking_connectivity,
-          &p->connectivity_changed);
+      start_picking(p);
     }
     grpc_subchannel_add_interested_party(p->subchannels[p->checking_subchannel],
                                          pollset);
@@ -249,8 +262,13 @@ static void pf_notify_on_state_change(grpc_lb_policy *pol,
 }
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
-    pf_destroy,   pf_shutdown,           pf_pick,
-    pf_broadcast, pf_check_connectivity, pf_notify_on_state_change};
+    pf_destroy,
+    pf_shutdown,
+    pf_pick,
+    pf_exit_idle,
+    pf_broadcast,
+    pf_check_connectivity,
+    pf_notify_on_state_change};
 
 grpc_lb_policy *grpc_create_pick_first_lb_policy(grpc_subchannel **subchannels,
                                                  size_t num_subchannels) {
