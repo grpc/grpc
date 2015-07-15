@@ -165,7 +165,7 @@ void InteropClient::DoOauth2AuthToken(const grpc::string& username,
 void InteropClient::DoPerRpcCreds(const grpc::string& username,
                                   const grpc::string& oauth_scope) {
   gpr_log(GPR_INFO,
-          "Sending a large unary rpc with per-rpc raw oauth2 access token ...");
+          "Sending a unary rpc with per-rpc raw oauth2 access token ...");
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -176,23 +176,16 @@ void InteropClient::DoPerRpcCreds(const grpc::string& username,
   grpc::string access_token = GetOauth2AccessToken();
   std::shared_ptr<Credentials> creds = AccessTokenCredentials(access_token);
   context.set_credentials(creds);
-  request.set_response_type(PayloadType::COMPRESSABLE);
-  request.set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   Status s = stub->UnaryCall(&context, request, &response);
 
   AssertOkOrPrintErrorStatus(s);
-  GPR_ASSERT(response.payload().type() == PayloadType::COMPRESSABLE);
-  GPR_ASSERT(response.payload().body() ==
-             grpc::string(kLargeResponseSize, '\0'));
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
   const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
-  gpr_log(GPR_INFO, "Large unary with per-rpc oauth2 access token done.");
+  gpr_log(GPR_INFO, "Unary with per-rpc oauth2 access token done.");
 }
 
 void InteropClient::DoJwtTokenCreds(const grpc::string& username) {
