@@ -257,7 +257,7 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor *method) {
 }
 
 void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// client-side stub interface\n");
+  out->Print("// client interface\n");
   out->Print("public interface $name$\n", "name",
              GetClientInterfaceName(service));
   out->Print("{\n");
@@ -312,7 +312,7 @@ void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
 void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("// client stub\n");
   out->Print(
-      "public class $name$ : AbstractStub<$name$, StubConfiguration>, $interface$\n",
+      "public class $name$ : ClientBase, $interface$\n",
       "name", GetClientClassName(service), "interface",
       GetClientInterfaceName(service));
   out->Print("{\n");
@@ -320,12 +320,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
 
   // constructors
   out->Print(
-      "public $name$(Channel channel) : this(channel, StubConfiguration.Default)\n",
-      "name", GetClientClassName(service));
-  out->Print("{\n");
-  out->Print("}\n");
-  out->Print(
-      "public $name$(Channel channel, StubConfiguration config) : base(channel, config)\n",
+      "public $name$(Channel channel) : base(channel)\n",
       "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
@@ -423,9 +418,9 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service) {
 }
 
 void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// creates a new client stub\n");
-  out->Print("public static $interface$ NewStub(Channel channel)\n",
-             "interface", GetClientInterfaceName(service));
+  out->Print("// creates a new client\n");
+  out->Print("public static $classname$ NewClient(Channel channel)\n",
+             "classname", GetClientClassName(service));
   out->Print("{\n");
   out->Indent();
   out->Print("return new $classname$(channel);\n", "classname",
@@ -433,17 +428,6 @@ void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
   out->Outdent();
   out->Print("}\n");
   out->Print("\n");
-
-  out->Print("// creates a new client stub\n");
-  out->Print(
-      "public static $interface$ NewStub(Channel channel, StubConfiguration config)\n",
-      "interface", GetClientInterfaceName(service));
-  out->Print("{\n");
-  out->Indent();
-  out->Print("return new $classname$(channel, config);\n", "classname",
-             GetClientClassName(service));
-  out->Outdent();
-  out->Print("}\n");
 }
 
 void GenerateService(Printer* out, const ServiceDescriptor *service) {

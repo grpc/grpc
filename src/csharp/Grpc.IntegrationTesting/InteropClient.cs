@@ -119,7 +119,7 @@ namespace Grpc.IntegrationTesting
 
             using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions))
             {
-                var stubConfig = StubConfiguration.Default;
+                TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
                 if (options.testCase == "service_account_creds" || options.testCase == "compute_engine_creds")
                 {
                     var credential = GoogleCredential.GetApplicationDefault();
@@ -127,10 +127,9 @@ namespace Grpc.IntegrationTesting
                     {
                         credential = credential.CreateScoped(new[] { AuthScope });
                     }
-                    stubConfig = new StubConfiguration(OAuth2InterceptorFactory.Create(credential));
+                    client.HeaderInterceptor = OAuth2InterceptorFactory.Create(credential);
                 }
 
-                TestService.ITestServiceClient client = new TestService.TestServiceClient(channel, stubConfig);
                 RunTestCase(options.testCase, client);
             }
             GrpcEnvironment.Shutdown();

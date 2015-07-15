@@ -80,9 +80,14 @@ namespace Grpc.Core
             where TRequest : class
             where TResponse : class
         {
-            var metadata = new Metadata();
-            HeaderInterceptor(metadata);
-            metadata.Freeze();
+            var metadata = Metadata.Empty;
+            var interceptor = HeaderInterceptor;
+            if (interceptor != null)
+            {
+                metadata = new Metadata();
+                interceptor(metadata);
+                metadata.Freeze();
+            }
             return new Call<TRequest, TResponse>(serviceName, method, channel, metadata);
         }
     }

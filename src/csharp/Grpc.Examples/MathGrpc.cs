@@ -41,7 +41,7 @@ namespace math {
         __Marshaller_Num,
         __Marshaller_Num);
 
-    // client-side stub interface
+    // client interface
     public interface IMathClient
     {
       global::math.DivReply Div(global::math.DivArgs request, CancellationToken token = default(CancellationToken));
@@ -61,12 +61,9 @@ namespace math {
     }
 
     // client stub
-    public class MathClient : ClientBase<MathClient, StubConfiguration>, IMathClient
+    public class MathClient : ClientBase, IMathClient
     {
-      public MathClient(Channel channel) : this(channel, StubConfiguration.Default)
-      {
-      }
-      public MathClient(Channel channel, StubConfiguration config) : base(channel, config)
+      public MathClient(Channel channel) : base(channel)
       {
       }
       public global::math.DivReply Div(global::math.DivArgs request, CancellationToken token = default(CancellationToken))
@@ -106,17 +103,12 @@ namespace math {
           .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
     }
 
-    // creates a new client stub
-    public static IMathClient NewStub(Channel channel)
+    // creates a new client
+    public static MathClient NewClient(Channel channel)
     {
       return new MathClient(channel);
     }
 
-    // creates a new client stub
-    public static IMathClient NewStub(Channel channel, StubConfiguration config)
-    {
-      return new MathClient(channel, config);
-    }
   }
 }
 #endregion

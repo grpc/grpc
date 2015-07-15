@@ -56,7 +56,7 @@ namespace grpc.testing {
         __Marshaller_StreamingOutputCallRequest,
         __Marshaller_StreamingOutputCallResponse);
 
-    // client-side stub interface
+    // client interface
     public interface ITestServiceClient
     {
       global::grpc.testing.Empty EmptyCall(global::grpc.testing.Empty request, CancellationToken token = default(CancellationToken));
@@ -81,12 +81,9 @@ namespace grpc.testing {
     }
 
     // client stub
-    public class TestServiceClient : ClientBase<TestServiceClient, StubConfiguration>, ITestServiceClient
+    public class TestServiceClient : ClientBase, ITestServiceClient
     {
-      public TestServiceClient(Channel channel) : this(channel, StubConfiguration.Default)
-      {
-      }
-      public TestServiceClient(Channel channel, StubConfiguration config) : base(channel, config)
+      public TestServiceClient(Channel channel) : base(channel)
       {
       }
       public global::grpc.testing.Empty EmptyCall(global::grpc.testing.Empty request, CancellationToken token = default(CancellationToken))
@@ -143,17 +140,12 @@ namespace grpc.testing {
           .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
     }
 
-    // creates a new client stub
-    public static ITestServiceClient NewStub(Channel channel)
+    // creates a new client
+    public static TestServiceClient NewClient(Channel channel)
     {
       return new TestServiceClient(channel);
     }
 
-    // creates a new client stub
-    public static ITestServiceClient NewStub(Channel channel, StubConfiguration config)
-    {
-      return new TestServiceClient(channel, config);
-    }
   }
 }
 #endregion
