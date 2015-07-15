@@ -55,7 +55,7 @@ var EventEmitter = require('events').EventEmitter;
  */
 function handleError(call, error) {
   var status = {
-    code: grpc.status.INTERNAL,
+    code: grpc.status.UNKNOWN,
     details: 'Unknown Error',
     metadata: {}
   };
@@ -142,12 +142,12 @@ function setUpWritable(stream, serialize) {
   stream.on('finish', sendStatus);
   /**
    * Set the pending status to a given error status. If the error does not have
-   * code or details properties, the code will be set to grpc.status.INTERNAL
+   * code or details properties, the code will be set to grpc.status.UNKNOWN
    * and the details will be set to 'Unknown Error'.
    * @param {Error} err The error object
    */
   function setStatus(err) {
-    var code = grpc.status.INTERNAL;
+    var code = grpc.status.UNKNOWN;
     var details = 'Unknown Error';
     var metadata = {};
     if (err.hasOwnProperty('message')) {

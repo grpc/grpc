@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,8 +27,40 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
-cd $(dirname $0)
-source ./determine_extension_dir.sh
-php $extension_dir \
-  ../tests/interop/interop_client.php $@ 1>&2
+"""State and behavior appropriate for use in tests."""
+
+import threading
+
+from grpc.framework.interfaces.links import links
+
+
+class RecordingLink(links.Link):
+  """A Link that records every ticket passed to it."""
+
+  def __init__(self):
+    self._condition = threading.Condition()
+    self._tickets = []
+
+  def accept_ticket(self, ticket):
+    with self._condition:
+      self._tickets.append(ticket)
+      self._condition.notify_all()
+
+  def join_link(self, link):
+    pass
+
+  def block_until_tickets_satisfy(self, predicate):
+    """Blocks until the received tickets satisfy the given predicate.
+
+    Args:
+      predicate: A callable that takes a sequence of tickets and returns a
+        boolean value.
+    """
+    with self._condition:
+      while not predicate(self._tickets):
+        self._condition.wait()
+
+  def tickets(self):
+    """Returns a copy of the list of all tickets received by this Link."""
+    with self._condition:
+      return tuple(self._tickets)

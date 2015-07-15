@@ -42,8 +42,10 @@ namespace Grpc.Core
     /// </summary>
     public class Channel : IDisposable
     {
+        readonly GrpcEnvironment environment;
         readonly ChannelSafeHandle handle;
         readonly string target;
+        bool disposed;
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
@@ -54,6 +56,7 @@ namespace Grpc.Core
         /// <param name="options">Channel options.</param>
         public Channel(string host, Credentials credentials = null, IEnumerable<ChannelOption> options = null)
         {
+            this.environment = GrpcEnvironment.GetInstance();
             using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(options))
             {
                 if (credentials != null)
@@ -105,10 +108,35 @@ namespace Grpc.Core
             }
         }
 
+        internal CompletionQueueSafeHandle CompletionQueue
+        {
+            get
+            {
+                return this.environment.CompletionQueue;
+            }
+        }
+
+        internal CompletionRegistry CompletionRegistry
+        {
+            get
+            {
+                return this.environment.CompletionRegistry;
+            }
+        }
+
+        internal GrpcEnvironment Environment
+        {
+            get
+            {
+                return this.environment;
+            }
+        }
+
         protected virtual void Dispose(bool disposing)
         {
-            if (handle != null && !handle.IsInvalid)
+            if (disposing && handle != null && !disposed)
             {
+                disposed = true;
                 handle.Dispose();
             }
         }

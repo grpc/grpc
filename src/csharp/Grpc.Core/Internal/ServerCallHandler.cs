@@ -42,7 +42,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IServerCallHandler
     {
-        Task HandleCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq);
+        Task HandleCall(string methodName, CallSafeHandle call, GrpcEnvironment environment);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -58,11 +58,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(string methodName, CallSafeHandle call, GrpcEnvironment environment)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer);
+                method.RequestMarshaller.Deserializer,
+                environment);
 
             asyncCall.Initialize(call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -110,11 +111,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(string methodName, CallSafeHandle call, GrpcEnvironment environment)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer);
+                method.RequestMarshaller.Deserializer,
+                environment);
 
             asyncCall.Initialize(call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -163,11 +165,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(string methodName, CallSafeHandle call, GrpcEnvironment environment)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer);
+                method.RequestMarshaller.Deserializer,
+                environment);
 
             asyncCall.Initialize(call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -219,11 +222,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(string methodName, CallSafeHandle call, GrpcEnvironment environment)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer);
+                method.RequestMarshaller.Deserializer,
+                environment);
 
             asyncCall.Initialize(call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -255,11 +259,11 @@ namespace Grpc.Core.Internal
 
     internal class NoSuchMethodCallHandler : IServerCallHandler
     {
-        public async Task HandleCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(string methodName, CallSafeHandle call, GrpcEnvironment environment)
         {
             // We don't care about the payload type here.
             var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload);
+                (payload) => payload, (payload) => payload, environment);
             
             asyncCall.Initialize(call);
             var finishedTask = asyncCall.ServerSideCallAsync();
