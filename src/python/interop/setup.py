@@ -45,7 +45,7 @@ _PACKAGE_DATA = {
         'credentials/server1.pem',]
 }
 
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.4.0a4']
+_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
 
 setuptools.setup(
     name='interop',

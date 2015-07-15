@@ -70,6 +70,9 @@
     <ClCompile Include="..\..\src\core\support\slice_buffer.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\stack_lockfree.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\string.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -207,6 +210,9 @@
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\support\murmur_hash.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\support\stack_lockfree.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\support\string.h">

@@ -81,6 +81,7 @@ _CLEAR_LINE = '\x1b[2K'
 
 _TAG_COLOR = {
     'FAILED': 'red',
+    'WARNING': 'yellow',
     'TIMEOUT': 'red',
     'PASSED': 'green',
     'START': 'gray',
@@ -205,13 +206,14 @@ class Job(object):
                 do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > 300:
+    elif self._state == _RUNNING and time.time() - self._start > 600:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
+      filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
       message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
       self.kill()
       if self._xml_test is not None:
-        ET.SubElement(self._xml_test, 'system-out').text = stdout
+        ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
         ET.SubElement(self._xml_test, 'error', message='Timeout')
     return self._state
 

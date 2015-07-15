@@ -12,7 +12,7 @@ download nuget.exe from the web and manually restore the NuGet packages.
 ```
 > REM Run from this directory.
 > REM No need to do this if you have NuGet visual studio extension.
-> nuget restore
+> nuget restore grpc.sln
 ```
 
 After that, you can build the solution using one of these options:

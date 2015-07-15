@@ -76,7 +76,7 @@ void gpr_default_log(gpr_log_func_args *args) {
   char *prefix;
   const char *display_file;
   char time_buffer[64];
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
 
   final_slash = strrchr(args->file, '/');

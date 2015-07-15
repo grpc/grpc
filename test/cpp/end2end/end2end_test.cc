@@ -83,12 +83,24 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
+template <typename T>
+void CheckAuthContext(T* context) {
+  std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
+  std::vector<grpc::string> fake =
+      auth_ctx->FindPropertyValues("transport_security_type");
+  EXPECT_EQ(1u, fake.size());
+  EXPECT_EQ("fake", fake[0]);
+  EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
+  EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
+}
+
 }  // namespace
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  TestServiceImpl() : signal_client_(false), host_(nullptr) {}
-  explicit TestServiceImpl(const grpc::string& host) : signal_client_(false), host_(new grpc::string(host)) {}
+  TestServiceImpl() : signal_client_(false), host_() {}
+  explicit TestServiceImpl(const grpc::string& host)
+      : signal_client_(false), host_(new grpc::string(host)) {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
@@ -104,15 +116,15 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       }
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
-            gpr_now(),
+            gpr_now(GPR_CLOCK_REALTIME),
             gpr_time_from_micros(request->param().client_cancel_after_us())));
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
-            gpr_now(),
-            gpr_time_from_micros(request->param().server_cancel_after_us())));
+          gpr_now(GPR_CLOCK_REALTIME),
+          gpr_time_from_micros(request->param().server_cancel_after_us())));
       return Status::CANCELLED;
     } else {
       EXPECT_FALSE(context->IsCancelled());
@@ -126,6 +138,9 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
            iter != client_metadata.end(); ++iter) {
         context->AddTrailingMetadata((*iter).first, (*iter).second);
       }
+    }
+    if (request->has_param() && request->param().check_auth_context()) {
+      CheckAuthContext(context);
     }
     return Status::OK;
   }
@@ -210,7 +225,8 @@ class TestServiceImplDupPkg
 
 class End2endTest : public ::testing::Test {
  protected:
-  End2endTest() : kMaxMessageSize_(8192), special_service_("special"), thread_pool_(2) {}
+  End2endTest()
+      : kMaxMessageSize_(8192), special_service_("special"), thread_pool_(2) {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -514,7 +530,8 @@ TEST_F(End2endTest, BadCredentials) {
 }
 
 void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
-  gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_micros(delay_us)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_micros(delay_us)));
   while (!service->signal_client()) {
   }
   context->TryCancel();
@@ -748,6 +765,21 @@ TEST_F(End2endTest, RequestStreamServerEarlyCancelTest) {
   stream->WritesDone();
   Status s = stream->Finish();
   EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
+}
+
+TEST_F(End2endTest, ClientAuthContext) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_check_auth_context(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+
+  CheckAuthContext(&context);
 }
 
 }  // namespace testing
