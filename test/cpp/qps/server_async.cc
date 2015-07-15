@@ -45,13 +45,13 @@
 #include <grpc/support/host_port.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/config.h>
+#include <grpc++/fixed_size_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include <grpc++/thread_pool.h>
 #include <gtest/gtest.h>
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"

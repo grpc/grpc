@@ -772,6 +772,7 @@ include/grpc++/config.h \
 include/grpc++/config_protobuf.h \
 include/grpc++/create_channel.h \
 include/grpc++/credentials.h \
+include/grpc++/fixed_size_thread_pool.h \
 include/grpc++/generic_stub.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
@@ -796,7 +797,6 @@ include/grpc++/slice.h \
 include/grpc++/status.h \
 include/grpc++/status_code_enum.h \
 include/grpc++/stream.h \
-include/grpc++/thread_pool.h \
 include/grpc++/thread_pool_interface.h \
 include/grpc++/time.h \
 src/cpp/client/secure_credentials.h \
@@ -823,12 +823,12 @@ src/cpp/common/rpc_method.cc \
 src/cpp/proto/proto_utils.cc \
 src/cpp/server/async_generic_service.cc \
 src/cpp/server/create_default_thread_pool.cc \
+src/cpp/server/fixed_size_thread_pool.cc \
 src/cpp/server/insecure_server_credentials.cc \
 src/cpp/server/server.cc \
 src/cpp/server/server_builder.cc \
 src/cpp/server/server_context.cc \
 src/cpp/server/server_credentials.cc \
-src/cpp/server/thread_pool.cc \
 src/cpp/util/byte_buffer.cc \
 src/cpp/util/slice.cc \
 src/cpp/util/status.cc \

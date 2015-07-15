@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/cpu.h>
-#include <grpc++/thread_pool.h>
+#include <grpc++/fixed_size_thread_pool.h>
 
 #ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
 

@@ -46,6 +46,9 @@
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
@@ -59,9 +62,6 @@
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server_credentials.cc">
-      <Filter>src\cpp\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\server\thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\byte_buffer.cc">
@@ -112,6 +112,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\credentials.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\generic_stub.h">
@@ -184,9 +187,6 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\stream.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\thread_pool.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h">

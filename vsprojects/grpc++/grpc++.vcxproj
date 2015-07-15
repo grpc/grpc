@@ -158,6 +158,7 @@
     <ClInclude Include="..\..\include\grpc++\config_protobuf.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\credentials.h" />
+    <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h" />
     <ClInclude Include="..\..\include\grpc++\generic_stub.h" />
     <ClInclude Include="..\..\include\grpc++\impl\call.h" />
     <ClInclude Include="..\..\include\grpc++\impl\client_unary_call.h" />
@@ -182,7 +183,6 @@
     <ClInclude Include="..\..\include\grpc++\status.h" />
     <ClInclude Include="..\..\include\grpc++\status_code_enum.h" />
     <ClInclude Include="..\..\include\grpc++\stream.h" />
-    <ClInclude Include="..\..\include\grpc++\thread_pool.h" />
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h" />
     <ClInclude Include="..\..\include\grpc++\time.h" />
   </ItemGroup>
@@ -232,6 +232,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server.cc">
@@ -241,8 +243,6 @@
     <ClCompile Include="..\..\src\cpp\server\server_context.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server_credentials.cc">
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\server\thread_pool.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\byte_buffer.cc">
     </ClCompile>
