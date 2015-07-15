@@ -108,9 +108,10 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   size_t i;
   gpr_mu_lock(&s->mu);
   /* First, shutdown all fd's. This will queue abortion calls for all
-     of the pending accepts. */
+     of the pending accepts due to the normal operation mechanism. */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
+    sp->shutting_down = 1;
     grpc_winsocket_shutdown(sp->socket);
   }
   /* This happens asynchronously. Wait while that happens. */
@@ -242,63 +243,52 @@ static void on_accept(void *arg, int from_iocp) {
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
+  DWORD transfered_bytes;
+  DWORD flags;
+  BOOL wsa_success;
 
-  /* The shutdown sequence is done in two parts. This is the second
-     part here, acknowledging the IOCP notification, and doing nothing
-     else, especially not queuing a new accept. */
-  if (sp->shutting_down) {
-    GPR_ASSERT(from_iocp);
-    sp->shutting_down = 0;
-    sp->socket->read_info.outstanding = 0;
-    gpr_mu_lock(&sp->server->mu);
-    if (0 == --sp->server->active_ports) {
-      gpr_cv_broadcast(&sp->server->cv);
-    }
-    gpr_mu_unlock(&sp->server->mu);
-    return;
-  }
+  /* The general mechanism for shutting down is to queue abortion calls. While
+     this is necessary in the read/write case, it's useless for the accept
+     case. Let's do nothing. */
+  if (!from_iocp) return;
 
-  if (from_iocp) {
-    /* The IOCP notified us of a completed operation. Let's grab the results,
-       and act accordingly. */
-    DWORD transfered_bytes = 0;
-    DWORD flags;
-    BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                              &transfered_bytes, FALSE, &flags);
-    if (!wsa_success) {
+  /* The IOCP notified us of a completed operation. Let's grab the results,
+      and act accordingly. */
+  transfered_bytes = 0;
+  wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
+                                            &transfered_bytes, FALSE, &flags);
+  if (!wsa_success) {
+    if (sp->shutting_down) {
+      /* During the shutdown case, we ARE expecting an error. So that's swell,
+         and we can wake up the shutdown thread. */
+      sp->shutting_down = 0;
+      sp->socket->read_info.outstanding = 0;
+      gpr_mu_lock(&sp->server->mu);
+      if (0 == --sp->server->active_ports) {
+        gpr_cv_broadcast(&sp->server->cv);
+      }
+      gpr_mu_unlock(&sp->server->mu);
+      return;
+    } else {
       char *utf8_message = gpr_format_message(WSAGetLastError());
       gpr_log(GPR_ERROR, "on_accept error: %s", utf8_message);
       gpr_free(utf8_message);
       closesocket(sock);
-    } else {
-	  /* TODO(ctiller): add sockaddr address to label */
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, "server"));
     }
   } else {
-    /* If we're not notified from the IOCP, it means we are asked to shutdown.
-       This will initiate that shutdown. Calling closesocket will trigger an
-       IOCP notification, that will call this function a second time, from
-       the IOCP thread. Of course, this only works if the socket was, in fact,
-       listening. If that's not the case, we'd wait indefinitely. That's a bit
-       of a degenerate case, but it can happen if you create a server, but
-       don't start it. So let's support that by recursing once. */
-    sp->shutting_down = 1;
-    sp->new_socket = INVALID_SOCKET;
-    if (sock != INVALID_SOCKET) {
-      closesocket(sock);
-    } else {
-      on_accept(sp, 1);
+    if (!sp->shutting_down) {
+      /* TODO(ctiller): add sockaddr address to label */
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, "server"));
     }
-    return;
   }
 
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
   if (ep) sp->server->cb(sp->server->cb_arg, ep);
   /* As we were notified from the IOCP of one and exactly one accept,
-      the former socked we created has now either been destroy or assigned
-      to the new connection. We need to create a new one for the next
-      connection. */
+     the former socked we created has now either been destroy or assigned
+     to the new connection. We need to create a new one for the next
+     connection. */
   start_accept(sp);
 }
 

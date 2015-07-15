@@ -27,12 +27,12 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 set -e
 default_extension_dir=$(php-config --extension-dir)
-if command -v brew >/dev/null && [ -d $(brew --prefix)/opt/grpc-php ]; then
-  # homebrew and the grpc-php formula are installed
-  extension_dir="-d extension_dir="$(brew --prefix)/opt/grpc-php
+if command -v brew > /dev/null && \
+   brew ls --versions | grep php5[56]-grpc > /dev/null; then
+  # the grpc php extension was installed by homebrew
+  :
 elif [ ! -e $default_extension_dir/grpc.so ]; then
   # the grpc extension is not found in the default PHP extension dir
   # try the source modules directory
@@ -45,5 +45,5 @@ elif [ ! -e $default_extension_dir/grpc.so ]; then
   for f in $default_extension_dir/*.so; do
     ln -s $f $module_dir/$(basename $f) &> /dev/null || true
   done
-  extension_dir="-d extension_dir="$module_dir
+  extension_dir="-d extension_dir=${module_dir} -d extension=grpc.so"
 fi

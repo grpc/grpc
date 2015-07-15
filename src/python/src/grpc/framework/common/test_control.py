@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,8 +27,61 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
-cd $(dirname $0)
-source ./determine_extension_dir.sh
-php $extension_dir \
-  ../tests/interop/interop_client.php $@ 1>&2
+"""Code for instructing systems under test to block or fail."""
+
+import abc
+import contextlib
+import threading
+
+
+class Control(object):
+  """An object that accepts program control from a system under test.
+
+  Systems under test passed a Control should call its control() method
+  frequently during execution. The control() method may block, raise an
+  exception, or do nothing, all according to the enclosing test's desire for
+  the system under test to simulate hanging, failing, or functioning.
+  """
+
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def control(self):
+    """Potentially does anything."""
+    raise NotImplementedError()
+
+
+class PauseFailControl(Control):
+  """A Control that can be used to pause or fail code under control."""
+
+  def __init__(self):
+    self._condition = threading.Condition()
+    self._paused = False
+    self._fail = False
+
+  def control(self):
+    with self._condition:
+      if self._fail:
+        raise ValueError()
+
+      while self._paused:
+        self._condition.wait()
+
+  @contextlib.contextmanager
+  def pause(self):
+    """Pauses code under control while controlling code is in context."""
+    with self._condition:
+      self._paused = True
+    yield
+    with self._condition:
+      self._paused = False
+      self._condition.notify_all()
+
+  @contextlib.contextmanager
+  def fail(self):
+    """Fails code under control while controlling code is in context."""
+    with self._condition:
+      self._fail = True
+    yield
+    with self._condition:
+      self._fail = False
