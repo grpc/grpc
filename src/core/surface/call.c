@@ -717,6 +717,7 @@ static void finish_message(grpc_call *call) {
     /* some aliases for readability */
     gpr_slice *slices = call->incoming_message.slices;
     const size_t nslices = call->incoming_message.count;
+
     if ((call->incoming_message_flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
         (call->compression_algorithm > GRPC_COMPRESS_NONE)) {
       byte_buffer = grpc_raw_compressed_byte_buffer_create(
