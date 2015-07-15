@@ -934,6 +934,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   shutdown_tag *sdt;
   channel_broadcaster broadcaster;
 
+  GRPC_SERVER_LOG_SHUTDOWN(GPR_INFO, server, cq, tag);
+
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
   grpc_cq_begin_op(cq);
