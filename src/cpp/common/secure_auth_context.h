@@ -53,6 +53,10 @@ class SecureAuthContext GRPC_FINAL : public AuthContext {
   std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
       GRPC_OVERRIDE;
 
+  const_iterator begin() const GRPC_OVERRIDE;
+
+  const_iterator end() const GRPC_OVERRIDE;
+
  private:
   grpc_auth_context* ctx_;
 };

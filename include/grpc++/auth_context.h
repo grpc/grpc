@@ -34,15 +34,43 @@
 #ifndef GRPCXX_AUTH_CONTEXT_H
 #define GRPCXX_AUTH_CONTEXT_H
 
+#include <iterator>
 #include <vector>
 
 #include <grpc++/config.h>
 
+struct grpc_auth_context;
+struct grpc_auth_property;
+struct grpc_auth_property_iterator;
+
 namespace grpc {
+class SecureAuthContext;
 
 class AuthContext {
  public:
   typedef std::pair<grpc::string, grpc::string> Property;
+  class PropertyIterator
+      : public std::iterator<std::input_iterator_tag, const Property> {
+   public:
+    ~PropertyIterator();
+    PropertyIterator& operator++();
+    PropertyIterator operator++(int);
+    bool operator==(const PropertyIterator& rhs) const;
+    bool operator!=(const PropertyIterator& rhs) const;
+    const Property operator*();
+
+   private:
+    friend SecureAuthContext;
+    PropertyIterator();
+    PropertyIterator(const grpc_auth_property* property,
+                     const grpc_auth_property_iterator* iter);
+    const grpc_auth_property* property_;
+    // The following items form a grpc_auth_property_iterator.
+    const grpc_auth_context* ctx_;
+    size_t index_;
+    const char* name_;
+  };
+  typedef PropertyIterator const_iterator;
 
   virtual ~AuthContext() {}
 
@@ -54,6 +82,10 @@ class AuthContext {
   // Returns all the property values with the given name.
   virtual std::vector<grpc::string> FindPropertyValues(
       const grpc::string& name) const = 0;
+
+  // Iteration over all the properties.
+  virtual const_iterator begin() const = 0;
+  virtual const_iterator end() const = 0;
 };
 
 }  // namespace grpc
