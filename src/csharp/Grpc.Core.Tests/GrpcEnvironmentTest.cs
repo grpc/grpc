@@ -43,16 +43,17 @@ namespace Grpc.Core.Tests
         [Test]
         public void InitializeAndShutdownGrpcEnvironment()
         {
-            GrpcEnvironment.Initialize();
-            Assert.IsNotNull(GrpcEnvironment.ThreadPool.CompletionQueue);
+            var env = GrpcEnvironment.GetInstance();
+            Assert.IsNotNull(env.CompletionQueue);
             GrpcEnvironment.Shutdown();
         }
 
         [Test]
         public void SubsequentInvocations()
         {
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Initialize();
+            var env1 = GrpcEnvironment.GetInstance();
+            var env2 = GrpcEnvironment.GetInstance();
+            Assert.IsTrue(object.ReferenceEquals(env1, env2));
             GrpcEnvironment.Shutdown();
             GrpcEnvironment.Shutdown();
         }
@@ -60,15 +61,13 @@ namespace Grpc.Core.Tests
         [Test]
         public void InitializeAfterShutdown()
         {
-            GrpcEnvironment.Initialize();
-            var tp1 = GrpcEnvironment.ThreadPool;
+            var env1 = GrpcEnvironment.GetInstance();
             GrpcEnvironment.Shutdown();
 
-            GrpcEnvironment.Initialize();
-            var tp2 = GrpcEnvironment.ThreadPool;
+            var env2 = GrpcEnvironment.GetInstance();
             GrpcEnvironment.Shutdown();
 
-            Assert.IsFalse(object.ReferenceEquals(tp1, tp2));
+            Assert.IsFalse(object.ReferenceEquals(env1, env2));
         }
     }
 }

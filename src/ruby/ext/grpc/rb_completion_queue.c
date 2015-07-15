@@ -91,7 +91,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
    * - investigate further, this is probably another example of C-level cleanup
    * not working consistently in all cases.
    */
-  next_call.timeout = gpr_time_add(gpr_now(), gpr_time_from_micros(5e3));
+  next_call.timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(5e3));
   do {
     rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                                (void *)&next_call, NULL, NULL);

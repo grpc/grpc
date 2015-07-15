@@ -46,8 +46,8 @@ extern "C" {
 #endif
 
 typedef struct gpr_timespec {
-    time_t tv_sec;
-    int tv_nsec;
+  time_t tv_sec;
+  int tv_nsec;
 } gpr_timespec;
 
 /* Time constants. */
@@ -62,8 +62,20 @@ extern const gpr_timespec gpr_inf_past;   /* The far past. */
 #define GPR_NS_PER_US 1000
 #define GPR_US_PER_MS 1000
 
-/* Return the current time measured from the system's default epoch. */
-gpr_timespec gpr_now(void);
+/* The clocks we support. */
+typedef enum {
+  /* Monotonic clock. Epoch undefined. Always moves forwards. */
+  GPR_CLOCK_MONOTONIC = 0,
+  /* Realtime clock. May jump forwards or backwards. Settable by
+     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
+  GPR_CLOCK_REALTIME
+} gpr_clock_type;
+
+/* initialize time subsystem */
+void gpr_time_init(void);
+
+/* Return the current time measured from the given clocks epoch. */
+gpr_timespec gpr_now(gpr_clock_type clock);
 
 /* Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
    respectively.  */
@@ -100,4 +112,4 @@ double gpr_timespec_to_micros(gpr_timespec t);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_TIME_H */
+#endif /* GRPC_SUPPORT_TIME_H */

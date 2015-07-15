@@ -129,9 +129,9 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* translate host to :authority since :authority may be
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-        channeld->mdctx, grpc_mdstr_ref(channeld->authority_key),
-        grpc_mdstr_ref(md->value));
-    grpc_mdelem_unref(md);
+        channeld->mdctx, GRPC_MDSTR_REF(channeld->authority_key),
+        GRPC_MDSTR_REF(md->value));
+    GRPC_MDELEM_UNREF(md);
     return authority;
   } else {
     return md;
@@ -193,7 +193,7 @@ static void hs_mutate_op(grpc_call_element *elem,
       if (op->type != GRPC_OP_METADATA) continue;
       calld->sent_status = 1;
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
-                                   grpc_mdelem_ref(channeld->status_ok));
+                                   GRPC_MDELEM_REF(channeld->status_ok));
       break;
     }
   }
@@ -264,17 +264,17 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
-  grpc_mdelem_unref(channeld->te_trailers);
-  grpc_mdelem_unref(channeld->status_ok);
-  grpc_mdelem_unref(channeld->status_not_found);
-  grpc_mdelem_unref(channeld->method_post);
-  grpc_mdelem_unref(channeld->http_scheme);
-  grpc_mdelem_unref(channeld->https_scheme);
-  grpc_mdelem_unref(channeld->grpc_scheme);
-  grpc_mdelem_unref(channeld->content_type);
-  grpc_mdstr_unref(channeld->path_key);
-  grpc_mdstr_unref(channeld->authority_key);
-  grpc_mdstr_unref(channeld->host_key);
+  GRPC_MDELEM_UNREF(channeld->te_trailers);
+  GRPC_MDELEM_UNREF(channeld->status_ok);
+  GRPC_MDELEM_UNREF(channeld->status_not_found);
+  GRPC_MDELEM_UNREF(channeld->method_post);
+  GRPC_MDELEM_UNREF(channeld->http_scheme);
+  GRPC_MDELEM_UNREF(channeld->https_scheme);
+  GRPC_MDELEM_UNREF(channeld->grpc_scheme);
+  GRPC_MDELEM_UNREF(channeld->content_type);
+  GRPC_MDSTR_UNREF(channeld->path_key);
+  GRPC_MDSTR_UNREF(channeld->authority_key);
+  GRPC_MDSTR_UNREF(channeld->host_key);
 }
 
 const grpc_channel_filter grpc_http_server_filter = {

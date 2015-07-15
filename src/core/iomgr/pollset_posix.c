@@ -122,7 +122,7 @@ static void finish_shutdown(grpc_pollset *pollset) {
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0;
   }
@@ -187,15 +187,16 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now) {
+int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
+                                         gpr_timespec now) {
   gpr_timespec timeout;
   static const int max_spin_polling_us = 10;
   if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
     return -1;
   }
   if (gpr_time_cmp(
-        deadline, 
-        gpr_time_add(now, gpr_time_from_micros(max_spin_polling_us))) <= 0) {
+          deadline,
+          gpr_time_add(now, gpr_time_from_micros(max_spin_polling_us))) <= 0) {
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);

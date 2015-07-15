@@ -61,6 +61,7 @@ typedef struct {
   grpc_transport_stream_op op;
   size_t op_md_idx;
   int sent_initial_metadata;
+  gpr_uint8 security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
 } call_data;
 
@@ -199,8 +200,22 @@ static void auth_start_transport_op(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   grpc_linked_mdelem *l;
   size_t i;
+  grpc_client_security_context* sec_ctx = NULL;
 
-  /* TODO(jboeuf): write the call auth context. */
+  if (calld->security_context_set == 0) {
+    calld->security_context_set = 1;
+    GPR_ASSERT(op->context);
+    if (op->context[GRPC_CONTEXT_SECURITY].value == NULL) {
+      op->context[GRPC_CONTEXT_SECURITY].value =
+          grpc_client_security_context_create();
+      op->context[GRPC_CONTEXT_SECURITY].destroy =
+          grpc_client_security_context_destroy;
+    }
+    sec_ctx = op->context[GRPC_CONTEXT_SECURITY].value;
+    GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
+    sec_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
+        chand->security_connector->base.auth_context, "client_auth_filter");
+  }
 
   if (op->bind_pollset) {
     calld->pollset = op->bind_pollset;
@@ -219,11 +234,11 @@ static void auth_start_transport_op(grpc_call_element *elem,
         /* Pointer comparison is OK for md_elems created from the same context.
          */
         if (md->key == chand->authority_string) {
-          if (calld->host != NULL) grpc_mdstr_unref(calld->host);
-          calld->host = grpc_mdstr_ref(md->value);
+          if (calld->host != NULL) GRPC_MDSTR_UNREF(calld->host);
+          calld->host = GRPC_MDSTR_REF(md->value);
         } else if (md->key == chand->path_string) {
-          if (calld->method != NULL) grpc_mdstr_unref(calld->method);
-          calld->method = grpc_mdstr_ref(md->value);
+          if (calld->method != NULL) GRPC_MDSTR_UNREF(calld->method);
+          calld->method = GRPC_MDSTR_REF(md->value);
         }
       }
       if (calld->host != NULL) {
@@ -263,6 +278,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->method = NULL;
   calld->pollset = NULL;
   calld->sent_initial_metadata = 0;
+  calld->security_context_set = 0;
 
   GPR_ASSERT(!initial_op || !initial_op->send_ops);
 }
@@ -272,10 +288,10 @@ static void destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   grpc_credentials_unref(calld->creds);
   if (calld->host != NULL) {
-    grpc_mdstr_unref(calld->host);
+    GRPC_MDSTR_UNREF(calld->host);
   }
   if (calld->method != NULL) {
-    grpc_mdstr_unref(calld->method);
+    GRPC_MDSTR_UNREF(calld->method);
   }
 }
 
@@ -314,16 +330,16 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   if (ctx != NULL)
     GRPC_SECURITY_CONNECTOR_UNREF(&ctx->base, "client_auth_filter");
   if (chand->authority_string != NULL) {
-    grpc_mdstr_unref(chand->authority_string);
+    GRPC_MDSTR_UNREF(chand->authority_string);
   }
   if (chand->error_msg_key != NULL) {
-    grpc_mdstr_unref(chand->error_msg_key);
+    GRPC_MDSTR_UNREF(chand->error_msg_key);
   }
   if (chand->status_key != NULL) {
-    grpc_mdstr_unref(chand->status_key);
+    GRPC_MDSTR_UNREF(chand->status_key);
   }
   if (chand->path_string != NULL) {
-    grpc_mdstr_unref(chand->path_string);
+    GRPC_MDSTR_UNREF(chand->path_string);
   }
 }
 

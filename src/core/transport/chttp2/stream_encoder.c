@@ -247,19 +247,19 @@ static grpc_mdelem *add_elem(grpc_chttp2_hpack_compressor *c,
   } else if (c->entries_keys[HASH_FRAGMENT_3(key_hash)] == elem->key) {
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   } else if (c->entries_keys[HASH_FRAGMENT_2(key_hash)] == NULL) {
-    c->entries_keys[HASH_FRAGMENT_2(key_hash)] = grpc_mdstr_ref(elem->key);
+    c->entries_keys[HASH_FRAGMENT_2(key_hash)] = GRPC_MDSTR_REF(elem->key);
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
   } else if (c->entries_keys[HASH_FRAGMENT_3(key_hash)] == NULL) {
-    c->entries_keys[HASH_FRAGMENT_3(key_hash)] = grpc_mdstr_ref(elem->key);
+    c->entries_keys[HASH_FRAGMENT_3(key_hash)] = GRPC_MDSTR_REF(elem->key);
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   } else if (c->indices_keys[HASH_FRAGMENT_2(key_hash)] <
              c->indices_keys[HASH_FRAGMENT_3(key_hash)]) {
-    grpc_mdstr_unref(c->entries_keys[HASH_FRAGMENT_2(key_hash)]);
-    c->entries_keys[HASH_FRAGMENT_2(key_hash)] = grpc_mdstr_ref(elem->key);
+    GRPC_MDSTR_UNREF(c->entries_keys[HASH_FRAGMENT_2(key_hash)]);
+    c->entries_keys[HASH_FRAGMENT_2(key_hash)] = GRPC_MDSTR_REF(elem->key);
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
   } else {
-    grpc_mdstr_unref(c->entries_keys[HASH_FRAGMENT_3(key_hash)]);
-    c->entries_keys[HASH_FRAGMENT_3(key_hash)] = grpc_mdstr_ref(elem->key);
+    GRPC_MDSTR_UNREF(c->entries_keys[HASH_FRAGMENT_3(key_hash)]);
+    c->entries_keys[HASH_FRAGMENT_3(key_hash)] = GRPC_MDSTR_REF(elem->key);
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   }
 
@@ -437,12 +437,13 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
                          framer_state *st) {
   char timeout_str[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem *mdelem;
-  grpc_chttp2_encode_timeout(gpr_time_sub(deadline, gpr_now()), timeout_str);
+  grpc_chttp2_encode_timeout(
+      gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
-      c->mdctx, grpc_mdstr_ref(c->timeout_key_str),
+      c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
       grpc_mdstr_from_string(c->mdctx, timeout_str));
   mdelem = hpack_enc(c, mdelem, st);
-  if (mdelem) grpc_mdelem_unref(mdelem);
+  if (mdelem) GRPC_MDELEM_UNREF(mdelem);
 }
 
 gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id) {
@@ -461,10 +462,10 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {
   int i;
   for (i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
-    if (c->entries_keys[i]) grpc_mdstr_unref(c->entries_keys[i]);
-    if (c->entries_elems[i]) grpc_mdelem_unref(c->entries_elems[i]);
+    if (c->entries_keys[i]) GRPC_MDSTR_UNREF(c->entries_keys[i]);
+    if (c->entries_elems[i]) GRPC_MDELEM_UNREF(c->entries_elems[i]);
   }
-  grpc_mdstr_unref(c->timeout_key_str);
+  GRPC_MDSTR_UNREF(c->timeout_key_str);
 }
 
 gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
@@ -620,10 +621,10 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
       op = &ops[unref_op];
       if (op->type != GRPC_OP_METADATA) continue;
       for (l = op->data.metadata.list.head; l; l = l->next) {
-        if (l->md) grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+        if (l->md) GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
       }
       for (l = op->data.metadata.garbage.head; l; l = l->next) {
-        grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+        GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
       }
     }
     grpc_mdctx_unlock(mdctx);

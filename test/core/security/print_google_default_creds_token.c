@@ -91,13 +91,13 @@ int main(int argc, char **argv) {
   grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, &sync.pollset, "", on_metadata_response, &sync);
+  grpc_credentials_get_request_metadata(creds, &sync.pollset, service_url,
+                                        on_metadata_response, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) grpc_pollset_work(&sync.pollset, gpr_inf_future);
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
-  grpc_pollset_destroy(&sync.pollset);
   grpc_credentials_release(creds);
 
 end:

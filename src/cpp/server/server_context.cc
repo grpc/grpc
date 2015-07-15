@@ -39,6 +39,8 @@
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
+#include "src/cpp/common/create_auth_context.h"
+
 namespace grpc {
 
 // CompletionOp
@@ -144,6 +146,18 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
 
 bool ServerContext::IsCancelled() {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
+}
+
+void ServerContext::set_call(grpc_call* call) {
+  call_ = call;
+  auth_context_ = CreateAuthContext(call);
+}
+
+std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
+  if (auth_context_.get() == nullptr) {
+    auth_context_ = CreateAuthContext(call_);
+  }
+  return auth_context_;
 }
 
 }  // namespace grpc

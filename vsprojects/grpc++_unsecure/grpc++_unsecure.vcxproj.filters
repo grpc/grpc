@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\src\cpp\common\insecure_create_auth_context.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -79,6 +82,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\async_unary_call.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\auth_context.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
@@ -190,6 +196,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cpp\common\create_auth_context.h">
+      <Filter>src\cpp\common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h">
       <Filter>src\cpp\server</Filter>

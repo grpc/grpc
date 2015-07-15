@@ -5,7 +5,10 @@ setlocal
 @rem enter this directory
 cd /d %~dp0\..\..\src\csharp
 
-packages\NUnit.Runners.2.6.4\tools\nunit-console-x86.exe -labels "%1/bin/Debug/%1.dll" || goto :error
+@rem set UUID variable to a random GUID, we will use it to put TestResults.xml to a dedicated directory, so that parallel test runs don't collide
+for /F %%i in ('powershell -Command "[guid]::NewGuid().ToString()"') do (set UUID=%%i)
+
+packages\NUnit.Runners.2.6.4\tools\nunit-console-x86.exe -labels "%1/bin/Debug/%1.dll" -work test-results/%UUID% || goto :error
 
 endlocal
 
