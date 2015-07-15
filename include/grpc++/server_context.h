@@ -97,7 +97,7 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  bool IsCancelled();
+  bool IsCancelled() const;
 
   const std::multimap<grpc::string, grpc::string>& client_metadata() {
     return client_metadata_;

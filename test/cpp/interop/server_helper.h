@@ -48,7 +48,9 @@ class InteropContextInspector {
  public:
   InteropContextInspector(const ::grpc::ServerContext& context);
 
-  // Inspector methods, able to peek inside ServerContext go here.
+  // Inspector methods, able to peek inside ServerContext, follow.
+  std::shared_ptr<const AuthContext> GetAuthContext() const;
+  bool IsCancelled() const;
 
  private:
   const ::grpc::ServerContext& context_;
