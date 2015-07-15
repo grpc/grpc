@@ -153,4 +153,11 @@ void ServerContext::set_call(grpc_call* call) {
   auth_context_ = CreateAuthContext(call);
 }
 
+std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
+  if (auth_context_.get() == nullptr) {
+    auth_context_ = CreateAuthContext(call_);
+  }
+  return auth_context_;
+}
+
 }  // namespace grpc
