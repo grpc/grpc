@@ -70,7 +70,6 @@ class AuthContext {
     size_t index_;
     const char* name_;
   };
-  typedef PropertyIterator const_iterator;
 
   virtual ~AuthContext() {}
 
@@ -84,8 +83,8 @@ class AuthContext {
       const grpc::string& name) const = 0;
 
   // Iteration over all the properties.
-  virtual const_iterator begin() const = 0;
-  virtual const_iterator end() const = 0;
+  virtual PropertyIterator begin() const = 0;
+  virtual PropertyIterator end() const = 0;
 };
 
 }  // namespace grpc

@@ -124,7 +124,7 @@ const AuthContext::Property AuthContext::PropertyIterator::operator*() {
       grpc::string(property_->value, property_->value_length));
 }
 
-SecureAuthContext::const_iterator SecureAuthContext::begin() const {
+AuthContext::PropertyIterator SecureAuthContext::begin() const {
   if (ctx_) {
     grpc_auth_property_iterator iter =
         grpc_auth_context_property_iterator(ctx_);
@@ -136,7 +136,7 @@ SecureAuthContext::const_iterator SecureAuthContext::begin() const {
   }
 }
 
-SecureAuthContext::const_iterator SecureAuthContext::end() const {
+AuthContext::PropertyIterator SecureAuthContext::end() const {
   return AuthContext::PropertyIterator();
 }
 
