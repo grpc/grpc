@@ -338,6 +338,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "gpr_stack_lockfree_test", 
+    "src": [
+      "test/core/support/stack_lockfree_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "gpr_string_test", 
     "src": [
       "test/core/support/string_test.c"
@@ -8608,6 +8620,7 @@
       "src/core/support/env.h", 
       "src/core/support/file.h", 
       "src/core/support/murmur_hash.h", 
+      "src/core/support/stack_lockfree.h", 
       "src/core/support/string.h", 
       "src/core/support/string_win32.h", 
       "src/core/support/thd_internal.h"
@@ -8669,6 +8682,8 @@
       "src/core/support/murmur_hash.h", 
       "src/core/support/slice.c", 
       "src/core/support/slice_buffer.c", 
+      "src/core/support/stack_lockfree.c", 
+      "src/core/support/stack_lockfree.h", 
       "src/core/support/string.c", 
       "src/core/support/string.h", 
       "src/core/support/string_posix.c", 
