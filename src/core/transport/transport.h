@@ -73,10 +73,8 @@ typedef struct grpc_transport_stream_op {
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
   /** The number of bytes this peer is currently prepared to receive.
-
-      Bytes offered are used to replenish per-stream flow control windows.
-      Offers are not retractable: if 5 bytes are offered and no bytes are read,
-        a later offer of 3 bytes still implies that 5 have been offered. */
+      These bytes will be eventually used to replenish per-stream flow control
+      windows. */
   gpr_uint32 max_recv_bytes;
   grpc_iomgr_closure *on_done_recv;
 
