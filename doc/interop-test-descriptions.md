@@ -406,7 +406,7 @@ configuring the test client with ServiceAccountCredentials directly, the test
 first uses the authorization library to obtain an authorization token.
 
 The test
-- uses the flag`--service_account_key_file` with the path to a json key file
+- uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
@@ -427,11 +427,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
       fill_username: true
       fill_oauth_scope: true
     }
@@ -442,9 +437,6 @@ Asserts:
 * received SimpleResponse.username is in the json key file used by the auth
 library to obtain the authorization token
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
-* response payload body is 314159 bytes in size
-* clients are free to assert that the response payload body contents are zero
-  and comparing the entire response message against a golden response
 
 ### per_rpc_creds
 
@@ -456,7 +448,7 @@ actually obtained from the service account credentials via the
 language-specific authorization library.
 
 The test
-- uses the flag`--service_account_key_file` with the path to a json key file
+- uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
@@ -479,11 +471,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
       fill_username: true
       fill_oauth_scope: true
     }
@@ -494,9 +481,6 @@ Asserts:
 * received SimpleResponse.username is in the json key file used by the auth
 library to obtain the authorization token
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
-* response payload body is 314159 bytes in size
-* clients are free to assert that the response payload body contents are zero
-  and comparing the entire response message against a golden response
 
 
 ### Metadata (TODO: fix name)
