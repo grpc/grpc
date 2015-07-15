@@ -48,6 +48,18 @@
     ]
   },
   {
+    "module": "grpc._links._lonely_invocation_link_test",
+    "pythonVersions": [
+      "2.7"
+    ]
+  },
+  {
+    "module": "grpc._links._transmission_test",
+    "pythonVersions": [
+      "2.7"
+    ]
+  },
+  {
     "module": "grpc.early_adopter.implementations_test",
     "pythonVersions": [
       "2.7"

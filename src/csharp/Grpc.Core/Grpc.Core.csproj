@@ -49,6 +49,7 @@
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
     <Compile Include="Internal\GrpcLog.cs" />
+    <Compile Include="Version.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="ChannelOptions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.Core.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Choose>

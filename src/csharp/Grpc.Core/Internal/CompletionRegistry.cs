@@ -45,11 +45,17 @@ namespace Grpc.Core.Internal
 
     internal class CompletionRegistry
     {
-        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();  
+        readonly GrpcEnvironment environment;
+        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>();
+
+        public CompletionRegistry(GrpcEnvironment environment)
+        {
+            this.environment = environment;
+        }
 
         public void Register(IntPtr key, OpCompletionDelegate callback)
         {
-            DebugStats.PendingBatchCompletions.Increment();
+            environment.DebugStats.PendingBatchCompletions.Increment();
             Preconditions.CheckState(dict.TryAdd(key, callback));
         }
 
@@ -63,7 +69,7 @@ namespace Grpc.Core.Internal
         {
             OpCompletionDelegate value;
             Preconditions.CheckState(dict.TryRemove(key, out value));
-            DebugStats.PendingBatchCompletions.Decrement();
+            environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
         }
 
