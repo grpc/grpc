@@ -61,7 +61,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
 
     $event = $this->server->requestCall();
     $this->assertSame('dummy_method', $event->method);
-    $this->assertSame([], $event->metadata);
     $server_call = $event->call;
 
     $event = $server_call->startBatch([
@@ -83,7 +82,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
         Grpc\OP_RECV_STATUS_ON_CLIENT => true
                                  ]);
 
-    $this->assertSame([], $event->metadata);
     $status = $event->status;
     $this->assertSame([], $status->metadata);
     $this->assertSame(Grpc\STATUS_OK, $status->code);
