@@ -61,7 +61,7 @@ namespace math {
     }
 
     // client stub
-    public class MathClient : AbstractStub<MathClient, StubConfiguration>, IMathClient
+    public class MathClient : ClientBase<MathClient, StubConfiguration>, IMathClient
     {
       public MathClient(Channel channel) : this(channel, StubConfiguration.Default)
       {

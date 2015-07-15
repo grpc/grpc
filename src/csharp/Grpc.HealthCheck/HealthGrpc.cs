@@ -35,7 +35,7 @@ namespace Grpc.Health.V1Alpha {
     }
 
     // client stub
-    public class HealthClient : AbstractStub<HealthClient, StubConfiguration>, IHealthClient
+    public class HealthClient : ClientBase<HealthClient, StubConfiguration>, IHealthClient
     {
       public HealthClient(Channel channel) : this(channel, StubConfiguration.Default)
       {

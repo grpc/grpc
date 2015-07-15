@@ -81,7 +81,7 @@ namespace grpc.testing {
     }
 
     // client stub
-    public class TestServiceClient : AbstractStub<TestServiceClient, StubConfiguration>, ITestServiceClient
+    public class TestServiceClient : ClientBase<TestServiceClient, StubConfiguration>, ITestServiceClient
     {
       public TestServiceClient(Channel channel) : this(channel, StubConfiguration.Default)
       {
