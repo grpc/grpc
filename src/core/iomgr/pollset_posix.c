@@ -106,11 +106,21 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(pollset, fd, 1);
+#ifndef NDEBUG
+  /* this will deadlock if the unlocking rules aren't correctly implemented */
+  gpr_mu_lock(&pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
+#endif
 }
 
 void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->del_fd(pollset, fd, 1);
+#ifndef NDEBUG  
+  /* this will deadlock if the unlocking rules aren't correctly implemented */
+  gpr_mu_lock(&pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
+#endif
 }
 
 static void finish_shutdown(grpc_pollset *pollset) {
