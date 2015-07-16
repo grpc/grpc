@@ -46,6 +46,7 @@ case $platform in
   i386)
     arch="i386"
     platform="linux"
+    docker_suffix=_32bits
     ;;
 esac
 
@@ -57,11 +58,13 @@ then
   git_root=`pwd`
   cd -
 
+  mkdir -p /tmp/ccache
+
   # Use image name based on Dockerfile checksum
-  DOCKER_IMAGE_NAME=grpc_jenkins_slave_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+  DOCKER_IMAGE_NAME=grpc_jenkins_slave$docker_suffix_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
 
   # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave
+  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
 
   # Create a local branch so the child Docker script won't complain
   git branch jenkins-docker
@@ -74,8 +77,10 @@ then
     -e "config=$config" \
     -e "language=$language" \
     -e "arch=$arch" \
+    -e CCACHE_DIR=/tmp/ccache \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
+    -v /tmp/ccache:/tmp/ccache \
     --cidfile=docker.cid \
     $DOCKER_IMAGE_NAME \
     bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"

@@ -30,7 +30,7 @@
 # A work-in-progress Dockerfile that allows running gRPC test suites
 # inside a docker container.
 
-FROM debian:jessie
+FROM 32bit/debian:jessie
 
 # Install Git.
 RUN apt-get update && apt-get install -y \
