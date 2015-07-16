@@ -57,9 +57,12 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GPR_ARRAY_SIZE(five) == 5);
 
   GPR_ASSERT(GPR_BITSET(&bitset, 3) == 8);
+  GPR_ASSERT(gpr_bitcount(bitset) == 1);
   GPR_ASSERT(GPR_BITGET(bitset, 3) == 1);
   GPR_ASSERT(GPR_BITSET(&bitset, 1) == 10);
+  GPR_ASSERT(gpr_bitcount(bitset) == 2);
   GPR_ASSERT(GPR_BITCLEAR(&bitset, 3) == 2);
+  GPR_ASSERT(gpr_bitcount(bitset) == 1);
   GPR_ASSERT(GPR_BITGET(bitset, 3) == 0);
 
   return 0;
