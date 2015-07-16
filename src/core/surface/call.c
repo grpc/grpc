@@ -801,6 +801,8 @@ static int begin_message(grpc_call *call, grpc_begin_message msg) {
                  "Invalid compression algorithm (%s) for compressed message.",
                  alg_name);
     cancel_with_status(call, GRPC_STATUS_INTERNAL, message);
+    gpr_free(message);
+    return 0;
   }
   /* stash away parameters, and prepare for incoming slices */
   if (msg.length > grpc_channel_get_max_message_length(call->channel)) {
