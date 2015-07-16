@@ -207,9 +207,9 @@ ${gen_package_props(packages)}\
     % for src_name in project.src:
       % if src_name.endswith(".proto"):
 <% src_name_parts = src_name.split(".") %>\
-    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.cc")}">
+    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".pb.cc")}">
     </ClCompile>
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.h")}">
+    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".pb.h")}">
     </ClInclude>
     <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.cc")}">
     </ClCompile>
