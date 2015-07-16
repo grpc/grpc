@@ -94,7 +94,8 @@ static void grpc_rb_server_mark(void *p) {
 
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",
-    {grpc_rb_server_mark, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {grpc_rb_server_mark, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL,
     NULL,
     /* It is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because the free function would block

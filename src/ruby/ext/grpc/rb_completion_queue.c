@@ -118,7 +118,7 @@ static void grpc_rb_completion_queue_destroy(void *p) {
 static rb_data_type_t grpc_rb_completion_queue_data_type = {
     "grpc_completion_queue",
     {GRPC_RB_GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
-     GRPC_RB_MEMSIZE_UNAVAILABLE},
+     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL, NULL,
     /* cannot immediately free because grpc_rb_completion_queue_shutdown_drain
      * calls rb_thread_call_without_gvl. */
