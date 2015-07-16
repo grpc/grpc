@@ -165,6 +165,7 @@ static void start_write(internal_request *req) {
 
 static void on_secure_transport_setup_done(void *rp,
                                            grpc_security_status status,
+                                           grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   internal_request *req = rp;
   if (status != GRPC_SECURITY_OK) {
