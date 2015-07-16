@@ -183,6 +183,82 @@ describe('Generic client and server', function() {
     });
   });
 });
+describe('Echo metadata', function() {
+  var client;
+  var server;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
+    server = new grpc.Server();
+    server.addProtoService(test_service, {
+      unary: function(call, cb) {
+        call.sendMetadata(call.metadata);
+        cb(null, {});
+      },
+      clientStream: function(stream, cb){
+        stream.on('data', function(data) {});
+        stream.on('end', function() {
+          stream.sendMetadata(stream.metadata);
+          cb(null, {});
+        });
+      },
+      serverStream: function(stream) {
+        stream.sendMetadata(stream.metadata);
+        stream.end();
+      },
+      bidiStream: function(stream) {
+        stream.on('data', function(data) {});
+        stream.on('end', function() {
+          stream.sendMetadata(stream.metadata);
+          stream.end();
+        });
+      }
+    });
+    var port = server.bind('localhost:0');
+    var Client = surface_client.makeProtobufClientConstructor(test_service);
+    client = new Client('localhost:' + port);
+    server.start();
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('with unary call', function(done) {
+    var call = client.unary({}, function(err, data) {
+      assert.ifError(err);
+    }, {key: ['value']});
+    call.on('metadata', function(metadata) {
+      assert.deepEqual(metadata.key, ['value']);
+      done();
+    });
+  });
+  it('with client stream call', function(done) {
+    var call = client.clientStream(function(err, data) {
+      assert.ifError(err);
+    }, {key: ['value']});
+    call.on('metadata', function(metadata) {
+      assert.deepEqual(metadata.key, ['value']);
+      done();
+    });
+    call.end();
+  });
+  it('with server stream call', function(done) {
+    var call = client.serverStream({}, {key: ['value']});
+    call.on('data', function() {});
+    call.on('metadata', function(metadata) {
+      assert.deepEqual(metadata.key, ['value']);
+      done();
+    });
+  });
+  it('with bidi stream call', function(done) {
+    var call = client.bidiStream({key: ['value']});
+    call.on('data', function() {});
+    call.on('metadata', function(metadata) {
+      assert.deepEqual(metadata.key, ['value']);
+      done();
+    });
+    call.end();
+  });
+});
 describe('Other conditions', function() {
   var client;
   var server;
