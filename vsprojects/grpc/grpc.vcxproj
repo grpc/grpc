@@ -191,7 +191,6 @@
     <ClInclude Include="..\..\src\core\client_config\resolver_registry.h" />
     <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h" />
     <ClInclude Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.h" />
-    <ClInclude Include="..\..\src\core\client_config\resolvers\zookeeper_resolver.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h" />
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
@@ -350,8 +349,6 @@
     <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\client_config\resolvers\zookeeper_resolver.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
     </ClCompile>

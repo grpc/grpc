@@ -8693,7 +8693,6 @@
       "src/core/client_config/resolver_registry.h", 
       "src/core/client_config/resolvers/dns_resolver.h", 
       "src/core/client_config/resolvers/unix_resolver_posix.h", 
-      "src/core/client_config/resolvers/zookeeper_resolver.h", 
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.h", 
       "src/core/client_config/uri_parser.h", 
@@ -8836,8 +8835,6 @@
       "src/core/client_config/resolvers/dns_resolver.h", 
       "src/core/client_config/resolvers/unix_resolver_posix.c", 
       "src/core/client_config/resolvers/unix_resolver_posix.h", 
-      "src/core/client_config/resolvers/zookeeper_resolver.c", 
-      "src/core/client_config/resolvers/zookeeper_resolver.h", 
       "src/core/client_config/subchannel.c", 
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.c", 
@@ -9145,7 +9142,6 @@
       "src/core/client_config/resolver_registry.h", 
       "src/core/client_config/resolvers/dns_resolver.h", 
       "src/core/client_config/resolvers/unix_resolver_posix.h", 
-      "src/core/client_config/resolvers/zookeeper_resolver.h", 
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.h", 
       "src/core/client_config/uri_parser.h", 
@@ -9271,8 +9267,6 @@
       "src/core/client_config/resolvers/dns_resolver.h", 
       "src/core/client_config/resolvers/unix_resolver_posix.c", 
       "src/core/client_config/resolvers/unix_resolver_posix.h", 
-      "src/core/client_config/resolvers/zookeeper_resolver.c", 
-      "src/core/client_config/resolvers/zookeeper_resolver.h", 
       "src/core/client_config/subchannel.c", 
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.c", 
@@ -9440,6 +9434,21 @@
       "src/core/transport/transport.h", 
       "src/core/transport/transport_impl.h", 
       "src/core/transport/transport_op_string.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [
+      "src/core/client_config/resolvers/zookeeper_resolver.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_zookeeper", 
+    "src": [
+      "src/core/client_config/resolvers/zookeeper_resolver.c", 
+      "src/core/client_config/resolvers/zookeeper_resolver.h"
     ]
   }, 
   {

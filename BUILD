@@ -165,7 +165,6 @@ cc_library(
     "src/core/client_config/resolver_registry.h",
     "src/core/client_config/resolvers/dns_resolver.h",
     "src/core/client_config/resolvers/unix_resolver_posix.h",
-    "src/core/client_config/resolvers/zookeeper_resolver.h",
     "src/core/client_config/subchannel.h",
     "src/core/client_config/subchannel_factory.h",
     "src/core/client_config/uri_parser.h",
@@ -283,7 +282,6 @@ cc_library(
     "src/core/client_config/resolver_registry.c",
     "src/core/client_config/resolvers/dns_resolver.c",
     "src/core/client_config/resolvers/unix_resolver_posix.c",
-    "src/core/client_config/resolvers/zookeeper_resolver.c",
     "src/core/client_config/subchannel.c",
     "src/core/client_config/subchannel_factory.c",
     "src/core/client_config/uri_parser.c",
@@ -419,7 +417,6 @@ cc_library(
     "src/core/client_config/resolver_registry.h",
     "src/core/client_config/resolvers/dns_resolver.h",
     "src/core/client_config/resolvers/unix_resolver_posix.h",
-    "src/core/client_config/resolvers/zookeeper_resolver.h",
     "src/core/client_config/subchannel.h",
     "src/core/client_config/subchannel_factory.h",
     "src/core/client_config/uri_parser.h",
@@ -515,7 +512,6 @@ cc_library(
     "src/core/client_config/resolver_registry.c",
     "src/core/client_config/resolvers/dns_resolver.c",
     "src/core/client_config/resolvers/unix_resolver_posix.c",
-    "src/core/client_config/resolvers/zookeeper_resolver.c",
     "src/core/client_config/subchannel.c",
     "src/core/client_config/subchannel_factory.c",
     "src/core/client_config/uri_parser.c",
@@ -623,6 +619,25 @@ cc_library(
   ],
   deps = [
     ":gpr",
+  ],
+)
+
+
+cc_library(
+  name = "grpc_zookeeper",
+  srcs = [
+    "src/core/client_config/resolvers/zookeeper_resolver.h",
+    "src/core/client_config/resolvers/zookeeper_resolver.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":gpr",
+    ":grpc",
   ],
 )
 
@@ -978,7 +993,6 @@ objc_library(
     "src/core/client_config/resolver_registry.c",
     "src/core/client_config/resolvers/dns_resolver.c",
     "src/core/client_config/resolvers/unix_resolver_posix.c",
-    "src/core/client_config/resolvers/zookeeper_resolver.c",
     "src/core/client_config/subchannel.c",
     "src/core/client_config/subchannel_factory.c",
     "src/core/client_config/uri_parser.c",
@@ -1115,7 +1129,6 @@ objc_library(
     "src/core/client_config/resolver_registry.h",
     "src/core/client_config/resolvers/dns_resolver.h",
     "src/core/client_config/resolvers/unix_resolver_posix.h",
-    "src/core/client_config/resolvers/zookeeper_resolver.h",
     "src/core/client_config/subchannel.h",
     "src/core/client_config/subchannel_factory.h",
     "src/core/client_config/uri_parser.h",
