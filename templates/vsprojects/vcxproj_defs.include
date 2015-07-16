@@ -205,8 +205,20 @@ ${gen_package_props(packages)}\
   % if project.get('src',[]):
   <ItemGroup>
     % for src_name in project.src:
+      % if src_name.endswith(".proto"):
+<% src_name_parts = src_name.split(".") %>\
+    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.cc")}">
+    </ClCompile>
+    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.h")}">
+    </ClInclude>
+    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.cc")}">
+    </ClCompile>
+    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.h")}">
+    </ClInclude>
+      % else:
     <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name)}">
     </ClCompile>
+      % endif
     % endfor
   </ItemGroup>
   % elif configuration_type != 'StaticLibrary':
