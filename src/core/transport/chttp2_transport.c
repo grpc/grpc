@@ -110,6 +110,8 @@ static void cancel_from_api(grpc_chttp2_transport_global *transport_global,
 /** Add endpoint from this transport to pollset */
 static void add_to_pollset_locked(grpc_chttp2_transport *t,
                                   grpc_pollset *pollset);
+static void add_to_pollset_set_locked(grpc_chttp2_transport *t,
+                                  grpc_pollset_set *pollset_set);
 
 /** Start new streams that have been created if we can */
 static void maybe_start_some_streams(
@@ -233,7 +235,7 @@ static void init_transport(grpc_chttp2_transport *t,
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
   grpc_connectivity_state_init(&t->channel_callback.state_tracker,
-                               GRPC_CHANNEL_READY);
+                               GRPC_CHANNEL_READY, "transport");
 
   gpr_slice_buffer_init(&t->global.qbuf);
 
@@ -668,6 +670,7 @@ static void send_ping_locked(grpc_chttp2_transport *t,
 
 static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
+  int close_transport = 0;
 
   lock(t);
 
@@ -687,9 +690,7 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
         t->global.last_incoming_stream_id,
         grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
         gpr_slice_ref(*op->goaway_message), &t->global.qbuf);
-    if (!grpc_chttp2_has_streams(t)) {
-      close_transport_locked(t);
-    }
+    close_transport = !grpc_chttp2_has_streams(t);
   }
 
   if (op->set_accept_stream != NULL) {
@@ -702,6 +703,10 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
     add_to_pollset_locked(t, op->bind_pollset);
   }
 
+  if (op->bind_pollset_set) {
+    add_to_pollset_set_locked(t, op->bind_pollset_set);
+  }
+
   if (op->send_ping) {
     send_ping_locked(t, op->send_ping);
   }
@@ -711,6 +716,12 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
   }
 
   unlock(t);
+
+  if (close_transport) {
+    lock(t);
+    close_transport_locked(t);
+    unlock(t);
+  }
 }
 
 /*
@@ -1013,6 +1024,13 @@ static void add_to_pollset_locked(grpc_chttp2_transport *t,
                                   grpc_pollset *pollset) {
   if (t->ep) {
     grpc_endpoint_add_to_pollset(t->ep, pollset);
+  }
+}
+
+static void add_to_pollset_set_locked(grpc_chttp2_transport *t,
+                                  grpc_pollset_set *pollset_set) {
+  if (t->ep) {
+    grpc_endpoint_add_to_pollset_set(t->ep, pollset_set);
   }
 }
 

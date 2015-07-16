@@ -46,6 +46,7 @@
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
+#include "src/core/transport/connectivity_state.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/client_config/resolvers/unix_resolver_posix.h"
@@ -76,6 +77,7 @@ void grpc_init(void) {
     grpc_register_tracer("http", &grpc_http_trace);
     grpc_register_tracer("flowctl", &grpc_flowctl_trace);
     grpc_register_tracer("batch", &grpc_trace_batch);
+    grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_tracer_init("GRPC_TRACE");

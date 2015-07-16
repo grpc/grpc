@@ -51,10 +51,14 @@ typedef struct {
   grpc_connectivity_state current_state;
   /** all our watchers */
   grpc_connectivity_state_watcher *watchers;
+  /** a name to help debugging */
+  char *name;
 } grpc_connectivity_state_tracker;
 
+extern int grpc_connectivity_state_trace;
+
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
-                                  grpc_connectivity_state init_state);
+                                  grpc_connectivity_state init_state, const char *name);
 void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
 
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
