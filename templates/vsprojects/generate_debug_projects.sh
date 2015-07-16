@@ -44,7 +44,7 @@ git add .               #because we're using "git diff" to find changes to grpc.
 line_number=0
 
 git diff |
-grep -A2 \\+Project |       #find "Project" immediately after one or more backslashes, plus 2 additional lines, plus 1 line of "--".  matches will come from the generated grpc.sln
+grep -A2 \\+Project |       #find "Project" immediately after a backslash (escaped), plus 2 additional lines to capture the "libs = ", plus 1 line of "--".  matches will come from the generated grpc.sln
 while read p ; do
   line_number=$((line_number + 1))
   if [ "$line_number" -gt "4" ]; then
