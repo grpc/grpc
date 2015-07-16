@@ -35,16 +35,19 @@
 #include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/channel/compress_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/compression/message_compress.h"
+#include "src/core/support/string.h"
 
 typedef struct call_data {
   gpr_slice_buffer slices;
   grpc_linked_mdelem compression_algorithm_storage;
+  grpc_linked_mdelem accept_encoding_storage;
   int remaining_slice_bytes;
   int written_initial_metadata;
   grpc_compression_algorithm compression_algorithm;
@@ -54,7 +57,9 @@ typedef struct call_data {
 typedef struct channel_data {
   grpc_mdstr *mdstr_request_compression_algorithm_key;
   grpc_mdstr *mdstr_outgoing_compression_algorithm_key;
+  grpc_mdstr *mdstr_compression_capabilities_key;
   grpc_mdelem *mdelem_compression_algorithms[GRPC_COMPRESS_ALGORITHMS_COUNT];
+  grpc_mdelem *mdelem_accept_encoding;
   grpc_compression_algorithm default_compression_algorithm;
 } channel_data;
 
@@ -190,10 +195,17 @@ static void process_send_ops(grpc_call_element *elem,
                 channeld->default_compression_algorithm;
             calld->has_compression_algorithm = 1; /* GPR_TRUE */
           }
+          /* hint compression algorithm */
           grpc_metadata_batch_add_head(
               &(sop->data.metadata), &calld->compression_algorithm_storage,
               grpc_mdelem_ref(channeld->mdelem_compression_algorithms
                                   [calld->compression_algorithm]));
+
+          /* convey supported compression algorithms */
+          grpc_metadata_batch_add_head(
+              &(sop->data.metadata), &calld->accept_encoding_storage,
+              grpc_mdelem_ref(channeld->mdelem_accept_encoding));
+
           calld->written_initial_metadata = 1; /* GPR_TRUE */
         }
         break;
@@ -267,6 +279,9 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               int is_first, int is_last) {
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
+  const char* supported_algorithms_names[GRPC_COMPRESS_ALGORITHMS_COUNT-1];
+  char *accept_encoding_str;
+  size_t accept_encoding_str_len;
   const grpc_compression_level clevel =
       grpc_channel_args_get_compression_level(args);
 
@@ -279,6 +294,9 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->mdstr_outgoing_compression_algorithm_key =
       grpc_mdstr_from_string(mdctx, "grpc-encoding");
 
+  channeld->mdstr_compression_capabilities_key =
+      grpc_mdstr_from_string(mdctx, "grpc-accept-encoding");
+
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
     char *algorith_name;
     GPR_ASSERT(grpc_compression_algorithm_name(algo_idx, &algorith_name) != 0);
@@ -287,7 +305,25 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
             mdctx,
             grpc_mdstr_ref(channeld->mdstr_outgoing_compression_algorithm_key),
             grpc_mdstr_from_string(mdctx, algorith_name));
+    if (algo_idx > 0) {
+      supported_algorithms_names[algo_idx-1] = algorith_name;
+    }
   }
+
+  accept_encoding_str =
+      gpr_strjoin_sep(supported_algorithms_names,
+                  GPR_ARRAY_SIZE(supported_algorithms_names),
+                  ", ",
+                  &accept_encoding_str_len);
+
+  channeld->mdelem_accept_encoding =
+      grpc_mdelem_from_metadata_strings(
+          mdctx,
+          grpc_mdstr_ref(channeld->mdstr_compression_capabilities_key),
+          grpc_mdstr_from_string(mdctx, accept_encoding_str));
+  /* TODO(dgq): gpr_strjoin_sep could be made to work with statically allocated
+   * arrays, as to avoid the heap allocs */
+  gpr_free(accept_encoding_str);
 
   GPR_ASSERT(!is_last);
 }
@@ -299,10 +335,12 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 
   grpc_mdstr_unref(channeld->mdstr_request_compression_algorithm_key);
   grpc_mdstr_unref(channeld->mdstr_outgoing_compression_algorithm_key);
+  grpc_mdstr_unref(channeld->mdstr_compression_capabilities_key);
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT;
        ++algo_idx) {
     grpc_mdelem_unref(channeld->mdelem_compression_algorithms[algo_idx]);
   }
+  grpc_mdelem_unref(channeld->mdelem_accept_encoding);
 }
 
 const grpc_channel_filter grpc_compress_filter = {
