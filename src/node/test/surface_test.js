@@ -69,34 +69,45 @@ describe('File loader', function() {
     });
   });
 });
-describe('Surface server constructor', function() {
-  it('Should fail with conflicting method names', function() {
-    assert.throws(function() {
-      grpc.buildServer([mathService, mathService]);
-    });
+describe('Server.prototype.addProtoService', function() {
+  var server;
+  var dummyImpls = {
+    'div': function() {},
+    'divMany': function() {},
+    'fib': function() {},
+    'sum': function() {}
+  };
+  beforeEach(function() {
+    server = new grpc.Server();
+  });
+  afterEach(function() {
+    server.shutdown();
   });
   it('Should succeed with a single service', function() {
     assert.doesNotThrow(function() {
-      grpc.buildServer([mathService]);
+      server.addProtoService(mathService, dummyImpls);
+    });
+  });
+  it('Should fail with conflicting method names', function() {
+    server.addProtoService(mathService, dummyImpls);
+    assert.throws(function() {
+      server.addProtoService(mathService, dummyImpls);
     });
   });
   it('Should fail with missing handlers', function() {
-    var Server = grpc.buildServer([mathService]);
     assert.throws(function() {
-      new Server({
-        'math.Math': {
-          'div': function() {},
-          'divMany': function() {},
-          'fib': function() {}
-        }
+      server.addProtoService(mathService, {
+        'div': function() {},
+        'divMany': function() {},
+        'fib': function() {}
       });
     }, /math.Math.Sum/);
   });
-  it('Should fail with no handlers for the service', function() {
-    var Server = grpc.buildServer([mathService]);
+  it('Should fail if the server has been started', function() {
+    server.start();
     assert.throws(function() {
-      new Server({});
-    }, /math.Math/);
+      server.addProtoService(mathService, dummyImpls);
+    });
   });
 });
 describe('Echo service', function() {
@@ -105,18 +116,16 @@ describe('Echo service', function() {
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
     var echo_service = test_proto.lookup('EchoService');
-    var Server = grpc.buildServer([echo_service]);
-    server = new Server({
-      'EchoService': {
-        echo: function(call, callback) {
-          callback(null, call.request);
-        }
+    server = new grpc.Server();
+    server.addProtoService(echo_service, {
+      echo: function(call, callback) {
+        callback(null, call.request);
       }
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(echo_service);
     client = new Client('localhost:' + port);
-    server.listen();
+    server.start();
   });
   after(function() {
     server.shutdown();
@@ -151,18 +160,14 @@ describe('Generic client and server', function() {
     var client;
     var server;
     before(function() {
-      var Server = grpc.makeGenericServerConstructor({
-        string: string_service_attrs
-      });
-      server = new Server({
-        string: {
-          capitalize: function(call, callback) {
-            callback(null, _.capitalize(call.request));
-          }
+      server = new grpc.Server();
+      server.addService(string_service_attrs, {
+        capitalize: function(call, callback) {
+          callback(null, _.capitalize(call.request));
         }
       });
       var port = server.bind('localhost:0');
-      server.listen();
+      server.start();
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
       client = new Client('localhost:' + port);
     });
@@ -185,72 +190,70 @@ describe('Other conditions', function() {
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
-    var Server = grpc.buildServer([test_service]);
-    server = new Server({
-      TestService: {
-        unary: function(call, cb) {
-          var req = call.request;
-          if (req.error) {
+    server = new grpc.Server();
+    server.addProtoService(test_service, {
+      unary: function(call, cb) {
+        var req = call.request;
+        if (req.error) {
+          cb(new Error('Requested error'), null, {metadata: ['yes']});
+        } else {
+          cb(null, {count: 1}, {metadata: ['yes']});
+        }
+      },
+      clientStream: function(stream, cb){
+        var count = 0;
+        var errored;
+        stream.on('data', function(data) {
+          if (data.error) {
+            errored = true;
             cb(new Error('Requested error'), null, {metadata: ['yes']});
           } else {
-            cb(null, {count: 1}, {metadata: ['yes']});
+            count += 1;
           }
-        },
-        clientStream: function(stream, cb){
-          var count = 0;
-          var errored;
-          stream.on('data', function(data) {
-            if (data.error) {
-              errored = true;
-              cb(new Error('Requested error'), null, {metadata: ['yes']});
-            } else {
-              count += 1;
-            }
-          });
-          stream.on('end', function() {
-            if (!errored) {
-              cb(null, {count: count}, {metadata: ['yes']});
-            }
-          });
-        },
-        serverStream: function(stream) {
-          var req = stream.request;
-          if (req.error) {
+        });
+        stream.on('end', function() {
+          if (!errored) {
+            cb(null, {count: count}, {metadata: ['yes']});
+          }
+        });
+      },
+      serverStream: function(stream) {
+        var req = stream.request;
+        if (req.error) {
+          var err = new Error('Requested error');
+          err.metadata = {metadata: ['yes']};
+          stream.emit('error', err);
+        } else {
+          for (var i = 0; i < 5; i++) {
+            stream.write({count: i});
+          }
+          stream.end({metadata: ['yes']});
+        }
+      },
+      bidiStream: function(stream) {
+        var count = 0;
+        stream.on('data', function(data) {
+          if (data.error) {
             var err = new Error('Requested error');
-            err.metadata = {metadata: ['yes']};
+            err.metadata = {
+              metadata: ['yes'],
+              count: ['' + count]
+            };
             stream.emit('error', err);
           } else {
-            for (var i = 0; i < 5; i++) {
-              stream.write({count: i});
-            }
-            stream.end({metadata: ['yes']});
+            stream.write({count: count});
+            count += 1;
           }
-        },
-        bidiStream: function(stream) {
-          var count = 0;
-          stream.on('data', function(data) {
-            if (data.error) {
-              var err = new Error('Requested error');
-              err.metadata = {
-                metadata: ['yes'],
-                count: ['' + count]
-              };
-              stream.emit('error', err);
-            } else {
-              stream.write({count: count});
-              count += 1;
-            }
-          });
-          stream.on('end', function() {
-            stream.end({metadata: ['yes']});
-          });
-        }
+        });
+        stream.on('end', function() {
+          stream.end({metadata: ['yes']});
+        });
       }
     });
     port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port);
-    server.listen();
+    server.start();
   });
   after(function() {
     server.shutdown();
@@ -423,18 +426,17 @@ describe('Cancelling surface client', function() {
   var client;
   var server;
   before(function() {
-    var Server = grpc.buildServer([mathService]);
-    server = new Server({
-      'math.Math': {
-        'div': function(stream) {},
-        'divMany': function(stream) {},
-        'fib': function(stream) {},
-        'sum': function(stream) {}
-      }
+    server = new grpc.Server();
+    server.addProtoService(mathService, {
+      'div': function(stream) {},
+      'divMany': function(stream) {},
+      'fib': function(stream) {},
+      'sum': function(stream) {}
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(mathService);
     client = new Client('localhost:' + port);
+    server.start();
   });
   after(function() {
     server.shutdown();

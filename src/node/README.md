@@ -54,10 +54,10 @@ function loadObject(reflectionObject)
 Returns the same structure that `load` returns, but takes a reflection object from `ProtoBuf.js` instead of a file name.
 
 ```javascript
-function buildServer(serviceArray)
+function Server([serverOpions])
 ```
 
-Takes an array of service objects and returns a constructor for a server that handles requests to all of those services.
+Constructs a server to which service/implementation pairs can be added.
 
 
 ```javascript

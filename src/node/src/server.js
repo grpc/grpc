@@ -477,18 +477,20 @@ function Server(getMetadata, options) {
   var handlers = this.handlers;
   var server = new grpc.Server(options);
   this._server = server;
+  this.started = false;
   /**
    * Start the server and begin handling requests
    * @this Server
    */
-  this.listen = function() {
+  this.start = function() {
+    if (this.started) {
+      throw new Error('Server is already running');
+    }
+    this.started = true;
     console.log('Server starting');
     _.each(handlers, function(handler, handler_name) {
       console.log('Serving', handler_name);
     });
-    if (this.started) {
-      throw 'Server is already running';
-    }
     server.start();
     /**
      * Handles the SERVER_RPC_NEW event. If there is a handler associated with
@@ -565,6 +567,47 @@ Server.prototype.register = function(name, handler, serialize, deserialize,
   return true;
 };
 
+Server.prototype.addService = function(service, implementation) {
+  if (this.started) {
+    throw new Error('Can\'t add a service to a started server.');
+  }
+  var self = this;
+  _.each(service, function(attrs, name) {
+    var method_type;
+    if (attrs.requestStream) {
+      if (attrs.responseStream) {
+        method_type = 'bidi';
+      } else {
+        method_type = 'client_stream';
+      }
+    } else {
+      if (attrs.responseStream) {
+        method_type = 'server_stream';
+      } else {
+        method_type = 'unary';
+      }
+    }
+    if (implementation[name] === undefined) {
+      throw new Error('Method handler for ' + attrs.path +
+          ' not provided.');
+    }
+    var serialize = attrs.responseSerialize;
+    var deserialize = attrs.requestDeserialize;
+    var register_success = self.register(attrs.path,
+                                         _.bind(implementation[name],
+                                                implementation),
+                                         serialize, deserialize, method_type);
+    if (!register_success) {
+      throw new Error('Method handler for ' + attrs.path +
+          ' already provided.');
+    }
+  });
+};
+
+Server.prototype.addProtoService = function(service, implementation) {
+  this.addService(common.getProtobufServiceAttrs(service), implementation);
+};
+
 /**
  * Binds the server to the given port, with SSL enabled if creds is given
  * @param {string} port The port that the server should bind on, in the format
@@ -573,6 +616,9 @@ Server.prototype.register = function(name, handler, serialize, deserialize,
  *     nothing for an insecure port
  */
 Server.prototype.bind = function(port, creds) {
+  if (this.started) {
+    throw new Error('Can\'t bind an already running server to an address');
+  }
   if (creds) {
     return this._server.addSecureHttp2Port(port, creds);
   } else {
@@ -581,131 +627,6 @@ Server.prototype.bind = function(port, creds) {
 };
 
 /**
- * Create a constructor for servers with services defined by service_attr_map.
- * That is an object that maps (namespaced) service names to objects that in
- * turn map method names to objects with the following keys:
- * path: The path on the server for accessing the method. For example, for
- *     protocol buffers, we use "/service_name/method_name"
- * requestStream: bool indicating whether the client sends a stream
- * resonseStream: bool indicating whether the server sends a stream
- * requestDeserialize: function to deserialize request objects
- * responseSerialize: function to serialize response objects
- * @param {Object} service_attr_map An object mapping service names to method
- *     attribute map objects
- * @return {function(Object, function, Object=)} New server constructor
+ * See documentation for Server
  */
-function makeServerConstructor(service_attr_map) {
-  /**
-   * Create a server with the given handlers for all of the methods.
-   * @constructor
-   * @param {Object} service_handlers Map from service names to map from method
-   *     names to handlers
-   * @param {function(string, Object<string, Array<Buffer>>):
-             Object<string, Array<Buffer|string>>=} getMetadata Callback that
-   *     gets metatada for a given method
-   * @param {Object=} options Options to pass to the underlying server
-   */
-  function SurfaceServer(service_handlers, getMetadata, options) {
-    var server = new Server(getMetadata, options);
-    this.inner_server = server;
-    _.each(service_attr_map, function(service_attrs, service_name) {
-      if (service_handlers[service_name] === undefined) {
-        throw new Error('Handlers for service ' +
-            service_name + ' not provided.');
-      }
-      _.each(service_attrs, function(attrs, name) {
-        var method_type;
-        if (attrs.requestStream) {
-          if (attrs.responseStream) {
-            method_type = 'bidi';
-          } else {
-            method_type = 'client_stream';
-          }
-        } else {
-          if (attrs.responseStream) {
-            method_type = 'server_stream';
-          } else {
-            method_type = 'unary';
-          }
-        }
-        if (service_handlers[service_name][name] === undefined) {
-          throw new Error('Method handler for ' + attrs.path +
-              ' not provided.');
-        }
-        var serialize = attrs.responseSerialize;
-        var deserialize = attrs.requestDeserialize;
-        server.register(attrs.path, _.bind(service_handlers[service_name][name],
-                                           service_handlers[service_name]),
-                        serialize, deserialize, method_type);
-      });
-    }, this);
-  }
-
-  /**
-   * Binds the server to the given port, with SSL enabled if creds is supplied
-   * @param {string} port The port that the server should bind on, in the format
-   *     "address:port"
-   * @param {boolean=} creds Credentials to use for SSL
-   * @return {SurfaceServer} this
-   */
-  SurfaceServer.prototype.bind = function(port, creds) {
-    return this.inner_server.bind(port, creds);
-  };
-
-  /**
-   * Starts the server listening on any bound ports
-   * @return {SurfaceServer} this
-   */
-  SurfaceServer.prototype.listen = function() {
-    this.inner_server.listen();
-    return this;
-  };
-
-  /**
-   * Shuts the server down; tells it to stop listening for new requests and to
-   * kill old requests.
-   */
-  SurfaceServer.prototype.shutdown = function() {
-    this.inner_server.shutdown();
-  };
-
-  return SurfaceServer;
-}
-
-/**
- * Create a constructor for servers that serve the given services.
- * @param {Array<ProtoBuf.Reflect.Service>} services The services that the
- *     servers will serve
- * @return {function(Object, function, Object=)} New server constructor
- */
-function makeProtobufServerConstructor(services) {
-  var qual_names = [];
-  var service_attr_map = {};
-  _.each(services, function(service) {
-    var service_name = common.fullyQualifiedName(service);
-    _.each(service.children, function(method) {
-      var name = common.fullyQualifiedName(method);
-      if (_.indexOf(qual_names, name) !== -1) {
-        throw new Error('Method ' + name + ' exposed by more than one service');
-      }
-      qual_names.push(name);
-    });
-    var method_attrs = common.getProtobufServiceAttrs(service);
-    if (!service_attr_map.hasOwnProperty(service_name)) {
-      service_attr_map[service_name] = {};
-    }
-    service_attr_map[service_name] = _.extend(service_attr_map[service_name],
-                                              method_attrs);
-  });
-  return makeServerConstructor(service_attr_map);
-}
-
-/**
- * See documentation for makeServerConstructor
- */
-exports.makeServerConstructor = makeServerConstructor;
-
-/**
- * See documentation for makeProtobufServerConstructor
- */
-exports.makeProtobufServerConstructor = makeProtobufServerConstructor;
+exports.Server = Server;
