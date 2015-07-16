@@ -63,7 +63,7 @@ namespace Grpc.HealthCheck.Tests
             server.Start();
             channel = new Channel(Host, port);
 
-            client = Grpc.Health.V1Alpha.Health.NewStub(channel);
+            client = Grpc.Health.V1Alpha.Health.NewClient(channel);
         }
 
         [TestFixtureTearDown]

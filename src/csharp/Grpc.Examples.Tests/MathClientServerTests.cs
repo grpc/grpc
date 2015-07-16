@@ -49,7 +49,7 @@ namespace math.Tests
         string host = "localhost";
         Server server;
         Channel channel;
-        Math.IMathClient client;
+        Math.MathClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -59,14 +59,14 @@ namespace math.Tests
             int port = server.AddListeningPort(host, Server.PickUnusedPort);
             server.Start();
             channel = new Channel(host, port);
+            client = Math.NewClient(channel);
 
             // TODO(jtattermusch): get rid of the custom header here once we have dedicated tests
             // for header support.
-            var stubConfig = new StubConfiguration((headerBuilder) =>
+            client.HeaderInterceptor = (metadata) =>
             {
-                headerBuilder.Add(new Metadata.MetadataEntry("customHeader", "abcdef"));
-            });
-            client = Math.NewStub(channel, stubConfig);
+                metadata.Add(new Metadata.Entry("customHeader", "abcdef"));
+            };
         }
 
         [TestFixtureTearDown]

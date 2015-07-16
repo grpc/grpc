@@ -39,7 +39,7 @@ using Grpc.Core.Internal;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Helper methods for generated client stubs to make RPC calls.
+    /// Helper methods for generated clients to make RPC calls.
     /// </summary>
     public static class Calls
     {
