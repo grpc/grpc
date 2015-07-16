@@ -221,5 +221,5 @@ namespace Grpc.Core
                 }
             }
         }
-    }   
+    }
 }
