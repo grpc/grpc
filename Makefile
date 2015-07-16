@@ -339,10 +339,10 @@ CACHE_MK =
 HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
 
 ifeq ($(HAS_PKG_CONFIG), true)
-CACHE_MK += HAS_PKG_CONFIG = true\n
+CACHE_MK += HAS_PKG_CONFIG = true,
 endif
 
-PC_TEMPLATE = prefix=$(prefix)\nexec_prefix=\$${prefix}\nincludedir=\$${prefix}/include\nlibdir=\$${exec_prefix}/lib\n\nName: $(PC_NAME)\nDescription: $(PC_DESCRIPTION)\nVersion: $(VERSION)\nCflags: -I\$${includedir} $(PC_CFLAGS)\nRequires.private: $(PC_REQUIRES_PRIVATE)\nLibs: -L\$${libdir} $(PC_LIB)\nLibs.private: $(PC_LIBS_PRIVATE)
+PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
 PC_NAME = gRPC Portable Runtime
@@ -417,7 +417,7 @@ HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true
 ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
 DEFINES += GRPC_HAVE_PERFTOOLS
 LIBS += profiler
-CACHE_MK += HAS_SYSTEM_PERFTOOLS = true\n
+CACHE_MK += HAS_SYSTEM_PERFTOOLS = true,
 endif
 endif
 
@@ -426,20 +426,20 @@ ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 HAS_SYSTEM_OPENSSL_NPN = true
-CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true\n
+CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
 else
 HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 endif
 ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true\n
+CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true,
 endif
 HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_ZLIB),true)
-CACHE_MK += HAS_SYSTEM_ZLIB = true\n
+CACHE_MK += HAS_SYSTEM_ZLIB = true,
 endif
 HAS_SYSTEM_PROTOBUF ?= $(HAS_SYSTEM_PROTOBUF_VERIFY)
 ifeq ($(HAS_SYSTEM_PROTOBUF),true)
-CACHE_MK += HAS_SYSTEM_PROTOBUF = true\n
+CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
 endif
 else
 # override system libraries if the config requires a custom compiled library
@@ -451,10 +451,10 @@ endif
 
 HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-CACHE_MK += HAS_PROTOC = true\n
+CACHE_MK += HAS_PROTOC = true,
 HAS_VALID_PROTOC ?= $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_VALID_PROTOC),true)
-CACHE_MK += HAS_VALID_PROTOC = true\n
+CACHE_MK += HAS_VALID_PROTOC = true,
 endif
 else
 HAS_VALID_PROTOC = false
@@ -475,7 +475,7 @@ endif
 endif
 
 ifeq ($(HAS_SYSTEMTAP),true)
-CACHE_MK += HAS_SYSTEMTAP = true\n
+CACHE_MK += HAS_SYSTEMTAP = true,
 endif
 
 # Note that for testing purposes, one can do:
@@ -2674,32 +2674,32 @@ endif
 
 cache.mk::
 	$(E) "[MAKE]    Generating $@"
-	$(Q) echo -e "$(CACHE_MK)" >$@
+	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GPR_PC_FILE)" >$@
+	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_UNSECURE_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPCXX_PC_FILE)" >$@
+	$(Q) echo "$(GRPCXX_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPCXX_UNSECURE_PC_FILE)" >$@
+	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/examples/pubsub/empty.pb.cc: protoc_dep_error

@@ -59,13 +59,13 @@ static void test_serial_sized(int size) {
   GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
 
   /* Now add repeatedly more items and check them */
-  for (i=1; i<size; i*=2) {
+  for (i = 1; i < size; i *= 2) {
     int j;
-    for (j=0; j<=i; j++) {
-      GPR_ASSERT(gpr_stack_lockfree_push(stack, j) == (j==0));
+    for (j = 0; j <= i; j++) {
+      GPR_ASSERT(gpr_stack_lockfree_push(stack, j) == (j == 0));
     }
-    for (j=0; j<=i; j++) {
-      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == i-j);
+    for (j = 0; j <= i; j++) {
+      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == i - j);
     }
     GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
   }
@@ -75,7 +75,7 @@ static void test_serial_sized(int size) {
 
 static void test_serial() {
   int i;
-  for (i=128; i<MAX_STACK_SIZE; i*=2) {
+  for (i = 128; i < MAX_STACK_SIZE; i *= 2) {
     test_serial_sized(i);
   }
   test_serial_sized(MAX_STACK_SIZE);
@@ -94,9 +94,9 @@ static void test_mt_body(void *v) {
   int lo, hi;
   int i;
   int res;
-  lo = arg->rank*arg->stack_size/arg->nthreads;
-  hi = (arg->rank+1)*arg->stack_size/arg->nthreads;
-  for (i=lo; i<hi; i++) {
+  lo = arg->rank * arg->stack_size / arg->nthreads;
+  hi = (arg->rank + 1) * arg->stack_size / arg->nthreads;
+  for (i = lo; i < hi; i++) {
     gpr_stack_lockfree_push(arg->stack, i);
     if ((res = gpr_stack_lockfree_pop(arg->stack)) != -1) {
       arg->sum += res;
@@ -116,7 +116,7 @@ static void test_mt_sized(int size, int nth) {
   gpr_thd_options options = gpr_thd_options_default();
 
   stack = gpr_stack_lockfree_create(size);
-  for (i=0; i<nth; i++) {
+  for (i = 0; i < nth; i++) {
     args[i].stack = stack;
     args[i].stack_size = size;
     args[i].nthreads = nth;
@@ -132,17 +132,17 @@ static void test_mt_sized(int size, int nth) {
     gpr_thd_join(thds[i]);
     sum = sum + args[i].sum;
   }
-  GPR_ASSERT((unsigned)sum == ((unsigned)size*(size-1))/2);
+  GPR_ASSERT((unsigned)sum == ((unsigned)size * (size - 1)) / 2);
   gpr_stack_lockfree_destroy(stack);
 }
 
 static void test_mt() {
   int size, nth;
-  for (nth=1; nth < MAX_THREADS; nth++) {
-    for (size=128; size < MAX_STACK_SIZE; size*=2) {
-      test_mt_sized(size,nth);
+  for (nth = 1; nth < MAX_THREADS; nth++) {
+    for (size = 128; size < MAX_STACK_SIZE; size *= 2) {
+      test_mt_sized(size, nth);
     }
-    test_mt_sized(MAX_STACK_SIZE,nth);
+    test_mt_sized(MAX_STACK_SIZE, nth);
   }
 }
 
