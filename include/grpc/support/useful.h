@@ -61,4 +61,12 @@
 /** Get the \a n-th bit of \a i */
 #define GPR_BITGET(i, n) (((i) & (1u << n)) != 0)
 
+#define HEXDIGIT_BITCOUNT_(x)                                    \
+  ((x) - (((x) >> 1) & 0x77777777) - (((x) >> 2) & 0x33333333) - \
+   (((x) >> 3) & 0x11111111))
+
+/** Returns number of bits set in bitset \a i */
+#define GPR_BITCOUNT(x) \
+  (((HEXDIGIT_BITCOUNT_(x) + (HEXDIGIT_BITCOUNT_(x) >> 4)) & 0x0F0F0F0F) % 255)
+
 #endif  /* GRPC_SUPPORT_USEFUL_H */
