@@ -103,7 +103,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testLargeUnaryRPC {
@@ -125,7 +125,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testClientStreamingRPC {
@@ -157,7 +157,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testServerStreamingRPC {
@@ -193,7 +193,7 @@
     }
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testPingPongRPC {
@@ -236,7 +236,7 @@
       [expectation fulfill];
     }
   }];
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testEmptyStreamRPC {
@@ -282,10 +282,11 @@
   
   [requestsBuffer writeValue:request];
   
-  __block ProtoRPC *call = [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
-                                                              eventHandler:^(BOOL done,
-                                                                             RMTStreamingOutputCallResponse *response,
-                                                                             NSError *error) {
+  __block ProtoRPC *call =
+      [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
+                                         eventHandler:^(BOOL done,
+                                                        RMTStreamingOutputCallResponse *response,
+                                                        NSError *error) {
     if (receivedResponse) {
       XCTAssert(done, @"Unexpected extra response %@", response);
       XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
@@ -299,7 +300,7 @@
     }
   }];
   [call start];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 @end
