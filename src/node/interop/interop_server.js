@@ -172,7 +172,7 @@ function getServer(port, tls) {
                                                     key_data,
                                                     pem_data);
   }
-  var server = new grpc.Server(null, options);
+  var server = new grpc.Server(options);
   server.addProtoService(testProto.TestService.service, {
     emptyCall: handleEmpty,
     unaryCall: handleUnary,
