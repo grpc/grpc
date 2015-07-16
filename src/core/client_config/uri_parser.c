@@ -99,7 +99,7 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
   if (uri_text[scheme_end + 1] == '/' && uri_text[scheme_end + 2] == '/') {
     authority_begin = scheme_end + 3;
     for (i = authority_begin; uri_text[i] != 0; i++) {
-      if (uri_text[i] == '/') {
+      if (uri_text[i] == '/' && authority_end == -1) {
         authority_end = i;
       }
       if (uri_text[i] == '?') {
