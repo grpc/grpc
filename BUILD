@@ -243,6 +243,7 @@ cc_library(
     "src/core/transport/transport.h",
     "src/core/transport/transport_impl.h",
     "src/core/census/context.h",
+    "src/core/census/resource_id.h",
     "src/core/httpcli/format_request.c",
     "src/core/httpcli/httpcli.c",
     "src/core/httpcli/httpcli_security_connector.c",
@@ -377,6 +378,7 @@ cc_library(
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
     "src/core/census/initialize.c",
+    "src/core/census/record_stat.c",
   ],
   hdrs = [
     "include/grpc/grpc_security.h",
@@ -497,6 +499,7 @@ cc_library(
     "src/core/transport/transport.h",
     "src/core/transport/transport_impl.h",
     "src/core/census/context.h",
+    "src/core/census/resource_id.h",
     "src/core/surface/init_unsecure.c",
     "src/core/census/grpc_context.c",
     "src/core/channel/channel_args.c",
@@ -608,6 +611,7 @@ cc_library(
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
     "src/core/census/initialize.c",
+    "src/core/census/record_stat.c",
   ],
   hdrs = [
     "include/grpc/byte_buffer.h",
@@ -1080,6 +1084,7 @@ objc_library(
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
     "src/core/census/initialize.c",
+    "src/core/census/record_stat.c",
   ],
   hdrs = [
     "include/grpc/grpc_security.h",
@@ -1202,6 +1207,7 @@ objc_library(
     "src/core/transport/transport.h",
     "src/core/transport/transport_impl.h",
     "src/core/census/context.h",
+    "src/core/census/resource_id.h",
   ],
   includes = [
     "include",
