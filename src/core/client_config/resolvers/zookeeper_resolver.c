@@ -182,9 +182,10 @@ static void zookeeper_dns_resolved(void *arg, grpc_resolved_addresses *addresses
   zookeeper_resolver *r = arg;
   r->resolved_num++;
   r->resolved_addrs->addrs = gpr_realloc(r->resolved_addrs->addrs, 
-                             sizeof(grpc_resolved_address) * (r->resolved_addrs->naddrs + addresses->naddrs));
+                            sizeof(grpc_resolved_address) * (r->resolved_addrs->naddrs + addresses->naddrs));
   for (i = 0; i < addresses->naddrs; i++) {
-    memcpy(r->resolved_addrs->addrs[i + r->resolved_addrs->naddrs].addr, addresses->addrs[i].addr, addresses->addrs[i].len);
+    memcpy(r->resolved_addrs->addrs[i + r->resolved_addrs->naddrs].addr, 
+          addresses->addrs[i].addr, addresses->addrs[i].len);
     r->resolved_addrs->addrs[i + r->resolved_addrs->naddrs].len = addresses->addrs[i].len;
   }
 
@@ -199,9 +200,9 @@ static void zookeeper_dns_resolved(void *arg, grpc_resolved_addresses *addresses
 static char *zookeeper_parse_address(char *buffer, int buffer_len) {
   char *host;
   char *port;
-  grpc_json *json;
-  grpc_json *cur;
   char *address;
+  grpc_json *json;
+  grpc_json *cur;  
 
   gpr_log(GPR_INFO, buffer);
   address = NULL;
@@ -249,16 +250,16 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
   r->resolved_addrs = NULL;
   r->resolved_total = 0;
   r->resolved_num = 0;
-
   address = NULL;
-  memset(path, 0, GRPC_MAX_ZOOKEEPER_BUFFER_SIZE);
-  memset(buffer, 0, GRPC_MAX_ZOOKEEPER_BUFFER_SIZE);
   buffer_len = GRPC_MAX_ZOOKEEPER_BUFFER_SIZE;
+  memset(path, 0, buffer_len);
+  memset(buffer, 0, buffer_len);
 
-  /** Read zookeeper node of given path r->name 
-      If not containing address, read its children */
+  /** Get zookeeper node of given path r->name 
+      If not containing address, get its children */
   gpr_log(GPR_INFO, r->name);
-  status = zoo_get(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, buffer, &buffer_len, NULL);
+  status = zoo_get(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, 
+                  buffer, &buffer_len, NULL);
   if (!status) {
     if (buffer_len > 0) {
       address = zookeeper_parse_address(buffer, buffer_len);
@@ -274,7 +275,8 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
     }
 
     buffer_len = GRPC_MAX_ZOOKEEPER_BUFFER_SIZE;
-    status = zoo_get_children(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, &children);
+    status = zoo_get_children(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, 
+                              &children);
     if (!status) {
       r->resolved_addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
       r->resolved_addrs->addrs = NULL;
@@ -288,29 +290,36 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
         strcat(path, children.data[i]);
         gpr_log(GPR_INFO, path);
         memset(buffer, 0, GRPC_MAX_ZOOKEEPER_BUFFER_SIZE);
-        status = zoo_get(r->zookeeper_handle, path, GRPC_ZOOKEEPER_WATCH, buffer, &buffer_len, NULL);
+        status = zoo_get(r->zookeeper_handle, path, GRPC_ZOOKEEPER_WATCH, 
+                        buffer, &buffer_len, NULL);
 
         if (!status) {
           if (buffer_len > 0) {
             address = zookeeper_parse_address(buffer, buffer_len);
-            if (address != NULL)
+            if (address != NULL) {
               grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r); 
-            else
-              gpr_log(GPR_ERROR, "Error when parsing zookeeper address %s", buffer);
+            }
+            else {
+              gpr_log(GPR_ERROR, "Cannot parse zookeeper address %s", buffer);
+            }
           }
-        } else 
-          gpr_log(GPR_ERROR, "Error when reading zookeeper node %s", path);
+        } else {
+          gpr_log(GPR_ERROR, "Cannot get zookeeper node %s", path);
+        }
 
         if (address == NULL) {
           r->resolved_total--;
-          if (r->resolved_num == r->resolved_total)
+          if (r->resolved_num == r->resolved_total) {
             zookeeper_on_resolved(r, r->resolved_addrs);
+          }
         }
       }
-    } else 
-      gpr_log(GPR_ERROR, "Error when getting children of zookeeper node %s", r->name);
-  } else
-    gpr_log(GPR_ERROR, "Error when reading zookeeper node %s", r->name);
+    } else {
+      gpr_log(GPR_ERROR, "Cannot get children of zookeeper node %s", r->name);
+    }
+  } else {
+    gpr_log(GPR_ERROR, "Cannot read zookeeper node %s", r->name);
+  }
   
   gpr_free(address);
 }
@@ -347,8 +356,9 @@ static void zookeeper_destroy(grpc_resolver *gr) {
   gpr_free(r);
 }
 
-/** Zookeeper watcher function - handle any updates to watched nodes */
-static void zookeeper_watcher(zhandle_t *zookeeper_handle, int type, int state, const char* path, void* watcher_ctx) {}
+/** Zookeeper watcher function - handle updates to any watched nodes */
+static void zookeeper_watcher(zhandle_t *zookeeper_handle, int type, int state, 
+                              const char* path, void* watcher_ctx) {}
 
 static grpc_resolver *zookeeper_create(
     grpc_uri *uri,
@@ -358,7 +368,7 @@ static grpc_resolver *zookeeper_create(
   zookeeper_resolver *r;
   const char *path = uri->path;
   if (0 == strcmp(uri->authority, "")) {
-    gpr_log(GPR_ERROR, "no authority specified in zookeeper uri");
+    gpr_log(GPR_ERROR, "No authority specified in zookeeper uri");
     return NULL;
   }
 
@@ -374,9 +384,10 @@ static grpc_resolver *zookeeper_create(
 
   /** Initialize zookeeper client */
   zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-  r->zookeeper_handle = zookeeper_init(uri->authority, zookeeper_watcher, GRPC_ZOOKEEPER_TIMEOUT, 0, 0, 0);
+  r->zookeeper_handle = zookeeper_init(uri->authority, zookeeper_watcher, 
+                                      GRPC_ZOOKEEPER_TIMEOUT, 0, 0, 0);
   if (r->zookeeper_handle  == NULL) {
-    gpr_log(GPR_ERROR, "Error when connecting to zookeeper servers");
+    gpr_log(GPR_ERROR, "Cannot connect to zookeeper server");
     return NULL;
   }
 

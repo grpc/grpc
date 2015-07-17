@@ -555,6 +555,9 @@
       "name": "grpc_zookeeper",
       "build": "all",
       "language": "c",
+      "public_headers": [
+        "include/grpc/grpc_zookeeper.h"
+      ],
       "headers": [
         "src/core/client_config/resolvers/zookeeper_resolver.h"
       ],
