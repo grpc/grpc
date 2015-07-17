@@ -59,6 +59,7 @@ class InteropClient {
   void DoResponseStreamingWithSlowConsumer();
   void DoCancelAfterBegin();
   void DoCancelAfterFirstResponse();
+  void DoTimeoutOnSleepingServer();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);
