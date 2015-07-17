@@ -44,12 +44,12 @@ static id (^kIdentity)(id value) = ^id(id value) {
   id (^_map)(id value);
 }
 
-- (instancetype)initWithWriter:(id<GRXWriter>)writer {
+- (instancetype)initWithWriter:(GRXWriter *)writer {
   return [self initWithWriter:writer map:nil];
 }
 
 // Designated initializer
-- (instancetype)initWithWriter:(id<GRXWriter>)writer map:(id (^)(id value))map {
+- (instancetype)initWithWriter:(GRXWriter *)writer map:(id (^)(id value))map {
   if ((self = [super initWithWriter:writer])) {
     _map = map ?: kIdentity;
   }

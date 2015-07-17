@@ -37,7 +37,7 @@
 @end
 
 @implementation GRXForwardingWriter {
-  id<GRXWriter> _writer;
+  GRXWriter *_writer;
   id<GRXWriteable> _writeable;
 }
 
@@ -46,7 +46,7 @@
 }
 
 // Designated initializer
-- (instancetype)initWithWriter:(id<GRXWriter>)writer {
+- (instancetype)initWithWriter:(GRXWriter *)writer {
   if (!writer) {
     [NSException raise:NSInvalidArgumentException format:@"writer can't be nil."];
   }
@@ -68,7 +68,7 @@
 // This is used to stop the input writer. It nillifies our reference to it
 // to release it.
 - (void)finishInput {
-  id<GRXWriter> writer = _writer;
+  GRXWriter *writer = _writer;
   _writer = nil;
   writer.state = GRXWriterStateFinished;
 }

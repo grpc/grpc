@@ -54,7 +54,7 @@
 // writesFinishedWithError: is sent to the writeable, and released after that.
 // This is used to create a retain cycle that keeps both objects alive until the
 // writing is explicitly finished.
-- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(id<GRXWriter>)writer
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(GRXWriter *)writer
     NS_DESIGNATED_INITIALIZER;
 
 // Enqueues writeValue: to be sent to the writeable in the main thread.

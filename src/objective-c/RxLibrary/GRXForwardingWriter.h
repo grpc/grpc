@@ -39,5 +39,5 @@
 // input writer, and for classes that represent objects with input and
 // output sequences of values, like an RPC.
 @interface GRXForwardingWriter : GRXWriter
-- (instancetype)initWithWriter:(id<GRXWriter>)writer NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithWriter:(GRXWriter *)writer NS_DESIGNATED_INITIALIZER;
 @end

@@ -46,7 +46,7 @@
 #pragma clang diagnostic ignored "-Wobjc-designated-initializers"
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(id<GRXWriter>)requestsWriter {
+              requestsWriter:(GRXWriter *)requestsWriter {
   [NSException raise:NSInvalidArgumentException
               format:@"Please use ProtoRPC's designated initializer instead."];
   return nil;
@@ -56,7 +56,7 @@
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
                       method:(ProtoMethod *)method
-              requestsWriter:(id<GRXWriter>)requestsWriter
+              requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable {
   // Because we can't tell the type system to constrain the class, we need to check at runtime:
