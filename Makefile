@@ -398,6 +398,7 @@ PROTOC_CHECK_CMD = which protoc > /dev/null
 PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
 DTRACE_CHECK_CMD = which dtrace > /dev/null
 SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
+ZOOKEEPER_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zookeeper.c $(LDFLAGS) -lzookeeper_mt
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -437,6 +438,8 @@ ifeq ($(HAS_DTRACE),true)
 HAS_SYSTEMTAP = true
 endif
 endif
+
+HAS_ZOOKEEPER = $(shell $(ZOOKEEPER_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
@@ -540,6 +543,14 @@ PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
 GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
+
+# gprc_zookeeper .pc file
+PC_NAME = gRPC zookeeper
+PC_DESCRIPTION = gRPC's zookeeper plugin
+PC_CFLAGS =
+PC_REQUIRES_PRIVATE =
+PC_LIBS_PRIVATE = -lzookeeper_mt
+GRPC_ZOOKEEPER_PC_FILE := $(PC_TEMPLATE)
 
 PROTOBUF_PKG_CONFIG = false
 
@@ -1301,6 +1312,7 @@ run_dep_checks:
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
 	$(PROTOC_CHECK_VERSION_CMD) || true
+	$(ZOOKEEPER_CHECK_CMD) || true
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
@@ -1359,17 +1371,29 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
+static_c: pc_c pc_c_unsecure  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a static_zookeeper_libs
+
 
 static_cxx: pc_cxx pc_cxx_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT)
+shared_c: pc_c pc_c_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) shared_zookeeper_libs
 
 shared_cxx: pc_cxx pc_cxx_unsecure  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
+ifeq ($(HAS_ZOOKEEPER),true)
+static_zookeeper_libs: $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
+shared_zookeeper_libs: $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT)
+else
+
+static_zookeeper_libs:
+
+shared_zookeeper_libs:
+
+endif
+
 grpc_csharp_ext: shared_csharp
 
 plugins: $(PROTOC_PLUGINS)
@@ -2580,6 +2604,9 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.a
 	$(E) "[STRIP]   Stripping libgrpc++_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+
+ifeq ($(HAS_ZOOKEEPER),true)
+endif
 endif
 
 strip-shared_c: shared_c
@@ -2590,8 +2617,10 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+ifeq ($(HAS_ZOOKEEPER),true)
 	$(E) "[STRIP]   Stripping libgrpc_zookeeper.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT)
+endif
 endif
 
 strip-shared_cxx: shared_cxx
@@ -2622,6 +2651,11 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
 	$(Q) echo -e "$(GRPC_UNSECURE_PC_FILE)" >$@
+
+$(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
+	$(E) "[MAKE]    Generating $@"
+	$(Q) mkdir -p $(@D)
+	$(Q) echo -e "$(GRPC_ZOOKEEPER_PC_FILE)" >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
 	$(E) "[MAKE]    Generating $@"
@@ -2865,9 +2899,11 @@ install-static_c: static_c strip-static_c install-pkg-config_c
 	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
+ifeq ($(HAS_ZOOKEEPER),true)
 	$(E) "[INSTALL] Installing libgrpc_zookeeper.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(prefix)/lib/libgrpc_zookeeper.a
+endif
 
 install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
@@ -2922,6 +2958,7 @@ ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
 endif
 endif
+ifeq ($(HAS_ZOOKEEPER),true)
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc_zookeeper.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
@@ -2934,6 +2971,7 @@ else
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_zookeeper.$(SHARED_EXT) $(prefix)/lib/libgrpc_zookeeper.so.0
 	$(Q) ln -sf libgrpc_zookeeper.$(SHARED_EXT) $(prefix)/lib/libgrpc_zookeeper.so
+endif
 endif
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2972,6 +3010,8 @@ ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 endif
+ifeq ($(HAS_ZOOKEEPER),true)
+endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ldconfig || true
@@ -2993,6 +3033,8 @@ ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so.0
 	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
+endif
+ifeq ($(HAS_ZOOKEEPER),true)
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -3024,6 +3066,7 @@ install-pkg-config_c: pc_gpr pc_c pc_c_unsecure
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc $(prefix)/lib/pkgconfig/grpc_zookeeper.pc
 
 install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
 	$(E) "[INSTALL] Installing C++ pkg-config files"
@@ -3657,9 +3700,9 @@ $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT): $(LIBGRPC_ZOOKEEPER_OBJS)  
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name libgrpc_zookeeper.$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) -lgpr -lgrpc
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name libgrpc_zookeeper.$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) -lgpr -lgrpc -lzookeeper_mt
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_zookeeper.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) -lgpr -lgrpc
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_zookeeper.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) -lgpr -lgrpc -lzookeeper_mt
 	$(Q) ln -sf libgrpc_zookeeper.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.so.0
 	$(Q) ln -sf libgrpc_zookeeper.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.so
 endif
