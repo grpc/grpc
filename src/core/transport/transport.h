@@ -72,6 +72,10 @@ typedef struct grpc_transport_stream_op {
 
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
+  /** The number of bytes this peer is currently prepared to receive.
+      These bytes will be eventually used to replenish per-stream flow control
+      windows. */
+  gpr_uint32 max_recv_bytes;
   grpc_iomgr_closure *on_done_recv;
 
   grpc_pollset *bind_pollset;
