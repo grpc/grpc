@@ -53,13 +53,13 @@
   } while (0)
 
 /** Set the \a n-th bit of \a i (a mutable pointer). */
-#define GPR_BITSET(i, n) ((*(i)) |= (1u << n))
+#define GPR_BITSET(i, n) ((*(i)) |= (1u << (n)))
 
 /** Clear the \a n-th bit of \a i (a mutable pointer). */
-#define GPR_BITCLEAR(i, n) ((*(i)) &= ~(1u << n))
+#define GPR_BITCLEAR(i, n) ((*(i)) &= ~(1u << (n)))
 
 /** Get the \a n-th bit of \a i */
-#define GPR_BITGET(i, n) (((i) & (1u << n)) != 0)
+#define GPR_BITGET(i, n) (((i) & (1u << (n))) != 0)
 
 #define GPR_INTERNAL_HEXDIGIT_BITCOUNT(x)                        \
   ((x) - (((x) >> 1) & 0x77777777) - (((x) >> 2) & 0x33333333) - \
@@ -69,7 +69,7 @@
 #define GPR_BITCOUNT(i)                          \
   (((GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) +         \
      (GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) >> 4)) & \
-    0x0F0F0F0F) %                                \
+    0x0f0f0f0f) %                                \
    255)
 
 #endif  /* GRPC_SUPPORT_USEFUL_H */
