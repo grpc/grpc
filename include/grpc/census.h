@@ -100,6 +100,9 @@ int census_context_deserialize(const char *buffer, census_context **context);
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
 
+/* Record a new value against the given stats ID and context. */
+void census_record_stat(census_context *context, int resource_id, double value);
+
 #ifdef __cplusplus
 }
 #endif
