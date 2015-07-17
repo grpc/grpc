@@ -615,6 +615,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "auth_property_iterator_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "channel_arguments_test", 
     "platforms": [
       "windows", 
@@ -679,6 +688,15 @@
     "flaky": false, 
     "language": "c++", 
     "name": "end2end_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "fixed_size_thread_pool_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -769,15 +787,6 @@
     "flaky": false, 
     "language": "c++", 
     "name": "sync_unary_ping_pong_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
-    "name": "thread_pool_test", 
     "platforms": [
       "windows", 
       "posix"

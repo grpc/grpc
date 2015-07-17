@@ -33,12 +33,11 @@
 
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
-
-#include "src/cpp/server/thread_pool.h"
+#include <grpc++/fixed_size_thread_pool.h>
 
 namespace grpc {
 
-void ThreadPool::ThreadFunc() {
+void FixedSizeThreadPool::ThreadFunc() {
   for (;;) {
     // Wait until work is available or we are shutting down.
     grpc::unique_lock<grpc::mutex> lock(mu_);
@@ -58,13 +57,14 @@ void ThreadPool::ThreadFunc() {
   }
 }
 
-ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
+FixedSizeThreadPool::FixedSizeThreadPool(int num_threads) : shutdown_(false) {
   for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(new grpc::thread(&ThreadPool::ThreadFunc, this));
+    threads_.push_back(
+        new grpc::thread(&FixedSizeThreadPool::ThreadFunc, this));
   }
 }
 
-ThreadPool::~ThreadPool() {
+FixedSizeThreadPool::~FixedSizeThreadPool() {
   {
     grpc::lock_guard<grpc::mutex> lock(mu_);
     shutdown_ = true;
@@ -76,7 +76,8 @@ ThreadPool::~ThreadPool() {
   }
 }
 
-void ThreadPool::ScheduleCallback(const std::function<void()>& callback) {
+void FixedSizeThreadPool::ScheduleCallback(
+    const std::function<void()>& callback) {
   grpc::lock_guard<grpc::mutex> lock(mu_);
   callbacks_.push(callback);
   cv_.notify_one();

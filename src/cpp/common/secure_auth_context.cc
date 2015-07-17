@@ -77,4 +77,20 @@ std::vector<grpc::string> SecureAuthContext::FindPropertyValues(
   return values;
 }
 
+AuthPropertyIterator SecureAuthContext::begin() const {
+  if (ctx_) {
+    grpc_auth_property_iterator iter =
+        grpc_auth_context_property_iterator(ctx_);
+    const grpc_auth_property* property =
+        grpc_auth_property_iterator_next(&iter);
+    return AuthPropertyIterator(property, &iter);
+  } else {
+    return end();
+  }
+}
+
+AuthPropertyIterator SecureAuthContext::end() const {
+  return AuthPropertyIterator();
+}
+
 }  // namespace grpc

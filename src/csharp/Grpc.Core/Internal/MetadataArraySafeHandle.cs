@@ -54,11 +54,11 @@ namespace Grpc.Core.Internal
 
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
-            var entries = metadata.Entries;
-            var metadataArray = grpcsharp_metadata_array_create(new UIntPtr((ulong)entries.Count));
-            for (int i = 0; i < entries.Count; i++)
+            // TODO(jtattermusch): we might wanna check that the metadata is readonly 
+            var metadataArray = grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
+            for (int i = 0; i < metadata.Count; i++)
             {
-                grpcsharp_metadata_array_add(metadataArray, entries[i].Key, entries[i].ValueBytes, new UIntPtr((ulong)entries[i].ValueBytes.Length));
+                grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, metadata[i].ValueBytes, new UIntPtr((ulong)metadata[i].ValueBytes.Length));
             }
             return metadataArray;
         }

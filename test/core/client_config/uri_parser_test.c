@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
   test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
   test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom");
   test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom");
+  test_succeeds("zookeeper://127.0.0.1:2181/foo/bar", "zookeeper", "127.0.0.1:2181", "/foo/bar");
   test_fails("xyz");
   test_fails("http://www.google.com?why-are-you-using-queries");
   test_fails("dns:foo.com#fragments-arent-supported-here");
