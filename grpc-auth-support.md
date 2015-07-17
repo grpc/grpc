@@ -1,31 +1,33 @@
 #gRPC Authentication support
 
-gRPC is designed to plug-in a number of authentication mechanisms. This document provides a quick overview 
-of the various auth mechanisms supported, discusses the API with some examples, and concludes with a discussion of extensibility. More documentation and examples are coming soon!
+gRPC is designed to plug-in a number of authentication mechanisms. This document
+provides a quick overview of the various auth mechanisms supported, discusses
+the API with some examples, and concludes with a discussion of extensibility.
+More documentation and examples are coming soon!
 
 ## Supported auth mechanisms
 
 ###SSL/TLS
-gRPC has SSL/TLS integration and promotes the use of SSL/TLS to authenticate the server,
-and encrypt all the data exchanged between the client and the server. Optional
-mechanisms are available for clients to provide certificates to accomplish mutual
-authentication.
+gRPC has SSL/TLS integration and promotes the use of SSL/TLS to authenticate the
+server, and encrypt all the data exchanged between the client and the server.
+Optional mechanisms are available for clients to provide certificates to
+accomplish mutual authentication.
 
 ###OAuth 2.0
-gRPC provides a generic mechanism (described below) to attach metadata to requests
-and responses. This mechanism can be used to attach OAuth 2.0 Access Tokens to
-RPCs being made at a client. Additional support for acquiring Access Tokens while
-accessing Google APIs through gRPC is provided for certain auth flows, demonstrated
-through code examples below.
+gRPC provides a generic mechanism (described below) to attach metadata to
+requests and responses. This mechanism can be used to attach OAuth 2.0 Access
+Tokens to RPCs being made at a client. Additional support for acquiring Access
+Tokens while accessing Google APIs through gRPC is provided for certain auth
+flows, demonstrated through code examples below.
 
 ## API
-To reduce complexity and minimize API clutter, gRPC works with a unified concept of
-a Credentials object. Users construct gRPC credentials using corresponding bootstrap
-credentials (e.g., SSL client certs or Service Account Keys), and use the
-credentials while creating a gRPC channel to any server. Depending on the type of
-credential supplied, the channel uses the credentials during the initial SSL/TLS
-handshake with the server, or uses  the credential to generate and attach Access
-Tokens to each request being made on the channel.
+To reduce complexity and minimize API clutter, gRPC works with a unified concept
+of a Credentials object. Users construct gRPC credentials using corresponding
+bootstrap credentials (e.g., SSL client certs or Service Account Keys), and use
+the credentials while creating a gRPC channel to any server. Depending on the
+type of credential supplied, the channel uses the credentials during the initial
+SSL/TLS handshake with the server, or uses  the credential to generate and
+attach Access Tokens to each request being made on the channel.
 
 ###SSL/TLS for server authentication and encryption
 This is the simplest authentication scenario, where a client just wants to
@@ -129,6 +131,19 @@ HLWGreeter *client = [[HLWGreeter alloc] initWithHost:@"localhost:50051"];
 HLWGreeter *client = [[HLWGreeter alloc] initWithHost:@"http://localhost:50051"];
 // Specifying the HTTP scheme explicitly forces no encryption.
 ```
+
+###SSL/TLS for server authentication and encryption (Python)
+```python
+# Base case - No encryption
+stub = early_adopter_create_GreeterService_stub('localhost', 50051)
+...
+
+# With server authentication SSL/TLS
+stub = early_adopter_create_GreeterService_stub(
+  'localhost', 50051, secure=True, root_certificates=open('ca.pem').read())
+...
+```
+n.b.: the beta API will look different
 
 ###Authenticating with Google (Ruby)
 ```ruby
@@ -251,3 +266,25 @@ call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
 ```
 
 You can see a working example app, with a more detailed explanation, [here](https://github.com/grpc/grpc-common/tree/master/objective-c/auth_sample).
+
+### Authenticating with Google (Python)
+```python
+# Base case - No encryption
+stub = early_adopter_create_GreeterService_stub('localhost', 50051)
+...
+
+# With server authentication SSL/TLS
+import oauth2client.client
+credentials = oauth2client.GoogleCredentials.get_application_default()
+scope = 'https://www.googleapis.com/auth/grpc-testing'
+scoped_credentials = credentials.create_scoped([scope])
+access_token = scoped_credentials.get_access_token().access_token
+metadata_transformer = (
+    lambda x: [('Authorization', 'Bearer {}'.format(access_token))])
+
+stub = early_adopter_create_GreeterService_stub(
+  'localhost', 50051, secure=True, root_certificates=open('ca.pem').read(),
+  metadata_transformer=metadata_transformer)
+...
+```
+n.b.: the beta API will look different
