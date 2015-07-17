@@ -50,7 +50,7 @@ class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
   explicit FixedSizeThreadPool(int num_threads);
   ~FixedSizeThreadPool();
 
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
 
  private:
   grpc::mutex mu_;
