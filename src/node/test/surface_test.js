@@ -422,6 +422,7 @@ describe('Other conditions', function() {
     it('for a unary call', function(done) {
       client.unary({error: true}, function(err, data) {
         assert(err);
+        assert.strictEqual(err.code, grpc.status.UNKNOWN);
         assert.strictEqual(err.message, 'Requested error');
         done();
       });
@@ -429,6 +430,7 @@ describe('Other conditions', function() {
     it('for a client stream call', function(done) {
       var call = client.clientStream(function(err, data) {
         assert(err);
+        assert.strictEqual(err.code, grpc.status.UNKNOWN);
         assert.strictEqual(err.message, 'Requested error');
         done();
       });
@@ -440,6 +442,7 @@ describe('Other conditions', function() {
       var call = client.serverStream({error: true});
       call.on('data', function(){});
       call.on('error', function(error) {
+        assert.strictEqual(error.code, grpc.status.UNKNOWN);
         assert.strictEqual(error.message, 'Requested error');
         done();
       });
@@ -451,6 +454,7 @@ describe('Other conditions', function() {
       call.end();
       call.on('data', function(){});
       call.on('error', function(error) {
+        assert.strictEqual(error.code, grpc.status.UNKNOWN);
         assert.strictEqual(error.message, 'Requested error');
         done();
       });
