@@ -79,13 +79,7 @@ void ClientContext::set_call(grpc_call* call,
   }
 }
 
-void ClientContext::set_compression_level(grpc_compression_level level) {
-  const grpc_compression_algorithm algorithm_for_level =
-      grpc_compression_algorithm_for_level(level);
-  set_compression_algorithm(algorithm_for_level);
-}
-
-void ClientContext::set_compression_algorithm(
+void ClientContext::_experimental_set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
   char* algorithm_name = NULL;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {

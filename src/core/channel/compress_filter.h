@@ -40,11 +40,7 @@
 
 /** Message-level compression filter.
  *
- * See <grpc/compression.h> for the available compression levels.
- *
- * Use grpc_channel_args_set_compression_level and
- * grpc_channel_args_get_compression_level to interact with the compression
- * settings for a channel.
+ * See <grpc/compression.h> for the available compression settings.
  *
  * grpc_op instances of type GRPC_OP_SEND_MESSAGE can have the bit specified by
  * the GRPC_WRITE_NO_COMPRESS mask in order to disable compression in an
