@@ -382,6 +382,9 @@ static grpc_resolver *zookeeper_create(
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &zookeeper_resolver_vtable);
   r->name = gpr_strdup(path);
+  if (r->name[strlen(r->name)-1] == '/') {
+    r->name[strlen(r->name)-1] = 0;
+  } 
   r->subchannel_factory = subchannel_factory;
   r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
