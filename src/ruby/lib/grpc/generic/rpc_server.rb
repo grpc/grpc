@@ -398,14 +398,14 @@ module GRPC
       nil
     end
 
-    # Sends NOT_FOUND if the method can't be found
-    def found?(an_rpc)
+    # Sends UNIMPLEMENTED if the method is not implemented by this server
+    def implemented?(an_rpc)
       mth = an_rpc.method.to_sym
       return an_rpc if rpc_descs.key?(mth)
-      GRPC.logger.warn("NOT_FOUND: #{an_rpc}")
+      GRPC.logger.warn("UNIMPLEMENTED: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::NOT_FOUND, '')
+      c.send_status(StatusCodes::UNIMPLEMENTED, '')
       nil
     end
 
@@ -446,7 +446,7 @@ module GRPC
       an_rpc.call.run_batch(@cq, handle_call_tag, INFINITE_FUTURE,
                             SEND_INITIAL_METADATA => connect_md)
       return nil unless available?(an_rpc)
-      return nil unless found?(an_rpc)
+      return nil unless implemented?(an_rpc)
 
       # Create the ActiveCall
       GRPC.logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")

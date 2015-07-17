@@ -128,7 +128,8 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   if (op->recv_ops) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_strvec_add(&b, gpr_strdup("RECV"));
+    gpr_asprintf(&tmp, "RECV:max_recv_bytes=%d", op->max_recv_bytes);
+    gpr_strvec_add(&b, tmp);
   }
 
   if (op->bind_pollset) {

@@ -33,8 +33,9 @@
 
 #import <Foundation/Foundation.h>
 
+#import <RxLibrary/GRXWriter.h>
+
 @protocol GRXWriteable;
-@protocol GRXWriter;
 
 // This is a thread-safe wrapper over a GRXWriteable instance. It lets one
 // enqueue calls to a GRXWriteable instance for the main thread, guaranteeing
@@ -54,7 +55,7 @@
 // writesFinishedWithError: is sent to the writeable, and released after that.
 // This is used to create a retain cycle that keeps both objects alive until the
 // writing is explicitly finished.
-- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(id<GRXWriter>)writer
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(GRXWriter *)writer
     NS_DESIGNATED_INITIALIZER;
 
 // Enqueues writeValue: to be sent to the writeable in the main thread.

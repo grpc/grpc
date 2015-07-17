@@ -513,6 +513,8 @@ static void unlock(grpc_call *call) {
   int completing_requests = 0;
   int start_op = 0;
   int i;
+  const gpr_uint32 MAX_RECV_PEEK_AHEAD = 65536;
+  size_t buffered_bytes;
   int cancel_alarm = 0;
 
   memset(&op, 0, sizeof(op));
@@ -528,6 +530,17 @@ static void unlock(grpc_call *call) {
     op.recv_ops = &call->recv_ops;
     op.recv_state = &call->recv_state;
     op.on_done_recv = &call->on_done_recv;
+    if (grpc_bbq_empty(&call->incoming_queue) && call->reading_message) {
+      op.max_recv_bytes = call->incoming_message_length -
+                          call->incoming_message.length + MAX_RECV_PEEK_AHEAD;
+    } else {
+      buffered_bytes = grpc_bbq_bytes(&call->incoming_queue);
+      if (buffered_bytes > MAX_RECV_PEEK_AHEAD) {
+        op.max_recv_bytes = 0;
+      } else {
+        op.max_recv_bytes = MAX_RECV_PEEK_AHEAD - buffered_bytes;
+      }
+    }
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
     start_op = 1;
