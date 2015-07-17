@@ -324,7 +324,7 @@ static void jwt_reset_cache(grpc_jwt_credentials *c) {
     gpr_free(c->cached.service_url);
     c->cached.service_url = NULL;
   }
-  c->cached.jwt_expiration = gpr_inf_past;
+  c->cached.jwt_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
 }
 
 static void jwt_destroy(grpc_credentials *creds) {
@@ -347,8 +347,8 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {
   grpc_jwt_credentials *c = (grpc_jwt_credentials *)creds;
-  gpr_timespec refresh_threshold = {GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS,
-                                    0};
+  gpr_timespec refresh_threshold = gpr_time_from_seconds(
+      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
   /* See if we can return a cached jwt. */
   grpc_credentials_md_store *jwt_md = NULL;
@@ -516,6 +516,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  access_token->value);
     token_lifetime->tv_sec = strtol(expires_in->value, NULL, 10);
     token_lifetime->tv_nsec = 0;
+    token_lifetime->clock_type = GPR_TIMESPAN;
     if (*token_md != NULL) grpc_credentials_md_store_unref(*token_md);
     *token_md = grpc_credentials_md_store_create(1);
     grpc_credentials_md_store_add_cstrings(
@@ -552,7 +553,7 @@ static void on_oauth2_token_fetcher_http_response(
     r->cb(r->user_data, c->access_token_md->entries,
           c->access_token_md->num_entries, status);
   } else {
-    c->token_expiration = gpr_inf_past;
+    c->token_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
     r->cb(r->user_data, NULL, 0, status);
   }
   gpr_mu_unlock(&c->mu);
@@ -564,8 +565,8 @@ static void oauth2_token_fetcher_get_request_metadata(
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_oauth2_token_fetcher_credentials *c =
       (grpc_oauth2_token_fetcher_credentials *)creds;
-  gpr_timespec refresh_threshold = {GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS,
-                                    0};
+  gpr_timespec refresh_threshold = gpr_time_from_seconds(
+      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
   grpc_credentials_md_store *cached_access_token_md = NULL;
   {
     gpr_mu_lock(&c->mu);
@@ -596,7 +597,7 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
   c->base.type = GRPC_CREDENTIALS_TYPE_OAUTH2;
   gpr_ref_init(&c->base.refcount, 1);
   gpr_mu_init(&c->mu);
-  c->token_expiration = gpr_inf_past;
+  c->token_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
   c->fetch_func = fetch_func;
   grpc_httpcli_context_init(&c->httpcli_context);
 }

@@ -302,12 +302,13 @@ grpcsharp_completion_queue_destroy(grpc_completion_queue *cq) {
 
 GPR_EXPORT grpc_event GPR_CALLTYPE
 grpcsharp_completion_queue_next(grpc_completion_queue *cq) {
-  return grpc_completion_queue_next(cq, gpr_inf_future);
+  return grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 GPR_EXPORT grpc_event GPR_CALLTYPE
 grpcsharp_completion_queue_pluck(grpc_completion_queue *cq, void *tag) {
-  return grpc_completion_queue_pluck(cq, tag, gpr_inf_future);
+  return grpc_completion_queue_pluck(cq, tag,
+                                     gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 /* Channel */
@@ -382,7 +383,7 @@ grpcsharp_channel_args_destroy(grpc_channel_args *args) {
 GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(void) { return gpr_now(GPR_CLOCK_REALTIME); }
 
 GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_future(void) {
-  return gpr_inf_future;
+  return gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE gprsharp_sizeof_timespec(void) {

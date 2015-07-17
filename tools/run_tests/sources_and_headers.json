@@ -938,20 +938,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "time_test", 
-    "src": [
-      "test/core/support/time_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "timeout_encoding_test", 
     "src": [
       "test/core/transport/chttp2/timeout_encoding_test.c"

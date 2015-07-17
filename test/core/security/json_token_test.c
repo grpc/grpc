@@ -269,8 +269,8 @@ static void check_jwt_header(grpc_json *header) {
 
 static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
                             const char *expected_scope) {
-  gpr_timespec expiration = {0, 0};
-  gpr_timespec issue_time = {0, 0};
+  gpr_timespec expiration = gpr_time_0(GPR_CLOCK_REALTIME);
+  gpr_timespec issue_time = gpr_time_0(GPR_CLOCK_REALTIME);
   gpr_timespec parsed_lifetime;
   grpc_json *iss = NULL;
   grpc_json *scope = NULL;

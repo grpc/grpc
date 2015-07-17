@@ -347,7 +347,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
-  if (gpr_time_cmp(send_deadline, gpr_inf_future) != 0) {
+  if (gpr_time_cmp(send_deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
     set_deadline_alarm(call, send_deadline);
   }
   return call;
@@ -985,7 +985,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
           mdb.list = chain_metadata_from_app(call, data.send_metadata.count,
                                              data.send_metadata.metadata);
           mdb.garbage.head = mdb.garbage.tail = NULL;
-          mdb.deadline = gpr_inf_future;
+          mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
@@ -1338,7 +1338,7 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       l->md = 0;
     }
   }
-  if (gpr_time_cmp(md->deadline, gpr_inf_future) != 0) {
+  if (gpr_time_cmp(md->deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
     set_deadline_alarm(call, md->deadline);
   }
   if (!is_trailing) {

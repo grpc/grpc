@@ -302,7 +302,7 @@ static void continue_connect(grpc_subchannel *c) {
 static void start_connect(grpc_subchannel *c) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   c->next_attempt = now;
-  c->backoff_delta = gpr_time_from_seconds(1);
+  c->backoff_delta = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
   continue_connect(c);
 }
