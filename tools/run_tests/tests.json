@@ -606,6 +606,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "auth_property_iterator_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "channel_arguments_test", 
     "platforms": [
       "windows", 

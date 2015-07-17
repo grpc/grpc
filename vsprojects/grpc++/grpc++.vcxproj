@@ -149,6 +149,7 @@
     <ClInclude Include="..\..\include\grpc++\async_generic_service.h" />
     <ClInclude Include="..\..\include\grpc++\async_unary_call.h" />
     <ClInclude Include="..\..\include\grpc++\auth_context.h" />
+    <ClInclude Include="..\..\include\grpc++\auth_property_iterator.h" />
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc++\channel_arguments.h" />
     <ClInclude Include="..\..\include\grpc++\channel_interface.h" />
@@ -197,6 +198,8 @@
     <ClCompile Include="..\..\src\cpp\client\secure_channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\secure_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\common\auth_property_iterator.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\common\secure_auth_context.cc">
     </ClCompile>

@@ -31,6 +31,7 @@
         "include/grpc++/async_generic_service.h",
         "include/grpc++/async_unary_call.h",
         "include/grpc++/auth_context.h",
+        "include/grpc++/auth_property_iterator.h",
         "include/grpc++/byte_buffer.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
@@ -568,6 +569,7 @@
       "src": [
         "src/cpp/client/secure_channel_arguments.cc",
         "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
         "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/server/secure_server_credentials.cc"
@@ -1902,6 +1904,19 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "auth_property_iterator_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/common/auth_property_iterator_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
         "gpr"
       ]
     },

@@ -7,6 +7,9 @@
     <ClCompile Include="..\..\src\cpp\client\secure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\common\auth_property_iterator.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\common\secure_auth_context.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -97,6 +100,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\auth_context.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\auth_property_iterator.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">

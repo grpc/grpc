@@ -77,13 +77,13 @@ TEST_F(SecureAuthContextTest, Iterators) {
   ctx->peer_identity_property_name = ctx->properties[0].name;
 
   SecureAuthContext context(ctx);
-  AuthContext::PropertyIterator iter = context.begin();
+  AuthPropertyIterator iter = context.begin();
   EXPECT_TRUE(context.end() != iter);
-  AuthContext::Property p0 = *iter;
+  AuthProperty p0 = *iter;
   ++iter;
-  AuthContext::Property p1 = *iter;
+  AuthProperty p1 = *iter;
   iter++;
-  AuthContext::Property p2 = *iter;
+  AuthProperty p2 = *iter;
   EXPECT_EQ("name", p0.first);
   EXPECT_EQ("chapi", p0.second);
   EXPECT_EQ("name", p1.first);
@@ -94,7 +94,7 @@ TEST_F(SecureAuthContextTest, Iterators) {
   EXPECT_EQ(context.end(), iter);
   // Range-based for loop test.
   int i = 0;
-  for (const AuthContext::Property p : context) {
+  for (auto p : context) {
     switch (i++) {
       case 0:
         EXPECT_EQ("name", p.first);

@@ -77,67 +77,20 @@ std::vector<grpc::string> SecureAuthContext::FindPropertyValues(
   return values;
 }
 
-AuthContext::PropertyIterator::PropertyIterator()
-    : property_(nullptr), ctx_(nullptr), index_(0), name_(nullptr) {}
-
-AuthContext::PropertyIterator::PropertyIterator(
-    const grpc_auth_property* property, const grpc_auth_property_iterator* iter)
-    : property_(property),
-      ctx_(iter->ctx),
-      index_(iter->index),
-      name_(iter->name) {}
-
-AuthContext::PropertyIterator::~PropertyIterator() {}
-
-AuthContext::PropertyIterator& AuthContext::PropertyIterator::operator++() {
-  grpc_auth_property_iterator iter = {ctx_, index_, name_};
-  property_ = grpc_auth_property_iterator_next(&iter);
-  ctx_ = iter.ctx;
-  index_ = iter.index;
-  name_ = iter.name;
-  return *this;
-}
-
-AuthContext::PropertyIterator AuthContext::PropertyIterator::operator++(int) {
-  PropertyIterator tmp(*this);
-  operator++();
-  return tmp;
-}
-
-bool AuthContext::PropertyIterator::operator==(
-    const AuthContext::PropertyIterator& rhs) const {
-  if (property_ == nullptr || rhs.property_ == nullptr) {
-    return property_ == rhs.property_;
-  } else {
-    return index_ == rhs.index_;
-  }
-}
-
-bool AuthContext::PropertyIterator::operator!=(
-    const AuthContext::PropertyIterator& rhs) const {
-  return !operator==(rhs);
-}
-
-const AuthContext::Property AuthContext::PropertyIterator::operator*() {
-  return std::make_pair<grpc::string, grpc::string>(
-      grpc::string(property_->name),
-      grpc::string(property_->value, property_->value_length));
-}
-
-AuthContext::PropertyIterator SecureAuthContext::begin() const {
+AuthPropertyIterator SecureAuthContext::begin() const {
   if (ctx_) {
     grpc_auth_property_iterator iter =
         grpc_auth_context_property_iterator(ctx_);
     const grpc_auth_property* property =
         grpc_auth_property_iterator_next(&iter);
-    return AuthContext::PropertyIterator(property, &iter);
+    return AuthPropertyIterator(property, &iter);
   } else {
     return end();
   }
 }
 
-AuthContext::PropertyIterator SecureAuthContext::end() const {
-  return AuthContext::PropertyIterator();
+AuthPropertyIterator SecureAuthContext::end() const {
+  return AuthPropertyIterator();
 }
 
 }  // namespace grpc

@@ -87,6 +87,9 @@
     <ClInclude Include="..\..\include\grpc++\auth_context.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\auth_property_iterator.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
