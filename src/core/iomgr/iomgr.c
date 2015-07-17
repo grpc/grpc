@@ -146,7 +146,6 @@ void grpc_iomgr_shutdown(void) {
       continue;
     }
     if (grpc_alarm_check(&g_mu, gpr_inf_future, NULL)) {
-      gpr_log(GPR_DEBUG, "got late alarm");
       continue;
     }
     if (g_root_object.next != &g_root_object) {

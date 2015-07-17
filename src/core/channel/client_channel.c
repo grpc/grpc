@@ -411,15 +411,11 @@ static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   lb_policy_connectivity_watcher *w = arg;
   int start_new = 0;
 
-  gpr_log(GPR_DEBUG, "on_lb_policy_state_changed: %p %d", w->lb_policy, w->state);
-
   gpr_mu_lock(&w->chand->mu_config);
   /* check if the notification is for a stale policy */
   if (w->lb_policy == w->chand->lb_policy) {
     grpc_connectivity_state_set(&w->chand->state_tracker, w->state);
     start_new = 1;
-  } else {
-    gpr_log(GPR_DEBUG, "stale state change: %p vs %p", w->lb_policy, w->chand->lb_policy);
   }
   gpr_mu_unlock(&w->chand->mu_config);
 
@@ -434,8 +430,6 @@ static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
 static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy, grpc_connectivity_state current_state) {
   lb_policy_connectivity_watcher *w = gpr_malloc(sizeof(*w));
   GRPC_CHANNEL_INTERNAL_REF(chand->master, "watch_lb_policy");
-
-  gpr_log(GPR_DEBUG, "watch_lb_policy: %p %d", lb_policy, current_state);
 
   w->chand = chand;
   grpc_iomgr_closure_init(&w->on_changed, on_lb_policy_state_changed, w);
