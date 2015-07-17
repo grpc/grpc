@@ -31,36 +31,57 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
-#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#include <grpc++/auth_property_iterator.h>
 
-#include <grpc++/auth_context.h>
-
-struct grpc_auth_context;
+#include <grpc/grpc_security.h>
 
 namespace grpc {
 
-class SecureAuthContext GRPC_FINAL : public AuthContext {
- public:
-  SecureAuthContext(grpc_auth_context* ctx);
+AuthPropertyIterator::AuthPropertyIterator()
+    : property_(nullptr), ctx_(nullptr), index_(0), name_(nullptr) {}
 
-  ~SecureAuthContext() GRPC_OVERRIDE;
+AuthPropertyIterator::AuthPropertyIterator(
+    const grpc_auth_property* property, const grpc_auth_property_iterator* iter)
+    : property_(property),
+      ctx_(iter->ctx),
+      index_(iter->index),
+      name_(iter->name) {}
 
-  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
+AuthPropertyIterator::~AuthPropertyIterator() {}
 
-  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
+AuthPropertyIterator& AuthPropertyIterator::operator++() {
+  grpc_auth_property_iterator iter = {ctx_, index_, name_};
+  property_ = grpc_auth_property_iterator_next(&iter);
+  ctx_ = iter.ctx;
+  index_ = iter.index;
+  name_ = iter.name;
+  return *this;
+}
 
-  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
-      GRPC_OVERRIDE;
+AuthPropertyIterator AuthPropertyIterator::operator++(int) {
+  AuthPropertyIterator tmp(*this);
+  operator++();
+  return tmp;
+}
 
-  AuthPropertyIterator begin() const GRPC_OVERRIDE;
+bool AuthPropertyIterator::operator==(
+    const AuthPropertyIterator& rhs) const {
+  if (property_ == nullptr || rhs.property_ == nullptr) {
+    return property_ == rhs.property_;
+  } else {
+    return index_ == rhs.index_;
+  }
+}
 
-  AuthPropertyIterator end() const GRPC_OVERRIDE;
+bool AuthPropertyIterator::operator!=(
+    const AuthPropertyIterator& rhs) const {
+  return !operator==(rhs);
+}
 
- private:
-  grpc_auth_context* ctx_;
-};
+const AuthProperty AuthPropertyIterator::operator*() {
+  return std::make_pair<grpc::string, grpc::string>(
+      grpc::string(property_->name),
+      grpc::string(property_->value, property_->value_length));
+}
 
 }  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H

@@ -31,36 +31,47 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
-#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#ifndef GRPCXX_AUTH_PROPERTY_ITERATOR_H
+#define GRPCXX_AUTH_PROPERTY_ITERATOR_H
 
-#include <grpc++/auth_context.h>
+#include <iterator>
+#include <vector>
+
+#include <grpc++/config.h>
 
 struct grpc_auth_context;
+struct grpc_auth_property;
+struct grpc_auth_property_iterator;
 
 namespace grpc {
+class SecureAuthContext;
 
-class SecureAuthContext GRPC_FINAL : public AuthContext {
+typedef std::pair<grpc::string, grpc::string> AuthProperty;
+
+class AuthPropertyIterator
+    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
-  SecureAuthContext(grpc_auth_context* ctx);
+  ~AuthPropertyIterator();
+  AuthPropertyIterator& operator++();
+  AuthPropertyIterator operator++(int);
+  bool operator==(const AuthPropertyIterator& rhs) const;
+  bool operator!=(const AuthPropertyIterator& rhs) const;
+  const AuthProperty operator*();
 
-  ~SecureAuthContext() GRPC_OVERRIDE;
-
-  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
-
-  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
-
-  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
-      GRPC_OVERRIDE;
-
-  AuthPropertyIterator begin() const GRPC_OVERRIDE;
-
-  AuthPropertyIterator end() const GRPC_OVERRIDE;
-
+ protected:
+  AuthPropertyIterator();
+  AuthPropertyIterator(const grpc_auth_property* property,
+                       const grpc_auth_property_iterator* iter);
  private:
-  grpc_auth_context* ctx_;
+  friend class SecureAuthContext;
+  const grpc_auth_property* property_;
+  // The following items form a grpc_auth_property_iterator.
+  const grpc_auth_context* ctx_;
+  size_t index_;
+  const char* name_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+ #endif  // GRPCXX_AUTH_PROPERTY_ITERATOR_H
+

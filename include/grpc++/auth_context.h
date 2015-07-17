@@ -36,14 +36,13 @@
 
 #include <vector>
 
+#include <grpc++/auth_property_iterator.h>
 #include <grpc++/config.h>
 
 namespace grpc {
 
 class AuthContext {
  public:
-  typedef std::pair<grpc::string, grpc::string> Property;
-
   virtual ~AuthContext() {}
 
   // A peer identity, in general is one or more properties (in which case they
@@ -54,6 +53,10 @@ class AuthContext {
   // Returns all the property values with the given name.
   virtual std::vector<grpc::string> FindPropertyValues(
       const grpc::string& name) const = 0;
+
+  // Iteration over all the properties.
+  virtual AuthPropertyIterator begin() const = 0;
+  virtual AuthPropertyIterator end() const = 0;
 };
 
 }  // namespace grpc
