@@ -44,30 +44,27 @@ static void test_succeeds(const char *uri_text, const char *scheme,
   grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
-  gpr_log(GPR_INFO, uri->scheme);
-  gpr_log(GPR_INFO, uri->authority);
-  gpr_log(GPR_INFO, uri->path);
   GPR_ASSERT(0 == strcmp(authority, uri->authority));
   GPR_ASSERT(0 == strcmp(path, uri->path));
   grpc_uri_destroy(uri);
 }
 
-/*static void test_fails(const char *uri_text) {
+static void test_fails(const char *uri_text) {
   GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
-}*/
+}
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  /*test_succeeds("http://www.google.com", "http", "www.google.com", "");
-  test_succeeds("dns:///foo", "dns", "", "/foo");*/
-  test_succeeds("zookeeper://127.0.0.1:2181/foo/1", "zookeeper", "127.0.0.1:2181", "/foo/1");
-  /*test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
+  test_succeeds("http://www.google.com", "http", "www.google.com", "");
+  test_succeeds("dns:///foo", "dns", "", "/foo");
+  test_succeeds("zookeeper://127.0.0.1:2181/foo/bar", "zookeeper", "127.0.0.1:2181", "/foo/bar");
+  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
   test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom");
   test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom");
   test_fails("xyz");
   test_fails("http://www.google.com?why-are-you-using-queries");
   test_fails("dns:foo.com#fragments-arent-supported-here");
   test_fails("http:?huh");
-  test_fails("unix:#yeah-right");*/
+  test_fails("unix:#yeah-right");
   return 0;
 }
