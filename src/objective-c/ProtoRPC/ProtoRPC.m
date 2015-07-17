@@ -35,7 +35,6 @@
 
 #import <GPBProtocolBuffers.h>
 #import <RxLibrary/GRXWriteable.h>
-#import <RxLibrary/GRXForwardingWriter.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
 @implementation ProtoRPC {
@@ -65,12 +64,11 @@
                 format:@"A protobuf class to parse the responses must be provided."];
   }
   // A writer that serializes the proto messages to send.
-  id<GRXWriter> bytesWriter =
-      [[[GRXForwardingWriter alloc] initWithWriter:requestsWriter] map:^id(GPBMessage *proto) {
-        // TODO(jcanizales): Fail with an understandable error message if the requestsWriter isn't
-        // sending GPBMessages.
-        return [proto data];
-      }];
+  GRXWriter *bytesWriter = [requestsWriter map:^id(GPBMessage *proto) {
+    // TODO(jcanizales): Fail with an understandable error message if the requestsWriter isn't
+    // sending GPBMessages.
+    return [proto data];
+  }];
   if ((self = [super initWithHost:host path:method.HTTPPath requestsWriter:bytesWriter])) {
     // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
