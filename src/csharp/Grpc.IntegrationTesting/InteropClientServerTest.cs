@@ -65,7 +65,7 @@ namespace Grpc.IntegrationTesting
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
             channel = new Channel(host, port, TestCredentials.CreateTestClientCredentials(true), options);
-            client = TestService.NewStub(channel);
+            client = TestService.NewClient(channel);
         }
 
         [TestFixtureTearDown]
