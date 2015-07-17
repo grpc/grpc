@@ -38,14 +38,28 @@
 
 #define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "internal:grpc-encoding-request"
 
-/** Message-level compression filter.
+/** Compression filter for outgoing data.
  *
  * See <grpc/compression.h> for the available compression settings.
  *
- * grpc_op instances of type GRPC_OP_SEND_MESSAGE can have the bit specified by
- * the GRPC_WRITE_NO_COMPRESS mask in order to disable compression in an
- * otherwise compressed channel.
- * */
+ * Compression settings may come from:
+ *  - Channel configuration, as established at channel creation time.
+ *  - The metadata accompanying the outgoing data to be compressed. This is
+ *    taken as a request only. We may choose not to honor it. The metadata key
+ *    is given by \a GRPC_COMPRESS_REQUEST_ALGORITHM_KEY.
+ *
+ * Compression can be disabled for concrete messages (for instance in order to
+ * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
+ * the BEGIN_MESSAGE flags.
+ *
+ * The attempted compression mechanism is added to the resulting initial
+ * metadata under the'grpc-encoding' key.
+ *
+ * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
+ * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
+ * aforementioned 'grpc-encoding' metadata value, data will pass through
+ * uncompressed. */
+
 extern const grpc_channel_filter grpc_compress_filter;
 
 #endif  /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */
