@@ -418,6 +418,44 @@ describe('Other conditions', function() {
       });
     });
   });
+  describe('Error object should contain the status', function() {
+    it('for a unary call', function(done) {
+      client.unary({error: true}, function(err, data) {
+        assert(err);
+        assert.strictEqual(err.message, 'Requested error');
+        done();
+      });
+    });
+    it('for a client stream call', function(done) {
+      var call = client.clientStream(function(err, data) {
+        assert(err);
+        assert.strictEqual(err.message, 'Requested error');
+        done();
+      });
+      call.write({error: false});
+      call.write({error: true});
+      call.end();
+    });
+    it('for a server stream call', function(done) {
+      var call = client.serverStream({error: true});
+      call.on('data', function(){});
+      call.on('error', function(error) {
+        assert.strictEqual(error.message, 'Requested error');
+        done();
+      });
+    });
+    it('for a bidi stream call', function(done) {
+      var call = client.bidiStream();
+      call.write({error: false});
+      call.write({error: true});
+      call.end();
+      call.on('data', function(){});
+      call.on('error', function(error) {
+        assert.strictEqual(error.message, 'Requested error');
+        done();
+      });
+    });
+  });
 });
 describe('Cancelling surface client', function() {
   var client;
