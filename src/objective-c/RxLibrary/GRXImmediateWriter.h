@@ -40,7 +40,7 @@
 //
 // Unless the writeable callback pauses them or stops them early, these writers will do all their
 // interactions with the writeable before the start method returns.
-@interface GRXImmediateWriter : NSObject<GRXWriter>
+@interface GRXImmediateWriter : GRXWriter
 
 // Returns a writer that pulls values from the passed NSEnumerator instance and pushes them to
 // its writeable. The NSEnumerator is released when it finishes.

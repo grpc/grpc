@@ -33,8 +33,9 @@
 
 #import <Foundation/Foundation.h>
 
+#import <RxLibrary/GRXWriter.h>
+
 @protocol GRXWriteable;
-@protocol GRXWriter;
 
 // This is a thread-safe wrapper over a GRXWriteable instance. It lets one
 // enqueue calls to a GRXWriteable instance for the main thread, guaranteeing
