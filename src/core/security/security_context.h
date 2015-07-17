@@ -106,8 +106,7 @@ void grpc_server_security_context_destroy(void *ctx);
 
 /* --- Auth metadata processing. --- */
 
-grpc_process_auth_metadata_func
-grpc_server_auth_context_get_process_metadata_func(void);
+grpc_auth_metadata_processor grpc_server_get_auth_metadata_processor(void);
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
 

@@ -291,16 +291,23 @@ typedef void (*grpc_process_auth_metadata_done_cb)(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
     int success, grpc_auth_context *result);
 
-/* Pluggable metadata processing function */
-typedef void (*grpc_process_auth_metadata_func)(
-    grpc_auth_ticket *ticket, grpc_auth_context *channel_ctx,
-    const grpc_metadata *md, size_t md_count,
-    grpc_process_auth_metadata_done_cb cb, void *user_data);
+/* Pluggable server-side metadata processor object */
+typedef struct {
+  void (*process)(void *state, grpc_auth_ticket *ticket,
+                  grpc_auth_context *channel_ctx, const grpc_metadata *md,
+                  size_t md_count, grpc_process_auth_metadata_done_cb cb,
+                  void *user_data);
+  void *state;
+} grpc_auth_metadata_processor;
 
-/* Registration function for metadata processing.
+/* XXXX: this is a temporarty interface. Please do NOT use.
+   This function will be moved to the server_credentials in a subsequent
+   pull request. XXXX
+
+   Registration function for metadata processing.
    Should be called before the server is started. */
-void grpc_server_auth_context_register_process_metadata_func(
-    grpc_process_auth_metadata_func func);
+void grpc_server_register_auth_metadata_processor(
+    grpc_auth_metadata_processor processor);
 
 #ifdef __cplusplus
 }

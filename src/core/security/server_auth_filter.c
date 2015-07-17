@@ -42,16 +42,14 @@
 
 typedef struct call_data {
   gpr_uint8 got_client_metadata;
-  gpr_uint8 sent_status;
-  gpr_uint8 success;
-  grpc_linked_mdelem status;
   grpc_stream_op_buffer *recv_ops;
-  /* Closure to call when finished with the hs_on_recv hook. */
+  /* Closure to call when finished with the auth_on_recv hook. */
   grpc_iomgr_closure *on_done_recv;
   /* Receive closures are chained: we inject this closure as the on_done_recv
      up-call on transport_op, and remember to call our on_done_recv member after
      handling it. */
   grpc_iomgr_closure auth_on_recv;
+  grpc_transport_stream_op transport_op;
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
   grpc_stream_op *md_op;
@@ -61,7 +59,7 @@ typedef struct call_data {
 
 typedef struct channel_data {
   grpc_security_connector *security_connector;
-  grpc_mdelem *status_auth_failure;
+  grpc_mdctx *mdctx;
 } channel_data;
 
 static grpc_metadata_array metadata_batch_to_md_array(
@@ -112,8 +110,8 @@ static void on_md_processing_done(void *user_data,
                                   grpc_auth_context *result) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
 
-  calld->success = success;
   if (success) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
@@ -124,11 +122,14 @@ static void on_md_processing_done(void *user_data,
                             "releasing old context.");
     *calld->call_auth_context =
         GRPC_AUTH_CONTEXT_REF(result, "refing new context.");
+    calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
   } else {
-    grpc_call_element_send_cancel(elem);
+    grpc_transport_stream_op_add_cancellation(
+        &calld->transport_op, GRPC_STATUS_UNAUTHENTICATED,
+        grpc_mdstr_from_string(chand->mdctx,
+                               "Authentication metadata processing failed."));
+    grpc_call_next_op(elem, &calld->transport_op);
   }
-
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }
 
 static void auth_on_recv(void *user_data, int success) {
@@ -141,16 +142,18 @@ static void auth_on_recv(void *user_data, int success) {
     grpc_stream_op *ops = calld->recv_ops->ops;
     for (i = 0; i < nops; i++) {
       grpc_metadata_array md_array;
-      grpc_process_auth_metadata_func processor =
-          grpc_server_auth_context_get_process_metadata_func();
+      grpc_auth_metadata_processor processor =
+          grpc_server_get_auth_metadata_processor();
       grpc_stream_op *op = &ops[i];
-      if (op->type != GRPC_OP_METADATA) continue;
+      if (op->type != GRPC_OP_METADATA || calld->got_client_metadata) continue;
       calld->got_client_metadata = 1;
-      if (processor == NULL) continue;
+      if (processor.process == NULL) continue;
       calld->md_op = op;
       md_array = metadata_batch_to_md_array(&op->data.metadata);
-      processor(&calld->ticket, chand->security_connector->auth_context,
-                md_array.metadata, md_array.count, on_md_processing_done, elem);
+      processor.process(processor.state, &calld->ticket,
+                        chand->security_connector->auth_context,
+                        md_array.metadata, md_array.count,
+                        on_md_processing_done, elem);
       grpc_metadata_array_destroy(&md_array);
       return;
     }
@@ -161,28 +164,13 @@ static void auth_on_recv(void *user_data, int success) {
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
                                       grpc_transport_stream_op *op) {
   call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-
-  if (op->send_ops && !calld->sent_status && !calld->success) {
-    size_t i;
-    size_t nops = op->send_ops->nops;
-    grpc_stream_op *ops = op->send_ops->ops;
-    for (i = 0; i < nops; i++) {
-      grpc_stream_op *op = &ops[i];
-      if (op->type != GRPC_OP_METADATA) continue;
-      calld->sent_status = 1;
-      grpc_metadata_batch_add_head(
-          &op->data.metadata, &calld->status,
-          GRPC_MDELEM_REF(chand->status_auth_failure));
-      break;
-    }
-  }
 
   if (op->recv_ops && !calld->got_client_metadata) {
     /* substitute our callback for the higher callback */
     calld->recv_ops = op->recv_ops;
     calld->on_done_recv = op->on_done_recv;
     op->on_done_recv = &calld->auth_on_recv;
+    calld->transport_op = *op;
   }
 }
 
@@ -209,7 +197,6 @@ static void init_call_elem(grpc_call_element *elem,
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
   grpc_iomgr_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
-  calld->success = 1;
 
   GPR_ASSERT(initial_op && initial_op->context != NULL &&
              initial_op->context[GRPC_CONTEXT_SECURITY].value == NULL);
@@ -260,8 +247,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(!sc->is_client_side);
   chand->security_connector =
       GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
-  chand->status_auth_failure =
-      grpc_mdelem_from_strings(mdctx, ":status", "401");
+  chand->mdctx = mdctx;
 }
 
 /* Destructor for channel data */
@@ -270,7 +256,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
   GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector,
                                 "server_auth_filter");
-  GRPC_MDELEM_UNREF(chand->status_auth_failure);
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
