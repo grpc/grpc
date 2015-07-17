@@ -31,10 +31,10 @@
  *
  */
 
-#import "RxLibrary/GRXWriter.h"
+#import "RxLibrary/GRXForwardingWriter.h"
 
 // A "proxy" writer that transforms all the values of its input writer by using a mapping function.
-@interface GRXMappingWriter : GRXWriter
+@interface GRXMappingWriter : GRXForwardingWriter
 - (instancetype)initWithWriter:(id<GRXWriter>)writer map:(id (^)(id value))map
     NS_DESIGNATED_INITIALIZER;
 @end
