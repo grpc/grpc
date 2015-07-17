@@ -38,9 +38,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <grpc/grpc_zookeeper.h>
 #include <zookeeper/zookeeper.h>
 
 #include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 #include "src/core/json/json.h"
@@ -192,11 +194,12 @@ static void zookeeper_dns_resolved(void *arg, grpc_resolved_addresses *addresses
   r->resolved_addrs->naddrs += addresses->naddrs;
   grpc_resolved_addresses_destroy(addresses);
 
+  /* Wait for all addresses to be resolved */
   if (r->resolved_num == r->resolved_total)
     zookeeper_on_resolved(r, r->resolved_addrs);
 }
 
-/** Parse json format address of a zookeeper node */
+/* Parse json format address of a zookeeper node */
 static char *zookeeper_parse_address(char *buffer, int buffer_len) {
   char *host;
   char *port;
@@ -236,7 +239,6 @@ static char *zookeeper_parse_address(char *buffer, int buffer_len) {
   return address;
 }
 
-/** Resolve address by zookeeper */
 static void zookeeper_resolve_address(zookeeper_resolver *r) {
   struct String_vector children;
   int status;
@@ -255,8 +257,8 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
   memset(path, 0, buffer_len);
   memset(buffer, 0, buffer_len);
 
-  /** Get zookeeper node of given path r->name 
-      If not containing address, get its children */
+  /* Get zookeeper node of given path r->name 
+     If not containing address(i.e. service node), get its children */
   gpr_log(GPR_INFO, r->name);
   status = zoo_get(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, 
                   buffer, &buffer_len, NULL);
@@ -268,6 +270,7 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
         r->resolved_addrs->addrs = NULL;
         r->resolved_addrs->naddrs = 0;
         r->resolved_total = 1;
+        /* Further resolve address by DNS */
         grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
         gpr_free(address);
         return;
@@ -297,6 +300,7 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
           if (buffer_len > 0) {
             address = zookeeper_parse_address(buffer, buffer_len);
             if (address != NULL) {
+              /* Further resolve address by DNS */
               grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r); 
             }
             else {
@@ -356,7 +360,7 @@ static void zookeeper_destroy(grpc_resolver *gr) {
   gpr_free(r);
 }
 
-/** Zookeeper watcher function - handle updates to any watched nodes */
+/* Zookeeper watcher function - handle updates to any watched nodes */
 static void zookeeper_watcher(zhandle_t *zookeeper_handle, int type, int state, 
                               const char* path, void* watcher_ctx) {}
 
@@ -382,7 +386,7 @@ static grpc_resolver *zookeeper_create(
   r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
 
-  /** Initialize zookeeper client */
+  /* Initialize zookeeper client */
   zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
   r->zookeeper_handle = zookeeper_init(uri->authority, zookeeper_watcher, 
                                       GRPC_ZOOKEEPER_TIMEOUT, 0, 0, 0);
@@ -392,6 +396,14 @@ static grpc_resolver *zookeeper_create(
   }
 
   return &r->base;
+}
+
+static void zookeeper_plugin_init() {
+  grpc_register_resolver_type("zookeeper", grpc_zookeeper_resolver_factory_create());
+}
+
+void grpc_zookeeper_register() {
+  grpc_register_plugin(zookeeper_plugin_init, NULL);
 }
 
 /*

@@ -335,6 +335,12 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+/** Registers a plugin to be initialized and deinitialized with the library.
+
+    It is safe to pass NULL to either argument. The initialization and
+    deinitialization order isn't guaranteed. */
+void grpc_register_plugin(void (*init)(void), void (*deinit)(void));
+
 /** Initialize the grpc library.
 
     It is not safe to call any other grpc functions before calling this.

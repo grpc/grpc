@@ -1371,14 +1371,14 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a static_zookeeper_libs
+static_c: pc_c pc_c_unsecure pc_gpr pc_c_zookeeper $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a static_zookeeper_libs
 
 
 static_cxx: pc_cxx pc_cxx_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure pc_gpr $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) shared_zookeeper_libs
+shared_c: pc_c pc_c_unsecure pc_gpr pc_c_zookeeper $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) shared_zookeeper_libs
 
 shared_cxx: pc_cxx pc_cxx_unsecure  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
 
@@ -1406,6 +1406,12 @@ pc_gpr: $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+
+ifeq ($(HAS_ZOOKEEPER),true)
+pc_c_zookeeper: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc
+else
+pc_c_zookeeper:
+endif
 
 pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -3060,13 +3066,15 @@ else
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 endif
 
-install-pkg-config_c: pc_gpr pc_c pc_c_unsecure
+install-pkg-config_c: pc_gpr pc_c pc_c_unsecure pc_c_zookeeper
 	$(E) "[INSTALL] Installing C pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+ifeq ($(HAS_ZOOKEEPER),true)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc $(prefix)/lib/pkgconfig/grpc_zookeeper.pc
+endif
 
 install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
 	$(E) "[INSTALL] Installing C++ pkg-config files"
@@ -3676,6 +3684,8 @@ endif
 LIBGRPC_ZOOKEEPER_SRC = \
     src/core/client_config/resolvers/zookeeper_resolver.c \
 
+PUBLIC_HEADERS_C += \
+    include/grpc/grpc_zookeeper.h \
 
 LIBGRPC_ZOOKEEPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ZOOKEEPER_SRC))))
 

@@ -630,6 +630,7 @@ cc_library(
     "src/core/client_config/resolvers/zookeeper_resolver.c",
   ],
   hdrs = [
+    "include/grpc/grpc_zookeeper.h",
   ],
   includes = [
     "include",
