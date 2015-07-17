@@ -87,7 +87,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testEmptyRPC {
@@ -109,7 +109,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
@@ -141,7 +141,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testMetadata {
@@ -173,7 +173,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end

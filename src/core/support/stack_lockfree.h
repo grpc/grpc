@@ -31,55 +31,20 @@
  *
  */
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
+#define GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
 
-#include "src/cpp/server/thread_pool.h"
+typedef struct gpr_stack_lockfree gpr_stack_lockfree;
 
-namespace grpc {
+/* This stack must specify the maximum number of entries to track.
+   The current implementation only allows up to 65534 entries */
+gpr_stack_lockfree* gpr_stack_lockfree_create(int entries);
+void gpr_stack_lockfree_destroy(gpr_stack_lockfree* stack);
 
-void ThreadPool::ThreadFunc() {
-  for (;;) {
-    // Wait until work is available or we are shutting down.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    if (!shutdown_ && callbacks_.empty()) {
-      cv_.wait(lock);
-    }
-    // Drain callbacks before considering shutdown to ensure all work
-    // gets completed.
-    if (!callbacks_.empty()) {
-      auto cb = callbacks_.front();
-      callbacks_.pop();
-      lock.unlock();
-      cb();
-    } else if (shutdown_) {
-      return;
-    }
-  }
-}
+/* Pass in a valid entry number for the next stack entry */
+void gpr_stack_lockfree_push(gpr_stack_lockfree* stack, int entry);
 
-ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
-  for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(new grpc::thread(&ThreadPool::ThreadFunc, this));
-  }
-}
+/* Returns -1 on empty or the actual entry number */
+int gpr_stack_lockfree_pop(gpr_stack_lockfree* stack);
 
-ThreadPool::~ThreadPool() {
-  {
-    grpc::lock_guard<grpc::mutex> lock(mu_);
-    shutdown_ = true;
-    cv_.notify_all();
-  }
-  for (auto t = threads_.begin(); t != threads_.end(); t++) {
-    (*t)->join();
-    delete *t;
-  }
-}
-
-void ThreadPool::ScheduleCallback(const std::function<void()>& callback) {
-  grpc::lock_guard<grpc::mutex> lock(mu_);
-  callbacks_.push(callback);
-  cv_.notify_one();
-}
-
-}  // namespace grpc
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H */

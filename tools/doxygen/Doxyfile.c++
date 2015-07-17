@@ -773,6 +773,7 @@ include/grpc++/config.h \
 include/grpc++/config_protobuf.h \
 include/grpc++/create_channel.h \
 include/grpc++/credentials.h \
+include/grpc++/fixed_size_thread_pool.h \
 include/grpc++/generic_stub.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \

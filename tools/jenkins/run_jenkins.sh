@@ -31,11 +31,23 @@
 # This script is invoked by Jenkins and triggers a test run based on
 # env variable settings.
 #
+# Setting up rvm environment BEFORE we set -ex.
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 # To prevent cygwin bash complaining about empty lines ending with \r
 # we set the igncr option. The option doesn't exist on Linux, so we fallback
 # to just 'set -ex' there.
 # NOTE: No empty lines should appear in this file before igncr is set!
 set -ex -o igncr || set -ex
+
+# Grabbing the machine's architecture
+arch=`uname -m`
+
+case $platform in
+  i386)
+    arch="i386"
+    platform="linux"
+    ;;
+esac
 
 if [ "$platform" == "linux" ]
 then
@@ -61,6 +73,7 @@ then
   docker run \
     -e "config=$config" \
     -e "language=$language" \
+    -e "arch=$arch" \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
     --cidfile=docker.cid \

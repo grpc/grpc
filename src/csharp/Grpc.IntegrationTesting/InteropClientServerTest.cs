@@ -55,8 +55,6 @@ namespace Grpc.IntegrationTesting
         [TestFixtureSetUp]
         public void Init()
         {
-            GrpcEnvironment.Initialize();
-
             server = new Server();
             server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
             int port = server.AddListeningPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
@@ -67,14 +65,13 @@ namespace Grpc.IntegrationTesting
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
             channel = new Channel(host, port, TestCredentials.CreateTestClientCredentials(true), options);
-            client = TestService.NewStub(channel);
+            client = TestService.NewClient(channel);
         }
 
         [TestFixtureTearDown]
         public void Cleanup()
         {
             channel.Dispose();
-
             server.ShutdownAsync().Wait();
             GrpcEnvironment.Shutdown();
         }
