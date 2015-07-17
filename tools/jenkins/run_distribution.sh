@@ -32,24 +32,66 @@
 # linuxbrew installation of a selected language
 set -ex
 
-sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
-DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
+if [ "$platform" == "linux" ]; then
 
-docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
+  if [ "$dist_channel" == "homebrew" ]; then
 
-supported="python nodejs ruby php"
+    sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
+    DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
 
-if [ "$language" == "core" ]; then
-  command="curl -fsSL https://goo.gl/getgrpc | bash -"
-elif [[ "$supported" =~ "$language" ]]; then
-  command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
+    docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
+
+    supported="python nodejs ruby php"
+
+    if [ "$language" == "core" ]; then
+      command="curl -fsSL https://goo.gl/getgrpc | bash -"
+    elif [[ "$supported" =~ "$language" ]]; then
+      command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
+    else
+      echo "unsupported language $language"
+      exit 1
+    fi
+
+    docker run $DOCKER_IMAGE_NAME bash -l \
+      -c "nvm use 0.12; \
+          npm set unsafe-perm true; \
+          rvm use ruby-2.1; \
+          $command"
+
+  else
+    echo "Unsupported $platform dist_channel $dist_channel"
+    exit 1
+  fi
+
+elif [ "$platform" == "macos" ]; then
+
+  if [ "$dist_channel" == "homebrew" ]; then
+    which brew # TODO: for debug, can be removed later
+    brew list -l
+    rm -rf /tmp/homebrew-test
+    mkdir -p /tmp/homebrew-test
+    git clone https://github.com/Homebrew/homebrew.git /tmp/homebrew-test
+    cd /tmp/homebrew-test
+    # TODO: Uncomment these when the general structure of the script is verified
+    # PATH=/tmp/homebrew-test/bin:$PATH brew tap homebrew/dupes
+    # PATH=/tmp/homebrew-test/bin:$PATH brew install zlib
+    # PATH=/tmp/homebrew-test/bin:$PATH brew install openssl
+    # PATH=/tmp/homebrew-test/bin:$PATH brew tap grpc/grpc
+    # PATH=/tmp/homebrew-test/bin:$PATH brew install --without-python google-protobuf
+    # PATH=/tmp/homebrew-test/bin:$PATH brew install grpc
+    PATH=/tmp/homebrew-test/bin:$PATH brew list -l
+    brew list -l
+    cd ~/ 
+    rm -rf /tmp/homebrew-test
+    echo $PATH # TODO: for debug, can be removed later
+    brew list -l # TODO: for debug, can be removed later
+
+  else
+    echo "Unsupported $platform dist_channel $dist_channel"
+    exit 1
+  fi
+
 else
-  echo "unsupported language $language"
+  echo "unsupported platform $platform"
   exit 1
 fi
-
-docker run $DOCKER_IMAGE_NAME bash -l \
-  -c "nvm use 0.12; \
-      npm set unsafe-perm true; \
-      rvm use ruby-2.1; \
-      $command"
