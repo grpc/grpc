@@ -82,7 +82,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
   next_call.cq = cq;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
   /* TODO: the timeout should be a module level constant that defaults
-   * to gpr_inf_future.
+   * to gpr_inf_future(GPR_CLOCK_REALTIME).
    *
    * - at the moment this does not work, it stalls.  Using a small timeout like
    *   this one works, and leads to fast test run times; a longer timeout was
@@ -91,7 +91,8 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
    * - investigate further, this is probably another example of C-level cleanup
    * not working consistently in all cases.
    */
-  next_call.timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(5e3));
+  next_call.timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_micros(5e3, GPR_TIMESPAN));
   do {
     rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                                (void *)&next_call, NULL, NULL);
@@ -143,7 +144,7 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   TypedData_Get_Struct(self, grpc_completion_queue,
                        &grpc_rb_completion_queue_data_type, next_call.cq);
   if (TYPE(timeout) == T_NIL) {
-    next_call.timeout = gpr_inf_future;
+    next_call.timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
   } else {
     next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   }

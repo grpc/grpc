@@ -173,7 +173,14 @@ void grpc_chttp2_publish_reads(
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
           "parsed", transport_parsing, stream_parsing, incoming_window_delta,
           -(gpr_int64)stream_parsing->incoming_window_delta);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "parsed", transport_parsing, stream_global, max_recv_bytes,
+          -(gpr_int64)stream_parsing->incoming_window_delta);
       stream_global->incoming_window -= stream_parsing->incoming_window_delta;
+      GPR_ASSERT(stream_global->max_recv_bytes >= 
+          stream_parsing->incoming_window_delta);
+      stream_global->max_recv_bytes -= 
+          stream_parsing->incoming_window_delta;
       stream_parsing->incoming_window_delta = 0;
       grpc_chttp2_list_add_writable_window_update_stream(transport_global,
                                                          stream_global);
@@ -594,7 +601,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
                                       cached_timeout)) {
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
                 grpc_mdstr_as_c_string(md->value));
-        *cached_timeout = gpr_inf_future;
+        *cached_timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
       }
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }

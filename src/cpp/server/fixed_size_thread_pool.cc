@@ -31,47 +31,55 @@
  *
  */
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-
-#include "src/cpp/server/thread_pool.h"
-#include <gtest/gtest.h>
+#include <grpc++/impl/sync.h>
+#include <grpc++/impl/thd.h>
+#include <grpc++/fixed_size_thread_pool.h>
 
 namespace grpc {
 
-class ThreadPoolTest : public ::testing::Test {
- public:
-  ThreadPoolTest() : thread_pool_(4) {}
-
- protected:
-  ThreadPool thread_pool_;
-};
-
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
-  *done = true;
-  cv->notify_all();
-}
-
-TEST_F(ThreadPoolTest, ScheduleCallback) {
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.ScheduleCallback(callback);
-
-  // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
+void FixedSizeThreadPool::ThreadFunc() {
+  for (;;) {
+    // Wait until work is available or we are shutting down.
+    grpc::unique_lock<grpc::mutex> lock(mu_);
+    if (!shutdown_ && callbacks_.empty()) {
+      cv_.wait(lock);
+    }
+    // Drain callbacks before considering shutdown to ensure all work
+    // gets completed.
+    if (!callbacks_.empty()) {
+      auto cb = callbacks_.front();
+      callbacks_.pop();
+      lock.unlock();
+      cb();
+    } else if (shutdown_) {
+      return;
+    }
   }
 }
 
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  return result;
+FixedSizeThreadPool::FixedSizeThreadPool(int num_threads) : shutdown_(false) {
+  for (int i = 0; i < num_threads; i++) {
+    threads_.push_back(
+        new grpc::thread(&FixedSizeThreadPool::ThreadFunc, this));
+  }
 }
+
+FixedSizeThreadPool::~FixedSizeThreadPool() {
+  {
+    grpc::lock_guard<grpc::mutex> lock(mu_);
+    shutdown_ = true;
+    cv_.notify_all();
+  }
+  for (auto t = threads_.begin(); t != threads_.end(); t++) {
+    (*t)->join();
+    delete *t;
+  }
+}
+
+void FixedSizeThreadPool::Add(const std::function<void()>& callback) {
+  grpc::lock_guard<grpc::mutex> lock(mu_);
+  callbacks_.push(callback);
+  cv_.notify_one();
+}
+
+}  // namespace grpc

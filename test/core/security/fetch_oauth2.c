@@ -181,7 +181,8 @@ int main(int argc, char **argv) {
   grpc_credentials_get_request_metadata(creds, &sync.pollset, "", on_oauth2_response, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  while (!sync.is_done) grpc_pollset_work(&sync.pollset, gpr_inf_future);
+  while (!sync.is_done)
+    grpc_pollset_work(&sync.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
   grpc_pollset_destroy(&sync.pollset);

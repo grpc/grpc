@@ -21,11 +21,11 @@ namespace Grpc.Health.V1Alpha {
         __Marshaller_HealthCheckRequest,
         __Marshaller_HealthCheckResponse);
 
-    // client-side stub interface
+    // client interface
     public interface IHealthClient
     {
-      global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CancellationToken token = default(CancellationToken));
-      Task<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CancellationToken token = default(CancellationToken));
+      global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
+      Task<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     // server-side interface
@@ -35,23 +35,20 @@ namespace Grpc.Health.V1Alpha {
     }
 
     // client stub
-    public class HealthClient : AbstractStub<HealthClient, StubConfiguration>, IHealthClient
+    public class HealthClient : ClientBase, IHealthClient
     {
-      public HealthClient(Channel channel) : this(channel, StubConfiguration.Default)
+      public HealthClient(Channel channel) : base(channel)
       {
       }
-      public HealthClient(Channel channel, StubConfiguration config) : base(channel, config)
+      public global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))
       {
+        var call = CreateCall(__ServiceName, __Method_Check, headers);
+        return Calls.BlockingUnaryCall(call, request, cancellationToken);
       }
-      public global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CancellationToken token = default(CancellationToken))
+      public Task<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__ServiceName, __Method_Check);
-        return Calls.BlockingUnaryCall(call, request, token);
-      }
-      public Task<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CancellationToken token = default(CancellationToken))
-      {
-        var call = CreateCall(__ServiceName, __Method_Check);
-        return Calls.AsyncUnaryCall(call, request, token);
+        var call = CreateCall(__ServiceName, __Method_Check, headers);
+        return Calls.AsyncUnaryCall(call, request, cancellationToken);
       }
     }
 
@@ -62,17 +59,12 @@ namespace Grpc.Health.V1Alpha {
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
     }
 
-    // creates a new client stub
-    public static IHealthClient NewStub(Channel channel)
+    // creates a new client
+    public static HealthClient NewClient(Channel channel)
     {
       return new HealthClient(channel);
     }
 
-    // creates a new client stub
-    public static IHealthClient NewStub(Channel channel, StubConfiguration config)
-    {
-      return new HealthClient(channel, config);
-    }
   }
 }
 #endregion

@@ -76,6 +76,10 @@ class CallOpBuffer;
 class CompletionQueue;
 class Server;
 
+namespace testing {
+class InteropContextInspector;
+}  // namespace testing
+
 // Interface of server side rpc context.
 class ServerContext {
  public:
@@ -93,7 +97,7 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  bool IsCancelled();
+  bool IsCancelled() const;
 
   const std::multimap<grpc::string, grpc::string>& client_metadata() {
     return client_metadata_;
@@ -102,6 +106,7 @@ class ServerContext {
   std::shared_ptr<const AuthContext> auth_context() const;
 
  private:
+  friend class ::grpc::testing::InteropContextInspector;
   friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;

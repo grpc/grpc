@@ -487,9 +487,9 @@ static void maybe_finish_shutdown(grpc_server *server) {
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
-    if (gpr_time_cmp(
-            gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), server->last_shutdown_message_time),
-            gpr_time_from_seconds(1)) >= 0) {
+    if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
+                                  server->last_shutdown_message_time),
+                     gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       server->last_shutdown_message_time = gpr_now(GPR_CLOCK_REALTIME);
       gpr_log(GPR_DEBUG,
               "Waiting for %d channels and %d/%d listeners to be destroyed"
@@ -536,7 +536,8 @@ static void server_on_recv(void *ptr, int success) {
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA) continue;
       grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
-      if (0 != gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future)) {
+      if (0 != gpr_time_cmp(op->data.metadata.deadline,
+                            gpr_inf_future(GPR_CLOCK_REALTIME))) {
         calld->deadline = op->data.metadata.deadline;
       }
       calld->got_initial_metadata = 1;
@@ -610,7 +611,7 @@ static void accept_stream(void *cd, grpc_transport *transport,
   channel_data *chand = cd;
   /* create a call */
   grpc_call_create(chand->channel, NULL, transport_server_data, NULL, 0,
-                   gpr_inf_future);
+                   gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 static void channel_connectivity_changed(void *cd, int iomgr_status_ignored) {
@@ -638,7 +639,7 @@ static void init_call_elem(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
-  calld->deadline = gpr_inf_future;
+  calld->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
   calld->call = grpc_call_from_top_element(elem);
   gpr_mu_init(&calld->mu_state);
 

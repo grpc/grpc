@@ -88,8 +88,7 @@
     <Compile Include="ServerCredentials.cs" />
     <Compile Include="Metadata.cs" />
     <Compile Include="Internal\MetadataArraySafeHandle.cs" />
-    <Compile Include="Stub\AbstractStub.cs" />
-    <Compile Include="Stub\StubConfiguration.cs" />
+    <Compile Include="ClientBase.cs" />
     <Compile Include="Internal\ServerCalls.cs" />
     <Compile Include="ServerMethods.cs" />
     <Compile Include="Internal\ClientRequestStream.cs" />

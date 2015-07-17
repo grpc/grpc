@@ -347,7 +347,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
-  if (gpr_time_cmp(send_deadline, gpr_inf_future) != 0) {
+  if (gpr_time_cmp(send_deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
     set_deadline_alarm(call, send_deadline);
   }
   return call;
@@ -513,6 +513,8 @@ static void unlock(grpc_call *call) {
   int completing_requests = 0;
   int start_op = 0;
   int i;
+  const gpr_uint32 MAX_RECV_PEEK_AHEAD = 65536;
+  size_t buffered_bytes;
   int cancel_alarm = 0;
 
   memset(&op, 0, sizeof(op));
@@ -528,6 +530,17 @@ static void unlock(grpc_call *call) {
     op.recv_ops = &call->recv_ops;
     op.recv_state = &call->recv_state;
     op.on_done_recv = &call->on_done_recv;
+    if (grpc_bbq_empty(&call->incoming_queue) && call->reading_message) {
+      op.max_recv_bytes = call->incoming_message_length -
+                          call->incoming_message.length + MAX_RECV_PEEK_AHEAD;
+    } else {
+      buffered_bytes = grpc_bbq_bytes(&call->incoming_queue);
+      if (buffered_bytes > MAX_RECV_PEEK_AHEAD) {
+        op.max_recv_bytes = 0;
+      } else {
+        op.max_recv_bytes = MAX_RECV_PEEK_AHEAD - buffered_bytes;
+      }
+    }
     call->receiving = 1;
     GRPC_CALL_INTERNAL_REF(call, "receiving");
     start_op = 1;
@@ -972,7 +985,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
           mdb.list = chain_metadata_from_app(call, data.send_metadata.count,
                                              data.send_metadata.metadata);
           mdb.garbage.head = mdb.garbage.tail = NULL;
-          mdb.deadline = gpr_inf_future;
+          mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
@@ -1325,7 +1338,7 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       l->md = 0;
     }
   }
-  if (gpr_time_cmp(md->deadline, gpr_inf_future) != 0) {
+  if (gpr_time_cmp(md->deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
     set_deadline_alarm(call, md->deadline);
   }
   if (!is_trailing) {

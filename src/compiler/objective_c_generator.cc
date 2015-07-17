@@ -67,7 +67,7 @@ void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
-    printer->Print("RequestsWriter:(id<GRXWriter>)requestWriter");
+    printer->Print("RequestsWriter:(GRXWriter *)requestWriter");
   } else {
     printer->Print(vars, "Request:($request_class$ *)request");
   }
