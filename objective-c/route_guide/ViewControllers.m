@@ -32,9 +32,9 @@
  */
 
 #import <UIKit/UIKit.h>
-#import <gRPC/GRXWriter+Immediate.h>
-#import <gRPC/GRXWriter+Transformations.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
+#import <RxLibrary/GRXWriter+Transformations.h>
 
 static NSString * const kHostAddress = @"http://localhost:50051";
 
@@ -131,7 +131,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
   rectangle.hi.longitude = -745E6;
 
   NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
-  [client listFeaturesWithRequest:rectangle handler:^(BOOL done, RTGFeature *response, NSError *error) {
+  [client listFeaturesWithRequest:rectangle
+                     eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
       NSLog(@"Found feature at %@ called %@.", response.location, response.name);
     } else if (error) {
@@ -211,7 +212,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
   RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
-  [client routeChatWithRequestsWriter:notesWriter handler:^(BOOL done, RTGRouteNote *note, NSError *error) {
+  [client routeChatWithRequestsWriter:notesWriter
+                         eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
     if (note) {
       NSLog(@"Got message %@ at %@", note.message, note.location);
     } else if (error) {
