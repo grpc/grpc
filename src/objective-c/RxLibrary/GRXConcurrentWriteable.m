@@ -61,7 +61,7 @@
   return self;
 }
 
-- (void)enqueueMessage:(NSData *)message completionHandler:(void (^)())handler {
+- (void)enqueueValue:(id)value completionHandler:(void (^)())handler {
   dispatch_async(_writeableQueue, ^{
     // We're racing a possible cancellation performed by another thread. To turn
     // all already-enqueued messages into noops, cancellation nillifies the
@@ -69,7 +69,7 @@
     // the race.
     id<GRXWriteable> writeable = self.writeable;
     if (writeable) {
-      [writeable writeValue:message];
+      [writeable writeValue:value];
       handler();
     }
   });

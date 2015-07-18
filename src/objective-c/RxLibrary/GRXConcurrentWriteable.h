@@ -33,9 +33,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <RxLibrary/GRXWriter.h>
-
-@protocol GRXWriteable;
+#import "GRXWriter.h"
+#import "GRXWriteable.h"
 
 // This is a thread-safe wrapper over a GRXWriteable instance. It lets one
 // enqueue calls to a GRXWriteable instance for the main thread, guaranteeing
@@ -47,7 +46,6 @@
 //
 // TODO(jcanizales): Let the user specify another queue for the writeable
 // callbacks.
-// TODO(jcanizales): Rename to GRXWriteableWrapper and move to the Rx library.
 @interface GRXConcurrentWriteable : NSObject
 
 // The GRXWriteable passed is the wrapped writeable.
@@ -60,7 +58,7 @@
 
 // Enqueues writeValue: to be sent to the writeable in the main thread.
 // The passed handler is invoked from the main thread after writeValue: returns.
-- (void)enqueueMessage:(NSData *)message completionHandler:(void (^)())handler;
+- (void)enqueueValue:(id)value completionHandler:(void (^)())handler;
 
 // Enqueues writesFinishedWithError:nil to be sent to the writeable in the main
 // thread. After that message is sent to the writeable, all other methods of

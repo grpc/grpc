@@ -216,7 +216,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
         [weakSelf cancelCall];
         return;
       }
-      [weakWriteable enqueueMessage:data completionHandler:^{
+      [weakWriteable enqueueValue:data completionHandler:^{
         [weakSelf startNextRead];
       }];
     }];
