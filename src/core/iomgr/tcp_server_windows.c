@@ -116,7 +116,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   }
   /* This happens asynchronously. Wait while that happens. */
   while (s->active_ports) {
-    gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future);
+    gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&s->mu);
 

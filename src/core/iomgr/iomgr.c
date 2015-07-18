@@ -57,9 +57,9 @@ static grpc_iomgr_object g_root_object;
 static void background_callback_executor(void *ignored) {
   gpr_mu_lock(&g_mu);
   while (!g_shutdown) {
-    gpr_timespec deadline = gpr_inf_future;
-    gpr_timespec short_deadline =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100));
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    gpr_timespec short_deadline = gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
     if (g_cbs_head) {
       grpc_iomgr_closure *closure = g_cbs_head;
       g_cbs_head = closure->next;
@@ -110,8 +110,8 @@ static size_t count_objects(void) {
 void grpc_iomgr_shutdown(void) {
   grpc_iomgr_object *obj;
   grpc_iomgr_closure *closure;
-  gpr_timespec shutdown_deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10));
+  gpr_timespec shutdown_deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
   gpr_mu_lock(&g_mu);
@@ -119,7 +119,7 @@ void grpc_iomgr_shutdown(void) {
   while (g_cbs_head != NULL || g_root_object.next != &g_root_object) {
     if (gpr_time_cmp(
             gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
-            gpr_time_from_seconds(1)) >= 0) {
+            gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       if (g_cbs_head != NULL && g_root_object.next != &g_root_object) {
         gpr_log(GPR_DEBUG,
                 "Waiting for %d iomgr objects to be destroyed and executing "
@@ -145,13 +145,13 @@ void grpc_iomgr_shutdown(void) {
       } while (g_cbs_head);
       continue;
     }
-    if (grpc_alarm_check(&g_mu, gpr_inf_future, NULL)) {
+    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)) {
       continue;
     }
     if (g_root_object.next != &g_root_object) {
       int timeout = 0;
-      gpr_timespec short_deadline =
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100));
+      gpr_timespec short_deadline = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
       while (gpr_cv_wait(&g_rcv, &g_mu, short_deadline) && g_cbs_head == NULL) {
         if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
           timeout = 1;
@@ -173,7 +173,8 @@ void grpc_iomgr_shutdown(void) {
   gpr_mu_unlock(&g_mu);
 
   grpc_kick_poller();
-  gpr_event_wait(&g_background_callback_executor_done, gpr_inf_future);
+  gpr_event_wait(&g_background_callback_executor_done,
+                 gpr_inf_future(GPR_CLOCK_REALTIME));
 
   grpc_alarm_list_shutdown();
 

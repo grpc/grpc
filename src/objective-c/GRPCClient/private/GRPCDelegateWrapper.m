@@ -38,7 +38,7 @@
 @interface GRPCDelegateWrapper ()
 // These are atomic so that cancellation can nillify them from any thread.
 @property(atomic, strong) id<GRXWriteable> writeable;
-@property(atomic, strong) id<GRXWriter> writer;
+@property(atomic, strong) GRXWriter *writer;
 @end
 
 @implementation GRPCDelegateWrapper {
@@ -52,7 +52,7 @@
 }
 
 // Designated initializer
-- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(id<GRXWriter>)writer {
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(GRXWriter *)writer {
   if (self = [super init]) {
     _writeableQueue = dispatch_get_main_queue();
     _writeable = writeable;

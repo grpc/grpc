@@ -351,5 +351,26 @@ void InteropClient::DoCancelAfterFirstResponse() {
   gpr_log(GPR_INFO, "Canceling pingpong streaming done.");
 }
 
+void InteropClient::DoTimeoutOnSleepingServer() {
+  gpr_log(GPR_INFO, "Sending Ping Pong streaming rpc with a short deadline...");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::milliseconds(1);
+  context.set_deadline(deadline);
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(stub->FullDuplexCall(&context));
+
+  StreamingOutputCallRequest request;
+  request.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  stream->Write(request);
+
+  Status s = stream->Finish();
+  GPR_ASSERT(s.error_code() == StatusCode::DEADLINE_EXCEEDED);
+  gpr_log(GPR_INFO, "Pingpong streaming timeout done.");
+}
+
 }  // namespace testing
 }  // namespace grpc

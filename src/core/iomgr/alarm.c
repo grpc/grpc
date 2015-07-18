@@ -102,7 +102,8 @@ void grpc_alarm_list_init(gpr_timespec now) {
 
 void grpc_alarm_list_shutdown(void) {
   int i;
-  while (run_some_expired_alarms(NULL, gpr_inf_future, NULL, 0))
+  while (run_some_expired_alarms(NULL, gpr_inf_future(GPR_CLOCK_REALTIME), NULL,
+                                 0))
     ;
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
@@ -127,6 +128,7 @@ static gpr_timespec dbl_to_ts(double d) {
   gpr_timespec ts;
   ts.tv_sec = d;
   ts.tv_nsec = 1e9 * (d - ts.tv_sec);
+  ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
 

@@ -938,20 +938,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "time_test", 
-    "src": [
-      "test/core/support/time_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "timeout_encoding_test", 
     "src": [
       "test/core/transport/chttp2/timeout_encoding_test.c"
@@ -1061,6 +1047,19 @@
     "name": "async_unary_ping_pong_test", 
     "src": [
       "test/cpp/qps/async_unary_ping_pong_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "auth_property_iterator_test", 
+    "src": [
+      "test/cpp/common/auth_property_iterator_test.cc"
     ]
   }, 
   {
@@ -10366,6 +10365,7 @@
       "include/grpc++/async_generic_service.h", 
       "include/grpc++/async_unary_call.h", 
       "include/grpc++/auth_context.h", 
+      "include/grpc++/auth_property_iterator.h", 
       "include/grpc++/byte_buffer.h", 
       "include/grpc++/channel_arguments.h", 
       "include/grpc++/channel_interface.h", 
@@ -10414,6 +10414,7 @@
       "include/grpc++/async_generic_service.h", 
       "include/grpc++/async_unary_call.h", 
       "include/grpc++/auth_context.h", 
+      "include/grpc++/auth_property_iterator.h", 
       "include/grpc++/byte_buffer.h", 
       "include/grpc++/channel_arguments.h", 
       "include/grpc++/channel_interface.h", 
@@ -10462,6 +10463,7 @@
       "src/cpp/client/secure_channel_arguments.cc", 
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
+      "src/cpp/common/auth_property_iterator.cc", 
       "src/cpp/common/call.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/create_auth_context.h", 
@@ -10537,6 +10539,7 @@
       "include/grpc++/async_generic_service.h", 
       "include/grpc++/async_unary_call.h", 
       "include/grpc++/auth_context.h", 
+      "include/grpc++/auth_property_iterator.h", 
       "include/grpc++/byte_buffer.h", 
       "include/grpc++/channel_arguments.h", 
       "include/grpc++/channel_interface.h", 
@@ -10582,6 +10585,7 @@
       "include/grpc++/async_generic_service.h", 
       "include/grpc++/async_unary_call.h", 
       "include/grpc++/auth_context.h", 
+      "include/grpc++/auth_property_iterator.h", 
       "include/grpc++/byte_buffer.h", 
       "include/grpc++/channel_arguments.h", 
       "include/grpc++/channel_interface.h", 

@@ -98,6 +98,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   const char *tstr = interval ? "time interval" : "time";
   const char *want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
 
+  t.clock_type = GPR_CLOCK_REALTIME;
   switch (TYPE(time)) {
     case T_DATA:
       if (CLASS_OF(time) == grpc_rb_cTimeVal) {
@@ -222,24 +223,31 @@ static VALUE grpc_rb_time_val_to_s(VALUE self) {
   return rb_funcall(grpc_rb_time_val_to_time(self), id_to_s, 0);
 }
 
+static gpr_timespec zero_realtime;
+static gpr_timespec inf_future_realtime;
+static gpr_timespec inf_past_realtime;
+
 /* Adds a module with constants that map to gpr's static timeval structs. */
 static void Init_grpc_time_consts() {
   VALUE grpc_rb_mTimeConsts =
       rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
   grpc_rb_cTimeVal =
       rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
+  zero_realtime = gpr_time_0(GPR_CLOCK_REALTIME);
+  inf_future_realtime = gpr_inf_future(GPR_CLOCK_REALTIME);
+  inf_past_realtime = gpr_inf_past(GPR_CLOCK_REALTIME);
   rb_define_const(
       grpc_rb_mTimeConsts, "ZERO",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_time_0));
+                            (void *)&zero_realtime));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_FUTURE",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_inf_future));
+                            (void *)&inf_future_realtime));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_PAST",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&gpr_inf_past));
+                            (void *)&inf_past_realtime));
   rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
   rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);

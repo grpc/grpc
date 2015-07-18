@@ -143,7 +143,7 @@
   RMTStreamingInputCallRequest *request4 = [RMTStreamingInputCallRequest message];
   request4.payload.body = [NSMutableData dataWithLength:45904];
 
-  id<GRXWriter> writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
+  GRXWriter *writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
 
   [_service streamingInputCallWithRequestsWriter:writer
                                          handler:^(RMTStreamingInputCallResponse *response,

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#ifndef GRPCXX_FIXED_SIZE_THREAD_POOL_H
+#define GRPCXX_FIXED_SIZE_THREAD_POOL_H
 
 #include <grpc++/config.h>
 
@@ -50,7 +50,7 @@ class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
   explicit FixedSizeThreadPool(int num_threads);
   ~FixedSizeThreadPool();
 
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
 
  private:
   grpc::mutex mu_;
@@ -64,4 +64,4 @@ class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#endif  // GRPCXX_FIXED_SIZE_THREAD_POOL_H

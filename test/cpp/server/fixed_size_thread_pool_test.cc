@@ -54,12 +54,12 @@ void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
   cv->notify_all();
 }
 
-TEST_F(FixedSizeThreadPoolTest, ScheduleCallback) {
+TEST_F(FixedSizeThreadPoolTest, Add) {
   std::mutex mu;
   std::condition_variable cv;
   bool done = false;
   std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.ScheduleCallback(callback);
+  thread_pool_.Add(callback);
 
   // Wait for the callback to finish.
   std::unique_lock<std::mutex> lock(mu);

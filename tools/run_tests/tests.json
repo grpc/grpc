@@ -534,15 +534,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "time_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "timeout_encoding_test", 
     "platforms": [
       "windows", 
@@ -607,6 +598,15 @@
     "flaky": false, 
     "language": "c++", 
     "name": "async_unary_ping_pong_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "auth_property_iterator_test", 
     "platforms": [
       "windows", 
       "posix"

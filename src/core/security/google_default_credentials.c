@@ -91,7 +91,7 @@ static int is_stack_running_on_compute_engine(void) {
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  gpr_timespec max_detection_delay = {1, 0};
+  gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
   grpc_pollset_init(&detector.pollset);
   detector.is_done = 0;
@@ -112,7 +112,7 @@ static int is_stack_running_on_compute_engine(void) {
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    grpc_pollset_work(&detector.pollset, gpr_inf_future);
+    grpc_pollset_work(&detector.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 

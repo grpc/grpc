@@ -125,7 +125,7 @@ static void test_connect(int n) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
   for (i = 0; i < n; i++) {
-    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(4000);
+    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
 
     nconnects_before = g_nconnects;
     clifd = socket(addr.ss_family, SOCK_STREAM, 0);
