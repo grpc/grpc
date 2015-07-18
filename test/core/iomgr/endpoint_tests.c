@@ -254,7 +254,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
   gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
   while (!state.read_done || !state.write_done) {
-    GPR_ASSERT(gpr_time_cmp(gpr_now(), deadline) < 0);
+    GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
     grpc_pollset_work(g_pollset, deadline);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
@@ -350,14 +350,14 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
         deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
         gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
         while (!write_st.done) {
-          GPR_ASSERT(gpr_time_cmp(gpr_now(), deadline) < 0);
+          GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
           grpc_pollset_work(g_pollset, deadline);
         }
         gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
         grpc_endpoint_destroy(write_st.ep);
         gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
         while (!read_st.done) {
-          GPR_ASSERT(gpr_time_cmp(gpr_now(), deadline) < 0);
+          GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
           grpc_pollset_work(g_pollset, deadline);
         }
         gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));

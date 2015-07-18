@@ -31,3 +31,5 @@ coverage
 # vim temp files
 .*.swp
 
+# Makefile's cache
+cache.mk

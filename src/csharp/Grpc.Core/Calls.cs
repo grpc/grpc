@@ -39,7 +39,7 @@ using Grpc.Core.Internal;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Helper methods for generated client stubs to make RPC calls.
+    /// Helper methods for generated clients to make RPC calls.
     /// </summary>
     public static class Calls
     {
@@ -58,7 +58,7 @@ namespace Grpc.Core
             where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
+            asyncCall.Initialize(call.Channel, call.Channel.CompletionQueue, call.Name);
             var asyncResult = asyncCall.UnaryCallAsync(req, call.Headers);
             RegisterCancellationCallback(asyncCall, token);
             return await asyncResult;
@@ -69,7 +69,7 @@ namespace Grpc.Core
             where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
+            asyncCall.Initialize(call.Channel, call.Channel.CompletionQueue, call.Name);
             asyncCall.StartServerStreamingCall(req, call.Headers);
             RegisterCancellationCallback(asyncCall, token);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
@@ -81,7 +81,7 @@ namespace Grpc.Core
             where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
+            asyncCall.Initialize(call.Channel, call.Channel.CompletionQueue, call.Name);
             var resultTask = asyncCall.ClientStreamingCallAsync(call.Headers);
             RegisterCancellationCallback(asyncCall, token);
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
@@ -93,7 +93,7 @@ namespace Grpc.Core
             where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
+            asyncCall.Initialize(call.Channel, call.Channel.CompletionQueue, call.Name);
             asyncCall.StartDuplexStreamingCall(call.Headers);
             RegisterCancellationCallback(asyncCall, token);
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
@@ -107,14 +107,6 @@ namespace Grpc.Core
             {
                 token.Register(() => asyncCall.Cancel());
             }
-        }
-
-        /// <summary>
-        /// Gets shared completion queue used for async calls.
-        /// </summary>
-        private static CompletionQueueSafeHandle GetCompletionQueue()
-        {
-            return GrpcEnvironment.ThreadPool.CompletionQueue;
         }
     }
 }

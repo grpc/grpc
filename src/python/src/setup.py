@@ -33,7 +33,6 @@ import os
 import sys
 
 from distutils import core as _core
-from distutils import extension as _extension
 import setuptools
 
 
@@ -54,19 +53,6 @@ _C_EXTENSION_SOURCES = (
     'grpc/_adapter/_c/types/server.c',
 )
 
-_CYTHON_EXTENSION_PACKAGE_NAMES = (
-)
-
-_CYTHON_EXTENSION_MODULE_NAMES = (
-    'grpc._cython.cygrpc',
-    'grpc._cython._cygrpc.call',
-    'grpc._cython._cygrpc.channel',
-    'grpc._cython._cygrpc.completion_queue',
-    'grpc._cython._cygrpc.credentials',
-    'grpc._cython._cygrpc.records',
-    'grpc._cython._cygrpc.server',
-)
-
 _EXTENSION_INCLUDE_DIRECTORIES = (
     '.',
 )
@@ -84,45 +70,13 @@ _C_EXTENSION_MODULE = _core.Extension(
     include_dirs=list(_EXTENSION_INCLUDE_DIRECTORIES),
     libraries=list(_EXTENSION_LIBRARIES),
 )
-_C_EXTENSION_MODULES = [_C_EXTENSION_MODULE]
-
-
-def cython_extensions(package_names, module_names, include_dirs, libraries,
-                      build_with_cython=False):
-  file_extension = 'pyx' if build_with_cython else 'c'
-  module_files = [name.replace('.', '/') + '.' + file_extension
-                  for name in module_names]
-  extensions = [
-      _extension.Extension(
-          name=module_name, sources=[module_file],
-          include_dirs=include_dirs, libraries=libraries
-      ) for (module_name, module_file) in zip(module_names, module_files)
-  ]
-  if build_with_cython:
-    import Cython.Build
-    return Cython.Build.cythonize(extensions)
-  else:
-    return extensions
-
-_CYTHON_EXTENSION_MODULES = cython_extensions(
-    list(_CYTHON_EXTENSION_PACKAGE_NAMES), list(_CYTHON_EXTENSION_MODULE_NAMES),
-    list(_EXTENSION_INCLUDE_DIRECTORIES), list(_EXTENSION_LIBRARIES),
-    bool(_BUILD_WITH_CYTHON))
-
-# TODO(atash): We shouldn't need to gate any C code based on the python version
-# from the distutils build system. Remove this hackery once we're on Cython and
-# 3.x C API compliant.
-_EXTENSION_MODULES = list(_CYTHON_EXTENSION_MODULES)
-if sys.version_info[0:2] <= (2, 7):
-  _EXTENSION_MODULES += _C_EXTENSION_MODULES
-
+_EXTENSION_MODULES = [_C_EXTENSION_MODULE]
 
 _PACKAGES = (
     'grpc',
     'grpc._adapter',
-    'grpc._cython',
-    'grpc._cython._cygrpc',
     'grpc._junkdrawer',
+    'grpc._links',
     'grpc.early_adopter',
     'grpc.framework',
     'grpc.framework.alpha',
@@ -131,20 +85,22 @@ _PACKAGES = (
     'grpc.framework.face',
     'grpc.framework.face.testing',
     'grpc.framework.foundation',
+    'grpc.framework.interfaces',
+    'grpc.framework.interfaces.links',
 )
 
 _PACKAGE_DIRECTORIES = {
     'grpc': 'grpc',
     'grpc._adapter': 'grpc/_adapter',
-    'grpc._cython': 'grpc/_cython',
     'grpc._junkdrawer': 'grpc/_junkdrawer',
+    'grpc._links': 'grpc/_links',
     'grpc.early_adopter': 'grpc/early_adopter',
     'grpc.framework': 'grpc/framework',
 }
 
 setuptools.setup(
     name='grpcio',
-    version='0.9.0a1',
+    version='0.10.0a0',
     ext_modules=_EXTENSION_MODULES,
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,

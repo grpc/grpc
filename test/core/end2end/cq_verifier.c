@@ -248,7 +248,8 @@ void cq_verify(cq_verifier *v) {
 }
 
 void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(1));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
   grpc_event ev;
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");

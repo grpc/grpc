@@ -48,30 +48,33 @@ plugins = sorted(glob.glob('tools/buildgen/plugins/*.py'))
 
 jobs = []
 for root, dirs, files in os.walk('templates'):
-	for f in files:
-		if os.path.splitext(f)[1] == '.template':
-			out = '.' + root[len('templates'):] + '/' + os.path.splitext(f)[0]
-			cmd = ['tools/buildgen/mako_renderer.py']
-			for plugin in plugins:
-				cmd.append('-p')
-				cmd.append(plugin)
-			for js in json:
-				cmd.append('-d')
-				cmd.append(js)
-			cmd.append('-o')
-			if test is None:
-				cmd.append(out)
-			else:
-				tf = tempfile.mkstemp()
-				test[out] = tf[1]
-				os.close(tf[0])
-				cmd.append(test[out])
-			cmd.append(root + '/' + f)
-			jobs.append(jobset.JobSpec(cmd, shortname=out))
+  for f in files:
+    if os.path.splitext(f)[1] == '.template':
+      out_dir = '.' + root[len('templates'):]
+      out = out_dir + '/' + os.path.splitext(f)[0]
+      if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+      cmd = ['tools/buildgen/mako_renderer.py']
+      for plugin in plugins:
+        cmd.append('-p')
+        cmd.append(plugin)
+      for js in json:
+        cmd.append('-d')
+        cmd.append(js)
+      cmd.append('-o')
+      if test is None:
+        cmd.append(out)
+      else:
+        tf = tempfile.mkstemp()
+        test[out] = tf[1]
+        os.close(tf[0])
+        cmd.append(test[out])
+      cmd.append(root + '/' + f)
+      jobs.append(jobset.JobSpec(cmd, shortname=out))
 
 jobset.run(jobs)
 
 if test is not None:
-	for s, g in test.iteritems():
-		assert(0 == os.system('diff %s %s' % (s, g)))
-		os.unlink(g)
+  for s, g in test.iteritems():
+    assert(0 == os.system('diff %s %s' % (s, g)))
+    os.unlink(g)

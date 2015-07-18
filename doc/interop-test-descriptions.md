@@ -396,14 +396,23 @@ Asserts:
 
 Similar to the other auth tests, this test is only for cloud-to-prod path.
 
-This test verifies unary calls succeed in sending messages using an OAuth2 token that is obtained OOB.  For the purpose of the test, the OAuth2 token is actually obtained from the service account credentials via the language-specific authorization library.  
+This test verifies unary calls succeed in sending messages using an OAuth2 token
+that is obtained out of band. For the purpose of the test, the OAuth2 token is
+actually obtained from the service account credentials via the
+language-specific authorization library.
 
-The difference between this test and the other auth tests is that rather than configuring the test client with ServiceAccountCredentials directly, the test first uses the authorization library to obtain an authorization token.
+The difference between this test and the other auth tests is that rather than
+configuring the test client with ServiceAccountCredentials directly, the test
+first uses the authorization library to obtain an authorization token.
 
 The test
-- uses the flag`--service_account_key_file` with the path to a json key file
-downloaded from https://console.developers.google.com. Alternately, if using a usable auth implementation, it may specify the file location in the environment variable GOOGLE_APPLICATION_CREDENTIALS
-- uses the flag `--oauth_scope` for the oauth scope.  For testing against grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should be passed as the `--oauth_scope`.
+- uses the flag `--service_account_key_file` with the path to a json key file
+downloaded from https://console.developers.google.com. Alternately, if using a
+usable auth implementation, it may specify the file location in the environment
+variable GOOGLE_APPLICATION_CREDENTIALS
+- uses the flag `--oauth_scope` for the oauth scope.  For testing against
+grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
+be passed as the `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
@@ -412,16 +421,12 @@ Server features:
 * [Echo OAuth Scope][]
 
 Procedure:
- 1. Client use the auth library to obtain an authorization token
- 2. Client calls UnaryCall, attaching the authorization token obtained in step1, with the following message
+ 1. Client uses the auth library to obtain an authorization token
+ 2. Client configures the channel to use AccessTokenCredentials with the access token obtained in step 1.
+ 3. Client calls UnaryCall with the following message
 
     ```
     {
-      response_type: COMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
       fill_username: true
       fill_oauth_scope: true
     }
@@ -429,11 +434,53 @@ Procedure:
     
 Asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file used by the auth library to obtain the authorization token
+* received SimpleResponse.username is in the json key file used by the auth
+library to obtain the authorization token
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
-* response payload body is 314159 bytes in size
-* clients are free to assert that the response payload body contents are zero
-  and comparing the entire response message against a golden response
+
+### per_rpc_creds
+
+Similar to the other auth tests, this test is only for cloud-to-prod path.
+
+This test verifies unary calls succeed in sending messages using an OAuth2 token
+that is obtained out of band. For the purpose of the test, the OAuth2 token is
+actually obtained from the service account credentials via the
+language-specific authorization library.
+
+The test
+- uses the flag `--service_account_key_file` with the path to a json key file
+downloaded from https://console.developers.google.com. Alternately, if using a
+usable auth implementation, it may specify the file location in the environment
+variable GOOGLE_APPLICATION_CREDENTIALS
+- uses the flag `--oauth_scope` for the oauth scope.  For testing against
+grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
+be passed as the `--oauth_scope`.
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* [Echo Authenticated Username][]
+* [Echo OAuth Scope][]
+
+Procedure:
+ 1. Client uses the auth library to obtain an authorization token
+ 2. Client configures the channel with just SSL credentials.
+ 3. Client calls UnaryCall, setting per-call credentials to
+ AccessTokenCredentials with the access token obtained in step 1. The request is
+ the following message
+
+    ```
+    {
+      fill_username: true
+      fill_oauth_scope: true
+    }
+    ```
+    
+Asserts:
+* call was successful
+* received SimpleResponse.username is in the json key file used by the auth
+library to obtain the authorization token
+* received SimpleResponse.oauth_scope is in `--oauth_scope`
 
 
 ### Metadata (TODO: fix name)

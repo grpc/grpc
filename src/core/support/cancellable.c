@@ -121,8 +121,9 @@ void gpr_cancellable_cancel(gpr_cancellable *c) {
         } else {
           gpr_event ev;
           gpr_event_init(&ev);
-          gpr_event_wait(&ev,
-                         gpr_time_add(gpr_now(), gpr_time_from_micros(1000)));
+          gpr_event_wait(
+              &ev, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                gpr_time_from_micros(1000, GPR_TIMESPAN)));
         }
       }
     } while (failures != 0);
