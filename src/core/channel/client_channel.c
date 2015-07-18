@@ -414,7 +414,8 @@ static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   gpr_mu_lock(&w->chand->mu_config);
   /* check if the notification is for a stale policy */
   if (w->lb_policy == w->chand->lb_policy) {
-    grpc_connectivity_state_set(&w->chand->state_tracker, w->state);
+    grpc_connectivity_state_set(&w->chand->state_tracker, w->state,
+                                "lb_changed");
     start_new = (w->state != GRPC_CHANNEL_FATAL_FAILURE);
   }
   gpr_mu_unlock(&w->chand->mu_config);
@@ -481,7 +482,8 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
     grpc_resolver_next(resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
     GRPC_RESOLVER_UNREF(resolver, "channel-next");
-    grpc_connectivity_state_set(&chand->state_tracker, state);
+    grpc_connectivity_state_set(&chand->state_tracker, state,
+                                "new_lb+resolver");
     if (lb_policy != NULL) {
       watch_lb_policy(chand, lb_policy, state);
     }
@@ -489,7 +491,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
     old_resolver = chand->resolver;
     chand->resolver = NULL;
     grpc_connectivity_state_set(&chand->state_tracker,
-                                GRPC_CHANNEL_FATAL_FAILURE);
+                                GRPC_CHANNEL_FATAL_FAILURE, "resolver_gone");
     gpr_mu_unlock(&chand->mu_config);
     if (old_resolver != NULL) {
       grpc_resolver_shutdown(old_resolver);
@@ -538,22 +540,22 @@ static void cc_start_transport_op(grpc_channel_element *elem,
     op->connectivity_state = NULL;
   }
 
+  if (!is_empty(op, sizeof(*op))) {
+    lb_policy = chand->lb_policy;
+    if (lb_policy) {
+      GRPC_LB_POLICY_REF(lb_policy, "broadcast");
+    }
+  }
+
   if (op->disconnect && chand->resolver != NULL) {
     grpc_connectivity_state_set(&chand->state_tracker,
-                                GRPC_CHANNEL_FATAL_FAILURE);
+                                GRPC_CHANNEL_FATAL_FAILURE, "disconnect");
     destroy_resolver = chand->resolver;
     chand->resolver = NULL;
     if (chand->lb_policy != NULL) {
       grpc_lb_policy_shutdown(chand->lb_policy);
       GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel");
       chand->lb_policy = NULL;
-    }
-  }
-
-  if (!is_empty(op, sizeof(*op))) {
-    lb_policy = chand->lb_policy;
-    if (lb_policy) {
-      GRPC_LB_POLICY_REF(lb_policy, "broadcast");
     }
   }
   gpr_mu_unlock(&chand->mu_config);

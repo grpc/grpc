@@ -75,6 +75,8 @@ struct grpc_lb_policy_vtable {
                                  grpc_iomgr_closure *closure);
 };
 
+#define GRPC_LB_POLICY_REFCOUNT_DEBUG
+
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
 #define GRPC_LB_POLICY_REF(p, r) \
   grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
@@ -111,9 +113,11 @@ void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op);
 
 void grpc_lb_policy_exit_idle(grpc_lb_policy *policy);
 
-void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy, grpc_connectivity_state *state,
-                                 grpc_iomgr_closure *closure);
+void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
+                                           grpc_connectivity_state *state,
+                                           grpc_iomgr_closure *closure);
 
-grpc_connectivity_state grpc_lb_policy_check_connectivity(grpc_lb_policy *policy);
+grpc_connectivity_state grpc_lb_policy_check_connectivity(
+    grpc_lb_policy *policy);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */
