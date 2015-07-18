@@ -415,7 +415,7 @@ static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   /* check if the notification is for a stale policy */
   if (w->lb_policy == w->chand->lb_policy) {
     grpc_connectivity_state_set(&w->chand->state_tracker, w->state);
-    start_new = 1;
+    start_new = (w->state != GRPC_CHANNEL_FATAL_FAILURE);
   }
   gpr_mu_unlock(&w->chand->mu_config);
 

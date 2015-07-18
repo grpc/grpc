@@ -492,6 +492,8 @@ static void publish_transport(grpc_subchannel *c) {
   connection *destroy_connection = NULL;
   grpc_channel_element *elem;
 
+  gpr_log(GPR_DEBUG, "publish_transport: %p", c->master);
+
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;
   filters = gpr_malloc(sizeof(*filters) * num_filters);
@@ -525,6 +527,8 @@ static void publish_transport(grpc_subchannel *c) {
     gpr_free(sw);
     gpr_free(filters);
     grpc_channel_stack_destroy(stk);
+    GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting");
+    GRPC_SUBCHANNEL_UNREF(c, "connecting");
     return;
   }
 
@@ -569,6 +573,8 @@ static void publish_transport(grpc_subchannel *c) {
 static void on_alarm(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
+  gpr_log(GPR_DEBUG, "on_alarm:%d:%d:%d", c->have_alarm, iomgr_success,
+          c->disconnected);
   c->have_alarm = 0;
   if (c->disconnected) {
     iomgr_success = 0;
@@ -588,13 +594,19 @@ static void subchannel_connected(void *arg, int iomgr_success) {
   if (c->connecting_result.transport != NULL) {
     publish_transport(c);
   } else {
+    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
     connectivity_state_changed_locked(c);
     c->next_attempt = gpr_time_add(c->next_attempt, c->backoff_delta);
-    c->backoff_delta = gpr_time_add(c->backoff_delta, c->backoff_delta);
-    grpc_alarm_init(&c->alarm, c->next_attempt, on_alarm, c, gpr_now(GPR_CLOCK_REALTIME));
+    if (gpr_time_cmp(c->backoff_delta, gpr_time_from_seconds(60)) < 0) {
+      c->backoff_delta = gpr_time_add(c->backoff_delta, c->backoff_delta);
+    }
+    gpr_log(GPR_DEBUG, "wait: %d.%09d %d.%09d %d.%09d", now.tv_sec, now.tv_nsec,
+            c->next_attempt.tv_sec, c->next_attempt.tv_nsec,
+            c->backoff_delta.tv_sec, c->backoff_delta.tv_nsec);
+    grpc_alarm_init(&c->alarm, c->next_attempt, on_alarm, c, now);
     gpr_mu_unlock(&c->mu);
   }
 }

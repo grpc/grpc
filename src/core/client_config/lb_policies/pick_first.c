@@ -62,6 +62,8 @@ typedef struct {
   grpc_subchannel *selected;
   /** have we started picking? */
   int started_picking;
+  /** are we shut down? */
+  int shutdown;
   /** which subchannel are we watching? */
   size_t checking_subchannel;
   /** what is the connectivity of that channel? */
@@ -107,12 +109,14 @@ void pf_shutdown(grpc_lb_policy *pol) {
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
   del_interested_parties_locked(p);
+  p->shutdown = 1;
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
     grpc_iomgr_add_delayed_callback(pp->on_complete, 0);
     gpr_free(pp);
   }
+  grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE);
   gpr_mu_unlock(&p->mu);
 }
 
@@ -168,7 +172,9 @@ static void pf_connectivity_changed(void *arg, int iomgr_success) {
 
   gpr_mu_lock(&p->mu);
 
-  if (p->selected != NULL) {
+  if (p->shutdown) {
+    unref = 1;
+  } else if (p->selected != NULL) {
     grpc_connectivity_state_set(&p->state_tracker, p->checking_connectivity);
     if (p->checking_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {
       grpc_subchannel_notify_on_state_change(p->selected, &p->checking_connectivity, &p->connectivity_changed);
