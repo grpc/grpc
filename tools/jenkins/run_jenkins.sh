@@ -31,11 +31,23 @@
 # This script is invoked by Jenkins and triggers a test run based on
 # env variable settings.
 #
+# Setting up rvm environment BEFORE we set -ex.
+[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 # To prevent cygwin bash complaining about empty lines ending with \r
 # we set the igncr option. The option doesn't exist on Linux, so we fallback
 # to just 'set -ex' there.
 # NOTE: No empty lines should appear in this file before igncr is set!
 set -ex -o igncr || set -ex
+
+# Grabbing the machine's architecture
+arch=`uname -m`
+
+case $platform in
+  i386)
+    arch="i386"
+    platform="linux"
+    ;;
+esac
 
 if [ "$platform" == "linux" ]
 then
@@ -51,11 +63,8 @@ then
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave
 
-  if [ "$ghprbPullId" != "" ]
-  then
-    # if we are building a pull request, grab corresponding refs.
-    FETCH_PULL_REQUEST_CMD="&& git fetch $GIT_URL refs/pull/$ghprbPullId/merge refs/pull/$ghprbPullId/head"
-  fi
+  # Create a local branch so the child Docker script won't complain
+  git branch jenkins-docker
 
   # Make sure the CID file is gone.
   rm -f docker.cid
@@ -64,6 +73,7 @@ then
   docker run \
     -e "config=$config" \
     -e "language=$language" \
+    -e "arch=$arch" \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
     --cidfile=docker.cid \
@@ -73,7 +83,8 @@ then
   DOCKER_CID=`cat docker.cid`
   docker kill $DOCKER_CID
   docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
-  docker rm $DOCKER_CID
+  sleep 4
+  docker rm $DOCKER_CID || true
 
 elif [ "$platform" == "windows" ]
 then
@@ -86,7 +97,12 @@ then
   /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
   /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
 
-  python tools/run_tests/run_tests.py -t -l $language -x report.xml
+  python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
+elif [ "$platform" == "macos" ]
+then
+  echo "building $language on MacOS"
+
+  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
 else
   echo "Unknown platform $platform"
   exit 1

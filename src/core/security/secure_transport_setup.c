@@ -47,7 +47,8 @@ typedef struct {
   tsi_handshaker *handshaker;
   unsigned char *handshake_buffer;
   size_t handshake_buffer_size;
-  grpc_endpoint *endpoint;
+  grpc_endpoint *wrapped_endpoint;
+  grpc_endpoint *secure_endpoint;
   gpr_slice_buffer left_overs;
   grpc_secure_transport_setup_done_cb cb;
   void *user_data;
@@ -63,13 +64,16 @@ static void on_handshake_data_sent_to_peer(void *setup,
 static void secure_transport_setup_done(grpc_secure_transport_setup *s,
                                         int is_success) {
   if (is_success) {
-    s->cb(s->user_data, GRPC_SECURITY_OK, s->endpoint);
+    s->cb(s->user_data, GRPC_SECURITY_OK, s->wrapped_endpoint,
+          s->secure_endpoint);
   } else {
-    if (s->endpoint != NULL) {
-      grpc_endpoint_shutdown(s->endpoint);
-      grpc_endpoint_destroy(s->endpoint);
+    if (s->secure_endpoint != NULL) {
+      grpc_endpoint_shutdown(s->secure_endpoint);
+      grpc_endpoint_destroy(s->secure_endpoint);
+    } else {
+      grpc_endpoint_destroy(s->wrapped_endpoint);
     }
-    s->cb(s->user_data, GRPC_SECURITY_ERROR, NULL);
+    s->cb(s->user_data, GRPC_SECURITY_ERROR, s->wrapped_endpoint, NULL);
   }
   if (s->handshaker != NULL) tsi_handshaker_destroy(s->handshaker);
   if (s->handshake_buffer != NULL) gpr_free(s->handshake_buffer);
@@ -95,8 +99,9 @@ static void on_peer_checked(void *user_data, grpc_security_status status) {
     secure_transport_setup_done(s, 0);
     return;
   }
-  s->endpoint = grpc_secure_endpoint_create(
-      protector, s->endpoint, s->left_overs.slices, s->left_overs.count);
+  s->secure_endpoint =
+      grpc_secure_endpoint_create(protector, s->wrapped_endpoint,
+                                  s->left_overs.slices, s->left_overs.count);
   secure_transport_setup_done(s, 1);
   return;
 }
@@ -152,7 +157,7 @@ static void send_handshake_bytes_to_peer(grpc_secure_transport_setup *s) {
       gpr_slice_from_copied_buffer((const char *)s->handshake_buffer, offset);
   /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
-  write_status = grpc_endpoint_write(s->endpoint, &to_send, 1,
+  write_status = grpc_endpoint_write(s->wrapped_endpoint, &to_send, 1,
                                      on_handshake_data_sent_to_peer, s);
   if (write_status == GRPC_ENDPOINT_WRITE_ERROR) {
     gpr_log(GPR_ERROR, "Could not send handshake data to peer.");
@@ -198,7 +203,7 @@ static void on_handshake_data_received_from_peer(
     if (result == TSI_INCOMPLETE_DATA) {
       /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
-      grpc_endpoint_notify_on_read(s->endpoint,
+      grpc_endpoint_notify_on_read(s->wrapped_endpoint,
                                    on_handshake_data_received_from_peer, setup);
       cleanup_slices(slices, nslices);
       return;
@@ -256,7 +261,7 @@ static void on_handshake_data_sent_to_peer(void *setup,
   if (tsi_handshaker_is_in_progress(s->handshaker)) {
     /* TODO(klempner,jboeuf): This should probably use the client setup
        deadline */
-    grpc_endpoint_notify_on_read(s->endpoint,
+    grpc_endpoint_notify_on_read(s->wrapped_endpoint,
                                  on_handshake_data_received_from_peer, setup);
   } else {
     check_peer(s);
@@ -280,7 +285,7 @@ void grpc_setup_secure_transport(grpc_security_connector *connector,
       GRPC_SECURITY_CONNECTOR_REF(connector, "secure_transport_setup");
   s->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   s->handshake_buffer = gpr_malloc(s->handshake_buffer_size);
-  s->endpoint = nonsecure_endpoint;
+  s->wrapped_endpoint = nonsecure_endpoint;
   s->user_data = user_data;
   s->cb = cb;
   gpr_slice_buffer_init(&s->left_overs);

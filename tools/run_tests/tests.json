@@ -197,6 +197,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "gpr_stack_lockfree_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "gpr_string_test", 
     "platforms": [
       "windows", 
@@ -306,6 +315,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "grpc_json_token_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "grpc_jwt_verifier_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -597,6 +615,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "auth_property_iterator_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "channel_arguments_test", 
     "platforms": [
       "windows", 
@@ -669,6 +696,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "fixed_size_thread_pool_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "generic_end2end_test", 
     "platforms": [
       "windows", 
@@ -696,6 +732,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "qps_openloop_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "qps_test", 
     "platforms": [
       "windows", 
@@ -705,7 +750,7 @@
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "qps_test_openloop", 
+    "name": "secure_auth_context_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -742,15 +787,6 @@
     "flaky": false, 
     "language": "c++", 
     "name": "sync_unary_ping_pong_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
-    "name": "thread_pool_test", 
     "platforms": [
       "windows", 
       "posix"

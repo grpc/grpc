@@ -157,7 +157,7 @@ static void record_stats(census_ht* store, census_op_id op_id,
         key.ptr = gpr_strdup(key.ptr);
         census_ht_insert(store, key, (void*)window_stats);
       }
-      census_window_stats_add(window_stats, gpr_now(), stats);
+      census_window_stats_add(window_stats, gpr_now(GPR_CLOCK_REALTIME), stats);
     } else {
       census_internal_unlock_trace_store();
     }
@@ -185,7 +185,7 @@ static void get_stats(census_ht* store, census_aggregated_rpc_stats* data) {
   if (store != NULL) {
     size_t n;
     unsigned i, j;
-    gpr_timespec now = gpr_now();
+    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
     census_ht_kv* kv = census_ht_get_all_elements(store, &n);
     if (kv != NULL) {
       data->num_entries = n;

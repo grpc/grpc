@@ -33,8 +33,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>..\packages\Microsoft.Bcl.Immutable.1.0.34\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="System.Collections.Immutable, Version=1.1.36.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\System.Collections.Immutable.1.1.36\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.Interactive.Async">
       <HintPath>..\packages\Ix-Async.1.2.3\lib\net45\System.Interactive.Async.dll</HintPath>
@@ -48,6 +49,7 @@
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
     <Compile Include="Internal\GrpcLog.cs" />
+    <Compile Include="Version.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
@@ -86,8 +88,7 @@
     <Compile Include="ServerCredentials.cs" />
     <Compile Include="Metadata.cs" />
     <Compile Include="Internal\MetadataArraySafeHandle.cs" />
-    <Compile Include="Stub\AbstractStub.cs" />
-    <Compile Include="Stub\StubConfiguration.cs" />
+    <Compile Include="ClientBase.cs" />
     <Compile Include="Internal\ServerCalls.cs" />
     <Compile Include="ServerMethods.cs" />
     <Compile Include="Internal\ClientRequestStream.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="ChannelOptions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.Core.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Choose>

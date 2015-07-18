@@ -37,6 +37,9 @@
     <ClCompile Include="..\..\src\core\security\json_token.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\jwt_verifier.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\secure_endpoint.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
@@ -313,6 +316,9 @@
     <ClCompile Include="..\..\src\core\surface\surface_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\version.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
       <Filter>src\core\transport\chttp2</Filter>
     </ClCompile>
@@ -444,6 +450,9 @@
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\json_token.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\jwt_verifier.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\secure_endpoint.h">

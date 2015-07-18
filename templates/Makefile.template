@@ -229,6 +229,7 @@ endif
 endif
 INSTALL = install
 RM = rm -f
+PKG_CONFIG = pkg-config
 
 ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
@@ -345,19 +346,27 @@ HOST_LDLIBS = $(LDLIBS)
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
 
-HAS_PKG_CONFIG = $(shell command -v pkg-config >/dev/null 2>&1 && echo true || echo false)
+-include cache.mk
 
-PC_TEMPLATE = prefix=$(prefix)\n\
-exec_prefix=${'\$${prefix}'}\n\
-includedir=${'\$${prefix}'}/include\n\
-libdir=${'\$${exec_prefix}'}/lib\n\
-\n\
-Name: $(PC_NAME)\n\
-Description: $(PC_DESCRIPTION)\n\
-Version: $(VERSION)\n\
-Cflags: -I${'\$${includedir}'} $(PC_CFLAGS)\n\
-Requires.private: $(PC_REQUIRES_PRIVATE)\n\
-Libs: -L${'\$${libdir}'}\n\
+CACHE_MK =
+
+HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
+
+ifeq ($(HAS_PKG_CONFIG), true)
+CACHE_MK += HAS_PKG_CONFIG = true,
+endif
+
+PC_TEMPLATE = prefix=$(prefix),\
+exec_prefix=${'\$${prefix}'},\
+includedir=${'\$${prefix}'}/include,\
+libdir=${'\$${exec_prefix}'}/lib,\
+,\
+Name: $(PC_NAME),\
+Description: $(PC_DESCRIPTION),\
+Version: $(VERSION),\
+Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
+Requires.private: $(PC_REQUIRES_PRIVATE),\
+Libs: -L${'\$${libdir}'} $(PC_LIB),\
 Libs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
@@ -366,7 +375,8 @@ PC_DESCRIPTION = gRPC Portable Runtime
 PC_CFLAGS = -pthread
 PC_REQUIRES_PRIVATE =
 PC_LIBS_PRIVATE = -lpthread
-ifeq ($(SYSTEM),Darwin)
+PC_LIB = -lgpr
+ifneq ($(SYSTEM),Darwin)
 PC_LIBS_PRIVATE += -lrt
 endif
 GPR_PC_FILE := $(PC_TEMPLATE)
@@ -396,10 +406,10 @@ OPENSSL_REQUIRES_DL = true
 endif
 
 ifeq ($(HAS_PKG_CONFIG),true)
-OPENSSL_ALPN_CHECK_CMD = pkg-config --atleast-version=1.0.2 openssl
-ZLIB_CHECK_CMD = pkg-config --exists zlib
-PERFTOOLS_CHECK_CMD = pkg-config --exists profiler
-PROTOBUF_CHECK_CMD = pkg-config --atleast-version=3.0.0-alpha-3 protobuf
+OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
+OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
+ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
+PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
 else # HAS_PKG_CONFIG
 
 ifeq ($(SYSTEM),MINGW32)
@@ -409,15 +419,18 @@ OPENSSL_LIBS = ssl crypto
 endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
+OPENSSL_NPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
-PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 OPENSSL_ALPN_CHECK_CMD += -ldl
+OPENSSL_NPN_CHECK_CMD += -ldl
 endif
 
 endif # HAS_PKG_CONFIG
+
+PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 
 PROTOC_CHECK_CMD = which protoc > /dev/null
 PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
@@ -426,28 +439,49 @@ SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/buil
 ZOOKEEPER_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zookeeper.c $(LDFLAGS) -lzookeeper_mt
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
 DEFINES += GRPC_HAVE_PERFTOOLS
 LIBS += profiler
+CACHE_MK += HAS_SYSTEM_PERFTOOLS = true,
 endif
 endif
 
 HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
-HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_SYSTEM_PROTOBUF = $(HAS_SYSTEM_PROTOBUF_VERIFY)
+HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+HAS_SYSTEM_OPENSSL_NPN = true
+CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
+else
+HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+endif
+ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true,
+endif
+HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_SYSTEM_ZLIB),true)
+CACHE_MK += HAS_SYSTEM_ZLIB = true,
+endif
+HAS_SYSTEM_PROTOBUF ?= $(HAS_SYSTEM_PROTOBUF_VERIFY)
+ifeq ($(HAS_SYSTEM_PROTOBUF),true)
+CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
+endif
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
+HAS_SYSTEM_OPENSSL_NPN = false
 HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
-HAS_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
+CACHE_MK += HAS_PROTOC = true,
+HAS_VALID_PROTOC ?= $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_VALID_PROTOC),true)
+CACHE_MK += HAS_VALID_PROTOC = true,
+endif
 else
 HAS_VALID_PROTOC = false
 endif
@@ -455,6 +489,7 @@ endif
 # Check for Systemtap (https://sourceware.org/systemtap/), first by making sure <sys/sdt.h> is present
 # in the system and secondly by checking for the "dtrace" binary (on Linux, this is part of the Systemtap
 # distribution. It's part of the base system on BSD/Solaris machines).
+ifndef HAS_SYSTEMTAP
 HAS_SYSTEMTAP_HEADERS = $(shell $(SYSTEMTAP_HEADERS_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_DTRACE = $(shell $(DTRACE_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEMTAP = false
@@ -463,9 +498,17 @@ ifeq ($(HAS_DTRACE),true)
 HAS_SYSTEMTAP = true
 endif
 endif
+endif
+
+ifeq ($(HAS_SYSTEMTAP),true)
+CACHE_MK += HAS_SYSTEMTAP = true,
+endif
 
 HAS_ZOOKEEPER = $(shell $(ZOOKEEPER_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
+# Note that for testing purposes, one can do:
+#   make HAS_EMBEDDED_OPENSSL_ALPN=false
+# to emulate the fact we do not have OpenSSL in the third_party folder.
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
 else
@@ -500,8 +543,8 @@ DEP_MISSING += zlib
 endif
 else
 ifeq ($(HAS_PKG_CONFIG),true)
-CPPFLAGS += $(shell pkg-config --cflags zlib)
-LDFLAGS += $(shell pkg-config --libs-only-L zlib)
+CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs-only-L zlib)
 PC_REQUIRES_GRPC += zlib
 else
 PC_LIBS_GRPC += -lz
@@ -517,11 +560,11 @@ ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_PKG_CONFIG = true
 PC_REQUIRES_SECURE = openssl
-CPPFLAGS := $(shell pkg-config --cflags openssl) $(CPPFLAGS)
-LDFLAGS_OPENSSL_PKG_CONFIG = $(shell pkg-config --libs-only-L openssl)
+CPPFLAGS := $(shell $(PKG_CONFIG) --cflags openssl) $(CPPFLAGS)
+LDFLAGS_OPENSSL_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L openssl)
 ifeq ($(SYSTEM),Linux)
 ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
-LDFLAGS_OPENSSL_PKG_CONFIG += $(shell pkg-config --libs-only-L openssl | sed s/L/Wl,-rpath,/)
+LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
 endif
 endif
 LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
@@ -534,6 +577,7 @@ endif
 endif
 else
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
+USE_SYSTEM_OPENSSL = false
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
 # need to prefix these to ensure overriding system libraries
@@ -543,12 +587,21 @@ ifeq ($(OPENSSL_REQUIRES_DL),true)
 LIBS_SECURE = dl
 endif
 else
+ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+USE_SYSTEM_OPENSSL = true
+CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
+LIBS_SECURE = $(OPENSSL_LIBS)
+ifeq ($(OPENSSL_REQUIRES_DL),true)
+LIBS_SECURE += dl
+endif
+else
 NO_SECURE = true
+endif
 endif
 endif
 
 ifeq ($(OPENSSL_PKG_CONFIG),true)
-LDLIBS_SECURE += $(shell pkg-config --libs-only-l openssl)
+LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
 else
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 endif
@@ -559,6 +612,7 @@ PC_DESCRIPTION = high performance general RPC framework
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
+PC_LIB = -lgrpc
 GRPC_PC_FILE := $(PC_TEMPLATE)
 
 # gprc_unsecure .pc file
@@ -567,6 +621,7 @@ PC_DESCRIPTION = high performance general RPC framework without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
+PC_LIB = -lgrpc
 GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 # gprc_zookeeper .pc file
@@ -586,11 +641,11 @@ ifeq ($(HAS_SYSTEM_PROTOBUF),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 PROTOBUF_PKG_CONFIG = true
 PC_REQUIRES_GRPCXX = protobuf
-CPPFLAGS := $(shell pkg-config --cflags protobuf) $(CPPFLAGS)
-LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell pkg-config --libs-only-L protobuf)
+CPPFLAGS := $(shell $(PKG_CONFIG) --cflags protobuf) $(CPPFLAGS)
+LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
 ifeq ($(SYSTEM),Linux)
 ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
-LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell pkg-config --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
+LDFLAGS_PROTOBUF_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
 endif
 endif
 else
@@ -613,7 +668,7 @@ LIBS_PROTOC = protoc protobuf
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 ifeq ($(PROTOBUF_PKG_CONFIG),true)
-LDLIBS_PROTOBUF += $(shell pkg-config --libs-only-l protobuf)
+LDLIBS_PROTOBUF += $(shell $(PKG_CONFIG) --libs-only-l protobuf)
 else
 LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
 endif
@@ -624,6 +679,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+PC_LIB = -lgrpc++
 GRPCXX_PC_FILE := $(PC_TEMPLATE)
 
 # grpc++_unsecure .pc file
@@ -632,6 +688,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
+PC_LIB = -lgrpc++
 GRPCXX_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
@@ -704,7 +761,7 @@ openssl_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires OpenSSL with ALPN support."
+	@echo "The target you are trying to run requires OpenSSL."
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -762,6 +819,7 @@ ${tgt.name}: $(BINDIR)/$(CONFIG)/${tgt.name}
 
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
+	$(OPENSSL_NPN_CHECK_CMD) || true
 	$(ZLIB_CHECK_CMD) || true
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
@@ -783,7 +841,7 @@ ifeq ($(SYSTEM),Darwin)
 else
 ifeq ($(SYSTEM),MINGW32)
 	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
-	@echo "Please provide an ALPN-capable OpenSSL in your mingw32 system."
+	@echo "Please provide a OpenSSL in your mingw32 system."
 	@echo
 	@echo "Note that you can find a compatible version of the libraries here:"
 	@echo
@@ -825,7 +883,7 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure pc_gpr pc_c_zookeeper\
+static_c: pc_c pc_c_unsecure cache.mk pc_gpr pc_c_zookeeper\
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -834,7 +892,7 @@ static_c: pc_c pc_c_unsecure pc_gpr pc_c_zookeeper\
  static_zookeeper_libs
 
 
-static_cxx: pc_cxx pc_cxx_unsecure pc_gpr\
+static_cxx: pc_cxx pc_cxx_unsecure pc_gpr cache.mk \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c++':
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
@@ -844,7 +902,7 @@ static_cxx: pc_cxx pc_cxx_unsecure pc_gpr\
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure pc_gpr pc_c_zookeeper\
+shared_c: pc_c pc_c_unsecure pc_gpr cache.mk pc_c_zookeeper\
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -852,7 +910,7 @@ shared_c: pc_c pc_c_unsecure pc_gpr pc_c_zookeeper\
 % endfor
  shared_zookeeper_libs
 
-shared_cxx: pc_cxx pc_cxx_unsecure \
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c++':
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -1119,20 +1177,24 @@ ifeq ($(CONFIG),opt)
 % endfor
 endif
 
+cache.mk::
+	$(E) "[MAKE]    Generating $@"
+	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
+
 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GPR_PC_FILE)" >$@
+	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_UNSECURE_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
 	$(E) "[MAKE]    Generating $@"
@@ -1142,12 +1204,12 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPCXX_PC_FILE)" >$@
+	$(Q) echo "$(GRPCXX_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPCXX_UNSECURE_PC_FILE)" >$@
+	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 % for p in protos:
 ifeq ($(NO_PROTOC),true)
@@ -1379,7 +1441,7 @@ endif
 
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
-	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
+	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR) cache.mk
 
 
 # The various libraries
@@ -1419,11 +1481,11 @@ PUBLIC_HEADERS_C += \\
 
 LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
-## If the library requires OpenSSL with ALPN, let's add some restrictions.
+## If the library requires OpenSSL, let's add some restrictions.
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure libraries if you don't have OpenSSL with ALPN.
+# You can't build secure libraries if you don't have OpenSSL.
 
 $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
@@ -1566,7 +1628,7 @@ endif
 % endif
 % if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ## If the lib was secure, we have to close the Makefile's if that tested
-## the presence of an ALPN-capable OpenSSL.
+## the presence of OpenSSL.
 
 endif
 % endif
@@ -1607,7 +1669,7 @@ ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(b
 % if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
-# You can't build secure targets if you don't have OpenSSL with ALPN.
+# You can't build secure targets if you don't have OpenSSL.
 
 $(BINDIR)/$(CONFIG)/${tgt.name}: openssl_dep_error
 

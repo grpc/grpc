@@ -30,56 +30,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include <memory>
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-
-#include "src/cpp/server/thread_pool.h"
+#include <grpc/grpc.h>
+#include <grpc++/auth_context.h>
 
 namespace grpc {
 
-void ThreadPool::ThreadFunc() {
-  for (;;) {
-    // Wait until work is available or we are shutting down.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    if (!shutdown_ && callbacks_.empty()) {
-      cv_.wait(lock);
-    }
-    // Drain callbacks before considering shutdown to ensure all work
-    // gets completed.
-    if (!callbacks_.empty()) {
-      auto cb = callbacks_.front();
-      callbacks_.pop();
-      lock.unlock();
-      cb();
-    } else if (shutdown_) {
-      return;
-    }
-  }
-}
-
-ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
-  for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(new grpc::thread(&ThreadPool::ThreadFunc, this));
-  }
-}
-
-ThreadPool::~ThreadPool() {
-  {
-    grpc::lock_guard<grpc::mutex> lock(mu_);
-    shutdown_ = true;
-    cv_.notify_all();
-  }
-  for (auto t = threads_.begin(); t != threads_.end(); t++) {
-    (*t)->join();
-    delete *t;
-  }
-}
-
-void ThreadPool::ScheduleCallback(const std::function<void()>& callback) {
-  grpc::lock_guard<grpc::mutex> lock(mu_);
-  callbacks_.push(callback);
-  cv_.notify_one();
+std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
+  (void)call;
+  return std::shared_ptr<const AuthContext>();
 }
 
 }  // namespace grpc

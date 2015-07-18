@@ -31,47 +31,36 @@
  *
  */
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
+#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
-#include "src/cpp/server/thread_pool.h"
-#include <gtest/gtest.h>
+#include <grpc++/auth_context.h>
+
+struct grpc_auth_context;
 
 namespace grpc {
 
-class ThreadPoolTest : public ::testing::Test {
+class SecureAuthContext GRPC_FINAL : public AuthContext {
  public:
-  ThreadPoolTest() : thread_pool_(4) {}
+  SecureAuthContext(grpc_auth_context* ctx);
 
- protected:
-  ThreadPool thread_pool_;
+  ~SecureAuthContext() GRPC_OVERRIDE;
+
+  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
+
+  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
+
+  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
+      GRPC_OVERRIDE;
+
+  AuthPropertyIterator begin() const GRPC_OVERRIDE;
+
+  AuthPropertyIterator end() const GRPC_OVERRIDE;
+
+ private:
+  grpc_auth_context* ctx_;
 };
-
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
-  *done = true;
-  cv->notify_all();
-}
-
-TEST_F(ThreadPoolTest, ScheduleCallback) {
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.ScheduleCallback(callback);
-
-  // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
-  }
-}
 
 }  // namespace grpc
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  return result;
-}
+#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H

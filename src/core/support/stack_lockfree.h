@@ -31,39 +31,20 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
+#define GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
 
-#include <grpc++/config.h>
+typedef struct gpr_stack_lockfree gpr_stack_lockfree;
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
+/* This stack must specify the maximum number of entries to track.
+   The current implementation only allows up to 65534 entries */
+gpr_stack_lockfree* gpr_stack_lockfree_create(int entries);
+void gpr_stack_lockfree_destroy(gpr_stack_lockfree* stack);
 
-#include <queue>
-#include <vector>
+/* Pass in a valid entry number for the next stack entry */
+void gpr_stack_lockfree_push(gpr_stack_lockfree* stack, int entry);
 
-namespace grpc {
+/* Returns -1 on empty or the actual entry number */
+int gpr_stack_lockfree_pop(gpr_stack_lockfree* stack);
 
-class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
- public:
-  explicit ThreadPool(int num_threads);
-  ~ThreadPool();
-
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
-
- private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread*> threads_;
-
-  void ThreadFunc();
-};
-
-ThreadPoolInterface* CreateDefaultThreadPool();
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H */

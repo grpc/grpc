@@ -151,7 +151,7 @@ static void client_init_call_elem(grpc_call_element* elem,
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   init_rpc_stats(&d->stats);
-  d->start_ts = gpr_now();
+  d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   d->op_id = census_tracing_start_op();
   if (initial_op) client_mutate_op(elem, initial_op);
 }
@@ -169,7 +169,7 @@ static void server_init_call_elem(grpc_call_element* elem,
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   init_rpc_stats(&d->stats);
-  d->start_ts = gpr_now();
+  d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   d->op_id = census_tracing_start_op();
   if (initial_op) server_mutate_op(elem, initial_op);
 }
@@ -177,8 +177,8 @@ static void server_init_call_elem(grpc_call_element* elem,
 static void server_destroy_call_elem(grpc_call_element* elem) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
-  d->stats.elapsed_time_ms =
-      gpr_timespec_to_micros(gpr_time_sub(gpr_now(), d->start_ts));
+  d->stats.elapsed_time_ms = gpr_timespec_to_micros(
+      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), d->start_ts));
   census_record_rpc_server_stats(d->op_id, &d->stats);
   census_tracing_end_op(d->op_id);
 }
@@ -197,7 +197,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
   if (chand->path_str != NULL) {
-    grpc_mdstr_unref(chand->path_str);
+    GRPC_MDSTR_UNREF(chand->path_str);
   }
 }
 

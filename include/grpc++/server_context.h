@@ -35,8 +35,10 @@
 #define GRPCXX_SERVER_CONTEXT_H
 
 #include <map>
+#include <memory>
 
 #include <grpc/support/time.h>
+#include <grpc++/auth_context.h>
 #include <grpc++/config.h>
 #include <grpc++/time.h>
 
@@ -74,6 +76,10 @@ class CallOpBuffer;
 class CompletionQueue;
 class Server;
 
+namespace testing {
+class InteropContextInspector;
+}  // namespace testing
+
 // Interface of server side rpc context.
 class ServerContext {
  public:
@@ -91,13 +97,16 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  bool IsCancelled();
+  bool IsCancelled() const;
 
   const std::multimap<grpc::string, grpc::string>& client_metadata() {
     return client_metadata_;
   }
 
+  std::shared_ptr<const AuthContext> auth_context() const;
+
  private:
+  friend class ::grpc::testing::InteropContextInspector;
   friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
@@ -133,12 +142,15 @@ class ServerContext {
   ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                 size_t metadata_count);
 
+  void set_call(grpc_call* call);
+
   CompletionOp* completion_op_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
+  mutable std::shared_ptr<const AuthContext> auth_context_;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;

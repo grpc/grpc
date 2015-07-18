@@ -47,6 +47,8 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>
     {
+        Channel channel;
+
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
@@ -61,8 +63,9 @@ namespace Grpc.Core.Internal
 
         public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName)
         {
-            var call = CallSafeHandle.Create(channel.Handle, cq, methodName, channel.Target, Timespec.InfFuture);
-            DebugStats.ActiveClientCalls.Increment();
+            this.channel = channel;
+            var call = CallSafeHandle.Create(channel.Handle, channel.CompletionRegistry, cq, methodName, channel.Target, Timespec.InfFuture);
+            channel.Environment.DebugStats.ActiveClientCalls.Increment();
             InitializeInternal(call);
         }
 
@@ -277,7 +280,7 @@ namespace Grpc.Core.Internal
 
         protected override void OnReleaseResources()
         {
-            DebugStats.ActiveClientCalls.Decrement();
+            channel.Environment.DebugStats.ActiveClientCalls.Decrement();
         }
 
         /// <summary>

@@ -79,7 +79,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // all. This wrapper over our actual writeable ensures thread-safety and
   // correct ordering.
   GRPCDelegateWrapper *_responseWriteable;
-  id<GRXWriter> _requestWriter;
+  GRXWriter *_requestWriter;
 
   NSMutableDictionary *_requestMetadata;
   NSMutableDictionary *_responseMetadata;
@@ -94,7 +94,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(id<GRXWriter>)requestWriter {
+              requestsWriter:(GRXWriter *)requestWriter {
   if (!host || !path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor method can be nil."];
   }

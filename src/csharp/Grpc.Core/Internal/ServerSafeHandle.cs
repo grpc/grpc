@@ -91,19 +91,19 @@ namespace Grpc.Core.Internal
         {
             grpcsharp_server_start(this);
         }
-            
-        public void ShutdownAndNotify(CompletionQueueSafeHandle cq, BatchCompletionDelegate callback)
+    
+        public void ShutdownAndNotify(BatchCompletionDelegate callback, GrpcEnvironment environment)
         {
             var ctx = BatchContextSafeHandle.Create();
-            GrpcEnvironment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            grpcsharp_server_shutdown_and_notify_callback(this, cq, ctx);
+            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            grpcsharp_server_shutdown_and_notify_callback(this, environment.CompletionQueue, ctx);
         }
 
-        public void RequestCall(CompletionQueueSafeHandle cq, BatchCompletionDelegate callback)
+        public void RequestCall(BatchCompletionDelegate callback, GrpcEnvironment environment)
         {
             var ctx = BatchContextSafeHandle.Create();
-            GrpcEnvironment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            grpcsharp_server_request_call(this, cq, ctx).CheckOk();
+            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            grpcsharp_server_request_call(this, environment.CompletionQueue, ctx).CheckOk();
         }
 
         protected override bool ReleaseHandle()

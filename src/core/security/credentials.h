@@ -39,6 +39,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/httpcli/httpcli.h"
+#include "src/core/security/json_token.h"
 #include "src/core/security/security_connector.h"
 
 struct grpc_httpcli_response;
@@ -178,10 +180,21 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_httpcli_response *response,
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
+void grpc_flush_cached_google_default_credentials(void);
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(
     const char *token_md_value, int is_async);
+
+/* Private constructor for jwt credentials from an already parsed json key.
+   Takes ownership of the key. */
+grpc_credentials *grpc_jwt_credentials_create_from_auth_json_key(
+    grpc_auth_json_key key, gpr_timespec token_lifetime);
+
+/* Private constructor for refresh token credentials from an already parsed
+   refresh token. Takes ownership of the refresh token. */
+grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
+    grpc_auth_refresh_token token);
 
 /* --- grpc_server_credentials. --- */
 
@@ -198,5 +211,104 @@ struct grpc_server_credentials {
 
 grpc_security_status grpc_server_credentials_create_security_connector(
     grpc_server_credentials *creds, grpc_security_connector **sc);
+
+/* -- Ssl credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_ssl_config config;
+} grpc_ssl_credentials;
+
+typedef struct {
+  grpc_server_credentials base;
+  grpc_ssl_server_config config;
+} grpc_ssl_server_credentials;
+
+/* -- Jwt credentials -- */
+
+typedef struct {
+  grpc_credentials base;
+
+  /* Have a simple cache for now with just 1 entry. We could have a map based on
+     the service_url for a more sophisticated one. */
+  gpr_mu cache_mu;
+  struct {
+    grpc_credentials_md_store *jwt_md;
+    char *service_url;
+    gpr_timespec jwt_expiration;
+  } cached;
+
+  grpc_auth_json_key key;
+  gpr_timespec jwt_lifetime;
+} grpc_jwt_credentials;
+
+/* -- Oauth2TokenFetcher credentials --
+
+   This object is a base for credentials that need to acquire an oauth2 token
+   from an http service. */
+
+typedef struct grpc_credentials_metadata_request
+    grpc_credentials_metadata_request;
+
+typedef void (*grpc_fetch_oauth2_func)(grpc_credentials_metadata_request *req,
+                                       grpc_httpcli_context *http_context,
+                                       grpc_pollset *pollset,
+                                       grpc_httpcli_response_cb response_cb,
+                                       gpr_timespec deadline);
+
+typedef struct {
+  grpc_credentials base;
+  gpr_mu mu;
+  grpc_credentials_md_store *access_token_md;
+  gpr_timespec token_expiration;
+  grpc_httpcli_context httpcli_context;
+  grpc_fetch_oauth2_func fetch_func;
+} grpc_oauth2_token_fetcher_credentials;
+
+/* -- ServiceAccount credentials. -- */
+
+typedef struct {
+  grpc_oauth2_token_fetcher_credentials base;
+  grpc_auth_json_key key;
+  char *scope;
+  gpr_timespec token_lifetime;
+} grpc_service_account_credentials;
+
+/* -- RefreshToken credentials. -- */
+
+typedef struct {
+  grpc_oauth2_token_fetcher_credentials base;
+  grpc_auth_refresh_token refresh_token;
+} grpc_refresh_token_credentials;
+
+/* -- Oauth2 Access Token credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_md_store *access_token_md;
+} grpc_access_token_credentials;
+
+/* -- Fake Oauth2 credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_md_store *access_token_md;
+  int is_async;
+} grpc_fake_oauth2_credentials;
+
+/* -- IAM credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_md_store *iam_md;
+} grpc_iam_credentials;
+
+/* -- Composite credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_array inner;
+  grpc_credentials *connector_creds;
+} grpc_composite_credentials;
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */

@@ -173,7 +173,14 @@ void grpc_chttp2_publish_reads(
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
           "parsed", transport_parsing, stream_parsing, incoming_window_delta,
           -(gpr_int64)stream_parsing->incoming_window_delta);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "parsed", transport_parsing, stream_global, max_recv_bytes,
+          -(gpr_int64)stream_parsing->incoming_window_delta);
       stream_global->incoming_window -= stream_parsing->incoming_window_delta;
+      GPR_ASSERT(stream_global->max_recv_bytes >= 
+          stream_parsing->incoming_window_delta);
+      stream_global->max_recv_bytes -= 
+          stream_parsing->incoming_window_delta;
       stream_parsing->incoming_window_delta = 0;
       grpc_chttp2_list_add_writable_window_update_stream(transport_global,
                                                          stream_global);
@@ -205,7 +212,8 @@ void grpc_chttp2_publish_reads(
     }
     if (stream_parsing->saw_rst_stream) {
       stream_global->cancelled = 1;
-      stream_global->cancelled_status = grpc_chttp2_http2_error_to_grpc_status(stream_parsing->rst_stream_reason);
+      stream_global->cancelled_status = grpc_chttp2_http2_error_to_grpc_status(
+          stream_parsing->rst_stream_reason);
       if (stream_parsing->rst_stream_reason == GRPC_CHTTP2_NO_ERROR) {
         stream_global->published_cancelled = 1;
       }
@@ -463,7 +471,7 @@ static grpc_chttp2_parse_error skip_parser(
   return GRPC_CHTTP2_PARSE_OK;
 }
 
-static void skip_header(void *tp, grpc_mdelem *md) { grpc_mdelem_unref(md); }
+static void skip_header(void *tp, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
 
 static int init_skip_frame_parser(
     grpc_chttp2_transport_parsing *transport_parsing, int is_header) {
@@ -599,8 +607,8 @@ static void on_header(void *tp, grpc_mdelem *md) {
     }
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &stream_parsing->incoming_metadata,
-        gpr_time_add(gpr_now(), *cached_timeout));
-    grpc_mdelem_unref(md);
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), *cached_timeout));
+    GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata,
                                              md);

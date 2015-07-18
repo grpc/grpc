@@ -207,7 +207,6 @@ static char *zookeeper_parse_address(char *buffer, int buffer_len) {
   grpc_json *json;
   grpc_json *cur;  
 
-  gpr_log(GPR_INFO, buffer);
   address = NULL;
   json = grpc_json_parse_string_with_len(buffer, buffer_len);
   if (json != NULL) {
@@ -231,7 +230,6 @@ static char *zookeeper_parse_address(char *buffer, int buffer_len) {
       strcat(address, host);
       strcat(address, ":");
       strcat(address, port);
-      gpr_log(GPR_INFO, address);
     }
     grpc_json_destroy(json);
   } 
@@ -259,7 +257,6 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
 
   /* Get zookeeper node of given path r->name 
      If not containing address(i.e. service node), get its children */
-  gpr_log(GPR_INFO, r->name);
   status = zoo_get(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, 
                   buffer, &buffer_len, NULL);
   if (!status) {
@@ -291,7 +288,6 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
         strcat(path, r->name);
         strcat(path, "/");
         strcat(path, children.data[i]);
-        gpr_log(GPR_INFO, path);
         memset(buffer, 0, GRPC_MAX_ZOOKEEPER_BUFFER_SIZE);
         status = zoo_get(r->zookeeper_handle, path, GRPC_ZOOKEEPER_WATCH, 
                         buffer, &buffer_len, NULL);

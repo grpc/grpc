@@ -148,6 +148,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc++\async_generic_service.h" />
     <ClInclude Include="..\..\include\grpc++\async_unary_call.h" />
+    <ClInclude Include="..\..\include\grpc++\auth_context.h" />
+    <ClInclude Include="..\..\include\grpc++\auth_property_iterator.h" />
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc++\channel_arguments.h" />
     <ClInclude Include="..\..\include\grpc++\channel_interface.h" />
@@ -157,6 +159,7 @@
     <ClInclude Include="..\..\include\grpc++\config_protobuf.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\credentials.h" />
+    <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h" />
     <ClInclude Include="..\..\include\grpc++\generic_stub.h" />
     <ClInclude Include="..\..\include\grpc++\impl\call.h" />
     <ClInclude Include="..\..\include\grpc++\impl\client_unary_call.h" />
@@ -186,9 +189,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cpp\client\channel.h" />
-    <ClInclude Include="..\..\src\cpp\server\thread_pool.h" />
+    <ClInclude Include="..\..\src\cpp\common\create_auth_context.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\cpp\common\insecure_create_auth_context.cc">
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\channel.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\channel_arguments.cc">
@@ -217,6 +222,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server.cc">
@@ -226,8 +233,6 @@
     <ClCompile Include="..\..\src\cpp\server\server_context.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server_credentials.cc">
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\server\thread_pool.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\byte_buffer.cc">
     </ClCompile>

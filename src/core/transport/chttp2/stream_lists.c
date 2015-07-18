@@ -139,6 +139,7 @@ static void stream_list_add(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {
+  GPR_ASSERT(stream_global->id != 0);
   stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
                   STREAM_FROM_GLOBAL(stream_global), GRPC_CHTTP2_LIST_WRITABLE);
 }
@@ -204,6 +205,7 @@ int grpc_chttp2_list_pop_written_stream(
 void grpc_chttp2_list_add_writable_window_update_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {
+  GPR_ASSERT(stream_global->id != 0);
   stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
                   STREAM_FROM_GLOBAL(stream_global),
                   GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE);
@@ -211,11 +213,14 @@ void grpc_chttp2_list_add_writable_window_update_stream(
 
 int grpc_chttp2_list_pop_writable_window_update_stream(
     grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global) {
+    grpc_chttp2_transport_writing *transport_writing,
+    grpc_chttp2_stream_global **stream_global,
+    grpc_chttp2_stream_writing **stream_writing) {
   grpc_chttp2_stream *stream;
   int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
                           GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE);
   *stream_global = &stream->global;
+  *stream_writing = &stream->writing;
   return r;
 }
 
@@ -354,9 +359,14 @@ void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
   stream_list_add_tail(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
 }
 
-void grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
+int grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
                                    grpc_chttp2_stream *s) {
-  stream_list_remove(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
+  stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
+  return stream_list_empty(t, GRPC_CHTTP2_LIST_ALL_STREAMS);
+}
+
+int grpc_chttp2_has_streams(grpc_chttp2_transport *t) {
+  return !stream_list_empty(t, GRPC_CHTTP2_LIST_ALL_STREAMS);
 }
 
 void grpc_chttp2_for_all_streams(

@@ -47,14 +47,12 @@
 
 static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
   gpr_strvec_add(b, gpr_strdup("key="));
-  gpr_strvec_add(
-      b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->key->slice),
-                     GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT));
+  gpr_strvec_add(b,
+                 gpr_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
 
   gpr_strvec_add(b, gpr_strdup(" value="));
-  gpr_strvec_add(b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->value->slice),
-                                GPR_SLICE_LENGTH(md->value->slice),
-                                GPR_HEXDUMP_PLAINTEXT));
+  gpr_strvec_add(
+      b, gpr_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
 }
 
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
@@ -130,7 +128,8 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   if (op->recv_ops) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_strvec_add(&b, gpr_strdup("RECV"));
+    gpr_asprintf(&tmp, "RECV:max_recv_bytes=%d", op->max_recv_bytes);
+    gpr_strvec_add(&b, tmp);
   }
 
   if (op->bind_pollset) {
