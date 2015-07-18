@@ -24,7 +24,7 @@ Load Balancing
 Load balancing configuration is provided by a grpc_lb_policy object, stored as
 part of grpc_client_config.
 
-A load balancing policy primary job is to pick a target server given only the
+The primary job of the load balancing policies is to pick a target server given only the
 initial metadata for a request. It does this by providing a grpc_subchannel
 object to the owning channel.
 
