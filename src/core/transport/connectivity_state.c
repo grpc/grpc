@@ -108,6 +108,7 @@ void grpc_connectivity_state_set_with_scheduler(
   if (tracker->current_state == state) {
     return;
   }
+  GPR_ASSERT(tracker->current_state != GRPC_CHANNEL_FATAL_FAILURE);
   tracker->current_state = state;
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
