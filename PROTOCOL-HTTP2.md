@@ -21,7 +21,7 @@ The following is the general sequence of message atoms in a GRPC request & respo
 Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 * **Request-Headers** → Call-Definition *Custom-Metadata
-* **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] [Content-Type] [Message-Type] [Message-Encoding] [User-Agent]
+* **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] [Content-Type] [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  “:method POST”
 * **Scheme** → “:scheme ”  (“http” / “https”)
 * **Path** → “:path”  {_path identifying method within exposed API_}
@@ -37,9 +37,9 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Microsecond** → “u”
 * **Nanosecond** → “n”
 * **Content-Type** → “content-type” “application/grpc” [(“+proto” / “+json” / {_custom_})]
-* **Message-Encoding** → “grpc-encoding”  (“gzip” / “deflate” / “snappy” / {_custom_} )
-* **Message-Accept-Encoding** → “grpc-accept-encoding”  {_comma-separated list of 
-                                zero or more of (“gzip” / “deflate” / “snappy” / {_custom_})}
+* **Content-Coding** → “gzip” / “deflate” / “snappy” / {_custom_}
+* **Message-Encoding** → “grpc-encoding” Content-Coding
+* **Message-Accept-Encoding** → “grpc-accept-encoding” Content-Coding *("," Content-Coding)
 * **User-Agent** → “user-agent” {_structured user-agent string_}
 * **Message-Type** → “grpc-message-type” {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
@@ -69,7 +69,7 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 ###Responses
 
 * **Response** → (Response-Headers *Delimited-Message Trailers) / Trailers-Only
-* **Response-Headers** → HTTP-Status [Message-Encoding] Content-Type *Custom-Metadata
+* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type *Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
 * **Trailers** → Status [Status-Message] *Custom-Metadata
 * **HTTP-Status** → “:status 200”
