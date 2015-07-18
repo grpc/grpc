@@ -81,6 +81,10 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   GRXConcurrentWriteable *_responseWriteable;
   GRXWriter *_requestWriter;
 
+  // To create a retain cycle when a call is started, up until it finishes. See
+  // |startWithWriteable:| and |finishWithError:|.
+  GRPCCall *_self;
+
   NSMutableDictionary *_requestMetadata;
   NSMutableDictionary *_responseMetadata;
 }
@@ -143,8 +147,13 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 #pragma mark Finish
 
 - (void)finishWithError:(NSError *)errorOrNil {
+  // If the call isn't retained anywhere else, it can be deallocated now.
+  _self = nil;
+
+  // If there were still request messages coming, stop them.
   _requestWriter.state = GRXWriterStateFinished;
   _requestWriter = nil;
+
   if (errorOrNil) {
     [_responseWriteable cancelWithError:errorOrNil];
   } else {
@@ -276,6 +285,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
+  _requestWriter = nil;
   if (errorOrNil) {
     [self cancel];
   } else {
@@ -335,12 +345,14 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 #pragma mark GRXWriter implementation
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  // The following produces a retain cycle self:_responseWriteable:self, which is only
-  // broken when writesFinishedWithError: is sent to the wrapped writeable.
-  // Care is taken not to retain self strongly in any of the blocks used in
-  // the implementation of GRPCCall, so that the life of the instance is
-  // determined by this retain cycle.
-  _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable writer:self];
+  // Create a retain cycle so that this instance lives until the RPC finishes (or is cancelled).
+  // This makes RPCs in which the call isn't externally retained possible (as long as it is started
+  // before being autoreleased).
+  // Care is taken not to retain self strongly in any of the blocks used in this implementation, so
+  // that the life of the instance is determined by this retain cycle.
+  _self = self;
+
+  _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable];
   [self sendHeaders:_requestMetadata];
   [self invokeCall];
 }
