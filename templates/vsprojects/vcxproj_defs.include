@@ -117,6 +117,14 @@ ${gen_package_props(packages)}\
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>${name}</TargetName>
+    ## see build/configurations.autopkg in the nuget packages for the options that are configured here
+    % if "zlib" in packages:
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    % endif
+    % if "openssl" in packages:
+    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
+    % endif
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>${name}</TargetName>
