@@ -88,11 +88,11 @@ error:
   return 0;
 }
 
-static void on_alarm(void *acp, int success) {
+static void tc_on_alarm(void *acp, int success) {
   int done;
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  if (ac->fd != NULL && success) {
+  if (ac->fd != NULL) {
     grpc_fd_shutdown(ac->fd);
   }
   done = (--ac->refs == 0);
@@ -157,6 +157,7 @@ static void on_writable(void *acp, int success) {
     } else {
       grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
       ep = grpc_tcp_create(ac->fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
+      ac->fd = NULL;
       goto finish;
     }
   } else {
@@ -167,10 +168,9 @@ static void on_writable(void *acp, int success) {
   abort();
 
 finish:
-  if (ep == NULL) {
+  if (ac->fd != NULL) {
     grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
     grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
-  } else {
     ac->fd = NULL;
   }
   done = (--ac->refs == 0);
@@ -253,7 +253,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->write_closure.cb_arg = ac;
 
   gpr_mu_lock(&ac->mu);
-  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
+  grpc_alarm_init(&ac->alarm, deadline, tc_on_alarm, ac,
                   gpr_now(GPR_CLOCK_REALTIME));
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
