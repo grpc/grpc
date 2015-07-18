@@ -35,10 +35,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
+#import <RxLibrary/GRXConcurrentWriteable.h>
 
 #import "private/GRPCChannel.h"
 #import "private/GRPCCompletionQueue.h"
-#import "private/GRPCDelegateWrapper.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
@@ -78,7 +78,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // do. Particularly, in the face of errors, there's no ordering guarantee at
   // all. This wrapper over our actual writeable ensures thread-safety and
   // correct ordering.
-  GRPCDelegateWrapper *_responseWriteable;
+  GRXConcurrentWriteable *_responseWriteable;
   GRXWriter *_requestWriter;
 
   NSMutableDictionary *_requestMetadata;
@@ -191,7 +191,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     return;
   }
   __weak GRPCCall *weakSelf = self;
-  __weak GRPCDelegateWrapper *weakWriteable = _responseWriteable;
+  __weak GRXConcurrentWriteable *weakWriteable = _responseWriteable;
 
   dispatch_async(_callQueue, ^{
     [weakSelf startReadWithHandler:^(grpc_byte_buffer *message) {
@@ -340,7 +340,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // Care is taken not to retain self strongly in any of the blocks used in
   // the implementation of GRPCCall, so that the life of the instance is
   // determined by this retain cycle.
-  _responseWriteable = [[GRPCDelegateWrapper alloc] initWithWriteable:writeable writer:self];
+  _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable writer:self];
   [self sendHeaders:_requestMetadata];
   [self invokeCall];
 }

@@ -48,7 +48,7 @@
 // TODO(jcanizales): Let the user specify another queue for the writeable
 // callbacks.
 // TODO(jcanizales): Rename to GRXWriteableWrapper and move to the Rx library.
-@interface GRPCDelegateWrapper : NSObject
+@interface GRXConcurrentWriteable : NSObject
 
 // The GRXWriteable passed is the wrapped writeable.
 // Both the GRXWriter instance and the GRXWriteable instance are retained until

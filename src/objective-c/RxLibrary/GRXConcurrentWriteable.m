@@ -31,17 +31,17 @@
  *
  */
 
-#import "GRPCDelegateWrapper.h"
+#import "GRXConcurrentWriteable.h"
 
 #import <RxLibrary/GRXWriteable.h>
 
-@interface GRPCDelegateWrapper ()
+@interface GRXConcurrentWriteable ()
 // These are atomic so that cancellation can nillify them from any thread.
 @property(atomic, strong) id<GRXWriteable> writeable;
 @property(atomic, strong) GRXWriter *writer;
 @end
 
-@implementation GRPCDelegateWrapper {
+@implementation GRXConcurrentWriteable {
   dispatch_queue_t _writeableQueue;
   // This ensures that writesFinishedWithError: is only sent once to the writeable.
   dispatch_once_t _alreadyFinished;
