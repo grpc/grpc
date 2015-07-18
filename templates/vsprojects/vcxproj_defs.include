@@ -27,8 +27,6 @@
       props.extend(['protoc'])
     else:
       props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
-    if target.language == 'c++':
-      props.extend(['protobuf'])
   props.extend(['global'])
 %>\
 <?xml version="1.0" encoding="utf-8"?>
