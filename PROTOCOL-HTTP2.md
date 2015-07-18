@@ -37,7 +37,9 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Microsecond** → “u”
 * **Nanosecond** → “n”
 * **Content-Type** → “content-type” “application/grpc” [(“+proto” / “+json” / {_custom_})]
-* **Message-Encoding** → “grpc-encoding ”  (“gzip” / “deflate” / “snappy” / {_custom_} )
+* **Message-Encoding** → “grpc-encoding”  (“gzip” / “deflate” / “snappy” / {_custom_} )
+* **Message-Accept-Encoding** → “grpc-accept-encoding”  {_comma-separated list of 
+                                zero or more of (“gzip” / “deflate” / “snappy” / {_custom_})}
 * **User-Agent** → “user-agent” {_structured user-agent string_}
 * **Message-Type** → “grpc-message-type” {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
