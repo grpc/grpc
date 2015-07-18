@@ -115,7 +115,7 @@ In addition, an `RPCToUnaryCallWithRequest:handler:` method is generated, which 
 not-yet-started RPC object:
 
 ```objective-c
-#import <gRPC/ProtoRPC.h>
+#import <ProtoRPC/ProtoRPC.h>
 
 ProtoRPC *call =
     [client RPCToUnaryCallWithRequest:request handler:^(AUTHResponse *response, NSError *error) {
@@ -132,10 +132,11 @@ The RPC represented by this object can be started at any later time like this:
 <a name="request-metadata"></a>
 ## Set request metadata of a call: Authorization header with an access token
 
-The `ProtoRPC` class has a `requestMetadata` property defined like this:
+The `ProtoRPC` class has a `requestMetadata` property (inherited from `GRPCCall`) defined like this:
 
 ```objective-c
-@property(nonatomic, readwrite) NSMutableDictionary *requestMetadata;
+- (NSMutableDictionary *)requestMetadata; // nonatomic
+- (void)setRequestMetadata:(NSDictionary *)requestMetadata; // nonatomic, copy
 ```
 
 Setting it to a dictionary of metadata keys and values will have them sent on the wire when the call
@@ -143,33 +144,46 @@ is started. gRPC metadata are pieces of information about the call sent by the c
 (and vice versa). They take the form of key-value pairs and are essentially opaque to gRPC itself.
 
 ```objective-c
-call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
-    @{@"My-Header": @"Value for this header",
-      @"Another-Header": @"Its value"}];
+call.requestMetadata = @{@"My-Header": @"Value for this header",
+                         @"Another-Header": @"Its value"};
+```
+
+For convenience, the property is initialized with an empty `NSMutableDictionary`, so that request
+metadata elements can be set like this:
+
+```objective-c
+call.requestMetadata[@"My-Header"] = @"Value for this header";
 ```
 
 If you have an access token, OAuth2 specifies it is to be sent in this format:
 
 ```objective-c
-@{@"Authorization": [@"Bearer " stringByAppendingString:accessToken]}
+call.requestMetadata[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken];
 ```
 
 <a name="response-metadata"></a>
 ## Get response metadata of a call: Auth challenge header
 
-The `ProtoRPC` class also has a `responseMetadata` property, analogous to the request metadata we
-just looked at. It's defined like this:
+The `ProtoRPC` class also inherits a `responseMetadata` property, analogous to the request metadata
+we just looked at. It's defined like this:
 
 ```objective-c
 @property(atomic, readonly) NSDictionary *responseMetadata;
 ```
 
-Because gRPC metadata keys can be repeated, the values of the `responseMetadata` dictionary are
-always `NSArray`s. Thus, to access OAuth2's authentication challenge header you write:
+To access OAuth2's authentication challenge header you write:
 
 ```objective-c
-call.responseMetadata[@"www-authenticate"][0]
+call.responseMetadata[@"www-authenticate"]
 ```
 
 Note that, as gRPC metadata elements are mapped to HTTP/2 headers (or trailers), the keys of the
 response metadata are always ASCII strings in lowercase.
+
+Many uses cases of response metadata are getting more details about an RPC error. For convenience,
+when a `NSError` instance is passed to an RPC handler block, the response metadata dictionary can
+also be accessed this way:
+
+```objective-c
+error.userInfo[kGRPCStatusMetadataKey]
+```
