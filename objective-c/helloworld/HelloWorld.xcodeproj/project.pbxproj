@@ -12,19 +12,8 @@
 		5E36906C1B2A23800040F884 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E36906B1B2A23800040F884 /* ViewController.m */; };
 		5E36906F1B2A23800040F884 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E36906D1B2A23800040F884 /* Main.storyboard */; };
 		5E3690711B2A23800040F884 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E3690701B2A23800040F884 /* Images.xcassets */; };
-		5E3690801B2A23800040F884 /* HelloWorldTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E36907F1B2A23800040F884 /* HelloWorldTests.m */; };
 		EF61CF6AE2536A31D47F0E63 /* libPods-HelloWorld.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6B4E1F55F8A2EC95A0E7EE88 /* libPods-HelloWorld.a */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		5E36907A1B2A23800040F884 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5E3690581B2A23800040F884 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 5E36905F1B2A23800040F884;
-			remoteInfo = HelloWorld;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		0C432EF610DB15C0F47A66BB /* Pods-HelloWorld.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HelloWorld.release.xcconfig"; path = "Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld.release.xcconfig"; sourceTree = "<group>"; };
@@ -37,9 +26,6 @@
 		5E36906B1B2A23800040F884 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		5E36906E1B2A23800040F884 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		5E3690701B2A23800040F884 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		5E3690791B2A23800040F884 /* HelloWorldTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HelloWorldTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5E36907E1B2A23800040F884 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		5E36907F1B2A23800040F884 /* HelloWorldTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HelloWorldTests.m; sourceTree = "<group>"; };
 		6B4E1F55F8A2EC95A0E7EE88 /* libPods-HelloWorld.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-HelloWorld.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DBDE3E48389499064CD664B8 /* Pods-HelloWorld.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HelloWorld.debug.xcconfig"; path = "Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -53,13 +39,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5E3690761B2A23800040F884 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -68,7 +47,6 @@
 			children = (
 				5E3690651B2A23800040F884 /* main.m */,
 				5E3690621B2A23800040F884 /* HelloWorld */,
-				5E36907C1B2A23800040F884 /* HelloWorldTests */,
 				5E3690611B2A23800040F884 /* Products */,
 				BD9CE6458E7C4FF49A1DF69F /* Pods */,
 				66CEC7120220DDD2221DD075 /* Frameworks */,
@@ -79,7 +57,6 @@
 			isa = PBXGroup;
 			children = (
 				5E3690601B2A23800040F884 /* HelloWorld.app */,
-				5E3690791B2A23800040F884 /* HelloWorldTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,23 +79,6 @@
 				5E3690681B2A23800040F884 /* AppDelegate.m */,
 				5E3690671B2A23800040F884 /* AppDelegate.h */,
 				5E3690641B2A23800040F884 /* Info.plist */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		5E36907C1B2A23800040F884 /* HelloWorldTests */ = {
-			isa = PBXGroup;
-			children = (
-				5E36907F1B2A23800040F884 /* HelloWorldTests.m */,
-				5E36907D1B2A23800040F884 /* Supporting Files */,
-			);
-			path = HelloWorldTests;
-			sourceTree = "<group>";
-		};
-		5E36907D1B2A23800040F884 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				5E36907E1B2A23800040F884 /* Info.plist */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -162,24 +122,6 @@
 			productReference = 5E3690601B2A23800040F884 /* HelloWorld.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5E3690781B2A23800040F884 /* HelloWorldTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5E3690861B2A23810040F884 /* Build configuration list for PBXNativeTarget "HelloWorldTests" */;
-			buildPhases = (
-				5E3690751B2A23800040F884 /* Sources */,
-				5E3690761B2A23800040F884 /* Frameworks */,
-				5E3690771B2A23800040F884 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				5E36907B1B2A23800040F884 /* PBXTargetDependency */,
-			);
-			name = HelloWorldTests;
-			productName = HelloWorldTests;
-			productReference = 5E3690791B2A23800040F884 /* HelloWorldTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -191,10 +133,6 @@
 				TargetAttributes = {
 					5E36905F1B2A23800040F884 = {
 						CreatedOnToolsVersion = 6.2;
-					};
-					5E3690781B2A23800040F884 = {
-						CreatedOnToolsVersion = 6.2;
-						TestTargetID = 5E36905F1B2A23800040F884;
 					};
 				};
 			};
@@ -212,7 +150,6 @@
 			projectRoot = "";
 			targets = (
 				5E36905F1B2A23800040F884 /* HelloWorld */,
-				5E3690781B2A23800040F884 /* HelloWorldTests */,
 			);
 		};
 /* End PBXProject section */
@@ -224,13 +161,6 @@
 			files = (
 				5E36906F1B2A23800040F884 /* Main.storyboard in Resources */,
 				5E3690711B2A23800040F884 /* Images.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5E3690771B2A23800040F884 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,23 +210,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5E3690751B2A23800040F884 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5E3690801B2A23800040F884 /* HelloWorldTests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		5E36907B1B2A23800040F884 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 5E36905F1B2A23800040F884 /* HelloWorld */;
-			targetProxy = 5E36907A1B2A23800040F884 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		5E36906D1B2A23800040F884 /* Main.storyboard */ = {
@@ -410,40 +324,6 @@
 			};
 			name = Release;
 		};
-		5E3690871B2A23810040F884 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SDKROOT)/Developer/Library/Frameworks",
-					"$(inherited)",
-				);
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = HelloWorldTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HelloWorld.app/HelloWorld";
-			};
-			name = Debug;
-		};
-		5E3690881B2A23810040F884 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SDKROOT)/Developer/Library/Frameworks",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = HelloWorldTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HelloWorld.app/HelloWorld";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -461,15 +341,6 @@
 			buildConfigurations = (
 				5E3690841B2A23810040F884 /* Debug */,
 				5E3690851B2A23810040F884 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		5E3690861B2A23810040F884 /* Build configuration list for PBXNativeTarget "HelloWorldTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				5E3690871B2A23810040F884 /* Debug */,
-				5E3690881B2A23810040F884 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
