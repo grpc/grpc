@@ -37,6 +37,7 @@
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/slice_buffer.h>
 #include <grpc/support/slice.h>
 
 #ifdef __cplusplus
@@ -76,6 +77,16 @@ void gpr_reverse_bytes(char *str, int len);
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
+
+/* Join a set of strings using a separator, returning the resulting string.
+   Total combined length (excluding null terminator) is returned in total_length
+   if it is non-null. */
+char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
+                      size_t *total_length);
+
+/** Split \a str by the separator \a sep. Results are stored in \a dst, which
+ * should be a properly initialized instance. */
+void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {
