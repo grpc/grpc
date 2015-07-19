@@ -44,7 +44,7 @@
   buildable_targets = [ target for target in targets + libs
                         if target.build in ['all', 'test', 'private', 'tool', 'benchmark'] and
                         target.language in ['c', 'c++'] and
-                        all([(src.endswith('.c') or src.endswith('.cc')) for src in target.src]) and
+                        all([(src.endswith('.c') or src.endswith('.cc') or src.endswith('.proto')) for src in target.src]) and
                         'windows' in target.get('platforms', ['windows']) ]
   c_test_targets = [ target for target in buildable_targets if target.build == 'test' and not target.language == 'c++' ]
   cxx_test_targets = [ target for target in buildable_targets if target.build == 'test' and target.language == 'c++' ]
@@ -86,7 +86,8 @@ LIBS=$(OPENSSL_LIBS) $(ZLIB_LIBS) $(GENERAL_LIBS) $(WINSOCK_LIBS)
 #shlwapi.lib provides PathMatchSpec() for gflags in windows
 GFLAGS_LIBS=.\..\third_party\gflags\lib\Debug\gflags.lib shlwapi.lib
 GTEST_LIBS=.\..\third_party\gtest\msvc\gtest\Debug\gtestd.lib
-CXX_LIBS=$(GFLAGS_LIBS) $(GTEST_LIBS)
+PROTOBUF_LIBS=.\..\third_party\protobuf\vsprojects\Debug\libprotobuf.lib
+CXX_LIBS=$(GFLAGS_LIBS) $(GTEST_LIBS) $(PROTOBUF_LIBS)
 
 all: buildtests
 
@@ -103,7 +104,7 @@ build_libs: \
 % for target in buildable_targets:
 % if target.build == 'private' or target.build == 'all':
 % if target.name in build_from_project_file:
-${target.name} \
+build_${target.name} \
 % else:
 Debug\${target.name}.lib \
 % endif
@@ -117,18 +118,35 @@ buildtests_c: \
 ${target.name}.exe \
 % endfor
 
-	echo All tests built.
+	echo All C tests built.
 
 buildtests_cxx: \
 % for target in cxx_test_targets:
 ${target.name}.exe \
 % endfor
 
-	echo All tests built.
+	echo All C++ tests built.
 
 % for target in buildable_targets:
+
+## replace all .proto includes with .pb.cc / .grpc.pb.cc
+%if target.src:
+%for source in target.src:
+%if source.endswith(".proto"):
+<%
+      src_name_parts = source.split(".")
+      target.src.append(src_name_parts[0] + ".pb.cc")
+      target.src.append(src_name_parts[0] + ".grpc.pb.cc")
+%>\
+%endif
+%endfor
+%endif
+## remove all .proto includes
+<%
+  target.src = [item for item in target.src if not re.search('([^/]+)\.proto$', item)]
+%>\
 %if target.name in build_from_project_file:
-${target.name}:
+build_${target.name}:
 	msbuild grpc.sln /t:${target.name} /p:Configuration=Debug /p:Linkage-grpc_dependencies_zlib=static
 %else:
 %if target.build == 'private':
@@ -136,7 +154,11 @@ Debug\${target.name}.lib: \
 %else:
 ${target.name}.exe: \
 %for dep in target.get('deps', []):
-${dep} \
+%if dep in build_from_project_file:
+build_${dep} \
+%else:
+Debug\${dep}.lib \
+%endif
 %endfor
 %endif
 $(OUT_DIR)
@@ -165,11 +187,14 @@ $(CXX_LIBS) \
 %endif
 $(LIBS) \
 %endif
-%for source in target.src:
-$(OUT_DIR)\${re.search('([^/]+)\.c{1,2}$', source).group(1)}.obj \
-%endfor
 %if not target.src:
 $(OUT_DIR)\dummy.obj \
+%else:
+%for source in target.src:
+%if re.search('([^/]+)\.c{1,2}$', source):
+$(OUT_DIR)\${re.search('([^/]+)\.c{1,2}$', source).group(1)}.obj \
+%endif
+%endfor
 %endif
 
 %if target.build != 'private':
