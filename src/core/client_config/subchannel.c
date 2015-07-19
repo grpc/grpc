@@ -579,8 +579,6 @@ static void publish_transport(grpc_subchannel *c) {
 static void on_alarm(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
-  gpr_log(GPR_DEBUG, "on_alarm:%d:%d:%d", c->have_alarm, iomgr_success,
-          c->disconnected);
   c->have_alarm = 0;
   if (c->disconnected) {
     iomgr_success = 0;
@@ -610,9 +608,6 @@ static void subchannel_connected(void *arg, int iomgr_success) {
                      gpr_time_from_seconds(60, GPR_TIMESPAN)) < 0) {
       c->backoff_delta = gpr_time_add(c->backoff_delta, c->backoff_delta);
     }
-    gpr_log(GPR_DEBUG, "wait: %d.%09d %d.%09d %d.%09d", now.tv_sec, now.tv_nsec,
-            c->next_attempt.tv_sec, c->next_attempt.tv_nsec,
-            c->backoff_delta.tv_sec, c->backoff_delta.tv_nsec);
     grpc_alarm_init(&c->alarm, c->next_attempt, on_alarm, c, now);
     gpr_mu_unlock(&c->mu);
   }
