@@ -39,6 +39,7 @@
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
+#include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
@@ -146,6 +147,24 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
 
 bool ServerContext::IsCancelled() const {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
+}
+
+void ServerContext::set_compression_level(grpc_compression_level level) {
+  const grpc_compression_algorithm algorithm_for_level =
+      grpc_compression_algorithm_for_level(level);
+  set_compression_algorithm(algorithm_for_level);
+}
+
+void ServerContext::set_compression_algorithm(
+    grpc_compression_algorithm algorithm) {
+  char* algorithm_name = NULL;
+  if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != NULL);
+  AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
 }
 
 void ServerContext::set_call(grpc_call* call) {

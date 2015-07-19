@@ -477,6 +477,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
   gpr_uint32 flow_controlled_bytes_taken = 0;
   gpr_uint32 curop = 0;
   gpr_uint8 *p;
+  int compressed_flag_set = 0;
 
   while (curop < *inops_count) {
     GPR_ASSERT(flow_controlled_bytes_taken <= max_flow_controlled_bytes);
@@ -496,9 +497,12 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
       case GRPC_OP_BEGIN_MESSAGE:
         /* begin op: for now we just convert the op to a slice and fall
            through - this lets us reuse the slice framing code below */
+        compressed_flag_set =
+            (op->data.begin_message.flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
         slice = gpr_slice_malloc(5);
+
         p = GPR_SLICE_START_PTR(slice);
-        p[0] = 0;
+        p[0] = compressed_flag_set;
         p[1] = op->data.begin_message.length >> 24;
         p[2] = op->data.begin_message.length >> 16;
         p[3] = op->data.begin_message.length >> 8;

@@ -44,6 +44,7 @@ default_secure_fixture_options = FixtureOptions(True, ['windows', 'posix'])
 END2END_FIXTURES = {
     'chttp2_fake_security': default_secure_fixture_options,
     'chttp2_fullstack': default_unsecure_fixture_options,
+    'chttp2_fullstack_compression': default_unsecure_fixture_options,
     'chttp2_fullstack_with_poll': FixtureOptions(False, ['posix']),
     'chttp2_fullstack_uds_posix': FixtureOptions(False, ['posix']),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
@@ -84,6 +85,7 @@ END2END_TESTS = {
     'request_response_with_payload_and_call_creds': TestOptions(flaky=False, secure=True),
     'request_with_large_metadata': default_test_options,
     'request_with_payload': default_test_options,
+    'request_with_compressed_payload': default_test_options,
     'request_with_flags': default_test_options,
     'server_finishes_request': default_test_options,
     'simple_delayed_request': default_test_options,
