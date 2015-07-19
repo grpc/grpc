@@ -409,20 +409,17 @@ static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy, grpc
 
 static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   lb_policy_connectivity_watcher *w = arg;
-  int start_new = 0;
 
   gpr_mu_lock(&w->chand->mu_config);
   /* check if the notification is for a stale policy */
   if (w->lb_policy == w->chand->lb_policy) {
     grpc_connectivity_state_set(&w->chand->state_tracker, w->state,
                                 "lb_changed");
-    start_new = (w->state != GRPC_CHANNEL_FATAL_FAILURE);
+    if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
+      watch_lb_policy(w->chand, w->lb_policy, w->state);
+    }
   }
   gpr_mu_unlock(&w->chand->mu_config);
-
-  if (start_new) {
-    watch_lb_policy(w->chand, w->lb_policy, w->state);
-  }
 
   GRPC_CHANNEL_INTERNAL_UNREF(w->chand->master, "watch_lb_policy");
   gpr_free(w);
