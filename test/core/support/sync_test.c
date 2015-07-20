@@ -81,13 +81,14 @@ void queue_destroy(queue *q) {
 void queue_append(queue *q, int x) {
   gpr_mu_lock(&q->mu);
   /* To wait for a predicate without a deadline, loop on the negation of the
-     predicate, and use gpr_cv_wait(..., gpr_inf_future) inside the loop
+     predicate, and use gpr_cv_wait(..., gpr_inf_future(GPR_CLOCK_REALTIME))
+     inside the loop
      to release the lock, wait, and reacquire on each iteration.  Code that
      makes the condition true should use gpr_cv_broadcast() on the
      corresponding condition variable.  The predicate must be on state
      protected by the lock.  */
   while (q->length == N) {
-    gpr_cv_wait(&q->non_full, &q->mu, gpr_inf_future);
+    gpr_cv_wait(&q->non_full, &q->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   if (q->length == 0) { /* Wake threads blocked in queue_remove(). */
     /* It's normal to use gpr_cv_broadcast() or gpr_signal() while
@@ -209,7 +210,7 @@ static void test_create_threads(struct test *m, void (*body)(void *arg)) {
 static void test_wait(struct test *m) {
   gpr_mu_lock(&m->mu);
   while (m->done != 0) {
-    gpr_cv_wait(&m->done_cv, &m->mu, gpr_inf_future);
+    gpr_cv_wait(&m->done_cv, &m->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&m->mu);
 }
@@ -244,8 +245,8 @@ static void test(const char *name, void (*body)(void *m),
   struct test *m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
-  gpr_timespec deadline =
-      gpr_time_add(start, gpr_time_from_micros(timeout_s * 1000000));
+  gpr_timespec deadline = gpr_time_add(
+      start, gpr_time_from_micros(timeout_s * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     iterations <<= 1;
@@ -306,7 +307,7 @@ static void inc_by_turns(void *v /*=m*/) {
   for (i = 0; i != m->iterations; i++) {
     gpr_mu_lock(&m->mu);
     while ((m->counter % m->threads) != id) {
-      gpr_cv_wait(&m->cv, &m->mu, gpr_inf_future);
+      gpr_cv_wait(&m->cv, &m->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
     }
     m->counter++;
     gpr_cv_broadcast(&m->cv);
@@ -323,8 +324,8 @@ static void inc_with_1ms_delay(void *v /*=m*/) {
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
     gpr_mu_lock(&m->mu);
-    deadline =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                            gpr_time_from_micros(1000, GPR_TIMESPAN));
     while (!gpr_cv_wait(&m->cv, &m->mu, deadline)) {
     }
     m->counter++;
@@ -340,8 +341,8 @@ static void inc_with_1ms_delay_event(void *v /*=m*/) {
   gpr_int64 i;
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
-    deadline =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                            gpr_time_from_micros(1000, GPR_TIMESPAN));
     GPR_ASSERT(gpr_event_wait(&m->event, deadline) == NULL);
     gpr_mu_lock(&m->mu);
     m->counter++;
@@ -379,14 +380,15 @@ static void consumer(void *v /*=m*/) {
   gpr_int64 i;
   int value;
   for (i = 0; i != n; i++) {
-    queue_remove(&m->q, &value, gpr_inf_future);
+    queue_remove(&m->q, &value, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_lock(&m->mu);
   m->counter = n;
   gpr_mu_unlock(&m->mu);
-  GPR_ASSERT(!queue_remove(&m->q, &value,
-                           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                        gpr_time_from_micros(1000000))));
+  GPR_ASSERT(
+      !queue_remove(&m->q, &value,
+                    gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1000000, GPR_TIMESPAN))));
   mark_thread_done(m);
 }
 
@@ -426,7 +428,8 @@ static void refcheck(void *v /*=m*/) {
   struct test *m = v;
   gpr_int64 n = m->iterations * m->threads;
   gpr_int64 i;
-  GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future) == (void *)1);
+  GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
+             (void *)1);
   GPR_ASSERT(gpr_event_get(&m->event) == (void *)1);
   for (i = 1; i != n; i++) {
     GPR_ASSERT(!gpr_unref(&m->refcount));

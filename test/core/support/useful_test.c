@@ -56,6 +56,10 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GPR_ARRAY_SIZE(four) == 4);
   GPR_ASSERT(GPR_ARRAY_SIZE(five) == 5);
 
+  GPR_ASSERT(GPR_BITCOUNT((1u << 31) - 1) == 31);
+  GPR_ASSERT(GPR_BITCOUNT(1u << 3) == 1);
+  GPR_ASSERT(GPR_BITCOUNT(0) == 0);
+
   GPR_ASSERT(GPR_BITSET(&bitset, 3) == 8);
   GPR_ASSERT(GPR_BITCOUNT(bitset) == 1);
   GPR_ASSERT(GPR_BITGET(bitset, 3) == 1);

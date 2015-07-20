@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
@@ -48,10 +49,12 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 }
 
 #if _POSIX_TIMERS > 0
-static gpr_timespec gpr_from_timespec(struct timespec ts) {
+static gpr_timespec gpr_from_timespec(struct timespec ts,
+                                      gpr_clock_type clock) {
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
   rv.tv_nsec = (int)ts.tv_nsec;
+  rv.clock_type = clock;
   return rv;
 }
 
@@ -62,8 +65,9 @@ void gpr_time_init(void) {}
 
 gpr_timespec gpr_now(gpr_clock_type clock) {
   struct timespec now;
+  GPR_ASSERT(clock != GPR_TIMESPAN);
   clock_gettime(clockid_for_gpr_clock[clock], &now);
-  return gpr_from_timespec(now);
+  return gpr_from_timespec(now, clock);
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
@@ -88,6 +92,7 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
   struct timeval now_tv;
   double now_dbl;
 
+  now.clock_type = clock;
   switch (clock) {
     case GPR_CLOCK_REALTIME:
       gettimeofday(&now_tv, NULL);
@@ -99,6 +104,8 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       now.tv_sec = now_dbl * 1e-9;
       now.tv_nsec = now_dbl - now.tv_sec * 1e9;
       break;
+    case GPR_TIMESPAN:
+      abort();
   }
 
   return now;

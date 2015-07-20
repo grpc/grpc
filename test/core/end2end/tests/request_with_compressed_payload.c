@@ -105,7 +105,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void request_with_payload_template(
     grpc_end2end_test_config config, const char *test_name,
     gpr_uint32 send_flags_bitmask,
-    grpc_compression_level requested_compression_level,
+    grpc_compression_algorithm requested_compression_algorithm,
     grpc_compression_algorithm expected_compression_algorithm,
     grpc_metadata *client_metadata) {
   grpc_call *c;
@@ -134,10 +134,10 @@ static void request_with_payload_template(
   request_payload_slice = gpr_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  client_args = grpc_channel_args_set_compression_level(
-      NULL, requested_compression_level);
-  server_args = grpc_channel_args_set_compression_level(
-      NULL, requested_compression_level);
+  client_args = grpc_channel_args_set_compression_algorithm(
+      NULL, requested_compression_algorithm);
+  server_args = grpc_channel_args_set_compression_algorithm(
+      NULL, requested_compression_algorithm);
 
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
@@ -265,7 +265,7 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
-      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_LEVEL_HIGH, GRPC_COMPRESS_NONE,
+      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_NONE,
       NULL);
 }
 
@@ -273,16 +273,14 @@ static void test_invoke_request_with_uncompressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
-      GRPC_COMPRESS_LEVEL_NONE,
-      grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE), NULL);
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, NULL);
 }
 
 static void test_invoke_request_with_compressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
-      GRPC_COMPRESS_LEVEL_HIGH,
-      grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_HIGH), NULL);
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, NULL);
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
@@ -305,19 +303,17 @@ static void test_invoke_request_with_compressed_payload_md_override(
   /* Channel default NONE, call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
-      GRPC_COMPRESS_LEVEL_NONE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
 
   /* Channel default DEFLATE, call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
-      grpc_compression_level_for_algorithm(GRPC_COMPRESS_DEFLATE),
-      GRPC_COMPRESS_GZIP, &gzip_compression_override);
+      GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
 
   /* Channel default DEFLATE, call override to NONE */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
-      grpc_compression_level_for_algorithm(GRPC_COMPRESS_DEFLATE),
-      GRPC_COMPRESS_NONE, &none_compression_override);
+      GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {

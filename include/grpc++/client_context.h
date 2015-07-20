@@ -110,15 +110,12 @@ class ClientContext {
     creds_ = creds;
   }
 
-  grpc_compression_level get_compression_level() const {
-    return compression_level_;
-  }
-  void set_compression_level(grpc_compression_level level);
-
-  grpc_compression_algorithm get_compression_algorithm() const {
+  grpc_compression_algorithm _experimental_get_compression_algorithm() const {
     return compression_algorithm_;
   }
-  void set_compression_algorithm(grpc_compression_algorithm algorithm);
+
+  void _experimental_set_compression_algorithm(
+      grpc_compression_algorithm algorithm);
 
   std::shared_ptr<const AuthContext> auth_context() const;
 
@@ -179,7 +176,6 @@ class ClientContext {
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
-  grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 };
 

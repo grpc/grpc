@@ -145,8 +145,8 @@ int main(int argc, char **argv) {
   gpr_free(args[0]);
   gpr_free(args[2]);
 
-  gpr_sleep_until(
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
 
   grpc_test_init(argc, argv);
   grpc_init();

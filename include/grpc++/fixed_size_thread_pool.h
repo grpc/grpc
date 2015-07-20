@@ -31,55 +31,37 @@
  *
  */
 
+#ifndef GRPCXX_FIXED_SIZE_THREAD_POOL_H
+#define GRPCXX_FIXED_SIZE_THREAD_POOL_H
+
+#include <grpc++/config.h>
+
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
+#include <grpc++/thread_pool_interface.h>
 
-#include "src/cpp/server/thread_pool.h"
+#include <queue>
+#include <vector>
 
 namespace grpc {
 
-void ThreadPool::ThreadFunc() {
-  for (;;) {
-    // Wait until work is available or we are shutting down.
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    if (!shutdown_ && callbacks_.empty()) {
-      cv_.wait(lock);
-    }
-    // Drain callbacks before considering shutdown to ensure all work
-    // gets completed.
-    if (!callbacks_.empty()) {
-      auto cb = callbacks_.front();
-      callbacks_.pop();
-      lock.unlock();
-      cb();
-    } else if (shutdown_) {
-      return;
-    }
-  }
-}
+class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
+ public:
+  explicit FixedSizeThreadPool(int num_threads);
+  ~FixedSizeThreadPool();
 
-ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
-  for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(new grpc::thread(&ThreadPool::ThreadFunc, this));
-  }
-}
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
 
-ThreadPool::~ThreadPool() {
-  {
-    grpc::lock_guard<grpc::mutex> lock(mu_);
-    shutdown_ = true;
-    cv_.notify_all();
-  }
-  for (auto t = threads_.begin(); t != threads_.end(); t++) {
-    (*t)->join();
-    delete *t;
-  }
-}
+ private:
+  grpc::mutex mu_;
+  grpc::condition_variable cv_;
+  bool shutdown_;
+  std::queue<std::function<void()>> callbacks_;
+  std::vector<grpc::thread*> threads_;
 
-void ThreadPool::ScheduleCallback(const std::function<void()>& callback) {
-  grpc::lock_guard<grpc::mutex> lock(mu_);
-  callbacks_.push(callback);
-  cv_.notify_one();
-}
+  void ThreadFunc();
+};
 
 }  // namespace grpc
+
+#endif  // GRPCXX_FIXED_SIZE_THREAD_POOL_H

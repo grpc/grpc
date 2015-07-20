@@ -76,6 +76,7 @@ static void connector_unref(grpc_connector *con) {
 
 static void on_secure_transport_setup_done(void *arg,
                                            grpc_security_status status,
+                                           grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   connector *c = arg;
   grpc_iomgr_closure *notify;

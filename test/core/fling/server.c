@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
     }
     ev = grpc_completion_queue_next(
         cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000000)));
+                         gpr_time_from_micros(1000000, GPR_TIMESPAN)));
     s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
