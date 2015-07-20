@@ -245,7 +245,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/context.h',
-                      'src/core/census/resource_id.h',
+                      'src/core/census/rpc_stat_id.h',
                       'grpc/grpc_security.h',
                       'grpc/byte_buffer.h',
                       'grpc/byte_buffer_reader.h',
@@ -508,7 +508,7 @@ Pod::Spec.new do |s|
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
                               'src/core/census/context.h',
-                              'src/core/census/resource_id.h'
+                              'src/core/census/rpc_stat_id.h'
 
     ss.header_mappings_dir = '.'
 

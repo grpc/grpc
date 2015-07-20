@@ -250,7 +250,7 @@
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\src\core\census\context.h" />
-    <ClInclude Include="..\..\src\core\census\resource_id.h" />
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">

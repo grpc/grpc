@@ -880,7 +880,7 @@ src/core/transport/stream_op.h \
 src/core/transport/transport.h \
 src/core/transport/transport_impl.h \
 src/core/census/context.h \
-src/core/census/resource_id.h \
+src/core/census/rpc_stat_id.h \
 src/core/httpcli/format_request.c \
 src/core/httpcli/httpcli.c \
 src/core/httpcli/httpcli_security_connector.c \

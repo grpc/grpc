@@ -770,7 +770,7 @@
     <ClInclude Include="..\..\src\core\census\context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\census\resource_id.h">
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
   </ItemGroup>
