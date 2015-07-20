@@ -271,9 +271,9 @@ describe('Other conditions', function() {
       unary: function(call, cb) {
         var req = call.request;
         if (req.error) {
-          cb(new Error('Requested error'), null, {metadata: ['yes']});
+          cb(new Error('Requested error'), null, {trailer_present: ['yes']});
         } else {
-          cb(null, {count: 1}, {metadata: ['yes']});
+          cb(null, {count: 1}, {trailer_present: ['yes']});
         }
       },
       clientStream: function(stream, cb){
@@ -282,14 +282,14 @@ describe('Other conditions', function() {
         stream.on('data', function(data) {
           if (data.error) {
             errored = true;
-            cb(new Error('Requested error'), null, {metadata: ['yes']});
+            cb(new Error('Requested error'), null, {trailer_present: ['yes']});
           } else {
             count += 1;
           }
         });
         stream.on('end', function() {
           if (!errored) {
-            cb(null, {count: count}, {metadata: ['yes']});
+            cb(null, {count: count}, {trailer_present: ['yes']});
           }
         });
       },
@@ -297,13 +297,13 @@ describe('Other conditions', function() {
         var req = stream.request;
         if (req.error) {
           var err = new Error('Requested error');
-          err.metadata = {metadata: ['yes']};
+          err.metadata = {trailer_present: ['yes']};
           stream.emit('error', err);
         } else {
           for (var i = 0; i < 5; i++) {
             stream.write({count: i});
           }
-          stream.end({metadata: ['yes']});
+          stream.end({trailer_present: ['yes']});
         }
       },
       bidiStream: function(stream) {
@@ -312,7 +312,7 @@ describe('Other conditions', function() {
           if (data.error) {
             var err = new Error('Requested error');
             err.metadata = {
-              metadata: ['yes'],
+              trailer_present: ['yes'],
               count: ['' + count]
             };
             stream.emit('error', err);
@@ -322,7 +322,7 @@ describe('Other conditions', function() {
           }
         });
         stream.on('end', function() {
-          stream.end({metadata: ['yes']});
+          stream.end({trailer_present: ['yes']});
         });
       }
     });
@@ -419,7 +419,7 @@ describe('Other conditions', function() {
         assert.ifError(err);
       });
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.metadata, ['yes']);
+        assert.deepEqual(status.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -428,7 +428,7 @@ describe('Other conditions', function() {
         assert(err);
       });
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.metadata, ['yes']);
+        assert.deepEqual(status.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -440,7 +440,7 @@ describe('Other conditions', function() {
       call.write({error: false});
       call.end();
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.metadata, ['yes']);
+        assert.deepEqual(status.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -452,7 +452,7 @@ describe('Other conditions', function() {
       call.write({error: true});
       call.end();
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.metadata, ['yes']);
+        assert.deepEqual(status.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -461,7 +461,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('status', function(status) {
         assert.strictEqual(status.code, grpc.status.OK);
-        assert.deepEqual(status.metadata.metadata, ['yes']);
+        assert.deepEqual(status.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -469,7 +469,7 @@ describe('Other conditions', function() {
       var call = client.serverStream({error: true});
       call.on('data', function(){});
       call.on('error', function(error) {
-        assert.deepEqual(error.metadata.metadata, ['yes']);
+        assert.deepEqual(error.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -481,7 +481,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('status', function(status) {
         assert.strictEqual(status.code, grpc.status.OK);
-        assert.deepEqual(status.metadata.metadata, ['yes']);
+        assert.deepEqual(status.metadata.trailer_present, ['yes']);
         done();
       });
     });
@@ -492,7 +492,7 @@ describe('Other conditions', function() {
       call.end();
       call.on('data', function(){});
       call.on('error', function(error) {
-        assert.deepEqual(error.metadata.metadata, ['yes']);
+        assert.deepEqual(error.metadata.trailer_present, ['yes']);
         done();
       });
     });
