@@ -28,8 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Return to current directory on error.
-trap 'cd - > /dev/null; exit 1' ERR
+set -e
 
 cd $(dirname $0)
 
@@ -47,5 +46,3 @@ xcodebuild \
     -destination name="iPhone 6" \
     test \
     | egrep "$XCODEBUILD_FILTER" -
-
-cd - > /dev/null
