@@ -44,35 +44,7 @@
 
 #include "src/core/security/credentials.h"
 #include "src/core/support/file.h"
-
-typedef struct {
-  grpc_pollset pollset;
-  int is_done;
-} synchronizer;
-
-static void on_oauth2_response(void *user_data,
-                               grpc_credentials_md *md_elems,
-                               size_t num_md, grpc_credentials_status status) {
-  synchronizer *sync = user_data;
-  char *token;
-  gpr_slice token_slice;
-  if (status == GRPC_CREDENTIALS_ERROR) {
-    gpr_log(GPR_ERROR, "Fetching token failed.");
-  } else {
-    GPR_ASSERT(num_md == 1);
-    token_slice = md_elems[0].value;
-    token = gpr_malloc(GPR_SLICE_LENGTH(token_slice) + 1);
-    memcpy(token, GPR_SLICE_START_PTR(token_slice),
-           GPR_SLICE_LENGTH(token_slice));
-    token[GPR_SLICE_LENGTH(token_slice)] = '\0';
-    printf("Got token: %s.\n", token);
-    gpr_free(token);
-  }
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
-  sync->is_done = 1;
-  grpc_pollset_kick(&sync->pollset);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
-}
+#include "test/core/security/oauth2_utils.h"
 
 static grpc_credentials *create_service_account_creds(
     const char *json_key_file_path, const char *scope) {
@@ -101,10 +73,10 @@ static grpc_credentials *create_refresh_token_creds(
 }
 
 int main(int argc, char **argv) {
-  synchronizer sync;
   grpc_credentials *creds = NULL;
   char *json_key_file_path = NULL;
   char *json_refresh_token_file_path = NULL;
+  char *token = NULL;
   int use_gce = 0;
   char *scope = NULL;
   gpr_cmdline *cl = gpr_cmdline_create("fetch_oauth2");
@@ -175,17 +147,11 @@ int main(int argc, char **argv) {
   }
   GPR_ASSERT(creds != NULL);
 
-  grpc_pollset_init(&sync.pollset);
-  sync.is_done = 0;
-
-  grpc_credentials_get_request_metadata(creds, &sync.pollset, "", on_oauth2_response, &sync);
-
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  while (!sync.is_done)
-    grpc_pollset_work(&sync.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
-
-  grpc_pollset_destroy(&sync.pollset);
+  token = grpc_test_fetch_oauth2_token_with_credentials(creds);
+  if (token != NULL) {
+    printf("Got token: %s.\n", token);
+    gpr_free(token);
+  }
   grpc_credentials_release(creds);
   gpr_cmdline_destroy(cl);
   grpc_shutdown();

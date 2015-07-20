@@ -31,13 +31,21 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
-#include "src/core/channel/compress_filter.h"
+#ifndef GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
+#define GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 
-grpc_server *grpc_server_create(const grpc_channel_args *args) {
-  const grpc_channel_filter *filters[] = {&grpc_compress_filter};
-  return grpc_server_create_from_filters(filters, GPR_ARRAY_SIZE(filters),
-                                         args);
+#include "src/core/security/credentials.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Fetch oauth2 access token with a credentials object. Does not take ownership.
+   Returns NULL on a failure. The caller should call gpr_free on the token. */
+char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H */

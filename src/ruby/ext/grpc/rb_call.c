@@ -131,7 +131,8 @@ static size_t md_ary_datasize(const void *p) {
 
 static const rb_data_type_t grpc_rb_md_ary_data_type = {
     "grpc_metadata_array",
-    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, md_ary_datasize},
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, md_ary_datasize,
+     {NULL, NULL}},
     NULL,
     NULL,
     0};
@@ -139,7 +140,8 @@ static const rb_data_type_t grpc_rb_md_ary_data_type = {
 /* Describes grpc_call struct for RTypedData */
 static const rb_data_type_t grpc_call_data_type = {
     "grpc_call",
-    {GRPC_RB_GC_NOT_MARKED, grpc_rb_call_destroy, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_call_destroy, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL,
     NULL,
     /* it is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because
@@ -275,6 +277,8 @@ static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
                                            VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
 
+  (void)key;
+
   /* Construct a metadata object from key and value and add it */
   TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
                        &grpc_rb_md_ary_data_type, md_ary);
@@ -348,6 +352,7 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary) {
 */
 static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val,
                                               VALUE ops_ary) {
+  (void)val;
   /* Update the capacity; the value is an array, add capacity for each value in
    * the array */
   if (TYPE(key) != T_FIXNUM) {

@@ -115,6 +115,7 @@
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/client_channel.h",
+        "src/core/channel/compress_filter.h",
         "src/core/channel/connected_channel.h",
         "src/core/channel/context.h",
         "src/core/channel/http_client_filter.h",
@@ -211,6 +212,7 @@
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/client_channel.c",
+        "src/core/channel/compress_filter.c",
         "src/core/channel/connected_channel.c",
         "src/core/channel/http_client_filter.c",
         "src/core/channel/http_server_filter.c",
@@ -322,6 +324,7 @@
       "headers": [
         "test/core/end2end/cq_verifier.h",
         "test/core/iomgr/endpoint_tests.h",
+        "test/core/security/oauth2_utils.h",
         "test/core/util/grpc_profiler.h",
         "test/core/util/parse_hexstring.h",
         "test/core/util/port.h",
@@ -330,6 +333,7 @@
       "src": [
         "test/core/end2end/cq_verifier.c",
         "test/core/iomgr/endpoint_tests.c",
+        "test/core/security/oauth2_utils.c",
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",

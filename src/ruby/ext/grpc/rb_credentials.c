@@ -89,7 +89,7 @@ static void grpc_rb_credentials_mark(void *p) {
 static rb_data_type_t grpc_rb_credentials_data_type = {
     "grpc_credentials",
     {grpc_rb_credentials_mark, grpc_rb_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE},
+     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL,
     NULL,
     RUBY_TYPED_FREE_IMMEDIATELY};

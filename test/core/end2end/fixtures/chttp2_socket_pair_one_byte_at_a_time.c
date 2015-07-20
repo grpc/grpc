@@ -39,6 +39,7 @@
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/channel/http_server_filter.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/surface/channel.h"
@@ -75,6 +76,7 @@ static void client_setup_transport(void *ts, grpc_transport *transport,
   sp_client_setup *cs = ts;
 
   const grpc_channel_filter *filters[] = {&grpc_http_client_filter,
+                                          &grpc_compress_filter,
                                           &grpc_connected_channel_filter};
   size_t nfilters = sizeof(filters) / sizeof(*filters);
   grpc_channel *channel = grpc_channel_create_from_filters(

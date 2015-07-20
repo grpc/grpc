@@ -739,9 +739,9 @@ void grpc_server_register_completion_queue(grpc_server *server,
   server->cqs[n] = cq;
 }
 
-grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
-                                             size_t filter_count,
-                                             const grpc_channel_args *args) {
+grpc_server *grpc_server_create_from_filters(
+    const grpc_channel_filter **filters, size_t filter_count,
+    const grpc_channel_args *args) {
   size_t i;
   /* TODO(census): restore this once we finalize census filter etc.
      int census_enabled = grpc_channel_args_is_census_enabled(args); */
