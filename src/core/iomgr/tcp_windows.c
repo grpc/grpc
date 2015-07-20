@@ -96,6 +96,8 @@ typedef struct grpc_tcp {
      to protect ourselves when requesting a shutdown. */
   gpr_mu mu;
   int shutting_down;
+
+  char *peer_string;
 } grpc_tcp;
 
 static void tcp_ref(grpc_tcp *tcp) {
@@ -107,6 +109,7 @@ static void tcp_unref(grpc_tcp *tcp) {
     gpr_slice_buffer_destroy(&tcp->write_slices);
     grpc_winsocket_orphan(tcp->socket);
     gpr_mu_destroy(&tcp->mu);
+    gpr_free(tcp->peer_string);
     gpr_free(tcp);
   }
 }
@@ -393,11 +396,16 @@ static void win_destroy(grpc_endpoint *ep) {
   tcp_unref(tcp);
 }
 
+static char *win_get_peer(grpc_endpoint *ep) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  return gpr_strdup(tcp->peer_string);
+}
+
 static grpc_endpoint_vtable vtable = {
-  win_notify_on_read, win_write, win_add_to_pollset, win_shutdown, win_destroy
+  win_notify_on_read, win_write, win_add_to_pollset, win_shutdown, win_destroy, win_get_peer
 };
 
-grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket) {
+grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *) gpr_malloc(sizeof(grpc_tcp));
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
@@ -405,6 +413,7 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket) {
   gpr_mu_init(&tcp->mu);
   gpr_slice_buffer_init(&tcp->write_slices);
   gpr_ref_init(&tcp->refcount, 1);
+  tcp->peer_string = gpr_strdup(peer_string);
   return &tcp->base;
 }
 

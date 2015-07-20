@@ -37,7 +37,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifdef GPR_POSIX_SOCKET
 #include <sys/un.h>
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -172,7 +174,7 @@ static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
   memset(in, 0, sizeof(*in));
   *len = sizeof(*in);
   in->sin_family = AF_INET;
-  if (inet_aton(host, &in->sin_addr) == 0) {
+  if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
     gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
     goto done;
   }
