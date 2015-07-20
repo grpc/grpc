@@ -1253,6 +1253,11 @@ static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
   elem->filter->start_transport_stream_op(elem, op);
 }
 
+char *grpc_call_get_peer(grpc_call *call) {
+  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+  return elem->filter->get_peer(elem);
+}
+
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
   return CALL_FROM_TOP_ELEM(elem);
 }

@@ -423,6 +423,12 @@ grpc_call *grpc_channel_create_registered_call(
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                                       size_t nops, void *tag);
 
+/* Returns a newly allocated string representing the endpoint to which this
+   call is communicating with. The string is in the uri format accepted by
+   grpc_channel_create.
+   The returned string should be disposed of with gpr_free(). */
+char *grpc_call_get_peer(grpc_call *call);
+
 /* Create a client channel to 'target'. Additional channel level configuration
    MAY be provided by grpc_channel_args, though the expectation is that most
    clients will want to simply pass NULL. See grpc_channel_args definition for
@@ -431,8 +437,12 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 grpc_channel *grpc_channel_create(const char *target,
                                   const grpc_channel_args *args);
 
+/* Return a newly allocated string representing the target a channel was
+   created for. */
+char *grpc_channel_get_target(grpc_channel *channel);
+
 /* Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(void);
+grpc_channel *grpc_lame_client_channel_create(const char *target);
 
 /* Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);

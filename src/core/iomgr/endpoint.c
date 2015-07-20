@@ -53,3 +53,7 @@ void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
 void grpc_endpoint_shutdown(grpc_endpoint *ep) { ep->vtable->shutdown(ep); }
 
 void grpc_endpoint_destroy(grpc_endpoint *ep) { ep->vtable->destroy(ep); }
+
+char *grpc_endpoint_get_peer(grpc_endpoint *ep) {
+  return ep->vtable->get_peer(ep);
+}

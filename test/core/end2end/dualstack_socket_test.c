@@ -79,6 +79,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   size_t details_capacity = 0;
   int was_cancelled = 2;
   grpc_call_details call_details;
+  char *peer;
 
   if (port == 0) {
     port = grpc_pick_unused_port_or_die();
@@ -184,6 +185,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(102), 1);
     cq_expect_completion(cqv, tag(1), 1);
     cq_verify(cqv);
+
+    peer = grpc_call_get_peer(c);
+    gpr_log(GPR_DEBUG, "got peer: '%s'", peer);
+    gpr_free(peer);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
     GPR_ASSERT(0 == strcmp(details, "xyz"));
