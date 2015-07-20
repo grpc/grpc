@@ -1890,6 +1890,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1907,6 +1910,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1965,6 +1971,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2188,6 +2197,9 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2206,6 +2218,9 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2220,6 +2235,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2324,6 +2342,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2342,6 +2363,9 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2360,6 +2384,9 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2411,6 +2438,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2460,6 +2490,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2477,6 +2510,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
