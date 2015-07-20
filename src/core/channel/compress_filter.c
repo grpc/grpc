@@ -210,13 +210,13 @@ static void process_send_ops(grpc_call_element *elem,
           /* hint compression algorithm */
           grpc_metadata_batch_add_head(
               &(sop->data.metadata), &calld->compression_algorithm_storage,
-              grpc_mdelem_ref(channeld->mdelem_compression_algorithms
+              GRPC_MDELEM_REF(channeld->mdelem_compression_algorithms
                                   [calld->compression_algorithm]));
 
           /* convey supported compression algorithms */
           grpc_metadata_batch_add_head(
               &(sop->data.metadata), &calld->accept_encoding_storage,
-              grpc_mdelem_ref(channeld->mdelem_accept_encoding));
+              GRPC_MDELEM_REF(channeld->mdelem_accept_encoding));
 
           calld->written_initial_metadata = 1; /* GPR_TRUE */
         }
@@ -313,13 +313,15 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
     channeld->mdelem_compression_algorithms[algo_idx] =
         grpc_mdelem_from_metadata_strings(
             mdctx,
-            grpc_mdstr_ref(channeld->mdstr_outgoing_compression_algorithm_key),
+            GRPC_MDSTR_REF(channeld->mdstr_outgoing_compression_algorithm_key),
             grpc_mdstr_from_string(mdctx, algorith_name));
     if (algo_idx > 0) {
       supported_algorithms_names[algo_idx-1] = algorith_name;
     }
   }
 
+  /* TODO(dgq): gpr_strjoin_sep could be made to work with statically allocated
+   * arrays, as to avoid the heap allocs */
   accept_encoding_str =
       gpr_strjoin_sep(supported_algorithms_names,
                   GPR_ARRAY_SIZE(supported_algorithms_names),
@@ -329,10 +331,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->mdelem_accept_encoding =
       grpc_mdelem_from_metadata_strings(
           mdctx,
-          grpc_mdstr_ref(channeld->mdstr_compression_capabilities_key),
+          GRPC_MDSTR_REF(channeld->mdstr_compression_capabilities_key),
           grpc_mdstr_from_string(mdctx, accept_encoding_str));
-  /* TODO(dgq): gpr_strjoin_sep could be made to work with statically allocated
-   * arrays, as to avoid the heap allocs */
   gpr_free(accept_encoding_str);
 
   GPR_ASSERT(!is_last);
@@ -343,14 +343,14 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
 
-  grpc_mdstr_unref(channeld->mdstr_request_compression_algorithm_key);
-  grpc_mdstr_unref(channeld->mdstr_outgoing_compression_algorithm_key);
-  grpc_mdstr_unref(channeld->mdstr_compression_capabilities_key);
+  GRPC_MDSTR_UNREF(channeld->mdstr_request_compression_algorithm_key);
+  GRPC_MDSTR_UNREF(channeld->mdstr_outgoing_compression_algorithm_key);
+  GRPC_MDSTR_UNREF(channeld->mdstr_compression_capabilities_key);
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT;
        ++algo_idx) {
-    grpc_mdelem_unref(channeld->mdelem_compression_algorithms[algo_idx]);
+    GRPC_MDELEM_UNREF(channeld->mdelem_compression_algorithms[algo_idx]);
   }
-  grpc_mdelem_unref(channeld->mdelem_accept_encoding);
+  GRPC_MDELEM_UNREF(channeld->mdelem_accept_encoding);
 }
 
 const grpc_channel_filter grpc_compress_filter = {
