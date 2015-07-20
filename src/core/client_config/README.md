@@ -1,7 +1,7 @@
 Client Configuration Support for GRPC
 =====================================
 
-This library provides high level configuration machinery to construct client 
+This library provides high level configuration machinery to construct client
 channels and load balance between them.
 
 Each grpc_channel is created with a grpc_resolver. It is the resolver's duty
@@ -22,32 +22,33 @@ Load Balancing
 --------------
 
 Load balancing configuration is provided by a grpc_lb_policy object, stored as
-part of grpc_client_config. 
+part of grpc_client_config.
 
-A load balancing policies primary job is to pick a target server given only the
-initial metadata for a request. It does this by providing a grpc_subchannel 
+The primary job of the load balancing policies is to pick a target server given only the
+initial metadata for a request. It does this by providing a grpc_subchannel
 object to the owning channel.
 
 
 Sub-Channels
 ------------
 
-A sub-channel provides a connection to a server for a client channel. It has a 
-connectivity state like a regular channel, and so can be connected or 
-disconnected. This connectivity state can be used to inform load balancing 
+A sub-channel provides a connection to a server for a client channel. It has a
+connectivity state like a regular channel, and so can be connected or
+disconnected. This connectivity state can be used to inform load balancing
 decisions (for example, by avoiding disconnected backends).
 
 Configured sub-channels are fully setup to participate in the grpc data plane.
 Their behavior is specified by a set of grpc channel filters defined at their
-construction. To customize this behavior, resolvers build grpc_subchannel_factory 
-objects, which use the decorator pattern to customize construction arguments for 
-concrete grpc_subchannel instances.
+construction. To customize this behavior, resolvers build
+grpc_subchannel_factory objects, which use the decorator pattern to customize
+construction arguments for concrete grpc_subchannel instances.
 
 
 Naming for GRPC
 ===============
 
-Names in GRPC are represented by a URI.
+Names in GRPC are represented by a URI (as defined in
+[RFC 3986](https://tools.ietf.org/html/rfc3986)).
 
 The following schemes are currently supported:
 
@@ -55,6 +56,7 @@ dns:///host:port - dns schemes are currently supported so long as authority is
                    empty (authority based dns resolution is expected in a future
                    release)
 
-unix:path        - the unix scheme is used to create and connect to unix domain 
-                   sockets - the authority must be empty, and the path represents
-                   the absolute or relative path to the desired socket
+unix:path        - the unix scheme is used to create and connect to unix domain
+                   sockets - the authority must be empty, and the path
+                   represents the absolute or relative path to the desired
+                   socket

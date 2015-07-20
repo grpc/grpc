@@ -63,7 +63,7 @@ void gpr_cv_destroy(gpr_cv *cv) { GPR_ASSERT(pthread_cond_destroy(cv) == 0); }
 
 int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
   int err = 0;
-  if (gpr_time_cmp(abs_deadline, gpr_inf_future) == 0) {
+  if (gpr_time_cmp(abs_deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
     err = pthread_cond_wait(cv, mu);
   } else {
     struct timespec abs_deadline_ts;

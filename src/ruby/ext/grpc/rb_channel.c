@@ -107,7 +107,8 @@ static void grpc_rb_channel_mark(void *p) {
 
 static rb_data_type_t grpc_channel_data_type = {
     "grpc_channel",
-    {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL, NULL,
     RUBY_TYPED_FREE_IMMEDIATELY
 };
