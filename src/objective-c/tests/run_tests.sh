@@ -40,7 +40,7 @@ pod install
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.
 set -o pipefail
-XCODEBUILD_FILTER='^(/.+:[0-9+:[0-9]+:.(error|warning):|fatal|===|\*\*)'
+XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
