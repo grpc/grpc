@@ -44,15 +44,16 @@ default_secure_fixture_options = FixtureOptions(True, True, ['windows', 'posix']
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'chttp2_fake_security': default_secure_fixture_options,
+    'chttp2_fullstack_compression': default_unsecure_fixture_options,
     'chttp2_fullstack': default_unsecure_fixture_options,
-    'chttp2_fullstack_with_poll': FixtureOptions(True, False, ['posix']),
     'chttp2_fullstack_uds_posix': FixtureOptions(True, False, ['posix']),
     'chttp2_fullstack_uds_posix_with_poll': FixtureOptions(True, False, ['posix']),
+    'chttp2_fullstack_with_poll': FixtureOptions(True, False, ['posix']),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
     'chttp2_simple_ssl_fullstack_with_poll': FixtureOptions(True, True, ['posix']),
     'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
-    'chttp2_socket_pair': socketpair_unsecure_fixture_options,
     'chttp2_socket_pair_one_byte_at_a_time': socketpair_unsecure_fixture_options,
+    'chttp2_socket_pair': socketpair_unsecure_fixture_options,
     'chttp2_socket_pair_with_grpc_trace': socketpair_unsecure_fixture_options,
 }
 
@@ -63,8 +64,8 @@ connectivity_test_options = TestOptions(True, False, False)
 # maps test names to options
 END2END_TESTS = {
     'bad_hostname': default_test_options,
-    'cancel_after_accept': default_test_options,
     'cancel_after_accept_and_writes_closed': default_test_options,
+    'cancel_after_accept': default_test_options,
     'cancel_after_invoke': default_test_options,
     'cancel_before_invoke': default_test_options,
     'cancel_in_a_vacuum': default_test_options,
@@ -82,13 +83,14 @@ END2END_TESTS = {
     'ping_pong_streaming': default_test_options,
     'registered_call': default_test_options,
     'request_response_with_binary_metadata_and_payload': default_test_options,
-    'request_response_with_trailing_metadata_and_payload': default_test_options,
     'request_response_with_metadata_and_payload': default_test_options,
-    'request_response_with_payload': default_test_options,
     'request_response_with_payload_and_call_creds': TestOptions(needs_fullstack=False, flaky=False, secure=True),
+    'request_response_with_payload': default_test_options,
+    'request_response_with_trailing_metadata_and_payload': default_test_options,
+    'request_with_compressed_payload': default_test_options,
+    'request_with_flags': default_test_options,
     'request_with_large_metadata': default_test_options,
     'request_with_payload': default_test_options,
-    'request_with_flags': default_test_options,
     'server_finishes_request': default_test_options,
     'simple_delayed_request': connectivity_test_options,
     'simple_request': default_test_options,
