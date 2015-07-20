@@ -110,12 +110,11 @@ class ClientContext {
     creds_ = creds;
   }
 
-  grpc_compression_algorithm _experimental_get_compression_algorithm() const {
+  grpc_compression_algorithm get_compression_algorithm() const {
     return compression_algorithm_;
   }
 
-  void _experimental_set_compression_algorithm(
-      grpc_compression_algorithm algorithm);
+  void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   std::shared_ptr<const AuthContext> auth_context() const;
 
