@@ -40,8 +40,6 @@ var _ = require('lodash');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/route_guide.proto').examples;
 
-var Server = grpc.buildServer([examples.RouteGuide.service]);
-
 var COORD_FACTOR = 1e7;
 
 /**
@@ -228,14 +226,14 @@ function routeChat(call) {
  * @return {Server} The new server object
  */
 function getServer() {
-  return new Server({
-    'examples.RouteGuide' : {
-      getFeature: getFeature,
-      listFeatures: listFeatures,
-      recordRoute: recordRoute,
-      routeChat: routeChat
-    }
+  var server = new grpc.Server();
+  server.addProtoService(examples.RouteGuide.service, {
+    getFeature: getFeature,
+    listFeatures: listFeatures,
+    recordRoute: recordRoute,
+    routeChat: routeChat
   });
+  return server;
 }
 
 if (require.main === module) {
