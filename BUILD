@@ -378,6 +378,7 @@ cc_library(
     "src/core/transport/transport.c",
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
+    "src/core/census/cpu_accounting.c",
     "src/core/census/initialize.c",
   ],
   hdrs = [
@@ -609,6 +610,7 @@ cc_library(
     "src/core/transport/transport.c",
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
+    "src/core/census/cpu_accounting.c",
     "src/core/census/initialize.c",
   ],
   hdrs = [
@@ -1086,6 +1088,7 @@ objc_library(
     "src/core/transport/transport.c",
     "src/core/transport/transport_op_string.c",
     "src/core/census/context.c",
+    "src/core/census/cpu_accounting.c",
     "src/core/census/initialize.c",
   ],
   hdrs = [

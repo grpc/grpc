@@ -331,6 +331,9 @@
     <ClCompile Include="..\..\src\core\census\context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\cpu_accounting.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>

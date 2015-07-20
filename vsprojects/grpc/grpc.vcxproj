@@ -537,6 +537,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\context.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\cpu_accounting.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
     </ClCompile>
   </ItemGroup>
