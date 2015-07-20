@@ -44,6 +44,7 @@ XCODEBUILD_FILTER='^(/.+:[0-9+:[0-9]+:.(error|warning):|fatal|===|\*\*)'
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme AllTests \
+    -destination name="iPhone 6" \
     test \
     | egrep "$XCODEBUILD_FILTER" -
 
