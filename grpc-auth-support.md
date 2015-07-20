@@ -247,7 +247,7 @@ GIDSignIn.sharedInstance.scopes = @[@"https://www.googleapis.com/auth/grpc-testi
 
 ...
 
-#import <gRPC/ProtoRPC.h>
+#import <ProtoRPC/ProtoRPC.h>
 
 // Create a not-yet-started RPC. We want to set the request headers on this object before starting
 // it.
@@ -258,8 +258,7 @@ ProtoRPC *call =
 
 // Set the access token to be used.
 NSString *accessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
-call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
-    @{@"Authorization": [@"Bearer " stringByAppendingString:accessToken]}];
+call.requestMetadata[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken]}];
 
 // Start the RPC.
 [call start];

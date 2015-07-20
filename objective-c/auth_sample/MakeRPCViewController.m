@@ -35,12 +35,32 @@
 
 #import <AuthTestService/AuthSample.pbrpc.h>
 #import <Google/SignIn.h>
-#import <gRPC/ProtoRPC.h>
-#include <gRPC/status.h>
+#include <grpc/status.h>
+#import <ProtoRPC/ProtoRPC.h>
 
 NSString * const kTestScope = @"https://www.googleapis.com/auth/xapi.zoo";
 
 static NSString * const kTestHostAddress = @"grpc-test.sandbox.google.com";
+
+// Category for RPC errors to create the descriptions as we want them to appear on our view.
+@interface NSError (AuthSample)
+- (NSString *)UIDescription;
+@end
+
+@implementation NSError (AuthSample)
+- (NSString *)UIDescription {
+  if (self.code == GRPC_STATUS_UNAUTHENTICATED) {
+    // Authentication error. OAuth2 specifies we'll receive a challenge header.
+    // |userInfo[kGRPCStatusMetadataKey]| is the dictionary of response metadata.
+    NSString *challengeHeader = self.userInfo[kGRPCStatusMetadataKey][@"www-authenticate"] ?: @"";
+    return [@"Invalid credentials. Server challenge:\n" stringByAppendingString:challengeHeader];
+  } else {
+    // Any other error.
+    return [NSString stringWithFormat:@"Unexpected RPC error %li: %@",
+            (long)self.code, self.localizedDescription];
+  }
+}
+@end
 
 @implementation MakeRPCViewController
 
@@ -55,30 +75,21 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.google.com";
 
   // Create a not-yet-started RPC. We want to set the request headers on this object before starting
   // it.
-  __block ProtoRPC *call =
+  ProtoRPC *call =
       [client RPCToUnaryCallWithRequest:request handler:^(AUTHResponse *response, NSError *error) {
         if (response) {
           // This test server responds with the email and scope of the access token it receives.
           self.mainLabel.text = [NSString stringWithFormat:@"Used scope: %@ on behalf of user %@",
                                  response.oauthScope, response.username];
 
-        } else if (error.code == GRPC_STATUS_UNAUTHENTICATED) {
-          // Authentication error. OAuth2 specifies we'll receive a challenge header.
-          NSString *challengeHeader = call.responseMetadata[@"www-authenticate"][0] ?: @"";
-          self.mainLabel.text =
-              [@"Invalid credentials. Server challenge:\n" stringByAppendingString:challengeHeader];
-
         } else {
-          // Any other error.
-          self.mainLabel.text = [NSString stringWithFormat:@"Unexpected RPC error %li: %@",
-                                 (long)error.code, error.localizedDescription];
+          self.mainLabel.text = error.UIDescription;
         }
       }];
 
   // Set the access token to be used.
   NSString *accessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
-  call.requestMetadata = [NSMutableDictionary dictionaryWithDictionary:
-      @{@"Authorization": [@"Bearer " stringByAppendingString:accessToken]}];
+  call.requestMetadata[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken];
 
   // Start the RPC.
   [call start];
