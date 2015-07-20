@@ -300,14 +300,8 @@ typedef struct {
   void *state;
 } grpc_auth_metadata_processor;
 
-/* XXXX: this is a temporarty interface. Please do NOT use.
-   This function will be moved to the server_credentials in a subsequent
-   pull request. XXXX
-
-   Registration function for metadata processing.
-   Should be called before the server is started. */
-void grpc_server_register_auth_metadata_processor(
-    grpc_auth_metadata_processor processor);
+void grpc_server_credentials_set_auth_metadata_processor(
+    grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 
 #ifdef __cplusplus
 }

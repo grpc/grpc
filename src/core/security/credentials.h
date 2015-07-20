@@ -208,6 +208,7 @@ typedef struct {
 struct grpc_server_credentials {
   const grpc_server_credentials_vtable *vtable;
   const char *type;
+  grpc_auth_metadata_processor processor;
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(

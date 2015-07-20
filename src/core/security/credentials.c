@@ -149,6 +149,12 @@ grpc_security_status grpc_server_credentials_create_security_connector(
   return creds->vtable->create_security_connector(creds, sc);
 }
 
+void grpc_server_credentials_set_auth_metadata_processor(
+    grpc_server_credentials *creds, grpc_auth_metadata_processor processor) {
+  if (creds == NULL) return;
+  creds->processor = processor;
+}
+
 /* -- Ssl credentials. -- */
 
 static void ssl_destroy(grpc_credentials *creds) {

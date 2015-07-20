@@ -60,6 +60,7 @@ typedef struct grpc_server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
   grpc_security_connector *sc;
+  grpc_auth_metadata_processor processor;
   tcp_endpoint_list *handshaking_tcp_endpoints;
   int is_shutdown;
   gpr_mu mu;
@@ -252,9 +253,11 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_resolved_addresses_destroy(resolved);
 
   state = gpr_malloc(sizeof(*state));
+  memset(state, 0, sizeof(*state));
   state->server = server;
   state->tcp = tcp;
   state->sc = sc;
+  state->processor = creds->processor;
   state->handshaking_tcp_endpoints = NULL;
   state->is_shutdown = 0;
   gpr_mu_init(&state->mu);
