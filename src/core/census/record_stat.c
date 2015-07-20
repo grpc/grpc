@@ -32,7 +32,7 @@
  */
 
 #include <grpc/census.h>
-#include "src/core/census/resource_id.h"
+#include "src/core/census/rpc_stat_id.h"
 
-void census_record_stat(census_context *context, int resource_id,
-                        double value) {}
+void census_record_stat(census_context *context, census_stat *stats,
+                        size_t nstats) {}

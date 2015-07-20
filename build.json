@@ -19,7 +19,7 @@
       ],
       "headers": [
         "src/core/census/context.h",
-        "src/core/census/resource_id.h"
+        "src/core/census/rpc_stat_id.h"
       ],
       "src": [
         "src/core/census/context.c",
