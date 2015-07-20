@@ -34,8 +34,11 @@
 #include <grpc++/client_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/string_util.h>
 #include <grpc++/credentials.h>
 #include <grpc++/time.h>
+
+#include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
@@ -44,7 +47,7 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
       cq_(nullptr),
-      deadline_(gpr_inf_future) {}
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -53,8 +56,8 @@ ClientContext::~ClientContext() {
   if (cq_) {
     // Drain cq_.
     grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
+    while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME))
+               .type != GRPC_QUEUE_SHUTDOWN)
       ;
     grpc_completion_queue_destroy(cq_);
   }
@@ -74,6 +77,18 @@ void ClientContext::set_call(grpc_call* call,
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.");
   }
+}
+
+void ClientContext::_experimental_set_compression_algorithm(
+    grpc_compression_algorithm algorithm) {
+  char* algorithm_name = NULL;
+  if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != NULL);
+  AddMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
 }
 
 std::shared_ptr<const AuthContext> ClientContext::auth_context() const {

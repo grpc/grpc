@@ -105,14 +105,28 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 
 void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
-  pollset->vtable->add_fd(pollset, fd);
+  pollset->vtable->add_fd(pollset, fd, 1);
+  /* the following (enabled only in debug) will reacquire and then release
+     our lock - meaning that if the unlocking flag passed to del_fd above is
+     not respected, the code will deadlock (in a way that we have a chance of
+     debugging) */
+#ifndef NDEBUG
+  gpr_mu_lock(&pollset->mu);
   gpr_mu_unlock(&pollset->mu);
+#endif
 }
 
 void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
-  pollset->vtable->del_fd(pollset, fd);
+  pollset->vtable->del_fd(pollset, fd, 1);
+  /* the following (enabled only in debug) will reacquire and then release
+     our lock - meaning that if the unlocking flag passed to del_fd above is
+     not respected, the code will deadlock (in a way that we have a chance of
+     debugging) */
+#ifndef NDEBUG
+  gpr_mu_lock(&pollset->mu);
   gpr_mu_unlock(&pollset->mu);
+#endif
 }
 
 static void finish_shutdown(grpc_pollset *pollset) {
@@ -122,7 +136,7 @@ static void finish_shutdown(grpc_pollset *pollset) {
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   /* pollset->mu already held */
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0;
   }
@@ -187,20 +201,21 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now) {
+int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
+                                         gpr_timespec now) {
   gpr_timespec timeout;
   static const int max_spin_polling_us = 10;
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
+  if (gpr_time_cmp(deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
     return -1;
   }
-  if (gpr_time_cmp(
-        deadline, 
-        gpr_time_add(now, gpr_time_from_micros(max_spin_polling_us))) <= 0) {
+  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
+                                                   max_spin_polling_us,
+                                                   GPR_TIMESPAN))) <= 0) {
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
-  return gpr_time_to_millis(
-      gpr_time_add(timeout, gpr_time_from_nanos(GPR_NS_PER_SEC - 1)));
+  return gpr_time_to_millis(gpr_time_add(
+      timeout, gpr_time_from_nanos(GPR_NS_PER_SEC - 1, GPR_TIMESPAN)));
 }
 
 /*
@@ -256,7 +271,7 @@ static void basic_do_promote(void *args, int success) {
   } else if (grpc_fd_is_orphaned(fd)) {
     /* Don't try to add it to anything, we'll drop our ref on it below */
   } else if (pollset->vtable != original_vtable) {
-    pollset->vtable->add_fd(pollset, fd);
+    pollset->vtable->add_fd(pollset, fd, 0);
   } else if (fd != pollset->data.ptr) {
     grpc_fd *fds[2];
     fds[0] = pollset->data.ptr;
@@ -286,10 +301,11 @@ static void basic_do_promote(void *args, int success) {
   GRPC_FD_UNREF(fd, "basicpoll_add");
 }
 
-static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
+static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
+                                 int and_unlock_pollset) {
   grpc_unary_promote_args *up_args;
   GPR_ASSERT(fd);
-  if (fd == pollset->data.ptr) return;
+  if (fd == pollset->data.ptr) goto exit;
 
   if (!pollset->counter) {
     /* Fast path -- no in flight cbs */
@@ -312,7 +328,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
       pollset->data.ptr = fd;
       GRPC_FD_REF(fd, "basicpoll");
     }
-    return;
+    goto exit;
   }
 
   /* Now we need to promote. This needs to happen when we're not polling. Since
@@ -328,13 +344,23 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   grpc_iomgr_add_callback(&up_args->promotion_closure);
 
   grpc_pollset_kick(pollset);
+
+exit:
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
 }
 
-static void basic_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
+static void basic_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd,
+                                 int and_unlock_pollset) {
   GPR_ASSERT(fd);
   if (fd == pollset->data.ptr) {
     GRPC_FD_UNREF(pollset->data.ptr, "basicpoll");
     pollset->data.ptr = NULL;
+  }
+
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
   }
 }
 

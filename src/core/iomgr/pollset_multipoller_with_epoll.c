@@ -50,11 +50,16 @@ typedef struct {
 } pollset_hdr;
 
 static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
-                                                grpc_fd *fd) {
+                                                grpc_fd *fd,
+                                                int and_unlock_pollset) {
   pollset_hdr *h = pollset->data.ptr;
   struct epoll_event ev;
   int err;
   grpc_fd_watcher watcher;
+
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
 
   /* We pretend to be polling whilst adding an fd to keep the fd from being
      closed during the add. This may result in a spurious wakeup being assigned
@@ -76,9 +81,15 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
 }
 
 static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,
-                                                grpc_fd *fd) {
+                                                grpc_fd *fd,
+                                                int and_unlock_pollset) {
   pollset_hdr *h = pollset->data.ptr;
   int err;
+
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
+
   /* Note that this can race with concurrent poll, but that should be fine since
    * at worst it creates a spurious read event on a reused grpc_fd object. */
   err = epoll_ctl(h->epoll_fd, EPOLL_CTL_DEL, fd->fd, NULL);
@@ -105,9 +116,10 @@ static void multipoll_with_epoll_pollset_maybe_work(
    * here.
    */
 
-  timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
   pollset->counter += 1;
   gpr_mu_unlock(&pollset->mu);
+
+  timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 
   do {
     ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
@@ -182,7 +194,7 @@ static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
     abort();
   }
   for (i = 0; i < nfds; i++) {
-    multipoll_with_epoll_pollset_add_fd(pollset, fds[i]);
+    multipoll_with_epoll_pollset_add_fd(pollset, fds[i], 0);
   }
 
   grpc_wakeup_fd_create(&h->wakeup_fd);

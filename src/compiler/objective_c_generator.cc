@@ -57,34 +57,34 @@ void PrintProtoRpcDeclarationAsPragma(Printer *printer,
   vars["server_stream"] = method->server_streaming() ? "stream " : "";
 
   printer->Print(vars,
-      "#pragma mark $method_name$($client_stream$$request_type$)"
-      " returns ($server_stream$$response_type$)\n\n");
+                 "#pragma mark $method_name$($client_stream$$request_type$)"
+                 " returns ($server_stream$$response_type$)\n\n");
 }
 
-void PrintMethodSignature(Printer *printer,
-                          const MethodDescriptor *method,
-                          const map<string, string>& vars) {
+void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
+                          const map<string, string> &vars) {
   // TODO(jcanizales): Print method comments.
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
-    printer->Print("RequestsWriter:(id<GRXWriter>)requestWriter");
+    printer->Print("RequestsWriter:(GRXWriter *)requestWriter");
   } else {
     printer->Print(vars, "Request:($request_class$ *)request");
   }
 
   // TODO(jcanizales): Put this on a new line and align colons.
   if (method->server_streaming()) {
-    printer->Print(vars, " eventHandler:(void(^)(BOOL done, "
-      "$response_class$ *response, NSError *error))eventHandler");
+    printer->Print(vars,
+                   " eventHandler:(void(^)(BOOL done, "
+                   "$response_class$ *response, NSError *error))eventHandler");
   } else {
-    printer->Print(vars, " handler:(void(^)($response_class$ *response, "
-      "NSError *error))handler");
+    printer->Print(vars,
+                   " handler:(void(^)($response_class$ *response, "
+                   "NSError *error))handler");
   }
 }
 
-void PrintSimpleSignature(Printer *printer,
-                          const MethodDescriptor *method,
+void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
                           map<string, string> vars) {
   vars["method_name"] =
       grpc_generator::LowercaseFirstLetter(vars["method_name"]);
@@ -92,8 +92,7 @@ void PrintSimpleSignature(Printer *printer,
   PrintMethodSignature(printer, method, vars);
 }
 
-void PrintAdvancedSignature(Printer *printer,
-                            const MethodDescriptor *method,
+void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
                             map<string, string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
   vars["return_type"] = "ProtoRPC *";
@@ -101,15 +100,16 @@ void PrintAdvancedSignature(Printer *printer,
 }
 
 inline map<string, string> GetMethodVars(const MethodDescriptor *method) {
-  return {{ "method_name", method->name() },
-          { "request_type", method->input_type()->name() },
-          { "response_type", method->output_type()->name() },
-          { "request_class", ClassName(method->input_type()) },
-          { "response_class", ClassName(method->output_type()) }};
+  map<string, string> res;
+  res["method_name"] = method->name();
+  res["request_type"] = method->input_type()->name();
+  res["response_type"] = method->output_type()->name();
+  res["request_class"] = ClassName(method->input_type());
+  res["response_class"] = ClassName(method->output_type());
+  return res;
 }
 
-void PrintMethodDeclarations(Printer *printer,
-                             const MethodDescriptor *method) {
+void PrintMethodDeclarations(Printer *printer, const MethodDescriptor *method) {
   map<string, string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -120,8 +120,7 @@ void PrintMethodDeclarations(Printer *printer,
   printer->Print(";\n\n\n");
 }
 
-void PrintSimpleImplementation(Printer *printer,
-                               const MethodDescriptor *method,
+void PrintSimpleImplementation(Printer *printer, const MethodDescriptor *method,
                                map<string, string> vars) {
   printer->Print("{\n");
   printer->Print(vars, "  [[self RPCTo$method_name$With");
@@ -178,7 +177,7 @@ void PrintMethodImplementations(Printer *printer,
   PrintAdvancedImplementation(printer, method, vars);
 }
 
-} // namespace
+}  // namespace
 
 string GetHeader(const ServiceDescriptor *service) {
   string output;
@@ -186,9 +185,6 @@ string GetHeader(const ServiceDescriptor *service) {
     // Scope the output stream so it closes and finalizes output to the string.
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
-  
-    printer.Print("@protocol GRXWriteable;\n");
-    printer.Print("@protocol GRXWriter;\n\n");
 
     map<string, string> vars = {{"service_class", ServiceClassName(service)}};
 
@@ -199,12 +195,15 @@ string GetHeader(const ServiceDescriptor *service) {
     }
     printer.Print("@end\n\n");
 
-    printer.Print("// Basic service implementation, over gRPC, that only does"
+    printer.Print(
+        "// Basic service implementation, over gRPC, that only does"
         " marshalling and parsing.\n");
-    printer.Print(vars, "@interface $service_class$ :"
-      " ProtoService<$service_class$>\n");
-    printer.Print("- (instancetype)initWithHost:(NSString *)host"
-      " NS_DESIGNATED_INITIALIZER;\n");
+    printer.Print(vars,
+                  "@interface $service_class$ :"
+                  " ProtoService<$service_class$>\n");
+    printer.Print(
+        "- (instancetype)initWithHost:(NSString *)host"
+        " NS_DESIGNATED_INITIALIZER;\n");
     printer.Print("@end\n");
   }
   return output;
@@ -222,18 +221,20 @@ string GetSource(const ServiceDescriptor *service) {
                                 {"package", service->file()->package()}};
 
     printer.Print(vars,
-        "static NSString *const kPackageName = @\"$package$\";\n");
-    printer.Print(vars,
-        "static NSString *const kServiceName = @\"$service_name$\";\n\n");
+                  "static NSString *const kPackageName = @\"$package$\";\n");
+    printer.Print(
+        vars, "static NSString *const kServiceName = @\"$service_name$\";\n\n");
 
     printer.Print(vars, "@implementation $service_class$\n\n");
-  
+
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-    printer.Print("  return (self = [super initWithHost:host"
+    printer.Print(
+        "  return (self = [super initWithHost:host"
         " packageName:kPackageName serviceName:kServiceName]);\n");
     printer.Print("}\n\n");
-    printer.Print("// Override superclass initializer to disallow different"
+    printer.Print(
+        "// Override superclass initializer to disallow different"
         " package and service names.\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host\n");
     printer.Print("                 packageName:(NSString *)packageName\n");
@@ -250,4 +251,4 @@ string GetSource(const ServiceDescriptor *service) {
   return output;
 }
 
-} // namespace grpc_objective_c_generator
+}  // namespace grpc_objective_c_generator

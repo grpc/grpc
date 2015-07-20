@@ -789,6 +789,7 @@ src/core/channel/census_filter.h \
 src/core/channel/channel_args.h \
 src/core/channel/channel_stack.h \
 src/core/channel/client_channel.h \
+src/core/channel/compress_filter.h \
 src/core/channel/connected_channel.h \
 src/core/channel/context.h \
 src/core/channel/http_client_filter.h \
@@ -908,6 +909,7 @@ src/core/census/grpc_context.c \
 src/core/channel/channel_args.c \
 src/core/channel/channel_stack.c \
 src/core/channel/client_channel.c \
+src/core/channel/compress_filter.c \
 src/core/channel/connected_channel.c \
 src/core/channel/http_client_filter.c \
 src/core/channel/http_server_filter.c \
@@ -985,6 +987,7 @@ src/core/surface/server.c \
 src/core/surface/server_chttp2.c \
 src/core/surface/server_create.c \
 src/core/surface/surface_trace.c \
+src/core/surface/version.c \
 src/core/transport/chttp2/alpn.c \
 src/core/transport/chttp2/bin_encoder.c \
 src/core/transport/chttp2/frame_data.c \
@@ -1044,6 +1047,7 @@ include/grpc/support/useful.h \
 src/core/support/env.h \
 src/core/support/file.h \
 src/core/support/murmur_hash.h \
+src/core/support/stack_lockfree.h \
 src/core/support/string.h \
 src/core/support/string_win32.h \
 src/core/support/thd_internal.h \
@@ -1070,6 +1074,7 @@ src/core/support/log_win32.c \
 src/core/support/murmur_hash.c \
 src/core/support/slice.c \
 src/core/support/slice_buffer.c \
+src/core/support/stack_lockfree.c \
 src/core/support/string.c \
 src/core/support/string_posix.c \
 src/core/support/string_win32.c \

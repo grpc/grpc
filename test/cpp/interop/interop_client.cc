@@ -148,18 +148,24 @@ void InteropClient::DoServiceAccountCreds(const grpc::string& username,
 void InteropClient::DoOauth2AuthToken(const grpc::string& username,
                                       const grpc::string& oauth_scope) {
   gpr_log(GPR_INFO,
-          "Sending a large unary rpc with raw oauth2 access token ...");
+          "Sending a unary rpc with raw oauth2 access token credentials ...");
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
   request.set_fill_oauth_scope(true);
-  PerformLargeUnary(&request, &response);
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+
+  Status s = stub->UnaryCall(&context, request, &response);
+
+  AssertOkOrPrintErrorStatus(s);
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
   const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
-  gpr_log(GPR_INFO, "Large unary with oauth2 access token done.");
+  gpr_log(GPR_INFO, "Unary with oauth2 access token credentials done.");
 }
 
 void InteropClient::DoPerRpcCreds(const grpc::string& username,

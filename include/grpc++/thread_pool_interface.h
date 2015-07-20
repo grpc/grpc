@@ -44,8 +44,10 @@ class ThreadPoolInterface {
   virtual ~ThreadPoolInterface() {}
 
   // Schedule the given callback for execution.
-  virtual void ScheduleCallback(const std::function<void()>& callback) = 0;
+  virtual void Add(const std::function<void()>& callback) = 0;
 };
+
+ThreadPoolInterface* CreateDefaultThreadPool();
 
 }  // namespace grpc
 

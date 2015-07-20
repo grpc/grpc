@@ -61,28 +61,28 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void Add()
         {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = new IntPtr(123456789) };
+            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 123456789 };
             var result = t.Add(TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 10));
             Assert.AreEqual(result.tv_sec, new IntPtr(12355));
-            Assert.AreEqual(result.tv_nsec, new IntPtr(123456789));
+            Assert.AreEqual(result.tv_nsec, 123456789);
         }
 
         [Test]
         public void Add_Nanos()
         {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = new IntPtr(123456789) };
+            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 123456789 };
             var result = t.Add(TimeSpan.FromTicks(10));
             Assert.AreEqual(result.tv_sec, new IntPtr(12345));
-            Assert.AreEqual(result.tv_nsec, new IntPtr(123456789 + 1000));
+            Assert.AreEqual(result.tv_nsec, 123456789 + 1000);
         }
 
         [Test]
         public void Add_NanosOverflow()
         {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = new IntPtr(999999999) };
+            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 999999999 };
             var result = t.Add(TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 10 + 10));
             Assert.AreEqual(result.tv_sec, new IntPtr(12356));
-            Assert.AreEqual(result.tv_nsec, new IntPtr(999));
+            Assert.AreEqual(result.tv_nsec, 999);
         }
     }
 }

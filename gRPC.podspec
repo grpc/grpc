@@ -36,14 +36,14 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  s.version  = '0.6.0'
+  s.version  = '0.7.0'
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',
-  #              :tag => 'release-0_9_1-objectivec-0.5.1' }
+  #              :tag => 'release-0_10_0-objectivec-0.6.0' }
 
   s.ios.deployment_target = '6.0'
   s.osx.deployment_target = '10.8'
@@ -64,6 +64,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/core/support/env.h',
                       'src/core/support/file.h',
                       'src/core/support/murmur_hash.h',
+                      'src/core/support/stack_lockfree.h',
                       'src/core/support/grpc_string.h',
                       'src/core/support/string_win32.h',
                       'src/core/support/thd_internal.h',
@@ -118,6 +119,7 @@ Pod::Spec.new do |s|
                       'src/core/support/murmur_hash.c',
                       'src/core/support/slice.c',
                       'src/core/support/slice_buffer.c',
+                      'src/core/support/stack_lockfree.c',
                       'src/core/support/string.c',
                       'src/core/support/string_posix.c',
                       'src/core/support/string_win32.c',
@@ -154,6 +156,7 @@ Pod::Spec.new do |s|
                       'src/core/channel/channel_args.h',
                       'src/core/channel/channel_stack.h',
                       'src/core/channel/client_channel.h',
+                      'src/core/channel/compress_filter.h',
                       'src/core/channel/connected_channel.h',
                       'src/core/channel/context.h',
                       'src/core/channel/http_client_filter.h',
@@ -280,6 +283,7 @@ Pod::Spec.new do |s|
                       'src/core/channel/channel_args.c',
                       'src/core/channel/channel_stack.c',
                       'src/core/channel/client_channel.c',
+                      'src/core/channel/compress_filter.c',
                       'src/core/channel/connected_channel.c',
                       'src/core/channel/http_client_filter.c',
                       'src/core/channel/http_server_filter.c',
@@ -357,6 +361,7 @@ Pod::Spec.new do |s|
                       'src/core/surface/server_chttp2.c',
                       'src/core/surface/server_create.c',
                       'src/core/surface/surface_trace.c',
+                      'src/core/surface/version.c',
                       'src/core/transport/chttp2/alpn.c',
                       'src/core/transport/chttp2/bin_encoder.c',
                       'src/core/transport/chttp2/frame_data.c',
@@ -389,6 +394,7 @@ Pod::Spec.new do |s|
     ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
                               'src/core/support/murmur_hash.h',
+                              'src/core/support/stack_lockfree.h',
                               'src/core/support/string.h',
                               'src/core/support/string_win32.h',
                               'src/core/support/thd_internal.h',
@@ -414,6 +420,7 @@ Pod::Spec.new do |s|
                               'src/core/channel/channel_args.h',
                               'src/core/channel/channel_stack.h',
                               'src/core/channel/client_channel.h',
+                              'src/core/channel/compress_filter.h',
                               'src/core/channel/connected_channel.h',
                               'src/core/channel/context.h',
                               'src/core/channel/http_client_filter.h',
@@ -511,6 +518,8 @@ Pod::Spec.new do |s|
     ss.requires_arc = false
     ss.libraries = 'z'
     ss.dependency 'OpenSSL', '~> 1.0.200'
+
+    # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
 
   # This is a workaround for Cocoapods Issue #1437.

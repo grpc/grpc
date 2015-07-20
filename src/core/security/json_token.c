@@ -49,7 +49,7 @@
 /* --- Constants. --- */
 
 /* 1 hour max. */
-const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0};
+const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0, GPR_TIMESPAN};
 
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
@@ -207,7 +207,7 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
-  gpr_timespec now = gpr_now();
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   char now_str[GPR_LTOA_MIN_BUFSIZE];
   char expiration_str[GPR_LTOA_MIN_BUFSIZE];
@@ -218,8 +218,8 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   gpr_ltoa(now.tv_sec, now_str);
   gpr_ltoa(expiration.tv_sec, expiration_str);
 
-  child = create_child(NULL, json, "iss", json_key->client_email,
-                       GRPC_JSON_STRING);
+  child =
+      create_child(NULL, json, "iss", json_key->client_email, GRPC_JSON_STRING);
   if (scope != NULL) {
     child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
   } else {
@@ -403,4 +403,3 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token) {
     refresh_token->refresh_token = NULL;
   }
 }
-

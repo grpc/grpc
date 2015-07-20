@@ -40,6 +40,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/tcp_client.h"
@@ -75,6 +76,7 @@ static void connector_unref(grpc_connector *con) {
 
 static void on_secure_transport_setup_done(void *arg,
                                            grpc_security_status status,
+                                           grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   connector *c = arg;
   grpc_iomgr_closure *notify;
@@ -212,6 +214,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
     } */
+  filters[n++] = &grpc_compress_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 

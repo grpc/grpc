@@ -1,5 +1,3 @@
-#region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -29,47 +27,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#endregion
+// TODO(jtattermusch): switch to proto3 once C# supports that.
+syntax = "proto2";
 
-using System;
-using Grpc.Core.Internal;
+package grpc.health.v1alpha;
+option csharp_namespace = "Grpc.Health.V1Alpha";
 
-namespace Grpc.Core
-{
-    // TODO: support adding timeout to methods.
-    /// <summary>
-    /// Base for client-side stubs.
-    /// </summary>
-    public abstract class AbstractStub<TStub, TConfig>
-        where TConfig : StubConfiguration
-    {
-        readonly Channel channel;
-        readonly TConfig config;
+message HealthCheckRequest {
+  optional string host = 1;
+  optional string service = 2;
+}
 
-        public AbstractStub(Channel channel, TConfig config)
-        {
-            this.channel = channel;
-            this.config = config;
-        }
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  optional ServingStatus status = 1;
+}
 
-        public Channel Channel
-        {
-            get
-            {
-                return this.channel;
-            }
-        }
-
-        /// <summary>
-        /// Creates a new call to given method.
-        /// </summary>
-        protected Call<TRequest, TResponse> CreateCall<TRequest, TResponse>(string serviceName, Method<TRequest, TResponse> method)
-            where TRequest : class
-            where TResponse : class
-        {
-            var headerBuilder = Metadata.CreateBuilder();
-            config.HeaderInterceptor(headerBuilder);
-            return new Call<TRequest, TResponse>(serviceName, method, channel, headerBuilder.Build());
-        }
-    }
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
 }
