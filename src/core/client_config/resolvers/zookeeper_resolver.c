@@ -85,7 +85,7 @@ typedef struct {
   grpc_resolved_addresses * resolved_addrs;
   /** total number of addresses to be resolved */
   int resolved_total;
-  /** number of addresses resolved */
+  /** resolved number of addresses */
   int resolved_num;
 } zookeeper_resolver;
 
@@ -179,9 +179,11 @@ static void zookeeper_on_resolved(void *arg, grpc_resolved_addresses *addresses)
   GRPC_RESOLVER_UNREF(&r->base, "zookeeper-resolving");
 }
 
+/* Callback function for each DNS resolved address */
 static void zookeeper_dns_resolved(void *arg, grpc_resolved_addresses *addresses) {
   size_t i;
   zookeeper_resolver *r = arg;
+  gpr_mu_lock(&r->mu);
   r->resolved_num++;
   r->resolved_addrs->addrs = gpr_realloc(r->resolved_addrs->addrs, 
                             sizeof(grpc_resolved_address) * (r->resolved_addrs->naddrs + addresses->naddrs));
@@ -195,8 +197,12 @@ static void zookeeper_dns_resolved(void *arg, grpc_resolved_addresses *addresses
   grpc_resolved_addresses_destroy(addresses);
 
   /* Wait for all addresses to be resolved */
-  if (r->resolved_num == r->resolved_total)
+  if (r->resolved_num == r->resolved_total) {
+    gpr_mu_unlock(&r->mu);
     zookeeper_on_resolved(r, r->resolved_addrs);
+  } else {
+    gpr_mu_unlock(&r->mu);
+  }
 }
 
 /* Parse json format address of a zookeeper node */
@@ -274,9 +280,7 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
       }
     }
 
-    buffer_len = GRPC_MAX_ZOOKEEPER_BUFFER_SIZE;
-    status = zoo_get_children(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, 
-                              &children);
+    status = zoo_get_children(r->zookeeper_handle, r->name, GRPC_ZOOKEEPER_WATCH, &children);
     if (!status) {
       r->resolved_addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
       r->resolved_addrs->addrs = NULL;
@@ -289,9 +293,9 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
         strcat(path, "/");
         strcat(path, children.data[i]);
         memset(buffer, 0, GRPC_MAX_ZOOKEEPER_BUFFER_SIZE);
+        buffer_len = GRPC_MAX_ZOOKEEPER_BUFFER_SIZE;
         status = zoo_get(r->zookeeper_handle, path, GRPC_ZOOKEEPER_WATCH, 
                         buffer, &buffer_len, NULL);
-
         if (!status) {
           if (buffer_len > 0) {
             address = zookeeper_parse_address(buffer, buffer_len);
@@ -300,13 +304,12 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
               grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r); 
             }
             else {
-              gpr_log(GPR_ERROR, "Cannot parse zookeeper address %s", buffer);
+              gpr_log(GPR_ERROR, "Fail to parse zookeeper address %s", path);
             }
           }
         } else {
-          gpr_log(GPR_ERROR, "Cannot get zookeeper node %s", path);
+          gpr_log(GPR_ERROR, "Fail to get zookeeper node %s", path);
         }
-
         if (address == NULL) {
           r->resolved_total--;
           if (r->resolved_num == r->resolved_total) {
@@ -314,11 +317,14 @@ static void zookeeper_resolve_address(zookeeper_resolver *r) {
           }
         }
       }
+      if (children.count == 0) {
+        gpr_log(GPR_ERROR, "Fail to resolve zookeeper address %s", r->name);
+      }
     } else {
-      gpr_log(GPR_ERROR, "Cannot get children of zookeeper node %s", r->name);
+      gpr_log(GPR_ERROR, "Fail to get children of zookeeper node %s", r->name);
     }
   } else {
-    gpr_log(GPR_ERROR, "Cannot read zookeeper node %s", r->name);
+    gpr_log(GPR_ERROR, "Fail to get zookeeper node %s", r->name);
   }
   
   gpr_free(address);
@@ -390,7 +396,7 @@ static grpc_resolver *zookeeper_create(
   r->zookeeper_handle = zookeeper_init(uri->authority, zookeeper_watcher, 
                                       GRPC_ZOOKEEPER_TIMEOUT, 0, 0, 0);
   if (r->zookeeper_handle  == NULL) {
-    gpr_log(GPR_ERROR, "Cannot connect to zookeeper server");
+    gpr_log(GPR_ERROR, "Unable to connect to zookeeper server");
     return NULL;
   }
 
