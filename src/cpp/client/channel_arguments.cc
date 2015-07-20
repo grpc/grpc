@@ -37,7 +37,7 @@
 
 namespace grpc {
 
-void ChannelArguments::_Experimental_SetCompressionAlgorithm(
+void ChannelArguments::SetCompressionAlgorithm(
     grpc_compression_algorithm algorithm) {
   SetInt(GRPC_COMPRESSION_ALGORITHM_ARG, algorithm);
 }
