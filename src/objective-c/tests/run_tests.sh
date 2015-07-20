@@ -28,16 +28,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-pushd `dirname $0`/../../..
-# TODO(jcanizales): Make only objective-c plugin.
-make plugins
+# Return to current directory on error.
+trap 'cd - > /dev/null; exit 1' ERR
 
-cd src/objective-c/tests
+cd $(dirname $0)
 
 # TODO(jcanizales): Remove when Cocoapods issue #3823 is resolved.
 export COCOAPODS_DISABLE_DETERMINISTIC_UUIDS=YES
 pod install
 
-xcodebuild -workspace Tests.xcworkspace -scheme AllTests test
+# xcodebuild is very verbose. We filter its output and tell Bash to fail if any
+# element of the pipe fails.
+set -o pipefail
+XCODEBUILD_FILTER='^(/.+:[0-9+:[0-9]+:.(error|warning):|fatal|===|\*\*)'
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme AllTests \
+    test \
+    | egrep "$XCODEBUILD_FILTER" -
 
-popd
+cd - > /dev/null
