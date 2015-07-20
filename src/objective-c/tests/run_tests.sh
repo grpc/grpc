@@ -38,6 +38,7 @@ pod install
 
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.
+# TODO(jcanizales): Use xctool instead? Issue #2540.
 set -o pipefail
 XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
 xcodebuild \
