@@ -57,7 +57,7 @@ class ChannelArguments {
   // grpc specific channel argument setters
   // Set target name override for SSL host name checking.
   void SetSslTargetNameOverride(const grpc::string& name);
-  // TODO(yangg) add flow control optionsc
+  // TODO(yangg) add flow control options
 
   // Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
