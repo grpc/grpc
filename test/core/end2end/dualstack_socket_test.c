@@ -37,6 +37,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -105,7 +106,12 @@ void test_connect(const char *server_host, const char *client_host, int port,
   cqv = cq_verifier_create(cq);
 
   /* Create client. */
-  gpr_join_host_port(&client_hostport, client_host, port);
+  if (client_host[0] == 'i') {
+    /* for ipv4:/ipv6: addresses, just concatenate the port */
+    gpr_asprintf(&client_hostport, "%s:%d", client_host, port);
+  } else {
+    gpr_join_host_port(&client_hostport, client_host, port);
+  }
   client = grpc_channel_create(client_hostport, NULL);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
@@ -233,21 +239,31 @@ int main(int argc, char **argv) {
     /* :: and 0.0.0.0 are handled identically. */
     test_connect("::", "127.0.0.1", 0, 1);
     test_connect("::", "::ffff:127.0.0.1", 0, 1);
+    test_connect("::", "ipv4:127.0.0.1", 0, 1);
+    test_connect("::", "ipv6:[::ffff:127.0.0.1]", 0, 1);
     test_connect("::", "localhost", 0, 1);
     test_connect("0.0.0.0", "127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "::ffff:127.0.0.1", 0, 1);
+    test_connect("0.0.0.0", "ipv4:127.0.0.1", 0, 1);
+    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1]", 0, 1);
     test_connect("0.0.0.0", "localhost", 0, 1);
     if (do_ipv6) {
       test_connect("::", "::1", 0, 1);
       test_connect("0.0.0.0", "::1", 0, 1);
+      test_connect("::", "ipv6:[::1]", 0, 1);
+      test_connect("0.0.0.0", "ipv6:[::1]", 0, 1);
     }
 
     /* These only work when the families agree. */
     test_connect("127.0.0.1", "127.0.0.1", 0, 1);
+    test_connect("127.0.0.1", "ipv4:127.0.0.1", 0, 1);
     if (do_ipv6) {
       test_connect("::1", "::1", 0, 1);
       test_connect("::1", "127.0.0.1", 0, 0);
       test_connect("127.0.0.1", "::1", 0, 0);
+      test_connect("::1", "ipv6:[::1]", 0, 1);
+      test_connect("::1", "ipv4:127.0.0.1", 0, 0);
+      test_connect("127.0.0.1", "ipv6:[::1]", 0, 0);
     }
   }
 
