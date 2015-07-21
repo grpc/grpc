@@ -106,7 +106,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Create client. */
   gpr_join_host_port(&client_hostport, client_host, port);
-  client = grpc_channel_create(client_hostport, NULL);
+  client = grpc_insecure_channel_create(client_hostport, NULL);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");

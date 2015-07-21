@@ -315,7 +315,7 @@ grpcsharp_completion_queue_pluck(grpc_completion_queue *cq, void *tag) {
 
 GPR_EXPORT grpc_channel *GPR_CALLTYPE
 grpcsharp_channel_create(const char *target, const grpc_channel_args *args) {
-  return grpc_channel_create(target, args);
+  return grpc_insecure_channel_create(target, args);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel *channel) {
