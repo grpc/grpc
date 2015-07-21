@@ -93,6 +93,15 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
 
   ClientContext context;
+  // XXX: add UNCOMPRESSABLE to the mix
+  //
+  // XXX: 1) set request.response_compression to all the diff available
+  // compression values. We can't check the compression method used at the
+  // application level, but if something is wrong, two different implementations
+  // of gRPC (java vs c) won't be able to communicate.
+  //
+  // 2) for UNCOMPRESSABLE, verify that the response can be whatever, most
+  // likely uncompressed
   request->set_response_type(PayloadType::COMPRESSABLE);
   request->set_response_size(kLargeResponseSize);
   grpc::string payload(kLargeRequestSize, '\0');
@@ -157,6 +166,7 @@ void InteropClient::DoJwtTokenCreds(const grpc::string& username) {
 void InteropClient::DoLargeUnary() {
   gpr_log(GPR_INFO, "Sending a large unary rpc...");
   SimpleRequest request;
+  request.set_response_compression(grpc::testing::GZIP);
   SimpleResponse response;
   PerformLargeUnary(&request, &response);
   gpr_log(GPR_INFO, "Large unary done.");

@@ -38,6 +38,10 @@
 #include "src/core/channel/context.h"
 #include <grpc/grpc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Primitive operation types - grpc_op's get rewritten into these */
 typedef enum {
   GRPC_IOREQ_RECV_INITIAL_METADATA,
@@ -152,5 +156,12 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
                                cq_bound_to_call, cq_for_notifications, tag)
 
 gpr_uint8 grpc_call_is_client(grpc_call *call);
+
+grpc_compression_algorithm grpc_call_get_compression_algorithm(
+    const grpc_call *call);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */
