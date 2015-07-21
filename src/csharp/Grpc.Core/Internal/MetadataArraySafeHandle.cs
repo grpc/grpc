@@ -34,6 +34,8 @@ using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
 {
+    
+
     /// <summary>
     /// grpc_metadata_array from <grpc/grpc.h>
     /// </summary>
@@ -46,12 +48,18 @@ namespace Grpc.Core.Internal
         static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern MetadataEntryStruct grpcsharp_metadata_array_get(IntPtr metadataArray, UIntPtr index);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
 
         private MetadataArraySafeHandle()
         {
         }
-
+            
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
             // TODO(jtattermusch): we might wanna check that the metadata is readonly 
@@ -63,10 +71,53 @@ namespace Grpc.Core.Internal
             return metadataArray;
         }
 
+        /// <summary>
+        /// Reads metadata from pointer to grpc_metadata_array
+        /// </summary>
+        public static Metadata ReadMetadataFromPtrUnsafe(IntPtr metadataArray)
+        {
+            if (metadataArray == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            ulong count = grpcsharp_metadata_array_count(metadataArray).ToUInt64();
+
+            var metadata = new Metadata();
+            for (ulong index = 0; index < count; index ++)
+            {
+                var rawEntry = grpcsharp_metadata_array_get(metadataArray, new UIntPtr(index));
+                string key = Marshal.PtrToStringAnsi(rawEntry.key);
+                var bytes = new byte[rawEntry.valueLength.ToUInt64()];
+                Marshal.Copy(rawEntry.value, bytes, 0, bytes.Length);
+                metadata.Add(new Metadata.Entry(key, bytes));
+            }
+            return metadata;
+        }
+
+        internal IntPtr Handle
+        {
+            get
+            {
+                return handle;
+            }
+        }
+
         protected override bool ReleaseHandle()
         {
             grpcsharp_metadata_array_destroy_full(handle);
             return true;
+        }
+
+        /// <summary>
+        /// gprc_metadata from grpc/grpc.h
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MetadataEntryStruct
+        {
+            public IntPtr key;  // const char*
+            public IntPtr value;  // const char*
+            public UIntPtr valueLength;
         }
     }
 }
