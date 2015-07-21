@@ -174,6 +174,8 @@ static void process_send_ops(grpc_call_element *elem,
   size_t i;
   int did_compress = 0;
 
+  /* In streaming calls, we need to reset the previously accumulated slices */
+  gpr_slice_buffer_reset_and_unref(&calld->slices);
   for (i = 0; i < send_ops->nops; ++i) {
     grpc_stream_op *sop = &send_ops->ops[i];
     switch (sop->type) {
