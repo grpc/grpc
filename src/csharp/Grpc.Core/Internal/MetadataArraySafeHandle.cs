@@ -34,8 +34,6 @@ using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
 {
-    
-
     /// <summary>
     /// grpc_metadata_array from <grpc/grpc.h>
     /// </summary>

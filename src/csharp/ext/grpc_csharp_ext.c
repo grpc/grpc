@@ -175,7 +175,7 @@ grpcsharp_metadata_array_count(grpc_metadata_array *array) {
 GPR_EXPORT const grpc_metadata *GPR_CALLTYPE
 grpcsharp_metadata_array_get(grpc_metadata_array *array, size_t index) {
   GPR_ASSERT(index < array->count);
-  return array->metadata[index];
+  return &(array->metadata[index]);
 }
 
 /* Move contents of metadata array */
@@ -230,7 +230,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_destroy(grpcsharp_batch_con
 }
 
 GPR_EXPORT const grpc_metadata_array *GPR_CALLTYPE
-grpcsharp_batch_context_receive_initial_metadata(
+grpcsharp_batch_context_recv_initial_metadata(
     const grpcsharp_batch_context *ctx) {
   return &(ctx->recv_initial_metadata);
 }
@@ -292,6 +292,18 @@ GPR_EXPORT const char *GPR_CALLTYPE
 grpcsharp_batch_context_server_rpc_new_method(
     const grpcsharp_batch_context *ctx) {
   return ctx->server_rpc_new.call_details.method;
+}
+
+GPR_EXPORT const char *GPR_CALLTYPE
+grpcsharp_batch_context_server_rpc_new_host(
+    const grpcsharp_batch_context *ctx) {
+  return ctx->server_rpc_new.call_details.host;
+}
+
+GPR_EXPORT gpr_timespec GPR_CALLTYPE
+grpcsharp_batch_context_server_rpc_new_deadline(
+    const grpcsharp_batch_context *ctx) {
+  return ctx->server_rpc_new.call_details.deadline;
 }
 
 GPR_EXPORT const grpc_metadata_array *GPR_CALLTYPE

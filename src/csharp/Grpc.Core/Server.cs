@@ -242,13 +242,12 @@ namespace Grpc.Core
         {
             // TODO: handle error
 
-            CallSafeHandle call = ctx.GetServerRpcNewCall();
-            string method = ctx.GetServerRpcNewMethod();
+            ServerRpcNew newRpc = ctx.GetServerRpcNew();
 
             // after server shutdown, the callback returns with null call
-            if (!call.IsInvalid)
+            if (!newRpc.Call.IsInvalid)
             {
-                Task.Run(async () => await InvokeCallHandler(call, method));
+                Task.Run(async () => await InvokeCallHandler(newRpc.Call, newRpc.Method));
             }
 
             AllowOneRpc();
