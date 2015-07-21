@@ -53,7 +53,7 @@ namespace Grpc.Core
             return asyncCall.UnaryCall(call.Channel, call.Name, req, call.Headers);
         }
 
-        public static async Task<TResponse> AsyncUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
+        public static AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
             where TRequest : class
             where TResponse : class
         {
@@ -61,7 +61,7 @@ namespace Grpc.Core
             asyncCall.Initialize(call.Channel, call.Channel.CompletionQueue, call.Name);
             var asyncResult = asyncCall.UnaryCallAsync(req, call.Headers);
             RegisterCancellationCallback(asyncCall, token);
-            return await asyncResult;
+            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
         public static AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
