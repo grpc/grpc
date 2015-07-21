@@ -119,6 +119,36 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void UnaryCall_ServerHandlerThrowsRpcException()
+        {
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            try
+            {
+                Calls.BlockingUnaryCall(call, "THROW_UNAUTHENTICATED", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unauthenticated, e.Status.StatusCode); 
+            }
+        }
+
+        [Test]
+        public void UnaryCall_ServerHandlerSetsStatus()
+        {
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            try
+            {
+                Calls.BlockingUnaryCall(call, "SET_UNAUTHENTICATED", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unauthenticated, e.Status.StatusCode); 
+            }
+        }
+
+        [Test]
         public void AsyncUnaryCall()
         {
             var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
@@ -193,6 +223,9 @@ namespace Grpc.Core.Tests
             var call = new Call<string, string>(ServiceName, EchoMethod, channel, metadata);
             var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).Result;
             Assert.AreEqual("ABC", result);
+
+            // TODO: implement assertion...
+            Assert.Fail();
         }
 
         [Test]
@@ -238,6 +271,16 @@ namespace Grpc.Core.Tests
             if (request == "THROW")
             {
                 throw new Exception("This was thrown on purpose by a test");
+            }
+
+            if (request == "THROW_UNAUTHENTICATED")
+            {
+                throw new RpcException(new Status(StatusCode.Unauthenticated, ""));
+            }
+
+            if (request == "SET_UNAUTHENTICATED")
+            {
+                context.Status = new Status(StatusCode.Unauthenticated, "");
             }
 
             return request;
