@@ -249,9 +249,10 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
-                      ChannelArguments());
+    ChannelArguments args;
+    args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
+    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+        server_address_.str(), FakeTransportSecurityCredentials(), args);
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 

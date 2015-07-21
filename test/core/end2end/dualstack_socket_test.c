@@ -211,6 +211,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
 
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+
   grpc_call_details_destroy(&call_details);
   gpr_free(details);
 }
