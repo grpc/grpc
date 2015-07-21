@@ -275,6 +275,7 @@ static void zookeeper_get_children_completion(int rc, const struct String_vector
   char path[GRPC_MAX_ZOOKEEPER_BUFFER_SIZE];
   int i;
   zookeeper_resolver *r = (zookeeper_resolver *)arg;
+  
   if (rc) {
     gpr_log(GPR_ERROR, "Error in getting zookeeper children of %s", r->name);
     return;
@@ -317,7 +318,7 @@ static void zookeeper_get_node_completion(int rc, const char *value, int value_l
     return;
   }
 
-  /* If zookeeper node r->name does not have address (i.e. service node),
+  /* If zookeeper node of path r->name does not have address (i.e. service node),
      get its children */
   address = zookeeper_parse_address((char *)value, value_len);
   if (address != NULL) {
