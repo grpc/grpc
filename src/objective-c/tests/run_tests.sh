@@ -27,19 +27,23 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by run_jekins.sh when piggy-backing into docker.
+
 set -e
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
-export CPPFLAGS=-I/tmp/prebuilt/include
+cd $(dirname $0)
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# TODO(jcanizales): Remove when Cocoapods issue #3823 is resolved.
+export COCOAPODS_DISABLE_DETERMINISTIC_UUIDS=YES
+pod install
 
-cd /var/local/git/grpc
-nvm use 0.12
-rvm use ruby-2.1
-
-setarch $arch tools/run_tests/run_tests.py -t -c $config -l $language -x report.xml
+# xcodebuild is very verbose. We filter its output and tell Bash to fail if any
+# element of the pipe fails.
+# TODO(jcanizales): Use xctool instead? Issue #2540.
+set -o pipefail
+XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme AllTests \
+    -destination name="iPhone 6" \
+    test \
+    | egrep "$XCODEBUILD_FILTER" -

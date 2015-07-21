@@ -135,7 +135,7 @@ namespace Grpc.IntegrationTesting
             GrpcEnvironment.Shutdown();
         }
 
-        private void RunTestCase(string testCase, TestService.ITestServiceClient client)
+        private void RunTestCase(string testCase, TestService.TestServiceClient client)
         {
             switch (testCase)
             {
@@ -162,6 +162,12 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "compute_engine_creds":
                     RunComputeEngineCreds(client);
+                    break;
+                case "oauth2_auth_token":
+                    RunOAuth2AuthToken(client);
+                    break;
+                case "per_rpc_creds":
+                    RunPerRpcCreds(client);
                     break;
                 case "cancel_after_begin":
                     RunCancelAfterBegin(client);
@@ -352,6 +358,51 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
             Assert.AreEqual(ComputeEngineUser, response.Username);
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunOAuth2AuthToken(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running oauth2_auth_token");
+            var credential = GoogleCredential.GetApplicationDefault().CreateScoped(new[] { AuthScope });
+            Assert.IsTrue(credential.RequestAccessTokenAsync(CancellationToken.None).Result);
+            string oauth2Token = credential.Token.AccessToken;
+
+            // Intercept calls with an OAuth2 token obtained out-of-band.
+            client.HeaderInterceptor = new MetadataInterceptorDelegate((metadata) =>
+            {
+                metadata.Add(new Metadata.Entry("Authorization", "Bearer " + oauth2Token));
+            });
+
+            var request = SimpleRequest.CreateBuilder()
+                .SetFillUsername(true)
+                .SetFillOauthScope(true)
+                .Build();
+
+            var response = client.UnaryCall(request);
+
+            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
+            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunPerRpcCreds(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running per_rpc_creds");
+
+            var credential = GoogleCredential.GetApplicationDefault().CreateScoped(new[] { AuthScope });
+            Assert.IsTrue(credential.RequestAccessTokenAsync(CancellationToken.None).Result);
+            string oauth2Token = credential.Token.AccessToken;
+
+            var request = SimpleRequest.CreateBuilder()
+                .SetFillUsername(true)
+                .SetFillOauthScope(true)
+                .Build();
+
+            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) } );
+
+            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
+            Assert.AreEqual(ServiceAccountUser, response.Username);
             Console.WriteLine("Passed!");
         }
 
