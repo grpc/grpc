@@ -1,0 +1,8 @@
+<map id="grpc_chttp2_transport_global" name="grpc_chttp2_transport_global">
+<area shape="rect" id="node2" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="12,200,129,227"/>
+<area shape="rect" id="node3" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="33,95,109,121"/>
+<area shape="rect" id="node4" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="5,5,136,32"/>
+<area shape="rect" id="node5" href="$structgrpc__chttp2__outstanding__ping.html" title="grpc_chttp2_outstanding_ping" alt="" coords="347,200,547,227"/>
+<area shape="rect" id="node6" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="143,95,281,121"/>
+<area shape="rect" id="node7" href="$structarg.html" title="arg" alt="" coords="191,5,233,32"/>
+</map>

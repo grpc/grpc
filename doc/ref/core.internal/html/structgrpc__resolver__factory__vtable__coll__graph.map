@@ -1,0 +1,5 @@
+<map id="grpc_resolver_factory_vtable" name="grpc_resolver_factory_vtable">
+<area shape="rect" id="node2" href="$structgrpc__resolver.html" title="grpc_resolver provides grpc_client_config objects to grpc_channel objects " alt="" coords="75,95,177,121"/>
+<area shape="rect" id="node3" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="5,5,103,32"/>
+<area shape="rect" id="node4" href="$structgrpc__resolver__vtable.html" title="grpc_resolver_vtable" alt="" coords="127,5,272,32"/>
+</map>

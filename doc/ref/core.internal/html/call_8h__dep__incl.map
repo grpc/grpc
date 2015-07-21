@@ -1,0 +1,13 @@
+<map id="src/core/surface/call.h" name="src/core/surface/call.h">
+<area shape="rect" id="node2" href="$grpc__context_8h.html" title="src/core/census/grpc\l_context.h" alt="" coords="67,80,212,121"/>
+<area shape="rect" id="node4" href="$call_8c.html" title="src/core/surface/call.c" alt="" coords="175,177,325,203"/>
+<area shape="rect" id="node5" href="$client__auth__filter_8c.html" title="src/core/security/client\l_auth_filter.c" alt="" coords="288,80,441,121"/>
+<area shape="rect" id="node6" href="$security__context_8c.html" title="src/core/security/security\l_context.c" alt="" coords="465,80,635,121"/>
+<area shape="rect" id="node7" href="$call__log__batch_8c.html" title="src/core/surface/call\l_log_batch.c" alt="" coords="659,80,799,121"/>
+<area shape="rect" id="node8" href="$channel_8c.html" title="src/core/surface/channel.c" alt="" coords="823,87,1000,114"/>
+<area shape="rect" id="node9" href="$completion__queue_8c.html" title="src/core/surface/completion\l_queue.c" alt="" coords="1024,80,1209,121"/>
+<area shape="rect" id="node10" href="$init_8c.html" title="src/core/surface/init.c" alt="" coords="1233,87,1381,114"/>
+<area shape="rect" id="node11" href="$lame__client_8c.html" title="src/core/surface/lame\l_client.c" alt="" coords="1406,80,1555,121"/>
+<area shape="rect" id="node12" href="$server_8c.html" title="src/core/surface/server.c" alt="" coords="1579,87,1747,114"/>
+<area shape="rect" id="node3" href="$grpc__context_8c.html" title="src/core/census/grpc\l_context.c" alt="" coords="5,169,151,211"/>
+</map>

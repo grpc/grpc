@@ -1,0 +1,5 @@
+<map id="grpc::ClientWriterInterface&lt; W &gt;" name="grpc::ClientWriterInterface&lt; W &gt;">
+<area shape="rect" id="node4" href="$classgrpc_1_1_client_writer.html" title="grpc::ClientWriter\&lt; W \&gt;" alt="" coords="133,155,293,181"/>
+<area shape="rect" id="node2" href="$classgrpc_1_1_client_streaming_interface.html" title="grpc::ClientStreamingInterface" alt="" coords="5,5,208,32"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_writer_interface.html" title="grpc::WriterInterface\&lt; W \&gt;" alt="" coords="232,5,411,32"/>
+</map>

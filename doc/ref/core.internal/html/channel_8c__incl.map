@@ -1,0 +1,34 @@
+<map id="src/core/surface/channel.c" name="src/core/surface/channel.c">
+<area shape="rect" id="node2" href="$channel_8h.html" title="src/core/surface/channel.h" alt="" coords="1450,80,1629,107"/>
+<area shape="rect" id="node18" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="1645,519,1775,546"/>
+<area shape="rect" id="node33" href="$string_8h.html" title="string.h" alt="" coords="1199,780,1264,807"/>
+<area shape="rect" id="node34" href="$iomgr_8h.html" title="src/core/iomgr/iomgr.h" alt="" coords="1850,80,2005,107"/>
+<area shape="rect" id="node35" href="$call_8h.html" title="src/core/surface/call.h" alt="" coords="961,341,1113,367"/>
+<area shape="rect" id="node36" href="$init_8h.html" title="src/core/surface/init.h" alt="" coords="2029,80,2178,107"/>
+<area shape="rect" id="node37" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="1577,162,1715,189"/>
+<area shape="rect" id="node3" href="$channel__stack_8h.html" title="src/core/channel/channel\l_stack.h" alt="" coords="1365,423,1535,464"/>
+<area shape="rect" id="node29" href="$subchannel__factory_8h.html" title="src/core/client_config\l/subchannel_factory.h" alt="" coords="1350,155,1502,196"/>
+<area shape="rect" id="node5" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="907,698,996,725"/>
+<area shape="rect" id="node21" href="$trace_8h.html" title="src/core/debug/trace.h" alt="" coords="1415,862,1570,889"/>
+<area shape="rect" id="node22" href="$transport_8h.html" title="src/core/transport\l/transport.h" alt="" coords="441,512,566,553"/>
+<area shape="rect" id="node6" href="$status_8h.html" title="grpc/status.h" alt="" coords="887,780,986,807"/>
+<area shape="rect" id="node7" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="733,780,863,807"/>
+<area shape="rect" id="node10" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="589,944,727,971"/>
+<area shape="rect" id="node16" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="815,1101,951,1127"/>
+<area shape="rect" id="node8" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="695,862,834,889"/>
+<area shape="rect" id="node9" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="859,855,985,896"/>
+<area shape="rect" id="node11" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="587,1019,726,1045"/>
+<area shape="rect" id="node12" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="722,1257,911,1284"/>
+<area shape="rect" id="node14" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="359,1101,549,1127"/>
+<area shape="rect" id="node17" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="573,1093,740,1135"/>
+<area shape="rect" id="node15" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="590,1183,723,1209"/>
+<area shape="rect" id="node23" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="125,944,285,971"/>
+<area shape="rect" id="node24" href="$pollset__set_8h.html" title="src/core/iomgr/pollset\l_set.h" alt="" coords="85,691,234,732"/>
+<area shape="rect" id="node25" href="$stream__op_8h.html" title="src/core/transport\l/stream_op.h" alt="" coords="441,601,566,643"/>
+<area shape="rect" id="node28" href="$channel_2context_8h.html" title="src/core/channel/context.h" alt="" coords="5,609,183,635"/>
+<area shape="rect" id="node26" href="$metadata_8h.html" title="src/core/transport\l/metadata.h" alt="" coords="441,691,566,732"/>
+<area shape="rect" id="node27" href="$useful_8h.html" title="grpc/support/useful.h" alt="" coords="461,780,607,807"/>
+<area shape="rect" id="node30" href="$subchannel_8h.html" title="src/core/client_config\l/subchannel.h" alt="" coords="1305,244,1451,285"/>
+<area shape="rect" id="node31" href="$connector_8h.html" title="src/core/client_config\l/connector.h" alt="" coords="1254,333,1401,375"/>
+<area shape="rect" id="node32" href="$sockaddr_8h.html" title="src/core/iomgr/sockaddr.h" alt="" coords="1415,1019,1591,1045"/>
+</map>

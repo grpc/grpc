@@ -1,0 +1,4 @@
+<map id="grpc::ServerAsyncWriter&lt; W &gt;" name="grpc::ServerAsyncWriter&lt; W &gt;">
+<area shape="rect" id="node2" href="$classgrpc_1_1_server_async_streaming_interface.html" title="grpc::ServerAsyncStreaming\lInterface" alt="" coords="5,5,197,47"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_async_writer_interface.html" title="grpc::AsyncWriterInterface\&lt; W \&gt;" alt="" coords="222,13,437,39"/>
+</map>

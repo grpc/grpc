@@ -1,0 +1,4 @@
+<map id="grpc::ServerContext::CompletionOp" name="grpc::ServerContext::CompletionOp">
+<area shape="rect" id="node2" href="$classgrpc_1_1_call_op_set_interface.html" title="An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l..." alt="" coords="14,80,182,107"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_completion_queue_tag.html" title="grpc::CompletionQueueTag" alt="" coords="5,5,191,32"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="src/core/channel/connected_channel.h" name="src/core/channel/connected_channel.h">
+<area shape="rect" id="node2" href="$client__channel_8c.html" title="src/core/channel/client\l_channel.c" alt="" coords="5,95,160,136"/>
+<area shape="rect" id="node3" href="$connected__channel_8c.html" title="src/core/channel/connected\l_channel.c" alt="" coords="185,95,370,136"/>
+<area shape="rect" id="node4" href="$subchannel_8c.html" title="src/core/client_config\l/subchannel.c" alt="" coords="395,95,541,136"/>
+<area shape="rect" id="node5" href="$server_8c.html" title="src/core/surface/server.c" alt="" coords="565,102,733,129"/>
+</map>

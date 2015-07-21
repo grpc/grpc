@@ -1,0 +1,51 @@
+<map id="request_killer" name="request_killer">
+<area shape="rect" id="node2" href="$structrequested__call.html" title="requested_call" alt="" coords="2529,443,2638,469"/>
+<area shape="rect" id="node3" href="$structgrpc__server.html" title="grpc_server" alt="" coords="2847,812,2939,839"/>
+<area shape="rect" id="node42" href="$structchannel__data.html" title="channel_data" alt="" coords="3137,2081,3240,2108"/>
+<area shape="rect" id="node4" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="532,2131,629,2157"/>
+<area shape="rect" id="node10" href="$structgrpc__completion__queue.html" title="grpc_completion_queue" alt="" coords="841,517,1005,544"/>
+<area shape="rect" id="node20" href="$structgrpc__call.html" title="grpc_call" alt="" coords="1219,1221,1295,1248"/>
+<area shape="rect" id="node28" href="$structgrpc__channel.html" title="grpc_channel" alt="" coords="872,1831,975,1857"/>
+<area shape="rect" id="node44" href="$structgrpc__security__connector.html" title="grpc_security_connector" alt="" coords="2500,2377,2667,2404"/>
+<area shape="rect" id="node46" href="$structgrpc__client__config.html" title="grpc_client_config" alt="" coords="1192,2197,1321,2224"/>
+<area shape="rect" id="node47" href="$structgrpc__lb__policy.html" title="grpc_lb_policy" alt="" coords="870,2197,977,2224"/>
+<area shape="rect" id="node48" href="$structgrpc__resolver.html" title="grpc_resolver provides grpc_client_config objects to grpc_channel objects " alt="" coords="1051,2317,1154,2344"/>
+<area shape="rect" id="node5" href="$structrequest__matcher.html" title="request_matcher" alt="" coords="1869,841,1991,868"/>
+<area shape="rect" id="node36" href="$structregistered__method.html" title="registered_method" alt="" coords="2155,756,2288,783"/>
+<area shape="rect" id="node6" href="$structcall__data.html" title="call_data" alt="" coords="1523,863,1599,889"/>
+<area shape="rect" id="node7" href="$structgrpc__stream__op__buffer.html" title="A stream op buffer is a wrapper around stream operations that is dynamically extendable. " alt="" coords="843,911,1003,937"/>
+<area shape="rect" id="node8" href="$structgrpc__stream__op.html" title="grpc_stream_op" alt="" coords="352,937,471,964"/>
+<area shape="rect" id="node9" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="5,937,81,964"/>
+<area shape="rect" id="node15" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="189,836,307,863"/>
+<area shape="rect" id="node19" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="203,1421,293,1448"/>
+<area shape="rect" id="node40" href="$structshutdown__tag.html" title="shutdown_tag" alt="" coords="1204,669,1309,696"/>
+<area shape="rect" id="node11" href="$structgrpc__cq__completion.html" title="grpc_cq_completion" alt="" coords="510,529,651,556"/>
+<area shape="rect" id="node12" href="$structgrpc__pollset.html" title="grpc_pollset" alt="" coords="534,100,627,127"/>
+<area shape="rect" id="node13" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="168,75,328,101"/>
+<area shape="rect" id="node14" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="179,125,317,152"/>
+<area shape="rect" id="node24" href="$structgrpc__byte__buffer.html" title="grpc_byte_buffer" alt="" coords="519,809,642,836"/>
+<area shape="rect" id="node16" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="529,333,632,360"/>
+<area shape="rect" id="node31" href="$structgrpc__alarm.html" title="grpc_alarm" alt="" coords="879,809,968,836"/>
+<area shape="rect" id="node50" href="$structgrpc__call__details.html" title="grpc_call_details" alt="" coords="1347,203,1468,229"/>
+<area shape="rect" id="node17" href="$structgrpc__linked__mdelem.html" title="grpc_linked_mdelem" alt="" coords="851,1271,996,1297"/>
+<area shape="rect" id="node18" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="529,1499,632,1525"/>
+<area shape="rect" id="node23" href="$uniongrpc__ioreq__data.html" title="grpc_ioreq_data" alt="" coords="864,1116,983,1143"/>
+<area shape="rect" id="node32" href="$structreceived__status.html" title="received_status" alt="" coords="692,1315,808,1341"/>
+<area shape="rect" id="node43" href="$structchannel__registered__method.html" title="channel_registered\l_method" alt="" coords="2515,1770,2651,1811"/>
+<area shape="rect" id="node21" href="$structreqinfo__master.html" title="reqinfo_master" alt="" coords="1506,1149,1617,1176"/>
+<area shape="rect" id="node22" href="$structcompleted__request.html" title="completed_request" alt="" coords="1493,1220,1629,1247"/>
+<area shape="rect" id="node25" href="$structgrpc__metadata__array.html" title="grpc_metadata_array" alt="" coords="506,999,655,1025"/>
+<area shape="rect" id="node26" href="$structgrpc__metadata.html" title="A single metadata element. " alt="" coords="193,1087,303,1113"/>
+<area shape="rect" id="node27" href="$structgrpc__mdctx.html" title="grpc_mdctx" alt="" coords="535,1916,626,1943"/>
+<area shape="rect" id="node29" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="511,1696,650,1723"/>
+<area shape="rect" id="node30" href="$structgrpc__call__context__element.html" title="grpc_call_context_element" alt="" coords="833,1560,1013,1587"/>
+<area shape="rect" id="node33" href="$structgrpc__byte__buffer__queue.html" title="grpc_byte_buffer_queue" alt="" coords="840,1321,1007,1348"/>
+<area shape="rect" id="node34" href="$structgpr__stack__lockfree.html" title="gpr_stack_lockfree" alt="" coords="1495,1271,1628,1297"/>
+<area shape="rect" id="node35" href="$unionlockfree__node.html" title="lockfree_node" alt="" coords="1204,1325,1309,1352"/>
+<area shape="rect" id="node37" href="$structgrpc__channel__filter.html" title="grpc_channel_filter" alt="" coords="2516,863,2651,889"/>
+<area shape="rect" id="node38" href="$structgrpc__channel__args.html" title="An array of arguments that can be passed around. " alt="" coords="2515,913,2651,940"/>
+<area shape="rect" id="node39" href="$structgrpc__arg.html" title="A single argument... " alt="" coords="2184,913,2259,940"/>
+<area shape="rect" id="node41" href="$structlistener.html" title="listener" alt="" coords="2551,1003,2616,1029"/>
+<area shape="rect" id="node49" href="$structgrpc__channel__security__connector.html" title="grpc_channel_security\l_connector" alt="" coords="2815,2439,2971,2481"/>
+<area shape="rect" id="node45" href="$structgrpc__connectivity__state__tracker.html" title="grpc_connectivity_state\l_tracker" alt="" coords="2812,2209,2973,2250"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="src/core/surface/server.h" name="src/core/surface/server.h">
+<area shape="rect" id="node2" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="5,80,165,121"/>
+<area shape="rect" id="node3" href="$server_8c.html" title="src/core/surface/server.c" alt="" coords="189,87,357,114"/>
+<area shape="rect" id="node4" href="$server__chttp2_8c.html" title="src/core/surface/server\l_chttp2.c" alt="" coords="381,80,539,121"/>
+<area shape="rect" id="node5" href="$server__create_8c.html" title="src/core/surface/server\l_create.c" alt="" coords="563,80,720,121"/>
+</map>

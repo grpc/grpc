@@ -1,0 +1,7 @@
+<map id="registered_resolver" name="registered_resolver">
+<area shape="rect" id="node2" href="$structgrpc__resolver__factory.html" title="grpc_resolver provides grpc_client_config objects to grpc_channel objects " alt="" coords="51,288,201,315"/>
+<area shape="rect" id="node3" href="$structgrpc__resolver__factory__vtable.html" title="grpc_resolver_factory\l_vtable" alt="" coords="51,184,201,225"/>
+<area shape="rect" id="node4" href="$structgrpc__resolver.html" title="grpc_resolver provides grpc_client_config objects to grpc_channel objects " alt="" coords="75,95,177,121"/>
+<area shape="rect" id="node5" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="5,5,103,32"/>
+<area shape="rect" id="node6" href="$structgrpc__resolver__vtable.html" title="grpc_resolver_vtable" alt="" coords="127,5,272,32"/>
+</map>

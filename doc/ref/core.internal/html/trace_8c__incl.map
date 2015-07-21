@@ -1,0 +1,19 @@
+<map id="src/core/debug/trace.c" name="src/core/debug/trace.c">
+<area shape="rect" id="node2" href="$trace_8h.html" title="src/core/debug/trace.h" alt="" coords="5,319,160,345"/>
+<area shape="rect" id="node5" href="$string_8h.html" title="string.h" alt="" coords="829,155,894,181"/>
+<area shape="rect" id="node14" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="514,80,603,107"/>
+<area shape="rect" id="node18" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="940,393,1079,420"/>
+<area shape="rect" id="node19" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="991,80,1121,107"/>
+<area shape="rect" id="node22" href="$env_8h.html" title="src/core/support/env.h" alt="" coords="207,80,361,107"/>
+<area shape="rect" id="node3" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="359,632,548,659"/>
+<area shape="rect" id="node7" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="586,229,713,271"/>
+<area shape="rect" id="node8" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="519,319,657,345"/>
+<area shape="rect" id="node9" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="263,393,401,420"/>
+<area shape="rect" id="node10" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="35,475,224,502"/>
+<area shape="rect" id="node12" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="491,475,627,502"/>
+<area shape="rect" id="node13" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="249,468,415,509"/>
+<area shape="rect" id="node11" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="265,557,399,584"/>
+<area shape="rect" id="node15" href="$status_8h.html" title="grpc/status.h" alt="" coords="372,155,471,181"/>
+<area shape="rect" id="node16" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="546,155,675,181"/>
+<area shape="rect" id="node17" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="423,237,561,263"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="src/core/client_config/resolver_factory.h" name="src/core/client_config/resolver_factory.h">
+<area shape="rect" id="node2" href="$resolver__registry_8h.html" title="src/core/client_config\l/resolver_registry.h" alt="" coords="369,102,516,143"/>
+<area shape="rect" id="node7" href="$dns__resolver_8h.html" title="src/core/client_config\l/resolvers/dns_resolver.h" alt="" coords="540,102,711,143"/>
+<area shape="rect" id="node9" href="$unix__resolver__posix_8h.html" title="src/core/client_config\l/resolvers/unix_resolver\l_posix.h" alt="" coords="735,95,897,151"/>
+<area shape="rect" id="node10" href="$resolver__factory_8c.html" title="src/core/client_config\l/resolver_factory.c" alt="" coords="921,102,1068,143"/>
+<area shape="rect" id="node3" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="5,199,165,240"/>
+<area shape="rect" id="node4" href="$resolver__registry_8c.html" title="src/core/client_config\l/resolver_registry.c" alt="" coords="189,199,336,240"/>
+<area shape="rect" id="node5" href="$channel__create_8c.html" title="src/core/surface/channel\l_create.c" alt="" coords="361,199,527,240"/>
+<area shape="rect" id="node6" href="$init_8c.html" title="src/core/surface/init.c" alt="" coords="551,206,699,233"/>
+<area shape="rect" id="node8" href="$dns__resolver_8c.html" title="src/core/client_config\l/resolvers/dns_resolver.c" alt="" coords="724,199,895,240"/>
+</map>

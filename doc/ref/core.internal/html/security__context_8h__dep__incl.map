@@ -1,0 +1,6 @@
+<map id="src/core/security/security_context.h" name="src/core/security/security_context.h">
+<area shape="rect" id="node2" href="$client__auth__filter_8c.html" title="src/core/security/client\l_auth_filter.c" alt="" coords="5,95,159,136"/>
+<area shape="rect" id="node3" href="$security__connector_8c.html" title="src/core/security/security\l_connector.c" alt="" coords="183,95,352,136"/>
+<area shape="rect" id="node4" href="$security__context_8c.html" title="src/core/security/security\l_context.c" alt="" coords="376,95,545,136"/>
+<area shape="rect" id="node5" href="$server__auth__filter_8c.html" title="src/core/security/server\l_auth_filter.c" alt="" coords="570,95,730,136"/>
+</map>

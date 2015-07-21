@@ -1,0 +1,10 @@
+<map id="src/core/iomgr/pollset_posix.h" name="src/core/iomgr/pollset_posix.h">
+<area shape="rect" id="node2" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="258,191,397,218"/>
+<area shape="rect" id="node10" href="$pollset__kick__posix_8h.html" title="src/core/iomgr/pollset\l_kick_posix.h" alt="" coords="365,95,514,136"/>
+<area shape="rect" id="node3" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="81,437,270,464"/>
+<area shape="rect" id="node5" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="30,281,219,307"/>
+<area shape="rect" id="node7" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="435,281,571,307"/>
+<area shape="rect" id="node9" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="244,273,411,315"/>
+<area shape="rect" id="node6" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="109,363,242,389"/>
+<area shape="rect" id="node11" href="$wakeup__fd__posix_8h.html" title="src/core/iomgr/wakeup\l_fd_posix.h" alt="" coords="421,184,577,225"/>
+</map>

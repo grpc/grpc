@@ -1,0 +1,21 @@
+<map id="grpc_connect_in_args" name="grpc_connect_in_args">
+<area shape="rect" id="node2" href="$structgrpc__mdctx.html" title="grpc_mdctx" alt="" coords="791,428,881,455"/>
+<area shape="rect" id="node3" href="$structinternal__metadata.html" title="internal_metadata" alt="" coords="771,637,901,664"/>
+<area shape="rect" id="node4" href="$structinternal__string.html" title="internal_string" alt="" coords="902,533,1007,560"/>
+<area shape="rect" id="node5" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="1022,428,1098,455"/>
+<area shape="rect" id="node6" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="1044,293,1175,320"/>
+<area shape="rect" id="node7" href="$structgrpc__pollset__set.html" title="grpc_pollset_set" alt="" coords="226,428,345,455"/>
+<area shape="rect" id="node8" href="$structgrpc__fd.html" title="grpc_fd" alt="" coords="396,293,463,320"/>
+<area shape="rect" id="node10" href="$structgrpc__fd__watcher.html" title="grpc_fd_watcher" alt="" coords="369,428,489,455"/>
+<area shape="rect" id="node9" href="$structgrpc__iomgr__object.html" title="grpc_iomgr_object" alt="" coords="353,188,485,215"/>
+<area shape="rect" id="node11" href="$structgrpc__pollset.html" title="grpc_pollset" alt="" coords="209,293,303,320"/>
+<area shape="rect" id="node12" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="5,188,165,215"/>
+<area shape="rect" id="node13" href="$structgrpc__kick__fd__info.html" title="grpc_kick_fd_info" alt="" coords="23,96,148,123"/>
+<area shape="rect" id="node14" href="$structgrpc__wakeup__fd__info.html" title="grpc_wakeup_fd_info" alt="" coords="11,5,160,32"/>
+<area shape="rect" id="node15" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="190,188,327,215"/>
+<area shape="rect" id="node16" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="564,188,703,215"/>
+<area shape="rect" id="node17" href="$structarg.html" title="arg" alt="" coords="613,96,654,123"/>
+<area shape="rect" id="node18" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="569,428,671,455"/>
+<area shape="rect" id="node19" href="$structgrpc__channel__args.html" title="An array of arguments that can be passed around. " alt="" coords="65,428,201,455"/>
+<area shape="rect" id="node20" href="$structgrpc__arg.html" title="A single argument... " alt="" coords="96,293,171,320"/>
+</map>

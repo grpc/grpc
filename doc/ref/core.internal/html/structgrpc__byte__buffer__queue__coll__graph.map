@@ -1,0 +1,7 @@
+<map id="grpc_byte_buffer_queue" name="grpc_byte_buffer_queue">
+<area shape="rect" id="node2" href="$structgrpc__bbq__array.html" title="grpc_bbq_array" alt="" coords="31,377,147,404"/>
+<area shape="rect" id="node3" href="$structgrpc__byte__buffer.html" title="grpc_byte_buffer" alt="" coords="27,288,150,315"/>
+<area shape="rect" id="node4" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="30,199,147,225"/>
+<area shape="rect" id="node5" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="51,95,127,121"/>
+<area shape="rect" id="node6" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="23,5,154,32"/>
+</map>

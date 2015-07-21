@@ -1,0 +1,19 @@
+<map id="include/grpc/grpc_security.h" name="include/grpc/grpc_security.h">
+<area shape="rect" id="node2" href="$security__connector_8h.html" title="src/core/security/security\l_connector.h" alt="" coords="871,80,1040,121"/>
+<area shape="rect" id="node6" href="$credentials_8h.html" title="src/core/security/credentials.h" alt="" coords="1048,177,1247,203"/>
+<area shape="rect" id="node10" href="$security__context_8c.html" title="src/core/security/security\l_context.c" alt="" coords="1891,348,2060,389"/>
+<area shape="rect" id="node3" href="$httpcli__security__connector_8h.html" title="src/core/httpcli/httpcli\l_security_connector.h" alt="" coords="216,169,368,211"/>
+<area shape="rect" id="node8" href="$client__auth__filter_8c.html" title="src/core/security/client\l_auth_filter.c" alt="" coords="875,348,1028,389"/>
+<area shape="rect" id="node9" href="$security__connector_8c.html" title="src/core/security/security\l_connector.c" alt="" coords="1698,348,1867,389"/>
+<area shape="rect" id="node11" href="$server__auth__filter_8c.html" title="src/core/security/server\l_auth_filter.c" alt="" coords="1053,348,1213,389"/>
+<area shape="rect" id="node15" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="762,259,922,300"/>
+<area shape="rect" id="node17" href="$secure__transport__setup_8h.html" title="src/core/security/secure\l_transport_setup.h" alt="" coords="485,169,648,211"/>
+<area shape="rect" id="node4" href="$httpcli_8c.html" title="src/core/httpcli/httpcli.c" alt="" coords="34,266,192,293"/>
+<area shape="rect" id="node5" href="$httpcli__security__connector_8c.html" title="src/core/httpcli/httpcli\l_security_connector.c" alt="" coords="216,259,368,300"/>
+<area shape="rect" id="node7" href="$security__context_8h.html" title="src/core/security/security\l_context.h" alt="" coords="1048,259,1218,300"/>
+<area shape="rect" id="node12" href="$credentials_8c.html" title="src/core/security/credentials.c" alt="" coords="1242,266,1440,293"/>
+<area shape="rect" id="node13" href="$credentials__metadata_8c.html" title="src/core/security/credentials\l_metadata.c" alt="" coords="1464,259,1650,300"/>
+<area shape="rect" id="node14" href="$google__default__credentials_8c.html" title="src/core/security/google\l_default_credentials.c" alt="" coords="1674,259,1837,300"/>
+<area shape="rect" id="node16" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="578,259,738,300"/>
+<area shape="rect" id="node18" href="$secure__transport__setup_8c.html" title="src/core/security/secure\l_transport_setup.c" alt="" coords="392,259,554,300"/>
+</map>

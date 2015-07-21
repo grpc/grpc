@@ -1,0 +1,18 @@
+<map id="src/core/surface/byte_buffer_reader.c" name="src/core/surface/byte_buffer_reader.c">
+<area shape="rect" id="node2" href="$byte__buffer__reader_8h.html" title="grpc/byte_buffer_reader.h" alt="" coords="397,95,573,121"/>
+<area shape="rect" id="node3" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="315,169,405,196"/>
+<area shape="rect" id="node6" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="443,251,573,278"/>
+<area shape="rect" id="node7" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="500,341,639,367"/>
+<area shape="rect" id="node8" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="663,333,790,375"/>
+<area shape="rect" id="node17" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="5,423,144,449"/>
+<area shape="rect" id="node18" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="881,95,1010,121"/>
+<area shape="rect" id="node21" href="$message__compress_8h.html" title="src/core/compression\l/message_compress.h" alt="" coords="649,244,805,285"/>
+<area shape="rect" id="node4" href="$status_8h.html" title="grpc/status.h" alt="" coords="269,251,368,278"/>
+<area shape="rect" id="node9" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="453,423,590,449"/>
+<area shape="rect" id="node15" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="295,579,431,606"/>
+<area shape="rect" id="node10" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="483,497,621,524"/>
+<area shape="rect" id="node11" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="397,736,587,763"/>
+<area shape="rect" id="node13" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="721,579,911,606"/>
+<area shape="rect" id="node16" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="530,572,697,613"/>
+<area shape="rect" id="node14" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="547,661,680,688"/>
+</map>

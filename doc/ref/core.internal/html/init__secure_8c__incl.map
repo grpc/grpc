@@ -1,0 +1,15 @@
+<map id="src/core/surface/init_secure.c" name="src/core/surface/init_secure.c">
+<area shape="rect" id="node2" href="$init_8h.html" title="src/core/surface/init.h" alt="" coords="117,102,267,129"/>
+<area shape="rect" id="node3" href="$trace_8h.html" title="src/core/debug/trace.h" alt="" coords="5,259,160,285"/>
+<area shape="rect" id="node6" href="$secure__endpoint_8h.html" title="src/core/security/secure\l_endpoint.h" alt="" coords="341,95,504,136"/>
+<area shape="rect" id="node16" href="$transport__security__interface_8h.html" title="src/core/tsi/transport\l_security_interface.h" alt="" coords="670,95,815,136"/>
+<area shape="rect" id="node4" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="335,572,524,599"/>
+<area shape="rect" id="node7" href="$endpoint_8h.html" title="src/core/iomgr/endpoint.h" alt="" coords="426,184,598,211"/>
+<area shape="rect" id="node11" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="325,259,462,285"/>
+<area shape="rect" id="node8" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="545,333,705,360"/>
+<area shape="rect" id="node9" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="495,415,631,442"/>
+<area shape="rect" id="node12" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="155,333,293,360"/>
+<area shape="rect" id="node13" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="231,415,420,442"/>
+<area shape="rect" id="node15" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="39,408,206,449"/>
+<area shape="rect" id="node14" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="259,497,392,524"/>
+</map>

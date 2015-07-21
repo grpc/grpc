@@ -1,0 +1,6 @@
+<map id="grpc_jwt_claims" name="grpc_jwt_claims">
+<area shape="rect" id="node2" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="33,111,109,137"/>
+<area shape="rect" id="node3" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="5,5,136,32"/>
+<area shape="rect" id="node4" href="$structgrpc__json.html" title="grpc_json" alt="" coords="133,111,213,137"/>
+<area shape="rect" id="node5" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="301,111,403,137"/>
+</map>

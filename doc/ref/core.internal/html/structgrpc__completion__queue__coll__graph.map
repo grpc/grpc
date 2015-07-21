@@ -1,0 +1,9 @@
+<map id="grpc_completion_queue" name="grpc_completion_queue">
+<area shape="rect" id="node2" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="5,276,103,303"/>
+<area shape="rect" id="node3" href="$structgrpc__cq__completion.html" title="grpc_cq_completion" alt="" coords="127,276,269,303"/>
+<area shape="rect" id="node4" href="$structgrpc__pollset.html" title="grpc_pollset" alt="" coords="293,276,386,303"/>
+<area shape="rect" id="node5" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="153,187,313,213"/>
+<area shape="rect" id="node6" href="$structgrpc__kick__fd__info.html" title="grpc_kick_fd_info" alt="" coords="170,96,295,123"/>
+<area shape="rect" id="node7" href="$structgrpc__wakeup__fd__info.html" title="grpc_wakeup_fd_info" alt="" coords="158,5,307,32"/>
+<area shape="rect" id="node8" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="337,187,475,213"/>
+</map>

@@ -1,0 +1,17 @@
+<map id="stream_list" name="stream_list">
+<area shape="rect" id="node2" href="$structstream.html" title="stream" alt="" coords="2436,173,2499,200"/>
+<area shape="rect" id="node15" href="$structstream__link.html" title="stream_link" alt="" coords="2581,205,2672,232"/>
+<area shape="rect" id="node3" href="$structgrpc__stream__op__buffer.html" title="grpc_stream_op_buffer" alt="" coords="1797,57,1957,84"/>
+<area shape="rect" id="node14" href="$structgrpc__chttp2__data__parser.html" title="grpc_chttp2_data_parser" alt="" coords="2100,16,2271,43"/>
+<area shape="rect" id="node4" href="$structgrpc__stream__op.html" title="grpc_stream_op" alt="" coords="1501,57,1620,84"/>
+<area shape="rect" id="node5" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="236,29,312,56"/>
+<area shape="rect" id="node11" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="391,61,480,88"/>
+<area shape="rect" id="node6" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="5,29,136,56"/>
+<area shape="rect" id="node7" href="$structgrpc__metadata__batch.html" title="grpc_metadata_batch" alt="" coords="1191,108,1341,135"/>
+<area shape="rect" id="node8" href="$structgrpc__mdelem__list.html" title="grpc_mdelem_list" alt="" coords="961,103,1088,129"/>
+<area shape="rect" id="node9" href="$structgrpc__linked__mdelem.html" title="grpc_linked_mdelem" alt="" coords="733,121,879,148"/>
+<area shape="rect" id="node10" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="560,85,663,112"/>
+<area shape="rect" id="node12" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="973,163,1076,189"/>
+<area shape="rect" id="node13" href="$structgrpc__begin__message.html" title="grpc_begin_message" alt="" coords="1191,57,1341,84"/>
+<area shape="rect" id="node16" href="$structop__closure.html" title="op_closure" alt="" coords="2142,291,2229,317"/>
+</map>

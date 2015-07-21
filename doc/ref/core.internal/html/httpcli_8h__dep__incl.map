@@ -1,0 +1,19 @@
+<map id="src/core/httpcli/httpcli.h" name="src/core/httpcli/httpcli.h">
+<area shape="rect" id="node2" href="$format__request_8h.html" title="src/core/httpcli/format\l_request.h" alt="" coords="160,80,309,121"/>
+<area shape="rect" id="node4" href="$httpcli_8c.html" title="src/core/httpcli/httpcli.c" alt="" coords="179,177,336,203"/>
+<area shape="rect" id="node5" href="$parser_8h.html" title="src/core/httpcli/parser.h" alt="" coords="384,87,544,114"/>
+<area shape="rect" id="node7" href="$credentials_8h.html" title="src/core/security/credentials.h" alt="" coords="1049,87,1247,114"/>
+<area shape="rect" id="node13" href="$credentials_8c.html" title="src/core/security/credentials.c" alt="" coords="544,177,741,203"/>
+<area shape="rect" id="node15" href="$google__default__credentials_8c.html" title="src/core/security/google\l_default_credentials.c" alt="" coords="1640,169,1803,211"/>
+<area shape="rect" id="node18" href="$jwt__verifier_8c.html" title="src/core/security/jwt\l_verifier.c" alt="" coords="1323,80,1461,121"/>
+<area shape="rect" id="node3" href="$format__request_8c.html" title="src/core/httpcli/format\l_request.c" alt="" coords="5,169,155,211"/>
+<area shape="rect" id="node6" href="$parser_8c.html" title="src/core/httpcli/parser.c" alt="" coords="360,177,520,203"/>
+<area shape="rect" id="node8" href="$security__context_8h.html" title="src/core/security/security\l_context.h" alt="" coords="1446,169,1615,211"/>
+<area shape="rect" id="node9" href="$client__auth__filter_8c.html" title="src/core/security/client\l_auth_filter.c" alt="" coords="1207,259,1361,300"/>
+<area shape="rect" id="node10" href="$security__connector_8c.html" title="src/core/security/security\l_connector.c" alt="" coords="1385,259,1554,300"/>
+<area shape="rect" id="node14" href="$credentials__metadata_8c.html" title="src/core/security/credentials\l_metadata.c" alt="" coords="765,169,952,211"/>
+<area shape="rect" id="node16" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="976,169,1136,211"/>
+<area shape="rect" id="node17" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="1160,169,1320,211"/>
+<area shape="rect" id="node11" href="$security__context_8c.html" title="src/core/security/security\l_context.c" alt="" coords="1578,259,1747,300"/>
+<area shape="rect" id="node12" href="$server__auth__filter_8c.html" title="src/core/security/server\l_auth_filter.c" alt="" coords="1772,259,1932,300"/>
+</map>

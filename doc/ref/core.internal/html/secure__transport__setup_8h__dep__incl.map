@@ -1,0 +1,7 @@
+<map id="src/core/security/secure_transport_setup.h" name="src/core/security/secure_transport_setup.h">
+<area shape="rect" id="node2" href="$httpcli_8c.html" title="src/core/httpcli/httpcli.c" alt="" coords="5,102,163,129"/>
+<area shape="rect" id="node3" href="$httpcli__security__connector_8c.html" title="src/core/httpcli/httpcli\l_security_connector.c" alt="" coords="187,95,339,136"/>
+<area shape="rect" id="node4" href="$secure__transport__setup_8c.html" title="src/core/security/secure\l_transport_setup.c" alt="" coords="363,95,525,136"/>
+<area shape="rect" id="node5" href="$server__secure__chttp2_8c.html" title="src/core/security/server\l_secure_chttp2.c" alt="" coords="549,95,709,136"/>
+<area shape="rect" id="node6" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="733,95,893,136"/>
+</map>

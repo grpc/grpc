@@ -1,0 +1,51 @@
+<map id="grpc_server_secure_state" name="grpc_server_secure_state">
+<area shape="rect" id="node2" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="315,608,412,635"/>
+<area shape="rect" id="node3" href="$structgrpc__server.html" title="grpc_server" alt="" coords="2462,1339,2554,1365"/>
+<area shape="rect" id="node7" href="$structgrpc__completion__queue.html" title="grpc_completion_queue" alt="" coords="609,2481,773,2508"/>
+<area shape="rect" id="node15" href="$structgrpc__channel.html" title="grpc_channel" alt="" coords="640,1312,743,1339"/>
+<area shape="rect" id="node26" href="$structgrpc__subchannel__call.html" title="grpc_subchannel_call" alt="" coords="799,936,949,963"/>
+<area shape="rect" id="node27" href="$structgrpc__credentials.html" title="grpc_credentials" alt="" coords="1003,633,1123,660"/>
+<area shape="rect" id="node28" href="$structgrpc__call.html" title="grpc_call" alt="" coords="1025,2097,1101,2124"/>
+<area shape="rect" id="node40" href="$structgrpc__security__connector.html" title="grpc_security_connector" alt="" coords="979,504,1146,531"/>
+<area shape="rect" id="node41" href="$structgrpc__auth__context.html" title="grpc_auth_context" alt="" coords="625,457,757,484"/>
+<area shape="rect" id="node44" href="$structgrpc__client__config.html" title="grpc_client_config" alt="" coords="998,317,1127,344"/>
+<area shape="rect" id="node45" href="$structgrpc__lb__policy.html" title="grpc_lb_policy" alt="" coords="638,317,745,344"/>
+<area shape="rect" id="node46" href="$structgrpc__resolver.html" title="grpc_resolver provides grpc_client_config objects to grpc_channel objects " alt="" coords="823,424,925,451"/>
+<area shape="rect" id="node32" href="$structrequested__call.html" title="requested_call" alt="" coords="2810,2049,2919,2076"/>
+<area shape="rect" id="node38" href="$structchannel__data.html" title="channel_data" alt="" coords="2813,636,2916,663"/>
+<area shape="rect" id="node4" href="$structrequest__matcher.html" title="request_matcher" alt="" coords="1773,1436,1896,1463"/>
+<area shape="rect" id="node33" href="$structregistered__method.html" title="registered_method" alt="" coords="2099,1397,2232,1424"/>
+<area shape="rect" id="node5" href="$structcall__data.html" title="call_data" alt="" coords="1402,1795,1478,1821"/>
+<area shape="rect" id="node6" href="$structgrpc__stream__op__buffer.html" title="A stream op buffer is a wrapper around stream operations that is dynamically extendable. " alt="" coords="611,1696,771,1723"/>
+<area shape="rect" id="node25" href="$structgrpc__transport__stream__op.html" title="grpc_transport_stream_op" alt="" coords="973,1844,1152,1871"/>
+<area shape="rect" id="node36" href="$structshutdown__tag.html" title="shutdown_tag" alt="" coords="1010,2547,1115,2573"/>
+<area shape="rect" id="node8" href="$structgrpc__cq__completion.html" title="grpc_cq_completion" alt="" coords="293,2585,434,2612"/>
+<area shape="rect" id="node9" href="$structgrpc__pollset.html" title="grpc_pollset" alt="" coords="317,2308,410,2335"/>
+<area shape="rect" id="node10" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="5,2333,165,2360"/>
+<area shape="rect" id="node11" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="17,2283,154,2309"/>
+<area shape="rect" id="node12" href="$structgrpc__subchannel.html" title="grpc_subchannel" alt="" coords="1001,1371,1125,1397"/>
+<area shape="rect" id="node13" href="$structgrpc__mdctx.html" title="grpc_mdctx" alt="" coords="318,1040,409,1067"/>
+<area shape="rect" id="node14" href="$structgrpc__connectivity__state__tracker.html" title="grpc_connectivity_state\l_tracker" alt="" coords="611,954,772,995"/>
+<area shape="rect" id="node16" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="312,1725,415,1752"/>
+<area shape="rect" id="node17" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="41,1165,130,1192"/>
+<area shape="rect" id="node39" href="$structchannel__registered__method.html" title="channel_registered\l_method" alt="" coords="2440,595,2576,637"/>
+<area shape="rect" id="node18" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="294,1532,433,1559"/>
+<area shape="rect" id="node19" href="$structgrpc__channel__filter.html" title="grpc_channel_filter" alt="" coords="624,1255,759,1281"/>
+<area shape="rect" id="node23" href="$structgrpc__call__element.html" title="grpc_call_element" alt="" coords="997,1541,1128,1568"/>
+<area shape="rect" id="node20" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="640,1503,743,1529"/>
+<area shape="rect" id="node35" href="$structgrpc__call__details.html" title="grpc_call_details" alt="" coords="1191,1469,1313,1496"/>
+<area shape="rect" id="node21" href="$structgrpc__channel__args.html" title="An array of arguments that can be passed around. " alt="" coords="623,1071,759,1097"/>
+<area shape="rect" id="node22" href="$structgrpc__arg.html" title="A single argument... " alt="" coords="326,801,401,828"/>
+<area shape="rect" id="node24" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="633,2309,750,2336"/>
+<area shape="rect" id="node34" href="$structgrpc__byte__buffer.html" title="grpc_byte_buffer" alt="" coords="1583,2492,1705,2519"/>
+<area shape="rect" id="node47" href="$structgrpc__channel__security__connector.html" title="grpc_channel_security\l_connector" alt="" coords="1362,543,1518,585"/>
+<area shape="rect" id="node29" href="$structgrpc__metadata__array.html" title="grpc_metadata_array" alt="" coords="617,2536,766,2563"/>
+<area shape="rect" id="node30" href="$structgpr__stack__lockfree.html" title="gpr_stack_lockfree" alt="" coords="1373,1257,1507,1284"/>
+<area shape="rect" id="node31" href="$unionlockfree__node.html" title="lockfree_node" alt="" coords="1010,1257,1115,1284"/>
+<area shape="rect" id="node37" href="$structlistener.html" title="listener" alt="" coords="2133,1564,2198,1591"/>
+<area shape="rect" id="node42" href="$structgrpc__auth__property.html" title="grpc_auth_property" alt="" coords="295,291,432,317"/>
+<area shape="rect" id="node43" href="$structgrpc__security__connector__vtable.html" title="grpc_security_connector\l_vtable" alt="" coords="608,509,775,550"/>
+<area shape="rect" id="node48" href="$structtcp__endpoint__list.html" title="tcp_endpoint_list" alt="" coords="2447,187,2569,213"/>
+<area shape="rect" id="node49" href="$structgrpc__endpoint.html" title="grpc_endpoint" alt="" coords="2112,187,2219,213"/>
+<area shape="rect" id="node50" href="$structgrpc__endpoint__vtable.html" title="grpc_endpoint_vtable" alt="" coords="1760,187,1909,213"/>
+</map>

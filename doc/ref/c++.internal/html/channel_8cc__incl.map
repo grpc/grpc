@@ -1,0 +1,18 @@
+<map id="src/cpp/client/channel.cc" name="src/cpp/client/channel.cc">
+<area shape="rect" id="node2" href="$channel_8h.html" title="src/cpp/client/channel.h" alt="" coords="397,87,558,114"/>
+<area shape="rect" id="node5" href="$status_8h.html" title="grpc++/status.h" alt="" coords="862,408,975,435"/>
+<area shape="rect" id="node7" href="$config_8h.html" title="grpc++/config.h" alt="" coords="913,572,1026,599"/>
+<area shape="rect" id="node9" href="$call_8h.html" title="grpc++/impl/call.h" alt="" coords="873,244,999,271"/>
+<area shape="rect" id="node11" href="$client__context_8h.html" title="grpc++/client_context.h" alt="" coords="1524,326,1684,353"/>
+<area shape="rect" id="node22" href="$completion__queue_8h.html" title="grpc++/completion_queue.h" alt="" coords="1313,326,1500,353"/>
+<area shape="rect" id="node44" href="$channel__arguments_8h.html" title="grpc++/channel_arguments.h" alt="" coords="1889,408,2085,435"/>
+<area shape="rect" id="node46" href="$credentials_8h.html" title="grpc++/credentials.h" alt="" coords="94,326,237,353"/>
+<area shape="rect" id="node47" href="$rpc__method_8h.html" title="grpc++/impl/rpc_method.h" alt="" coords="4579,87,4757,114"/>
+<area shape="rect" id="node4" href="$channel__interface_8h.html" title="grpc++/channel_interface.h" alt="" coords="385,169,569,196"/>
+<area shape="rect" id="node23" href="$grpc__library_8h.html" title="grpc++/impl/grpc_library.h" alt="" coords="661,408,837,435"/>
+<area shape="rect" id="node6" href="$status__code__enum_8h.html" title="grpc++/status_code\l_enum.h" alt="" coords="743,483,881,524"/>
+<area shape="rect" id="node25" href="$serialization__traits_8h.html" title="grpc++/impl/serialization\l_traits.h" alt="" coords="515,319,680,360"/>
+<area shape="rect" id="node16" href="$auth__context_8h.html" title="grpc++/auth_context.h" alt="" coords="1123,408,1277,435"/>
+<area shape="rect" id="node20" href="$time_8h.html" title="grpc++/time.h" alt="" coords="1301,408,1405,435"/>
+<area shape="rect" id="node18" href="$auth__property__iterator_8h.html" title="grpc++/auth_property\l_iterator.h" alt="" coords="1108,483,1257,524"/>
+</map>

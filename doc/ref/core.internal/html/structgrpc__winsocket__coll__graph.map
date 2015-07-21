@@ -1,0 +1,6 @@
+<map id="grpc_winsocket" name="grpc_winsocket">
+<area shape="rect" id="node2" href="$structgrpc__iomgr__object.html" title="grpc_iomgr_object" alt="" coords="5,96,137,123"/>
+<area shape="rect" id="node3" href="$structgrpc__winsocket__callback__info.html" title="grpc_winsocket_callback_info" alt="" coords="216,96,415,123"/>
+<area shape="rect" id="node4" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="439,96,578,123"/>
+<area shape="rect" id="node5" href="$structarg.html" title="arg" alt="" coords="488,5,529,32"/>
+</map>

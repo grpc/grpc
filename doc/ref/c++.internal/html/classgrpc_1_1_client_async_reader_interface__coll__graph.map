@@ -1,0 +1,4 @@
+<map id="grpc::ClientAsyncReaderInterface&lt; R &gt;" name="grpc::ClientAsyncReaderInterface&lt; R &gt;">
+<area shape="rect" id="node2" href="$classgrpc_1_1_client_async_streaming_interface.html" title="grpc::ClientAsyncStreaming\lInterface" alt="" coords="5,5,192,47"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_async_reader_interface.html" title="grpc::AsyncReaderInterface\&lt; R \&gt;" alt="" coords="217,13,437,39"/>
+</map>

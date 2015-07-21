@@ -1,0 +1,11 @@
+<map id="grpc_fd" name="grpc_fd">
+<area shape="rect" id="node3" href="$structgrpc__fd__watcher.html" title="grpc_fd_watcher" alt="" coords="311,428,431,455"/>
+<area shape="rect" id="node2" href="$structgrpc__iomgr__object.html" title="grpc_iomgr_object" alt="" coords="351,188,483,215"/>
+<area shape="rect" id="node4" href="$structgrpc__pollset.html" title="grpc_pollset" alt="" coords="212,293,305,320"/>
+<area shape="rect" id="node5" href="$structgrpc__pollset__kick__state.html" title="grpc_pollset_kick_state" alt="" coords="5,188,165,215"/>
+<area shape="rect" id="node6" href="$structgrpc__kick__fd__info.html" title="grpc_kick_fd_info" alt="" coords="23,96,148,123"/>
+<area shape="rect" id="node7" href="$structgrpc__wakeup__fd__info.html" title="grpc_wakeup_fd_info" alt="" coords="11,5,160,32"/>
+<area shape="rect" id="node8" href="$structgrpc__pollset__vtable.html" title="grpc_pollset_vtable" alt="" coords="190,188,327,215"/>
+<area shape="rect" id="node9" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="563,188,701,215"/>
+<area shape="rect" id="node10" href="$structarg.html" title="arg" alt="" coords="611,96,653,123"/>
+</map>

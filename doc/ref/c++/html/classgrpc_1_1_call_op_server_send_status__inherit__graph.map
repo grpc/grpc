@@ -1,0 +1,4 @@
+<map id="grpc::CallOpServerSendStatus" name="grpc::CallOpServerSendStatus">
+<area shape="rect" id="node2" href="$classgrpc_1_1_call_op_set.html" title="grpc::CallOpSet\&lt; grpc\l::CallOpSendInitialMetadata,\l grpc::CallOpSendMessage,\l grpc::CallOpServerSendStatus \&gt;" alt="" coords="257,5,477,76"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_call_op_set.html" title="grpc::CallOpSet\&lt; grpc\l::CallOpSendInitialMetadata,\l grpc::CallOpServerSendStatus \&gt;" alt="" coords="257,101,477,157"/>
+</map>

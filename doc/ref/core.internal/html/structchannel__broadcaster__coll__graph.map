@@ -1,0 +1,14 @@
+<map id="channel_broadcaster" name="channel_broadcaster">
+<area shape="rect" id="node2" href="$structgrpc__channel.html" title="grpc_channel" alt="" coords="423,557,526,584"/>
+<area shape="rect" id="node3" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="203,304,306,331"/>
+<area shape="rect" id="node11" href="$structregistered__call.html" title="registered_call" alt="" coords="333,468,442,495"/>
+<area shape="rect" id="node4" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="210,199,299,225"/>
+<area shape="rect" id="node5" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="411,95,487,121"/>
+<area shape="rect" id="node10" href="$structinternal__string.html" title="internal_string" alt="" coords="550,199,655,225"/>
+<area shape="rect" id="node6" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="481,5,612,32"/>
+<area shape="rect" id="node7" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="932,468,1030,495"/>
+<area shape="rect" id="node8" href="$structgrpc__mdctx.html" title="grpc_mdctx" alt="" coords="558,304,649,331"/>
+<area shape="rect" id="node9" href="$structinternal__metadata.html" title="internal_metadata" alt="" coords="679,468,808,495"/>
+<area shape="rect" id="node12" href="$structgrpc__iomgr__closure.html" title="A closure over a grpc_iomgr_cb_func. " alt="" coords="1054,468,1193,495"/>
+<area shape="rect" id="node13" href="$structarg.html" title="arg" alt="" coords="1103,304,1144,331"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="src/core/iomgr/pollset_windows.h" name="src/core/iomgr/pollset_windows.h">
+<area shape="rect" id="node2" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="89,273,228,300"/>
+<area shape="rect" id="node10" href="$socket__windows_8h.html" title="src/core/iomgr/socket\l_windows.h" alt="" coords="312,95,461,136"/>
+<area shape="rect" id="node3" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="304,512,493,539"/>
+<area shape="rect" id="node5" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="25,355,215,382"/>
+<area shape="rect" id="node7" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="481,355,617,382"/>
+<area shape="rect" id="node9" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="239,348,406,389"/>
+<area shape="rect" id="node6" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="268,437,401,464"/>
+<area shape="rect" id="node12" href="$iomgr__internal_8h.html" title="src/core/iomgr/iomgr\l_internal.h" alt="" coords="257,184,401,225"/>
+<area shape="rect" id="node13" href="$iomgr_8h.html" title="src/core/iomgr/iomgr.h" alt="" coords="252,273,407,300"/>
+</map>

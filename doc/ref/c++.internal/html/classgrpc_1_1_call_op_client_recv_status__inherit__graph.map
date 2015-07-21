@@ -1,0 +1,6 @@
+<map id="grpc::CallOpClientRecvStatus" name="grpc::CallOpClientRecvStatus">
+<area shape="rect" id="node2" href="$classgrpc_1_1_call_op_set.html" title="grpc::CallOpSet\&lt; grpc\l::CallOpGenericRecvMessage,\l grpc::CallOpClientRecvStatus \&gt;" alt="" coords="270,5,483,61"/>
+<area shape="rect" id="node3" href="$classgrpc_1_1_call_op_set.html" title="grpc::CallOpSet\&lt; grpc\l::CallOpRecvInitialMetadata,\l grpc::CallOpClientRecvStatus \&gt;" alt="" coords="270,85,483,141"/>
+<area shape="rect" id="node4" href="$classgrpc_1_1_call_op_set.html" title="grpc::CallOpSet\&lt; grpc\l::CallOpRecvInitialMetadata,\l grpc::CallOpGenericRecvMessage,\l grpc::CallOpClientRecvStatus \&gt;" alt="" coords="259,166,494,237"/>
+<area shape="rect" id="node5" href="$classgrpc_1_1_call_op_set.html" title="grpc::CallOpSet\&lt; grpc\l::CallOpRecvInitialMetadata,\l grpc::CallOpRecvMessage\l\&lt; R \&gt;, grpc::CallOpClientRecvStatus \&gt;" alt="" coords="252,261,501,331"/>
+</map>

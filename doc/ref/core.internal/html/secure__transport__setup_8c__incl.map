@@ -1,0 +1,24 @@
+<map id="src/core/security/secure_transport_setup.c" name="src/core/security/secure_transport_setup.c">
+<area shape="rect" id="node2" href="$secure__transport__setup_8h.html" title="src/core/security/secure\l_transport_setup.h" alt="" coords="695,95,857,136"/>
+<area shape="rect" id="node20" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="222,527,349,568"/>
+<area shape="rect" id="node23" href="$string_8h.html" title="string.h" alt="" coords="151,445,217,471"/>
+<area shape="rect" id="node24" href="$secure__endpoint_8h.html" title="src/core/security/secure\l_endpoint.h" alt="" coords="457,437,620,479"/>
+<area shape="rect" id="node25" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="539,616,677,643"/>
+<area shape="rect" id="node26" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="1005,102,1134,129"/>
+<area shape="rect" id="node3" href="$endpoint_8h.html" title="src/core/iomgr/endpoint.h" alt="" coords="638,534,810,561"/>
+<area shape="rect" id="node14" href="$security__connector_8h.html" title="src/core/security/security\l_connector.h" alt="" coords="791,184,961,225"/>
+<area shape="rect" id="node4" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="752,691,912,717"/>
+<area shape="rect" id="node7" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="701,773,837,799"/>
+<area shape="rect" id="node9" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="377,616,514,643"/>
+<area shape="rect" id="node5" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="500,929,689,956"/>
+<area shape="rect" id="node10" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="288,691,427,717"/>
+<area shape="rect" id="node11" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="43,773,232,799"/>
+<area shape="rect" id="node13" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="257,765,423,807"/>
+<area shape="rect" id="node12" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="273,855,407,881"/>
+<area shape="rect" id="node15" href="$grpc__security_8h.html" title="grpc/grpc_security.h" alt="" coords="827,281,970,307"/>
+<area shape="rect" id="node21" href="$transport__security__interface_8h.html" title="src/core/tsi/transport\l_security_interface.h" alt="" coords="1009,273,1154,315"/>
+<area shape="rect" id="node16" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="854,363,943,389"/>
+<area shape="rect" id="node17" href="$status_8h.html" title="grpc/status.h" alt="" coords="987,445,1085,471"/>
+<area shape="rect" id="node18" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="303,445,433,471"/>
+<area shape="rect" id="node19" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="373,534,512,561"/>
+</map>

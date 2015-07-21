@@ -1,0 +1,18 @@
+<map id="src/core/security/security_connector.h" name="src/core/security/security_connector.h">
+<area shape="rect" id="node2" href="$grpc__security_8h.html" title="grpc/grpc_security.h" alt="" coords="651,102,794,129"/>
+<area shape="rect" id="node17" href="$endpoint_8h.html" title="src/core/iomgr/endpoint.h" alt="" coords="117,341,289,367"/>
+<area shape="rect" id="node19" href="$transport__security__interface_8h.html" title="src/core/tsi/transport\l_security_interface.h" alt="" coords="818,95,963,136"/>
+<area shape="rect" id="node3" href="$grpc_8h.html" title="grpc/grpc.h" alt="" coords="678,184,767,211"/>
+<area shape="rect" id="node4" href="$status_8h.html" title="grpc/status.h" alt="" coords="820,259,919,285"/>
+<area shape="rect" id="node6" href="$byte__buffer_8h.html" title="grpc/byte_buffer.h" alt="" coords="555,259,685,285"/>
+<area shape="rect" id="node9" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="553,423,690,449"/>
+<area shape="rect" id="node15" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="115,579,251,606"/>
+<area shape="rect" id="node7" href="$compression_8h.html" title="grpc/compression.h" alt="" coords="395,341,533,367"/>
+<area shape="rect" id="node8" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="558,333,685,375"/>
+<area shape="rect" id="node10" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="364,497,503,524"/>
+<area shape="rect" id="node11" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="217,736,407,763"/>
+<area shape="rect" id="node13" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="541,579,731,606"/>
+<area shape="rect" id="node16" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="350,572,517,613"/>
+<area shape="rect" id="node14" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="367,661,500,688"/>
+<area shape="rect" id="node18" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="5,497,165,524"/>
+</map>

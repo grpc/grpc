@@ -1,0 +1,14 @@
+<map id="grpc_secure_transport_setup" name="grpc_secure_transport_setup">
+<area shape="rect" id="node2" href="$structgrpc__endpoint.html" title="grpc_endpoint" alt="" coords="581,60,687,87"/>
+<area shape="rect" id="node3" href="$structgrpc__endpoint__vtable.html" title="grpc_endpoint_vtable" alt="" coords="263,5,413,32"/>
+<area shape="rect" id="node4" href="$structgrpc__security__connector.html" title="grpc_security_connector" alt="" coords="551,189,717,216"/>
+<area shape="rect" id="node5" href="$structgrpc__auth__context.html" title="grpc_auth_context" alt="" coords="272,157,404,184"/>
+<area shape="rect" id="node6" href="$structgpr__refcount.html" title="gpr_refcount" alt="" coords="25,99,123,125"/>
+<area shape="rect" id="node7" href="$structgrpc__auth__property.html" title="grpc_auth_property" alt="" coords="5,157,143,184"/>
+<area shape="rect" id="node8" href="$structgrpc__security__connector__vtable.html" title="grpc_security_connector\l_vtable" alt="" coords="255,209,421,250"/>
+<area shape="rect" id="node9" href="$structgpr__slice__buffer.html" title="gpr_slice_buffer" alt="" coords="575,243,693,269"/>
+<area shape="rect" id="node10" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="300,275,376,301"/>
+<area shape="rect" id="node11" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="9,275,139,301"/>
+<area shape="rect" id="node12" href="$structtsi__handshaker.html" title="tsi_handshaker" alt="" coords="578,297,690,324"/>
+<area shape="rect" id="node13" href="$structtsi__handshaker__vtable.html" title="tsi_handshaker_vtable" alt="" coords="260,325,416,352"/>
+</map>

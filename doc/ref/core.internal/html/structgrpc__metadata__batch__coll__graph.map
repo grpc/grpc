@@ -1,0 +1,9 @@
+<map id="grpc_metadata_batch" name="grpc_metadata_batch">
+<area shape="rect" id="node2" href="$structgrpc__mdelem__list.html" title="grpc_mdelem_list" alt="" coords="15,484,141,511"/>
+<area shape="rect" id="node3" href="$structgrpc__linked__mdelem.html" title="grpc_linked_mdelem" alt="" coords="5,379,151,405"/>
+<area shape="rect" id="node4" href="$structgrpc__mdelem.html" title="grpc_mdelem" alt="" coords="27,288,129,315"/>
+<area shape="rect" id="node5" href="$structgrpc__mdstr.html" title="grpc_mdstr" alt="" coords="33,184,123,211"/>
+<area shape="rect" id="node6" href="$structgpr__slice.html" title="gpr_slice" alt="" coords="40,95,116,121"/>
+<area shape="rect" id="node7" href="$structgpr__slice__refcount.html" title="gpr_slice_refcount" alt="" coords="13,5,143,32"/>
+<area shape="rect" id="node8" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="165,484,268,511"/>
+</map>

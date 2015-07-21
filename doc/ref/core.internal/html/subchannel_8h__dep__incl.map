@@ -1,0 +1,30 @@
+<map id="src/core/client_config/subchannel.h" name="src/core/client_config/subchannel.h">
+<area shape="rect" id="node2" href="$lb__policy_8h.html" title="src/core/client_config\l/lb_policy.h" alt="" coords="452,95,599,136"/>
+<area shape="rect" id="node22" href="$subchannel__factory_8h.html" title="src/core/client_config\l/subchannel_factory.h" alt="" coords="767,273,919,315"/>
+<area shape="rect" id="node29" href="$subchannel_8c.html" title="src/core/client_config\l/subchannel.c" alt="" coords="789,95,936,136"/>
+<area shape="rect" id="node3" href="$client__config_8h.html" title="src/core/client_config\l/client_config.h" alt="" coords="537,184,684,225"/>
+<area shape="rect" id="node19" href="$pick__first_8h.html" title="src/core/client_config\l/lb_policies/pick_first.h" alt="" coords="119,184,275,225"/>
+<area shape="rect" id="node21" href="$lb__policy_8c.html" title="src/core/client_config\l/lb_policy.c" alt="" coords="367,184,513,225"/>
+<area shape="rect" id="node4" href="$resolver_8h.html" title="src/core/client_config\l/resolver.h" alt="" coords="596,273,743,315"/>
+<area shape="rect" id="node18" href="$client__config_8c.html" title="src/core/client_config\l/client_config.c" alt="" coords="425,273,572,315"/>
+<area shape="rect" id="node5" href="$client__channel_8h.html" title="src/core/channel/client\l_channel.h" alt="" coords="957,459,1112,501"/>
+<area shape="rect" id="node9" href="$resolver__factory_8h.html" title="src/core/client_config\l/resolver_factory.h" alt="" coords="600,363,747,404"/>
+<area shape="rect" id="node17" href="$resolver_8c.html" title="src/core/client_config\l/resolver.c" alt="" coords="429,363,576,404"/>
+<area shape="rect" id="node6" href="$secure__channel__create_8c.html" title="src/core/surface/secure\l_channel_create.c" alt="" coords="843,556,1003,597"/>
+<area shape="rect" id="node7" href="$client__channel_8c.html" title="src/core/channel/client\l_channel.c" alt="" coords="1027,556,1181,597"/>
+<area shape="rect" id="node8" href="$channel__create_8c.html" title="src/core/surface/channel\l_create.c" alt="" coords="651,556,818,597"/>
+<area shape="rect" id="node10" href="$resolver__registry_8h.html" title="src/core/client_config\l/resolver_registry.h" alt="" coords="600,459,747,501"/>
+<area shape="rect" id="node13" href="$dns__resolver_8h.html" title="src/core/client_config\l/resolvers/dns_resolver.h" alt="" coords="235,459,405,501"/>
+<area shape="rect" id="node15" href="$unix__resolver__posix_8h.html" title="src/core/client_config\l/resolvers/unix_resolver\l_posix.h" alt="" coords="771,452,933,508"/>
+<area shape="rect" id="node16" href="$resolver__factory_8c.html" title="src/core/client_config\l/resolver_factory.c" alt="" coords="429,459,576,501"/>
+<area shape="rect" id="node11" href="$resolver__registry_8c.html" title="src/core/client_config\l/resolver_registry.c" alt="" coords="480,556,627,597"/>
+<area shape="rect" id="node12" href="$init_8c.html" title="src/core/surface/init.c" alt="" coords="307,563,455,590"/>
+<area shape="rect" id="node14" href="$dns__resolver_8c.html" title="src/core/client_config\l/resolvers/dns_resolver.c" alt="" coords="112,556,283,597"/>
+<area shape="rect" id="node20" href="$pick__first_8c.html" title="src/core/client_config\l/lb_policies/pick_first.c" alt="" coords="5,273,160,315"/>
+<area shape="rect" id="node23" href="$channel_8h.html" title="src/core/surface/channel.h" alt="" coords="1163,467,1341,493"/>
+<area shape="rect" id="node28" href="$subchannel__factory_8c.html" title="src/core/client_config\l/subchannel_factory.c" alt="" coords="880,363,1032,404"/>
+<area shape="rect" id="node24" href="$call_8c.html" title="src/core/surface/call.c" alt="" coords="1571,563,1722,590"/>
+<area shape="rect" id="node25" href="$channel_8c.html" title="src/core/surface/channel.c" alt="" coords="1746,563,1923,590"/>
+<area shape="rect" id="node26" href="$lame__client_8c.html" title="src/core/surface/lame\l_client.c" alt="" coords="1205,556,1355,597"/>
+<area shape="rect" id="node27" href="$server_8c.html" title="src/core/surface/server.c" alt="" coords="1379,563,1547,590"/>
+</map>

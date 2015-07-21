@@ -1,0 +1,10 @@
+<map id="src/core/iomgr/endpoint.h" name="src/core/iomgr/endpoint.h">
+<area shape="rect" id="node2" href="$pollset_8h.html" title="src/core/iomgr/pollset.h" alt="" coords="617,155,777,181"/>
+<area shape="rect" id="node5" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="512,237,648,263"/>
+<area shape="rect" id="node7" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="405,80,542,107"/>
+<area shape="rect" id="node3" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="404,393,593,420"/>
+<area shape="rect" id="node8" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="267,155,405,181"/>
+<area shape="rect" id="node9" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="5,237,195,263"/>
+<area shape="rect" id="node11" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="219,229,386,271"/>
+<area shape="rect" id="node10" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="236,319,369,345"/>
+</map>

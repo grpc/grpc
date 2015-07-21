@@ -1,0 +1,18 @@
+<map id="src/core/iomgr/iomgr.c" name="src/core/iomgr/iomgr.c">
+<area shape="rect" id="node2" href="$iomgr_8h.html" title="src/core/iomgr/iomgr.h" alt="" coords="76,177,231,203"/>
+<area shape="rect" id="node4" href="$iomgr__internal_8h.html" title="src/core/iomgr/iomgr\l_internal.h" alt="" coords="177,80,321,121"/>
+<area shape="rect" id="node5" href="$sync_8h.html" title="grpc/support/sync.h" alt="" coords="259,348,397,375"/>
+<area shape="rect" id="node13" href="$alarm__internal_8h.html" title="src/core/iomgr/alarm\l_internal.h" alt="" coords="365,259,509,300"/>
+<area shape="rect" id="node14" href="$string_8h.html" title="src/core/support/string.h" alt="" coords="608,87,773,114"/>
+<area shape="rect" id="node17" href="$alloc_8h.html" title="grpc/support/alloc.h" alt="" coords="797,348,936,375"/>
+<area shape="rect" id="node18" href="$log_8h.html" title="grpc/support/log.h" alt="" coords="950,87,1079,114"/>
+<area shape="rect" id="node20" href="$string__util_8h.html" title="grpc/support/string\l_util.h" alt="" coords="1103,80,1235,121"/>
+<area shape="rect" id="node21" href="$thd_8h.html" title="grpc/support/thd.h" alt="" coords="879,266,1009,293"/>
+<area shape="rect" id="node6" href="$port__platform_8h.html" title="grpc/support/port_platform.h" alt="" coords="435,587,624,613"/>
+<area shape="rect" id="node8" href="$sync__generic_8h.html" title="grpc/support/sync_generic.h" alt="" coords="5,430,195,457"/>
+<area shape="rect" id="node10" href="$time_8h.html" title="grpc/support/time.h" alt="" coords="461,430,597,457"/>
+<area shape="rect" id="node12" href="$cancellable__platform_8h.html" title="grpc/support/cancellable\l_platform.h" alt="" coords="219,423,386,464"/>
+<area shape="rect" id="node9" href="$atm_8h.html" title="grpc/support/atm.h" alt="" coords="236,512,369,539"/>
+<area shape="rect" id="node15" href="$slice__buffer_8h.html" title="grpc/support/slice\l_buffer.h" alt="" coords="545,169,671,211"/>
+<area shape="rect" id="node16" href="$slice_8h.html" title="grpc/support/slice.h" alt="" coords="534,266,671,293"/>
+</map>

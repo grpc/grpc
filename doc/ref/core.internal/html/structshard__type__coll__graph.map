@@ -1,0 +1,7 @@
+<map id="shard_type" name="shard_type">
+<area shape="rect" id="node2" href="$structgrpc__alarm__heap.html" title="grpc_alarm_heap" alt="" coords="45,209,171,235"/>
+<area shape="rect" id="node3" href="$structgrpc__alarm.html" title="grpc_alarm" alt="" coords="22,96,111,123"/>
+<area shape="rect" id="node4" href="$structarg.html" title="arg" alt="" coords="38,5,79,32"/>
+<area shape="rect" id="node5" href="$structgpr__timespec.html" title="gpr_timespec" alt="" coords="157,5,259,32"/>
+<area shape="rect" id="node6" href="$structgrpc__time__averaged__stats.html" title="grpc_time_averaged\l_stats" alt="" coords="245,201,389,243"/>
+</map>
