@@ -322,11 +322,6 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
   (new GoogleAuth()).getApplicationDefault(function(err, credential) {
     assert.ifError(err);
     var arg = {
-      response_type: 'COMPRESSABLE',
-      response_size: 314159,
-      payload: {
-        body: zeroBuffer(271828)
-      },
       fill_username: true,
       fill_oauth_scope: true
     };
