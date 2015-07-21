@@ -257,6 +257,7 @@ static void zookeeper_get_children_node_completion(int rc, const char *value, in
   if (address != NULL) {
     /* Further resolve address by DNS */
     grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
+    gpr_free(address);
   } else {
     gpr_mu_lock(&r->mu);
     r->resolved_total--;
@@ -275,7 +276,7 @@ static void zookeeper_get_children_completion(int rc, const struct String_vector
   char path[GRPC_MAX_ZOOKEEPER_BUFFER_SIZE];
   int i;
   zookeeper_resolver *r = (zookeeper_resolver *)arg;
-  
+
   if (rc) {
     gpr_log(GPR_ERROR, "Error in getting zookeeper children of %s", r->name);
     return;
