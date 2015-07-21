@@ -274,7 +274,6 @@ namespace Grpc.Core.Internal
             
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<byte[], byte[]>(asyncCall);
             var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
 
             await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, "No such method."), Metadata.Empty);
@@ -286,6 +285,13 @@ namespace Grpc.Core.Internal
     {
         public static Status StatusFromException(Exception e)
         {
+            var rpcException = e as RpcException;
+            if (rpcException != null)
+            {
+                // use the status thrown by handler.
+                return rpcException.Status;
+            }
+
             // TODO(jtattermusch): what is the right status code here?
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
