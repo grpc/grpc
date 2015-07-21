@@ -905,6 +905,7 @@ test_runner() {
     echo "will run:"
     echo "  $cmd"
     echo "on $host"
+    echo "$(date)" 
     gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   else
     # gcloud's auto-uploading of RSA keys doesn't work for Windows VMs.
@@ -918,25 +919,78 @@ test_runner() {
   #
   PID=$!
   echo "pid is $PID"
-  for x in {0..5}
+  sleep_intervals=( 1 1 1 1 1 1 1 1 1 1 10 10 10 10 10)
+  for x in "${sleep_intervals[@]}"
   do
     if ps -p $PID
     then
       # test command has not returned and 60 seconds timeout has not reached
-      sleep 10
+      sleep $x 
     else
       # test command has returned, return the return code from the test command
       wait $PID
       local ret=$?
       echo " test runner return $ret before timeout"
+      echo "$(date)" 
       return $ret
     fi
   done
   kill $PID
   echo "test got killed by timeout return as failure"
+  echo "$(date)" 
   return 1
 }
 
+test_runner_all() {
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
+  if [ "$grpc_client_platform" != "Windows" ]
+  then
+    echo "will run here:"
+    echo "  ${cmd_all[0]}; ${cmd_all[1]}; ${cmd_all[2]}; ${cmd_all[3]}; ${cmd_all[4]}; ${cmd_all[5]}; ${cmd_all[6]}"
+    echo "on $host"
+    echo "$(date)" 
+    gcloud compute $project_opt ssh $zone_opt $host --command "${cmd_all[0]}; ${cmd_all[1]}; ${cmd_all[2]}; ${cmd_all[3]}; ${cmd_all[4]}; ${cmd_all[5]}; ${cmd_all[6]}" &
+  else
+    # gcloud's auto-uploading of RSA keys doesn't work for Windows VMs.
+    # So we have a linux machine that is authorized to access the Windows
+    # machine through ssh and we use gcloud auth support to logon to the proxy.
+    echo "will run:"
+    echo "  $cmd"
+    echo "on $host (through grpc-windows-proxy)"
+    gcloud compute $project_opt ssh $zone_opt stoked-keyword-656@grpc-windows-proxy --command "ssh $host '$cmd'" &
+  fi
+  #
+  PID=$!
+  echo "pid is $PID"
+  sleep_intervals=( 1 1 1 1 1 1 1 1 1 1 10 10 10 10 10)
+  for x in "${sleep_intervals[@]}"
+  do
+    if ps -p $PID
+    then
+      # test command has not returned and 60 seconds timeout has not reached
+      sleep $x 
+    else
+      # test command has returned, return the return code from the test command
+      wait $PID
+      local ret=$?
+      echo " test runner return $ret before timeout"
+      echo "$(date)" 
+      return $ret
+    fi
+  done
+  kill $PID
+  echo "test got killed by timeout return as failure"
+  echo "$(date)" 
+  return 1
+}
+
+# Runs a test command on a docker instance.
+#
+# call-seq:
+#   grpc_interop_test <test_name> <host> <client_type> \
+#                     <server_host> <server_type>
 # Runs a test command on a docker instance.
 #
 # call-seq:
@@ -998,6 +1052,46 @@ grpc_interop_test() {
   [[ -n $cmd ]] || return 1
 
   test_runner
+}
+
+grpc_interop_test_all() {
+  _grpc_ensure_gcloud_ssh || return 1;
+  # declare vars local so that they don't pollute the shell environment
+  # where this func is used.
+
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  #  grpc_interop_test_args
+  local test_case host grpc_gen_test_cmd grpc_server grpc_port grpc_client_platform
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f grpc_interop_test_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+
+  local addr=$(gce_find_internal_ip $grpc_project $grpc_server)
+  [[ -n $addr ]] || return 1
+  flags_all[0]=$(grpc_interop_test_flags $addr 8010 $test_case)
+  flags_all[1]=$(grpc_interop_test_flags $addr 8020 $test_case)
+  flags_all[2]=$(grpc_interop_test_flags $addr 8030 $test_case)
+  flags_all[3]=$(grpc_interop_test_flags $addr 8040 $test_case)
+  flags_all[4]=$(grpc_interop_test_flags $addr 8050 $test_case)
+  flags_all[5]=$(grpc_interop_test_flags $addr 8060 $test_case)
+  flags_all[6]=$(grpc_interop_test_flags $addr 8070 $test_case)
+  cmd_all[0]=$($grpc_gen_test_cmd ${flags_all[0]})
+  cmd_all[1]=$($grpc_gen_test_cmd ${flags_all[1]})
+  cmd_all[2]=$($grpc_gen_test_cmd ${flags_all[2]})
+  cmd_all[3]=$($grpc_gen_test_cmd ${flags_all[3]})
+  cmd_all[4]=$($grpc_gen_test_cmd ${flags_all[4]})
+  cmd_all[5]=$($grpc_gen_test_cmd ${flags_all[5]})
+  cmd_all[6]=$($grpc_gen_test_cmd ${flags_all[6]})
+
+  test_runner_all
+
+  #local flags=$(grpc_interop_test_flags $addr $grpc_port $test_case)
+  #[[ -n $flags ]] || return 1
+  #cmd=$($grpc_gen_test_cmd $flags)
+  #[[ -n $cmd ]] || return 1
+
+  #test_runner
 }
 
 # Runs a test command on a docker instance.

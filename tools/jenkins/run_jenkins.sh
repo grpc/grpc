@@ -51,58 +51,21 @@ esac
 
 if [ "$platform" == "linux" ]
 then
-  echo "building $language on Linux"
-
-  cd `dirname $0`/../..
-  git_root=`pwd`
-  cd -
-
-  # Use image name based on Dockerfile checksum
-  DOCKER_IMAGE_NAME=grpc_jenkins_slave_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
-
-  # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave
-
-  # Create a local branch so the child Docker script won't complain
-  git branch jenkins-docker
-
-  # Make sure the CID file is gone.
-  rm -f docker.cid
-
-  # Run tests inside docker
-  docker run \
-    -e "config=$config" \
-    -e "language=$language" \
-    -e "arch=$arch" \
-    -i \
-    -v "$git_root:/var/local/jenkins/grpc" \
-    --cidfile=docker.cid \
-    $DOCKER_IMAGE_NAME \
-    bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
-
-  DOCKER_CID=`cat docker.cid`
-  docker kill $DOCKER_CID
-  docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
-  sleep 4
-  docker rm $DOCKER_CID || true
-
+  if [ "$config" != "opt" ]
+  then
+    exit 0
+  fi
+  if [ "$language" != "sanity" ]
+  then
+    exit 0
+  fi
+  python tools/run_tests/run_interop.py
 elif [ "$platform" == "windows" ]
 then
-  echo "building $language on Windows"
-
-  # Prevent msbuild from picking up "platform" env variable, which would break the build
-  unset platform
-
-  # TODO(jtattermusch): integrate nuget restore in a nicer way.
-  /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
-  /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
-
-  python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
+  exit 0
 elif [ "$platform" == "macos" ]
 then
-  echo "building $language on MacOS"
-
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+  exit 0
 else
   echo "Unknown platform $platform"
   exit 1

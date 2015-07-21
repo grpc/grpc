@@ -55,21 +55,28 @@ main() {
       then
         server_vm_test="grpc-windows-interop1"
       fi
+      echo "$(date)"
       if grpc_interop_test $test_case $client_vm_test $client $server_vm_test $server> /tmp/$log_file_name 2>&1
       then
+        echo "$(date)"
         echo "          ['$test_case', '$client', '$server', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/$result.txt
       else
+        echo "$(date)"
         echo "          ['$test_case', '$client', '$server', false, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/$result.txt
       fi
+      echo "$(date)"
       gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/interop_result/$test_case/$cur/logs/$log_file_name
+      echo "$(date)"
       rm /tmp/$log_file_name
     done
   done
   if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "$(date)"
     cat pre.html /tmp/$result.txt post.html > /tmp/$result.html
     gsutil cp /tmp/$result.html gs://stoked-keyword-656-output/interop_result/$test_case/$cur/$result.html
     rm /tmp/$result.txt
     rm /tmp/$result.html
+    echo "$(date)" 
   fi
 }
 
