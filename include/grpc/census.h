@@ -100,6 +100,27 @@ int census_context_deserialize(const char *buffer, census_context **context);
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
 
+/* Start a new logical tracing "operation". The operation ends when
+ * census_trace_end_op() is called. */
+void census_trace_start_op(census_context *context);
++ service method start time,
+    peer ? +sampled ?
+
+                    /* End a tracing operation. Must be matched with an earlier
+                     * census_start_op().
+                     */
+    void
+    census_trace_end_op(census_context *context);
++ status
+
+    /* Insert a trace record into the trace stream. The record consists of an
+     * arbitrary size buffer, the size of which is provided in 'n'. */
+    void
+    census_trace_print(census_context *context, const char *buffer, size_t n);
+
+census_active_ops_as_html() + struct or char *query ops
+    census_sampled_ops_as_html()
+
 #ifdef __cplusplus
 }
 #endif
