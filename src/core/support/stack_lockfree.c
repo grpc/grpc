@@ -67,7 +67,7 @@ typedef union lockfree_node {
 #define ENTRY_ALIGNMENT_BITS 3 /* make sure that entries aligned to 8-bytes */
 #define INVALID_ENTRY_INDEX                        \
   ((1 << 16) - 1) /* reserve this entry as invalid \
-                       */
+                        */
 
 struct gpr_stack_lockfree {
   lockfree_node *entries;
@@ -117,8 +117,8 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
     GPR_ASSERT(test.contents.pad == 0);
     newtest.atm = test.atm;
     newtest.contents.pad = 1;
-    GPR_ASSERT(gpr_atm_no_barrier_cas(&(stack->entries[entry].atm),
-				      test.atm, newtest.atm));
+    GPR_ASSERT(gpr_atm_no_barrier_cas(&(stack->entries[entry].atm), test.atm,
+                                      newtest.atm));
   }
 #endif
 #endif
@@ -155,8 +155,8 @@ int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
     GPR_ASSERT(test.contents.pad == 1);
     newtest.atm = test.atm;
     newtest.contents.pad = 0;
-    GPR_ASSERT(gpr_atm_no_barrier_cas(&(stack->entries[head.contents.index].atm),
-				      test.atm, newtest.atm));
+    GPR_ASSERT(gpr_atm_no_barrier_cas(
+        &(stack->entries[head.contents.index].atm), test.atm, newtest.atm));
   }
 #endif
 #endif
