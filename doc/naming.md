@@ -8,7 +8,8 @@ gRPC supports DNS as the default name-system. A number of alternative name-syste
 
  A fully qualified, self contained name used for gRPC channel construction uses the syntax:
 
-```scheme://authority/endpoint_name
+```
+scheme://authority/endpoint_name
 ```
 
 Here, scheme indicates the name-system to be used. Example schemes to be supported include: 
@@ -31,11 +32,12 @@ Resolvers should be able to contact the authority and get a resolution that they
 
 ## Zookeeper
 
-Apache [ZooKeeper](https://zookeeper.apache.org/) is a popular solution for building name-systems. Curator is a service discovery system built on to of ZooKeeper. We propose to organize names hierarchically as `/path/service/instance similar` to Apache Curator.
+Apache [ZooKeeper](https://zookeeper.apache.org/) is a popular solution for building name-systems. Curator is a service discovery system built on to of ZooKeeper. We propose to organize names hierarchically as `/path/service/instance` similar to Apache Curator.
 
 A fully-qualified ZooKeeper name used to construct a gRPC channel will look as follows:
 
-```zookeeper://host:port/path/service/instance
+```
+zookeeper://host:port/path/service/instance
 ```
 Here `zookeeper` is the scheme identifying the name-system. `host:port` identifies an authoritative name-server for this scheme (i.e., a  Zookeeper server). The host can be an IP address or a DNS name. 
 Finally `/path/service/instance` is the Zookeeper name to be resolved. 
