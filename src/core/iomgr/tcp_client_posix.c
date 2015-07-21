@@ -114,6 +114,8 @@ static void on_writable(void *acp, int success) {
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
 
+  grpc_alarm_cancel(&ac->alarm);
+
   gpr_mu_lock(&ac->mu);
   if (success) {
     do {
@@ -178,8 +180,6 @@ finish:
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac);
-  } else {
-    grpc_alarm_cancel(&ac->alarm);
   }
   cb(cb_arg, ep);
 }
