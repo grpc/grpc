@@ -92,26 +92,6 @@ TEST_F(SecureAuthContextTest, Iterators) {
   EXPECT_EQ("bar", p2.second);
   ++iter;
   EXPECT_EQ(context.end(), iter);
-
-  int i = 0;
-  for (auto p = context.begin(); p != context.end(); p++) {
-    switch (i++) {
-      case 0:
-        EXPECT_EQ("name", (*p).first);
-        EXPECT_EQ("chapi", (*p).second);
-        break;
-      case 1:
-        EXPECT_EQ("name", (*p).first);
-        EXPECT_EQ("chapo", (*p).second);
-        break;
-      case 2:
-        EXPECT_EQ("foo", (*p).first);
-        EXPECT_EQ("bar", (*p).second);
-        break;
-      default:
-        EXPECT_TRUE(0);
-    }
-  }
 }
 
 }  // namespace
