@@ -677,6 +677,21 @@
       "vs_project_guid": "{B6E81D84-2ACB-41B8-8781-493A944C7817}"
     },
     {
+      "name": "health_check_service",
+      "build": "all",
+      "language": "c++",
+      "headers": [
+        "include/grpc++/health_check_service.h"
+      ],
+      "src": [
+        "src/cpp/util/health_check/health.proto",
+        "src/cpp/util/health_check/health_check_service.cc"
+      ],
+      "deps": [
+        "grpc++"
+      ]
+    },
+    {
       "name": "interop_client_helper",
       "build": "private",
       "language": "c++",
@@ -2173,6 +2188,23 @@
       ],
       "secure": "no",
       "vs_project_guid": "{069E9D05-B78B-4751-9252-D21EBAE7DE8E}"
+    },
+    {
+      "name": "health_check_service_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/health_check_service_test.cc"
+      ],
+      "deps": [
+        "health_check_service",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
     },
     {
       "name": "interop_client",

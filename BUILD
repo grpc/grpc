@@ -848,6 +848,25 @@ cc_library(
 
 
 cc_library(
+  name = "health_check_service",
+  srcs = [
+    "include/grpc++/health_check_service.h",
+    "src/cpp/util/health_check/health.proto",
+    "src/cpp/util/health_check/health_check_service.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":grpc++",
+  ],
+)
+
+
+cc_library(
   name = "grpc_csharp_ext",
   srcs = [
     "src/csharp/ext/grpc_csharp_ext.c",

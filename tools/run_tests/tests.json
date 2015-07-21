@@ -705,6 +705,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "health_check_service_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "interop_test", 
     "platforms": [
       "windows", 

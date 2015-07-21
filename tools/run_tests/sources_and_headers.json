@@ -1306,6 +1306,23 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "health_check_service"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "health_check_service_test", 
+    "src": [
+      "test/cpp/util/health_check_service_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
@@ -10964,6 +10981,22 @@
       "src/compiler/ruby_generator_helpers-inl.h", 
       "src/compiler/ruby_generator_map-inl.h", 
       "src/compiler/ruby_generator_string-inl.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "include/grpc++/health_check_service.h", 
+      "src/cpp/util/health_check/health.grpc.pb.h", 
+      "src/cpp/util/health_check/health.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "health_check_service", 
+    "src": [
+      "include/grpc++/health_check_service.h", 
+      "src/cpp/util/health_check/health_check_service.cc"
     ]
   }, 
   {
