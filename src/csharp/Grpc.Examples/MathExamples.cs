@@ -46,8 +46,7 @@ namespace math
 
         public static async Task DivAsyncExample(Math.IMathClient client)
         {
-            Task<DivReply> resultTask = client.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-            DivReply result = await resultTask;
+            DivReply result = await client.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
             Console.WriteLine("DivAsync Result: " + result);
         }
 

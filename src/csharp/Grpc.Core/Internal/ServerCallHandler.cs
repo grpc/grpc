@@ -79,7 +79,7 @@ namespace Grpc.Core.Internal
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
                 Preconditions.CheckArgument(!await requestStream.MoveNext());
-                var result = await handler(context, request);
+                var result = await handler(request, context);
                 status = context.Status;
                 await responseStream.WriteAsync(result);
             } 
@@ -133,7 +133,7 @@ namespace Grpc.Core.Internal
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
                 Preconditions.CheckArgument(!await requestStream.MoveNext());
-                await handler(context, request, responseStream);
+                await handler(request, responseStream, context);
                 status = context.Status;
             }
             catch (Exception e)
@@ -184,7 +184,7 @@ namespace Grpc.Core.Internal
             var context = HandlerUtils.NewContext(newRpc);
             try
             {
-                var result = await handler(context, requestStream);
+                var result = await handler(requestStream, context);
                 status = context.Status;
                 try
                 {
@@ -242,7 +242,7 @@ namespace Grpc.Core.Internal
             var context = HandlerUtils.NewContext(newRpc);
             try
             {
-                await handler(context, requestStream, responseStream);
+                await handler(requestStream, responseStream, context);
                 status = context.Status;
             }
             catch (Exception e)
