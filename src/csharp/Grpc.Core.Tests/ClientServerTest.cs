@@ -129,7 +129,7 @@ namespace Grpc.Core.Tests
             }
             catch (RpcException e)
             {
-                Assert.AreEqual(StatusCode.Unauthenticated, e.Status.StatusCode); 
+                Assert.AreEqual(StatusCode.Unauthenticated, e.Status.StatusCode);
             }
         }
 
@@ -215,18 +215,25 @@ namespace Grpc.Core.Tests
         [Test]
         public void AsyncUnaryCall_EchoMetadata()
         {
-            var metadata = new Metadata
+            var headers = new Metadata
             {
                 new Metadata.Entry("asciiHeader", "abcdefg"),
                 new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff } ),
             };
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, metadata);
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, headers);
             var callResult = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None);
 
             Assert.AreEqual("ABC", callResult.Result.Result);
 
-            // TODO: implement assertion...
-            //Assert.Fail();
+            Assert.AreEqual(StatusCode.OK, callResult.GetStatus().StatusCode);
+
+            var trailers = callResult.GetTrailers();
+            Assert.AreEqual(2, trailers.Count);
+            Assert.AreEqual(headers[0].Key, trailers[0].Key);
+            Assert.AreEqual(headers[0].Value, trailers[0].Value);
+
+            Assert.AreEqual(headers[1].Key, trailers[1].Key);
+            CollectionAssert.AreEqual(headers[1].ValueBytes, trailers[1].ValueBytes);
         }
 
         [Test]
