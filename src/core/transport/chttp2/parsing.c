@@ -588,7 +588,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
   GPR_ASSERT(stream_parsing);
 
   GRPC_CHTTP2_IF_TRACING(gpr_log(
-      GPR_INFO, "HTTP:%d:HDR: %s: %s", stream_parsing->id,
+      GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", stream_parsing->id,
       transport_parsing->is_client ? "CLI" : "SVR",
       grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
