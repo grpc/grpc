@@ -43,15 +43,15 @@ namespace Grpc.Core
     public sealed class AsyncClientStreamingCall<TRequest, TResponse> : IDisposable
     {
         readonly IClientStreamWriter<TRequest> requestStream;
-        readonly Task<TResponse> result;
+        readonly Task<TResponse> responseAsync;
         readonly Func<Status> getStatusFunc;
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> result, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> responseAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.requestStream = requestStream;
-            this.result = result;
+            this.responseAsync = responseAsync;
             this.getStatusFunc = getStatusFunc;
             this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
@@ -60,11 +60,11 @@ namespace Grpc.Core
         /// <summary>
         /// Asynchronous call result.
         /// </summary>
-        public Task<TResponse> Result
+        public Task<TResponse> ResponseAsync
         {
             get
             {
-                return this.result;
+                return this.responseAsync;
             }
         }
 
@@ -85,7 +85,7 @@ namespace Grpc.Core
         /// <returns></returns>
         public TaskAwaiter<TResponse> GetAwaiter()
         {
-            return result.GetAwaiter();
+            return responseAsync.GetAwaiter();
         }
 
         /// <summary>

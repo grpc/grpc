@@ -152,7 +152,7 @@ namespace Grpc.Core.Tests
         public void AsyncUnaryCall()
         {
             var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).Result.Result;
+            var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).ResponseAsync.Result;
             Assert.AreEqual("ABC", result);
         }
 
@@ -183,7 +183,7 @@ namespace Grpc.Core.Tests
                 var callResult = Calls.AsyncClientStreamingCall(call, CancellationToken.None);
 
                 await callResult.RequestStream.WriteAll(new string[] { "A", "B", "C" });
-                Assert.AreEqual("ABC", await callResult.Result);
+                Assert.AreEqual("ABC", await callResult.ResponseAsync);
             }).Wait();
         }
 
@@ -203,7 +203,7 @@ namespace Grpc.Core.Tests
 
                 try
                 {
-                    await callResult.Result;
+                    await callResult.ResponseAsync;
                 }
                 catch (RpcException e)
                 {
@@ -223,7 +223,7 @@ namespace Grpc.Core.Tests
             var call = new Call<string, string>(ServiceName, EchoMethod, channel, headers);
             var callResult = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None);
 
-            Assert.AreEqual("ABC", callResult.Result.Result);
+            Assert.AreEqual("ABC", callResult.ResponseAsync.Result);
 
             Assert.AreEqual(StatusCode.OK, callResult.GetStatus().StatusCode);
 
