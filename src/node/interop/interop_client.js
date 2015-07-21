@@ -342,8 +342,6 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
         assert.ifError(error);
         var call = client.unaryCall(arg, function(err, resp) {
           assert.ifError(err);
-          assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
-          assert.strictEqual(resp.payload.body.length, 314159);
           assert.strictEqual(resp.username, expected_user);
           assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
         });
