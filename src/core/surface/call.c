@@ -495,7 +495,8 @@ static void set_encodings_accepted_by_peer(grpc_call *call,
   for (i = 0; i < accept_encoding_parts.count; i++) {
     const gpr_slice* slice = &accept_encoding_parts.slices[i];
     if (grpc_compression_algorithm_parse(
-            (const char *)GPR_SLICE_START_PTR(*slice), &algorithm)) {
+            (const char *)GPR_SLICE_START_PTR(*slice), GPR_SLICE_LENGTH(*slice),
+            &algorithm)) {
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
       /* TODO(dgq): it'd be nice to have a slice-to-cstr function to easily
@@ -1344,10 +1345,12 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
-    algorithm = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+    algorithm =
+        ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    if (!grpc_compression_algorithm_parse(md_c_str, &algorithm)) {
+    if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
+                                          &algorithm)) {
       gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
       assert(0);
     }

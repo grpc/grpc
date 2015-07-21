@@ -100,7 +100,7 @@ static grpc_mdelem* compression_md_filter(void *user_data, grpc_mdelem *md) {
 
   if (md->key == channeld->mdstr_request_compression_algorithm_key) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    if (!grpc_compression_algorithm_parse(md_c_str,
+    if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
                                           &calld->compression_algorithm)) {
       gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'. Ignoring.",
               md_c_str);
