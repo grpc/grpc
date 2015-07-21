@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -70,15 +71,16 @@ namespace Grpc.Core.Internal
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
-            Status status = Status.DefaultSuccess;
+            Status status;
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
                 Preconditions.CheckArgument(!await requestStream.MoveNext());
-                var context = new ServerCallContext();  // TODO(jtattermusch): initialize the context
+                var context = HandlerUtils.NewContext(newRpc);
                 var result = await handler(context, request);
+                status = context.Status;
                 await responseStream.WriteAsync(result);
             } 
             catch (Exception e)
@@ -123,7 +125,7 @@ namespace Grpc.Core.Internal
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
-            Status status = Status.DefaultSuccess;
+            Status status;
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
@@ -131,8 +133,9 @@ namespace Grpc.Core.Internal
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
                 Preconditions.CheckArgument(!await requestStream.MoveNext());
 
-                var context = new ServerCallContext();  // TODO(jtattermusch): initialize the context
+                var context = HandlerUtils.NewContext(newRpc);
                 await handler(context, request, responseStream);
+                status = context.Status;
             }
             catch (Exception e)
             {
@@ -176,12 +179,13 @@ namespace Grpc.Core.Internal
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
-            var context = new ServerCallContext();  // TODO(jtattermusch): initialize the context
+            var context = HandlerUtils.NewContext(newRpc);
 
-            Status status = Status.DefaultSuccess;
+            Status status;
             try
             {
                 var result = await handler(context, requestStream);
+                status = context.Status;
                 try
                 {
                     await responseStream.WriteAsync(result);
@@ -233,12 +237,13 @@ namespace Grpc.Core.Internal
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
-            var context = new ServerCallContext();  // TODO(jtattermusch): initialize the context
+            var context = HandlerUtils.NewContext(newRpc);
 
-            Status status = Status.DefaultSuccess;
+            Status status;
             try
             {
                 await handler(context, requestStream, responseStream);
+                status = context.Status;
             }
             catch (Exception e)
             {
@@ -283,6 +288,13 @@ namespace Grpc.Core.Internal
         {
             // TODO(jtattermusch): what is the right status code here?
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
+        }
+
+        public static ServerCallContext NewContext(ServerRpcNew newRpc)
+        {
+            return new ServerCallContext(
+                newRpc.Method, newRpc.Host, newRpc.Deadline.ToDateTime(),
+                newRpc.RequestMetadata, CancellationToken.None);
         }
     }
 }

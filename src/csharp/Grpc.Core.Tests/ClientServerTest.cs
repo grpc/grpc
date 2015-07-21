@@ -183,6 +183,19 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void AsyncUnaryCall_EchoMetadata()
+        {
+            var metadata = new Metadata
+            {
+                new Metadata.Entry("asciiHeader", "abcdefg"),
+                new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff } ),
+            };
+            var call = new Call<string, string>(ServiceName, EchoMethod, channel, metadata);
+            var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).Result;
+            Assert.AreEqual("ABC", result);
+        }
+
+        [Test]
         public void UnaryCall_DisposedChannel()
         {
             channel.Dispose();
@@ -216,10 +229,17 @@ namespace Grpc.Core.Tests
 
         private static async Task<string> EchoHandler(ServerCallContext context, string request)
         {
+            foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
+            {
+                Console.WriteLine("Echoing header " + metadataEntry.Key + " as trailer");
+                context.ResponseTrailers.Add(metadataEntry);
+            }
+
             if (request == "THROW")
             {
                 throw new Exception("This was thrown on purpose by a test");
             }
+
             return request;
         }
 
