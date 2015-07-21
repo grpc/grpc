@@ -145,7 +145,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -155,7 +155,7 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer
+CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
 LDFLAGS_asan = -fsanitize=address
 DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
@@ -165,7 +165,7 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-error=unused-command-line-argument
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
@@ -176,7 +176,7 @@ CC_ubsan = clang
 CXX_ubsan = clang++
 LD_ubsan = clang
 LDXX_ubsan = clang++
-CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
+CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
 OPENSSL_CFLAGS_ubsan = -DPURIFY
 LDFLAGS_ubsan = -fsanitize=undefined
 DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
@@ -241,10 +241,6 @@ HOST_CXX = $(CXX)
 HOST_LD = $(LD)
 HOST_LDXX = $(LDXX)
 
-CPPFLAGS += $(CPPFLAGS_$(CONFIG))
-DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
-LDFLAGS += $(LDFLAGS_$(CONFIG))
-
 ifdef EXTRA_DEFINES
 DEFINES += $(EXTRA_DEFINES)
 endif
@@ -257,6 +253,10 @@ CXXFLAGS += -std=c++0x
 endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g
+
+CPPFLAGS += $(CPPFLAGS_$(CONFIG))
+DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
+LDFLAGS += $(LDFLAGS_$(CONFIG))
 
 ifneq ($(SYSTEM),MINGW32)
 PIC_CPPFLAGS = -fPIC
@@ -1443,7 +1443,7 @@ run_dep_checks:
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
-	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
+	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
 	$(Q)$(MAKE) -C third_party/zlib clean
 	$(Q)$(MAKE) -C third_party/zlib
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
@@ -1452,7 +1452,7 @@ $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
 	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
 ifeq ($(SYSTEM),Darwin)
-	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc)
+	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./Configure darwin64-x86_64-cc)
 else
 ifeq ($(SYSTEM),MINGW32)
 	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
@@ -1473,7 +1473,7 @@ ifeq ($(SYSTEM),MINGW32)
 	@echo "  CPPFLAGS=-I/c/OpenSSL-Win64/include LDFLAGS=-L/c/OpenSSL-Win64 make"
 	@false
 else
-	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
 endif
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
@@ -1487,7 +1487,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
