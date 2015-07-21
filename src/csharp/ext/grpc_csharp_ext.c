@@ -172,10 +172,10 @@ grpcsharp_metadata_array_count(grpc_metadata_array *array) {
   return (gpr_intptr) array->count;
 }
 
-GPR_EXPORT const grpc_metadata *GPR_CALLTYPE
+GPR_EXPORT grpc_metadata GPR_CALLTYPE
 grpcsharp_metadata_array_get(grpc_metadata_array *array, size_t index) {
   GPR_ASSERT(index < array->count);
-  return &(array->metadata[index]);
+  return array->metadata[index];
 }
 
 /* Move contents of metadata array */
