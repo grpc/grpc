@@ -145,7 +145,7 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
-bool ServerContext::IsCancelled() {
+bool ServerContext::IsCancelled() const {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
 }
 

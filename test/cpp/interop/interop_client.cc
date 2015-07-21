@@ -152,6 +152,29 @@ void InteropClient::DoServiceAccountCreds(const grpc::string& username,
   gpr_log(GPR_INFO, "Large unary with service account creds done.");
 }
 
+void InteropClient::DoOauth2AuthToken(const grpc::string& username,
+                                      const grpc::string& oauth_scope) {
+  gpr_log(GPR_INFO,
+          "Sending a unary rpc with raw oauth2 access token credentials ...");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+  request.set_fill_oauth_scope(true);
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+
+  Status s = stub->UnaryCall(&context, request, &response);
+
+  AssertOkOrPrintErrorStatus(s);
+  GPR_ASSERT(!response.username().empty());
+  GPR_ASSERT(!response.oauth_scope().empty());
+  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
+  const char* oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Unary with oauth2 access token credentials done.");
+}
+
 void InteropClient::DoJwtTokenCreds(const grpc::string& username) {
   gpr_log(GPR_INFO, "Sending a large unary rpc with JWT token credentials ...");
   SimpleRequest request;
@@ -359,6 +382,27 @@ void InteropClient::DoCancelAfterFirstResponse() {
 
   Status s = stream->Finish();
   gpr_log(GPR_INFO, "Canceling pingpong streaming done.");
+}
+
+void InteropClient::DoTimeoutOnSleepingServer() {
+  gpr_log(GPR_INFO, "Sending Ping Pong streaming rpc with a short deadline...");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::milliseconds(1);
+  context.set_deadline(deadline);
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(stub->FullDuplexCall(&context));
+
+  StreamingOutputCallRequest request;
+  request.mutable_payload()->set_body(grpc::string(27182, '\0'));
+  stream->Write(request);
+
+  Status s = stream->Finish();
+  GPR_ASSERT(s.error_code() == StatusCode::DEADLINE_EXCEEDED);
+  gpr_log(GPR_INFO, "Pingpong streaming timeout done.");
 }
 
 }  // namespace testing

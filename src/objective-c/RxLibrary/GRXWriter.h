@@ -85,7 +85,7 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
 // Unless otherwise indicated by a conforming class, no messages should be sent
 // concurrently to a GRXWriter. I.e., conforming classes aren't required to
 // be thread-safe.
-@protocol GRXWriter <NSObject>
+@interface GRXWriter : NSObject
 
 // This property can be used to query the current state of the writer, which
 // determines how it might currently use its writeable. Some state transitions can
@@ -115,13 +115,4 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
 // stopping. I know I've relied on it in part of the code that uses this, but
 // can't remember the details in the presence of concurrency.
 - (void)finishWithError:(NSError *)errorOrNil;
-@end
-
-// A "proxy" class that simply forwards values, completion, and errors from its
-// input writer to its writeable.
-// It is useful as a superclass for pipes that act as a transformation of their
-// input writer, and for classes that represent objects with input and
-// output sequences of values, like an RPC.
-@interface GRXWriter : NSObject<GRXWriter>
-- (instancetype)initWithWriter:(id<GRXWriter>)writer NS_DESIGNATED_INITIALIZER;
 @end

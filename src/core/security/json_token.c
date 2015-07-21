@@ -49,7 +49,7 @@
 /* --- Constants. --- */
 
 /* 1 hour max. */
-const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0};
+const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0, GPR_TIMESPAN};
 
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"

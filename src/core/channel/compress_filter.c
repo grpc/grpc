@@ -43,18 +43,25 @@
 #include "src/core/compression/message_compress.h"
 
 typedef struct call_data {
-  gpr_slice_buffer slices;
+  gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_linked_mdelem compression_algorithm_storage;
-  int remaining_slice_bytes;
-  int written_initial_metadata;
+  int remaining_slice_bytes; /**< Input data to be read, as per BEGIN_MESSAGE */
+  int written_initial_metadata; /**< Already processed initial md? */
+  /** Compression algorithm we'll try to use. It may be given by incoming
+   * metadata, or by the channel's default compression settings. */
   grpc_compression_algorithm compression_algorithm;
-  gpr_uint8 has_compression_algorithm;
+   /** If true, contents of \a compression_algorithm are authoritative */
+  int has_compression_algorithm;
 } call_data;
 
 typedef struct channel_data {
+  /** Metadata key for the incoming (requested) compression algorithm */
   grpc_mdstr *mdstr_request_compression_algorithm_key;
+  /** Metadata key for the outgoing (used) compression algorithm */
   grpc_mdstr *mdstr_outgoing_compression_algorithm_key;
+  /** Precomputed metadata elements for all available compression algorithms */
   grpc_mdelem *mdelem_compression_algorithms[GRPC_COMPRESS_ALGORITHMS_COUNT];
+  /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
 } channel_data;
 
@@ -157,6 +164,9 @@ static void finish_compressed_sopb(grpc_stream_op_buffer *send_ops,
   grpc_sopb_destroy(&new_send_ops);
 }
 
+/** Filter's "main" function, called for any incoming grpc_transport_stream_op
+ * instance that holds a non-zero number of send operations, accesible to this
+ * function in \a send_ops.  */
 static void process_send_ops(grpc_call_element *elem,
                              grpc_stream_op_buffer *send_ops) {
   call_data *calld = elem->call_data;
@@ -267,11 +277,9 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               int is_first, int is_last) {
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
-  const grpc_compression_level clevel =
-      grpc_channel_args_get_compression_level(args);
 
   channeld->default_compression_algorithm =
-      grpc_compression_algorithm_for_level(clevel);
+      grpc_channel_args_get_compression_algorithm(args);
 
   channeld->mdstr_request_compression_algorithm_key =
       grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY);

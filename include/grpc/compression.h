@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 /** To be used in channel arguments */
-#define GRPC_COMPRESSION_LEVEL_ARG "grpc.compression_level"
+#define GRPC_COMPRESSION_ALGORITHM_ARG "grpc.compression_algorithm"
 
 /* The various compression algorithms supported by GRPC */
 typedef enum {

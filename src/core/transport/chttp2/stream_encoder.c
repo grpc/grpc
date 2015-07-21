@@ -589,7 +589,8 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
           l->md = hpack_enc(compressor, l->md, &st);
           need_unref |= l->md != NULL;
         }
-        if (gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future) != 0) {
+        if (gpr_time_cmp(op->data.metadata.deadline,
+                         gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
           deadline_enc(compressor, op->data.metadata.deadline, &st);
         }
         curop++;

@@ -35,7 +35,6 @@
 #include <thread>
 
 #include "src/core/security/credentials.h"
-#include "src/cpp/server/thread_pool.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
@@ -46,6 +45,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
+#include <grpc++/fixed_size_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -75,7 +75,7 @@ const char* kServerCancelAfterReads = "cancel_after_reads";
 void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
                        EchoResponse* response) {
   if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future;
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     if (context->deadline() != system_clock::time_point::max()) {
       Timepoint2Timespec(context->deadline(), &deadline);
     }
@@ -117,14 +117,16 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us())));
+            gpr_time_from_micros(request->param().client_cancel_after_us(),
+                                 GPR_TIMESPAN)));
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us())));
+          gpr_time_from_micros(request->param().server_cancel_after_us(),
+                               GPR_TIMESPAN)));
       return Status::CANCELLED;
     } else {
       EXPECT_FALSE(context->IsCancelled());
@@ -260,7 +262,7 @@ class End2endTest : public ::testing::Test {
   TestServiceImpl service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  ThreadPool thread_pool_;
+  FixedSizeThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
@@ -271,7 +273,7 @@ static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
 
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
-    context.set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
@@ -376,7 +378,8 @@ TEST_F(End2endTest, EchoDeadlineForNoDeadlineRpc) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
-  EXPECT_EQ(response.param().request_deadline(), gpr_inf_future.tv_sec);
+  EXPECT_EQ(response.param().request_deadline(),
+            gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec);
 }
 
 TEST_F(End2endTest, UnimplementedRpc) {
@@ -531,7 +534,7 @@ TEST_F(End2endTest, BadCredentials) {
 
 void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_micros(delay_us)));
+                               gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
   while (!service->signal_client()) {
   }
   context->TryCancel();

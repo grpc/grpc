@@ -61,7 +61,7 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
     if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
     put_metadata(b, m->md);
   }
-  if (gpr_time_cmp(md.deadline, gpr_inf_future) != 0) {
+  if (gpr_time_cmp(md.deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
     char *tmp;
     gpr_asprintf(&tmp, " deadline=%d.%09d", md.deadline.tv_sec,
                  md.deadline.tv_nsec);
@@ -128,7 +128,8 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   if (op->recv_ops) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_strvec_add(&b, gpr_strdup("RECV"));
+    gpr_asprintf(&tmp, "RECV:max_recv_bytes=%d", op->max_recv_bytes);
+    gpr_strvec_add(&b, tmp);
   }
 
   if (op->bind_pollset) {

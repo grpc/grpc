@@ -383,7 +383,7 @@ void Server::ScheduleCallback() {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_running_cb_++;
   }
-  thread_pool_->ScheduleCallback(std::bind(&Server::RunRpc, this));
+  thread_pool_->Add(std::bind(&Server::RunRpc, this));
 }
 
 void Server::RunRpc() {

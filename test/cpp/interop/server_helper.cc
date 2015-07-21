@@ -68,5 +68,15 @@ grpc_compression_algorithm
 InteropContextInspector::GetCallCompressionAlgorithm() const {
   return grpc_call_get_compression_algorithm(context_.call_);
 }
+
+std::shared_ptr<const AuthContext> InteropContextInspector::GetAuthContext()
+    const {
+  return context_.auth_context();
+}
+
+bool InteropContextInspector::IsCancelled() const {
+  return context_.IsCancelled();
+}
+
 }  // namespace testing
 }  // namespace grpc

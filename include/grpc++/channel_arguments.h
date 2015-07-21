@@ -59,8 +59,8 @@ class ChannelArguments {
   void SetSslTargetNameOverride(const grpc::string& name);
   // TODO(yangg) add flow control options
 
-  // Set the compression level for the channel.
-  void SetCompressionLevel(grpc_compression_level level);
+  // Set the compression algorithm for the channel.
+  void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
   // Generic channel argument setters. Only for advanced use cases.
   void SetInt(const grpc::string& key, int value);

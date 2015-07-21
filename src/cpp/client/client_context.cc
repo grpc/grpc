@@ -47,7 +47,7 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
       cq_(nullptr),
-      deadline_(gpr_inf_future) {}
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -56,8 +56,8 @@ ClientContext::~ClientContext() {
   if (cq_) {
     // Drain cq_.
     grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future).type !=
-           GRPC_QUEUE_SHUTDOWN)
+    while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME))
+               .type != GRPC_QUEUE_SHUTDOWN)
       ;
     grpc_completion_queue_destroy(cq_);
   }
@@ -77,12 +77,6 @@ void ClientContext::set_call(grpc_call* call,
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.");
   }
-}
-
-void ClientContext::set_compression_level(grpc_compression_level level) {
-  const grpc_compression_algorithm algorithm_for_level =
-      grpc_compression_algorithm_for_level(level);
-  set_compression_algorithm(algorithm_for_level);
 }
 
 void ClientContext::set_compression_algorithm(

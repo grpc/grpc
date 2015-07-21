@@ -64,9 +64,11 @@ DEFINE_string(test_case, "large_unary",
               "ping_pong : full-duplex streaming; "
               "cancel_after_begin : cancel stream after starting it; "
               "cancel_after_first_response: cancel on first response; "
+              "timeout_on_sleeping_server: deadline exceeds on stream; "
               "service_account_creds : large_unary with service_account auth; "
               "compute_engine_creds: large_unary with compute engine auth; "
               "jwt_token_creds: large_unary with JWT token auth; "
+              "oauth2_auth_token: raw oauth2 access token auth; "
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -101,6 +103,8 @@ int main(int argc, char** argv) {
     client.DoCancelAfterBegin();
   } else if (FLAGS_test_case == "cancel_after_first_response") {
     client.DoCancelAfterFirstResponse();
+  } else if (FLAGS_test_case == "timeout_on_sleeping_server") {
+    client.DoTimeoutOnSleepingServer();
   } else if (FLAGS_test_case == "service_account_creds") {
     grpc::string json_key = GetServiceAccountJsonKey();
     client.DoServiceAccountCreds(json_key, FLAGS_oauth_scope);
@@ -110,6 +114,9 @@ int main(int argc, char** argv) {
   } else if (FLAGS_test_case == "jwt_token_creds") {
     grpc::string json_key = GetServiceAccountJsonKey();
     client.DoJwtTokenCreds(json_key);
+  } else if (FLAGS_test_case == "oauth2_auth_token") {
+    grpc::string json_key = GetServiceAccountJsonKey();
+    client.DoOauth2AuthToken(json_key, FLAGS_oauth_scope);
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
@@ -119,11 +126,13 @@ int main(int argc, char** argv) {
     client.DoPingPong();
     client.DoCancelAfterBegin();
     client.DoCancelAfterFirstResponse();
+    client.DoTimeoutOnSleepingServer();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_enable_ssl) {
       grpc::string json_key = GetServiceAccountJsonKey();
       client.DoServiceAccountCreds(json_key, FLAGS_oauth_scope);
       client.DoJwtTokenCreds(json_key);
+      client.DoOauth2AuthToken(json_key, FLAGS_oauth_scope);
     }
     // compute_engine_creds only runs in GCE.
   } else {
@@ -132,7 +141,8 @@ int main(int argc, char** argv) {
         "Unsupported test case %s. Valid options are all|empty_unary|"
         "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
         "cancel_after_begin|cancel_after_first_response|"
-        "service_account_creds|compute_engine_creds|jwt_token_creds",
+        "timeout_on_sleeping_server|service_account_creds|compute_engine_creds|"
+        "jwt_token_creds|oauth2_auth_token",
         FLAGS_test_case.c_str());
     ret = 1;
   }

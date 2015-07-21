@@ -37,8 +37,9 @@
 
 namespace grpc {
 
-void ChannelArguments::SetCompressionLevel(grpc_compression_level level) {
-  SetInt(GRPC_COMPRESSION_LEVEL_ARG, level);
+void ChannelArguments::SetCompressionAlgorithm(
+    grpc_compression_algorithm algorithm) {
+  SetInt(GRPC_COMPRESSION_ALGORITHM_ARG, algorithm);
 }
 
 void ChannelArguments::SetInt(const grpc::string& key, int value) {

@@ -124,25 +124,25 @@ int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
   return 0;
 }
 
-grpc_compression_level grpc_channel_args_get_compression_level(
+grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a) {
   size_t i;
   if (a == NULL) return 0;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
-        !strcmp(GRPC_COMPRESSION_LEVEL_ARG, a->args[i].key)) {
+        !strcmp(GRPC_COMPRESSION_ALGORITHM_ARG, a->args[i].key)) {
       return a->args[i].value.integer;
       break;
     }
   }
-  return GRPC_COMPRESS_LEVEL_NONE;
+  return GRPC_COMPRESS_NONE;
 }
 
-grpc_channel_args *grpc_channel_args_set_compression_level(
-    grpc_channel_args *a, grpc_compression_level level) {
+grpc_channel_args *grpc_channel_args_set_compression_algorithm(
+    grpc_channel_args *a, grpc_compression_algorithm algorithm) {
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_LEVEL_ARG;
-  tmp.value.integer = level;
+  tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
+  tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }

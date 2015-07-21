@@ -45,15 +45,30 @@
 extern "C" {
 #endif
 
+/* The clocks we support. */
+typedef enum {
+  /* Monotonic clock. Epoch undefined. Always moves forwards. */
+  GPR_CLOCK_MONOTONIC = 0,
+  /* Realtime clock. May jump forwards or backwards. Settable by
+     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
+  GPR_CLOCK_REALTIME,
+  /* Unmeasurable clock type: no base, created by taking the difference
+     between two times */
+  GPR_TIMESPAN
+} gpr_clock_type;
+
 typedef struct gpr_timespec {
   time_t tv_sec;
   int tv_nsec;
+  /** Against which clock was this time measured? (or GPR_TIMESPAN if
+      this is a relative time meaure) */
+  gpr_clock_type clock_type;
 } gpr_timespec;
 
 /* Time constants. */
-extern const gpr_timespec gpr_time_0;     /* The zero time interval. */
-extern const gpr_timespec gpr_inf_future; /* The far future */
-extern const gpr_timespec gpr_inf_past;   /* The far past. */
+gpr_timespec gpr_time_0(gpr_clock_type type);     /* The zero time interval. */
+gpr_timespec gpr_inf_future(gpr_clock_type type); /* The far future */
+gpr_timespec gpr_inf_past(gpr_clock_type type);   /* The far past. */
 
 #define GPR_MS_PER_SEC 1000
 #define GPR_US_PER_SEC 1000000
@@ -61,15 +76,6 @@ extern const gpr_timespec gpr_inf_past;   /* The far past. */
 #define GPR_NS_PER_MS 1000000
 #define GPR_NS_PER_US 1000
 #define GPR_US_PER_MS 1000
-
-/* The clocks we support. */
-typedef enum {
-  /* Monotonic clock. Epoch undefined. Always moves forwards. */
-  GPR_CLOCK_MONOTONIC = 0,
-  /* Realtime clock. May jump forwards or backwards. Settable by
-     the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
-  GPR_CLOCK_REALTIME
-} gpr_clock_type;
 
 /* initialize time subsystem */
 void gpr_time_init(void);
@@ -90,12 +96,12 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
 /* Return a timespec representing a given number of time units. LONG_MIN is
    interpreted as gpr_inf_past, and LONG_MAX as gpr_inf_future.  */
-gpr_timespec gpr_time_from_micros(long x);
-gpr_timespec gpr_time_from_nanos(long x);
-gpr_timespec gpr_time_from_millis(long x);
-gpr_timespec gpr_time_from_seconds(long x);
-gpr_timespec gpr_time_from_minutes(long x);
-gpr_timespec gpr_time_from_hours(long x);
+gpr_timespec gpr_time_from_micros(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_nanos(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_millis(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_seconds(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_minutes(long x, gpr_clock_type clock_type);
+gpr_timespec gpr_time_from_hours(long x, gpr_clock_type clock_type);
 
 gpr_int32 gpr_time_to_millis(gpr_timespec timespec);
 

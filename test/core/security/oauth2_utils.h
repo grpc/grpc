@@ -31,47 +31,21 @@
  *
  */
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
+#ifndef GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
+#define GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 
-#include "src/cpp/server/thread_pool.h"
-#include <gtest/gtest.h>
+#include "src/core/security/credentials.h"
 
-namespace grpc {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-class ThreadPoolTest : public ::testing::Test {
- public:
-  ThreadPoolTest() : thread_pool_(4) {}
+/* Fetch oauth2 access token with a credentials object. Does not take ownership.
+   Returns NULL on a failure. The caller should call gpr_free on the token. */
+char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds);
 
- protected:
-  ThreadPool thread_pool_;
-};
-
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
-  *done = true;
-  cv->notify_all();
+#ifdef __cplusplus
 }
+#endif
 
-TEST_F(ThreadPoolTest, ScheduleCallback) {
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.ScheduleCallback(callback);
-
-  // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
-  }
-}
-
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  return result;
-}
+#endif /* GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H */

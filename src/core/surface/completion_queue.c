@@ -116,7 +116,7 @@ void grpc_cq_begin_op(grpc_completion_queue *cc) {
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
                     void (*done)(void *done_arg, grpc_cq_completion *storage),
                     void *done_arg, grpc_cq_completion *storage) {
-  int shutdown = gpr_unref(&cc->pending_events);
+  int shutdown;
 
   storage->tag = tag;
   storage->done = done;
@@ -124,15 +124,15 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
   storage->next =
       ((gpr_uintptr)&cc->completed_head) | ((gpr_uintptr)(success != 0));
 
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  shutdown = gpr_unref(&cc->pending_events);
   if (!shutdown) {
-    gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
     cc->completed_tail->next =
         ((gpr_uintptr)storage) | (1u & (gpr_uintptr)cc->completed_tail->next);
     cc->completed_tail = storage;
     grpc_pollset_kick(&cc->pollset);
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   } else {
-    gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
     cc->completed_tail->next =
         ((gpr_uintptr)storage) | (1u & (gpr_uintptr)cc->completed_tail->next);
     cc->completed_tail = storage;
@@ -260,8 +260,9 @@ grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
 void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   grpc_pollset_kick(&cc->pollset);
-  grpc_pollset_work(&cc->pollset, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                               gpr_time_from_millis(100)));
+  grpc_pollset_work(&cc->pollset,
+                    gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_millis(100, GPR_TIMESPAN)));
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 

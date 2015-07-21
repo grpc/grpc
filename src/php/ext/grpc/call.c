@@ -408,7 +408,7 @@ PHP_METHOD(Call, startBatch) {
     goto cleanup;
   }
   event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
-                                      gpr_inf_future);
+                                      gpr_inf_future(GPR_CLOCK_REALTIME));
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "The batch failed for some reason",

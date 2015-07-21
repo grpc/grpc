@@ -64,7 +64,7 @@ static NSString * const kService = @"RouteGuide";
 //                                                         interface:kService
 //                                                            method:@"EmptyCall"];
 //
-//  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
+//  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 //
 //  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
 //                                           method:method
@@ -91,7 +91,7 @@ static NSString * const kService = @"RouteGuide";
                                                      service:kService
                                                       method:@"RecordRoute"];
 
-  id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
+  GRXWriter *requestsWriter = [GRXWriter emptyWriter];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
                                              path:method.HTTPPath
@@ -122,7 +122,7 @@ static NSString * const kService = @"RouteGuide";
   RGDPoint *point = [RGDPoint message];
   point.latitude = 28E7;
   point.longitude = -15E7;
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[point data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
                                              path:method.HTTPPath
