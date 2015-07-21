@@ -630,15 +630,20 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_send_status_from_server(grpc_call *call,
                                        grpcsharp_batch_context *ctx,
                                        grpc_status_code status_code,
-                                       const char *status_details) {
+                                       const char *status_details,
+                                       grpc_metadata_array *trailing_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[1];
   ops[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   ops[0].data.send_status_from_server.status = status_code;
   ops[0].data.send_status_from_server.status_details =
       gpr_strdup(status_details);
-  ops[0].data.send_status_from_server.trailing_metadata = NULL;
-  ops[0].data.send_status_from_server.trailing_metadata_count = 0;
+  grpcsharp_metadata_array_move(&(ctx->send_status_from_server.trailing_metadata),
+                                  trailing_metadata);
+  ops[0].data.send_status_from_server.trailing_metadata_count =
+      ctx->send_status_from_server.trailing_metadata.count;
+  ops[0].data.send_status_from_server.trailing_metadata =
+      ctx->send_status_from_server.trailing_metadata.metadata;
   ops[0].flags = 0;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);

@@ -72,13 +72,13 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
+            var context = HandlerUtils.NewContext(newRpc);
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
                 Preconditions.CheckArgument(!await requestStream.MoveNext());
-                var context = HandlerUtils.NewContext(newRpc);
                 var result = await handler(context, request);
                 status = context.Status;
                 await responseStream.WriteAsync(result);
@@ -90,7 +90,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatusAsync(status);
+                await responseStream.WriteStatusAsync(status, context.ResponseTrailers);
             }
             catch (OperationCanceledException)
             {
@@ -126,14 +126,13 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
+            var context = HandlerUtils.NewContext(newRpc);
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
                 var request = requestStream.Current;
                 // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
                 Preconditions.CheckArgument(!await requestStream.MoveNext());
-
-                var context = HandlerUtils.NewContext(newRpc);
                 await handler(context, request, responseStream);
                 status = context.Status;
             }
@@ -145,7 +144,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatusAsync(status);
+                await responseStream.WriteStatusAsync(status, context.ResponseTrailers);
             }
             catch (OperationCanceledException)
             {
@@ -179,9 +178,10 @@ namespace Grpc.Core.Internal
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
-            var context = HandlerUtils.NewContext(newRpc);
+
 
             Status status;
+            var context = HandlerUtils.NewContext(newRpc);
             try
             {
                 var result = await handler(context, requestStream);
@@ -203,7 +203,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatusAsync(status);
+                await responseStream.WriteStatusAsync(status, context.ResponseTrailers);
             }
             catch (OperationCanceledException)
             {
@@ -237,9 +237,9 @@ namespace Grpc.Core.Internal
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
-            var context = HandlerUtils.NewContext(newRpc);
 
             Status status;
+            var context = HandlerUtils.NewContext(newRpc);
             try
             {
                 await handler(context, requestStream, responseStream);
@@ -252,7 +252,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatusAsync(status);
+                await responseStream.WriteStatusAsync(status, context.ResponseTrailers);
             }
             catch (OperationCanceledException)
             {
@@ -277,7 +277,7 @@ namespace Grpc.Core.Internal
             var requestStream = new ServerRequestStream<byte[], byte[]>(asyncCall);
             var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
 
-            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, "No such method."));
+            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, "No such method."), Metadata.Empty);
             await finishedTask;
         }
     }
