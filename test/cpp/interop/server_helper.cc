@@ -60,21 +60,21 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
   }
 }
 
-InteropContextInspector::InteropContextInspector(
+InteropServerContextInspector::InteropServerContextInspector(
     const ::grpc::ServerContext& context)
     : context_(context) {}
 
 grpc_compression_algorithm
-InteropContextInspector::GetCallCompressionAlgorithm() const {
+InteropServerContextInspector::GetCallCompressionAlgorithm() const {
   return grpc_call_get_compression_algorithm(context_.call_);
 }
 
-std::shared_ptr<const AuthContext> InteropContextInspector::GetAuthContext()
+std::shared_ptr<const AuthContext> InteropServerContextInspector::GetAuthContext()
     const {
   return context_.auth_context();
 }
 
-bool InteropContextInspector::IsCancelled() const {
+bool InteropServerContextInspector::IsCancelled() const {
   return context_.IsCancelled();
 }
 

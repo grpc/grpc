@@ -45,9 +45,9 @@ namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
 
-class InteropContextInspector {
+class InteropServerContextInspector {
  public:
-  InteropContextInspector(const ::grpc::ServerContext& context);
+  InteropServerContextInspector(const ::grpc::ServerContext& context);
 
   // Inspector methods, able to peek inside ServerContext, follow.
   std::shared_ptr<const AuthContext> GetAuthContext() const;

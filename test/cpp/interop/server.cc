@@ -81,8 +81,28 @@ static bool got_sigint = false;
 bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
   payload->set_type(response_type);
-  std::unique_ptr<char[]> body(new char[size]());
-  payload->set_body(body.get(), size);
+  switch (type) {
+    case PayloadType::COMPRESSABLE:
+      {
+        std::unique_ptr<char[]> body(new char[size]());
+        payload->set_body(body.get(), size);
+      }
+      break;
+    case PayloadType::UNCOMPRESSABLE:
+      {
+        // XXX
+        std::unique_ptr<char[]> body(new char[size]());
+        payload->set_body(body.get(), size);
+      }
+      break;
+    case PayloadType::RANDOM:
+      {
+        // XXX
+        std::unique_ptr<char[]> body(new char[size]());
+        payload->set_body(body.get(), size);
+      }
+      break;
+  }
   return true;
 }
 
@@ -122,6 +142,7 @@ class TestServiceImpl : public TestService::Service {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
     }
+
     return Status::OK;
   }
 

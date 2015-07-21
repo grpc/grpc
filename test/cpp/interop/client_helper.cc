@@ -48,9 +48,12 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/stream.h>
-#include "src/cpp/client/secure_credentials.h"
+
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
+
+#include "src/core/surface/call.h"
+#include "src/cpp/client/secure_credentials.h"
 
 DECLARE_bool(enable_ssl);
 DECLARE_bool(use_prod_roots);
@@ -61,6 +64,8 @@ DECLARE_string(test_case);
 DECLARE_string(default_service_account);
 DECLARE_string(service_account_key_file);
 DECLARE_string(oauth_scope);
+
+using grpc::testing::CompressionType;
 
 namespace grpc {
 namespace testing {
@@ -136,6 +141,30 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
                              FLAGS_enable_ssl, FLAGS_use_prod_roots);
   }
 }
+
+CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
+    grpc_compression_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_COMPRESS_NONE:
+      return CompressionType::NONE;
+    case GRPC_COMPRESS_GZIP:
+      return CompressionType::GZIP;
+    case GRPC_COMPRESS_DEFLATE:
+      return CompressionType::DEFLATE;
+    default:
+      GPR_ASSERT(false);
+  }
+}
+
+InteropClientContextInspector::InteropClientContextInspector(
+    const ::grpc::ClientContext& context)
+    : context_(context) {}
+
+grpc_compression_algorithm
+InteropClientContextInspector::GetCallCompressionAlgorithm() const {
+  return grpc_call_get_compression_algorithm(context_.call_);
+}
+
 
 }  // namespace testing
 }  // namespace grpc
