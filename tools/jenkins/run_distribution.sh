@@ -68,21 +68,22 @@ elif [ "$platform" == "macos" ]; then
   if [ "$dist_channel" == "homebrew" ]; then
     which brew # TODO: for debug, can be removed later
     brew list -l
-    rm -rf /tmp/homebrew-test
-    mkdir -p /tmp/homebrew-test
-    git clone https://github.com/Homebrew/homebrew.git /tmp/homebrew-test
-    cd /tmp/homebrew-test
+    dir=/tmp/homebrew-test-$language
+    rm -rf $dir
+    mkdir -p $dir
+    git clone https://github.com/Homebrew/homebrew.git $dir
+    cd $dir
     # TODO: Uncomment these when the general structure of the script is verified
-    # PATH=/tmp/homebrew-test/bin:$PATH brew tap homebrew/dupes
-    # PATH=/tmp/homebrew-test/bin:$PATH brew install zlib
-    # PATH=/tmp/homebrew-test/bin:$PATH brew install openssl
-    # PATH=/tmp/homebrew-test/bin:$PATH brew tap grpc/grpc
-    # PATH=/tmp/homebrew-test/bin:$PATH brew install --without-python google-protobuf
-    # PATH=/tmp/homebrew-test/bin:$PATH brew install grpc
-    PATH=/tmp/homebrew-test/bin:$PATH brew list -l
+    # PATH=$dir/bin:$PATH brew tap homebrew/dupes
+    # PATH=$dir/bin:$PATH brew install zlib
+    # PATH=$dir/bin:$PATH brew install openssl
+    # PATH=$dir/bin:$PATH brew tap grpc/grpc
+    # PATH=$dir/bin:$PATH brew install --without-python google-protobuf
+    # PATH=$dir/bin:$PATH brew install grpc
+    PATH=$dir/bin:$PATH brew list -l
     brew list -l
     cd ~/ 
-    rm -rf /tmp/homebrew-test
+    rm -rf $dir
     echo $PATH # TODO: for debug, can be removed later
     brew list -l # TODO: for debug, can be removed later
 

@@ -33,49 +33,39 @@
 
 #import <Foundation/Foundation.h>
 
-#import <RxLibrary/GRXWriter.h>
+#import "GRXWriter.h"
+#import "GRXWriteable.h"
 
-@protocol GRXWriteable;
-
-// This is a thread-safe wrapper over a GRXWriteable instance. It lets one
-// enqueue calls to a GRXWriteable instance for the main thread, guaranteeing
-// that writesFinishedWithError: is the last message sent to it (no matter what
-// messages are sent to the wrapper, in what order, nor from which thread). It
-// also guarantees that, if cancelWithError: is called from the main thread
-// (e.g. by the app cancelling the writes), no further messages are sent to the
-// writeable except writesFinishedWithError:.
+// This is a thread-safe wrapper over a GRXWriteable instance. It lets one enqueue calls to a
+// GRXWriteable instance for the main thread, guaranteeing that writesFinishedWithError: is the last
+// message sent to it (no matter what messages are sent to the wrapper, in what order, nor from
+// which thread). It also guarantees that, if cancelWithError: is called from the main thread (e.g.
+// by the app cancelling the writes), no further messages are sent to the writeable except
+// writesFinishedWithError:.
 //
-// TODO(jcanizales): Let the user specify another queue for the writeable
-// callbacks.
-// TODO(jcanizales): Rename to GRXWriteableWrapper and move to the Rx library.
-@interface GRPCDelegateWrapper : NSObject
+// TODO(jcanizales): Let the user specify another queue for the writeable callbacks.
+@interface GRXConcurrentWriteable : NSObject
 
 // The GRXWriteable passed is the wrapped writeable.
-// Both the GRXWriter instance and the GRXWriteable instance are retained until
-// writesFinishedWithError: is sent to the writeable, and released after that.
-// This is used to create a retain cycle that keeps both objects alive until the
-// writing is explicitly finished.
-- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable writer:(GRXWriter *)writer
-    NS_DESIGNATED_INITIALIZER;
+// The GRXWriteable instance is retained until writesFinishedWithError: is sent to it, and released
+// after that.
+- (instancetype)initWithWriteable:(id<GRXWriteable>)writeable NS_DESIGNATED_INITIALIZER;
 
 // Enqueues writeValue: to be sent to the writeable in the main thread.
 // The passed handler is invoked from the main thread after writeValue: returns.
-- (void)enqueueMessage:(NSData *)message completionHandler:(void (^)())handler;
+- (void)enqueueValue:(id)value completionHandler:(void (^)())handler;
 
-// Enqueues writesFinishedWithError:nil to be sent to the writeable in the main
-// thread. After that message is sent to the writeable, all other methods of
-// this object are effectively noops.
+// Enqueues writesFinishedWithError:nil to be sent to the writeable in the main thread. After that
+// message is sent to the writeable, all other methods of this object are effectively noops.
 - (void)enqueueSuccessfulCompletion;
 
-// If the writeable has not yet received a writesFinishedWithError: message, this
-// will enqueue one to be sent to it in the main thread, and cancel all other
-// pending messages to the writeable enqueued by this object (both past and
-// future).
+// If the writeable has not yet received a writesFinishedWithError: message, this will enqueue one
+// to be sent to it in the main thread, and cancel all other pending messages to the writeable
+// enqueued by this object (both past and future).
 // The error argument cannot be nil.
 - (void)cancelWithError:(NSError *)error;
 
-// Cancels all pending messages to the writeable enqueued by this object (both
-// past and future). Because the writeable won't receive writesFinishedWithError:,
-// this also releases the writeable and the writer.
+// Cancels all pending messages to the writeable enqueued by this object (both past and future).
+// Because the writeable won't receive writesFinishedWithError:, this also releases the writeable.
 - (void)cancelSilently;
 @end
