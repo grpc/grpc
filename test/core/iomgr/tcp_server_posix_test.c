@@ -135,7 +135,7 @@ static void test_connect(int n) {
 
     gpr_log(GPR_DEBUG, "wait");
     while (g_nconnects == nconnects_before &&
-           gpr_time_cmp(deadline, gpr_now(GPR_CLOCK_REALTIME)) > 0) {
+           gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_work(&g_pollset, deadline);
     }
     gpr_log(GPR_DEBUG, "wait done");

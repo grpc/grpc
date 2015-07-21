@@ -61,7 +61,7 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
     if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
     put_metadata(b, m->md);
   }
-  if (gpr_time_cmp(md.deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
+  if (gpr_time_cmp(md.deadline, gpr_inf_future(md.deadline.clock_type)) != 0) {
     char *tmp;
     gpr_asprintf(&tmp, " deadline=%d.%09d", md.deadline.tv_sec,
                  md.deadline.tv_nsec);
