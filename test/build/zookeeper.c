@@ -31,7 +31,7 @@
  *
  */
 
-/* This is just a compilation test, to see if we have Zookeeper C client 
+/* This is just a compilation test, to see if we have Zookeeper C client
    library installed. */
 
 #include <stdlib.h>
