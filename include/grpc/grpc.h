@@ -244,6 +244,7 @@ typedef struct {
   char *host;
   size_t host_capacity;
   gpr_timespec deadline;
+  void *reserved;
 } grpc_call_details;
 
 void grpc_call_details_init(grpc_call_details *details);
@@ -343,6 +344,7 @@ typedef struct grpc_op {
       int *cancelled;
     } recv_close_on_server;
   } data;
+  void *reserved;
 } grpc_op;
 
 /** Initialize the grpc library.
@@ -365,7 +367,7 @@ void grpc_shutdown(void);
 const char *grpc_version_string(void);
 
 /** Create a completion queue */
-grpc_completion_queue *grpc_completion_queue_create(void);
+grpc_completion_queue *grpc_completion_queue_create(void *reserved);
 
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached.
@@ -376,7 +378,7 @@ grpc_completion_queue *grpc_completion_queue_create(void);
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
-                                      gpr_timespec deadline);
+                                      gpr_timespec deadline, void *reserved);
 
 /** Blocks until an event with tag 'tag' is available, the completion queue is
     being shutdown or deadline is reached.
@@ -387,7 +389,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
-                                       gpr_timespec deadline);
+                                       gpr_timespec deadline, void *reserved);
 
 /** Begin destruction of a completion queue. Once all possible events are
     drained then grpc_completion_queue_next will start to produce
@@ -408,16 +410,16 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
-                                    gpr_timespec deadline);
+                                    gpr_timespec deadline, void *reserved);
 
 /** Pre-register a method/host pair on a channel. */
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
-                                 const char *host);
+                                 const char *host, void *reserved);
 
 /** Create a call given a handle returned from grpc_channel_register_call */
 grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline);
+    void *registered_call_handle, gpr_timespec deadline, void *reserved);
 
 /** Start a batch of operations defined in the array ops; when complete, post a
     completion of type 'tag' to the completion queue bound to the call.
@@ -431,7 +433,7 @@ grpc_call *grpc_channel_create_registered_call(
     containing just send operations independently from batches containing just
     receive operations. */
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                      size_t nops, void *tag);
+                                      size_t nops, void *tag, void *reserved);
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
@@ -439,7 +441,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
     more on this. The data in 'args' need only live through the invocation of
     this function. */
 grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args);
+                                  const grpc_channel_args *args,
+                                  void *reserved);
 
 /** Create a lame client: this client fails every operation attempted on it. */
 grpc_channel *grpc_lame_client_channel_create(void);
@@ -458,7 +461,7 @@ void grpc_channel_destroy(grpc_channel *channel);
     THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
     are thread-safe, and can be called at any point before grpc_call_destroy
     is called.*/
-grpc_call_error grpc_call_cancel(grpc_call *call);
+grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
 
 /** Called by clients to cancel an RPC on the server.
     Can be called multiple times, from any thread.
@@ -468,7 +471,8 @@ grpc_call_error grpc_call_cancel(grpc_call *call);
     remote endpoint. */
 grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                              grpc_status_code status,
-                                             const char *description);
+                                             const char *description,
+                                             void *reserved);
 
 /** Destroy a call.
     THREAD SAFETY: grpc_call_destroy is thread-compatible */
@@ -507,14 +511,16 @@ grpc_call_error grpc_server_request_registered_call(
     be specified with args. If no additional configuration is needed, args can
     be NULL. See grpc_channel_args for more. The data in 'args' need only live
     through the invocation of this function. */
-grpc_server *grpc_server_create(const grpc_channel_args *args);
+grpc_server *grpc_server_create(const grpc_channel_args *args,
+                                void *reserved);
 
 /** Register a completion queue with the server. Must be done for any
     notification completion queue that is passed to grpc_server_request_*_call
     and to grpc_server_shutdown_and_notify. Must be performed prior to
     grpc_server_start. */
 void grpc_server_register_completion_queue(grpc_server *server,
-                                           grpc_completion_queue *cq);
+                                           grpc_completion_queue *cq,
+                                           void *reserved);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
