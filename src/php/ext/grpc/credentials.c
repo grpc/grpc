@@ -175,15 +175,6 @@ PHP_METHOD(Credentials, createGce) {
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
-/**
- * Create fake credentials. Only to be used for testing.
- * @return Credentials The new fake credentials object
- */
-PHP_METHOD(Credentials, createFake) {
-  grpc_credentials *creds = grpc_fake_transport_security_credentials_create();
-  zval *creds_object = grpc_php_wrap_credentials(creds);
-  RETURN_DESTROY_ZVAL(creds_object);
-}
 
 static zend_function_entry credentials_methods[] = {
     PHP_ME(Credentials, createDefault, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -191,7 +182,6 @@ static zend_function_entry credentials_methods[] = {
     PHP_ME(Credentials, createComposite, NULL,
            ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Credentials, createGce, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Credentials, createFake, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END};
 
 void grpc_init_credentials(TSRMLS_D) {

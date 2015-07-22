@@ -35,11 +35,11 @@
 #include <thread>
 
 #include "src/core/security/credentials.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include "test/cpp/util/fake_credentials.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -83,13 +83,12 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
-template <typename T>
-void CheckAuthContext(T* context) {
+void CheckServerAuthContext(const ServerContext* context) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string> fake =
+  std::vector<grpc::string> ssl =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, fake.size());
-  EXPECT_EQ("fake", fake[0]);
+  EXPECT_EQ(1u, ssl.size());
+  EXPECT_EQ("ssl", ssl[0]);
   EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
 }
@@ -142,7 +141,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       }
     }
     if (request->has_param() && request->param().check_auth_context()) {
-      CheckAuthContext(context);
+      CheckServerAuthContext(context);
     }
     return Status::OK;
   }
@@ -235,10 +234,15 @@ class End2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+      test_server1_cert};
+    SslServerCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = "";
+    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
     builder.AddListeningPort(server_address_.str(),
-                             FakeTransportSecurityServerCredentials());
+                             SslServerCredentials(ssl_opts));
     builder.RegisterService(&service_);
-    builder.RegisterService("special", &special_service_);
+    builder.RegisterService("foo.test.youtube.com", &special_service_);
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
@@ -249,12 +253,15 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
-                      ChannelArguments());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
+    SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+    ChannelArguments args;
+    args.SetSslTargetNameOverride("foo.test.google.fr");
+    channel_ = CreateChannel(server_address_.str(), SslCredentials(ssl_opts),
+                             args);
+    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
+  std::shared_ptr<ChannelInterface> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
@@ -288,11 +295,11 @@ TEST_F(End2endTest, SimpleRpcWithHost) {
   request.set_message("Hello");
 
   ClientContext context;
-  context.set_authority("special");
+  context.set_authority("foo.test.youtube.com");
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(response.has_param());
-  EXPECT_EQ(response.param().host(), "special");
+  EXPECT_EQ("special", response.param().host());
   EXPECT_TRUE(s.ok());
 }
 
@@ -481,24 +488,19 @@ TEST_F(End2endTest, BidiStream) {
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_F(End2endTest, DiffPackageServices) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
-                    ChannelArguments());
-
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
-      grpc::cpp::test::util::TestService::NewStub(channel));
   ClientContext context;
-  Status s = stub->Echo(&context, request, &response);
+  Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
   std::unique_ptr<grpc::cpp::test::util::duplicate::TestService::Stub>
       dup_pkg_stub(
-          grpc::cpp::test::util::duplicate::TestService::NewStub(channel));
+          grpc::cpp::test::util::duplicate::TestService::NewStub(channel_));
   ClientContext context2;
   s = dup_pkg_stub->Echo(&context2, request, &response);
   EXPECT_EQ("no package", response.message());
@@ -782,7 +784,17 @@ TEST_F(End2endTest, ClientAuthContext) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
-  CheckAuthContext(&context);
+  std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
+  std::vector<grpc::string> ssl =
+      auth_ctx->FindPropertyValues("transport_security_type");
+  EXPECT_EQ(1u, ssl.size());
+  EXPECT_EQ("ssl", ssl[0]);
+  EXPECT_EQ("x509_subject_alternative_name",
+            auth_ctx->GetPeerIdentityPropertyName());
+  EXPECT_EQ(3u, auth_ctx->GetPeerIdentity().size());
+  EXPECT_EQ("*.test.google.fr", auth_ctx->GetPeerIdentity()[0]);
+  EXPECT_EQ("waterzooi.test.google.be", auth_ctx->GetPeerIdentity()[1]);
+  EXPECT_EQ("*.test.youtube.com", auth_ctx->GetPeerIdentity()[2]);
 }
 
 }  // namespace testing

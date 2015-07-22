@@ -152,12 +152,6 @@ def client_credentials_refresh_token(json_refresh_token):
   credentials.references.append(json_refresh_token)
   return credentials
 
-def client_credentials_fake_transport_security():
-  cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = (
-      grpc.grpc_fake_transport_security_credentials_create())
-  return credentials
-
 def client_credentials_iam(authorization_token, authority_selector):
   if isinstance(authorization_token, bytes):
     pass
@@ -210,8 +204,3 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs):
   )
   return credentials
 
-def server_credentials_fake_transport_security():
-  cdef ServerCredentials credentials = ServerCredentials()
-  credentials.c_credentials = (
-      grpc.grpc_fake_transport_security_server_credentials_create())
-  return credentials
