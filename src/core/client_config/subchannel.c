@@ -307,7 +307,7 @@ static void continue_connect(grpc_subchannel *c) {
 }
 
 static void start_connect(grpc_subchannel *c) {
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   c->next_attempt = now;
   c->backoff_delta = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
@@ -598,7 +598,7 @@ static void subchannel_connected(void *arg, int iomgr_success) {
   if (c->connecting_result.transport != NULL) {
     publish_transport(c);
   } else {
-    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;

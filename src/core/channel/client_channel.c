@@ -249,21 +249,6 @@ static void picked_target(void *arg, int iomgr_success) {
   }
 }
 
-static void pick_target(grpc_lb_policy *lb_policy, call_data *calld) {
-  grpc_metadata_batch *initial_metadata;
-  grpc_transport_stream_op *op = &calld->waiting_op;
-
-  GPR_ASSERT(op->bind_pollset);
-  GPR_ASSERT(op->send_ops);
-  GPR_ASSERT(op->send_ops->nops >= 1);
-  GPR_ASSERT(op->send_ops->ops[0].type == GRPC_OP_METADATA);
-  initial_metadata = &op->send_ops->ops[0].data.metadata;
-
-  grpc_iomgr_closure_init(&calld->async_setup_task, picked_target, calld);
-  grpc_lb_policy_pick(lb_policy, op->bind_pollset, initial_metadata,
-                      &calld->picked_channel, &calld->async_setup_task);
-}
-
 static grpc_iomgr_closure *merge_into_waiting_op(
     grpc_call_element *elem, grpc_transport_stream_op *new_op) {
   call_data *calld = elem->call_data;
@@ -371,12 +356,23 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           gpr_mu_lock(&chand->mu_config);
           lb_policy = chand->lb_policy;
           if (lb_policy) {
+            grpc_transport_stream_op *op = &calld->waiting_op;
+            grpc_pollset *bind_pollset = op->bind_pollset;
+            grpc_metadata_batch *initial_metadata = &op->send_ops->ops[0].data.metadata;
             GRPC_LB_POLICY_REF(lb_policy, "pick");
             gpr_mu_unlock(&chand->mu_config);
             calld->state = CALL_WAITING_FOR_PICK;
+
+            GPR_ASSERT(op->bind_pollset);
+            GPR_ASSERT(op->send_ops);
+            GPR_ASSERT(op->send_ops->nops >= 1);
+            GPR_ASSERT(
+                op->send_ops->ops[0].type == GRPC_OP_METADATA);
             gpr_mu_unlock(&calld->mu_state);
 
-            pick_target(lb_policy, calld);
+            grpc_iomgr_closure_init(&calld->async_setup_task, picked_target, calld);
+            grpc_lb_policy_pick(lb_policy, bind_pollset, initial_metadata,
+                                &calld->picked_channel, &calld->async_setup_task);
 
             GRPC_LB_POLICY_UNREF(lb_policy, "pick");
           } else if (chand->resolver != NULL) {

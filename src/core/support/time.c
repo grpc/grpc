@@ -290,3 +290,30 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
 double gpr_timespec_to_micros(gpr_timespec t) {
   return (double)t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
 }
+
+gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
+  if (t.clock_type == clock_type) {
+    return t;
+  }
+
+  if (t.tv_nsec == 0) {
+    if (t.tv_sec == TYPE_MAX(time_t)) {
+      t.clock_type = clock_type;
+      return t;
+    }
+    if (t.tv_sec == TYPE_MIN(time_t)) {
+      t.clock_type = clock_type;
+      return t;
+    }
+  }
+
+  if (clock_type == GPR_TIMESPAN) {
+    return gpr_time_sub(t, gpr_now(t.clock_type));
+  }
+
+  if (t.clock_type == GPR_TIMESPAN) {
+    return gpr_time_add(gpr_now(clock_type), t);
+  }
+
+  return gpr_time_add(gpr_now(clock_type), gpr_time_sub(t, gpr_now(t.clock_type)));
+}
