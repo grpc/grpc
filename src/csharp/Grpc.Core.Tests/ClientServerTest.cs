@@ -219,7 +219,7 @@ namespace Grpc.Core.Tests
             var headers = new Metadata
             {
                 new Metadata.Entry("asciiHeader", "abcdefg"),
-                new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff } ),
+                new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff }),
             };
             var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, headers);
             var call = Calls.AsyncUnaryCall(internalCall, "ABC", CancellationToken.None);

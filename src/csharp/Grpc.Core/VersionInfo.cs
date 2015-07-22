@@ -11,5 +11,3 @@ namespace Grpc.Core
         public const string CurrentVersion = "0.6.0";
     }
 }
-
-

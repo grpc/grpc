@@ -399,7 +399,7 @@ namespace Grpc.IntegrationTesting
                 .SetFillOauthScope(true)
                 .Build();
 
-            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) } );
+            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) });
 
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
             Assert.AreEqual(ServiceAccountUser, response.Username);

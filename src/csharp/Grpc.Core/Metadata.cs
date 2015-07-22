@@ -225,7 +225,6 @@ namespace Grpc.Core
             {
                 return string.Format("[Entry: key={0}, value={1}]", Key, Value);
             }
-            
         }
     }
 }

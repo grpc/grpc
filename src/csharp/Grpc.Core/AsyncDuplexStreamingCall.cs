@@ -56,7 +56,6 @@ namespace Grpc.Core
             this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
         }
-        
 
         /// <summary>
         /// Async stream to read streaming responses.
