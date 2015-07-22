@@ -521,9 +521,9 @@ function makeClientConstructor(methods, serviceName) {
     if (!options) {
       options = {};
     }
-    options.GRPC_ARG_PRIMARY_USER_AGENT_STRING = 'grpc-node/' + version;
-    this.server_address = address.replace(/\/$/, '');
+    options['grpc.primary_user_agent'] = 'grpc-node/' + version;
     this.channel = new grpc.Channel(address, options);
+    this.server_address = address.replace(/\/$/, '');
     this.auth_uri = this.server_address + '/' + serviceName;
     this.updateMetadata = updateMetadata;
   }
