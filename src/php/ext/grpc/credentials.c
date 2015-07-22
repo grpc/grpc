@@ -175,7 +175,6 @@ PHP_METHOD(Credentials, createGce) {
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
-
 static zend_function_entry credentials_methods[] = {
     PHP_ME(Credentials, createDefault, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Credentials, createSsl, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
