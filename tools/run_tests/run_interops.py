@@ -1,7 +1,7 @@
 import xml.etree.cElementTree as ET
 import jobset
 
-java_steps = '../gce_setup/time_test_java.sh'
+#java_steps = '../gce_setup/time_test_java.sh'
 cxx_steps = '../gce_setup/time_test_cxx.sh'
 node_steps = '../gce_setup/time_test_node.sh'
 
