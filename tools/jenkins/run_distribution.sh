@@ -85,8 +85,8 @@ elif [ "$platform" == "macos" ]; then
     # i.e. curl -fsSL https://goo.gl/getgrpc | bash -s $language
     # need to resolve a bunch of environment and privilege issue on the jenkins
     # mac machine itself
-    OLD_PATH=$PATH
-    PATH=$brew_root/bin:$PATH
+    export OLD_PATH=$PATH
+    export PATH=$brew_root/bin:$PATH
     cd $brew_root
     brew tap homebrew/dupes
     brew install zlib
@@ -139,7 +139,7 @@ elif [ "$platform" == "macos" ]; then
     rm -rf $brew_root
 
     # Make sure the system brew installation is still unaffected
-    PATH=$OLD_PATH
+    export PATH=$OLD_PATH
     brew list -l
 
   else
