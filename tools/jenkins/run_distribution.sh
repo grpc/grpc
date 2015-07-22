@@ -93,6 +93,9 @@ elif [ "$platform" == "macos" ]; then
       *nodejs*)
         export PATH=$HOME/.nvm/versions/node/v0.12.7/bin:$PATH
         ;;
+      *ruby*)
+        export PATH=/usr/local/rvm/rubies/ruby-2.2.1/bin:$PATH
+        ;;
       *php*)
         export CFLAGS="-Wno-parentheses-equality"
         ;;
