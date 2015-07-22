@@ -59,6 +59,7 @@ typedef struct call_data {
 
 typedef struct channel_data {
   grpc_security_connector *security_connector;
+  grpc_auth_metadata_processor processor;
   grpc_mdctx *mdctx;
 } channel_data;
 
@@ -142,18 +143,16 @@ static void auth_on_recv(void *user_data, int success) {
     grpc_stream_op *ops = calld->recv_ops->ops;
     for (i = 0; i < nops; i++) {
       grpc_metadata_array md_array;
-      grpc_auth_metadata_processor processor =
-          grpc_server_get_auth_metadata_processor();
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA || calld->got_client_metadata) continue;
       calld->got_client_metadata = 1;
-      if (processor.process == NULL) continue;
+      if (chand->processor.process == NULL) continue;
       calld->md_op = op;
       md_array = metadata_batch_to_md_array(&op->data.metadata);
-      processor.process(processor.state, &calld->ticket,
-                        chand->security_connector->auth_context,
-                        md_array.metadata, md_array.count,
-                        on_md_processing_done, elem);
+      chand->processor.process(chand->processor.state, &calld->ticket,
+                               chand->security_connector->auth_context,
+                               md_array.metadata, md_array.count,
+                               on_md_processing_done, elem);
       grpc_metadata_array_destroy(&md_array);
       return;
     }
@@ -233,6 +232,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   grpc_security_connector *sc = grpc_find_security_connector_in_args(args);
+  grpc_auth_metadata_processor *processor =
+      grpc_find_auth_metadata_processor_in_args(args);
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
 
@@ -242,12 +243,14 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
   GPR_ASSERT(sc != NULL);
+  GPR_ASSERT(processor != NULL);
 
   /* initialize members */
   GPR_ASSERT(!sc->is_client_side);
   chand->security_connector =
       GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
   chand->mdctx = mdctx;
+  chand->processor = *processor;
 }
 
 /* Destructor for channel data */

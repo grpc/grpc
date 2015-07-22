@@ -108,8 +108,10 @@ void grpc_server_security_context_destroy(void *ctx);
 #define GRPC_AUTH_METADATA_PROCESSOR_ARG "grpc.auth_metadata_processor"
 
 grpc_arg grpc_auth_metadata_processor_to_arg(grpc_auth_metadata_processor *p);
-grpc_auth_metadata_processor grpc_auth_metadata_processor_from_arg(
+grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg(
     const grpc_arg *arg);
+grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
+    const grpc_channel_args *args);
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
 

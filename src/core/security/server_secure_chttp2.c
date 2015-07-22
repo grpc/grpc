@@ -43,6 +43,7 @@
 #include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_connector.h"
+#include "src/core/security/security_context.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
@@ -87,9 +88,13 @@ static void setup_transport(void *statep, grpc_transport *transport,
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
-  grpc_arg connector_arg = grpc_security_connector_to_arg(state->sc);
-  grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
-      grpc_server_get_channel_args(state->server), &connector_arg, 1);
+  grpc_channel_args *args_copy;
+  grpc_arg args_to_add[2];
+  args_to_add[0] = grpc_security_connector_to_arg(state->sc);
+  args_to_add[1] = grpc_auth_metadata_processor_to_arg(&state->processor);
+  args_copy = grpc_channel_args_copy_and_add(
+      grpc_server_get_channel_args(state->server), args_to_add,
+      GPR_ARRAY_SIZE(args_to_add));
   grpc_server_setup_transport(state->server, transport, extra_filters,
                               GPR_ARRAY_SIZE(extra_filters), mdctx, args_copy);
   grpc_channel_args_destroy(args_copy);

@@ -46,9 +46,45 @@
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
+static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
+static const char *client_identity_property_name = "smurf_name";
+static const char *client_identity = "Brainy Smurf";
+
 typedef struct fullstack_secure_fixture_data {
   char *localaddr;
 } fullstack_secure_fixture_data;
+
+static const grpc_metadata *find_metadata(const grpc_metadata *md,
+                                          size_t md_count,
+                                          const char *key,
+                                          const char *value) {
+  size_t i;
+  for (i = 0; i < md_count; i++) {
+    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
+        memcmp(md[i].value, value, md[i].value_length) == 0) {
+      return &md[i];
+    }
+  }
+  return NULL;
+}
+
+void process_oauth2(void *state, grpc_auth_ticket *ticket,
+                    grpc_auth_context *channel_ctx, const grpc_metadata *md,
+                    size_t md_count, grpc_process_auth_metadata_done_cb cb,
+                    void *user_data) {
+  const grpc_metadata *oauth2 =
+      find_metadata(md, md_count, "Authorization", oauth2_md);
+  grpc_auth_context *new_ctx;
+  GPR_ASSERT(state == NULL);
+  GPR_ASSERT(oauth2 != NULL);
+  new_ctx = grpc_auth_context_create(channel_ctx);
+  grpc_auth_context_add_cstring_property(new_ctx, client_identity_property_name,
+                                         client_identity);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                 new_ctx, client_identity_property_name) == 1);
+  cb(user_data, oauth2, 1, 1, new_ctx);
+  grpc_auth_context_release(new_ctx);
+}
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
@@ -100,8 +136,8 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
-  grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
-      "Authorization", "Bearer aaslkfjs424535asdf", 1);
+  grpc_credentials *oauth2_creds =
+      grpc_md_only_test_credentials_create("Authorization", oauth2_md, 1);
   grpc_credentials *ssl_oauth2_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
@@ -121,6 +157,8 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
+  grpc_auth_metadata_processor processor = {process_oauth2, NULL};
+  grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 

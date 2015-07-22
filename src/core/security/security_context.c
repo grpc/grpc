@@ -295,3 +295,35 @@ void grpc_auth_property_reset(grpc_auth_property *property) {
   memset(property, 0, sizeof(grpc_auth_property));
 }
 
+grpc_arg grpc_auth_metadata_processor_to_arg(grpc_auth_metadata_processor *p) {
+  grpc_arg arg;
+  memset(&arg, 0, sizeof(grpc_arg));
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_AUTH_METADATA_PROCESSOR_ARG;
+  arg.value.pointer.p = p;
+  return arg;
+}
+
+grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg(
+    const grpc_arg *arg) {
+  if (strcmp(arg->key, GRPC_AUTH_METADATA_PROCESSOR_ARG) != 0) return NULL;
+  if (arg->type != GRPC_ARG_POINTER) {
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
+            GRPC_AUTH_METADATA_PROCESSOR_ARG);
+    return NULL;
+  }
+  return arg->value.pointer.p;
+}
+
+grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
+    const grpc_channel_args *args) {
+  size_t i;
+  if (args == NULL) return NULL;
+  for (i = 0; i < args->num_args; i++) {
+    grpc_auth_metadata_processor *p =
+        grpc_auth_metadata_processor_from_arg(&args->args[i]);
+    if (p != NULL) return p;
+  }
+  return NULL;
+}
+
