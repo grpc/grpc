@@ -480,6 +480,10 @@ grpc_compression_algorithm grpc_call_get_compression_algorithm(
   return call->compression_algorithm;
 }
 
+gpr_uint32 grpc_call_get_message_flags(const grpc_call *call) {
+  return call->incoming_message_flags;
+}
+
 static void set_status_details(grpc_call *call, status_source source,
                                grpc_mdstr *status) {
   if (call->status[source].details != NULL) {

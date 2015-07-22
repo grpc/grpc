@@ -4328,6 +4328,7 @@ endif
 
 
 LIBINTEROP_CLIENT_HELPER_SRC = \
+    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
     test/cpp/interop/client_helper.cc \
 
 
@@ -4372,6 +4373,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_CLIENT_HELPER_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc
 
 
 LIBINTEROP_CLIENT_MAIN_SRC = \

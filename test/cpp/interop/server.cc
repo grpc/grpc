@@ -31,6 +31,7 @@
  *
  */
 
+#include <fstream>
 #include <memory>
 #include <sstream>
 #include <thread>
@@ -48,6 +49,7 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
@@ -77,31 +79,32 @@ using grpc::testing::TestService;
 using grpc::Status;
 
 static bool got_sigint = false;
+static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 
 bool SetPayload(PayloadType type, int size, Payload* payload) {
-  PayloadType response_type = type;
+  PayloadType response_type;
+  if (type == PayloadType::RANDOM) {
+    response_type =
+        rand() & 0x1 ? PayloadType::COMPRESSABLE : PayloadType::UNCOMPRESSABLE;
+  } else {
+    response_type = type;
+  }
   payload->set_type(response_type);
-  switch (type) {
-    case PayloadType::COMPRESSABLE:
-      {
-        std::unique_ptr<char[]> body(new char[size]());
-        payload->set_body(body.get(), size);
-      }
-      break;
-    case PayloadType::UNCOMPRESSABLE:
-      {
-        // XXX
-        std::unique_ptr<char[]> body(new char[size]());
-        payload->set_body(body.get(), size);
-      }
-      break;
-    case PayloadType::RANDOM:
-      {
-        // XXX
-        std::unique_ptr<char[]> body(new char[size]());
-        payload->set_body(body.get(), size);
-      }
-      break;
+  switch (response_type) {
+    case PayloadType::COMPRESSABLE: {
+      std::unique_ptr<char[]> body(new char[size]());
+      payload->set_body(body.get(), size);
+    } break;
+    case PayloadType::UNCOMPRESSABLE: {
+      std::unique_ptr<char[]> body(new char[size]());
+      std::ifstream rnd_file(kRandomFile);
+      GPR_ASSERT(rnd_file.good());
+      rnd_file.read(body.get(), size);
+      GPR_ASSERT(!rnd_file.eof());  // Requested more rnd bytes than available
+      payload->set_body(body.get(), size);
+    } break;
+    default:
+      GPR_ASSERT(false);
   }
   return true;
 }

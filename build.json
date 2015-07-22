@@ -684,6 +684,7 @@
         "test/cpp/interop/client_helper.h"
       ],
       "src": [
+        "test/proto/messages.proto",
         "test/cpp/interop/client_helper.cc"
       ],
       "deps": [

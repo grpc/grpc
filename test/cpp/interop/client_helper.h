@@ -61,6 +61,7 @@ class InteropClientContextInspector {
 
   // Inspector methods, able to peek inside ClientContext, follow.
   grpc_compression_algorithm GetCallCompressionAlgorithm() const;
+  gpr_uint32 GetMessageFlags() const;
 
  private:
   const ::grpc::ClientContext& context_;

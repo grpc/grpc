@@ -160,6 +160,8 @@ gpr_uint8 grpc_call_is_client(grpc_call *call);
 grpc_compression_algorithm grpc_call_get_compression_algorithm(
     const grpc_call *call);
 
+gpr_uint32 grpc_call_get_message_flags(const grpc_call *call);
+
 #ifdef __cplusplus
 }
 #endif
