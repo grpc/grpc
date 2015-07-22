@@ -32,8 +32,6 @@
 #endregion
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -41,37 +39,44 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    /// <summary>
-    /// Tests if the version of nunit-console used is sufficient to run async tests.
-    /// </summary>
-    public class NUnitVersionTest
+    public class ChannelTest
     {
-        private int testRunCount = 0;
-
         [TestFixtureTearDown]
-        public void Cleanup()
+        public void CleanupClass()
         {
-            if (testRunCount != 2)
+            GrpcEnvironment.Shutdown();
+        }
+
+        [Test]
+        public void Constructor_RejectsInvalidParams()
+        {
+            Assert.Throws(typeof(NullReferenceException), () => new Channel(null, Credentials.Insecure));
+        }
+
+        [Test]
+        public void State_IdleAfterCreation()
+        {
+            using (var channel = new Channel("localhost", Credentials.Insecure))
             {
-                Console.Error.WriteLine("You are using and old version of NUnit that doesn't support async tests and skips them instead. " +
-                "This test has failed to indicate that.");
-                Console.Error.Flush();
-                Environment.Exit(1);
+                Assert.AreEqual(ChannelState.Idle, channel.State);
             }
         }
 
         [Test]
-        public void NUnitVersionTest1()
+        public void WaitForStateChangedAsync_InvalidArgument()
         {
-            testRunCount++;
+            using (var channel = new Channel("localhost", Credentials.Insecure))
+            {
+                Assert.Throws(typeof(ArgumentException), () => channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
+            }
         }
 
-        // Old version of NUnit will skip this test
         [Test]
-        public async Task NUnitVersionTest2()
+        public void Dispose_IsIdempotent()
         {
-            testRunCount++;
-            await Task.Delay(10);
+            var channel = new Channel("localhost", Credentials.Insecure);
+            channel.Dispose();
+            channel.Dispose();
         }
     }
 }

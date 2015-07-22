@@ -50,6 +50,13 @@ namespace Grpc.Core.Internal
         static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern ChannelState grpcsharp_channel_check_connectivity_state(ChannelSafeHandle channel, int tryToConnect);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_channel_watch_connectivity_state(ChannelSafeHandle channel, ChannelState lastObservedState,
+            Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_channel_destroy(IntPtr channel);
 
         private ChannelSafeHandle()
@@ -71,6 +78,19 @@ namespace Grpc.Core.Internal
             var result = grpcsharp_channel_create_call(this, cq, method, host, deadline);
             result.SetCompletionRegistry(registry);
             return result;
+        }
+
+        public ChannelState CheckConnectivityState(bool tryToConnect)
+        {
+            return grpcsharp_channel_check_connectivity_state(this, tryToConnect ? 1 : 0);
+        }
+
+        public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq,
+            CompletionRegistry completionRegistry, BatchCompletionDelegate callback)
+        {
+            var ctx = BatchContextSafeHandle.Create();
+            completionRegistry.RegisterBatchCompletion(ctx, callback);
+            grpcsharp_channel_watch_connectivity_state(this, lastObservedState, deadline, cq, ctx);
         }
 
         protected override bool ReleaseHandle()
