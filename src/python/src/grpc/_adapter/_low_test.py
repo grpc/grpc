@@ -129,7 +129,10 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.assertIsInstance(request_event.call, _low.Call)
     self.assertIs(server_request_tag, request_event.tag)
     self.assertEquals(1, len(request_event.results))
-    self.assertEquals(dict(client_initial_metadata), dict(request_event.results[0].initial_metadata))
+    got_initial_metadata = dict(request_event.results[0].initial_metadata)
+    self.assertEquals(
+        dict(client_initial_metadata),
+        dict((x, got_initial_metadata[x]) for x in zip(*client_initial_metadata)[0]))
     self.assertEquals(METHOD, request_event.call_details.method)
     self.assertEquals(HOST, request_event.call_details.host)
     self.assertLess(abs(DEADLINE - request_event.call_details.deadline), DEADLINE_TOLERANCE)

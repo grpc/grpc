@@ -256,6 +256,7 @@ class End2endTest : public ::testing::Test {
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
+    args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
     channel_ = CreateChannel(server_address_.str(), SslCredentials(ssl_opts),
                              args);
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));

@@ -114,6 +114,8 @@ static void on_writable(void *acp, int success) {
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
 
+  grpc_alarm_cancel(&ac->alarm);
+
   gpr_mu_lock(&ac->mu);
   if (success) {
     do {
@@ -178,8 +180,6 @@ finish:
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac);
-  } else {
-    grpc_alarm_cancel(&ac->alarm);
   }
   cb(cb_arg, ep);
 }
@@ -253,8 +253,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->write_closure.cb_arg = ac;
 
   gpr_mu_lock(&ac->mu);
-  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
-                  gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&ac->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), 
+                  on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 

@@ -64,6 +64,7 @@ void free_wrapped_grpc_server(void *object TSRMLS_DC) {
   wrapped_grpc_server *server = (wrapped_grpc_server *)object;
   if (server->wrapped != NULL) {
     grpc_server_shutdown_and_notify(server->wrapped, completion_queue, NULL);
+    grpc_server_cancel_all_calls(server->wrapped);
     grpc_completion_queue_pluck(completion_queue, NULL,
                                 gpr_inf_future(GPR_CLOCK_REALTIME));
     grpc_server_destroy(server->wrapped);
