@@ -196,12 +196,13 @@ typedef struct grpc_metadata {
   const char *key;
   const char *value;
   size_t value_length;
+  gpr_uint32 flags;
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage during
       calls to grpc. */
   struct {
-    void *obfuscated[3];
+    void *obfuscated[4];
   } internal_data;
 } grpc_metadata;
 
@@ -286,7 +287,13 @@ typedef struct grpc_op {
   grpc_op_type op;
   /** Write flags bitset for grpc_begin_messages */
   gpr_uint32 flags; 
+  /** Reserved for future usage */
+  void *reserved;
   union {
+    /** Reserved for future usage */
+    struct {
+      void *reserved[8];
+    } reserved;
     struct {
       size_t count;
       grpc_metadata *metadata;
@@ -344,7 +351,6 @@ typedef struct grpc_op {
       int *cancelled;
     } recv_close_on_server;
   } data;
-  void *reserved;
 } grpc_op;
 
 /** Initialize the grpc library.
