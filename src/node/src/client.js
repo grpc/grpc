@@ -72,13 +72,15 @@ function ClientWritableStream(call, serialize) {
  * Attempt to write the given chunk. Calls the callback when done. This is an
  * implementation of a method needed for implementing stream.Writable.
  * @param {Buffer} chunk The chunk to write
- * @param {string} encoding Ignored
+ * @param {string} encoding Used to pass write flags
  * @param {function(Error=)} callback Called when the write is complete
  */
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
-  batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
+  var message = this.serialize(chunk);
+  message.grpcWriteFlags = encoding;
+  batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, event) {
     if (err) {
       // Something has gone wrong. Stop writing by failing to call callback
@@ -207,9 +209,11 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
    *     call
    * @param {(number|Date)=} deadline The deadline for processing this request.
    *     Defaults to infinite future
+   * @param {number=} flags Flags for modifying how the message is sent.
+   *     Defaults to 0.
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeUnaryRequest(argument, callback, metadata, deadline) {
+  function makeUnaryRequest(argument, callback, metadata, deadline, flags) {
     /* jshint validthis: true */
     if (deadline === undefined) {
       deadline = Infinity;
@@ -229,8 +233,10 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         return;
       }
       var client_batch = {};
+      var message = serialize(argument);
+      message.grpcWriteFlags = flags;
       client_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
-      client_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      client_batch[grpc.opType.SEND_MESSAGE] = message;
       client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
       client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
       client_batch[grpc.opType.RECV_MESSAGE] = true;
@@ -352,9 +358,11 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
    *     call
    * @param {(number|Date)=} deadline The deadline for processing this request.
    *     Defaults to infinite future
+   * @param {number=} flags Flags for modifying how the message is sent.
+   *     Defaults to 0.
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeServerStreamRequest(argument, metadata, deadline) {
+  function makeServerStreamRequest(argument, metadata, deadline, flags) {
     /* jshint validthis: true */
     if (deadline === undefined) {
       deadline = Infinity;
@@ -371,9 +379,11 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
         return;
       }
       var start_batch = {};
+      var message = serialize(argument);
+      message.grpcWriteFlags = flags;
       start_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
       start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      start_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      start_batch[grpc.opType.SEND_MESSAGE] = message;
       start_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
       call.startBatch(start_batch, function(err, response) {
         if (err) {
