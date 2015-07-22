@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -100,7 +101,7 @@ static void test_grpc_alarm(void) {
   alarm_arg arg2;
   void *fdone;
 
-  grpc_iomgr_init();
+  grpc_init();
 
   arg.counter = 0;
   arg.success = SUCCESS_NOT_SET;
@@ -113,7 +114,7 @@ static void test_grpc_alarm(void) {
   gpr_event_init(&arg.fcb_arg);
 
   grpc_alarm_init(&alarm, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100), alarm_cb, &arg,
-                  gpr_now(GPR_CLOCK_REALTIME));
+                  gpr_now(GPR_CLOCK_MONOTONIC));
 
   alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
   gpr_mu_lock(&arg.mu);
@@ -165,7 +166,7 @@ static void test_grpc_alarm(void) {
   gpr_event_init(&arg2.fcb_arg);
 
   grpc_alarm_init(&alarm_to_cancel, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100),
-                  alarm_cb, &arg2, gpr_now(GPR_CLOCK_REALTIME));
+                  alarm_cb, &arg2, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_alarm_cancel(&alarm_to_cancel);
 
   alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
@@ -214,7 +215,7 @@ static void test_grpc_alarm(void) {
   gpr_mu_destroy(&arg2.mu);
   gpr_free(arg2.followup_closure);
 
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
 }
 
 int main(int argc, char **argv) {

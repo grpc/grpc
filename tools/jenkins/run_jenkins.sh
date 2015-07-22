@@ -46,6 +46,7 @@ case $platform in
   i386)
     arch="i386"
     platform="linux"
+    docker_suffix=_32bits
     ;;
 esac
 

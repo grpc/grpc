@@ -63,41 +63,28 @@
   return [[self alloc] initWithEnumerator:enumerator error:errorOrNil];
 }
 
-+ (id<GRXWriter>)writerWithEnumerator:(NSEnumerator *)enumerator {
++ (GRXWriter *)writerWithEnumerator:(NSEnumerator *)enumerator {
   return [self writerWithEnumerator:enumerator error:nil];
 }
 
-+ (id<GRXWriter>)writerWithValueSupplier:(id (^)())block {
++ (GRXWriter *)writerWithValueSupplier:(id (^)())block {
   return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithValueSupplier:block]];
 }
 
-+ (id<GRXWriter>)writerWithContainer:(id<NSFastEnumeration>)container {
++ (GRXWriter *)writerWithContainer:(id<NSFastEnumeration>)container {
   return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithContainer:container]];;
 }
 
-+ (id<GRXWriter>)writerWithValue:(id)value {
-  if (value) {
-    return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithSingleValue:value]];
-  } else {
-    return [self emptyWriter];
-  }
++ (GRXWriter *)writerWithValue:(id)value {
+  return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithSingleValue:value]];
 }
 
-+ (id<GRXWriter>)writerWithError:(NSError *)error {
-  if (error) {
-    return [self writerWithEnumerator:nil error:error];
-  } else {
-    return [self emptyWriter];
-  }
++ (GRXWriter *)writerWithError:(NSError *)error {
+  return [self writerWithEnumerator:nil error:error];
 }
 
-+ (id<GRXWriter>)emptyWriter {
-  static GRXImmediateWriter *emptyWriter;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    emptyWriter = [self writerWithEnumerator:nil error:nil];
-  });
-  return emptyWriter;
++ (GRXWriter *)emptyWriter {
+  return [self writerWithEnumerator:nil error:nil];
 }
 
 #pragma mark Conformance with GRXWriter

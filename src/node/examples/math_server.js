@@ -36,8 +36,6 @@
 var grpc = require('..');
 var math = grpc.load(__dirname + '/math.proto').math;
 
-var Server = grpc.buildServer([math.Math.service]);
-
 /**
  * Server function for division. Provides the /Math/DivMany and /Math/Div
  * functions (Div is just DivMany with only one stream element). For each
@@ -108,19 +106,17 @@ function mathDivMany(stream) {
     stream.end();
   });
 }
-
-var server = new Server({
-  'math.Math' : {
-    div: mathDiv,
-    fib: mathFib,
-    sum: mathSum,
-    divMany: mathDivMany
-  }
+var server = new grpc.Server();
+server.addProtoService(math.Math.service, {
+  div: mathDiv,
+  fib: mathFib,
+  sum: mathSum,
+  divMany: mathDivMany
 });
 
 if (require.main === module) {
   server.bind('0.0.0.0:50051');
-  server.listen();
+  server.start();
 }
 
 /**

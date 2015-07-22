@@ -42,7 +42,8 @@ gpr_stack_lockfree* gpr_stack_lockfree_create(int entries);
 void gpr_stack_lockfree_destroy(gpr_stack_lockfree* stack);
 
 /* Pass in a valid entry number for the next stack entry */
-void gpr_stack_lockfree_push(gpr_stack_lockfree* stack, int entry);
+/* Returns 1 if this is the first element on the stack, 0 otherwise */
+int gpr_stack_lockfree_push(gpr_stack_lockfree*, int entry);
 
 /* Returns -1 on empty or the actual entry number */
 int gpr_stack_lockfree_pop(gpr_stack_lockfree* stack);

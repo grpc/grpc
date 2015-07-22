@@ -136,3 +136,11 @@ void grpc_server_log_request_call(char *file, int line,
           "tag=%p)", server, call, details, initial_metadata,
           cq_bound_to_call, cq_for_notification, tag);
 }
+
+void grpc_server_log_shutdown(char *file, int line, gpr_log_severity severity,
+                              grpc_server *server, grpc_completion_queue *cq,
+                              void *tag) {
+  gpr_log(file, line, severity,
+          "grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", server,
+          cq, tag);
+}

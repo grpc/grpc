@@ -385,10 +385,12 @@ static int pygrpc_isinf(double x) {
 gpr_timespec pygrpc_cast_double_to_gpr_timespec(double seconds) {
   gpr_timespec result;
   if (pygrpc_isinf(seconds)) {
-    result = seconds > 0.0 ? gpr_inf_future : gpr_inf_past;
+    result = seconds > 0.0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
+                           : gpr_inf_past(GPR_CLOCK_REALTIME);
   } else {
     result.tv_sec = (time_t)seconds;
     result.tv_nsec = ((seconds - result.tv_sec) * 1e9);
+    result.clock_type = GPR_CLOCK_REALTIME;
   }
   return result;
 }

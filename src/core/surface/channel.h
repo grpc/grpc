@@ -54,7 +54,8 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel,
                                                  int status_code);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
-grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel);
+grpc_mdstr *grpc_channel_get_compression_algorithm_string(
+    grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 

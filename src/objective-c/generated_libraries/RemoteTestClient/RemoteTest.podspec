@@ -7,7 +7,13 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = "10.8"
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
-  s.prepare_command = "protoc --objc_out=. --objcgrpc_out=. *.proto"
+  s.prepare_command = <<-CMD
+    cd ../../../..
+    # TODO(jcanizales): Make only Objective-C plugin.
+    make plugins
+    cd -
+    protoc --plugin=protoc-gen-grpc=../../../../bins/opt/grpc_objective_c_plugin --objc_out=. --grpc_out=. *.proto
+  CMD
 
   s.subspec "Messages" do |ms|
     ms.source_files = "*.pbobjc.{h,m}"
