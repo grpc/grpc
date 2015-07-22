@@ -41,6 +41,9 @@ int grpc_compression_algorithm_parse(const char* name, size_t name_length,
    * doesn't matter, given that we are comparing against string literals, but
    * because this way we needn't have "name" nil-terminated (useful for slice
    * data, for example) */
+  if (name_length == 0) {
+    return 0;
+  }
   if (strncmp(name, "none", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_NONE;
   } else if (strncmp(name, "gzip", name_length) == 0) {

@@ -943,6 +943,20 @@
       ]
     },
     {
+      "name": "compression_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/compression/compression_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "dualstack_socket_test",
       "build": "test",
       "language": "c",

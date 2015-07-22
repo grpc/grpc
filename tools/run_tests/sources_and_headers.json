@@ -122,6 +122,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "compression_test", 
+    "src": [
+      "test/core/compression/compression_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "dualstack_socket_test", 
     "src": [
       "test/core/end2end/dualstack_socket_test.c"
