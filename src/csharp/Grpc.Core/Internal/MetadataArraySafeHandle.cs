@@ -49,7 +49,13 @@ namespace Grpc.Core.Internal
         static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern MetadataEntryStruct grpcsharp_metadata_array_get(IntPtr metadataArray, UIntPtr index);
+        static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern UIntPtr grpcsharp_metadata_array_get_value_length(IntPtr metadataArray, UIntPtr index);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
@@ -82,12 +88,12 @@ namespace Grpc.Core.Internal
             ulong count = grpcsharp_metadata_array_count(metadataArray).ToUInt64();
 
             var metadata = new Metadata();
-            for (ulong index = 0; index < count; index ++)
+            for (ulong i = 0; i < count; i ++)
             {
-                var rawEntry = grpcsharp_metadata_array_get(metadataArray, new UIntPtr(index));
-                string key = Marshal.PtrToStringAnsi(rawEntry.key);
-                var bytes = new byte[rawEntry.valueLength.ToUInt64()];
-                Marshal.Copy(rawEntry.value, bytes, 0, bytes.Length);
+                var index = new UIntPtr(i);
+                string key = Marshal.PtrToStringAnsi(grpcsharp_metadata_array_get_key(metadataArray, index));
+                var bytes = new byte[grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
+                Marshal.Copy(grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
                 metadata.Add(new Metadata.Entry(key, bytes));
             }
             return metadata;
@@ -105,17 +111,6 @@ namespace Grpc.Core.Internal
         {
             grpcsharp_metadata_array_destroy_full(handle);
             return true;
-        }
-
-        /// <summary>
-        /// gprc_metadata from grpc/grpc.h
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MetadataEntryStruct
-        {
-            public IntPtr key;  // const char*
-            public IntPtr value;  // const char*
-            public UIntPtr valueLength;
         }
     }
 }

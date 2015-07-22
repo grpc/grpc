@@ -172,10 +172,22 @@ grpcsharp_metadata_array_count(grpc_metadata_array *array) {
   return (gpr_intptr) array->count;
 }
 
-GPR_EXPORT grpc_metadata GPR_CALLTYPE
-grpcsharp_metadata_array_get(grpc_metadata_array *array, size_t index) {
+GPR_EXPORT const char *GPR_CALLTYPE
+grpcsharp_metadata_array_get_key(grpc_metadata_array *array, size_t index) {
   GPR_ASSERT(index < array->count);
-  return array->metadata[index];
+  return array->metadata[index].key;
+}
+
+GPR_EXPORT const char *GPR_CALLTYPE
+grpcsharp_metadata_array_get_value(grpc_metadata_array *array, size_t index) {
+  GPR_ASSERT(index < array->count);
+  return array->metadata[index].value;
+}
+
+GPR_EXPORT gpr_intptr GPR_CALLTYPE
+grpcsharp_metadata_array_get_value_length(grpc_metadata_array *array, size_t index) {
+  GPR_ASSERT(index < array->count);
+  return (gpr_intptr) array->metadata[index].value_length;
 }
 
 /* Move contents of metadata array */
