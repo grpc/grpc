@@ -59,7 +59,7 @@ then
   then
     exit 0
   fi
-  tools/run_tests/run_interops.sh
+  tools/run_tests/run_build.sh
 elif [ "$platform" == "windows" ]
 then
   exit 0
