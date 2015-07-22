@@ -33,6 +33,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -268,12 +269,27 @@ namespace Grpc.Core.Tests
             }
         }
 
+        [Test]
+        public void UserAgentStringPresent()
+        {
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            string userAgent = Calls.BlockingUnaryCall(internalCall, "RETURN-USER-AGENT", CancellationToken.None);
+            Assert.IsTrue(userAgent.StartsWith("grpc-csharp/"));
+        }
+
         private static async Task<string> EchoHandler(string request, ServerCallContext context)
         {
             foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
             {
-                Console.WriteLine("Echoing header " + metadataEntry.Key + " as trailer");
-                context.ResponseTrailers.Add(metadataEntry);
+                if (metadataEntry.Key != "user-agent")
+                {
+                    context.ResponseTrailers.Add(metadataEntry);
+                }
+            }
+
+            if (request == "RETURN-USER-AGENT")
+            {
+                return context.RequestHeaders.Where(entry => entry.Key == "user-agent").Single().Value;
             }
 
             if (request == "THROW")
