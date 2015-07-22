@@ -140,8 +140,10 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
     return NanThrowTypeError("createSsl's third argument must be a Buffer");
   }
   key_cert_pair.cert_chain = ::node::Buffer::Data(args[2]);
+  // TODO Add a force_client_auth parameter and pass it as the last parameter
+  // here.
   NanReturnValue(WrapStruct(
-      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1)));
+      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1, 0)));
 }
 
 NAN_METHOD(ServerCredentials::CreateFake) {

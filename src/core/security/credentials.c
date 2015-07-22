@@ -259,8 +259,10 @@ static void ssl_build_config(const char *pem_root_certs,
 
 static void ssl_build_server_config(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, grpc_ssl_server_config *config) {
+    size_t num_key_cert_pairs, int force_client_auth,
+    grpc_ssl_server_config *config) {
   size_t i;
+  config->force_client_auth = force_client_auth;
   if (pem_root_certs != NULL) {
     ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
                           &config->pem_root_certs_size);
@@ -302,14 +304,14 @@ grpc_credentials *grpc_ssl_credentials_create(
 
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs) {
+    size_t num_key_cert_pairs, int force_client_auth) {
   grpc_ssl_server_credentials *c =
       gpr_malloc(sizeof(grpc_ssl_server_credentials));
   memset(c, 0, sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_server_vtable;
   ssl_build_server_config(pem_root_certs, pem_key_cert_pairs,
-                          num_key_cert_pairs, &c->config);
+                          num_key_cert_pairs, force_client_auth, &c->config);
   return &c->base;
 }
 

@@ -64,6 +64,7 @@ struct SslServerCredentialsOptions {
   };
   grpc::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
+  bool force_client_auth;
 };
 
 // Builds SSL ServerCredentials given SSL specific options

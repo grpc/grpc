@@ -718,8 +718,9 @@ grpcsharp_ssl_server_credentials_create(
       key_cert_pairs[i].private_key = key_cert_pair_private_key_array[i];
     }
   }
+  /* TODO: Add a force_client_auth parameter and pass it here. */
   creds = grpc_ssl_server_credentials_create(pem_root_certs, key_cert_pairs,
-                                             num_key_cert_pairs);
+                                             num_key_cert_pairs, 0);
   gpr_free(key_cert_pairs);
   return creds;
 }
