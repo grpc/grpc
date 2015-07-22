@@ -44,14 +44,19 @@ namespace Grpc.Core
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly IAsyncStreamReader<TResponse> responseStream;
+        readonly Func<Status> getStatusFunc;
+        readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream, Action disposeAction)
+        public AsyncDuplexStreamingCall(IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.requestStream = requestStream;
             this.responseStream = responseStream;
+            this.getStatusFunc = getStatusFunc;
+            this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
         }
+        
 
         /// <summary>
         /// Async stream to read streaming responses.
@@ -73,6 +78,24 @@ namespace Grpc.Core
             {
                 return requestStream;
             }
+        }
+
+        /// <summary>
+        /// Gets the call status if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Status GetStatus()
+        {
+            return getStatusFunc();
+        }
+
+        /// <summary>
+        /// Gets the call trailing metadata if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Metadata GetTrailers()
+        {
+            return getTrailersFunc();
         }
 
         /// <summary>

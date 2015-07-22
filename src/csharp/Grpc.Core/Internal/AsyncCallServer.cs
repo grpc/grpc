@@ -101,14 +101,17 @@ namespace Grpc.Core.Internal
         /// Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendStatusFromServer(Status status, Metadata trailers, AsyncCompletionDelegate<object> completionDelegate)
         {
             lock (myLock)
             {
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendStatusFromServer(status, HandleHalfclosed);
+                using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
+                {
+                    call.StartSendStatusFromServer(status, HandleHalfclosed, metadataArray);
+                }
                 halfcloseRequested = true;
                 readingDone = true;
                 sendCompletionDelegate = completionDelegate;

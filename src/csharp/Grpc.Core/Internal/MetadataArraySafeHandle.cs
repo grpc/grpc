@@ -46,12 +46,24 @@ namespace Grpc.Core.Internal
         static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern UIntPtr grpcsharp_metadata_array_get_value_length(IntPtr metadataArray, UIntPtr index);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
 
         private MetadataArraySafeHandle()
         {
         }
-
+            
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
             // TODO(jtattermusch): we might wanna check that the metadata is readonly 
@@ -61,6 +73,38 @@ namespace Grpc.Core.Internal
                 grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, metadata[i].ValueBytes, new UIntPtr((ulong)metadata[i].ValueBytes.Length));
             }
             return metadataArray;
+        }
+
+        /// <summary>
+        /// Reads metadata from pointer to grpc_metadata_array
+        /// </summary>
+        public static Metadata ReadMetadataFromPtrUnsafe(IntPtr metadataArray)
+        {
+            if (metadataArray == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            ulong count = grpcsharp_metadata_array_count(metadataArray).ToUInt64();
+
+            var metadata = new Metadata();
+            for (ulong i = 0; i < count; i ++)
+            {
+                var index = new UIntPtr(i);
+                string key = Marshal.PtrToStringAnsi(grpcsharp_metadata_array_get_key(metadataArray, index));
+                var bytes = new byte[grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
+                Marshal.Copy(grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
+                metadata.Add(new Metadata.Entry(key, bytes));
+            }
+            return metadata;
+        }
+
+        internal IntPtr Handle
+        {
+            get
+            {
+                return handle;
+            }
         }
 
         protected override bool ReleaseHandle()

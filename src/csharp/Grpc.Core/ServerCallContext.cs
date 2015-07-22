@@ -33,6 +33,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core
@@ -42,14 +43,94 @@ namespace Grpc.Core
     /// </summary>
     public sealed class ServerCallContext
     {
-        // TODO(jtattermusch): add cancellationToken
-
-        // TODO(jtattermusch): add deadline info
-
-        // TODO(jtattermusch): expose initial metadata sent by client for reading
-
         // TODO(jtattermusch): expose method to send initial metadata back to client
 
         // TODO(jtattermusch): allow setting status and trailing metadata to send after handler completes.
+
+        private readonly string method;
+        private readonly string host;
+        private readonly DateTime deadline;
+        private readonly Metadata requestHeaders;
+        private readonly CancellationToken cancellationToken;
+
+        private Status status = Status.DefaultSuccess;
+        private readonly Metadata responseTrailers = new Metadata();
+
+        public ServerCallContext(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken)
+        {
+            this.method = method;
+            this.host = host;
+            this.deadline = deadline;
+            this.requestHeaders = requestHeaders;
+            this.cancellationToken = cancellationToken;
+        }
+            
+        /// <summary> Name of method called in this RPC. </summary>
+        public string Method
+        {
+            get
+            {
+                return this.method;
+            }
+        }
+
+        /// <summary> Name of host called in this RPC. </summary>
+        public string Host
+        {
+            get
+            {
+                return this.host;
+            }
+        }
+
+        /// <summary> Deadline for this RPC. </summary>
+        public DateTime Deadline
+        {
+            get
+            {
+                return this.deadline;
+            }
+        }
+
+        /// <summary> Initial metadata sent by client. </summary>
+        public Metadata RequestHeaders
+        {
+            get
+            {
+                return this.requestHeaders;
+            }
+        }
+
+        // TODO(jtattermusch): support signalling cancellation.
+        /// <summary> Cancellation token signals when call is cancelled. </summary>
+        public CancellationToken CancellationToken
+        {
+            get
+            {
+                return this.cancellationToken;
+            }
+        }
+
+        /// <summary> Trailers to send back to client after RPC finishes.</summary>
+        public Metadata ResponseTrailers
+        {
+            get
+            {
+                return this.responseTrailers;
+            }
+        }
+
+        /// <summary> Status to send back to client after RPC finishes.</summary>
+        public Status Status
+        {
+            get
+            {
+                return this.status;
+            }
+            set
+            {
+                status = value;
+            }
+        }
     }
 }

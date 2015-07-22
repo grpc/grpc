@@ -149,7 +149,7 @@ std::string GetMethodRequestParamMaybe(const MethodDescriptor *method) {
 std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
-      return "Task<" + GetClassName(method->output_type()) + ">";
+      return "AsyncUnaryCall<" + GetClassName(method->output_type()) + ">";
     case METHODTYPE_CLIENT_STREAMING:
       return "AsyncClientStreamingCall<" + GetClassName(method->input_type())
           + ", " + GetClassName(method->output_type()) + ">";
@@ -298,7 +298,7 @@ void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor *method = service->method(i);
-    out->Print("$returntype$ $methodname$(ServerCallContext context, $request$$response_stream_maybe$);\n",
+    out->Print("$returntype$ $methodname$($request$$response_stream_maybe$, ServerCallContext context);\n",
                "methodname", method->name(), "returntype",
                GetMethodReturnTypeServer(method), "request",
                GetMethodRequestParamServer(method), "response_stream_maybe",

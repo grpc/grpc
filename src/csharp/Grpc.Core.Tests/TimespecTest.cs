@@ -59,6 +59,19 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ToDateTime()
+        {
+            Assert.AreEqual(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                new Timespec(IntPtr.Zero, 0).ToDateTime());
+
+            Assert.AreEqual(new DateTime(1970, 1, 1, 0, 0, 10, DateTimeKind.Utc).AddTicks(50),
+                new Timespec(new IntPtr(10), 5000).ToDateTime());
+
+            Assert.AreEqual(new DateTime(2015, 7, 21, 4, 21, 48, DateTimeKind.Utc),
+                new Timespec(new IntPtr(1437452508), 0).ToDateTime());
+        }
+
+        [Test]
         public void Add()
         {
             var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 123456789 };

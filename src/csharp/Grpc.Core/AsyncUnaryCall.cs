@@ -38,32 +38,40 @@ using System.Threading.Tasks;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Return type for server streaming calls.
+    /// Return type for single request - single response call.
     /// </summary>
-    public sealed class AsyncServerStreamingCall<TResponse> : IDisposable
+    public sealed class AsyncUnaryCall<TResponse> : IDisposable
     {
-        readonly IAsyncStreamReader<TResponse> responseStream;
+        readonly Task<TResponse> responseAsync;
         readonly Func<Status> getStatusFunc;
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncServerStreamingCall(IAsyncStreamReader<TResponse> responseStream, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        public AsyncUnaryCall(Task<TResponse> responseAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
-            this.responseStream = responseStream;
+            this.responseAsync = responseAsync;
             this.getStatusFunc = getStatusFunc;
             this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
         }
 
         /// <summary>
-        /// Async stream to read streaming responses.
+        /// Asynchronous call result.
         /// </summary>
-        public IAsyncStreamReader<TResponse> ResponseStream
+        public Task<TResponse> ResponseAsync
         {
             get
             {
-                return responseStream;
+                return this.responseAsync;
             }
+        }
+
+        /// <summary>
+        /// Allows awaiting this object directly.
+        /// </summary>
+        public TaskAwaiter<TResponse> GetAwaiter()
+        {
+            return responseAsync.GetAwaiter();
         }
 
         /// <summary>
@@ -86,7 +94,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Provides means to cleanup after the call.
-        /// If the call has already finished normally (response stream has been fully read), doesn't do anything.
+        /// If the call has already finished normally (request stream has been completed and call result has been received), doesn't do anything.
         /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.
         /// As a result, all resources being used by the call should be released eventually.
         /// </summary>
