@@ -45,16 +45,14 @@ namespace Grpc.Core
     {
         // TODO(jtattermusch): expose method to send initial metadata back to client
 
-        // TODO(jtattermusch): allow setting status and trailing metadata to send after handler completes.
-
         private readonly string method;
         private readonly string host;
         private readonly DateTime deadline;
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
+        private readonly Metadata responseTrailers = new Metadata();
 
         private Status status = Status.DefaultSuccess;
-        private readonly Metadata responseTrailers = new Metadata();
 
         public ServerCallContext(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken)
         {
@@ -127,6 +125,7 @@ namespace Grpc.Core
             {
                 return this.status;
             }
+
             set
             {
                 status = value;

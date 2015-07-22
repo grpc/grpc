@@ -88,7 +88,7 @@ namespace Grpc.Core.Internal
             ulong count = grpcsharp_metadata_array_count(metadataArray).ToUInt64();
 
             var metadata = new Metadata();
-            for (ulong i = 0; i < count; i ++)
+            for (ulong i = 0; i < count; i++)
             {
                 var index = new UIntPtr(i);
                 string key = Marshal.PtrToStringAnsi(grpcsharp_metadata_array_get_key(metadataArray, index));

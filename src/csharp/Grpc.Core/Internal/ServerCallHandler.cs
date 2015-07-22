@@ -179,7 +179,6 @@ namespace Grpc.Core.Internal
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
-
             Status status;
             var context = HandlerUtils.NewContext(newRpc);
             try

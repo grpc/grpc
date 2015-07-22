@@ -102,6 +102,7 @@
     <Compile Include="Internal\BatchContextSafeHandle.cs" />
     <Compile Include="ChannelOptions.cs" />
     <Compile Include="AsyncUnaryCall.cs" />
+    <Compile Include="VersionInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
