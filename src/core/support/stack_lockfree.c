@@ -47,7 +47,7 @@ struct lockfree_node_contents {
   /* next thing to look at. Actual index for head, next index otherwise */
   gpr_uint16 index;
 #ifdef GPR_ARCH_64
-  gpr_uint16 pad;
+  gpr_uint16 pad; /* In debugging, used for testing if already pushed */
   gpr_uint32 aba_ctr;
 #else
 #ifdef GPR_ARCH_32
@@ -67,7 +67,7 @@ typedef union lockfree_node {
 #define ENTRY_ALIGNMENT_BITS 3 /* make sure that entries aligned to 8-bytes */
 #define INVALID_ENTRY_INDEX                        \
   ((1 << 16) - 1) /* reserve this entry as invalid \
-                       */
+                        */
 
 struct gpr_stack_lockfree {
   lockfree_node *entries;
@@ -89,6 +89,7 @@ gpr_stack_lockfree *gpr_stack_lockfree_create(int entries) {
 
   /* Point the head at reserved dummy entry */
   stack->head.contents.index = INVALID_ENTRY_INDEX;
+
   return stack;
 }
 
@@ -105,6 +106,22 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
   newhead.contents.index = (gpr_uint16)entry;
   /* Also post-increment the aba_ctr */
   newhead.contents.aba_ctr = stack->entries[entry].contents.aba_ctr++;
+
+#ifndef NDEBUG
+#ifdef GPR_ARCH_64
+  /* Make sure that this thing isn't double pushed, either
+     simultaneously or otherwise */
+  {
+    lockfree_node test, newtest;
+    test.atm = stack->entries[entry].atm;
+    GPR_ASSERT(test.contents.pad == 0);
+    newtest.atm = test.atm;
+    newtest.contents.pad = 1;
+    GPR_ASSERT(gpr_atm_no_barrier_cas(&(stack->entries[entry].atm), test.atm,
+                                      newtest.atm));
+  }
+#endif
+#endif
 
   do {
     /* Atomically get the existing head value for use */
@@ -128,5 +145,21 @@ int gpr_stack_lockfree_pop(gpr_stack_lockfree *stack) {
         gpr_atm_no_barrier_load(&(stack->entries[head.contents.index].atm));
 
   } while (!gpr_atm_no_barrier_cas(&(stack->head.atm), head.atm, newhead.atm));
+
+#ifndef NDEBUG
+#ifdef GPR_ARCH_64
+  /* Make sure that this isn't being used simultaneously */
+  {
+    lockfree_node test, newtest;
+    test.atm = stack->entries[head.contents.index].atm;
+    GPR_ASSERT(test.contents.pad == 1);
+    newtest.atm = test.atm;
+    newtest.contents.pad = 0;
+    GPR_ASSERT(gpr_atm_no_barrier_cas(
+        &(stack->entries[head.contents.index].atm), test.atm, newtest.atm));
+  }
+#endif
+#endif
+
   return head.contents.index;
 }
