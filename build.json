@@ -22,6 +22,7 @@
       ],
       "src": [
         "src/core/census/context.c",
+        "src/core/census/cpu_accounting.c",
         "src/core/census/initialize.c"
       ]
     },

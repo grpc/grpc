@@ -3610,6 +3610,7 @@ LIBGRPC_SRC = \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
+    src/core/census/cpu_accounting.c \
     src/core/census/initialize.c \
 
 PUBLIC_HEADERS_C += \
@@ -3874,6 +3875,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
+    src/core/census/cpu_accounting.c \
     src/core/census/initialize.c \
 
 PUBLIC_HEADERS_C += \

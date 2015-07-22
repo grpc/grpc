@@ -100,6 +100,18 @@ int census_context_deserialize(const char *buffer, census_context **context);
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
 
+/* Census can record CPU time used during the course of an operation. The two
+ * functions below can be used to annotate the beginning and end of a logical
+ * operation (e.g. sending an RPC request). Unlike most other census
+ * functions, census_begin_work() does not take a census_context as argument,
+ * as one may not be available in the early parts of a operation. Instead, a
+ * thread-local flag is used, and the CPU usage is accounted at the time
+ * census_end_work() is called. For this reason, the same thread must be used
+ * for both calls. If CPU accounting is not enabled, then these functions
+ * are effectively NOP's. */
+void census_begin_work();
+void census_end_work(census_context *context);
+
 #ifdef __cplusplus
 }
 #endif
