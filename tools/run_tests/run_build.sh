@@ -20,7 +20,7 @@
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 # A PARTICULAR PURPOSE ARE DISCLAIMED. 
-source tools/gce_setup/shared_startup_funcs.sh && tools/gce_setup/grpc_dockerfile_refresh grpc/cxx tools/dockerfile/grpc_cxx
+source tools/gce_setup/shared_startup_funcs.sh && grpc_dockerfile_refresh grpc/cxx tools/dockerfile/grpc_cxx
 
 
 
