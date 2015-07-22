@@ -309,7 +309,36 @@ static void slice_unref(void *p) {
   unlock(ctx);
 }
 
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str) {
+grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int canonicalize_key) {
+  if (canonicalize_key) {
+    size_t len;
+    size_t i;
+    int canonical = 1;
+
+    for (i = 0; str[i]; i++) {
+      if (str[i] >= 'A' && str[i] <= 'Z') {
+        canonical = 0;
+      }
+    }
+    len = i;
+
+    if (canonical) {
+      return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, len);
+    } else {
+      char *copy = gpr_malloc(len + 1);
+      grpc_mdstr *ret;
+      for (i = 0; i < len; i++) {
+        if (str[i] >= 'A' && str[i] <= 'Z') {
+          copy[i] = str[i] - 'A' + 'a';
+        } else {
+          copy[i] = str[i];
+        }
+      }
+      ret = grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)copy, len);
+      gpr_free(copy);
+      return ret;
+    }
+  }
   return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, strlen(str));
 }
 
@@ -491,8 +520,8 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
 grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
                                       const char *value) {
   return grpc_mdelem_from_metadata_strings(ctx,
-                                           grpc_mdstr_from_string(ctx, key),
-                                           grpc_mdstr_from_string(ctx, value));
+                                           grpc_mdstr_from_string(ctx, key, 0),
+                                           grpc_mdstr_from_string(ctx, value, 0));
 }
 
 grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
@@ -504,9 +533,10 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
                                                 const char *key,
                                                 const gpr_uint8 *value,
-                                                size_t value_length) {
+                                                size_t value_length,
+                                                int canonicalize_key) {
   return grpc_mdelem_from_metadata_strings(
-      ctx, grpc_mdstr_from_string(ctx, key),
+      ctx, grpc_mdstr_from_string(ctx, key, canonicalize_key),
       grpc_mdstr_from_buffer(ctx, value, value_length));
 }
 

@@ -228,7 +228,7 @@ static void init_transport(grpc_chttp2_transport *t,
   t->global.pings.next = t->global.pings.prev = &t->global.pings;
   t->parsing.is_client = is_client;
   t->parsing.str_grpc_timeout =
-      grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
+      grpc_mdstr_from_string(t->metadata_context, "grpc-timeout", 0);
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
