@@ -188,7 +188,8 @@ grpc_credentials *grpc_fake_oauth2_credentials_create(
 
 /* Private constructor for jwt credentials from an already parsed json key.
    Takes ownership of the key. */
-grpc_credentials *grpc_jwt_credentials_create_from_auth_json_key(
+grpc_credentials *
+grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
 
 /* Private constructor for refresh token credentials from an already parsed
@@ -240,7 +241,7 @@ typedef struct {
 
   grpc_auth_json_key key;
   gpr_timespec jwt_lifetime;
-} grpc_jwt_credentials;
+} grpc_service_account_jwt_access_credentials;
 
 /* -- Oauth2TokenFetcher credentials --
 
