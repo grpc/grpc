@@ -33,9 +33,47 @@
 
 #include <grpc++/channel_arguments.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/channel/channel_args.h"
 
 namespace grpc {
+
+ChannelArguments::ChannelArguments(const ChannelArguments& other)
+    : strings_(other.strings_) {
+  args_.reserve(other.args_.size());
+  auto list_it_dst = strings_.begin();
+  auto list_it_src = other.strings_.begin();
+  for (auto a = other.args_.begin(); a != other.args_.end(); ++a) {
+    grpc_arg ap;
+    ap.type = a->type;
+    GPR_ASSERT(list_it_src->c_str() == a->key);
+    ap.key = const_cast<char*>(list_it_dst->c_str());
+    ++list_it_src;
+    ++list_it_dst;
+    switch (a->type) {
+      case GRPC_ARG_INTEGER:
+        ap.value.integer = a->value.integer;
+        break;
+      case GRPC_ARG_STRING:
+        GPR_ASSERT(list_it_src->c_str() == a->value.string);
+        ap.value.string = const_cast<char*>(list_it_dst->c_str());
+        ++list_it_src;
+        ++list_it_dst;
+        break;
+      case GRPC_ARG_POINTER:
+        ap.value.pointer = a->value.pointer;
+        ap.value.pointer.p = a->value.pointer.copy(ap.value.pointer.p);
+        break;
+    }
+    args_.push_back(ap);
+  }
+}
+
+void ChannelArguments::Swap(ChannelArguments& other) {
+  args_.swap(other.args_);
+  strings_.swap(other.strings_);
+}
 
 void ChannelArguments::SetCompressionAlgorithm(
     grpc_compression_algorithm algorithm) {
