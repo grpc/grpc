@@ -35,10 +35,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-extern "C" {
-#include "src/core/iomgr/socket_utils_posix.h"
-}
-
+#include <grpc/support/socket_util.h>
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
