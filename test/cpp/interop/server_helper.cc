@@ -69,8 +69,12 @@ InteropServerContextInspector::GetCallCompressionAlgorithm() const {
   return grpc_call_get_compression_algorithm(context_.call_);
 }
 
-std::shared_ptr<const AuthContext> InteropServerContextInspector::GetAuthContext()
-    const {
+gpr_uint32 InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
+  return grpc_call_get_encodings_accepted_by_peer(context_.call_);
+}
+
+std::shared_ptr<const AuthContext>
+InteropServerContextInspector::GetAuthContext() const {
   return context_.auth_context();
 }
 

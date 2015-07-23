@@ -479,6 +479,12 @@ static void set_compression_algorithm(grpc_call *call,
   call->compression_algorithm = algo;
 }
 
+grpc_compression_algorithm grpc_call_get_compression_algorithm(
+    const grpc_call *call) {
+  return call->compression_algorithm;
+}
+
+
 static void set_encodings_accepted_by_peer(grpc_call *call,
                                 const gpr_slice accept_encoding_slice) {
   size_t i;
@@ -1350,7 +1356,7 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
     algorithm =
-        ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+        ((grpc_compression_algorithm)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
     if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),

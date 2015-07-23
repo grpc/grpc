@@ -42,6 +42,7 @@
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -67,6 +68,7 @@ using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::SslServerCredentialsOptions;
+using grpc::testing::InteropServerContextInspector;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
 using grpc::testing::SimpleRequest;
@@ -138,6 +140,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
+    InteropServerContextInspector inspector(*context);
     SetResponseCompression(context, *request);
     if (request->has_response_size() && request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
@@ -145,6 +148,9 @@ class TestServiceImpl : public TestService::Service {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
     }
+    const gpr_uint32 client_accept_encodings_bitset =
+        inspector.GetEncodingsAcceptedByClient();
+    gpr_log(GPR_INFO, "%d", GPR_BITCOUNT(client_accept_encodings_bitset));
 
     return Status::OK;
   }

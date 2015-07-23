@@ -53,6 +53,7 @@ class InteropServerContextInspector {
   std::shared_ptr<const AuthContext> GetAuthContext() const;
   bool IsCancelled() const;
   grpc_compression_algorithm GetCallCompressionAlgorithm() const;
+  gpr_uint32 GetEncodingsAcceptedByClient() const;
 
  private:
   const ::grpc::ServerContext& context_;
