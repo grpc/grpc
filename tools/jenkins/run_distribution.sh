@@ -32,24 +32,113 @@
 # linuxbrew installation of a selected language
 set -ex
 
-sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
-DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
-
-docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
-
-supported="python nodejs ruby php"
-
+# Our homebrew installation script command, per language
+# Can be used in both linux and macos
 if [ "$language" == "core" ]; then
   command="curl -fsSL https://goo.gl/getgrpc | bash -"
-elif [[ "$supported" =~ "$language" ]]; then
+elif [[ "python nodejs ruby php" =~ "$language" ]]; then
   command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
 else
   echo "unsupported language $language"
   exit 1
 fi
 
-docker run $DOCKER_IMAGE_NAME bash -l \
-  -c "nvm use 0.12; \
-      npm set unsafe-perm true; \
-      rvm use ruby-2.1; \
-      $command"
+if [ "$platform" == "linux" ]; then
+
+  if [ "$dist_channel" == "homebrew" ]; then
+
+    sha1=$(sha1sum tools/jenkins/grpc_linuxbrew/Dockerfile | cut -f1 -d\ )
+    DOCKER_IMAGE_NAME=grpc_linuxbrew_$sha1
+
+    # build docker image, contains all pre-requisites
+    docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
+
+    # run per-language homebrew installation script
+    docker run $DOCKER_IMAGE_NAME bash -l \
+      -c "nvm use 0.12; \
+          npm set unsafe-perm true; \
+          rvm use ruby-2.1; \
+          $command"
+
+  else
+    echo "Unsupported $platform dist_channel $dist_channel"
+    exit 1
+  fi
+
+elif [ "$platform" == "macos" ]; then
+
+  if [ "$dist_channel" == "homebrew" ]; then
+
+    echo "Formulas installed by system-wide homebrew (before)"
+    brew list -l
+
+    # Save the original PATH so that we can run the system `brew` command
+    # again at the end of the script
+    export ORIGINAL_PATH=$PATH
+
+    # Set up temp directories for test installation of homebrew
+    brew_root=/tmp/homebrew-test-$language
+    rm -rf $brew_root
+    mkdir -p $brew_root
+    git clone https://github.com/Homebrew/homebrew.git $brew_root
+
+    # Make sure we are operating at the right copy of temp homebrew
+    # installation
+    export PATH=$brew_root/bin:$PATH
+
+    # Set up right environment for each language
+    case $language in
+      *python*)
+        rm -rf jenkins_python_venv
+        virtualenv jenkins_python_venv
+        source jenkins_python_venv/bin/activate
+        ;;
+      *nodejs*)
+        export PATH=$HOME/.nvm/versions/node/v0.12.7/bin:$PATH
+        ;;
+      *ruby*)
+        export PATH=/usr/local/rvm/rubies/ruby-2.2.1/bin:$PATH
+        ;;
+      *php*)
+        export CFLAGS="-Wno-parentheses-equality"
+        ;;
+    esac
+
+    # Run our homebrew installation script
+    bash -c "$command"
+
+    # Uninstall / clean up per-language modules/extensions after the test
+    case $language in
+      *python*)
+        deactivate
+        rm -rf jenkins_python_venv
+        ;;
+      *nodejs*)
+        npm list -g | grep grpc
+        npm uninstall -g grpc
+        ;;
+      *ruby*)
+        gem list | grep grpc
+        gem uninstall grpc
+        ;;
+      *php*)
+        rm grpc.so
+        ;;
+    esac
+
+    # Clean up
+    rm -rf $brew_root
+
+    echo "Formulas installed by system-wide homebrew (after, should be unaffected)"
+    export PATH=$ORIGINAL_PATH
+    brew list -l
+
+  else
+    echo "Unsupported $platform dist_channel $dist_channel"
+    exit 1
+  fi
+
+else
+  echo "unsupported platform $platform"
+  exit 1
+fi

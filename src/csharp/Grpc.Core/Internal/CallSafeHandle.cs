@@ -81,7 +81,7 @@ namespace Grpc.Core.Internal
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_send_status_from_server(CallSafeHandle call, 
-            BatchContextSafeHandle ctx, StatusCode statusCode, string statusMessage);
+            BatchContextSafeHandle ctx, StatusCode statusCode, string statusMessage, MetadataArraySafeHandle metadataArray);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_recv_message(CallSafeHandle call,
@@ -159,11 +159,11 @@ namespace Grpc.Core.Internal
             grpcsharp_call_send_close_from_client(this, ctx).CheckOk();
         }
 
-        public void StartSendStatusFromServer(Status status, BatchCompletionDelegate callback)
+        public void StartSendStatusFromServer(Status status, BatchCompletionDelegate callback, MetadataArraySafeHandle metadataArray)
         {
             var ctx = BatchContextSafeHandle.Create();
             completionRegistry.RegisterBatchCompletion(ctx, callback);
-            grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, status.Detail).CheckOk();
+            grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, status.Detail, metadataArray).CheckOk();
         }
 
         public void StartReceiveMessage(BatchCompletionDelegate callback)

@@ -148,6 +148,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
                                       gpr_timespec deadline) {
   grpc_event ret;
 
+  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
+
   GRPC_CQ_INTERNAL_REF(cc, "next");
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
@@ -187,6 +189,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   grpc_event ret;
   grpc_cq_completion *c;
   grpc_cq_completion *prev;
+
+  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
   GRPC_CQ_INTERNAL_REF(cc, "pluck");
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));

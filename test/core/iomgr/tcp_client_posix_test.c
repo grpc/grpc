@@ -196,13 +196,13 @@ void test_times_out(void) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (gpr_time_cmp(gpr_time_add(connect_deadline,
                                    gpr_time_from_seconds(2, GPR_TIMESPAN)),
-                      gpr_now(GPR_CLOCK_REALTIME)) > 0) {
+                      gpr_now(connect_deadline.clock_type)) > 0) {
     int is_after_deadline =
-        gpr_time_cmp(connect_deadline, gpr_now(GPR_CLOCK_REALTIME)) <= 0;
+        gpr_time_cmp(connect_deadline, gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
     if (is_after_deadline &&
         gpr_time_cmp(gpr_time_add(connect_deadline,
                                   gpr_time_from_seconds(1, GPR_TIMESPAN)),
-                     gpr_now(GPR_CLOCK_REALTIME)) > 0) {
+                     gpr_now(GPR_CLOCK_MONOTONIC)) > 0) {
       /* allow some slack before insisting that things be done */
     } else {
       GPR_ASSERT(g_connections_complete ==

@@ -36,14 +36,14 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  s.version  = '0.6.0'
+  s.version  = '0.7.0'
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',
-  #              :tag => 'release-0_9_1-objectivec-0.5.1' }
+  #              :tag => 'release-0_10_0-objectivec-0.6.0' }
 
   s.ios.deployment_target = '6.0'
   s.osx.deployment_target = '10.8'
@@ -170,7 +170,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolver_factory.h',
                       'src/core/client_config/resolver_registry.h',
                       'src/core/client_config/resolvers/dns_resolver.h',
-                      'src/core/client_config/resolvers/unix_resolver_posix.h',
+                      'src/core/client_config/resolvers/sockaddr_resolver.h',
                       'src/core/client_config/subchannel.h',
                       'src/core/client_config/subchannel_factory.h',
                       'src/core/client_config/uri_parser.h',
@@ -248,6 +248,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/context.h',
+                      'src/core/census/rpc_stat_id.h',
                       'grpc/grpc_security.h',
                       'grpc/byte_buffer.h',
                       'grpc/byte_buffer_reader.h',
@@ -296,7 +297,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolver_factory.c',
                       'src/core/client_config/resolver_registry.c',
                       'src/core/client_config/resolvers/dns_resolver.c',
-                      'src/core/client_config/resolvers/unix_resolver_posix.c',
+                      'src/core/client_config/resolvers/sockaddr_resolver.c',
                       'src/core/client_config/subchannel.c',
                       'src/core/client_config/subchannel_factory.c',
                       'src/core/client_config/uri_parser.c',
@@ -389,7 +390,8 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.c',
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
-                      'src/core/census/initialize.c'
+                      'src/core/census/initialize.c',
+                      'src/core/census/record_stat.c'
 
     ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
@@ -434,7 +436,7 @@ Pod::Spec.new do |s|
                               'src/core/client_config/resolver_factory.h',
                               'src/core/client_config/resolver_registry.h',
                               'src/core/client_config/resolvers/dns_resolver.h',
-                              'src/core/client_config/resolvers/unix_resolver_posix.h',
+                              'src/core/client_config/resolvers/sockaddr_resolver.h',
                               'src/core/client_config/subchannel.h',
                               'src/core/client_config/subchannel_factory.h',
                               'src/core/client_config/uri_parser.h',
@@ -511,13 +513,16 @@ Pod::Spec.new do |s|
                               'src/core/transport/stream_op.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
-                              'src/core/census/context.h'
+                              'src/core/census/context.h',
+                              'src/core/census/rpc_stat_id.h'
 
     ss.header_mappings_dir = '.'
 
     ss.requires_arc = false
     ss.libraries = 'z'
     ss.dependency 'OpenSSL', '~> 1.0.200'
+
+    # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
 
   # This is a workaround for Cocoapods Issue #1437.

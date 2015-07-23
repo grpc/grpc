@@ -134,6 +134,10 @@ void grpc_server_log_request_call(char *file, int line,
                                   grpc_completion_queue *cq_for_notification,
                                   void *tag);
 
+void grpc_server_log_shutdown(char *file, int line, gpr_log_severity severity,
+                              grpc_server *server, grpc_completion_queue *cq,
+                              void *tag);
+
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
 void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
@@ -150,6 +154,9 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
   if (grpc_trace_batch)                                                      \
   grpc_server_log_request_call(sev, server, call, details, initial_metadata, \
                                cq_bound_to_call, cq_for_notifications, tag)
+
+#define GRPC_SERVER_LOG_SHUTDOWN(sev, server, cq, tag) \
+  if (grpc_trace_batch) grpc_server_log_shutdown(sev, server, cq, tag)
 
 gpr_uint8 grpc_call_is_client(grpc_call *call);
 

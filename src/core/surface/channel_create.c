@@ -179,7 +179,8 @@ grpc_channel *grpc_channel_create(const char *target,
     return NULL;
   }
 
-  channel = grpc_channel_create_from_filters(filters, n, args, mdctx, 1);
+  channel =
+      grpc_channel_create_from_filters(target, filters, n, args, mdctx, 1);
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
                                    resolver);
   GRPC_RESOLVER_UNREF(resolver, "create");

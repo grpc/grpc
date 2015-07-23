@@ -348,7 +348,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
-  if (gpr_time_cmp(send_deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
+  if (gpr_time_cmp(send_deadline, gpr_inf_future(send_deadline.clock_type)) != 0) {
     set_deadline_alarm(call, send_deadline);
   }
   return call;
@@ -1253,6 +1253,11 @@ static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
   elem->filter->start_transport_stream_op(elem, op);
 }
 
+char *grpc_call_get_peer(grpc_call *call) {
+  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+  return elem->filter->get_peer(elem);
+}
+
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
   return CALL_FROM_TOP_ELEM(elem);
 }
@@ -1278,8 +1283,8 @@ static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   }
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
-  grpc_alarm_init(&call->alarm, deadline, call_alarm, call,
-                  gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&call->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), call_alarm, call,
+                  gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 /* we offset status by a small amount when storing it into transport metadata

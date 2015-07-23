@@ -41,8 +41,10 @@
 #include <grpc/support/log.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
+#include <grpc++/credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include "test/cpp/interop/client_helper.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
@@ -164,6 +166,32 @@ void InteropClient::DoOauth2AuthToken(const grpc::string& username,
   const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Unary with oauth2 access token credentials done.");
+}
+
+void InteropClient::DoPerRpcCreds(const grpc::string& username,
+                                  const grpc::string& oauth_scope) {
+  gpr_log(GPR_INFO,
+          "Sending a unary rpc with per-rpc raw oauth2 access token ...");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+  request.set_fill_oauth_scope(true);
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  grpc::string access_token = GetOauth2AccessToken();
+  std::shared_ptr<Credentials> creds = AccessTokenCredentials(access_token);
+  context.set_credentials(creds);
+
+  Status s = stub->UnaryCall(&context, request, &response);
+
+  AssertOkOrPrintErrorStatus(s);
+  GPR_ASSERT(!response.username().empty());
+  GPR_ASSERT(!response.oauth_scope().empty());
+  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
+  const char* oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Unary with per-rpc oauth2 access token done.");
 }
 
 void InteropClient::DoJwtTokenCreds(const grpc::string& username) {

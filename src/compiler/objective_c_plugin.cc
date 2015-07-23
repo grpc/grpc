@@ -63,7 +63,9 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       // Generate .pbrpc.h
 
       string imports = string("#import \"") + file_name + ".pbobjc.h\"\n\n"
-        "#import <ProtoRPC/ProtoService.h>\n";
+        "#import <ProtoRPC/ProtoService.h>\n"
+        "#import <RxLibrary/GRXWriteable.h>\n"
+        "#import <RxLibrary/GRXWriter.h>\n";
 
       // TODO(jcanizales): Instead forward-declare the input and output types
       // and import the files in the .pbrpc.m
@@ -89,7 +91,6 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       string imports = string("#import \"") + file_name + ".pbrpc.h\"\n\n"
         "#import <ProtoRPC/ProtoRPC.h>\n"
-        "#import <RxLibrary/GRXWriteable.h>\n"
         "#import <RxLibrary/GRXWriter+Immediate.h>\n";
 
       string definitions;
