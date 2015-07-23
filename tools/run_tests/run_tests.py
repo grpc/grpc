@@ -458,7 +458,7 @@ if platform.system() == 'Windows':
                           cwd='vsprojects', shell=True)
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make',
+    return jobset.JobSpec([os.getenv('MAKE', 'make'),
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,

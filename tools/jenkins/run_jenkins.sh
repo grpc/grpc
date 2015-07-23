@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -31,6 +31,8 @@
 # This script is invoked by Jenkins and triggers a test run based on
 # env variable settings.
 #
+# Bootstrap into bash
+[ -z $1 ] && exec bash $0 bootstrapped
 # Setting up rvm environment BEFORE we set -ex.
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 # To prevent cygwin bash complaining about empty lines ending with \r
@@ -103,11 +105,18 @@ then
   /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
 
   python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
+
 elif [ "$platform" == "macos" ]
 then
   echo "building $language on MacOS"
 
   ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+
+elif [ "$platform" == "freebsd" ]
+then
+  echo "building $language on FreeBSD"
+
+  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
 else
   echo "Unknown platform $platform"
   exit 1
