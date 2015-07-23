@@ -39,6 +39,7 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/client_config/resolvers/dns_resolver.h"
+#include "src/core/client_config/resolvers/sockaddr_resolver.h"
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/profiling/timers.h"
@@ -46,10 +47,6 @@
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
-
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/client_config/resolvers/unix_resolver_posix.h"
-#endif
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
@@ -68,6 +65,8 @@ void grpc_init(void) {
     gpr_time_init();
     grpc_resolver_registry_init("dns:///");
     grpc_register_resolver_type("dns", grpc_dns_resolver_factory_create());
+    grpc_register_resolver_type("ipv4", grpc_ipv4_resolver_factory_create());
+    grpc_register_resolver_type("ipv6", grpc_ipv6_resolver_factory_create());
 #ifdef GPR_POSIX_SOCKET
     grpc_register_resolver_type("unix", grpc_unix_resolver_factory_create());
 #endif

@@ -265,6 +265,26 @@ static grpc_iomgr_closure *merge_into_waiting_op(
   return consumed_op;
 }
 
+static char *cc_get_peer(grpc_call_element *elem) {
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  grpc_subchannel_call *subchannel_call;
+  char *result;
+
+  gpr_mu_lock(&calld->mu_state);
+  if (calld->state == CALL_ACTIVE) {
+    subchannel_call = calld->subchannel_call;
+    GRPC_SUBCHANNEL_CALL_REF(subchannel_call, "get_peer");
+    gpr_mu_unlock(&calld->mu_state);
+    result = grpc_subchannel_call_get_peer(subchannel_call);
+    GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call, "get_peer");
+    return result;
+  } else {
+    gpr_mu_unlock(&calld->mu_state);
+    return grpc_channel_get_target(chand->master);
+  }
+}
+
 static void perform_transport_stream_op(grpc_call_element *elem,
                                         grpc_transport_stream_op *op,
                                         int continuation) {
@@ -590,6 +610,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    cc_get_peer,
     "client-channel",
 };
 
