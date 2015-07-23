@@ -171,7 +171,8 @@ grpc_channel *grpc_channel_create(const char *target,
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  channel = grpc_channel_create_from_filters(filters, n, args, mdctx, 1);
+  channel =
+      grpc_channel_create_from_filters(target, filters, n, args, mdctx, 1);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;

@@ -489,10 +489,10 @@ PyObject *pygrpc_cast_metadata_array_to_pyseq(grpc_metadata_array metadata) {
 void pygrpc_byte_buffer_to_bytes(
     grpc_byte_buffer *buffer, char **result, size_t *result_size) {
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, buffer);
   gpr_slice slice;
   char *read_result = NULL;
   size_t size = 0;
+  grpc_byte_buffer_reader_init(&reader, buffer);
   while (grpc_byte_buffer_reader_next(&reader, &slice)) {
     read_result = gpr_realloc(read_result, size + GPR_SLICE_LENGTH(slice));
     memcpy(read_result + size, GPR_SLICE_START_PTR(slice),

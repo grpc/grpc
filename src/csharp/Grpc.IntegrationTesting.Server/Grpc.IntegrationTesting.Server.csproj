@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>10.0.0</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{A654F3B8-E859-4E6A-B30D-227527DBEF0D}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Grpc.IntegrationTesting.Server</RootNamespace>
@@ -47,6 +45,10 @@
     <ProjectReference Include="..\Grpc.IntegrationTesting\Grpc.IntegrationTesting.csproj">
       <Project>{C61154BA-DD4A-4838-8420-0162A28925E0}</Project>
       <Name>Grpc.IntegrationTesting</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">
+      <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
+      <Name>Grpc.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

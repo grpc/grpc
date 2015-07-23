@@ -51,7 +51,7 @@ std::shared_ptr<ChannelInterface> CreateChannel(
   cp_args.SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING,
                     user_agent_prefix.str());
   return creds ? creds->CreateChannel(target, cp_args)
-               : std::shared_ptr<ChannelInterface>(
-                     new Channel(target, grpc_lame_client_channel_create()));
+               : std::shared_ptr<ChannelInterface>(new Channel(
+                     target, grpc_lame_client_channel_create(NULL)));
 }
 }  // namespace grpc

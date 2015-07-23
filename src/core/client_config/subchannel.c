@@ -664,6 +664,12 @@ void grpc_subchannel_call_unref(
   }
 }
 
+char *grpc_subchannel_call_get_peer(grpc_subchannel_call *call) {
+  grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
+  grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
+  return top_elem->filter->get_peer(top_elem);
+}
+
 void grpc_subchannel_call_process_op(grpc_subchannel_call *call,
                                      grpc_transport_stream_op *op) {
   grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);

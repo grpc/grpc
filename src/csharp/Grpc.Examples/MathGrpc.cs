@@ -45,7 +45,7 @@ namespace math {
     public interface IMathClient
     {
       global::math.DivReply Div(global::math.DivArgs request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
-      Task<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
       AsyncDuplexStreamingCall<global::math.DivArgs, global::math.DivReply> DivMany(Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
       AsyncServerStreamingCall<global::math.Num> Fib(global::math.FibArgs request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
       AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -54,10 +54,10 @@ namespace math {
     // server-side interface
     public interface IMath
     {
-      Task<global::math.DivReply> Div(ServerCallContext context, global::math.DivArgs request);
-      Task DivMany(ServerCallContext context, IAsyncStreamReader<global::math.DivArgs> requestStream, IServerStreamWriter<global::math.DivReply> responseStream);
-      Task Fib(ServerCallContext context, global::math.FibArgs request, IServerStreamWriter<global::math.Num> responseStream);
-      Task<global::math.Num> Sum(ServerCallContext context, IAsyncStreamReader<global::math.Num> requestStream);
+      Task<global::math.DivReply> Div(global::math.DivArgs request, ServerCallContext context);
+      Task DivMany(IAsyncStreamReader<global::math.DivArgs> requestStream, IServerStreamWriter<global::math.DivReply> responseStream, ServerCallContext context);
+      Task Fib(global::math.FibArgs request, IServerStreamWriter<global::math.Num> responseStream, ServerCallContext context);
+      Task<global::math.Num> Sum(IAsyncStreamReader<global::math.Num> requestStream, ServerCallContext context);
     }
 
     // client stub
@@ -71,7 +71,7 @@ namespace math {
         var call = CreateCall(__ServiceName, __Method_Div, headers);
         return Calls.BlockingUnaryCall(call, request, cancellationToken);
       }
-      public Task<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         var call = CreateCall(__ServiceName, __Method_Div, headers);
         return Calls.AsyncUnaryCall(call, request, cancellationToken);

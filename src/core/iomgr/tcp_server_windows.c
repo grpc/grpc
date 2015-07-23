@@ -243,6 +243,10 @@ static void on_accept(void *arg, int from_iocp) {
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
   grpc_endpoint *ep = NULL;
+  struct sockaddr_storage peer_name;
+  char *peer_name_string;
+  char *fd_name;
+  int peer_name_len = sizeof(peer_name);
   DWORD transfered_bytes;
   DWORD flags;
   BOOL wsa_success;
@@ -277,8 +281,13 @@ static void on_accept(void *arg, int from_iocp) {
     }
   } else {
     if (!sp->shutting_down) {
-      /* TODO(ctiller): add sockaddr address to label */
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, "server"));
+      getpeername(sock, (struct sockaddr *)&peer_name, &peer_name_len);
+      peer_name_string = grpc_sockaddr_to_uri((struct sockaddr *)&peer_name);
+      gpr_asprintf(&fd_name, "tcp_server:%s", peer_name_string);
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name),
+                           peer_name_string);
+      gpr_free(fd_name);
+      gpr_free(peer_name_string);
     }
   }
 

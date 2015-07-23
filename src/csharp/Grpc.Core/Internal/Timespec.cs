@@ -43,6 +43,8 @@ namespace Grpc.Core.Internal
         const int NanosPerSecond = 1000 * 1000 * 1000;
         const int NanosPerTick = 100;
 
+        static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+
         [DllImport("grpc_csharp_ext.dll")]
         static extern Timespec gprsharp_now();
 
@@ -51,6 +53,13 @@ namespace Grpc.Core.Internal
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern int gprsharp_sizeof_timespec();
+
+        public Timespec(IntPtr tv_sec, int tv_nsec)
+        {
+            this.tv_sec = tv_sec;
+            this.tv_nsec = tv_nsec;
+            this.clock_type = GPRClockType.Realtime;
+        }
 
         // NOTE: on linux 64bit  sizeof(gpr_timespec) = 16, on windows 32bit sizeof(gpr_timespec) = 8
         // so IntPtr seems to have the right size to work on both.
@@ -75,6 +84,11 @@ namespace Grpc.Core.Internal
             {
                 return gprsharp_now();
             }
+        }
+            
+        public DateTime ToDateTime()
+        {
+            return UnixEpoch.AddTicks(tv_sec.ToInt64() * (NanosPerSecond / NanosPerTick) + tv_nsec / NanosPerTick);
         }
 
         internal static int NativeSize

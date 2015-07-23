@@ -52,8 +52,8 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
-        // Set after status is received. Only used for streaming response calls.
-        Status? finishedStatus;
+        // Set after status is received. Used for both unary and streaming response calls.
+        ClientSideStatus? finishedStatus;
 
         bool readObserverCompleted;  // True if readObserver has already been completed.
 
@@ -249,6 +249,32 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Gets the resulting status if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Status GetStatus()
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckState(finishedStatus.HasValue, "Status can only be accessed once the call has finished.");
+                return finishedStatus.Value.Status;
+            }
+        }
+
+        /// <summary>
+        /// Gets the trailing metadata if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Metadata GetTrailers()
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckState(finishedStatus.HasValue, "Trailers can only be accessed once the call has finished.");
+                return finishedStatus.Value.Trailers;
+            }
+        }
+
+        /// <summary>
         /// On client-side, we only fire readCompletionDelegate once all messages have been read 
         /// and status has been received.
         /// </summary>
@@ -265,7 +291,7 @@ namespace Grpc.Core.Internal
 
                 if (shouldComplete)
                 {
-                    var status = finishedStatus.Value;
+                    var status = finishedStatus.Value.Status;
                     if (status.StatusCode != StatusCode.OK)
                     {
                         FireCompletion(completionDelegate, default(TResponse), new RpcException(status));
@@ -288,9 +314,13 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleUnaryResponse(bool success, BatchContextSafeHandle ctx)
         {
+            var fullStatus = ctx.GetReceivedStatusOnClient();
+
             lock (myLock)
             {
                 finished = true;
+                finishedStatus = fullStatus;
+
                 halfclosed = true;
 
                 ReleaseResourcesIfPossible();
@@ -302,7 +332,8 @@ namespace Grpc.Core.Internal
                 return;
             }
 
-            var status = ctx.GetReceivedStatus();
+            var status = fullStatus.Status;
+
             if (status.StatusCode != StatusCode.OK)
             {
                 unaryResponseTcs.SetException(new RpcException(status));
@@ -321,13 +352,13 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinished(bool success, BatchContextSafeHandle ctx)
         {
-            var status = ctx.GetReceivedStatus();
+            var fullStatus = ctx.GetReceivedStatusOnClient();
 
             AsyncCompletionDelegate<TResponse> origReadCompletionDelegate = null;
             lock (myLock)
             {
                 finished = true;
-                finishedStatus = status;
+                finishedStatus = fullStatus;
 
                 origReadCompletionDelegate = readCompletionDelegate;
 

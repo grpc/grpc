@@ -258,6 +258,15 @@ describe('Echo metadata', function() {
     });
     call.end();
   });
+  it('shows the correct user-agent string', function(done) {
+    var version = require('../package.json').version;
+    var call = client.unary({}, function(err, data) { assert.ifError(err); },
+                            {key: ['value']});
+    call.on('metadata', function(metadata) {
+      assert(_.startsWith(metadata['user-agent'], 'grpc-node/' + version));
+      done();
+    });
+  });
 });
 describe('Other conditions', function() {
   var client;
