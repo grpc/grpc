@@ -152,7 +152,8 @@ static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
 grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args) {
+                                  const grpc_channel_args *args,
+                                  void *reserved) {
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
@@ -160,6 +161,7 @@ grpc_channel *grpc_channel_create(const char *target,
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create();
   int n = 0;
+  (void) reserved;
   /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;

@@ -40,7 +40,9 @@
 
 namespace grpc {
 
-CompletionQueue::CompletionQueue() { cq_ = grpc_completion_queue_create(); }
+CompletionQueue::CompletionQueue() {
+  cq_ = grpc_completion_queue_create(nullptr);
+}
 
 CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {}
 
@@ -51,7 +53,7 @@ void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
     void** tag, bool* ok, gpr_timespec deadline) {
   for (;;) {
-    auto ev = grpc_completion_queue_next(cq_, deadline);
+    auto ev = grpc_completion_queue_next(cq_, deadline, nullptr);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         return TIMEOUT;
@@ -70,8 +72,8 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
 }
 
 bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
-  auto ev =
-      grpc_completion_queue_pluck(cq_, tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+  auto deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
   bool ok = ev.success != 0;
   void* ignored = tag;
   GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
@@ -81,8 +83,8 @@ bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
 }
 
 void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
-  auto ev =
-      grpc_completion_queue_pluck(cq_, tag, gpr_time_0(GPR_CLOCK_REALTIME));
+  auto deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+  auto ev = grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
   if (ev.type == GRPC_QUEUE_TIMEOUT) return;
   bool ok = ev.success != 0;
   void* ignored = tag;

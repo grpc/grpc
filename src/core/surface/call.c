@@ -1182,18 +1182,22 @@ void grpc_call_destroy(grpc_call *c) {
   c->cancel_alarm |= c->have_alarm;
   cancel = c->read_state != READ_STATE_STREAM_CLOSED;
   unlock(c);
-  if (cancel) grpc_call_cancel(c);
+  if (cancel) grpc_call_cancel(c, NULL);
   GRPC_CALL_INTERNAL_UNREF(c, "destroy", 1);
 }
 
-grpc_call_error grpc_call_cancel(grpc_call *call) {
-  return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled");
+grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
+  (void) reserved;
+  return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
+                                      NULL);
 }
 
 grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
                                              grpc_status_code status,
-                                             const char *description) {
+                                             const char *description,
+                                             void *reserved) {
   grpc_call_error r;
+  (void) reserved;
   lock(c);
   r = cancel_with_status(c, status, description);
   unlock(c);
@@ -1420,13 +1424,14 @@ static int are_write_flags_valid(gpr_uint32 flags) {
 }
 
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                      size_t nops, void *tag) {
+                                      size_t nops, void *tag, void *reserved) {
   grpc_ioreq reqs[GRPC_IOREQ_OP_COUNT];
   size_t in;
   size_t out;
   const grpc_op *op;
   grpc_ioreq *req;
   void (*finish_func)(grpc_call *, int, void *) = finish_batch;
+  (void) reserved;
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
