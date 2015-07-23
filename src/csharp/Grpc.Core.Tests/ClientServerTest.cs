@@ -33,6 +33,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -99,17 +100,17 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", CancellationToken.None));
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            Assert.AreEqual("ABC", Calls.BlockingUnaryCall(internalCall, "ABC", CancellationToken.None));
         }
 
         [Test]
         public void UnaryCall_ServerHandlerThrows()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
             try
             {
-                Calls.BlockingUnaryCall(call, "THROW", CancellationToken.None);
+                Calls.BlockingUnaryCall(internalCall, "THROW", CancellationToken.None);
                 Assert.Fail();
             }
             catch (RpcException e)
@@ -119,10 +120,40 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void UnaryCall_ServerHandlerThrowsRpcException()
+        {
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            try
+            {
+                Calls.BlockingUnaryCall(internalCall, "THROW_UNAUTHENTICATED", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unauthenticated, e.Status.StatusCode);
+            }
+        }
+
+        [Test]
+        public void UnaryCall_ServerHandlerSetsStatus()
+        {
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            try
+            {
+                Calls.BlockingUnaryCall(internalCall, "SET_UNAUTHENTICATED", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unauthenticated, e.Status.StatusCode); 
+            }
+        }
+
+        [Test]
         public void AsyncUnaryCall()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            var result = Calls.AsyncUnaryCall(call, "ABC", CancellationToken.None).Result;
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            var result = Calls.AsyncUnaryCall(internalCall, "ABC", CancellationToken.None).ResponseAsync.Result;
             Assert.AreEqual("ABC", result);
         }
 
@@ -131,10 +162,10 @@ namespace Grpc.Core.Tests
         {
             Task.Run(async () =>
             {
-                var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+                var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
                 try
                 {
-                    await Calls.AsyncUnaryCall(call, "THROW", CancellationToken.None);
+                    await Calls.AsyncUnaryCall(internalCall, "THROW", CancellationToken.None);
                     Assert.Fail();
                 }
                 catch (RpcException e)
@@ -149,11 +180,11 @@ namespace Grpc.Core.Tests
         {
             Task.Run(async () => 
             {
-                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-                var callResult = Calls.AsyncClientStreamingCall(call, CancellationToken.None);
+                var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+                var call = Calls.AsyncClientStreamingCall(internalCall, CancellationToken.None);
 
-                await callResult.RequestStream.WriteAll(new string[] { "A", "B", "C" });
-                Assert.AreEqual("ABC", await callResult.Result);
+                await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
+                Assert.AreEqual("ABC", await call.ResponseAsync);
             }).Wait();
         }
 
@@ -162,10 +193,10 @@ namespace Grpc.Core.Tests
         {
             Task.Run(async () => 
             {
-                var call = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+                var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
 
                 var cts = new CancellationTokenSource();
-                var callResult = Calls.AsyncClientStreamingCall(call, cts.Token);
+                var call = Calls.AsyncClientStreamingCall(internalCall, cts.Token);
 
                 // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
                 await Task.Delay(1000);
@@ -173,7 +204,7 @@ namespace Grpc.Core.Tests
 
                 try
                 {
-                    await callResult.Result;
+                    await call.ResponseAsync;
                 }
                 catch (RpcException e)
                 {
@@ -183,29 +214,53 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void AsyncUnaryCall_EchoMetadata()
+        {
+            var headers = new Metadata
+            {
+                new Metadata.Entry("asciiHeader", "abcdefg"),
+                new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff }),
+            };
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, headers);
+            var call = Calls.AsyncUnaryCall(internalCall, "ABC", CancellationToken.None);
+
+            Assert.AreEqual("ABC", call.ResponseAsync.Result);
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+
+            var trailers = call.GetTrailers();
+            Assert.AreEqual(2, trailers.Count);
+            Assert.AreEqual(headers[0].Key, trailers[0].Key);
+            Assert.AreEqual(headers[0].Value, trailers[0].Value);
+
+            Assert.AreEqual(headers[1].Key, trailers[1].Key);
+            CollectionAssert.AreEqual(headers[1].ValueBytes, trailers[1].ValueBytes);
+        }
+
+        [Test]
         public void UnaryCall_DisposedChannel()
         {
             channel.Dispose();
 
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-            Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(call, "ABC", CancellationToken.None));
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(internalCall, "ABC", CancellationToken.None));
         }
 
         [Test]
         public void UnaryCallPerformance()
         {
-            var call = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
             BenchmarkUtil.RunBenchmark(100, 100,
-                                       () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
+                                       () => { Calls.BlockingUnaryCall(internalCall, "ABC", default(CancellationToken)); });
         }
             
         [Test]
         public void UnknownMethodHandler()
         {
-            var call = new Call<string, string>(ServiceName, NonexistentMethod, channel, Metadata.Empty);
+            var internalCall = new Call<string, string>(ServiceName, NonexistentMethod, channel, Metadata.Empty);
             try
             {
-                Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
+                Calls.BlockingUnaryCall(internalCall, "ABC", default(CancellationToken));
                 Assert.Fail();
             }
             catch (RpcException e)
@@ -214,16 +269,48 @@ namespace Grpc.Core.Tests
             }
         }
 
-        private static async Task<string> EchoHandler(ServerCallContext context, string request)
+        [Test]
+        public void UserAgentStringPresent()
         {
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            string userAgent = Calls.BlockingUnaryCall(internalCall, "RETURN-USER-AGENT", CancellationToken.None);
+            Assert.IsTrue(userAgent.StartsWith("grpc-csharp/"));
+        }
+
+        private static async Task<string> EchoHandler(string request, ServerCallContext context)
+        {
+            foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
+            {
+                if (metadataEntry.Key != "user-agent")
+                {
+                    context.ResponseTrailers.Add(metadataEntry);
+                }
+            }
+
+            if (request == "RETURN-USER-AGENT")
+            {
+                return context.RequestHeaders.Where(entry => entry.Key == "user-agent").Single().Value;
+            }
+
             if (request == "THROW")
             {
                 throw new Exception("This was thrown on purpose by a test");
             }
+
+            if (request == "THROW_UNAUTHENTICATED")
+            {
+                throw new RpcException(new Status(StatusCode.Unauthenticated, ""));
+            }
+
+            if (request == "SET_UNAUTHENTICATED")
+            {
+                context.Status = new Status(StatusCode.Unauthenticated, "");
+            }
+
             return request;
         }
 
-        private static async Task<string> ConcatAndEchoHandler(ServerCallContext context, IAsyncStreamReader<string> requestStream)
+        private static async Task<string> ConcatAndEchoHandler(IAsyncStreamReader<string> requestStream, ServerCallContext context)
         {
             string result = "";
             await requestStream.ForEach(async (request) =>

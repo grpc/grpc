@@ -208,7 +208,7 @@ static void process_send_ops(grpc_call_element *elem,
             calld->has_compression_algorithm = 1; /* GPR_TRUE */
           }
           /* hint compression algorithm */
-          grpc_metadata_batch_add_head(
+          grpc_metadata_batch_add_tail(
               &(sop->data.metadata), &calld->compression_algorithm_storage,
               GRPC_MDELEM_REF(channeld->mdelem_compression_algorithms
                                   [calld->compression_algorithm]));

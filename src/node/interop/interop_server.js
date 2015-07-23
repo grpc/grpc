@@ -38,7 +38,6 @@ var path = require('path');
 var _ = require('lodash');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
-var Server = grpc.buildServer([testProto.TestService.service]);
 
 /**
  * Create a buffer filled with size zeroes
@@ -173,16 +172,15 @@ function getServer(port, tls) {
                                                     key_data,
                                                     pem_data);
   }
-  var server = new Server({
-    'grpc.testing.TestService' : {
-      emptyCall: handleEmpty,
-      unaryCall: handleUnary,
-      streamingOutputCall: handleStreamingOutput,
-      streamingInputCall: handleStreamingInput,
-      fullDuplexCall: handleFullDuplex,
-      halfDuplexCall: handleHalfDuplex
-    }
-  }, null, options);
+  var server = new grpc.Server(options);
+  server.addProtoService(testProto.TestService.service, {
+    emptyCall: handleEmpty,
+    unaryCall: handleUnary,
+    streamingOutputCall: handleStreamingOutput,
+    streamingInputCall: handleStreamingInput,
+    fullDuplexCall: handleFullDuplex,
+    halfDuplexCall: handleHalfDuplex
+  });
   var port_num = server.bind('0.0.0.0:' + port, server_creds);
   return {server: server, port: port_num};
 }

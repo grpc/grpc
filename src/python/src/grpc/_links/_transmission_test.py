@@ -93,8 +93,13 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
   def create_service_completion(self):
     return _intermediary_low.Code.OK, 'An exuberant test "details" message!'
 
-  def assertMetadataEqual(self, original_metadata, transmitted_metadata):
-    self.assertSequenceEqual(original_metadata, transmitted_metadata)
+  def assertMetadataTransmitted(self, original_metadata, transmitted_metadata):
+    # we need to filter out any additional metadata added in transmitted_metadata
+    # since implementations are allowed to add to what is sent (in any position)
+    keys, _ = zip(*original_metadata)
+    self.assertSequenceEqual(
+        original_metadata,
+        [x for x in transmitted_metadata if x[0] in keys])
 
 
 class RoundTripTest(unittest.TestCase):

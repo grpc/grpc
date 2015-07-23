@@ -249,9 +249,10 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), FakeTransportSecurityCredentials(),
-                      ChannelArguments());
+    ChannelArguments args;
+    args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
+    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+        server_address_.str(), FakeTransportSecurityCredentials(), args);
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -273,7 +274,7 @@ static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
 
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
-    context._experimental_set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
@@ -508,7 +509,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
   std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
-  EXPECT_EQ(nullptr, bad_creds.get());
+  EXPECT_EQ(static_cast<Credentials *>(nullptr), bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
