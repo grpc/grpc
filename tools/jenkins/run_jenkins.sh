@@ -60,7 +60,7 @@ then
   then
     exit 0
   fi
-  tools/run_tests/interops.sh
+  tools/run_tests/run_interops.sh
 elif [ "$platform" == "windows" ]
 then
   exit 0
