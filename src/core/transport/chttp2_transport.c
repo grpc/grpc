@@ -395,6 +395,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   }
 
   grpc_chttp2_list_remove_incoming_window_updated(&t->global, &s->global);
+  grpc_chttp2_list_remove_writable_stream(&t->global, &s->global);
 
   gpr_mu_unlock(&t->mu);
 
