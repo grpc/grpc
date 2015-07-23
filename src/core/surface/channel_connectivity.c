@@ -172,8 +172,9 @@ void grpc_channel_watch_connectivity_state(
   w->tag = tag;
   w->channel = channel;
 
-  grpc_alarm_init(&w->alarm, deadline, timeout_complete, w,
-                  gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(
+      &w->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), 
+      timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
 
   if (client_channel_elem->filter != &grpc_client_channel_filter) {
     gpr_log(GPR_ERROR,
