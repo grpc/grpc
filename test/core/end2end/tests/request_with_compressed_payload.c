@@ -46,6 +46,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/compress_filter.h"
+#include "src/core/surface/call.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -186,6 +187,14 @@ static void request_with_payload_template(
                                       f.cq, tag(101)));
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
+
+  GPR_ASSERT(GPR_BITCOUNT(grpc_call_get_encodings_accepted_by_peer(s)) == 3);
+  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+                        GRPC_COMPRESS_NONE) != 0);
+  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+                        GRPC_COMPRESS_DEFLATE) != 0);
+  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+                        GRPC_COMPRESS_GZIP) != 0);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

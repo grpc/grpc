@@ -32,6 +32,15 @@
 # linuxbrew installation of a selected language
 set -ex
 
+if [ "$language" == "core" ]; then
+  command="curl -fsSL https://goo.gl/getgrpc | bash -"
+elif [[ "python nodejs ruby php" =~ "$language" ]]; then
+  command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
+else
+  echo "unsupported language $language"
+  exit 1
+fi
+
 if [ "$platform" == "linux" ]; then
 
   if [ "$dist_channel" == "homebrew" ]; then
@@ -41,15 +50,6 @@ if [ "$platform" == "linux" ]; then
 
     # build docker image, contains all pre-requisites
     docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
-
-    if [ "$language" == "core" ]; then
-      command="curl -fsSL https://goo.gl/getgrpc | bash -"
-    elif [[ "python nodejs ruby php" =~ "$language" ]]; then
-      command="curl -fsSL https://goo.gl/getgrpc | bash -s $language"
-    else
-      echo "unsupported language $language"
-      exit 1
-    fi
 
     # run per-language homebrew installation script
     docker run $DOCKER_IMAGE_NAME bash -l \
@@ -66,8 +66,12 @@ if [ "$platform" == "linux" ]; then
 elif [ "$platform" == "macos" ]; then
 
   if [ "$dist_channel" == "homebrew" ]; then
-    # system installed homebrew, don't interfere
+    echo "Formulas installed by system-wide homebrew (before)"
     brew list -l
+
+    # Save the original PATH so that we can run the system `brew` command
+    # again at the end of the script
+    export ORIGINAL_PATH=$PATH
 
     # Set up temp directories for test installation of homebrew
     brew_root=/tmp/homebrew-test-$language
@@ -75,58 +79,50 @@ elif [ "$platform" == "macos" ]; then
     mkdir -p $brew_root
     git clone https://github.com/Homebrew/homebrew.git $brew_root
 
-    # Install grpc via homebrew
-    #
-    # The temp $PATH env variable makes sure we are operating at the right copy of
-    # temp homebrew installation, and do not interfere with the system's main brew
-    # installation.
-    #
-    # TODO: replace the next section with the actual homebrew installation script
-    # i.e. curl -fsSL https://goo.gl/getgrpc | bash -s $language
-    # need to resolve a bunch of environment and privilege issue on the jenkins
-    # mac machine itself
-    export OLD_PATH=$PATH
+    # Make sure we are operating at the right copy of temp homebrew
+    # installation
     export PATH=$brew_root/bin:$PATH
-    cd $brew_root
-    brew tap homebrew/dupes
-    brew install zlib
-    brew install openssl
-    brew tap grpc/grpc
-    brew install --without-python google-protobuf
-    brew install grpc
-    brew list -l
 
-    # Install per-language modules/extensions on top of core grpc
-    #
-    # If a command below needs root access, the binary had been added to
-    # /etc/sudoers. This step needs to be repeated if we add more mac instances
-    # to our jenkins project.
-    #
-    # Examples (lines that needed to be added to /etc/sudoers):
-    # + Defaults        env_keep += "CFLAGS CXXFLAGS LDFLAGS enable_grpc"
-    # + jenkinsnode1 ALL=(ALL) NOPASSWD: /usr/bin/pecl, /usr/local/bin/pip,
-    # +   /usr/local/bin/npm
+    # Set up right environment for each language
+    case $language in
+      *python*)
+        rm -rf jenkins_python_venv
+        virtualenv jenkins_python_venv
+        source jenkins_python_venv/bin/activate
+        ;;
+      *nodejs*)
+        export PATH=$HOME/.nvm/versions/node/v0.12.7/bin:$PATH
+        ;;
+      *ruby*)
+        export PATH=/usr/local/rvm/rubies/ruby-2.2.1/bin:$PATH
+        ;;
+      *php*)
+        export CFLAGS="-Wno-parentheses-equality"
+        ;;
+      *)
+        ;;
+    esac
+
+    # Run our homebrew installation script
+    bash -c "$command"
+
+    # Uninstall / clean up per-language modules/extensions after the test
     case $language in
       *core*) ;;
       *python*)
-        sudo CFLAGS=-I$brew_root/include LDFLAGS=-L$brew_root/lib pip install grpcio
-        pip list | grep grpcio
-        echo 'y' | sudo pip uninstall grpcio
+        deactivate
+        rm -rf jenkins_python_venv
         ;;
       *nodejs*)
-        sudo CXXFLAGS=-I$brew_root/include LDFLAGS=-L$brew_root/lib npm install grpc
-        npm list | grep grpc
-        sudo npm uninstall grpc
+        npm list -g | grep grpc
+        npm uninstall -g grpc
         ;;
       *ruby*)
-        gem install grpc -- --with-grpc-dir=$brew_root
         gem list | grep grpc
         gem uninstall grpc
         ;;
       *php*)
-        sudo enable_grpc=$brew_root CFLAGS="-Wno-parentheses-equality" pecl install grpc-alpha
-        pecl list | grep grpc
-        sudo pecl uninstall grpc
+        rm grpc.so
         ;;
       *)
         echo "Unsupported language $language"
@@ -134,12 +130,11 @@ elif [ "$platform" == "macos" ]; then
         ;;
     esac
 
-    # clean up
-    cd ~/ 
+    # Clean up
     rm -rf $brew_root
 
-    # Make sure the system brew installation is still unaffected
-    export PATH=$OLD_PATH
+    echo "Formulas installed by system-wide homebrew (after, should be unaffected)"
+    export PATH=$ORIGINAL_PATH
     brew list -l
 
   else

@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/census/grpc_context.h"
 #include "src/core/channel/channel_stack.h"
@@ -238,6 +239,9 @@ struct grpc_call {
 
   /* Compression algorithm for the call */
   grpc_compression_algorithm compression_algorithm;
+
+  /* Supported encodings (compression algorithms), a bitset */
+  gpr_uint32 encodings_accepted_by_peer;
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
@@ -475,9 +479,36 @@ static void set_compression_algorithm(grpc_call *call,
   call->compression_algorithm = algo;
 }
 
-grpc_compression_algorithm grpc_call_get_compression_algorithm(
-    const grpc_call *call) {
-  return call->compression_algorithm;
+static void set_encodings_accepted_by_peer(grpc_call *call,
+                                const gpr_slice accept_encoding_slice) {
+  size_t i;
+  grpc_compression_algorithm algorithm;
+  gpr_slice_buffer accept_encoding_parts;
+
+  gpr_slice_buffer_init(&accept_encoding_parts);
+  gpr_slice_split(accept_encoding_slice, ", ", &accept_encoding_parts);
+
+  /* No need to zero call->encodings_accepted_by_peer: grpc_call_create already
+   * zeroes the whole grpc_call */
+  /* Always support no compression */
+  GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
+  for (i = 0; i < accept_encoding_parts.count; i++) {
+    const gpr_slice* slice = &accept_encoding_parts.slices[i];
+    if (grpc_compression_algorithm_parse(
+            (const char *)GPR_SLICE_START_PTR(*slice), GPR_SLICE_LENGTH(*slice),
+            &algorithm)) {
+      GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
+    } else {
+      /* TODO(dgq): it'd be nice to have a slice-to-cstr function to easily
+       * print the offending entry */
+      gpr_log(GPR_ERROR,
+              "Invalid entry in accept encoding metadata. Ignoring.");
+    }
+  }
+}
+
+gpr_uint32 grpc_call_get_encodings_accepted_by_peer(grpc_call *call) {
+  return call->encodings_accepted_by_peer;
 }
 
 gpr_uint32 grpc_call_get_message_flags(const grpc_call *call) {
@@ -1318,10 +1349,12 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
-    algorithm = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+    algorithm =
+        ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    if (!grpc_compression_algorithm_parse(md_c_str, &algorithm)) {
+    if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
+                                          &algorithm)) {
       gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
       assert(0);
     }
@@ -1349,6 +1382,9 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     } else if (key ==
                grpc_channel_get_compression_algorithm_string(call->channel)) {
       set_compression_algorithm(call, decode_compression(md));
+    } else if (key == grpc_channel_get_encodings_accepted_by_peer_string(
+                          call->channel)) {
+      set_encodings_accepted_by_peer(call, md->value->slice);
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {

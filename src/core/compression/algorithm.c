@@ -35,13 +35,20 @@
 #include <string.h>
 #include <grpc/compression.h>
 
-int grpc_compression_algorithm_parse(const char* name,
+int grpc_compression_algorithm_parse(const char* name, size_t name_length,
                                      grpc_compression_algorithm *algorithm) {
-  if (strcmp(name, "none") == 0) {
+  /* we use strncmp not only because it's safer (even though in this case it
+   * doesn't matter, given that we are comparing against string literals, but
+   * because this way we needn't have "name" nil-terminated (useful for slice
+   * data, for example) */
+  if (name_length == 0) {
+    return 0;
+  }
+  if (strncmp(name, "none", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_NONE;
-  } else if (strcmp(name, "gzip") == 0) {
+  } else if (strncmp(name, "gzip", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_GZIP;
-  } else if (strcmp(name, "deflate") == 0) {
+  } else if (strncmp(name, "deflate", name_length) == 0) {
     *algorithm = GRPC_COMPRESS_DEFLATE;
   } else {
     return 0;

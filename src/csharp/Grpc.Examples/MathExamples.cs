@@ -46,8 +46,7 @@ namespace math
 
         public static async Task DivAsyncExample(Math.IMathClient client)
         {
-            Task<DivReply> resultTask = client.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-            DivReply result = await resultTask;
+            DivReply result = await client.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
             Console.WriteLine("DivAsync Result: " + result);
         }
 
@@ -72,7 +71,7 @@ namespace math
             using (var call = client.Sum())
             {
                 await call.RequestStream.WriteAll(numbers);
-                Console.WriteLine("Sum Result: " + await call.Result);
+                Console.WriteLine("Sum Result: " + await call.ResponseAsync);
             }
         }
 
@@ -104,7 +103,7 @@ namespace math
             using (var sumCall = client.Sum())
             {
                 await sumCall.RequestStream.WriteAll(numbers);
-                sum = await sumCall.Result;
+                sum = await sumCall.ResponseAsync;
             }
 
             DivReply result = await client.DivAsync(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numbers.Count }.Build());

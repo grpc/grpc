@@ -31,30 +31,47 @@
  *
  */
 
-#include <grpc++/credentials.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <memory>
+#include <grpc/compression.h>
+#include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
+#include "test/core/util/test_config.h"
 
-namespace grpc {
-namespace testing {
+static void test_compression_algorithm_parse(void) {
+  size_t i;
+  const char* valid_names[] = {"none", "gzip", "deflate"};
+  const grpc_compression_algorithm valid_algorithms[] = {
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE};
+  const char* invalid_names[] = {"gzip2", "foo", "", "2gzip"};
 
-class CredentialsTest : public ::testing::Test {
- protected:
-};
+  gpr_log(GPR_DEBUG, "test_compression_algorithm_parse");
 
-TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
-  std::shared_ptr<Credentials> bad1 = ServiceAccountCredentials("", "", 1);
-  EXPECT_EQ(static_cast<Credentials *>(nullptr), bad1.get());
+  for (i = 0; i < GPR_ARRAY_SIZE(valid_names); i++) {
+    const char* valid_name = valid_names[i];
+    grpc_compression_algorithm algorithm;
+    int success;
+    success = grpc_compression_algorithm_parse(valid_name, strlen(valid_name),
+                                               &algorithm);
+    GPR_ASSERT(success != 0);
+    GPR_ASSERT(algorithm == valid_algorithms[i]);
+  }
+
+  for (i = 0; i < GPR_ARRAY_SIZE(invalid_names); i++) {
+    const char* invalid_name = invalid_names[i];
+    grpc_compression_algorithm algorithm;
+    int success;
+    success = grpc_compression_algorithm_parse(
+        invalid_name, strlen(invalid_name), &algorithm);
+    GPR_ASSERT(success == 0);
+    /* the value of "algorithm" is undefined upon failure */
+  }
 }
 
-}  // namespace testing
-}  // namespace grpc
+int main(int argc, char **argv) {
+  test_compression_algorithm_parse();
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  return ret;
+  return 0;
 }

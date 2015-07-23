@@ -98,6 +98,18 @@ static void hc_on_recv(void *user_data, int success) {
   calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }
 
+static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
+  grpc_call_element *elem = user_data;
+  channel_data *channeld = elem->channel_data;
+  /* eat the things we'd like to set ourselves */
+  if (md->key == channeld->method->key) return NULL;
+  if (md->key == channeld->scheme->key) return NULL;
+  if (md->key == channeld->te_trailers->key) return NULL;
+  if (md->key == channeld->content_type->key) return NULL;
+  if (md->key == channeld->user_agent->key) return NULL;
+  return md;
+}
+
 static void hc_mutate_op(grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
@@ -111,6 +123,7 @@ static void hc_mutate_op(grpc_call_element *elem,
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA) continue;
       calld->sent_initial_metadata = 1;
+      grpc_metadata_batch_filter(&op->data.metadata, client_strip_filter, elem);
       /* Send : prefixed headers, which have to be before any application
          layer headers. */
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->method,

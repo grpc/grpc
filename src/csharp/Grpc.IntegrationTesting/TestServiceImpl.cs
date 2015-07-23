@@ -46,19 +46,19 @@ namespace grpc.testing
     /// </summary>
     public class TestServiceImpl : TestService.ITestService
     {
-        public Task<Empty> EmptyCall(ServerCallContext context, Empty request)
+        public Task<Empty> EmptyCall(Empty request, ServerCallContext context)
         {
             return Task.FromResult(Empty.DefaultInstance);
         }
 
-        public Task<SimpleResponse> UnaryCall(ServerCallContext context, SimpleRequest request)
+        public Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
             var response = SimpleResponse.CreateBuilder()
                 .SetPayload(CreateZerosPayload(request.ResponseSize)).Build();
             return Task.FromResult(response);
         }
 
-        public async Task StreamingOutputCall(ServerCallContext context, StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream)
+        public async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             foreach (var responseParam in request.ResponseParametersList)
             {
@@ -68,7 +68,7 @@ namespace grpc.testing
             }
         }
 
-        public async Task<StreamingInputCallResponse> StreamingInputCall(ServerCallContext context, IAsyncStreamReader<StreamingInputCallRequest> requestStream)
+        public async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
         {
             int sum = 0;
             await requestStream.ForEach(async request =>
@@ -78,7 +78,7 @@ namespace grpc.testing
             return StreamingInputCallResponse.CreateBuilder().SetAggregatedPayloadSize(sum).Build();
         }
 
-        public async Task FullDuplexCall(ServerCallContext context, IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream)
+        public async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             await requestStream.ForEach(async request =>
             {
@@ -91,7 +91,7 @@ namespace grpc.testing
             });
         }
 
-        public async Task HalfDuplexCall(ServerCallContext context, IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream)
+        public async Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }

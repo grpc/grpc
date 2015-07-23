@@ -169,6 +169,12 @@ grpc_compression_algorithm grpc_call_get_compression_algorithm(
 
 gpr_uint32 grpc_call_get_message_flags(const grpc_call *call);
 
+/** Returns a bitset for the encodings (compression algorithms) supported by \a
+ * call's peer.
+ *
+ * To be indexed by grpc_compression_algorithm enum values. */
+gpr_uint32 grpc_call_get_encodings_accepted_by_peer(grpc_call *call);
+
 #ifdef __cplusplus
 }
 #endif
