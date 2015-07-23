@@ -235,7 +235,7 @@ static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
 */
 static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
-  int array_length;
+  long array_length;
   int i;
 
   /* Construct a metadata object from key and value and add it */
