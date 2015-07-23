@@ -395,7 +395,6 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   }
 
   grpc_chttp2_list_remove_incoming_window_updated(&t->global, &s->global);
-  grpc_chttp2_list_remove_writable_window_update_stream(&t->global, &s->global);
 
   gpr_mu_unlock(&t->mu);
 
@@ -576,8 +575,6 @@ static void maybe_start_some_streams(
     grpc_chttp2_list_add_incoming_window_updated(transport_global,
                                                  stream_global);
     grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
-    grpc_chttp2_list_add_writable_window_update_stream(transport_global,
-                                                       stream_global);
 
   }
   /* cancel out streams that will never be started */
@@ -643,8 +640,7 @@ static void perform_stream_op_locked(
     if (stream_global->id != 0) {
       grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                     stream_global);
-      grpc_chttp2_list_add_writable_window_update_stream(transport_global,
-                                                         stream_global);
+      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
   }
 
@@ -752,6 +748,7 @@ static void remove_stream(grpc_chttp2_transport *t, gpr_uint32 id) {
   if (!s) {
     s = grpc_chttp2_stream_map_delete(&t->new_stream_map, id);
   }
+  grpc_chttp2_list_remove_writable_stream(&t->global, &s->global);
   GPR_ASSERT(s);
   s->global.in_stream_map = 0;
   if (t->parsing.incoming_stream == &s->parsing) {
@@ -831,6 +828,9 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
       }
     }
     if (!stream_global->publish_sopb) {
+      continue;
+    }
+    if (stream_global->writing_now) {
       continue;
     }
     /* FIXME(ctiller): we include in_stream_map in our computation of
