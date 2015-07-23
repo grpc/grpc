@@ -37,8 +37,6 @@
 #include <memory>
 #include <sstream>
 
-#include <unistd.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
