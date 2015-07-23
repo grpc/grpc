@@ -220,6 +220,11 @@ namespace Grpc.Core
                     return value;
                 }
             }
+                
+            public override string ToString()
+            {
+                return string.Format("[Entry: key={0}, value={1}]", Key, Value);
+            }
         }
     }
 }

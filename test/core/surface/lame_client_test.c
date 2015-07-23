@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  chan = grpc_lame_client_channel_create();
+  chan = grpc_lame_client_channel_create("lampoon:national");
   GPR_ASSERT(chan);
   cq = grpc_completion_queue_create();
   call = grpc_channel_create_call(chan, cq, "/Foo", "anywhere",

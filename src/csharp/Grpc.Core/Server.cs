@@ -53,6 +53,7 @@ namespace Grpc.Core
         public const int PickUnusedPort = 0;
 
         readonly GrpcEnvironment environment;
+        readonly List<ChannelOption> options;
         readonly ServerSafeHandle handle;
         readonly object myLock = new object();
 
@@ -69,7 +70,8 @@ namespace Grpc.Core
         public Server(IEnumerable<ChannelOption> options = null)
         {
             this.environment = GrpcEnvironment.GetInstance();
-            using (var channelArgs = ChannelOptions.CreateChannelArgs(options))
+            this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
+            using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
                 this.handle = ServerSafeHandle.NewServer(environment.CompletionQueue, channelArgs);
             }
@@ -218,16 +220,16 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async Task InvokeCallHandler(CallSafeHandle call, string method)
+        private async Task HandleCallAsync(ServerRpcNew newRpc)
         {
             try
             {
                 IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(method, out callHandler))
+                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
                 {
-                    callHandler = new NoSuchMethodCallHandler();
+                    callHandler = NoSuchMethodCallHandler.Instance;
                 }
-                await callHandler.HandleCall(method, call, environment);
+                await callHandler.HandleCall(newRpc, environment);
             }
             catch (Exception e)
             {
@@ -240,15 +242,15 @@ namespace Grpc.Core
         /// </summary>
         private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx)
         {
-            // TODO: handle error
-
-            CallSafeHandle call = ctx.GetServerRpcNewCall();
-            string method = ctx.GetServerRpcNewMethod();
-
-            // after server shutdown, the callback returns with null call
-            if (!call.IsInvalid)
+            if (success)
             {
-                Task.Run(async () => await InvokeCallHandler(call, method));
+                ServerRpcNew newRpc = ctx.GetServerRpcNew();
+
+                // after server shutdown, the callback returns with null call
+                if (!newRpc.Call.IsInvalid)
+                {
+                    Task.Run(async () => await HandleCallAsync(newRpc));
+                }
             }
 
             AllowOneRpc();

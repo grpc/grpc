@@ -219,7 +219,7 @@ namespace Grpc.IntegrationTesting
                 {
                     await call.RequestStream.WriteAll(bodySizes);
 
-                    var response = await call.Result;
+                    var response = await call.ResponseAsync;
                     Assert.AreEqual(74922, response.AggregatedPayloadSize);
                 }
                 Console.WriteLine("Passed!");
@@ -399,7 +399,7 @@ namespace Grpc.IntegrationTesting
                 .SetFillOauthScope(true)
                 .Build();
 
-            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) } );
+            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) });
 
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
             Assert.AreEqual(ServiceAccountUser, response.Username);
@@ -421,7 +421,7 @@ namespace Grpc.IntegrationTesting
 
                     try
                     {
-                        var response = await call.Result;
+                        var response = await call.ResponseAsync;
                         Assert.Fail();
                     }
                     catch (RpcException e)
