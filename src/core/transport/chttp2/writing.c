@@ -66,7 +66,8 @@ int grpc_chttp2_unlocking_check_writes(
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to
      available window sizes) and add to the output buffer */
-  while (grpc_chttp2_list_pop_writable_stream(transport_global,
+  while (transport_global->outgoing_window > 0 &&
+         grpc_chttp2_list_pop_writable_stream(transport_global,
                                               transport_writing, &stream_global,
                                               &stream_writing)) {
     stream_writing->id = stream_global->id;

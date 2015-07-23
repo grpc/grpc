@@ -38,6 +38,7 @@ message RequestParams {
   optional int32 server_cancel_after_us = 3;
   optional bool echo_metadata = 4;
   optional bool check_auth_context = 5;
+  optional int32 response_message_length = 6;
 }
 
 message EchoRequest {
