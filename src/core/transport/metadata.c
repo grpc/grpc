@@ -318,6 +318,7 @@ grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int canonic
     for (i = 0; str[i]; i++) {
       if (str[i] >= 'A' && str[i] <= 'Z') {
         canonical = 0;
+        /* Keep going in loop just to get string length */
       }
     }
     len = i;
@@ -325,7 +326,7 @@ grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int canonic
     if (canonical) {
       return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, len);
     } else {
-      char *copy = gpr_malloc(len + 1);
+      char *copy = gpr_malloc(len);
       grpc_mdstr *ret;
       for (i = 0; i < len; i++) {
         if (str[i] >= 'A' && str[i] <= 'Z') {
