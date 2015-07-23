@@ -79,9 +79,10 @@ void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
 }
 
 system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
-  if (gpr_time_cmp(t, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
+  if (gpr_time_cmp(t, gpr_inf_future(t.clock_type)) == 0) {
     return system_clock::time_point::max();
   }
+  t = gpr_convert_clock_type(t, GPR_CLOCK_REALTIME);
   system_clock::time_point tp;
   tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
   tp +=

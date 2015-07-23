@@ -1368,7 +1368,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       l->md = 0;
     }
   }
-  if (gpr_time_cmp(md->deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
+  if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
+      0) {
     set_deadline_alarm(call, md->deadline);
   }
   if (!is_trailing) {
