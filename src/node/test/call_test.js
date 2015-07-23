@@ -132,7 +132,7 @@ describe('call', function() {
                                                     'key2': ['value2']};
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -147,7 +147,7 @@ describe('call', function() {
         };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });

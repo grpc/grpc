@@ -192,7 +192,7 @@ class SendMetadataOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "send metadata";
+    return "send_metadata";
   }
 };
 
@@ -216,7 +216,7 @@ class SendMessageOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "send message";
+    return "send_message";
   }
 };
 
@@ -232,7 +232,7 @@ class SendClientCloseOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "client close";
+    return "client_close";
   }
 };
 
@@ -276,7 +276,7 @@ class SendServerStatusOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "send status";
+    return "send_status";
   }
 };
 

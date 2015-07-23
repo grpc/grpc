@@ -544,7 +544,7 @@ function Server(options) {
       if (err) {
         return;
       }
-      var details = event['new call'];
+      var details = event.new_call;
       var call = details.call;
       var method = details.method;
       var metadata = details.metadata;
