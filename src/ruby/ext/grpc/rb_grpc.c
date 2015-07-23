@@ -139,7 +139,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT_VALUE(time));
         }
-        t.tv_nsec = (time_t)(d * 1e9 + 0.5);
+        t.tv_nsec = (int)(time_t)(d * 1e9 + 0.5);
       }
       break;
 
