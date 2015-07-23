@@ -77,6 +77,7 @@ int grpc_chttp2_unlocking_check_writes(
 
     stream_writing->id = stream_global->id;
     stream_writing->send_closed = GRPC_DONT_SEND_CLOSED;
+    GPR_ASSERT(!stream_global->writing_now);
 
     if (stream_global->outgoing_sopb) {
       window_delta =
@@ -227,12 +228,9 @@ void grpc_chttp2_cleanup_writing(
       if (!transport_global->is_client) {
         stream_global->read_closed = 1;
       }
-      grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                    stream_global);
-    } else if (stream_global->read_closed) {
-      grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                    stream_global);
     }
+    grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                  stream_global);
   }
   transport_writing->outbuf.count = 0;
   transport_writing->outbuf.length = 0;

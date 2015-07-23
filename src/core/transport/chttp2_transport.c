@@ -399,7 +399,11 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   gpr_mu_unlock(&t->mu);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
-    GPR_ASSERT(!s->included[i]);
+    if (s->included[i]) {
+      gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
+              t->global.is_client ? "client" : "server", s->global.id, i);
+      abort();
+    }
   }
 
   GPR_ASSERT(s->global.outgoing_sopb == NULL);
