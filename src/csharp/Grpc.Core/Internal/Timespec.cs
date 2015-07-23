@@ -179,6 +179,41 @@ namespace Grpc.Core.Internal
                 return tv_sec.ToInt64() > 0 ? DateTime.MaxValue : DateTime.MinValue;
             }
         }
+            
+        public static Timespec FromDateTime(DateTime dateTime)
+        {
+            if (dateTime == DateTime.MaxValue)
+            {
+                return Timespec.InfFuture;
+            }
+
+            if (dateTime == DateTime.MinValue)
+            {
+                return Timespec.InfPast;
+            }
+
+            Preconditions.CheckArgument(dateTime.Kind == DateTimeKind.Utc, "dateTime");
+
+            try
+            {
+                TimeSpan timeSpan = dateTime - UnixEpoch;
+                long ticks = timeSpan.Ticks;
+
+                IntPtr seconds = new IntPtr(ticks / TicksPerSecond);  // possible OverflowException
+                // (x % m + m) % m is workaround for modulo semantics with negative numbers.
+                int nanos = (int)(((ticks % TicksPerSecond + TicksPerSecond) % TicksPerSecond) * NanosPerTick);
+
+                return new Timespec(seconds, nanos);
+            }
+            catch (OverflowException)
+            {
+                return dateTime > UnixEpoch ? Timespec.InfFuture : Timespec.InfPast;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return dateTime > UnixEpoch ? Timespec.InfFuture : Timespec.InfPast;
+            }
+        }
 
         internal static int NativeSize
         {

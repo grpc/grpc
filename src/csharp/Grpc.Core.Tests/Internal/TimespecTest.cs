@@ -41,9 +41,22 @@ namespace Grpc.Core.Internal.Tests
     public class TimespecTest
     {
         [Test]
-        public void Now()
+        public void Now_IsInUtc() 
+        {
+            Assert.AreEqual(DateTimeKind.Utc, Timespec.Now.ToDateTime().Kind);
+        }
+
+        [Test]
+        public void Now_AgreesWithUtcNow()
         {
             var timespec = Timespec.Now;
+            var utcNow = DateTime.UtcNow;
+
+            TimeSpan difference = utcNow - timespec.ToDateTime();
+
+            // This test is inherently a race - but the two timestamps
+            // should really be way less that a minute apart.
+            Assert.IsTrue(difference.TotalSeconds < 60);
         }
 
         [Test]
