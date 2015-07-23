@@ -126,6 +126,7 @@ def client_credentials_service_account(
   credentials.references.extend([json_key, scope])
   return credentials
 
+#TODO rename to something like client_credentials_service_account_jwt_access.
 def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
   if isinstance(json_key, bytes):
     pass
@@ -134,7 +135,7 @@ def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
   else:
     raise TypeError("expected json_key to be str or bytes")
   cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_jwt_credentials_create(
+  credentials.c_credentials = grpc.grpc_service_account_jwt_access_credentials_create(
       json_key, token_lifetime.c_time)
   credentials.references.append(json_key)
   return credentials
