@@ -36,11 +36,8 @@ sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
 gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
 gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
 sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
-sudo docker run --cidfile=docker.cid grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=large_unary
-DOCKER_CID=`cat docker.cid`
-sudo docker kill $DOCKER_CID
+sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=large_unary
 sleep 4
-docker rm $DOCKER_CID
 sudo docker rmi grpc/cxx
 sudo docker rmi grpc/base
 sudo docker rmi 0.0.0.0:5000/grpc/base
