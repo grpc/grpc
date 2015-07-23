@@ -27,47 +27,27 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and triggers a test run based on
-# env variable settings.
-#
-# Setting up rvm environment BEFORE we set -ex.
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-# To prevent cygwin bash complaining about empty lines ending with \r
-# we set the igncr option. The option doesn't exist on Linux, so we fallback
-# to just 'set -ex' there.
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-# Grabbing the machine's architecture
-arch=`uname -m`
 
-case $platform in
-  i386)
-    arch="i386"
-    platform="linux"
-    docker_suffix=_32bits
-    ;;
-esac
+main() {
+  # restart builder vm and wait for images to sync to it
+  source ../gce_setup/grpc_docker.sh
+  cd ../../
 
-if [ "$platform" == "linux" ]
-then
-  if [ "$config" != "opt" ]
-  then
-    exit 0
-  fi
-  if [ "$language" != "sanity" ]
-  then
-    exit 0
-  fi
-  tools/run_tests/run_build.sh
-elif [ "$platform" == "windows" ]
-then
-  exit 0
-elif [ "$platform" == "macos" ]
-then
-  exit 0
-else
-  echo "Unknown platform $platform"
-  exit 1
-fi
+  # build images for all languages
+  #languages=(cxx java go ruby node python php csharp_mono)
+  languages=(java)
+  for lan in "${languages[@]}"
+  do
+    date -u
+    grpc_update_image $lan
+    date -u
+  done
+  for x in {1 1 1 1 10 10}
+  do 
+    echo "$x"
+  done
+}
+
+set -x
+main "$@"
