@@ -49,6 +49,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
+#include <grpc/support/string_util.h>
 
 DECLARE_bool(enable_ssl);
 DECLARE_bool(use_prod_roots);
@@ -101,10 +102,9 @@ grpc::string GetOauth2AccessToken() {
 std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     const grpc::string& test_case) {
   GPR_ASSERT(FLAGS_server_port);
-  const int host_port_buf_size = 1024;
-  char host_port[host_port_buf_size];
-  snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
-           FLAGS_server_port);
+  char* host_port;
+
+  gpr_asprintf(&host_port, "%s:%d", FLAGS_server_host.c_str(), FLAGS_server_port);
 
   if (test_case == "service_account_creds") {
     std::shared_ptr<Credentials> creds = CreateServiceAccountCredentials();
