@@ -58,6 +58,9 @@ void DynamicThreadPool::DynamicThread::ThreadFunc() {
       pool_->dead_threads_.push_back(this);
     }
   }
+  if ((pool_->shutdown_) && (pool_->nthreads_ == 0)) {
+    pool_->shutdown_cv_.notify_one();
+  }
 }
   
 void DynamicThreadPool::ThreadFunc() {
@@ -103,12 +106,12 @@ void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
 }
   
 DynamicThreadPool::~DynamicThreadPool() {
-  {
-    grpc::lock_guard<grpc::mutex> lock(mu_);
-    shutdown_ = true;
-    cv_.notify_all();
+  grpc::unique_lock<grpc::mutex> lock(mu_);
+  shutdown_ = true;
+  cv_.notify_all();
+  while (nthreads_ != 0) {
+    shutdown_cv_.wait(lock);
   }
-  ReapThreads(&live_threads_);
   ReapThreads(&dead_threads_);
 }
 

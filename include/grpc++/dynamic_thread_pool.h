@@ -64,6 +64,7 @@ class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
   };
   grpc::mutex mu_;
   grpc::condition_variable cv_;
+  grpc::condition_variable shutdown_cv_;
   bool shutdown_;
   std::queue<std::function<void()>> callbacks_;
   int reserve_threads_;
