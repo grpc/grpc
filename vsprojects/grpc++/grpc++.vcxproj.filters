@@ -61,6 +61,9 @@
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\dynamic_thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
@@ -130,6 +133,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\credentials.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\dynamic_thread_pool.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h">
