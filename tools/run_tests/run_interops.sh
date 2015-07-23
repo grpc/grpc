@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,47 +28,19 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and triggers a test run based on
-# env variable settings.
-#
-# Setting up rvm environment BEFORE we set -ex.
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-# To prevent cygwin bash complaining about empty lines ending with \r
-# we set the igncr option. The option doesn't exist on Linux, so we fallback
-# to just 'set -ex' there.
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-# Grabbing the machine's architecture
-arch=`uname -m`
+#sudo docker run -d -e GCS_BUCKET=docker-interop-images -e STORAGE_PATH=/admin/docker_images -p 5000:5000 google/docker-registry
 
-case $platform in
-  i386)
-    arch="i386"
-    platform="linux"
-    docker_suffix=_32bits
-    ;;
-esac
-
-if [ "$platform" == "linux" ]
-then
-  if [ "$config" != "opt" ]
-  then
-    exit 0
-  fi
-  if [ "$language" != "sanity" ]
-  then
-    exit 0
-  fi
-  tools/run_tests/interops.sh
-elif [ "$platform" == "windows" ]
-then
-  exit 0
-elif [ "$platform" == "macos" ]
-then
-  exit 0
-else
-  echo "Unknown platform $platform"
-  exit 1
-fi
+sudo docker pull 0.0.0.0:5000/grpc/base
+sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
+gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
+gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
+sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
+sudo docker run --cidfile=docker.cid grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=large_unary
+DOCKER_CID=`cat docker.cid`
+sudo docker kill $DOCKER_CID
+sleep 4
+docker rm $DOCKER_CID
+sudo docker rmi grpc/cxx
+sudo docker rmi grpc/base
+sudo docker rmi 0.0.0.0:5000/grpc/base
