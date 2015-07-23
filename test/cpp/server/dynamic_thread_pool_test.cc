@@ -42,7 +42,7 @@ namespace grpc {
 
 class DynamicThreadPoolTest : public ::testing::Test {
  public:
-  DynamicThreadPoolTest() : thread_pool_(4) {}
+  DynamicThreadPoolTest() : thread_pool_(0) {}
 
  protected:
   DynamicThreadPool thread_pool_;
