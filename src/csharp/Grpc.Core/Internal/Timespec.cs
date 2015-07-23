@@ -180,6 +180,14 @@ namespace Grpc.Core.Internal
             }
         }
             
+        /// <summary>
+        /// Creates DateTime to Timespec.
+        /// DateTime has to be in UTC (DateTimeKind.Utc) unless it's DateTime.MaxValue or DateTime.MinValue.
+        /// For DateTime.MaxValue of date time after the largest representable Timespec, Timespec.InfFuture is returned.
+        /// For DateTime.MinValue of date time before the lowest representable Timespec, Timespec.InfPast is returned.
+        /// </summary>
+        /// <returns>The date time.</returns>
+        /// <param name="dateTime">Date time.</param>
         public static Timespec FromDateTime(DateTime dateTime)
         {
             if (dateTime == DateTime.MaxValue)
@@ -199,11 +207,16 @@ namespace Grpc.Core.Internal
                 TimeSpan timeSpan = dateTime - UnixEpoch;
                 long ticks = timeSpan.Ticks;
 
-                IntPtr seconds = new IntPtr(ticks / TicksPerSecond);  // possible OverflowException
-                // (x % m + m) % m is workaround for modulo semantics with negative numbers.
-                int nanos = (int)(((ticks % TicksPerSecond + TicksPerSecond) % TicksPerSecond) * NanosPerTick);
-
-                return new Timespec(seconds, nanos);
+                long seconds = ticks / TicksPerSecond;  
+                int nanos = (int)((ticks % TicksPerSecond) * NanosPerTick);
+                if (nanos < 0) 
+                {
+                    // correct the result based on C# modulo semantics for negative dividend
+                    seconds--;
+                    nanos += (int)NanosPerSecond;
+                }
+                // new IntPtr possibly throws OverflowException
+                return new Timespec(new IntPtr(seconds), nanos);
             }
             catch (OverflowException)
             {

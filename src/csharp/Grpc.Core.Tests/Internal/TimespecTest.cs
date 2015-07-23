@@ -92,18 +92,16 @@ namespace Grpc.Core.Internal.Tests
             // before epoch
             Assert.AreEqual(new DateTime(1969, 12, 31, 23, 59, 55, DateTimeKind.Utc).AddTicks(10),
                 new Timespec(new IntPtr(-5), 1000).ToDateTime());
-        }
 
-        [Test]
-        public void ToDateTime_RoundUp()
-        {
+            // infinity
+            Assert.AreEqual(DateTime.MaxValue, Timespec.InfFuture.ToDateTime());
+            Assert.AreEqual(DateTime.MinValue, Timespec.InfPast.ToDateTime());
+
+            // nanos are rounded to ticks are rounded up
             Assert.AreEqual(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddTicks(1),
                 new Timespec(IntPtr.Zero, 99).ToDateTime());
-        }
 
-        [Test]
-        public void ToDateTime_WrongInputs()
-        {
+            // Illegal inputs
             Assert.Throws(typeof(InvalidOperationException),
                 () => new Timespec(new IntPtr(0), -2).ToDateTime());
             Assert.Throws(typeof(InvalidOperationException),
@@ -120,14 +118,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ToDateTime_Infinity()
-        {
-            Assert.AreEqual(DateTime.MaxValue, Timespec.InfFuture.ToDateTime());
-            Assert.AreEqual(DateTime.MinValue, Timespec.InfPast.ToDateTime());
-        }
-
-        [Test]
-        public void ToDateTime_OverflowGivesMaxOrMinVal()
+        public void ToDateTime_Overflow()
         {
             // we can only get overflow in ticks arithmetic on 64-bit
             if (IntPtr.Size == 8)
@@ -145,7 +136,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ToDateTime_OutOfRangeGivesMaxOrMinVal()
+        public void ToDateTime_OutOfDateTimeRange()
         {
             // we can only get out of range on 64-bit, on 32 bit the max 
             // timestamp is ~ Jan 19 2038, which is far within range of DateTime
@@ -165,6 +156,46 @@ namespace Grpc.Core.Internal.Tests
             else
             {
                 Console.WriteLine("Test cannot be run on this platform, skipping the test");
+            }
+        }
+
+        [Test]
+        public void FromDateTime()
+        {
+            Assert.AreEqual(new Timespec(IntPtr.Zero, 0),
+                Timespec.FromDateTime(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+            Assert.AreEqual(new Timespec(new IntPtr(10), 5000),
+                Timespec.FromDateTime(new DateTime(1970, 1, 1, 0, 0, 10, DateTimeKind.Utc).AddTicks(50)));
+
+            Assert.AreEqual(new Timespec(new IntPtr(1437452508), 0),
+                Timespec.FromDateTime(new DateTime(2015, 7, 21, 4, 21, 48, DateTimeKind.Utc)));
+
+            // before epoch
+            Assert.AreEqual(new Timespec(new IntPtr(-5), 1000),
+                Timespec.FromDateTime(new DateTime(1969, 12, 31, 23, 59, 55, DateTimeKind.Utc).AddTicks(10)));
+
+            // infinity
+            Assert.AreEqual(Timespec.InfFuture, Timespec.FromDateTime(DateTime.MaxValue));
+            Assert.AreEqual(Timespec.InfPast, Timespec.FromDateTime(DateTime.MinValue));
+
+            // illegal inputs
+            Assert.Throws(typeof(ArgumentException),
+                () => Timespec.FromDateTime(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified)));
+        }
+
+        [Test]
+        public void FromDateTime_OutOfTimespecRange()
+        {
+            // we can only get overflow in Timespec on 32-bit
+            if (IntPtr.Size == 4)
+            {
+                Assert.AreEqual(Timespec.InfFuture, new DateTime(2040, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+                Assert.AreEqual(Timespec.InfPast, new DateTime(1800, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            }
+            else
+            {
+                Console.WriteLine("Test cannot be run on this platform, skipping the test.");
             }
         }
     }
