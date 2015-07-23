@@ -406,6 +406,9 @@
     <ClCompile Include="..\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\grpc_security.h">
@@ -771,6 +774,9 @@
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\census\context.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
   </ItemGroup>

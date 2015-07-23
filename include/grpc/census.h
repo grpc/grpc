@@ -100,6 +100,17 @@ int census_context_deserialize(const char *buffer, census_context **context);
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
 
+/* A census statistic to be recorded comprises two parts: an ID for the
+ * particular statistic and the value to be recorded against it. */
+typedef struct {
+  int id;
+  double value;
+} census_stat;
+
+/* Record new stats against the given context. */
+void census_record_stat(census_context *context, census_stat *stats,
+                        size_t nstats);
+
 #ifdef __cplusplus
 }
 #endif

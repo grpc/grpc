@@ -270,6 +270,7 @@
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\src\core\census\context.h" />
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\httpcli\format_request.c">
@@ -541,6 +542,8 @@
     <ClCompile Include="..\..\src\core\census\context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
