@@ -97,7 +97,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
     CLIENT_METADATA_BIN_VALUE = b'\0'*1000
     SERVER_INITIAL_METADATA_KEY = 'init_me_me_me'
     SERVER_INITIAL_METADATA_VALUE = 'whodawha?'
-    SERVER_TRAILING_METADATA_KEY = 'California_is_in_a_drought'
+    SERVER_TRAILING_METADATA_KEY = 'california_is_in_a_drought'
     SERVER_TRAILING_METADATA_VALUE = 'zomg it is'
     SERVER_STATUS_CODE = _types.StatusCode.OK
     SERVER_STATUS_DETAILS = 'our work is never over'
