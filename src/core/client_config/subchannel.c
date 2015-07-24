@@ -322,8 +322,8 @@ static void continue_connect(grpc_subchannel *c) {
 static void start_connect(grpc_subchannel *c) {
   c->backoff_delta = gpr_time_from_seconds(
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS, GPR_TIMESPAN);
-  c->next_attempt = gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
+  c->next_attempt =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
   continue_connect(c);
 }
 
