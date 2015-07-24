@@ -273,7 +273,7 @@ void grpc_subchannel_del_interested_party(grpc_subchannel *c,
 }
 
 static gpr_int32 random_seed() {
-  return gpr_time_to_millis(gpr_now(GPR_CLOCK_REALTIME));
+  return gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
@@ -608,7 +608,8 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
     backoff_delta_millis = max_backoff_millis;
   }
   c->backoff_delta = gpr_time_from_millis(backoff_delta_millis, GPR_TIMESPAN);
-  c->next_attempt = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c->backoff_delta);
+  c->next_attempt =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
 
   jitter_range = GRPC_SUBCHANNEL_RECONNECT_JITTER * backoff_delta_millis;
   jitter =
@@ -654,7 +655,7 @@ static gpr_timespec compute_connect_deadline(grpc_subchannel *c) {
   gpr_timespec current_deadline =
       gpr_time_add(c->next_attempt, c->backoff_delta);
   gpr_timespec min_deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_seconds(GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS,
                             GPR_TIMESPAN));
   return gpr_time_cmp(current_deadline, min_deadline) > 0 ? current_deadline
