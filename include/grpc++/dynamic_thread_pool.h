@@ -70,7 +70,6 @@ class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
   int reserve_threads_;
   int nthreads_;
   int threads_waiting_;
-  std::list<DynamicThread*> live_threads_;
   std::list<DynamicThread*> dead_threads_;
 
   void ThreadFunc();
