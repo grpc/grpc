@@ -122,10 +122,26 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void DeadlineInThePast()
+        {
+            var deadline = DateTime.MinValue;
+            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
+
+            try
+            {
+                Calls.BlockingUnaryCall(internalCall, "TIMEOUT", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
+            }
+        }
+
+        [Test]
         public void DeadlineExceededStatusOnTimeout()
         {
-            // no deadline specified, check server sees infinite deadline
-            var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(1));
+            var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
             var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
 
             try
@@ -142,8 +158,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void ServerReceivesCancellationOnTimeout()
         {
-            // no deadline specified, check server sees infinite deadline
-            var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(1));
+            var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
             var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
 
             try
