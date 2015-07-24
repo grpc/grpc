@@ -66,10 +66,10 @@ namespace Grpc.Core
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
         public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates)
         {
-            this.rootCertificates = rootCertificates;
             this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
-            Preconditions.CheckArgument(this.keyCertificatePairs.Count == 0,
+            Preconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
                 "At least one KeyCertificatePair needs to be provided");
+            this.rootCertificates = rootCertificates;
         }
 
         /// <summary>
