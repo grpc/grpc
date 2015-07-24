@@ -190,8 +190,8 @@ namespace Grpc.Core.Internal.Tests
             // we can only get overflow in Timespec on 32-bit
             if (IntPtr.Size == 4)
             {
-                Assert.AreEqual(Timespec.InfFuture, new DateTime(2040, 1, 1, 0, 0, 0, DateTimeKind.Utc));
-                Assert.AreEqual(Timespec.InfPast, new DateTime(1800, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+                Assert.AreEqual(Timespec.InfFuture, Timespec.FromDateTime(new DateTime(2040, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.AreEqual(Timespec.InfPast, Timespec.FromDateTime(new DateTime(1800, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
             }
             else
             {
