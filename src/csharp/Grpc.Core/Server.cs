@@ -38,6 +38,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -51,6 +52,8 @@ namespace Grpc.Core
         /// Pass this value as port to have the server choose an unused listening port for you.
         /// </summary>
         public const int PickUnusedPort = 0;
+
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
         readonly GrpcEnvironment environment;
         readonly List<ChannelOption> options;
@@ -233,7 +236,7 @@ namespace Grpc.Core
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception while handling RPC: " + e);
+                Logger.Warning(e, "Exception while handling RPC.");
             }
         }
 

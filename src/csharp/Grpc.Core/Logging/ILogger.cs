@@ -32,38 +32,26 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
 
-namespace Grpc.Core.Utils
+namespace Grpc.Core.Logging
 {
-    public static class BenchmarkUtil
+    /// <summary>For logging messages.</summary>
+    public interface ILogger
     {
-        /// <summary>
-        /// Runs a simple benchmark preceded by warmup phase.
-        /// </summary>
-        public static void RunBenchmark(int warmupIterations, int benchmarkIterations, Action action)
-        {
-            var logger = GrpcEnvironment.Logger;
-            
-            logger.Info("Warmup iterations: {0}", warmupIterations);
-            for (int i = 0; i < warmupIterations; i++)
-            {
-                action();
-            }
+        /// <summary>Returns a logger associated with the specified type.</summary>
+        ILogger ForType<T>();
 
-            logger.Info("Benchmark iterations: {0}", benchmarkIterations);
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            for (int i = 0; i < benchmarkIterations; i++)
-            {
-                action();
-            }
-            stopwatch.Stop();
-            logger.Info("Elapsed time: {0}ms", stopwatch.ElapsedMilliseconds);
-            logger.Info("Ops per second: {0}", (int)((double)benchmarkIterations  * 1000 / stopwatch.ElapsedMilliseconds));
-        }
+        void Debug(string message, params object[] formatArgs);
+
+        void Info(string message, params object[] formatArgs);
+
+        void Warning(string message, params object[] formatArgs);
+
+        void Warning(Exception exception, string message, params object[] formatArgs);
+
+        void Error(string message, params object[] formatArgs);
+
+        void Error(Exception exception, string message, params object[] formatArgs);
     }
 }
