@@ -400,6 +400,15 @@ static void finish_start_new_rpc(grpc_server *server, grpc_call_element *elem,
   call_data *calld = elem->call_data;
   int request_id;
 
+  if (gpr_atm_acq_load(&server->shutdown_flag)) {
+    gpr_mu_lock(&calld->mu_state);
+    calld->state = ZOMBIED;
+    gpr_mu_unlock(&calld->mu_state);
+    grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+    grpc_iomgr_add_callback(&calld->kill_zombie_closure);
+    return;
+  }
+
   request_id = gpr_stack_lockfree_pop(request_matcher->requests);
   if (request_id == -1) {
     gpr_mu_lock(&server->mu_call);
