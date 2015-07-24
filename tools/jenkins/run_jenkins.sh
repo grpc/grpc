@@ -60,7 +60,7 @@ then
   then
     exit 0
   fi
-  tools/run_tests/run_interops.py
+  python tools/run_tests/run_interops.py
 elif [ "$platform" == "windows" ]
 then
   exit 0
