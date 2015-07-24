@@ -1,0 +1,67 @@
+Connection Backoff Interop Test Descriptions
+===============================================
+
+This test is to verify the client is reconnecting the server with correct
+backoffs as specified in
+[the spec](http://github.com/grpc/grpc/blob/master/doc/connection-backoff.md).
+The test server has a port (control_port) running a rpc service for controlling
+the server and another port (retry_port) to close any incoming tcp connections.
+The test has the following flow:
+1. The server starts listening on control_port.
+2. The client calls Start rpc on server control_port.
+3. The server starts listening on retry_port.
+4. The client calls Start rpc on server retry_port with a deadline of 540s.
+5. The client waits until the rpc finishes.
+6. The client calls Stop rpc on server control port.
+7. The client checks the response to see whether the server thinks the backoffs
+are conforming the spec or do its own check on the backoffs in the response.
+
+Client and server use
+[test.proto](https://github.com/grpc/grpc/blob/master/test/proto/test.proto).
+Each language should implement its own client. The C++ server is shared among
+languages.
+
+Client
+------
+
+Clients should accept these arguments:
+* --server_control_port=PORT
+    * The server port to connect to for rpc. For example, "8080"
+* --server_retry_port=PORT
+    * The server port to connect to for testing backoffs. For example, "8080"
+
+The client must connect to the control port without TLS. The client should
+either assert on the server returned backoff status or check the returned
+backoffs on its own.
+
+Procedure of client:
+1. Calls Start on server control port and checks it succeeded.
+2. Calls Start on server retry port with a deadline of 540s. Waits and checks it
+   got deadline exceeded status.
+3. Calls Stop on server control port and checks it succeeded.
+4. Checks the response to see whether the server thinks the backoffs passed the
+   test.
+5. Optionally, the client can do its own check on the returned backoffs.
+
+
+Server
+------
+
+A C++ server can be used for the test. Other languages do NOT need to implement
+a server. To minimize the network delay, the server binary should run on the
+same machine with the client binary.
+
+A server implements the ReconnectService to its state. It also opens a
+tcp server on the retry_port, which just shuts down all incoming tcp
+connections to simulate connection failures. The server will keep a record of
+all the reconnection timestamps and return the connection backoffs in the
+response in milliseconds. The server also checks the backoffs to see whether
+they conform the spec and returns whether the client passes the test.
+
+Servers should accept these arguments:
+
+* --control_port=PORT
+    * The port to listen on for control rpcs. For example, "8080"
+* --retry_port=PORT
+    * The tcp server port. For example, "8080"
+
