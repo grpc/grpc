@@ -445,6 +445,10 @@ GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_past(gpr_clock_type clock_type
   return gpr_inf_past(clock_type);
 }
 
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_convert_clock_type(gpr_timespec t, gpr_clock_type target_clock) {
+  return gpr_convert_clock_type(t, target_clock);
+}
+
 GPR_EXPORT gpr_int32 GPR_CALLTYPE gprsharp_sizeof_timespec(void) {
   return sizeof(gpr_timespec);
 }

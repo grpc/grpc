@@ -297,8 +297,10 @@ namespace Grpc.Core.Internal
 
         public static ServerCallContext NewContext(ServerRpcNew newRpc, CancellationToken cancellationToken)
         {
+            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(GPRClockType.Realtime).ToDateTime();
+
             return new ServerCallContext(
-                newRpc.Method, newRpc.Host, newRpc.Deadline.ToDateTime(),
+                newRpc.Method, newRpc.Host, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken);
         }
     }

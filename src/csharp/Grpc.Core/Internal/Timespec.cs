@@ -58,6 +58,9 @@ namespace Grpc.Core.Internal
         static extern Timespec gprsharp_inf_past(GPRClockType clockType);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern Timespec gprsharp_convert_clock_type(Timespec t, GPRClockType targetClock);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern int gprsharp_sizeof_timespec();
 
         public Timespec(IntPtr tv_sec, int tv_nsec) : this(tv_sec, tv_nsec, GPRClockType.Realtime)
@@ -130,6 +133,14 @@ namespace Grpc.Core.Internal
             {
                 return tv_nsec;
             }
+        }
+
+        /// <summary>
+        /// Converts the timespec to desired clock type.
+        /// </summary>
+        public Timespec ToClockType(GPRClockType targetClock)
+        {
+            return gprsharp_convert_clock_type(this, targetClock);
         }
             
         /// <summary>
