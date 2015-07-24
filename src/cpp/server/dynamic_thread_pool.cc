@@ -95,9 +95,8 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads) :
 }
 
 void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
-  for (auto t = tlist->begin(); t != tlist->end(); t++) {
-    delete *t;
-    t = tlist->erase(t);
+  for (auto t = tlist->begin(); t != tlist->end(); t = tlist->erase(t)) {
+    delete *t;    
   }
 }
   
