@@ -123,6 +123,7 @@ class CLanguage(object):
 
   def test_specs(self, config, travis):
     out = []
+    out.append(config.job_sepc(['tools/run_tests/run_interops.sh'], ['tools/run_tests/run_interops.sh']))
     for target in self.binaries:
       if travis and target['flaky']:
         continue

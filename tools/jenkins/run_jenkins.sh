@@ -52,21 +52,62 @@ esac
 
 if [ "$platform" == "linux" ]
 then
-  if [ "$config" != "opt" ]
-  then
-    exit 0
-  fi
-  if [ "$language" != "sanity" ]
-  then
-    exit 0
-  fi
-  tools/run_tests/run_interops.sh
+  echo "building $language on Linux"
+
+  cd `dirname $0`/../..
+  git_root=`pwd`
+  cd -
+
+  mkdir -p /tmp/ccache
+
+  # Use image name based on Dockerfile checksum
+  DOCKER_IMAGE_NAME=grpc_jenkins_slave$docker_suffix_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+
+  # Make sure docker image has been built. Should be instantaneous if so.
+  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
+
+  # Create a local branch so the child Docker script won't complain
+  git branch jenkins-docker
+
+  # Make sure the CID file is gone.
+  rm -f docker.cid
+
+  # Run tests inside docker
+  docker run \
+    -e "config=$config" \
+    -e "language=$language" \
+    -e "arch=$arch" \
+    -e CCACHE_DIR=/tmp/ccache \
+    -i \
+    -v "$git_root:/var/local/jenkins/grpc" \
+    -v /tmp/ccache:/tmp/ccache \
+    --cidfile=docker.cid \
+    $DOCKER_IMAGE_NAME \
+    bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
+
+  DOCKER_CID=`cat docker.cid`
+  docker kill $DOCKER_CID
+  docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
+  sleep 4
+  docker rm $DOCKER_CID || true
+
 elif [ "$platform" == "windows" ]
 then
-  exit 0
+  echo "building $language on Windows"
+
+  # Prevent msbuild from picking up "platform" env variable, which would break the build
+  unset platform
+
+  # TODO(jtattermusch): integrate nuget restore in a nicer way.
+  /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
+  /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
+
+  python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
 elif [ "$platform" == "macos" ]
 then
-  exit 0
+  echo "building $language on MacOS"
+
+  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
 else
   echo "Unknown platform $platform"
   exit 1
