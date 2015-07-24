@@ -44,11 +44,33 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ServerCredentials
     {
+        static readonly ServerCredentials InsecureInstance = new InsecureServerCredentialsImpl();
+
+        /// <summary>
+        /// Returns instance of credential that provides no security and 
+        /// will result in creating an unsecure server port with no encryption whatsoever.
+        /// </summary>
+        public static ServerCredentials Insecure
+        {
+            get
+            {
+                return InsecureInstance;
+            }
+        }
+
         /// <summary>
         /// Creates native object for the credentials.
         /// </summary>
         /// <returns>The native credentials.</returns>
         internal abstract ServerCredentialsSafeHandle ToNativeCredentials();
+
+        private sealed class InsecureServerCredentialsImpl : ServerCredentials
+        {
+            internal override ServerCredentialsSafeHandle ToNativeCredentials()
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>

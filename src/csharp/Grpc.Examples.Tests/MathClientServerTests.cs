@@ -56,9 +56,9 @@ namespace math.Tests
         {
             server = new Server();
             server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
-            int port = server.AddListeningPort(host, Server.PickUnusedPort);
+            int port = server.AddPort(host, Server.PickUnusedPort, ServerCredentials.Insecure);
             server.Start();
-            channel = new Channel(host, port);
+            channel = new Channel(host, port, Credentials.Insecure);
             client = Math.NewClient(channel);
 
             // TODO(jtattermusch): get rid of the custom header here once we have dedicated tests
