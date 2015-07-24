@@ -797,7 +797,7 @@ TEST_F(End2endTest, HugeResponse) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("huge response");
-  const int kResponseSize = 1024 * (1024 + 10);
+  const size_t kResponseSize = 1024 * (1024 + 10);
   request.mutable_param()->set_response_message_length(kResponseSize);
 
   ClientContext context;
