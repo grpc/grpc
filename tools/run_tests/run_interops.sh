@@ -30,7 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #sudo docker run -d -e GCS_BUCKET=docker-interop-images -e STORAGE_PATH=/admin/docker_images -p 5000:5000 google/docker-registry
-
+set -e
 sudo docker pull 0.0.0.0:5000/grpc/base
 sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
 gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx

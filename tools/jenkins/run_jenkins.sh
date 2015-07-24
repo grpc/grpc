@@ -105,9 +105,13 @@ then
   python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
 elif [ "$platform" == "macos" ]
 then
-  echo "building $language on MacOS"
+  #echo "building $language on MacOS"
 
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+  #./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+  
+  echo "test building interop"
+  ./tools/run_tests/run_interops.sh || true
+
 else
   echo "Unknown platform $platform"
   exit 1
