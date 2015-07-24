@@ -60,7 +60,7 @@ then
   then
     exit 0
   fi
-  tools/run_tests/run_interops.sh
+  tools/run_tests/run_interops.py -t -c $config -l sanity -x report.xml
 elif [ "$platform" == "windows" ]
 then
   exit 0
