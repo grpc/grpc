@@ -182,8 +182,7 @@ void grpc_chttp2_publish_reads(
       stream_global->max_recv_bytes -= 
           stream_parsing->incoming_window_delta;
       stream_parsing->incoming_window_delta = 0;
-      grpc_chttp2_list_add_writable_window_update_stream(transport_global,
-                                                         stream_global);
+      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
 
     /* update outgoing flow control window */

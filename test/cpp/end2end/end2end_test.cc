@@ -144,6 +144,11 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     if (request->has_param() && request->param().check_auth_context()) {
       CheckAuthContext(context);
     }
+    if (request->has_param() &&
+        request->param().response_message_length() > 0) {
+      response->set_message(
+          grpc::string(request->param().response_message_length(), '\0'));
+    }
     return Status::OK;
   }
 
@@ -784,6 +789,21 @@ TEST_F(End2endTest, ClientAuthContext) {
   EXPECT_TRUE(s.ok());
 
   CheckAuthContext(&context);
+}
+
+// Make the response larger than the flow control window.
+TEST_F(End2endTest, HugeResponse) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("huge response");
+  const int kResponseSize = 1024 * (1024 + 10);
+  request.mutable_param()->set_response_message_length(kResponseSize);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(kResponseSize, response.message().size());
+  EXPECT_TRUE(s.ok());
 }
 
 }  // namespace testing
