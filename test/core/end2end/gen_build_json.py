@@ -71,6 +71,7 @@ END2END_TESTS = {
     'cancel_in_a_vacuum': default_test_options,
     'census_simple_request': default_test_options,
     'channel_connectivity': connectivity_test_options,
+    'default_host': connectivity_test_options,
     'disappearing_server': connectivity_test_options,
     'early_server_shutdown_finishes_inflight_calls': default_test_options,
     'early_server_shutdown_finishes_tags': default_test_options,

@@ -1743,6 +1743,21 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_fake_security", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fake_security_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_fake_security", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -2217,6 +2232,21 @@
     "headers": [], 
     "language": "c", 
     "name": "chttp2_fullstack_channel_connectivity_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_fullstack", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_default_host_test", 
     "src": []
   }, 
   {
@@ -2703,6 +2733,21 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_fullstack_compression", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_compression_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_fullstack_compression", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -3177,6 +3222,21 @@
     "headers": [], 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_channel_connectivity_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_fullstack_uds_posix", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_default_host_test", 
     "src": []
   }, 
   {
@@ -3663,6 +3723,21 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_fullstack_uds_posix_with_poll", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_with_poll_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_fullstack_uds_posix_with_poll", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -4137,6 +4212,21 @@
     "headers": [], 
     "language": "c", 
     "name": "chttp2_fullstack_with_poll_channel_connectivity_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_fullstack_with_poll", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_default_host_test", 
     "src": []
   }, 
   {
@@ -4623,6 +4713,21 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_simple_ssl_fullstack", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_simple_ssl_fullstack", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -5103,6 +5208,21 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_simple_ssl_fullstack_with_poll", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_simple_ssl_fullstack_with_poll", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -5577,6 +5697,21 @@
     "headers": [], 
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_channel_connectivity_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_default_host_test", 
     "src": []
   }, 
   {
@@ -7359,6 +7494,20 @@
   {
     "deps": [
       "end2end_fixture_chttp2_fullstack", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_default_host_unsecure_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_chttp2_fullstack", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -7788,6 +7937,20 @@
     "headers": [], 
     "language": "c", 
     "name": "chttp2_fullstack_compression_channel_connectivity_unsecure_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_chttp2_fullstack_compression", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_compression_default_host_unsecure_test", 
     "src": []
   }, 
   {
@@ -8227,6 +8390,20 @@
   {
     "deps": [
       "end2end_fixture_chttp2_fullstack_uds_posix", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_default_host_unsecure_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_chttp2_fullstack_uds_posix", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -8661,6 +8838,20 @@
   {
     "deps": [
       "end2end_fixture_chttp2_fullstack_uds_posix_with_poll", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_posix_with_poll_default_host_unsecure_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_chttp2_fullstack_uds_posix_with_poll", 
       "end2end_test_disappearing_server", 
       "gpr", 
       "gpr_test_util", 
@@ -9090,6 +9281,20 @@
     "headers": [], 
     "language": "c", 
     "name": "chttp2_fullstack_with_poll_channel_connectivity_unsecure_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_chttp2_fullstack_with_poll", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "chttp2_fullstack_with_poll_default_host_unsecure_test", 
     "src": []
   }, 
   {
@@ -12422,6 +12627,25 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/channel_connectivity.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/tests/cancel_test_helpers.h"
+    ], 
+    "language": "c", 
+    "name": "end2end_test_default_host", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/tests/cancel_test_helpers.h", 
+      "test/core/end2end/tests/default_host.c"
     ]
   }, 
   {
