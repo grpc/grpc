@@ -103,6 +103,8 @@
     <Compile Include="ChannelOptions.cs" />
     <Compile Include="AsyncUnaryCall.cs" />
     <Compile Include="VersionInfo.cs" />
+    <Compile Include="Internal\CStringSafeHandle.cs" />
+    <Compile Include="KeyCertificatePair.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,45 +28,57 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#endregion
-using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Grpc.Core.Internal
+#endregion
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+
+namespace Grpc.Core
 {
     /// <summary>
-    /// grpc_credentials from <grpc/grpc_security.h>
+    /// Key certificate pair (in PEM encoding).
     /// </summary>
-    internal class CredentialsSafeHandle : SafeHandleZeroIsInvalid
+    public sealed class KeyCertificatePair
     {
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern CredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+        readonly string certificateChain;
+        readonly string privateKey;
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_credentials_release(IntPtr credentials);
-
-        private CredentialsSafeHandle()
+        /// <summary>
+        /// Creates a new certificate chain - private key pair.
+        /// </summary>
+        /// <param name="certificateChain">PEM encoded certificate chain.</param>
+        /// <param name="privateKey">PEM encoded private key.</param>
+        public KeyCertificatePair(string certificateChain, string privateKey)
         {
+            this.certificateChain = Preconditions.CheckNotNull(certificateChain);
+            this.privateKey = Preconditions.CheckNotNull(privateKey);
         }
 
-        public static CredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair)
+        /// <summary>
+        /// PEM encoded certificate chain.
+        /// </summary>
+        public string CertificateChain
         {
-            if (keyCertPair != null)
+            get
             {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
-            }
-            else
-            {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
+                return certificateChain;
             }
         }
 
-        protected override bool ReleaseHandle()
+        /// <summary>
+        /// PEM encoded private key.
+        /// </summary>
+        public string PrivateKey
         {
-            grpcsharp_credentials_release(handle);
-            return true;
+            get
+            {
+                return privateKey;
+            }
         }
     }
 }

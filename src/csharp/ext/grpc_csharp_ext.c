@@ -465,6 +465,14 @@ grpcsharp_call_cancel_with_status(grpc_call *call, grpc_status_code status,
   return grpc_call_cancel_with_status(call, status, description);
 }
 
+GPR_EXPORT char *GPR_CALLTYPE grpcsharp_call_get_peer(grpc_call *call) {
+  return grpc_call_get_peer(call);
+}
+
+GPR_EXPORT void GPR_CALLTYPE gprsharp_free(void *p) {
+  gpr_free(p);
+}
+
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
   grpc_call_destroy(call);
 }

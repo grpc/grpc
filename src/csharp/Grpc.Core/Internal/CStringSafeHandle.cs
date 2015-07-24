@@ -30,41 +30,30 @@
 #endregion
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_credentials from <grpc/grpc_security.h>
+    /// Owned char* object.
     /// </summary>
-    internal class CredentialsSafeHandle : SafeHandleZeroIsInvalid
+    internal class CStringSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern CredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
-
         [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_credentials_release(IntPtr credentials);
+        static extern void gprsharp_free(IntPtr ptr);
 
-        private CredentialsSafeHandle()
+        private CStringSafeHandle()
         {
         }
 
-        public static CredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair)
+        public string GetValue()
         {
-            if (keyCertPair != null)
-            {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
-            }
-            else
-            {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
-            }
+            return Marshal.PtrToStringAnsi(handle);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_credentials_release(handle);
+            gprsharp_free(handle);
             return true;
         }
     }
