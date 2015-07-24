@@ -367,7 +367,7 @@ grpcsharp_completion_queue_pluck(grpc_completion_queue *cq, void *tag) {
 /* Channel */
 
 GPR_EXPORT grpc_channel *GPR_CALLTYPE
-grpcsharp_channel_create(const char *target, const grpc_channel_args *args) {
+grpcsharp_insecure_channel_create(const char *target, const grpc_channel_args *args) {
   return grpc_channel_create(target, args);
 }
 
@@ -717,7 +717,7 @@ grpcsharp_server_create(grpc_completion_queue *cq,
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
-grpcsharp_server_add_http2_port(grpc_server *server, const char *addr) {
+grpcsharp_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   return grpc_server_add_http2_port(server, addr);
 }
 

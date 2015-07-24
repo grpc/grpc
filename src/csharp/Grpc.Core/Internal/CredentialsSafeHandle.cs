@@ -50,6 +50,13 @@ namespace Grpc.Core.Internal
         {
         }
 
+        public static CredentialsSafeHandle CreateNullCredentials()
+        {
+            var creds = new CredentialsSafeHandle();
+            creds.SetHandle(IntPtr.Zero);
+            return creds;
+        }
+
         public static CredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair)
         {
             if (keyCertPair != null)

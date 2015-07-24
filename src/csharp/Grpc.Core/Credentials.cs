@@ -41,17 +41,40 @@ namespace Grpc.Core
     /// </summary>
     public abstract class Credentials
     {
+        static readonly Credentials InsecureInstance = new InsecureCredentialsImpl();
+
         /// <summary>
-        /// Creates native object for the credentials.
+        /// Returns instance of credential that provides no security and 
+        /// will result in creating an unsecure channel with no encryption whatsoever.
+        /// </summary>
+        public static Credentials Insecure
+        {
+            get
+            {
+                return InsecureInstance;
+            }
+        }
+
+        /// <summary>
+        /// Creates native object for the credentials. May return null if insecure channel
+        /// should be created.
         /// </summary>
         /// <returns>The native credentials.</returns>
         internal abstract CredentialsSafeHandle ToNativeCredentials();
+
+        private sealed class InsecureCredentialsImpl : Credentials
+        {
+            internal override CredentialsSafeHandle ToNativeCredentials()
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>
     /// Client-side SSL credentials.
     /// </summary>
-    public class SslCredentials : Credentials
+    public sealed class SslCredentials : Credentials
     {
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
