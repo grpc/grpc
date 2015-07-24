@@ -131,6 +131,14 @@ namespace Grpc.Core.Internal
             }
         }
 
+        public string Peer
+        {
+            get
+            {
+                return call.GetPeer();
+            }
+        }
+
         protected override void OnReleaseResources()
         {
             environment.DebugStats.ActiveServerCalls.Decrement();

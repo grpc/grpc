@@ -47,6 +47,7 @@ namespace Grpc.Core
 
         private readonly string method;
         private readonly string host;
+        private readonly string peer;
         private readonly DateTime deadline;
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
@@ -54,10 +55,11 @@ namespace Grpc.Core
 
         private Status status = Status.DefaultSuccess;
 
-        public ServerCallContext(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken)
+        public ServerCallContext(string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken)
         {
             this.method = method;
             this.host = host;
+            this.peer = peer;
             this.deadline = deadline;
             this.requestHeaders = requestHeaders;
             this.cancellationToken = cancellationToken;
@@ -78,6 +80,15 @@ namespace Grpc.Core
             get
             {
                 return this.host;
+            }
+        }
+
+        /// <summary> Address of the remote endpoint in URI format. </summary>
+        public string Peer
+        {
+            get
+            {
+                return this.peer;
             }
         }
 

@@ -89,6 +89,9 @@ namespace Grpc.Core.Internal
             BatchContextSafeHandle ctx);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_call_destroy(IntPtr call);
 
         private CallSafeHandle()
@@ -178,6 +181,14 @@ namespace Grpc.Core.Internal
         public void CancelWithStatus(Status status)
         {
             grpcsharp_call_cancel_with_status(this, status.StatusCode, status.Detail).CheckOk();
+        }
+
+        public string GetPeer()
+        {
+            using (var cstring = grpcsharp_call_get_peer(this))
+            {
+                return cstring.GetValue();
+            }
         }
 
         protected override bool ReleaseHandle()
