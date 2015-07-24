@@ -62,7 +62,7 @@ namespace Grpc.IntegrationTesting
                 File.ReadAllText(TestCredentials.ServerCertChainPath),
                 File.ReadAllText(TestCredentials.ServerPrivateKeyPath));
 
-            var serverCredentials = new SslServerCredentials(new [] { keyCertPair }, rootCert);
+            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert);
             var clientCredentials = new SslCredentials(rootCert, keyCertPair);
 
             server = new Server();
@@ -93,6 +93,5 @@ namespace Grpc.IntegrationTesting
             var response = client.UnaryCall(SimpleRequest.CreateBuilder().SetResponseSize(10).Build());
             Assert.AreEqual(10, response.Payload.Body.Length);
         }
-
     }
 }
