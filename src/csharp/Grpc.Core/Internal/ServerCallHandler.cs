@@ -72,7 +72,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
@@ -126,7 +126,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
@@ -180,7 +180,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
             try
             {
                 var result = await handler(requestStream, context);
@@ -238,7 +238,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
             try
             {
                 await handler(requestStream, responseStream, context);
@@ -295,11 +295,11 @@ namespace Grpc.Core.Internal
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
 
-        public static ServerCallContext NewContext(ServerRpcNew newRpc)
+        public static ServerCallContext NewContext(ServerRpcNew newRpc, CancellationToken cancellationToken)
         {
             return new ServerCallContext(
                 newRpc.Method, newRpc.Host, newRpc.Deadline.ToDateTime(),
-                newRpc.RequestMetadata, CancellationToken.None);
+                newRpc.RequestMetadata, cancellationToken);
         }
     }
 }
