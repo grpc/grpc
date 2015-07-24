@@ -64,6 +64,7 @@ typedef struct {
   int refs;
   grpc_iomgr_closure write_closure;
   grpc_pollset_set *interested_parties;
+  char *addr_str;
 } async_connect;
 
 static int prepare_socket(const struct sockaddr *addr, int fd) {
@@ -99,6 +100,7 @@ static void tc_on_alarm(void *acp, int success) {
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
+    gpr_free(ac->addr_str);
     gpr_free(ac);
   }
 }
@@ -164,7 +166,7 @@ static void on_writable(void *acp, int success) {
       }
     } else {
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
+      ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
       fd = NULL;
       goto finish;
     }
@@ -185,6 +187,7 @@ finish:
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
+    gpr_free(ac->addr_str);
     gpr_free(ac);
   }
   cb(cb_arg, ep);
@@ -229,13 +232,13 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
     err = connect(fd, addr, addr_len);
   } while (err < 0 && errno == EINTR);
 
-  grpc_sockaddr_to_string(&addr_str, addr, 1);
+  addr_str = grpc_sockaddr_to_uri(addr);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
 
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    cb(arg, grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    cb(arg, grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));
     goto done;
   }
 
@@ -253,14 +256,16 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->cb_arg = arg;
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
+  ac->addr_str = addr_str;
+  addr_str = NULL;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
 
   gpr_mu_lock(&ac->mu);
-  grpc_alarm_init(&ac->alarm, deadline, tc_on_alarm, ac,
-                  gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_init(&ac->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), 
+                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 

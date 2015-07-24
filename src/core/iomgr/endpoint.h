@@ -74,11 +74,14 @@ struct grpc_endpoint_vtable {
   void (*add_to_pollset_set)(grpc_endpoint *ep, grpc_pollset_set *pollset);
   void (*shutdown)(grpc_endpoint *ep);
   void (*destroy)(grpc_endpoint *ep);
+  char *(*get_peer)(grpc_endpoint *ep);
 };
 
 /* When data is available on the connection, calls the callback with slices. */
 void grpc_endpoint_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
                                   void *user_data);
+
+char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
 /* Write slices out to the socket.
 

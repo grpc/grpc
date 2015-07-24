@@ -322,7 +322,8 @@ static void continue_connect(grpc_subchannel *c) {
 static void start_connect(grpc_subchannel *c) {
   c->backoff_delta = gpr_time_from_seconds(
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS, GPR_TIMESPAN);
-  c->next_attempt = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c->backoff_delta);
+  c->next_attempt = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
   continue_connect(c);
 }
 
@@ -639,7 +640,7 @@ static void subchannel_connected(void *arg, int iomgr_success) {
   if (c->connecting_result.transport != NULL) {
     publish_transport(c);
   } else {
-    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
@@ -705,6 +706,12 @@ void grpc_subchannel_call_unref(
       subchannel_destroy(destroy);
     }
   }
+}
+
+char *grpc_subchannel_call_get_peer(grpc_subchannel_call *call) {
+  grpc_call_stack *call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
+  grpc_call_element *top_elem = grpc_call_stack_element(call_stack, 0);
+  return top_elem->filter->get_peer(top_elem);
 }
 
 void grpc_subchannel_call_process_op(grpc_subchannel_call *call,

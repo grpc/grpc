@@ -3706,7 +3706,7 @@ LIBGRPC_SRC = \
     src/core/client_config/resolver_factory.c \
     src/core/client_config/resolver_registry.c \
     src/core/client_config/resolvers/dns_resolver.c \
-    src/core/client_config/resolvers/unix_resolver_posix.c \
+    src/core/client_config/resolvers/sockaddr_resolver.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/uri_parser.c \
@@ -3801,6 +3801,7 @@ LIBGRPC_SRC = \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
+    src/core/census/record_stat.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_security.h \
@@ -3971,7 +3972,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/resolver_factory.c \
     src/core/client_config/resolver_registry.c \
     src/core/client_config/resolvers/dns_resolver.c \
-    src/core/client_config/resolvers/unix_resolver_posix.c \
+    src/core/client_config/resolvers/sockaddr_resolver.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
     src/core/client_config/uri_parser.c \
@@ -4066,6 +4067,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
+    src/core/census/record_stat.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \

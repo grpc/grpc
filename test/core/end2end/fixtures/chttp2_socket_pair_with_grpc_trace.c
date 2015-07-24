@@ -81,7 +81,7 @@ static void client_setup_transport(void *ts, grpc_transport *transport,
                                           &grpc_connected_channel_filter};
   size_t nfilters = sizeof(filters) / sizeof(*filters);
   grpc_channel *channel = grpc_channel_create_from_filters(
-      filters, nfilters, cs->client_args, mdctx, 1);
+      "socketpair-target", filters, nfilters, cs->client_args, mdctx, 1);
 
   cs->f->client = channel;
 

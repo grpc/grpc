@@ -170,6 +170,7 @@ static void destruct_transport(grpc_chttp2_transport *t) {
 
   grpc_mdctx_unref(t->metadata_context);
 
+  gpr_free(t->peer_string);
   gpr_free(t);
 }
 
@@ -219,6 +220,7 @@ static void init_transport(grpc_chttp2_transport *t,
   gpr_ref_init(&t->refs, 2);
   gpr_mu_init(&t->mu);
   grpc_mdctx_ref(mdctx);
+  t->peer_string = grpc_endpoint_get_peer(ep);
   t->metadata_context = mdctx;
   t->endpoint_reading = 1;
   t->global.next_stream_id = is_client ? 1 : 2;
@@ -1090,9 +1092,17 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,
  * INTEGRATION GLUE
  */
 
-static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), init_stream,    perform_stream_op,
-    perform_transport_op,       destroy_stream, destroy_transport};
+static char *chttp2_get_peer(grpc_transport *t) {
+  return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
+}
+
+static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
+                                             init_stream,
+                                             perform_stream_op,
+                                             perform_transport_op,
+                                             destroy_stream,
+                                             destroy_transport,
+                                             chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     const grpc_channel_args *channel_args, grpc_endpoint *ep, grpc_mdctx *mdctx,

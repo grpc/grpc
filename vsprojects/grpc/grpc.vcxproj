@@ -192,7 +192,7 @@
     <ClInclude Include="..\..\src\core\client_config\resolver_factory.h" />
     <ClInclude Include="..\..\src\core\client_config\resolver_registry.h" />
     <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h" />
-    <ClInclude Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h" />
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
@@ -270,6 +270,7 @@
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\src\core\census\context.h" />
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\httpcli\format_request.c">
@@ -354,7 +355,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.c">
+    <ClCompile Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
     </ClCompile>
@@ -543,6 +544,8 @@
     <ClCompile Include="..\..\src\core\census\context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

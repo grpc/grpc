@@ -28,11 +28,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Grpc.Core.Internal;
 
 namespace Grpc.Core
@@ -44,6 +47,7 @@ namespace Grpc.Core
     {
         readonly GrpcEnvironment environment;
         readonly ChannelSafeHandle handle;
+        readonly List<ChannelOption> options;
         readonly string target;
         bool disposed;
 
@@ -57,7 +61,10 @@ namespace Grpc.Core
         public Channel(string host, Credentials credentials = null, IEnumerable<ChannelOption> options = null)
         {
             this.environment = GrpcEnvironment.GetInstance();
-            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(options))
+            this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
+
+            EnsureUserAgentChannelOption(this.options);
+            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
                 if (credentials != null)
                 {
@@ -71,7 +78,7 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.Create(host, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(host, options);
+            this.target = GetOverridenTarget(host, this.options);
         }
 
         /// <summary>
@@ -139,6 +146,20 @@ namespace Grpc.Core
                 disposed = true;
                 handle.Dispose();
             }
+        }
+
+        private static void EnsureUserAgentChannelOption(List<ChannelOption> options)
+        {
+            if (!options.Any((option) => option.Name == ChannelOptions.PrimaryUserAgentString))
+            {
+                options.Add(new ChannelOption(ChannelOptions.PrimaryUserAgentString, GetUserAgentString()));
+            }
+        }
+
+        private static string GetUserAgentString()
+        {
+            // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
+            return string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
         }
 
         /// <summary>
