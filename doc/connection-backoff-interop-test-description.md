@@ -7,6 +7,7 @@ backoffs as specified in
 The test server has a port (control_port) running a rpc service for controlling
 the server and another port (retry_port) to close any incoming tcp connections.
 The test has the following flow:
+
 1. The server starts listening on control_port.
 2. The client calls Start rpc on server control_port.
 3. The server starts listening on retry_port.
@@ -35,6 +36,7 @@ either assert on the server returned backoff status or check the returned
 backoffs on its own.
 
 Procedure of client:
+
 1. Calls Start on server control port and checks it succeeded.
 2. Calls Start on server retry port with a deadline of 540s. Waits and checks it
    got deadline exceeded status.
