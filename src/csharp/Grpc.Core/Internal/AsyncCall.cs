@@ -61,10 +61,10 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName)
+        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName, Timespec deadline)
         {
             this.channel = channel;
-            var call = CallSafeHandle.Create(channel.Handle, channel.CompletionRegistry, cq, methodName, channel.Target, Timespec.InfFuture);
+            var call = channel.Handle.CreateCall(channel.CompletionRegistry, cq, methodName, channel.Target, deadline);
             channel.Environment.DebugStats.ActiveClientCalls.Increment();
             InitializeInternal(call);
         }
@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Blocking unary request - unary response call.
         /// </summary>
-        public TResponse UnaryCall(Channel channel, string methodName, TRequest msg, Metadata headers)
+        public TResponse UnaryCall(Channel channel, string methodName, TRequest msg, Metadata headers, DateTime deadline)
         {
             using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
             {
@@ -86,7 +86,7 @@ namespace Grpc.Core.Internal
 
                 lock (myLock)
                 {
-                    Initialize(channel, cq, methodName);
+                    Initialize(channel, cq, methodName, Timespec.FromDateTime(deadline));
                     started = true;
                     halfcloseRequested = true;
                     readingDone = true;
@@ -126,7 +126,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - unary response call.
         /// </summary>
-        public Task<TResponse> UnaryCallAsync(TRequest msg, Metadata headers)
+        public Task<TResponse> UnaryCallAsync(TRequest msg, Metadata headers, DateTime deadline)
         {
             lock (myLock)
             {
@@ -151,7 +151,7 @@ namespace Grpc.Core.Internal
         /// Starts a streamed request - unary response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public Task<TResponse> ClientStreamingCallAsync(Metadata headers)
+        public Task<TResponse> ClientStreamingCallAsync(Metadata headers, DateTime deadline)
         {
             lock (myLock)
             {
@@ -173,7 +173,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - streamed response call.
         /// </summary>
-        public void StartServerStreamingCall(TRequest msg, Metadata headers)
+        public void StartServerStreamingCall(TRequest msg, Metadata headers, DateTime deadline)
         {
             lock (myLock)
             {
@@ -196,7 +196,7 @@ namespace Grpc.Core.Internal
         /// Starts a streaming request - streaming response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public void StartDuplexStreamingCall(Metadata headers)
+        public void StartDuplexStreamingCall(Metadata headers, DateTime deadline)
         {
             lock (myLock)
             {

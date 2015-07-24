@@ -44,13 +44,14 @@
     <Compile Include="ClientServerTest.cs" />
     <Compile Include="ServerTest.cs" />
     <Compile Include="GrpcEnvironmentTest.cs" />
-    <Compile Include="TimespecTest.cs" />
     <Compile Include="PInvokeTest.cs" />
     <Compile Include="Internal\MetadataArraySafeHandleTest.cs" />
     <Compile Include="Internal\CompletionQueueSafeHandleTest.cs" />
     <Compile Include="Internal\CompletionQueueEventTest.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandleTest.cs" />
     <Compile Include="ChannelOptionsTest.cs" />
+    <Compile Include="Internal\TimespecTest.cs" />
+    <Compile Include="TimeoutsTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

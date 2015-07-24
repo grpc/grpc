@@ -433,10 +433,20 @@ grpcsharp_channel_args_destroy(grpc_channel_args *args) {
 
 /* Timespec */
 
-GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(void) { return gpr_now(GPR_CLOCK_REALTIME); }
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(gpr_clock_type clock_type) {
+  return gpr_now(clock_type);
+}
 
-GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_future(void) {
-  return gpr_inf_future(GPR_CLOCK_REALTIME);
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_future(gpr_clock_type clock_type) {
+  return gpr_inf_future(clock_type);
+}
+
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_past(gpr_clock_type clock_type) {
+  return gpr_inf_past(clock_type);
+}
+
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_convert_clock_type(gpr_timespec t, gpr_clock_type target_clock) {
+  return gpr_convert_clock_type(t, target_clock);
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE gprsharp_sizeof_timespec(void) {
