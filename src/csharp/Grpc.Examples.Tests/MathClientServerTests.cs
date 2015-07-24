@@ -165,6 +165,27 @@ namespace math.Tests
             }).Wait();
         }
 
+        [Test]
+        public void FibWithDeadline()
+        {
+            Task.Run(async () =>
+            {
+                using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
+                    deadline: DateTime.UtcNow.AddMilliseconds(500)))
+                {
+                    try
+                    {
+                        await call.ResponseStream.ToList();
+                        Assert.Fail();
+                    }
+                    catch (RpcException e)
+                    {
+                        Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
+                    }
+                }
+            }).Wait();
+        }
+
         // TODO: test Fib with limit=0 and cancellation
         [Test]
         public void Sum()
