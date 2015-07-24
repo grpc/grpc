@@ -184,4 +184,10 @@ describe('call', function() {
       });
     });
   });
+  describe('getPeer', function() {
+    it('should return a string', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.strictEqual(typeof call.getPeer(), 'string');
+    });
+  });
 });
