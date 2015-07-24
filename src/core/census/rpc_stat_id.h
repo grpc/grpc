@@ -31,34 +31,16 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_HOST_PORT_H
-#define GRPC_SUPPORT_HOST_PORT_H
+#ifndef CENSUS_RPC_STAT_ID_H
+#define CENSUS_RPC_STAT_ID_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* Stats ID's used for RPC measurements. */
+#define CENSUS_INVALID_STAT_ID 0     /* ID 0 is always invalid */
+#define CENSUS_RPC_CLIENT_REQUESTS 1 /* Count of client requests sent. */
+#define CENSUS_RPC_SERVER_REQUESTS 2 /* Count of server requests sent. */
+#define CENSUS_RPC_CLIENT_ERRORS 3   /* Client error counts. */
+#define CENSUS_RPC_SERVER_ERRORS 4   /* Server error counts. */
+#define CENSUS_RPC_CLIENT_LATENCY 5  /* Client side request latency. */
+#define CENSUS_RPC_SERVER_LATENCY 6  /* Server side request latency. */
 
-/* Given a host and port, creates a newly-allocated string of the form
-   "host:port" or "[ho:st]:port", depending on whether the host contains colons
-   like an IPv6 literal.  If the host is already bracketed, then additional
-   brackets will not be added.
-
-   Usage is similar to gpr_asprintf: returns the number of bytes written
-   (excluding the final '\0'), and *out points to a string which must later be
-   destroyed using gpr_free().
-
-   In the unlikely event of an error, returns -1 and sets *out to NULL. */
-int gpr_join_host_port(char **out, const char *host, int port);
-
-/* Given a name in the form "host:port" or "[ho:st]:port", split into hostname
-   and port number, into newly allocated strings, which must later be
-   destroyed using gpr_free().
-   Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on
-   failure. */
-int gpr_split_host_port(const char *name, char **host, char **port);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  /* GRPC_SUPPORT_HOST_PORT_H */
+#endif /* CENSUS_RPC_STAT_ID_H */

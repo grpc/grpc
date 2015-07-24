@@ -119,8 +119,8 @@ grpc_credentials *grpc_service_account_credentials_create(
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
-                                              gpr_timespec token_lifetime);
+grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+    const char *json_key, gpr_timespec token_lifetime);
 
 /* Creates an Oauth2 Refresh Token credentials object. May return NULL if the
    input is invalid.

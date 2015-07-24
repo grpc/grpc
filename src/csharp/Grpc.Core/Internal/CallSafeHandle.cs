@@ -46,9 +46,6 @@ namespace Grpc.Core.Internal
         CompletionRegistry completionRegistry;
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
-
-        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_cancel(CallSafeHandle call);
 
         [DllImport("grpc_csharp_ext.dll")]
@@ -96,13 +93,6 @@ namespace Grpc.Core.Internal
 
         private CallSafeHandle()
         {
-        }
-
-        public static CallSafeHandle Create(ChannelSafeHandle channel, CompletionRegistry registry, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline)
-        {
-            var result = grpcsharp_channel_create_call(channel, cq, method, host, deadline);
-            result.SetCompletionRegistry(registry);
-            return result;
         }
 
         public void SetCompletionRegistry(CompletionRegistry completionRegistry)

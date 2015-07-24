@@ -208,6 +208,7 @@ ClientCredentials *pygrpc_ClientCredentials_service_account(
   return self;
 }
 
+/* TODO: Rename this credentials to something like service_account_jwt_access */
 ClientCredentials *pygrpc_ClientCredentials_jwt(
     PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   ClientCredentials *self;
@@ -219,7 +220,7 @@ ClientCredentials *pygrpc_ClientCredentials_jwt(
     return NULL;
   }
   self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_jwt_credentials_create(
+  self->c_creds = grpc_service_account_jwt_access_credentials_create(
       json_key, pygrpc_cast_double_to_gpr_timespec(lifetime));
   if (!self->c_creds) {
     Py_DECREF(self);

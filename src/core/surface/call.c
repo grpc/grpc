@@ -1253,6 +1253,11 @@ static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
   elem->filter->start_transport_stream_op(elem, op);
 }
 
+char *grpc_call_get_peer(grpc_call *call) {
+  grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
+  return elem->filter->get_peer(elem);
+}
+
 grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
   return CALL_FROM_TOP_ELEM(elem);
 }
@@ -1368,7 +1373,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
       l->md = 0;
     }
   }
-  if (gpr_time_cmp(md->deadline, gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
+  if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
+      0) {
     set_deadline_alarm(call, md->deadline);
   }
   if (!is_trailing) {

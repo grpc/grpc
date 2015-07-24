@@ -36,12 +36,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/init.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 /** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
  *  Avoids needing to take a metadata context lock for sending status
@@ -73,6 +75,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
   grpc_iomgr_closure destroy_closure;
+  char *target;
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
@@ -85,13 +88,14 @@ struct grpc_channel {
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
 grpc_channel *grpc_channel_create_from_filters(
-    const grpc_channel_filter **filters, size_t num_filters,
+    const char *target, const grpc_channel_filter **filters, size_t num_filters,
     const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client) {
   size_t i;
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
   grpc_channel *channel = gpr_malloc(size);
   memset(channel, 0, sizeof(*channel));
+  channel->target = gpr_strdup(target);
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
   /* decremented by grpc_channel_destroy */
@@ -135,6 +139,10 @@ grpc_channel *grpc_channel_create_from_filters(
                           CHANNEL_STACK_FROM_CHANNEL(channel));
 
   return channel;
+}
+
+char *grpc_channel_get_target(grpc_channel *channel) {
+  return gpr_strdup(channel->target);
 }
 
 static grpc_call *grpc_channel_create_call_internal(
@@ -222,6 +230,7 @@ static void destroy_channel(void *p, int ok) {
   }
   grpc_mdctx_unref(channel->metadata_context);
   gpr_mu_destroy(&channel->registered_call_mu);
+  gpr_free(channel->target);
   gpr_free(channel);
 }
 

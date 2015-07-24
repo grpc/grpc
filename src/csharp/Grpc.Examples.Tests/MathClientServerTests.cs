@@ -132,6 +132,60 @@ namespace math.Tests
             }).Wait();
         }
 
+        [Test]
+        public void FibWithCancel()
+        {
+            Task.Run(async () =>
+            {
+                var cts = new CancellationTokenSource();
+
+                using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
+                    cancellationToken: cts.Token))
+                {
+                    List<long> responses = new List<long>();
+
+                    try
+                    {
+                        while (await call.ResponseStream.MoveNext())
+                        {
+                            if (responses.Count == 0)
+                            {
+                                cts.CancelAfter(500);  // make sure we cancel soon
+                            }
+                            responses.Add(call.ResponseStream.Current.Num_);
+                        }
+                        Assert.Fail();
+                    }
+                    catch (RpcException e)
+                    {
+                        Assert.IsTrue(responses.Count > 0);
+                        Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+                    }
+                }
+            }).Wait();
+        }
+
+        [Test]
+        public void FibWithDeadline()
+        {
+            Task.Run(async () =>
+            {
+                using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
+                    deadline: DateTime.UtcNow.AddMilliseconds(500)))
+                {
+                    try
+                    {
+                        await call.ResponseStream.ToList();
+                        Assert.Fail();
+                    }
+                    catch (RpcException e)
+                    {
+                        Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
+                    }
+                }
+            }).Wait();
+        }
+
         // TODO: test Fib with limit=0 and cancellation
         [Test]
         public void Sum()

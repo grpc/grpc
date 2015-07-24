@@ -47,6 +47,9 @@ namespace Grpc.Core.Internal
         static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_channel_destroy(IntPtr channel);
 
         private ChannelSafeHandle()
@@ -61,6 +64,13 @@ namespace Grpc.Core.Internal
         public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
         {
             return grpcsharp_secure_channel_create(credentials, target, channelArgs);
+        }
+
+        public CallSafeHandle CreateCall(CompletionRegistry registry, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline)
+        {
+            var result = grpcsharp_channel_create_call(this, cq, method, host, deadline);
+            result.SetCompletionRegistry(registry);
+            return result;
         }
 
         protected override bool ReleaseHandle()

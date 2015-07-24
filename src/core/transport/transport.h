@@ -182,4 +182,7 @@ void grpc_transport_close(grpc_transport *transport);
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_transport *transport);
 
+/* Get the transports peer */
+char *grpc_transport_get_peer(grpc_transport *transport);
+
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */

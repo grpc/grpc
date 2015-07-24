@@ -140,8 +140,9 @@ static grpc_credentials *create_default_creds_from_path(char *creds_path) {
   /* First, try an auth json key. */
   key = grpc_auth_json_key_create_from_json(json);
   if (grpc_auth_json_key_is_valid(&key)) {
-    result = grpc_jwt_credentials_create_from_auth_json_key(
-        key, grpc_max_auth_token_lifetime);
+    result =
+        grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
+            key, grpc_max_auth_token_lifetime);
     goto end;
   }
 
