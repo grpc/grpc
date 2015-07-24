@@ -36,7 +36,9 @@
 #include <memory>
 
 #include <gflags/gflags.h>
-#include "test/core/end2end/data/ssl_test_data.h"
+extern "C" {
+  #include "test/core/end2end/data/ssl_test_data.h"
+}
 #include <grpc++/config.h>
 #include <grpc++/server_credentials.h>
 
