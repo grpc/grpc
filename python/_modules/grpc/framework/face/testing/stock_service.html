@@ -1,0 +1,563 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.testing.stock_service &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.face.testing.stock_service</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.face.testing.stock_service</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Examples of Python implementations of the stock.proto Stock service.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">cardinality</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">service</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">abandonment</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream_util</span>
+<span class="kn">from</span> <span class="nn">grpc._junkdrawer</span> <span class="kn">import</span> <span class="n">stock_pb2</span>
+
+<span class="n">SYMBOL_FORMAT</span> <span class="o">=</span> <span class="s">&#39;test symbol:</span><span class="si">%03d</span><span class="s">&#39;</span>
+<span class="n">STREAM_LENGTH</span> <span class="o">=</span> <span class="mi">400</span>
+
+<span class="c"># A test-appropriate security-pricing function. :-P</span>
+<span class="n">_price</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">symbol_name</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">symbol_name</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4096</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_last_trade_price</span><span class="p">(</span><span class="n">stock_request</span><span class="p">,</span> <span class="n">stock_reply_callback</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">active</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A unary-request, unary-response test method.&quot;&quot;&quot;</span>
+  <span class="n">control</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+  <span class="k">if</span> <span class="n">active</span><span class="p">():</span>
+    <span class="n">stock_reply_callback</span><span class="p">(</span>
+        <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span>
+            <span class="n">symbol</span><span class="o">=</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)))</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="n">abandonment</span><span class="o">.</span><span class="n">Abandoned</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_get_last_trade_price_multiple</span><span class="p">(</span><span class="n">stock_reply_consumer</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">active</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A stream-request, stream-response test method.&quot;&quot;&quot;</span>
+  <span class="k">def</span> <span class="nf">stock_reply_for_stock_request</span><span class="p">(</span><span class="n">stock_request</span><span class="p">):</span>
+    <span class="n">control</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">active</span><span class="p">():</span>
+      <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span>
+          <span class="n">symbol</span><span class="o">=</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="n">abandonment</span><span class="o">.</span><span class="n">Abandoned</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">stream_util</span><span class="o">.</span><span class="n">TransformingConsumer</span><span class="p">(</span>
+      <span class="n">stock_reply_for_stock_request</span><span class="p">,</span> <span class="n">stock_reply_consumer</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_watch_future_trades</span><span class="p">(</span><span class="n">stock_request</span><span class="p">,</span> <span class="n">stock_reply_consumer</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">active</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A unary-request, stream-response test method.&quot;&quot;&quot;</span>
+  <span class="n">base_price</span> <span class="o">=</span> <span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">num_trades_to_watch</span><span class="p">):</span>
+    <span class="n">control</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">active</span><span class="p">():</span>
+      <span class="n">stock_reply_consumer</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span>
+          <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span>
+              <span class="n">symbol</span><span class="o">=</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">base_price</span> <span class="o">+</span> <span class="n">index</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="n">abandonment</span><span class="o">.</span><span class="n">Abandoned</span><span class="p">()</span>
+  <span class="n">stock_reply_consumer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_get_highest_trade_price</span><span class="p">(</span><span class="n">stock_reply_callback</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">active</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A stream-request, unary-response test method.&quot;&quot;&quot;</span>
+
+  <span class="k">class</span> <span class="nc">StockRequestConsumer</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Keeps an ongoing record of the most valuable symbol yet consumed.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span> <span class="o">=</span> <span class="bp">None</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stock_request</span><span class="p">):</span>
+      <span class="n">control</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">active</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span> <span class="o">=</span> <span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="n">candidate_price</span> <span class="o">=</span> <span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+          <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">&lt;</span> <span class="n">candidate_price</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span> <span class="o">=</span> <span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="n">candidate_price</span>
+
+    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="n">control</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">active</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+          <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="n">stock_reply_callback</span><span class="p">(</span>
+              <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">))</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span> <span class="o">=</span> <span class="bp">None</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stock_request</span><span class="p">):</span>
+      <span class="n">control</span><span class="o">.</span><span class="n">control</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">active</span><span class="p">():</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+          <span class="n">stock_reply_callback</span><span class="p">(</span>
+              <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span>
+                  <span class="n">symbol</span><span class="o">=</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span>
+                  <span class="n">price</span><span class="o">=</span><span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="n">candidate_price</span> <span class="o">=</span> <span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+          <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">&lt;</span> <span class="n">candidate_price</span><span class="p">:</span>
+            <span class="n">stock_reply_callback</span><span class="p">(</span>
+                <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span>
+                    <span class="n">symbol</span><span class="o">=</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">candidate_price</span><span class="p">))</span>
+          <span class="k">else</span><span class="p">:</span>
+            <span class="n">stock_reply_callback</span><span class="p">(</span>
+                <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="p">(</span>
+                    <span class="n">symbol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_price</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_symbol</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_price</span> <span class="o">=</span> <span class="bp">None</span>
+
+  <span class="k">return</span> <span class="n">StockRequestConsumer</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="GetLastTradePrice"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice">[docs]</a><span class="k">class</span> <span class="nc">GetLastTradePrice</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">UnaryUnaryTestMethodImplementation</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;GetLastTradePrice for use in tests.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GetLastTradePrice.name"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.name">[docs]</a>  <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&#39;GetLastTradePrice&#39;</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.cardinality"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.cardinality">[docs]</a>  <span class="k">def</span> <span class="nf">cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.request_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.request_class">[docs]</a>  <span class="k">def</span> <span class="nf">request_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.response_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.response_class">[docs]</a>  <span class="k">def</span> <span class="nf">response_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.serialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.serialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.deserialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.deserialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.serialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.serialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.deserialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.deserialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_response</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePrice.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePrice.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="n">_get_last_trade_price</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="GetLastTradePriceMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMessages">[docs]</a><span class="k">class</span> <span class="nc">GetLastTradePriceMessages</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">UnaryUnaryTestMessages</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="GetLastTradePriceMessages.request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMessages.request">[docs]</a>  <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">symbol</span> <span class="o">=</span> <span class="n">SYMBOL_FORMAT</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="n">symbol</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">_price</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">symbol</span><span class="p">),</span> <span class="n">response</span><span class="o">.</span><span class="n">price</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple">[docs]</a><span class="k">class</span> <span class="nc">GetLastTradePriceMultiple</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">StreamStreamTestMethodImplementation</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;GetLastTradePriceMultiple for use in tests.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GetLastTradePriceMultiple.name"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.name">[docs]</a>  <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&#39;GetLastTradePriceMultiple&#39;</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.cardinality"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.cardinality">[docs]</a>  <span class="k">def</span> <span class="nf">cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.request_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.request_class">[docs]</a>  <span class="k">def</span> <span class="nf">request_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.response_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.response_class">[docs]</a>  <span class="k">def</span> <span class="nf">response_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.serialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.serialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.deserialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.deserialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.serialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.serialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.deserialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.deserialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_response</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultiple.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_get_last_trade_price_multiple</span><span class="p">(</span>
+        <span class="n">response_consumer</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="GetLastTradePriceMultipleMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages">[docs]</a><span class="k">class</span> <span class="nc">GetLastTradePriceMultipleMessages</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">StreamStreamTestMessages</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Pairs of message streams for use with GetLastTradePriceMultiple.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="GetLastTradePriceMultipleMessages.requests"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages.requests">[docs]</a>  <span class="k">def</span> <span class="nf">requests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">base_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="n">SYMBOL_FORMAT</span> <span class="o">%</span> <span class="p">(</span><span class="n">base_index</span> <span class="o">+</span> <span class="n">index</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">STREAM_LENGTH</span><span class="p">)]</span>
+</div>
+<div class="viewcode-block" id="GetLastTradePriceMultipleMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">responses</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">stock_request</span><span class="p">,</span> <span class="n">stock_reply</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">responses</span><span class="p">):</span>
+      <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">stock_reply</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+      <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">_price</span><span class="p">(</span><span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span><span class="p">),</span> <span class="n">stock_reply</span><span class="o">.</span><span class="n">price</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="WatchFutureTrades"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades">[docs]</a><span class="k">class</span> <span class="nc">WatchFutureTrades</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">UnaryStreamTestMethodImplementation</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;WatchFutureTrades for use in tests.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WatchFutureTrades.name"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.name">[docs]</a>  <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&#39;WatchFutureTrades&#39;</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.cardinality"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.cardinality">[docs]</a>  <span class="k">def</span> <span class="nf">cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.request_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.request_class">[docs]</a>  <span class="k">def</span> <span class="nf">request_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.response_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.response_class">[docs]</a>  <span class="k">def</span> <span class="nf">response_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.serialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.serialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.deserialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.deserialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.serialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.serialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.deserialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.deserialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_response</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTrades.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTrades.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="n">_watch_future_trades</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="WatchFutureTradesMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTradesMessages">[docs]</a><span class="k">class</span> <span class="nc">WatchFutureTradesMessages</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">UnaryStreamTestMessages</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Pairs of a single request message and a sequence of response messages.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="WatchFutureTradesMessages.request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTradesMessages.request">[docs]</a>  <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">symbol</span> <span class="o">=</span> <span class="n">SYMBOL_FORMAT</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="p">(</span>
+        <span class="n">symbol</span><span class="o">=</span><span class="n">symbol</span><span class="p">,</span> <span class="n">num_trades_to_watch</span><span class="o">=</span><span class="n">STREAM_LENGTH</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WatchFutureTradesMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.WatchFutureTradesMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">STREAM_LENGTH</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">responses</span><span class="p">))</span>
+    <span class="n">base_price</span> <span class="o">=</span> <span class="n">_price</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">response</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">responses</span><span class="p">):</span>
+      <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">base_price</span> <span class="o">+</span> <span class="n">index</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">price</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="GetHighestTradePrice"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice">[docs]</a><span class="k">class</span> <span class="nc">GetHighestTradePrice</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">StreamUnaryTestMethodImplementation</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;GetHighestTradePrice for use in tests.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GetHighestTradePrice.name"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.name">[docs]</a>  <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&#39;GetHighestTradePrice&#39;</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.cardinality"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.cardinality">[docs]</a>  <span class="k">def</span> <span class="nf">cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.request_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.request_class">[docs]</a>  <span class="k">def</span> <span class="nf">request_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.response_class"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.response_class">[docs]</a>  <span class="k">def</span> <span class="nf">response_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.serialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.serialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.deserialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.deserialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.serialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.serialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.deserialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.deserialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_response</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockReply</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">serialized_response</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePrice.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePrice.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_get_highest_trade_price</span><span class="p">(</span>
+        <span class="n">response_callback</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">context</span><span class="o">.</span><span class="n">is_active</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="GetHighestTradePriceMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages">[docs]</a><span class="k">class</span> <span class="nc">GetHighestTradePriceMessages</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">StreamUnaryTestMessages</span><span class="p">):</span>
+
+<div class="viewcode-block" id="GetHighestTradePriceMessages.requests"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages.requests">[docs]</a>  <span class="k">def</span> <span class="nf">requests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">stock_pb2</span><span class="o">.</span><span class="n">StockRequest</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="n">SYMBOL_FORMAT</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">STREAM_LENGTH</span><span class="p">)]</span>
+</div>
+<div class="viewcode-block" id="GetHighestTradePriceMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">symbol</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">for</span> <span class="n">stock_request</span> <span class="ow">in</span> <span class="n">requests</span><span class="p">:</span>
+      <span class="n">current_symbol</span> <span class="o">=</span> <span class="n">stock_request</span><span class="o">.</span><span class="n">symbol</span>
+      <span class="n">current_price</span> <span class="o">=</span> <span class="n">_price</span><span class="p">(</span><span class="n">current_symbol</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">price</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">price</span> <span class="o">&lt;</span> <span class="n">current_price</span><span class="p">:</span>
+        <span class="n">price</span> <span class="o">=</span> <span class="n">current_price</span>
+        <span class="n">symbol</span> <span class="o">=</span> <span class="n">current_symbol</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">price</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">price</span><span class="p">)</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="StockTestService"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.StockTestService">[docs]</a><span class="k">class</span> <span class="nc">StockTestService</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">TestService</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A corpus of test data with one method of each RPC cardinality.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StockTestService.name"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.StockTestService.name">[docs]</a>  <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&#39;Stock&#39;</span>
+</div>
+<div class="viewcode-block" id="StockTestService.unary_unary_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.StockTestService.unary_unary_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">unary_unary_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;GetLastTradePrice&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">GetLastTradePrice</span><span class="p">(),</span> <span class="p">[</span><span class="n">GetLastTradePriceMessages</span><span class="p">()]),</span>
+    <span class="p">}</span>
+</div>
+<div class="viewcode-block" id="StockTestService.unary_stream_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.StockTestService.unary_stream_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">unary_stream_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;WatchFutureTrades&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">WatchFutureTrades</span><span class="p">(),</span> <span class="p">[</span><span class="n">WatchFutureTradesMessages</span><span class="p">()]),</span>
+    <span class="p">}</span>
+</div>
+<div class="viewcode-block" id="StockTestService.stream_unary_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.StockTestService.stream_unary_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">stream_unary_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;GetHighestTradePrice&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">GetHighestTradePrice</span><span class="p">(),</span> <span class="p">[</span><span class="n">GetHighestTradePriceMessages</span><span class="p">()])</span>
+    <span class="p">}</span>
+</div>
+<div class="viewcode-block" id="StockTestService.stream_stream_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.stock_service.StockTestService.stream_stream_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">stream_stream_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&#39;GetLastTradePriceMultiple&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">GetLastTradePriceMultiple</span><span class="p">(),</span> <span class="p">[</span><span class="n">GetLastTradePriceMultipleMessages</span><span class="p">()]),</span>
+    <span class="p">}</span>
+
+</div></div>
+<span class="n">STOCK_TEST_SERVICE</span> <span class="o">=</span> <span class="n">StockTestService</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

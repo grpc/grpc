@@ -1,0 +1,389 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.common package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
+        <link rel="next" title="grpc.framework.face package" href="grpc.framework.face.html"/>
+        <link rel="prev" title="grpc.framework.base package" href="grpc.framework.base.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+    <li>grpc.framework.common package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.common.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-common-package">
+<h1>grpc.framework.common package<a class="headerlink" href="#grpc-framework-common-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.common.cardinality">
+<span id="grpc-framework-common-cardinality-module"></span><h2>grpc.framework.common.cardinality module<a class="headerlink" href="#module-grpc.framework.common.cardinality" title="Permalink to this headline">¶</a></h2>
+<p>Defines an enum for classifying RPC methods by streaming semantics.</p>
+<dl class="class">
+<dt id="grpc.framework.common.cardinality.Cardinality">
+<em class="property">class </em><code class="descclassname">grpc.framework.common.cardinality.</code><code class="descname">Cardinality</code><a class="reference internal" href="_modules/grpc/framework/common/cardinality.html#Cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.cardinality.Cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Describes the streaming semantics of an RPC method.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.common.style">
+<span id="grpc-framework-common-style-module"></span><h2>grpc.framework.common.style module<a class="headerlink" href="#module-grpc.framework.common.style" title="Permalink to this headline">¶</a></h2>
+<p>Defines an enum for classifying RPC methods by control flow semantics.</p>
+<dl class="class">
+<dt id="grpc.framework.common.style.Service">
+<em class="property">class </em><code class="descclassname">grpc.framework.common.style.</code><code class="descname">Service</code><a class="reference internal" href="_modules/grpc/framework/common/style.html#Service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.style.Service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Describes the control flow style of RPC method implementation.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.common.test_constants">
+<span id="grpc-framework-common-test-constants-module"></span><h2>grpc.framework.common.test_constants module<a class="headerlink" href="#module-grpc.framework.common.test_constants" title="Permalink to this headline">¶</a></h2>
+<p>Constants shared among tests throughout RPC Framework.</p>
+</div>
+<div class="section" id="module-grpc.framework.common.test_control">
+<span id="grpc-framework-common-test-control-module"></span><h2>grpc.framework.common.test_control module<a class="headerlink" href="#module-grpc.framework.common.test_control" title="Permalink to this headline">¶</a></h2>
+<p>Code for instructing systems under test to block or fail.</p>
+<dl class="class">
+<dt id="grpc.framework.common.test_control.Control">
+<em class="property">class </em><code class="descclassname">grpc.framework.common.test_control.</code><code class="descname">Control</code><a class="reference internal" href="_modules/grpc/framework/common/test_control.html#Control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_control.Control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>An object that accepts program control from a system under test.</p>
+<p>Systems under test passed a Control should call its control() method
+frequently during execution. The control() method may block, raise an
+exception, or do nothing, all according to the enclosing test&#8217;s desire for
+the system under test to simulate hanging, failing, or functioning.</p>
+<dl class="method">
+<dt id="grpc.framework.common.test_control.Control.control">
+<code class="descname">control</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_control.html#Control.control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_control.Control.control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Potentially does anything.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.common.test_control.PauseFailControl">
+<em class="property">class </em><code class="descclassname">grpc.framework.common.test_control.</code><code class="descname">PauseFailControl</code><a class="reference internal" href="_modules/grpc/framework/common/test_control.html#PauseFailControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_control.PauseFailControl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.common.test_control.Control" title="grpc.framework.common.test_control.Control"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.common.test_control.Control</span></code></a></p>
+<p>A Control that can be used to pause or fail code under control.</p>
+<dl class="method">
+<dt id="grpc.framework.common.test_control.PauseFailControl.control">
+<code class="descname">control</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_control.html#PauseFailControl.control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_control.PauseFailControl.control" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_control.PauseFailControl.fail">
+<code class="descname">fail</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_control.html#PauseFailControl.fail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_control.PauseFailControl.fail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fails code under control while controlling code is in context.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_control.PauseFailControl.pause">
+<code class="descname">pause</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_control.html#PauseFailControl.pause"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_control.PauseFailControl.pause" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pauses code under control while controlling code is in context.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.common.test_coverage">
+<span id="grpc-framework-common-test-coverage-module"></span><h2>grpc.framework.common.test_coverage module<a class="headerlink" href="#module-grpc.framework.common.test_coverage" title="Permalink to this headline">¶</a></h2>
+<p>Governs coverage for tests of RPCs throughout RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.common.test_coverage.Coverage">
+<em class="property">class </em><code class="descclassname">grpc.framework.common.test_coverage.</code><code class="descname">Coverage</code><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Specification of test coverage.</p>
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testCancelledStreamRequestStreamResponse">
+<code class="descname">testCancelledStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testCancelledStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testCancelledStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testCancelledStreamRequestUnaryResponse">
+<code class="descname">testCancelledStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testCancelledStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testCancelledStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testCancelledUnaryRequestStreamResponse">
+<code class="descname">testCancelledUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testCancelledUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testCancelledUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testCancelledUnaryRequestUnaryResponse">
+<code class="descname">testCancelledUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testCancelledUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testCancelledUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testExpiredStreamRequestStreamResponse">
+<code class="descname">testExpiredStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testExpiredStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testExpiredStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testExpiredStreamRequestUnaryResponse">
+<code class="descname">testExpiredStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testExpiredStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testExpiredStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testExpiredUnaryRequestStreamResponse">
+<code class="descname">testExpiredUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testExpiredUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testExpiredUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testExpiredUnaryRequestUnaryResponse">
+<code class="descname">testExpiredUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testExpiredUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testExpiredUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testFailedStreamRequestStreamResponse">
+<code class="descname">testFailedStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testFailedStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testFailedStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testFailedStreamRequestUnaryResponse">
+<code class="descname">testFailedStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testFailedStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testFailedStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testFailedUnaryRequestStreamResponse">
+<code class="descname">testFailedUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testFailedUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testFailedUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testFailedUnaryRequestUnaryResponse">
+<code class="descname">testFailedUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testFailedUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testFailedUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testParallelInvocations">
+<code class="descname">testParallelInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testSequentialInvocations">
+<code class="descname">testSequentialInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testSequentialInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testSequentialInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testSuccessfulStreamRequestStreamResponse">
+<code class="descname">testSuccessfulStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testSuccessfulStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testSuccessfulStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testSuccessfulStreamRequestUnaryResponse">
+<code class="descname">testSuccessfulStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testSuccessfulStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testSuccessfulStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testSuccessfulUnaryRequestStreamResponse">
+<code class="descname">testSuccessfulUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testSuccessfulUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testSuccessfulUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testSuccessfulUnaryRequestUnaryResponse">
+<code class="descname">testSuccessfulUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testSuccessfulUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testSuccessfulUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.common.test_coverage.Coverage.testWaitingForSomeButNotAllParallelInvocations">
+<code class="descname">testWaitingForSomeButNotAllParallelInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/common/test_coverage.html#Coverage.testWaitingForSomeButNotAllParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.common.test_coverage.Coverage.testWaitingForSomeButNotAllParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.common">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.common" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.face.html" class="btn btn-neutral float-right" title="grpc.framework.face package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.framework.base.html" class="btn btn-neutral" title="grpc.framework.base package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

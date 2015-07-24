@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.interfaces.links.links &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.interfaces.links.links</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.interfaces.links.links</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;The low-level ticket-exchanging-links interface of RPC Framework.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+
+
+<div class="viewcode-block" id="Ticket"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Ticket">[docs]</a><span class="k">class</span> <span class="nc">Ticket</span><span class="p">(</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s">&#39;operation_id&#39;</span><span class="p">,</span> <span class="s">&#39;sequence_number&#39;</span><span class="p">,</span> <span class="s">&#39;group&#39;</span><span class="p">,</span> <span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="s">&#39;subscription&#39;</span><span class="p">,</span>
+         <span class="s">&#39;timeout&#39;</span><span class="p">,</span> <span class="s">&#39;allowance&#39;</span><span class="p">,</span> <span class="s">&#39;initial_metadata&#39;</span><span class="p">,</span> <span class="s">&#39;payload&#39;</span><span class="p">,</span>
+         <span class="s">&#39;terminal_metadata&#39;</span><span class="p">,</span> <span class="s">&#39;code&#39;</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="s">&#39;termination&#39;</span><span class="p">])):</span>
+  <span class="sd">&quot;&quot;&quot;A sum type for all values sent from a front to a back.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    operation_id: A unique-with-respect-to-equality hashable object identifying</span>
+<span class="sd">      a particular operation.</span>
+<span class="sd">    sequence_number: A zero-indexed integer sequence number identifying the</span>
+<span class="sd">      ticket&#39;s place in the stream of tickets sent in one direction for the</span>
+<span class="sd">      particular operation.</span>
+<span class="sd">    group: The group to which the method of the operation belongs. Must be</span>
+<span class="sd">      present in the first ticket from invocation side to service side. Ignored</span>
+<span class="sd">      for all other tickets exchanged during the operation.</span>
+<span class="sd">    method: The name of an operation. Must be present in the first ticket from</span>
+<span class="sd">      invocation side to service side. Ignored for all other tickets exchanged</span>
+<span class="sd">      during the operation.</span>
+<span class="sd">    subscription: A Subscription value describing the interest one side has in</span>
+<span class="sd">      receiving information from the other side. Must be present in the first</span>
+<span class="sd">      ticket from either side. Ignored for all other tickets exchanged during</span>
+<span class="sd">      the operation.</span>
+<span class="sd">    timeout: A nonzero length of time (measured from the beginning of the</span>
+<span class="sd">      operation) to allow for the entire operation. Must be present in the first</span>
+<span class="sd">      ticket from invocation side to service side. Optional for all other</span>
+<span class="sd">      tickets exchanged during the operation. Receipt of a value from the other</span>
+<span class="sd">      side of the operation indicates the value in use by that side. Setting a</span>
+<span class="sd">      value on a later ticket allows either side to request time extensions (or</span>
+<span class="sd">      even time reductions!) on in-progress operations.</span>
+<span class="sd">    allowance: A positive integer granting permission for a number of payloads</span>
+<span class="sd">      to be transmitted to the communicating side of the operation, or None if</span>
+<span class="sd">      no additional allowance is being granted with this ticket.</span>
+<span class="sd">    initial_metadata: An optional metadata value communicated from one side to</span>
+<span class="sd">      the other at the beginning of the operation. May be non-None in at most</span>
+<span class="sd">      one ticket from each side. Any non-None value must appear no later than</span>
+<span class="sd">      the first payload value.</span>
+<span class="sd">    payload: A customer payload object. May be None.</span>
+<span class="sd">    terminal_metadata: A metadata value comminicated from one side to the other</span>
+<span class="sd">      at the end of the operation. May be non-None in the same ticket as</span>
+<span class="sd">      the code and message, but must be None for all earlier tickets.</span>
+<span class="sd">    code: A value communicated at operation completion. May be None.</span>
+<span class="sd">    message: A value communicated at operation completion. May be None.</span>
+<span class="sd">    termination: A Termination value describing the end of the operation, or</span>
+<span class="sd">      None if the operation has not yet terminated. If set, no further tickets</span>
+<span class="sd">      may be sent in the same direction.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="Ticket.Subscription"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Ticket.Subscription">[docs]</a>  <span class="k">class</span> <span class="nc">Subscription</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identifies the level of subscription of a side of an operation.&quot;&quot;&quot;</span>
+
+    <span class="n">NONE</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
+    <span class="n">TERMINATION</span> <span class="o">=</span> <span class="s">&#39;termination&#39;</span>
+    <span class="n">FULL</span> <span class="o">=</span> <span class="s">&#39;full&#39;</span>
+</div>
+  <span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="Ticket.Termination"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Ticket.Termination">[docs]</a>  <span class="k">class</span> <span class="nc">Termination</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identifies the termination of an operation.&quot;&quot;&quot;</span>
+
+    <span class="n">COMPLETION</span> <span class="o">=</span> <span class="s">&#39;completion&#39;</span>
+    <span class="n">CANCELLATION</span> <span class="o">=</span> <span class="s">&#39;cancellation&#39;</span>
+    <span class="n">EXPIRATION</span> <span class="o">=</span> <span class="s">&#39;expiration&#39;</span>
+    <span class="n">LOCAL_SHUTDOWN</span> <span class="o">=</span> <span class="s">&#39;local shutdown&#39;</span>
+    <span class="n">RECEPTION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;reception failure&#39;</span>
+    <span class="n">TRANSMISSION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;transmission failure&#39;</span>
+    <span class="n">LOCAL_FAILURE</span> <span class="o">=</span> <span class="s">&#39;local failure&#39;</span>
+    <span class="n">REMOTE_FAILURE</span> <span class="o">=</span> <span class="s">&#39;remote failure&#39;</span>
+
+</div></div>
+<div class="viewcode-block" id="Link"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link">[docs]</a><span class="k">class</span> <span class="nc">Link</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Accepts and emits tickets.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Link.accept_ticket"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link.accept_ticket">[docs]</a>  <span class="k">def</span> <span class="nf">accept_ticket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ticket</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Accept a Ticket.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      ticket: Any Ticket.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Link.join_link"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link.join_link">[docs]</a>  <span class="k">def</span> <span class="nf">join_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Mates this object with a peer with which it will exchange tickets.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

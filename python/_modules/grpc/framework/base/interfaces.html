@@ -1,0 +1,552 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.base.interfaces &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.base.interfaces</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.base.interfaces</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Interfaces defined and used by the base layer of RPC Framework.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+
+<span class="c"># stream is referenced from specification in this module.</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>  <span class="c"># pylint: disable=unused-import</span>
+
+
+<span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="Outcome"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Outcome">[docs]</a><span class="k">class</span> <span class="nc">Outcome</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Operation outcomes.&quot;&quot;&quot;</span>
+
+  <span class="n">COMPLETED</span> <span class="o">=</span> <span class="s">&#39;completed&#39;</span>
+  <span class="n">CANCELLED</span> <span class="o">=</span> <span class="s">&#39;cancelled&#39;</span>
+  <span class="n">EXPIRED</span> <span class="o">=</span> <span class="s">&#39;expired&#39;</span>
+  <span class="n">RECEPTION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;reception failure&#39;</span>
+  <span class="n">TRANSMISSION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;transmission failure&#39;</span>
+  <span class="n">SERVICER_FAILURE</span> <span class="o">=</span> <span class="s">&#39;servicer failure&#39;</span>
+  <span class="n">SERVICED_FAILURE</span> <span class="o">=</span> <span class="s">&#39;serviced failure&#39;</span>
+
+</div>
+<div class="viewcode-block" id="OperationContext"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.OperationContext">[docs]</a><span class="k">class</span> <span class="nc">OperationContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Provides operation-related information and action.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    trace_id: A uuid.UUID identifying a particular set of related operations.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="OperationContext.is_active"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.OperationContext.is_active">[docs]</a>  <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes whether the operation is active or has terminated.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="OperationContext.add_termination_callback"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.OperationContext.add_termination_callback">[docs]</a>  <span class="k">def</span> <span class="nf">add_termination_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds a function to be called upon operation termination.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      callback: A callable that will be passed an Outcome value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="OperationContext.time_remaining"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.OperationContext.time_remaining">[docs]</a>  <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the operation.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A nonnegative float indicating the length of allowed time in seconds</span>
+<span class="sd">      remaining for the operation to complete before it is considered to have</span>
+<span class="sd">      timed out.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="OperationContext.fail"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.OperationContext.fail">[docs]</a>  <span class="k">def</span> <span class="nf">fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Indicates that the operation has failed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      exception: An exception germane to the operation failure. May be None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="Servicer"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Servicer">[docs]</a><span class="k">class</span> <span class="nc">Servicer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Interface for service implementations.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Servicer.service"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Servicer.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">output_consumer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Services an operation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The name of the operation.</span>
+<span class="sd">      context: A ServicerContext object affording contextual information and</span>
+<span class="sd">        actions.</span>
+<span class="sd">      output_consumer: A stream.Consumer that will accept output values of</span>
+<span class="sd">        the operation.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A stream.Consumer that will accept input values for the operation.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      exceptions.NoSuchMethodError: If this Servicer affords no method with the</span>
+<span class="sd">        given name.</span>
+<span class="sd">      abandonment.Abandoned: If the operation has been aborted and there no</span>
+<span class="sd">        longer is any reason to service the operation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="Operation"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Operation">[docs]</a><span class="k">class</span> <span class="nc">Operation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Representation of an in-progress operation.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    consumer: A stream.Consumer into which payloads constituting the operation&#39;s</span>
+<span class="sd">      input may be passed.</span>
+<span class="sd">    context: An OperationContext affording information and action about the</span>
+<span class="sd">      operation.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Operation.cancel"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Operation.cancel">[docs]</a>  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cancels this operation.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ServicedIngestor"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ServicedIngestor">[docs]</a><span class="k">class</span> <span class="nc">ServicedIngestor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Responsible for accepting the result of an operation.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="ServicedIngestor.consumer"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ServicedIngestor.consumer">[docs]</a>  <span class="k">def</span> <span class="nf">consumer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords a consumer to which operation results will be passed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      operation_context: An OperationContext object for the current operation.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A stream.Consumer to which the results of the current operation will be</span>
+<span class="sd">        passed.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      abandonment.Abandoned: If the operation has been aborted and there no</span>
+<span class="sd">        longer is any reason to service the operation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ServicedSubscription"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ServicedSubscription">[docs]</a><span class="k">class</span> <span class="nc">ServicedSubscription</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A sum type representing a serviced&#39;s interest in an operation.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    kind: A Kind value.</span>
+<span class="sd">    ingestor: A ServicedIngestor. Must be present if kind is Kind.FULL. Must</span>
+<span class="sd">      be None if kind is Kind.TERMINATION_ONLY or Kind.NONE.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="ServicedSubscription.Kind"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ServicedSubscription.Kind">[docs]</a>  <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Kinds of subscription.&quot;&quot;&quot;</span>
+
+    <span class="n">FULL</span> <span class="o">=</span> <span class="s">&#39;full&#39;</span>
+    <span class="n">TERMINATION_ONLY</span> <span class="o">=</span> <span class="s">&#39;termination only&#39;</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
+
+</div></div>
+<div class="viewcode-block" id="End"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.End">[docs]</a><span class="k">class</span> <span class="nc">End</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Common type for entry-point objects on both sides of an operation.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="End.operation_stats"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.End.operation_stats">[docs]</a>  <span class="k">def</span> <span class="nf">operation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reports the number of terminated operations broken down by outcome.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A dictionary from Outcome value to an integer identifying the number</span>
+<span class="sd">        of operations that terminated with that outcome.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="End.add_idle_action"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.End.add_idle_action">[docs]</a>  <span class="k">def</span> <span class="nf">add_idle_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds an action to be called when this End has no ongoing operations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      action: A callable that accepts no arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="Front"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Front">[docs]</a><span class="k">class</span> <span class="nc">Front</span><span class="p">(</span><span class="n">End</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Clientish objects that afford the invocation of operations.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Front.operate"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Front.operate">[docs]</a>  <span class="k">def</span> <span class="nf">operate</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">complete</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">subscription</span><span class="p">,</span> <span class="n">trace_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Commences an operation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The name of the method invoked for the operation.</span>
+<span class="sd">      payload: An initial payload for the operation. May be None.</span>
+<span class="sd">      complete: A boolean indicating whether or not additional payloads to be</span>
+<span class="sd">        sent to the servicer may be supplied after this call.</span>
+<span class="sd">      timeout: A length of time in seconds to allow for the operation.</span>
+<span class="sd">      subscription: A ServicedSubscription for the operation.</span>
+<span class="sd">      trace_id: A uuid.UUID identifying a set of related operations to which</span>
+<span class="sd">        this operation belongs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      An Operation object affording information and action about the operation</span>
+<span class="sd">        in progress.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="Back"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.Back">[docs]</a><span class="k">class</span> <span class="nc">Back</span><span class="p">(</span><span class="n">End</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Serverish objects that perform the work of operations.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+</div>
+<div class="viewcode-block" id="FrontToBackTicket"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.FrontToBackTicket">[docs]</a><span class="k">class</span> <span class="nc">FrontToBackTicket</span><span class="p">(</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;FrontToBackTicket&#39;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s">&#39;operation_id&#39;</span><span class="p">,</span> <span class="s">&#39;sequence_number&#39;</span><span class="p">,</span> <span class="s">&#39;kind&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;subscription&#39;</span><span class="p">,</span>
+         <span class="s">&#39;trace_id&#39;</span><span class="p">,</span> <span class="s">&#39;payload&#39;</span><span class="p">,</span> <span class="s">&#39;timeout&#39;</span><span class="p">])):</span>
+  <span class="sd">&quot;&quot;&quot;A sum type for all values sent from a front to a back.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    operation_id: A unique-with-respect-to-equality hashable object identifying</span>
+<span class="sd">      a particular operation.</span>
+<span class="sd">    sequence_number: A zero-indexed integer sequence number identifying the</span>
+<span class="sd">      ticket&#39;s place among all the tickets sent from front to back for this</span>
+<span class="sd">      particular operation. Must be zero if kind is Kind.COMMENCEMENT or</span>
+<span class="sd">      Kind.ENTIRE. Must be positive for any other kind.</span>
+<span class="sd">    kind: A Kind value describing the overall kind of ticket.</span>
+<span class="sd">    name: The name of an operation. Must be present if kind is Kind.COMMENCEMENT</span>
+<span class="sd">      or Kind.ENTIRE. Must be None for any other kind.</span>
+<span class="sd">    subscription: An ServicedSubscription.Kind value describing the interest</span>
+<span class="sd">      the front has in tickets sent from the back. Must be present if</span>
+<span class="sd">      kind is Kind.COMMENCEMENT or Kind.ENTIRE. Must be None for any other kind.</span>
+<span class="sd">    trace_id: A uuid.UUID identifying a set of related operations to which this</span>
+<span class="sd">      operation belongs. May be None.</span>
+<span class="sd">    payload: A customer payload object. Must be present if kind is</span>
+<span class="sd">      Kind.CONTINUATION. Must be None if kind is Kind.CANCELLATION. May be None</span>
+<span class="sd">      for any other kind.</span>
+<span class="sd">    timeout: An optional length of time (measured from the beginning of the</span>
+<span class="sd">      operation) to allow for the entire operation. If None, a default value on</span>
+<span class="sd">      the back will be used. If present and excessively large, the back may</span>
+<span class="sd">      limit the operation to a smaller duration of its choice. May be present</span>
+<span class="sd">      for any ticket kind; setting a value on a later ticket allows fronts</span>
+<span class="sd">      to request time extensions (or even time reductions!) on in-progress</span>
+<span class="sd">      operations.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="FrontToBackTicket.Kind"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.FrontToBackTicket.Kind">[docs]</a>  <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identifies the overall kind of a FrontToBackTicket.&quot;&quot;&quot;</span>
+
+    <span class="n">COMMENCEMENT</span> <span class="o">=</span> <span class="s">&#39;commencement&#39;</span>
+    <span class="n">CONTINUATION</span> <span class="o">=</span> <span class="s">&#39;continuation&#39;</span>
+    <span class="n">COMPLETION</span> <span class="o">=</span> <span class="s">&#39;completion&#39;</span>
+    <span class="n">ENTIRE</span> <span class="o">=</span> <span class="s">&#39;entire&#39;</span>
+    <span class="n">CANCELLATION</span> <span class="o">=</span> <span class="s">&#39;cancellation&#39;</span>
+    <span class="n">EXPIRATION</span> <span class="o">=</span> <span class="s">&#39;expiration&#39;</span>
+    <span class="n">SERVICER_FAILURE</span> <span class="o">=</span> <span class="s">&#39;servicer failure&#39;</span>
+    <span class="n">SERVICED_FAILURE</span> <span class="o">=</span> <span class="s">&#39;serviced failure&#39;</span>
+    <span class="n">RECEPTION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;reception failure&#39;</span>
+    <span class="n">TRANSMISSION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;transmission failure&#39;</span>
+
+</div></div>
+<div class="viewcode-block" id="BackToFrontTicket"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.BackToFrontTicket">[docs]</a><span class="k">class</span> <span class="nc">BackToFrontTicket</span><span class="p">(</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;BackToFrontTicket&#39;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s">&#39;operation_id&#39;</span><span class="p">,</span> <span class="s">&#39;sequence_number&#39;</span><span class="p">,</span> <span class="s">&#39;kind&#39;</span><span class="p">,</span> <span class="s">&#39;payload&#39;</span><span class="p">])):</span>
+  <span class="sd">&quot;&quot;&quot;A sum type for all values sent from a back to a front.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    operation_id: A unique-with-respect-to-equality hashable object identifying</span>
+<span class="sd">      a particular operation.</span>
+<span class="sd">    sequence_number: A zero-indexed integer sequence number identifying the</span>
+<span class="sd">      ticket&#39;s place among all the tickets sent from back to front for this</span>
+<span class="sd">      particular operation.</span>
+<span class="sd">    kind: A Kind value describing the overall kind of ticket.</span>
+<span class="sd">    payload: A customer payload object. Must be present if kind is</span>
+<span class="sd">      Kind.CONTINUATION. May be None if kind is Kind.COMPLETION. Must be None</span>
+<span class="sd">      otherwise.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="BackToFrontTicket.Kind"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.BackToFrontTicket.Kind">[docs]</a>  <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identifies the overall kind of a BackToFrontTicket.&quot;&quot;&quot;</span>
+
+    <span class="n">CONTINUATION</span> <span class="o">=</span> <span class="s">&#39;continuation&#39;</span>
+    <span class="n">COMPLETION</span> <span class="o">=</span> <span class="s">&#39;completion&#39;</span>
+    <span class="n">CANCELLATION</span> <span class="o">=</span> <span class="s">&#39;cancellation&#39;</span>
+    <span class="n">EXPIRATION</span> <span class="o">=</span> <span class="s">&#39;expiration&#39;</span>
+    <span class="n">SERVICER_FAILURE</span> <span class="o">=</span> <span class="s">&#39;servicer failure&#39;</span>
+    <span class="n">SERVICED_FAILURE</span> <span class="o">=</span> <span class="s">&#39;serviced failure&#39;</span>
+    <span class="n">RECEPTION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;reception failure&#39;</span>
+    <span class="n">TRANSMISSION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;transmission failure&#39;</span>
+
+</div></div>
+<div class="viewcode-block" id="ForeLink"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ForeLink">[docs]</a><span class="k">class</span> <span class="nc">ForeLink</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Accepts back-to-front tickets and emits front-to-back tickets.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="ForeLink.accept_back_to_front_ticket"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ForeLink.accept_back_to_front_ticket">[docs]</a>  <span class="k">def</span> <span class="nf">accept_back_to_front_ticket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ticket</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Accept a BackToFrontTicket.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      ticket: Any BackToFrontTicket.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="ForeLink.join_rear_link"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.ForeLink.join_rear_link">[docs]</a>  <span class="k">def</span> <span class="nf">join_rear_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rear_link</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Mates this object with a peer with which it will exchange tickets.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="RearLink"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.RearLink">[docs]</a><span class="k">class</span> <span class="nc">RearLink</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Accepts front-to-back tickets and emits back-to-front tickets.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="RearLink.accept_front_to_back_ticket"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.RearLink.accept_front_to_back_ticket">[docs]</a>  <span class="k">def</span> <span class="nf">accept_front_to_back_ticket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ticket</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Accepts a FrontToBackTicket.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      ticket: Any FrontToBackTicket.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="RearLink.join_fore_link"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.RearLink.join_fore_link">[docs]</a>  <span class="k">def</span> <span class="nf">join_fore_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fore_link</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Mates this object with a peer with which it will exchange tickets.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="FrontLink"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.FrontLink">[docs]</a><span class="k">class</span> <span class="nc">FrontLink</span><span class="p">(</span><span class="n">Front</span><span class="p">,</span> <span class="n">ForeLink</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Clientish objects that operate by sending and receiving tickets.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+</div>
+<div class="viewcode-block" id="BackLink"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces.BackLink">[docs]</a><span class="k">class</span> <span class="nc">BackLink</span><span class="p">(</span><span class="n">Back</span><span class="p">,</span> <span class="n">RearLink</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Serverish objects that operate by sending and receiving tickets.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

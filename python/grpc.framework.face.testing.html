@@ -1,0 +1,1875 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.testing package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework.face package" href="grpc.framework.face.html"/>
+        <link rel="next" title="grpc.framework.foundation package" href="grpc.framework.foundation.html"/>
+        <link rel="prev" title="grpc.framework.face package" href="grpc.framework.face.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.face.html">grpc.framework.face package</a> &raquo;</li>
+      
+    <li>grpc.framework.face.testing package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.face.testing.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-face-testing-package">
+<h1>grpc.framework.face.testing package<a class="headerlink" href="#grpc-framework-face-testing-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.face.testing.base_util">
+<span id="grpc-framework-face-testing-base-util-module"></span><h2>grpc.framework.face.testing.base_util module<a class="headerlink" href="#module-grpc.framework.face.testing.base_util" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for creating Base-layer objects for use in Face-layer tests.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.base_util.LinkedPair">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.base_util.</code><code class="descname">LinkedPair</code><a class="reference internal" href="_modules/grpc/framework/face/testing/base_util.html#LinkedPair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.base_util.LinkedPair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A Front and Back that are linked to one another.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.base_util.LinkedPair.front">
+<code class="descname">front</code><a class="headerlink" href="#grpc.framework.face.testing.base_util.LinkedPair.front" title="Permalink to this definition">¶</a></dt>
+<dd><p>An interfaces.Front.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.base_util.LinkedPair.back">
+<code class="descname">back</code><a class="headerlink" href="#grpc.framework.face.testing.base_util.LinkedPair.back" title="Permalink to this definition">¶</a></dt>
+<dd><p>An interfaces.Back.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.base_util.LinkedPair.shut_down">
+<code class="descname">shut_down</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/base_util.html#LinkedPair.shut_down"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.base_util.LinkedPair.shut_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shuts down this object and releases its resources.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.testing.base_util.linked_pair">
+<code class="descclassname">grpc.framework.face.testing.base_util.</code><code class="descname">linked_pair</code><span class="sig-paren">(</span><em>servicer</em>, <em>default_timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/base_util.html#linked_pair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.base_util.linked_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Server and Stub linked together for use.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.blocking_invocation_inline_service_test_case">
+<span id="grpc-framework-face-testing-blocking-invocation-inline-service-test-case-module"></span><h2>grpc.framework.face.testing.blocking_invocation_inline_service_test_case module<a class="headerlink" href="#module-grpc.framework.face.testing.blocking_invocation_inline_service_test_case" title="Permalink to this headline">¶</a></h2>
+<p>A test to verify an implementation of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.blocking_invocation_inline_service_test_case.</code><code class="descname">BlockingInvocationInlineServiceTestCase</code><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.test_case.FaceTestCase" title="grpc.framework.face.testing.test_case.FaceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.test_case.FaceTestCase</span></code></a>, <a class="reference internal" href="#grpc.framework.face.testing.coverage.BlockingCoverage" title="grpc.framework.face.testing.coverage.BlockingCoverage"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.coverage.BlockingCoverage</span></code></a></p>
+<p>A test of the Face layer of RPC Framework.</p>
+<p>Concrete subclasses must also extend unittest.TestCase.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>See unittest.TestCase.setUp for full specification.</p>
+<p>Overriding implementations must call this implementation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>See unittest.TestCase.tearDown for full specification.</p>
+<p>Overriding implementations must call this implementation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredStreamRequestStreamResponse">
+<code class="descname">testExpiredStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testExpiredStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredStreamRequestUnaryResponse">
+<code class="descname">testExpiredStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testExpiredStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredUnaryRequestStreamResponse">
+<code class="descname">testExpiredUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testExpiredUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredUnaryRequestUnaryResponse">
+<code class="descname">testExpiredUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testExpiredUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testExpiredUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedStreamRequestStreamResponse">
+<code class="descname">testFailedStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testFailedStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedStreamRequestUnaryResponse">
+<code class="descname">testFailedStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testFailedStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedUnaryRequestStreamResponse">
+<code class="descname">testFailedUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testFailedUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedUnaryRequestUnaryResponse">
+<code class="descname">testFailedUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testFailedUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testFailedUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSequentialInvocations">
+<code class="descname">testSequentialInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testSequentialInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSequentialInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulStreamRequestStreamResponse">
+<code class="descname">testSuccessfulStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testSuccessfulStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulStreamRequestUnaryResponse">
+<code class="descname">testSuccessfulStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testSuccessfulStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulUnaryRequestStreamResponse">
+<code class="descname">testSuccessfulUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testSuccessfulUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulUnaryRequestUnaryResponse">
+<code class="descname">testSuccessfulUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/blocking_invocation_inline_service_test_case.html#BlockingInvocationInlineServiceTestCase.testSuccessfulUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase.testSuccessfulUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.callback">
+<span id="grpc-framework-face-testing-callback-module"></span><h2>grpc.framework.face.testing.callback module<a class="headerlink" href="#module-grpc.framework.face.testing.callback" title="Permalink to this headline">¶</a></h2>
+<p>A utility useful in tests of asynchronous, event-driven interfaces.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.callback.Callback">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.callback.</code><code class="descname">Callback</code><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
+<p>A utility object useful in tests of asynchronous code.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.abort">
+<code class="descname">abort</code><span class="sig-paren">(</span><em>abortion</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.abort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.abort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.abortion">
+<code class="descname">abortion</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.abortion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.abortion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.block_until_terminated">
+<code class="descname">block_until_terminated</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.block_until_terminated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.block_until_terminated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.complete">
+<code class="descname">complete</code><span class="sig-paren">(</span><em>unary_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.complete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.complete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>streamed_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>streamed_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.response">
+<code class="descname">response</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.responses">
+<code class="descname">responses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.responses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.responses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.callback.Callback.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/callback.html#Callback.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.callback.Callback.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.control">
+<span id="grpc-framework-face-testing-control-module"></span><h2>grpc.framework.face.testing.control module<a class="headerlink" href="#module-grpc.framework.face.testing.control" title="Permalink to this headline">¶</a></h2>
+<p>Code for instructing systems under test to block or fail.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.control.Control">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.control.</code><code class="descname">Control</code><a class="reference internal" href="_modules/grpc/framework/face/testing/control.html#Control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.control.Control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>An object that accepts program control from a system under test.</p>
+<p>Systems under test passed a Control should call its control() method
+frequently during execution. The control() method may block, raise an
+exception, or do nothing, all according to the enclosing test&#8217;s desire for
+the system under test to simulate hanging, failing, or functioning.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.control.Control.control">
+<code class="descname">control</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/control.html#Control.control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.control.Control.control" title="Permalink to this definition">¶</a></dt>
+<dd><p>Potentially does anything.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.control.PauseFailControl">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.control.</code><code class="descname">PauseFailControl</code><a class="reference internal" href="_modules/grpc/framework/face/testing/control.html#PauseFailControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.control.PauseFailControl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.control.Control" title="grpc.framework.face.testing.control.Control"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.control.Control</span></code></a></p>
+<p>A Control that can be used to pause or fail code under control.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.control.PauseFailControl.control">
+<code class="descname">control</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/control.html#PauseFailControl.control"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.control.PauseFailControl.control" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.control.PauseFailControl.fail">
+<code class="descname">fail</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/control.html#PauseFailControl.fail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.control.PauseFailControl.fail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fails code under control while controlling code is in context.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.control.PauseFailControl.pause">
+<code class="descname">pause</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/control.html#PauseFailControl.pause"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.control.PauseFailControl.pause" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pauses code under control while controlling code is in context.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.coverage">
+<span id="grpc-framework-face-testing-coverage-module"></span><h2>grpc.framework.face.testing.coverage module<a class="headerlink" href="#module-grpc.framework.face.testing.coverage" title="Permalink to this headline">¶</a></h2>
+<p>Governs coverage for the tests of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.coverage.</code><code class="descname">BlockingCoverage</code><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Specification of test coverage for blocking behaviors.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredStreamRequestStreamResponse">
+<code class="descname">testExpiredStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testExpiredStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredStreamRequestUnaryResponse">
+<code class="descname">testExpiredStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testExpiredStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredUnaryRequestStreamResponse">
+<code class="descname">testExpiredUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testExpiredUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredUnaryRequestUnaryResponse">
+<code class="descname">testExpiredUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testExpiredUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testExpiredUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testFailedStreamRequestStreamResponse">
+<code class="descname">testFailedStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testFailedStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testFailedStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testFailedStreamRequestUnaryResponse">
+<code class="descname">testFailedStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testFailedStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testFailedStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testFailedUnaryRequestStreamResponse">
+<code class="descname">testFailedUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testFailedUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testFailedUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testFailedUnaryRequestUnaryResponse">
+<code class="descname">testFailedUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testFailedUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testFailedUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testSequentialInvocations">
+<code class="descname">testSequentialInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testSequentialInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testSequentialInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulStreamRequestStreamResponse">
+<code class="descname">testSuccessfulStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testSuccessfulStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulStreamRequestUnaryResponse">
+<code class="descname">testSuccessfulStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testSuccessfulStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulUnaryRequestStreamResponse">
+<code class="descname">testSuccessfulUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testSuccessfulUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulUnaryRequestUnaryResponse">
+<code class="descname">testSuccessfulUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#BlockingCoverage.testSuccessfulUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.BlockingCoverage.testSuccessfulUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.coverage.</code><code class="descname">FullCoverage</code><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.coverage.BlockingCoverage" title="grpc.framework.face.testing.coverage.BlockingCoverage"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.coverage.BlockingCoverage</span></code></a></p>
+<p>Specification of test coverage for non-blocking behaviors.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage.testCancelledStreamRequestStreamResponse">
+<code class="descname">testCancelledStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage.testCancelledStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage.testCancelledStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage.testCancelledStreamRequestUnaryResponse">
+<code class="descname">testCancelledStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage.testCancelledStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage.testCancelledStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage.testCancelledUnaryRequestStreamResponse">
+<code class="descname">testCancelledUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage.testCancelledUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage.testCancelledUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage.testCancelledUnaryRequestUnaryResponse">
+<code class="descname">testCancelledUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage.testCancelledUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage.testCancelledUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage.testParallelInvocations">
+<code class="descname">testParallelInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage.testParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage.testParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.coverage.FullCoverage.testWaitingForSomeButNotAllParallelInvocations">
+<code class="descname">testWaitingForSomeButNotAllParallelInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/coverage.html#FullCoverage.testWaitingForSomeButNotAllParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.coverage.FullCoverage.testWaitingForSomeButNotAllParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.digest">
+<span id="grpc-framework-face-testing-digest-module"></span><h2>grpc.framework.face.testing.digest module<a class="headerlink" href="#module-grpc.framework.face.testing.digest" title="Permalink to this headline">¶</a></h2>
+<p>Code for making a service.TestService more amenable to use in tests.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.digest.</code><code class="descname">TestServiceDigest</code><a class="reference internal" href="_modules/grpc/framework/face/testing/digest.html#TestServiceDigest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.digest.TestServiceDigest" title="grpc.framework.face.testing.digest.TestServiceDigest"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.digest.TestServiceDigest</span></code></a></p>
+<p>A transformation of a service.TestService.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.name">
+<code class="descname">name</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The RPC service name to be used in the test.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.methods">
+<code class="descname">methods</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>A sequence of interfaces.Method objects describing the RPC
+methods that will be called during the test.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.inline_method_implementations">
+<code class="descname">inline_method_implementations</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.inline_method_implementations" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from RPC method name to
+face_interfaces.MethodImplementation object to be used in tests of
+in-line calls to behaviors under test.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.event_method_implementations">
+<code class="descname">event_method_implementations</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.event_method_implementations" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from RPC method name to
+face_interfaces.MethodImplementation object to be used in tests of
+event-driven calls to behaviors under test.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.multi_method_implementation">
+<code class="descname">multi_method_implementation</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.multi_method_implementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>A face_interfaces.MultiMethodImplementation to
+be used in tests of generic calls to behaviors under test.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.unary_unary_messages_sequences">
+<code class="descname">unary_unary_messages_sequences</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.unary_unary_messages_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to sequence of
+service.UnaryUnaryTestMessages objects to be used to test the method
+with the given name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.unary_stream_messages_sequences">
+<code class="descname">unary_stream_messages_sequences</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.unary_stream_messages_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to sequence of
+service.UnaryStreamTestMessages objects to be used to test the method
+with the given name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.stream_unary_messages_sequences">
+<code class="descname">stream_unary_messages_sequences</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.stream_unary_messages_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to sequence of
+service.StreamUnaryTestMessages objects to be used to test the method
+with the given name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.stream_stream_messages_sequences">
+<code class="descname">stream_stream_messages_sequences</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.stream_stream_messages_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to sequence of
+service.StreamStreamTestMessages objects to be used to test the
+method with the given name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.digest.TestServiceDigest.serialization">
+<code class="descname">serialization</code><a class="headerlink" href="#grpc.framework.face.testing.digest.TestServiceDigest.serialization" title="Permalink to this definition">¶</a></dt>
+<dd><p>A serial.Serialization object describing serialization
+behaviors for all the RPC methods.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.testing.digest.digest">
+<code class="descclassname">grpc.framework.face.testing.digest.</code><code class="descname">digest</code><span class="sig-paren">(</span><em>service</em>, <em>control</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/digest.html#digest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.digest.digest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a TestServiceDigest from a TestService.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service</strong> &#8211; A testing_service.TestService.</li>
+<li><strong>control</strong> &#8211; A testing_control.Control.</li>
+<li><strong>pool</strong> &#8211; If RPC methods should be serviced in a separate thread, a thread pool.
+None if RPC methods should be serviced in the thread belonging to the
+run-time that calls for their service.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A TestServiceDigest synthesized from the given service.TestService.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case">
+<span id="grpc-framework-face-testing-event-invocation-synchronous-event-service-test-case-module"></span><h2>grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case module<a class="headerlink" href="#module-grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case" title="Permalink to this headline">¶</a></h2>
+<p>A test to verify an implementation of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.</code><code class="descname">EventInvocationSynchronousEventServiceTestCase</code><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.test_case.FaceTestCase" title="grpc.framework.face.testing.test_case.FaceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.test_case.FaceTestCase</span></code></a>, <a class="reference internal" href="#grpc.framework.face.testing.coverage.FullCoverage" title="grpc.framework.face.testing.coverage.FullCoverage"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.coverage.FullCoverage</span></code></a></p>
+<p>A test of the Face layer of RPC Framework.</p>
+<p>Concrete subclasses must also extend unittest.TestCase.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>See unittest.TestCase.setUp for full specification.</p>
+<p>Overriding implementations must call this implementation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>See unittest.TestCase.tearDown for full specification.</p>
+<p>Overriding implementations must call this implementation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse">
+<code class="descname">testCancelledStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse">
+<code class="descname">testCancelledStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse">
+<code class="descname">testCancelledUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse">
+<code class="descname">testCancelledUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse">
+<code class="descname">testExpiredStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse">
+<code class="descname">testExpiredStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse">
+<code class="descname">testExpiredUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse">
+<code class="descname">testExpiredUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse">
+<code class="descname">testFailedStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse">
+<code class="descname">testFailedStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse">
+<code class="descname">testFailedUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse">
+<code class="descname">testFailedUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testParallelInvocations">
+<code class="descname">testParallelInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSequentialInvocations">
+<code class="descname">testSequentialInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testSequentialInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSequentialInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse">
+<code class="descname">testSuccessfulStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse">
+<code class="descname">testSuccessfulStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse">
+<code class="descname">testSuccessfulUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse">
+<code class="descname">testSuccessfulUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations">
+<code class="descname">testWaitingForSomeButNotAllParallelInvocations</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/event_invocation_synchronous_event_service_test_case.html#EventInvocationSynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case">
+<span id="grpc-framework-face-testing-future-invocation-asynchronous-event-service-test-case-module"></span><h2>grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case module<a class="headerlink" href="#module-grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case" title="Permalink to this headline">¶</a></h2>
+<p>A test to verify an implementation of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.</code><code class="descname">FutureInvocationAsynchronousEventServiceTestCase</code><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.test_case.FaceTestCase" title="grpc.framework.face.testing.test_case.FaceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.test_case.FaceTestCase</span></code></a>, <a class="reference internal" href="#grpc.framework.face.testing.coverage.FullCoverage" title="grpc.framework.face.testing.coverage.FullCoverage"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.coverage.FullCoverage</span></code></a></p>
+<p>A test of the Face layer of RPC Framework.</p>
+<p>Concrete subclasses must also extend unittest.TestCase.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>See unittest.TestCase.setUp for full specification.</p>
+<p>Overriding implementations must call this implementation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>See unittest.TestCase.tearDown for full specification.</p>
+<p>Overriding implementations must call this implementation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse">
+<code class="descname">testCancelledStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse">
+<code class="descname">testCancelledStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse">
+<code class="descname">testCancelledUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse">
+<code class="descname">testCancelledUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse">
+<code class="descname">testExpiredStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse">
+<code class="descname">testExpiredStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse">
+<code class="descname">testExpiredUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse">
+<code class="descname">testExpiredUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse">
+<code class="descname">testFailedStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse">
+<code class="descname">testFailedStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse">
+<code class="descname">testFailedUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse">
+<code class="descname">testFailedUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testParallelInvocations">
+<code class="descname">testParallelInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSequentialInvocations">
+<code class="descname">testSequentialInvocations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testSequentialInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSequentialInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse">
+<code class="descname">testSuccessfulStreamRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse">
+<code class="descname">testSuccessfulStreamRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse">
+<code class="descname">testSuccessfulUnaryRequestStreamResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse">
+<code class="descname">testSuccessfulUnaryRequestUnaryResponse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations">
+<code class="descname">testWaitingForSomeButNotAllParallelInvocations</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/future_invocation_asynchronous_event_service_test_case.html#FutureInvocationAsynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.interfaces">
+<span id="grpc-framework-face-testing-interfaces-module"></span><h2>grpc.framework.face.testing.interfaces module<a class="headerlink" href="#module-grpc.framework.face.testing.interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Interfaces implemented by data sets used in Face-layer tests.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.interfaces.Method">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.interfaces.</code><code class="descname">Method</code><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>An RPC method to be used in tests of RPC implementations.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.cardinality">
+<code class="descname">cardinality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify the cardinality of the method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A cardinality.Cardinality value describing the streaming semantics of the
+method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synthesize a request object from a given bytestring.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>serialized_request</strong> &#8211; A bytestring deserializable into a request object
+appropriate for this method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synthesize a response object from a given bytestring.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>serialized_response</strong> &#8211; A bytestring deserializable into a response object
+appropriate for this method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify the name of the method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The name of the method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.request_class">
+<code class="descname">request_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.request_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.request_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify the class used for the method&#8217;s request objects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The class object of the class to which the method&#8217;s request objects
+belong.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.response_class">
+<code class="descname">response_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.response_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.response_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify the class used for the method&#8217;s response objects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The class object of the class to which the method&#8217;s response objects
+belong.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize the given request object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> &#8211; A request object appropriate for this method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.interfaces.Method.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/interfaces.html#Method.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.interfaces.Method.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize the given response object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> &#8211; A response object appropriate for this method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.serial">
+<span id="grpc-framework-face-testing-serial-module"></span><h2>grpc.framework.face.testing.serial module<a class="headerlink" href="#module-grpc.framework.face.testing.serial" title="Permalink to this headline">¶</a></h2>
+<p>Utility for serialization in the context of test RPC services.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.serial.Serialization">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.serial.</code><code class="descname">Serialization</code><a class="reference internal" href="_modules/grpc/framework/face/testing/serial.html#Serialization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.serial.Serialization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.serial._Serialization</span></code></p>
+<p>An aggregation of serialization behaviors for an RPC service.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.serial.Serialization.request_serializers">
+<code class="descname">request_serializers</code><a class="headerlink" href="#grpc.framework.face.testing.serial.Serialization.request_serializers" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to request object serializer
+behavior.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.serial.Serialization.request_deserializers">
+<code class="descname">request_deserializers</code><a class="headerlink" href="#grpc.framework.face.testing.serial.Serialization.request_deserializers" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to request object
+deserializer behavior.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.serial.Serialization.response_serializers">
+<code class="descname">response_serializers</code><a class="headerlink" href="#grpc.framework.face.testing.serial.Serialization.response_serializers" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to response object serializer
+behavior.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.testing.serial.Serialization.response_deserializers">
+<code class="descname">response_deserializers</code><a class="headerlink" href="#grpc.framework.face.testing.serial.Serialization.response_deserializers" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict from method name to response object
+deserializer behavior.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.testing.serial.serialization">
+<code class="descclassname">grpc.framework.face.testing.serial.</code><code class="descname">serialization</code><span class="sig-paren">(</span><em>methods</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/serial.html#serialization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.serial.serialization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Serialization from a sequences of interfaces.Method objects.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.service">
+<span id="grpc-framework-face-testing-service-module"></span><h2>grpc.framework.face.testing.service module<a class="headerlink" href="#module-grpc.framework.face.testing.service" title="Permalink to this headline">¶</a></h2>
+<p>Private interfaces implemented by data sets used in Face-layer tests.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.StreamStreamTestMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">StreamStreamTestMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamStreamTestMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamStreamTestMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A type for stream-request-stream-response message pairings.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.StreamStreamTestMessages.requests">
+<code class="descname">requests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamStreamTestMessages.requests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamStreamTestMessages.requests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords a sequence of request messages.</p>
+<p>Implementations of this method should return a different sequences with each
+call so that multiple test executions of the test method may be made with
+different inputs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A sequence of request messages.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.StreamStreamTestMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>requests</em>, <em>responses</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamStreamTestMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamStreamTestMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifies that the computed response matches the given requests.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>requests</strong> &#8211; A sequence of request messages.</li>
+<li><strong>responses</strong> &#8211; A sequence of response messages.</li>
+<li><strong>test_case</strong> &#8211; A unittest.TestCase object affording useful assertion methods.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code> &#8211;
+If the requests and responses do not match, indicating
+that there was some problem executing the RPC under test.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.StreamStreamTestMethodImplementation">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">StreamStreamTestMethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamStreamTestMethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamStreamTestMethodImplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.interfaces.Method" title="grpc.framework.face.testing.interfaces.Method"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.interfaces.Method</span></code></a></p>
+<p>A controllable implementation of a stream-stream RPC method.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.StreamStreamTestMethodImplementation.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>response_consumer</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamStreamTestMethodImplementation.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamStreamTestMethodImplementation.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Services an RPC that accepts and produces streams of messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the response
+messages of the RPC.</li>
+<li><strong>context</strong> &#8211; A face_interfaces.RpcContext object.</li>
+<li><strong>control</strong> &#8211; A test_control.Control to control execution of this method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A stream.Consumer with which to accept the request messages of the RPC.
+The consumer returned from this method may or may not be invoked to
+completion: in the case of RPC abortion, RPC Framework will simply stop
+passing messages to this object. Implementations must not assume that
+this object will be called to completion of the request stream or even
+called at all.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+May or may not be raised when the RPC has been
+aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.StreamUnaryTestMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">StreamUnaryTestMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamUnaryTestMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamUnaryTestMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A type for stream-request-unary-response message pairings.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.StreamUnaryTestMessages.requests">
+<code class="descname">requests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamUnaryTestMessages.requests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamUnaryTestMessages.requests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords a sequence of request messages.</p>
+<p>Implementations of this method should return a different sequences with each
+call so that multiple test executions of the test method may be made with
+different inputs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A sequence of request messages.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.StreamUnaryTestMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>requests</em>, <em>response</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamUnaryTestMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamUnaryTestMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifies that the computed response matches the given requests.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>requests</strong> &#8211; A sequence of request messages.</li>
+<li><strong>response</strong> &#8211; A response message.</li>
+<li><strong>test_case</strong> &#8211; A unittest.TestCase object affording useful assertion methods.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code> &#8211;
+If the requests and response do not match, indicating that
+there was some problem executing the RPC under test.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">StreamUnaryTestMethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamUnaryTestMethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.interfaces.Method" title="grpc.framework.face.testing.interfaces.Method"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.interfaces.Method</span></code></a></p>
+<p>A controllable implementation of a stream-unary RPC method.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>response_callback</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#StreamUnaryTestMethodImplementation.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Services an RPC that takes a stream of messages and produces one message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>response_callback</strong> &#8211; A callback to be called to accept the response message
+of the RPC.</li>
+<li><strong>context</strong> &#8211; A face_interfaces.RpcContext object.</li>
+<li><strong>control</strong> &#8211; A test_control.Control to control execution of this method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A stream.Consumer with which to accept the request messages of the RPC.
+The consumer returned from this method may or may not be invoked to
+completion: in the case of RPC abortion, RPC Framework will simply stop
+passing messages to this object. Implementations must not assume that
+this object will be called to completion of the request stream or even
+called at all.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+May or may not be raised when the RPC has been
+aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.TestService">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">TestService</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#TestService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.TestService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A specification of implemented RPC methods to use in tests.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.TestService.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#TestService.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.TestService.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identifies the RPC service name used during the test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The RPC service name to be used for the test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.TestService.stream_stream_scenarios">
+<code class="descname">stream_stream_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#TestService.stream_stream_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.TestService.stream_stream_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords stream-request-stream-response test methods and their messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dict from method name to pair. The first element of the pair is a
+StreamStreamTestMethodImplementation object and the second element is a
+sequence of StreamStreamTestMethodMessages objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.TestService.stream_unary_scenarios">
+<code class="descname">stream_unary_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#TestService.stream_unary_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.TestService.stream_unary_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords stream-request-unary-response test methods and their messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dict from method name to pair. The first element of the pair is a
+StreamUnaryTestMethodImplementation object and the second element is a
+sequence of StreamUnaryTestMethodMessages objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.TestService.unary_stream_scenarios">
+<code class="descname">unary_stream_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#TestService.unary_stream_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.TestService.unary_stream_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords unary-request-stream-response test methods and their messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dict from method name to pair. The first element of the pair is a
+UnaryStreamTestMethodImplementation object and the second element is a
+sequence of UnaryStreamTestMethodMessages objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.TestService.unary_unary_scenarios">
+<code class="descname">unary_unary_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#TestService.unary_unary_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.TestService.unary_unary_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords unary-request-unary-response test methods and their messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dict from method name to pair. The first element of the pair
+is a UnaryUnaryTestMethodImplementation object and the second element
+is a sequence of UnaryUnaryTestMethodMessages objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.UnaryStreamTestMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">UnaryStreamTestMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryStreamTestMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryStreamTestMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A type for unary-request-stream-response message pairings.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.UnaryStreamTestMessages.request">
+<code class="descname">request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryStreamTestMessages.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryStreamTestMessages.request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords a request message.</p>
+<p>Implementations of this method should return a different message with each
+call so that multiple test executions of the test method may be made with
+different inputs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A request message.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.UnaryStreamTestMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>request</em>, <em>responses</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryStreamTestMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryStreamTestMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifies that the computed responses match the given request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; A request message.</li>
+<li><strong>responses</strong> &#8211; A sequence of response messages.</li>
+<li><strong>test_case</strong> &#8211; A unittest.TestCase object affording useful assertion methods.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code> &#8211;
+If the request and responses do not match, indicating that
+there was some problem executing the RPC under test.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">UnaryStreamTestMethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryStreamTestMethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.interfaces.Method" title="grpc.framework.face.testing.interfaces.Method"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.interfaces.Method</span></code></a></p>
+<p>A controllable implementation of a unary-stream RPC method.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>request</em>, <em>response_consumer</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryStreamTestMethodImplementation.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Services an RPC that takes one message and produces a stream of messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The single request message for the RPC.</li>
+<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the response
+messages of the RPC.</li>
+<li><strong>context</strong> &#8211; A face_interfaces.RpcContext object.</li>
+<li><strong>control</strong> &#8211; A test_control.Control to control execution of this method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+May or may not be raised when the RPC has been
+aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.UnaryUnaryTestMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">UnaryUnaryTestMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryUnaryTestMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryUnaryTestMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A type for unary-request-unary-response message pairings.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.UnaryUnaryTestMessages.request">
+<code class="descname">request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryUnaryTestMessages.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryUnaryTestMessages.request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords a request message.</p>
+<p>Implementations of this method should return a different message with each
+call so that multiple test executions of the test method may be made with
+different inputs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A request message.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.UnaryUnaryTestMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>request</em>, <em>response</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryUnaryTestMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryUnaryTestMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifies that the computed response matches the given request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; A request message.</li>
+<li><strong>response</strong> &#8211; A response message.</li>
+<li><strong>test_case</strong> &#8211; A unittest.TestCase object affording useful assertion methods.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code> &#8211;
+If the request and response do not match, indicating that
+there was some problem executing the RPC under test.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.service.</code><code class="descname">UnaryUnaryTestMethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryUnaryTestMethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.interfaces.Method" title="grpc.framework.face.testing.interfaces.Method"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.interfaces.Method</span></code></a></p>
+<p>A controllable implementation of a unary-unary RPC method.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>request</em>, <em>response_callback</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/service.html#UnaryUnaryTestMethodImplementation.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Services an RPC that accepts one message and produces one message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The single request message for the RPC.</li>
+<li><strong>response_callback</strong> &#8211; A callback to be called to accept the response message
+of the RPC.</li>
+<li><strong>context</strong> &#8211; An face_interfaces.RpcContext object.</li>
+<li><strong>control</strong> &#8211; A test_control.Control to control execution of this method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+May or may not be raised when the RPC has been
+aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.stock_service">
+<span id="grpc-framework-face-testing-stock-service-module"></span><h2>grpc.framework.face.testing.stock_service module<a class="headerlink" href="#module-grpc.framework.face.testing.stock_service" title="Permalink to this headline">¶</a></h2>
+<p>Examples of Python implementations of the stock.proto Stock service.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">GetHighestTradePrice</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation" title="grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation</span></code></a></p>
+<p>GetHighestTradePrice for use in tests.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.cardinality">
+<code class="descname">cardinality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.request_class">
+<code class="descname">request_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.request_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.request_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.response_class">
+<code class="descname">response_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.response_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.response_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePrice.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>response_callback</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePrice.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePrice.service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">GetHighestTradePriceMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePriceMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.StreamUnaryTestMessages" title="grpc.framework.face.testing.service.StreamUnaryTestMessages"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.StreamUnaryTestMessages</span></code></a></p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages.requests">
+<code class="descname">requests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePriceMessages.requests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages.requests" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>requests</em>, <em>response</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetHighestTradePriceMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetHighestTradePriceMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">GetLastTradePrice</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation" title="grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation</span></code></a></p>
+<p>GetLastTradePrice for use in tests.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.cardinality">
+<code class="descname">cardinality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.request_class">
+<code class="descname">request_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.request_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.request_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.response_class">
+<code class="descname">response_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.response_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.response_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePrice.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>request</em>, <em>response_callback</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePrice.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePrice.service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">GetLastTradePriceMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.UnaryUnaryTestMessages" title="grpc.framework.face.testing.service.UnaryUnaryTestMessages"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.UnaryUnaryTestMessages</span></code></a></p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMessages.request">
+<code class="descname">request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMessages.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMessages.request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>request</em>, <em>response</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">GetLastTradePriceMultiple</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.StreamStreamTestMethodImplementation" title="grpc.framework.face.testing.service.StreamStreamTestMethodImplementation"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.StreamStreamTestMethodImplementation</span></code></a></p>
+<p>GetLastTradePriceMultiple for use in tests.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.cardinality">
+<code class="descname">cardinality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.request_class">
+<code class="descname">request_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.request_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.request_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.response_class">
+<code class="descname">response_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.response_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.response_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>response_consumer</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultiple.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultiple.service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">GetLastTradePriceMultipleMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultipleMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.StreamStreamTestMessages" title="grpc.framework.face.testing.service.StreamStreamTestMessages"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.StreamStreamTestMessages</span></code></a></p>
+<p>Pairs of message streams for use with GetLastTradePriceMultiple.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages.requests">
+<code class="descname">requests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultipleMessages.requests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages.requests" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>requests</em>, <em>responses</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#GetLastTradePriceMultipleMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.GetLastTradePriceMultipleMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.StockTestService">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">StockTestService</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#StockTestService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.StockTestService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.TestService" title="grpc.framework.face.testing.service.TestService"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.TestService</span></code></a></p>
+<p>A corpus of test data with one method of each RPC cardinality.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.StockTestService.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#StockTestService.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.StockTestService.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.StockTestService.stream_stream_scenarios">
+<code class="descname">stream_stream_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#StockTestService.stream_stream_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.StockTestService.stream_stream_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.StockTestService.stream_unary_scenarios">
+<code class="descname">stream_unary_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#StockTestService.stream_unary_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.StockTestService.stream_unary_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.StockTestService.unary_stream_scenarios">
+<code class="descname">unary_stream_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#StockTestService.unary_stream_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.StockTestService.unary_stream_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.StockTestService.unary_unary_scenarios">
+<code class="descname">unary_unary_scenarios</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#StockTestService.unary_unary_scenarios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.StockTestService.unary_unary_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">WatchFutureTrades</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation" title="grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation</span></code></a></p>
+<p>WatchFutureTrades for use in tests.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.cardinality">
+<code class="descname">cardinality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.name">
+<code class="descname">name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.request_class">
+<code class="descname">request_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.request_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.request_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.response_class">
+<code class="descname">response_class</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.response_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.response_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTrades.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>request</em>, <em>response_consumer</em>, <em>context</em>, <em>control</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTrades.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTrades.service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTradesMessages">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.stock_service.</code><code class="descname">WatchFutureTradesMessages</code><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTradesMessages"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTradesMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.testing.service.UnaryStreamTestMessages" title="grpc.framework.face.testing.service.UnaryStreamTestMessages"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.service.UnaryStreamTestMessages</span></code></a></p>
+<p>Pairs of a single request message and a sequence of response messages.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTradesMessages.request">
+<code class="descname">request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTradesMessages.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTradesMessages.request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.stock_service.WatchFutureTradesMessages.verify">
+<code class="descname">verify</code><span class="sig-paren">(</span><em>request</em>, <em>responses</em>, <em>test_case</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/stock_service.html#WatchFutureTradesMessages.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.stock_service.WatchFutureTradesMessages.verify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing.test_case">
+<span id="grpc-framework-face-testing-test-case-module"></span><h2>grpc.framework.face.testing.test_case module<a class="headerlink" href="#module-grpc.framework.face.testing.test_case" title="Permalink to this headline">¶</a></h2>
+<p>Tools for creating tests of implementations of the Face layer.</p>
+<dl class="class">
+<dt id="grpc.framework.face.testing.test_case.FaceTestCase">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.testing.test_case.</code><code class="descname">FaceTestCase</code><a class="reference internal" href="_modules/grpc/framework/face/testing/test_case.html#FaceTestCase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.test_case.FaceTestCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Describes a test of the Face Layer of RPC Framework.</p>
+<p>Concrete subclasses must also inherit from unittest.TestCase and from at least
+one class that defines test methods.</p>
+<dl class="method">
+<dt id="grpc.framework.face.testing.test_case.FaceTestCase.set_up_implementation">
+<code class="descname">set_up_implementation</code><span class="sig-paren">(</span><em>name</em>, <em>methods</em>, <em>method_implementations</em>, <em>multi_method_implementation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/test_case.html#FaceTestCase.set_up_implementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.test_case.FaceTestCase.set_up_implementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates the Face Layer implementation under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The service name to be used in the test.</li>
+<li><strong>methods</strong> &#8211; A sequence of interfaces.Method objects describing the RPC
+methods that will be called during the test.</li>
+<li><strong>method_implementations</strong> &#8211; A dictionary from string RPC method name to
+face_interfaces.MethodImplementation object specifying
+implementation of an RPC method.</li>
+<li><strong>multi_method_implementation</strong> &#8211; An face_interfaces.MultiMethodImplementation
+or None.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A sequence of length two the first element of which is a
+face_interfaces.GenericStub (backed by the given method
+implementations), and the second element of which is an arbitrary memo
+object to be kept and passed to tearDownImplementation at the conclusion
+of the test.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.testing.test_case.FaceTestCase.tear_down_implementation">
+<code class="descname">tear_down_implementation</code><span class="sig-paren">(</span><em>memo</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/testing/test_case.html#FaceTestCase.tear_down_implementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.testing.test_case.FaceTestCase.tear_down_implementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroys the Face layer implementation under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>memo</strong> &#8211; The object from the second position of the return value of
+set_up_implementation.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.testing">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.face.testing" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.foundation.html" class="btn btn-neutral float-right" title="grpc.framework.foundation package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.framework.face.html" class="btn btn-neutral" title="grpc.framework.face package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

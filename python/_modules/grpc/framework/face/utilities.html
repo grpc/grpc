@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.utilities &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.face.utilities</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.face.utilities</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Utilities for RPC framework&#39;s face layer.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">cardinality</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">style</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>
+
+
+<span class="k">class</span> <span class="nc">_MethodImplementation</span><span class="p">(</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">,</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;_MethodImplementation&#39;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s">&#39;cardinality&#39;</span><span class="p">,</span> <span class="s">&#39;style&#39;</span><span class="p">,</span> <span class="s">&#39;unary_unary_inline&#39;</span><span class="p">,</span> <span class="s">&#39;unary_stream_inline&#39;</span><span class="p">,</span>
+         <span class="s">&#39;stream_unary_inline&#39;</span><span class="p">,</span> <span class="s">&#39;stream_stream_inline&#39;</span><span class="p">,</span> <span class="s">&#39;unary_unary_event&#39;</span><span class="p">,</span>
+         <span class="s">&#39;unary_stream_event&#39;</span><span class="p">,</span> <span class="s">&#39;stream_unary_event&#39;</span><span class="p">,</span> <span class="s">&#39;stream_stream_event&#39;</span><span class="p">,])):</span>
+  <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="unary_unary_inline"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.unary_unary_inline">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a unary-unary RPC method as a callable value</span>
+<span class="sd">      that takes a request value and an interfaces.RpcContext object and</span>
+<span class="sd">      returns a response value.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="unary_stream_inline"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.unary_stream_inline">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a unary-stream RPC method as a callable</span>
+<span class="sd">      value that takes a request value and an interfaces.RpcContext object and</span>
+<span class="sd">      returns an iterator of response values.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_unary_inline"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.stream_unary_inline">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a stream-unary RPC method as a callable</span>
+<span class="sd">      value that takes an iterator of request values and an</span>
+<span class="sd">      interfaces.RpcContext object and returns a response value.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_stream_inline"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.stream_stream_inline">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_inline</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a stream-stream RPC method as a callable</span>
+<span class="sd">      value that takes an iterator of request values and an</span>
+<span class="sd">      interfaces.RpcContext object and returns an iterator of response values.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="unary_unary_event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.unary_unary_event">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a unary-unary RPC method as a callable</span>
+<span class="sd">      value that takes a request value, a response callback to which to pass</span>
+<span class="sd">      the response value of the RPC, and an interfaces.RpcContext.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="unary_stream_event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.unary_stream_event">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a unary-stream RPC method as a callable</span>
+<span class="sd">      value that takes a request value, a stream.Consumer to which to pass the</span>
+<span class="sd">      the response values of the RPC, and an interfaces.RpcContext.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_unary_event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.stream_unary_event">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a stream-unary RPC method as a callable</span>
+<span class="sd">      value that takes a response callback to which to pass the response value</span>
+<span class="sd">      of the RPC and an interfaces.RpcContext and returns a stream.Consumer to</span>
+<span class="sd">      which the request values of the RPC should be passed.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_stream_event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.utilities.stream_stream_event">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_event</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.MethodImplementation for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The implementation of a stream-stream RPC method as a callable</span>
+<span class="sd">      value that takes a stream.Consumer to which to pass the response values</span>
+<span class="sd">      of the RPC and an interfaces.RpcContext and returns a stream.Consumer to</span>
+<span class="sd">      which the request values of the RPC should be passed.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.MethodImplementation derived from the given behavior.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_MethodImplementation</span><span class="p">(</span>
+      <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.base.implementations &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.base.implementations</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.base.implementations</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Entry points into the ticket-exchange-based base layer implementation.&quot;&quot;&quot;</span>
+
+<span class="c"># interfaces is referenced from specification in this module.</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">_ends</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">interfaces</span>  <span class="c"># pylint: disable=unused-import</span>
+
+
+<div class="viewcode-block" id="front_link"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.implementations.front_link">[docs]</a><span class="k">def</span> <span class="nf">front_link</span><span class="p">(</span><span class="n">work_pool</span><span class="p">,</span> <span class="n">transmission_pool</span><span class="p">,</span> <span class="n">utility_pool</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Factory function for creating interfaces.FrontLinks.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    work_pool: A thread pool to be used for doing work within the created</span>
+<span class="sd">      FrontLink object.</span>
+<span class="sd">    transmission_pool: A thread pool to be used within the created FrontLink</span>
+<span class="sd">      object for transmitting values to a joined RearLink object.</span>
+<span class="sd">    utility_pool: A thread pool to be used within the created FrontLink object</span>
+<span class="sd">      for utility tasks.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.FrontLink.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_ends</span><span class="o">.</span><span class="n">FrontLink</span><span class="p">(</span><span class="n">work_pool</span><span class="p">,</span> <span class="n">transmission_pool</span><span class="p">,</span> <span class="n">utility_pool</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="back_link"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.implementations.back_link">[docs]</a><span class="k">def</span> <span class="nf">back_link</span><span class="p">(</span>
+    <span class="n">servicer</span><span class="p">,</span> <span class="n">work_pool</span><span class="p">,</span> <span class="n">transmission_pool</span><span class="p">,</span> <span class="n">utility_pool</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span>
+    <span class="n">maximum_timeout</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Factory function for creating interfaces.BackLinks.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    servicer: An interfaces.Servicer for servicing operations.</span>
+<span class="sd">    work_pool: A thread pool to be used for doing work within the created</span>
+<span class="sd">      BackLink object.</span>
+<span class="sd">    transmission_pool: A thread pool to be used within the created BackLink</span>
+<span class="sd">      object for transmitting values to a joined ForeLink object.</span>
+<span class="sd">    utility_pool: A thread pool to be used within the created BackLink object</span>
+<span class="sd">      for utility tasks.</span>
+<span class="sd">    default_timeout: A length of time in seconds to be used as the default</span>
+<span class="sd">      time alloted for a single operation.</span>
+<span class="sd">    maximum_timeout: A length of time in seconds to be used as the maximum</span>
+<span class="sd">      time alloted for a single operation.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.BackLink.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_ends</span><span class="o">.</span><span class="n">BackLink</span><span class="p">(</span>
+      <span class="n">servicer</span><span class="p">,</span> <span class="n">work_pool</span><span class="p">,</span> <span class="n">transmission_pool</span><span class="p">,</span> <span class="n">utility_pool</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span>
+      <span class="n">maximum_timeout</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

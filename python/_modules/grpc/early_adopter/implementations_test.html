@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.early_adopter.implementations_test &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.early_adopter.implementations_test</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.early_adopter.implementations_test</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="c"># TODO(nathaniel): Expand this test coverage.</span>
+
+<span class="sd">&quot;&quot;&quot;Test of the GRPC-backed ForeLink and RearLink.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">from</span> <span class="nn">grpc.early_adopter</span> <span class="kn">import</span> <span class="n">implementations</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="kn">import</span> <span class="n">utilities</span>
+<span class="kn">from</span> <span class="nn">grpc._junkdrawer</span> <span class="kn">import</span> <span class="n">math_pb2</span>
+
+<span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="s">&#39;math.Math&#39;</span>
+
+<span class="n">DIV</span> <span class="o">=</span> <span class="s">&#39;Div&#39;</span>
+<span class="n">DIV_MANY</span> <span class="o">=</span> <span class="s">&#39;DivMany&#39;</span>
+<span class="n">FIB</span> <span class="o">=</span> <span class="s">&#39;Fib&#39;</span>
+<span class="n">SUM</span> <span class="o">=</span> <span class="s">&#39;Sum&#39;</span>
+
+<span class="k">def</span> <span class="nf">_fibbonacci</span><span class="p">(</span><span class="n">limit</span><span class="p">):</span>
+  <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+  <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">limit</span><span class="p">):</span>
+    <span class="k">yield</span> <span class="n">left</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">right</span><span class="p">,</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span>
+
+
+<span class="k">def</span> <span class="nf">_div</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">unused_context</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivReply</span><span class="p">(</span>
+      <span class="n">quotient</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">dividend</span> <span class="o">/</span> <span class="n">request</span><span class="o">.</span><span class="n">divisor</span><span class="p">,</span>
+      <span class="n">remainder</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">dividend</span> <span class="o">%</span> <span class="n">request</span><span class="o">.</span><span class="n">divisor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_div_many</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">unused_context</span><span class="p">):</span>
+  <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
+    <span class="k">yield</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivReply</span><span class="p">(</span>
+        <span class="n">quotient</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">dividend</span> <span class="o">/</span> <span class="n">request</span><span class="o">.</span><span class="n">divisor</span><span class="p">,</span>
+        <span class="n">remainder</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">dividend</span> <span class="o">%</span> <span class="n">request</span><span class="o">.</span><span class="n">divisor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_fib</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">unused_context</span><span class="p">):</span>
+  <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">_fibbonacci</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">limit</span><span class="p">):</span>
+    <span class="k">yield</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">number</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_sum</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">unused_context</span><span class="p">):</span>
+  <span class="n">accumulation</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
+    <span class="n">accumulation</span> <span class="o">+=</span> <span class="n">request</span><span class="o">.</span><span class="n">num</span>
+  <span class="k">return</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">accumulation</span><span class="p">)</span>
+
+
+<span class="n">_INVOCATION_DESCRIPTIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">DIV</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">unary_unary_invocation_description</span><span class="p">(</span>
+        <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivArgs</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivReply</span><span class="o">.</span><span class="n">FromString</span><span class="p">),</span>
+    <span class="n">DIV_MANY</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">stream_stream_invocation_description</span><span class="p">(</span>
+        <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivArgs</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivReply</span><span class="o">.</span><span class="n">FromString</span><span class="p">),</span>
+    <span class="n">FIB</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">unary_stream_invocation_description</span><span class="p">(</span>
+        <span class="n">math_pb2</span><span class="o">.</span><span class="n">FibArgs</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="o">.</span><span class="n">FromString</span><span class="p">),</span>
+    <span class="n">SUM</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">stream_unary_invocation_description</span><span class="p">(</span>
+        <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="o">.</span><span class="n">FromString</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">_SERVICE_DESCRIPTIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">DIV</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">unary_unary_service_description</span><span class="p">(</span>
+        <span class="n">_div</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivArgs</span><span class="o">.</span><span class="n">FromString</span><span class="p">,</span>
+        <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivReply</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">),</span>
+    <span class="n">DIV_MANY</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">stream_stream_service_description</span><span class="p">(</span>
+        <span class="n">_div_many</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivArgs</span><span class="o">.</span><span class="n">FromString</span><span class="p">,</span>
+        <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivReply</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">),</span>
+    <span class="n">FIB</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">unary_stream_service_description</span><span class="p">(</span>
+        <span class="n">_fib</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">FibArgs</span><span class="o">.</span><span class="n">FromString</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">),</span>
+    <span class="n">SUM</span><span class="p">:</span> <span class="n">utilities</span><span class="o">.</span><span class="n">stream_unary_service_description</span><span class="p">(</span>
+        <span class="n">_sum</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="o">.</span><span class="n">FromString</span><span class="p">,</span> <span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">_TIMEOUT</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest">[docs]</a><span class="k">class</span> <span class="nc">EarlyAdopterImplementationsTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.setUp"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.setUp">[docs]</a>  <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">implementations</span><span class="o">.</span><span class="n">server</span><span class="p">(</span>
+        <span class="n">SERVICE_NAME</span><span class="p">,</span> <span class="n">_SERVICE_DESCRIPTIONS</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">port</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">stub</span> <span class="o">=</span> <span class="n">implementations</span><span class="o">.</span><span class="n">stub</span><span class="p">(</span>
+        <span class="n">SERVICE_NAME</span><span class="p">,</span> <span class="n">_INVOCATION_DESCRIPTIONS</span><span class="p">,</span> <span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.tearDown"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.tearDown">[docs]</a>  <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.testUpAndDown"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUpAndDown">[docs]</a>  <span class="k">def</span> <span class="nf">testUpAndDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="p">:</span>
+      <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.testUnaryUnary"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUnaryUnary">[docs]</a>  <span class="k">def</span> <span class="nf">testUnaryUnary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">divisor</span> <span class="o">=</span> <span class="mi">59</span>
+    <span class="n">dividend</span> <span class="o">=</span> <span class="mi">973</span>
+    <span class="n">expected_quotient</span> <span class="o">=</span> <span class="n">dividend</span> <span class="o">/</span> <span class="n">divisor</span>
+    <span class="n">expected_remainder</span> <span class="o">=</span> <span class="n">dividend</span> <span class="o">%</span> <span class="n">divisor</span>
+
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="p">:</span>
+      <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span>
+          <span class="n">math_pb2</span><span class="o">.</span><span class="n">DivArgs</span><span class="p">(</span><span class="n">divisor</span><span class="o">=</span><span class="n">divisor</span><span class="p">,</span> <span class="n">dividend</span><span class="o">=</span><span class="n">dividend</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">expected_quotient</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">quotient</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">expected_remainder</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">remainder</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.testUnaryStream"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUnaryStream">[docs]</a>  <span class="k">def</span> <span class="nf">testUnaryStream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">stream_length</span> <span class="o">=</span> <span class="mi">43</span>
+
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="p">:</span>
+      <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">Fib</span><span class="p">(</span>
+          <span class="n">math_pb2</span><span class="o">.</span><span class="n">FibArgs</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="n">stream_length</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+      <span class="n">numbers</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">num</span> <span class="k">for</span> <span class="n">response</span> <span class="ow">in</span> <span class="n">response_iterator</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">early</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">later</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">numbers</span><span class="p">[:</span><span class="mi">2</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">early</span> <span class="o">+</span> <span class="n">middle</span><span class="p">,</span> <span class="n">later</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">stream_length</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">numbers</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.testStreamUnary"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testStreamUnary">[docs]</a>  <span class="k">def</span> <span class="nf">testStreamUnary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">stream_length</span> <span class="o">=</span> <span class="mi">127</span>
+
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="p">:</span>
+      <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">Sum</span><span class="o">.</span><span class="n">async</span><span class="p">(</span>
+          <span class="p">(</span><span class="n">math_pb2</span><span class="o">.</span><span class="n">Num</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">stream_length</span><span class="p">)),</span>
+          <span class="n">_TIMEOUT</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+          <span class="p">(</span><span class="n">stream_length</span> <span class="o">*</span> <span class="p">(</span><span class="n">stream_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+          <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span><span class="o">.</span><span class="n">num</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="EarlyAdopterImplementationsTest.testStreamStream"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testStreamStream">[docs]</a>  <span class="k">def</span> <span class="nf">testStreamStream</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">stream_length</span> <span class="o">=</span> <span class="mi">179</span>
+    <span class="n">divisor_offset</span> <span class="o">=</span> <span class="mi">71</span>
+    <span class="n">dividend_offset</span> <span class="o">=</span> <span class="mi">1763</span>
+
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="p">:</span>
+      <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">DivMany</span><span class="p">(</span>
+          <span class="p">(</span><span class="n">math_pb2</span><span class="o">.</span><span class="n">DivArgs</span><span class="p">(</span>
+               <span class="n">divisor</span><span class="o">=</span><span class="n">divisor_offset</span> <span class="o">+</span> <span class="n">index</span><span class="p">,</span>
+               <span class="n">dividend</span><span class="o">=</span><span class="n">dividend_offset</span> <span class="o">+</span> <span class="n">index</span><span class="p">)</span>
+           <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">stream_length</span><span class="p">)),</span>
+          <span class="n">_TIMEOUT</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">response</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">dividend_offset</span> <span class="o">+</span> <span class="n">index</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">divisor_offset</span> <span class="o">+</span> <span class="n">index</span><span class="p">),</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">quotient</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">dividend_offset</span> <span class="o">+</span> <span class="n">index</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">divisor_offset</span> <span class="o">+</span> <span class="n">index</span><span class="p">),</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">remainder</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">stream_length</span><span class="p">,</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+  <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

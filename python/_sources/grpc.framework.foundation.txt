@@ -1,0 +1,94 @@
+grpc.framework.foundation package
+=================================
+
+Submodules
+----------
+
+grpc.framework.foundation.abandonment module
+--------------------------------------------
+
+.. automodule:: grpc.framework.foundation.abandonment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.activated module
+------------------------------------------
+
+.. automodule:: grpc.framework.foundation.activated
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.callable_util module
+----------------------------------------------
+
+.. automodule:: grpc.framework.foundation.callable_util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.future module
+---------------------------------------
+
+.. automodule:: grpc.framework.foundation.future
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.later module
+--------------------------------------
+
+.. automodule:: grpc.framework.foundation.later
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.logging_pool module
+---------------------------------------------
+
+.. automodule:: grpc.framework.foundation.logging_pool
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.relay module
+--------------------------------------
+
+.. automodule:: grpc.framework.foundation.relay
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.stream module
+---------------------------------------
+
+.. automodule:: grpc.framework.foundation.stream
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.stream_testing module
+-----------------------------------------------
+
+.. automodule:: grpc.framework.foundation.stream_testing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+grpc.framework.foundation.stream_util module
+--------------------------------------------
+
+.. automodule:: grpc.framework.foundation.stream_util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: grpc.framework.foundation
+    :members:
+    :undoc-members:
+    :show-inheritance:

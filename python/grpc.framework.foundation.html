@@ -1,0 +1,890 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.foundation package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
+        <link rel="next" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
+        <link rel="prev" title="grpc.framework.face.testing package" href="grpc.framework.face.testing.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+    <li>grpc.framework.foundation package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.foundation.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-foundation-package">
+<h1>grpc.framework.foundation package<a class="headerlink" href="#grpc-framework-foundation-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.foundation.abandonment">
+<span id="grpc-framework-foundation-abandonment-module"></span><h2>grpc.framework.foundation.abandonment module<a class="headerlink" href="#module-grpc.framework.foundation.abandonment" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for indicating abandonment of computation.</p>
+<dl class="exception">
+<dt id="grpc.framework.foundation.abandonment.Abandoned">
+<em class="property">exception </em><code class="descclassname">grpc.framework.foundation.abandonment.</code><code class="descname">Abandoned</code><a class="reference internal" href="_modules/grpc/framework/foundation/abandonment.html#Abandoned"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.abandonment.Abandoned" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Indicates that some computation is being abandoned.</p>
+<p>Abandoning a computation is different than returning a value or raising
+an exception indicating some operational or programming defect.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.activated">
+<span id="grpc-framework-foundation-activated-module"></span><h2>grpc.framework.foundation.activated module<a class="headerlink" href="#module-grpc.framework.foundation.activated" title="Permalink to this headline">¶</a></h2>
+<p>Interfaces related to streams of values or objects.</p>
+<dl class="class">
+<dt id="grpc.framework.foundation.activated.Activated">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.activated.</code><code class="descname">Activated</code><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Interface for objects that may be started and stopped.</p>
+<p>Values implementing this type must also implement the context manager
+protocol.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.activated.Activated.__enter__">
+<code class="descname">__enter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.__enter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.__enter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>See the context manager protocol for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.activated.Activated.__exit__">
+<code class="descname">__exit__</code><span class="sig-paren">(</span><em>exc_type</em>, <em>exc_val</em>, <em>exc_tb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.__exit__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.__exit__" title="Permalink to this definition">¶</a></dt>
+<dd><p>See the context manager protocol for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.activated.Activated.start">
+<code class="descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activates this object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A value equal to the value returned by this object&#8217;s __enter__ method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.activated.Activated.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deactivates this object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.callable_util">
+<span id="grpc-framework-foundation-callable-util-module"></span><h2>grpc.framework.foundation.callable_util module<a class="headerlink" href="#module-grpc.framework.foundation.callable_util" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for working with callables.</p>
+<dl class="class">
+<dt id="grpc.framework.foundation.callable_util.Outcome">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.callable_util.</code><code class="descname">Outcome</code><a class="reference internal" href="_modules/grpc/framework/foundation/callable_util.html#Outcome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A sum type describing the outcome of some call.</p>
+<dl class="attribute">
+<dt id="grpc.framework.foundation.callable_util.Outcome.kind">
+<code class="descname">kind</code><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>One of Kind.RETURNED or Kind.RAISED respectively indicating that the
+call returned a value or raised an exception.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.foundation.callable_util.Outcome.return_value">
+<code class="descname">return_value</code><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.return_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value returned by the call. Must be present if kind is
+Kind.RETURNED.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.foundation.callable_util.Outcome.exception">
+<code class="descname">exception</code><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>The exception raised by the call. Must be present if kind is
+Kind.RAISED.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.foundation.callable_util.Outcome.Kind">
+<em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/foundation/callable_util.html#Outcome.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Identifies the general kind of the outcome of some call.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.foundation.callable_util.call_logging_exceptions">
+<code class="descclassname">grpc.framework.foundation.callable_util.</code><code class="descname">call_logging_exceptions</code><span class="sig-paren">(</span><em>behavior</em>, <em>message</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/callable_util.html#call_logging_exceptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.callable_util.call_logging_exceptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls a behavior in a try-except that logs any exceptions it raises.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> &#8211; Any callable.</li>
+<li><strong>message</strong> &#8211; A string to log if the behavior raises an exception.</li>
+<li><strong>*args</strong> &#8211; Positional arguments to pass to the given behavior.</li>
+<li><strong>**kwargs</strong> &#8211; Keyword arguments to pass to the given behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An Outcome describing whether the given behavior returned a value or raised
+an exception.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.foundation.callable_util.with_exceptions_logged">
+<code class="descclassname">grpc.framework.foundation.callable_util.</code><code class="descname">with_exceptions_logged</code><span class="sig-paren">(</span><em>behavior</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/callable_util.html#with_exceptions_logged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.callable_util.with_exceptions_logged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps a callable in a try-except that logs any exceptions it raises.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> &#8211; Any callable.</li>
+<li><strong>message</strong> &#8211; A string to log if the behavior raises an exception.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A callable that when executed invokes the given behavior. The returned
+callable takes the same arguments as the given behavior but returns a
+future.Outcome describing whether the given behavior returned a value or
+raised an exception.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.future">
+<span id="grpc-framework-foundation-future-module"></span><h2>grpc.framework.foundation.future module<a class="headerlink" href="#module-grpc.framework.foundation.future" title="Permalink to this headline">¶</a></h2>
+<p>A Future interface.</p>
+<p>Python doesn&#8217;t have a Future interface in its standard library. In the absence
+of such a standard, three separate, incompatible implementations
+(concurrent.futures.Future, ndb.Future, and asyncio.Future) have appeared. This
+interface attempts to be as compatible as possible with
+concurrent.futures.Future. From ndb.Future it adopts a traceback-object accessor
+method.</p>
+<p>Unlike the concrete and implemented Future classes listed above, the Future
+class defined in this module is an entirely abstract interface that anyone may
+implement and use.</p>
+<p>The one known incompatibility between this interface and the interface of
+concurrent.futures.Future is that this interface defines its own CancelledError
+and TimeoutError exceptions rather than raising the implementation-private
+concurrent.futures._base.CancelledError and the
+built-in-but-only-in-3.3-and-later TimeoutError.</p>
+<dl class="exception">
+<dt id="grpc.framework.foundation.future.CancelledError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.foundation.future.</code><code class="descname">CancelledError</code><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#CancelledError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.CancelledError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Indicates that the computation underlying a Future was cancelled.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.foundation.future.Future">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.future.</code><code class="descname">Future</code><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A representation of a computation in another control flow.</p>
+<p>Computations represented by a Future may be yet to be begun, may be ongoing,
+or may have already completed.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.add_done_callback">
+<code class="descname">add_done_callback</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.add_done_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.add_done_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a function to be called at completion of the computation.</p>
+<p>The callback will be passed this Future object describing the outcome of
+the computation.</p>
+<p>If the computation has already completed, the callback will be called
+immediately.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> &#8211; A callable taking a this Future object as its single parameter.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempts to cancel the computation.</p>
+<p>This method does not block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation has not yet begun, will not be allowed to take
+place, and determination of both was possible without blocking. False
+under all other circumstances including but not limited to the
+computation&#8217;s already having begun, the computation&#8217;s already having
+finished, and the computation&#8217;s having been scheduled for execution on a
+remote system for which a determination of whether or not it commenced
+before being cancelled cannot be made without blocking.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.cancelled">
+<code class="descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes whether the computation was cancelled.</p>
+<p>This method does not block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation was cancelled any time before its result became
+immediately available. False under all other circumstances including but
+not limited to this object&#8217;s cancel method not having been called and
+the computation&#8217;s result having become immediately available.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.done">
+<code class="descname">done</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes whether the computation has taken place.</p>
+<p>This method does not block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation is known to have either completed or have been
+unscheduled or interrupted. False if the computation may possibly be
+executing or scheduled to execute later.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.exception">
+<code class="descname">exception</code><span class="sig-paren">(</span><em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the exception raised by the computation.</p>
+<p>This method may return immediately or may block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>timeout</strong> &#8211; The length of time in seconds to wait for the computation to
+terminate or be cancelled, or None if this method should block until
+the computation is terminated or is cancelled no matter how long that
+takes.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The exception raised by the computation, or None if the computation did
+not raise an exception.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211;
+If a timeout value is passed and the computation does not
+terminate within the allotted time.</li>
+<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211;
+If the computation was cancelled.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.result">
+<code class="descname">result</code><span class="sig-paren">(</span><em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the outcome of the computation or raises its exception.</p>
+<p>This method may return immediately or may block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>timeout</strong> &#8211; The length of time in seconds to wait for the computation to
+finish or be cancelled, or None if this method should block until the
+computation has finished or is cancelled no matter how long that takes.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The return value of the computation.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211;
+If a timeout value is passed and the computation does not
+terminate within the allotted time.</li>
+<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211;
+If the computation was cancelled.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code> &#8211;
+If the computation raised an exception, this call will raise
+the same exception.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.running">
+<code class="descname">running</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.running"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.running" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes whether the computation is taking place.</p>
+<p>This method does not block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the computation is scheduled to take place in the future or is
+taking place now, or False if the computation took place in the past or
+was cancelled.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.future.Future.traceback">
+<code class="descname">traceback</code><span class="sig-paren">(</span><em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future.traceback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future.traceback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access the traceback of the exception raised by the computation.</p>
+<p>This method may return immediately or may block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>timeout</strong> &#8211; The length of time in seconds to wait for the computation to
+terminate or be cancelled, or None if this method should block until
+the computation is terminated or is cancelled no matter how long that
+takes.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The traceback of the exception raised by the computation, or None if the
+computation did not raise an exception.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference internal" href="#grpc.framework.foundation.future.TimeoutError" title="grpc.framework.foundation.future.TimeoutError"><code class="xref py py-exc docutils literal"><span class="pre">TimeoutError</span></code></a> &#8211;
+If a timeout value is passed and the computation does not
+terminate within the allotted time.</li>
+<li><a class="reference internal" href="#grpc.framework.foundation.future.CancelledError" title="grpc.framework.foundation.future.CancelledError"><code class="xref py py-exc docutils literal"><span class="pre">CancelledError</span></code></a> &#8211;
+If the computation was cancelled.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.foundation.future.TimeoutError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.foundation.future.</code><code class="descname">TimeoutError</code><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#TimeoutError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.TimeoutError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Indicates that a particular call timed out.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.later">
+<span id="grpc-framework-foundation-later-module"></span><h2>grpc.framework.foundation.later module<a class="headerlink" href="#module-grpc.framework.foundation.later" title="Permalink to this headline">¶</a></h2>
+<p>Enables scheduling execution at a later time.</p>
+<dl class="function">
+<dt id="grpc.framework.foundation.later.later">
+<code class="descclassname">grpc.framework.foundation.later.</code><code class="descname">later</code><span class="sig-paren">(</span><em>delay</em>, <em>computation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/later.html#later"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.later.later" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedules later execution of a callable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>delay</strong> &#8211; Any numeric value. Represents the minimum length of time in seconds
+to allow to pass before beginning the computation. No guarantees are made
+about the maximum length of time that will pass.</li>
+<li><strong>computation</strong> &#8211; A callable that accepts no arguments.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Future representing the scheduled computation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.logging_pool">
+<span id="grpc-framework-foundation-logging-pool-module"></span><h2>grpc.framework.foundation.logging_pool module<a class="headerlink" href="#module-grpc.framework.foundation.logging_pool" title="Permalink to this headline">¶</a></h2>
+<p>A thread pool that logs exceptions raised by tasks executed within it.</p>
+<dl class="function">
+<dt id="grpc.framework.foundation.logging_pool.pool">
+<code class="descclassname">grpc.framework.foundation.logging_pool.</code><code class="descname">pool</code><span class="sig-paren">(</span><em>max_workers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/logging_pool.html#pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.logging_pool.pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a thread pool that logs exceptions raised by the tasks within it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>max_workers</strong> &#8211; The maximum number of worker threads to allow the pool.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions
+raised by the tasks executed within it.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.relay">
+<span id="grpc-framework-foundation-relay-module"></span><h2>grpc.framework.foundation.relay module<a class="headerlink" href="#module-grpc.framework.foundation.relay" title="Permalink to this headline">¶</a></h2>
+<p>Implementations of in-order work deference.</p>
+<dl class="class">
+<dt id="grpc.framework.foundation.relay.Relay">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.relay.</code><code class="descname">Relay</code><a class="reference internal" href="_modules/grpc/framework/foundation/relay.html#Relay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.relay.Relay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Performs work submitted to it in another thread.</p>
+<p>Performs work in the order in which work was submitted to it; otherwise there
+would be no reason to use an implementation of this interface instead of a
+thread pool.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.relay.Relay.add_value">
+<code class="descname">add_value</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/relay.html#Relay.add_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.relay.Relay.add_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a value to be passed to the behavior registered with this Relay.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> &#8211; A value that will be passed to a call made in another thread to the
+behavior registered with this Relay.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.relay.Relay.set_behavior">
+<code class="descname">set_behavior</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/relay.html#Relay.set_behavior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.relay.Relay.set_behavior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the behavior that this Relay should call when passed values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The behavior that this Relay should call in another thread when
+passed a value, or None to have passed values ignored.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.foundation.relay.pool_relay">
+<code class="descclassname">grpc.framework.foundation.relay.</code><code class="descname">pool_relay</code><span class="sig-paren">(</span><em>pool</em>, <em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/relay.html#pool_relay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.relay.pool_relay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Relay that uses a given thread pool.</p>
+<p>This object will make use of at most one thread in the given pool.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pool</strong> &#8211; A futures.ThreadPoolExecutor for use by the created Relay.</li>
+<li><strong>behavior</strong> &#8211; The behavior to be called by the created Relay, or None to have
+passed values dropped until a different behavior is given to the returned
+Relay later.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An object that is both an activated.Activated and a Relay. The object is
+only valid for use as a Relay when activated.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.foundation.relay.relay">
+<code class="descclassname">grpc.framework.foundation.relay.</code><code class="descname">relay</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/relay.html#relay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.relay.relay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Relay.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The behavior to be called by the created Relay, or None to have
+passed values dropped until a different behavior is given to the returned
+Relay later.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An object that is both an activated.Activated and a Relay. The object is
+only valid for use as a Relay when activated.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.stream">
+<span id="grpc-framework-foundation-stream-module"></span><h2>grpc.framework.foundation.stream module<a class="headerlink" href="#module-grpc.framework.foundation.stream" title="Permalink to this headline">¶</a></h2>
+<p>Interfaces related to streams of values or objects.</p>
+<dl class="class">
+<dt id="grpc.framework.foundation.stream.Consumer">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream.</code><code class="descname">Consumer</code><a class="reference internal" href="_modules/grpc/framework/foundation/stream.html#Consumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream.Consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Interface for consumers of finite streams of values or objects.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.stream.Consumer.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream.html#Consumer.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream.Consumer.consume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepts a value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> &#8211; Any value accepted by this Consumer.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream.Consumer.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream.html#Consumer.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream.Consumer.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Supplies a value and signals that no more values will be supplied.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> &#8211; Any value accepted by this Consumer.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream.Consumer.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream.html#Consumer.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream.Consumer.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates to this Consumer that no more values will be supplied.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.stream_testing">
+<span id="grpc-framework-foundation-stream-testing-module"></span><h2>grpc.framework.foundation.stream_testing module<a class="headerlink" href="#module-grpc.framework.foundation.stream_testing" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for testing stream-related code.</p>
+<dl class="class">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream_testing.</code><code class="descname">TestConsumer</code><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
+<p>A stream.Consumer instrumented for testing.</p>
+<dl class="attribute">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer.calls">
+<code class="descname">calls</code><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.calls" title="Permalink to this definition">¶</a></dt>
+<dd><p>A sequence of value-termination pairs describing the history of calls
+made on this object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.consume" title="Permalink to this definition">¶</a></dt>
+<dd><p>See stream.Consumer.consume for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>See stream.Consumer.consume_and_terminate for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer.is_legal">
+<code class="descname">is_legal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.is_legal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.is_legal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports whether or not a legal sequence of calls has been made.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>See stream.Consumer.terminate for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_testing.TestConsumer.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the sequence of values that have been passed to this Consumer.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation.stream_util">
+<span id="grpc-framework-foundation-stream-util-module"></span><h2>grpc.framework.foundation.stream_util module<a class="headerlink" href="#module-grpc.framework.foundation.stream_util" title="Permalink to this headline">¶</a></h2>
+<p>Helpful utilities related to the stream module.</p>
+<dl class="class">
+<dt id="grpc.framework.foundation.stream_util.IterableConsumer">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream_util.</code><code class="descname">IterableConsumer</code><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#IterableConsumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.IterableConsumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
+<p>A Consumer that when iterated over emits the values it has consumed.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.IterableConsumer.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>stock_reply</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#IterableConsumer.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.IterableConsumer.consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.IterableConsumer.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>stock_reply</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#IterableConsumer.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.IterableConsumer.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.IterableConsumer.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#IterableConsumer.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.IterableConsumer.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.IterableConsumer.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#IterableConsumer.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.IterableConsumer.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.foundation.stream_util.ThreadSwitchingConsumer">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream_util.</code><code class="descname">ThreadSwitchingConsumer</code><span class="sig-paren">(</span><em>sink</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#ThreadSwitchingConsumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
+<p>A Consumer decorator that affords serialization and asynchrony.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#ThreadSwitchingConsumer.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#ThreadSwitchingConsumer.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#ThreadSwitchingConsumer.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.foundation.stream_util.TransformingConsumer">
+<em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream_util.</code><code class="descname">TransformingConsumer</code><span class="sig-paren">(</span><em>transformation</em>, <em>downstream</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#TransformingConsumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.TransformingConsumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
+<p>A stream.Consumer that passes a transformation of its input to another.</p>
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.TransformingConsumer.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#TransformingConsumer.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.TransformingConsumer.consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.TransformingConsumer.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#TransformingConsumer.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.TransformingConsumer.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.foundation.stream_util.TransformingConsumer.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_util.html#TransformingConsumer.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_util.TransformingConsumer.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.foundation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.foundation" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.interfaces.html" class="btn btn-neutral float-right" title="grpc.framework.interfaces package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.framework.face.testing.html" class="btn btn-neutral" title="grpc.framework.face.testing package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

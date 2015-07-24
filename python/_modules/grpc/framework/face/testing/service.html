@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.testing.service &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.face.testing.service</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.face.testing.service</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Private interfaces implemented by data sets used in Face-layer tests.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+
+<span class="c"># interfaces is referenced from specification in this module.</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">interfaces</span> <span class="k">as</span> <span class="n">face_interfaces</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">interfaces</span>
+
+
+<div class="viewcode-block" id="UnaryUnaryTestMethodImplementation"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryTestMethodImplementation</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Method</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A controllable implementation of a unary-unary RPC method.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryTestMethodImplementation.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryUnaryTestMethodImplementation.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Services an RPC that accepts one message and produces one message.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The single request message for the RPC.</span>
+<span class="sd">      response_callback: A callback to be called to accept the response message</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">      context: An face_interfaces.RpcContext object.</span>
+<span class="sd">      control: A test_control.Control to control execution of this method.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      abandonment.Abandoned: May or may not be raised when the RPC has been</span>
+<span class="sd">        aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="UnaryUnaryTestMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryUnaryTestMessages">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryTestMessages</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A type for unary-request-unary-response message pairings.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryTestMessages.request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryUnaryTestMessages.request">[docs]</a>  <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords a request message.</span>
+
+<span class="sd">    Implementations of this method should return a different message with each</span>
+<span class="sd">    call so that multiple test executions of the test method may be made with</span>
+<span class="sd">    different inputs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A request message.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryTestMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryUnaryTestMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Verifies that the computed response matches the given request.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: A request message.</span>
+<span class="sd">      response: A response message.</span>
+<span class="sd">      test_case: A unittest.TestCase object affording useful assertion methods.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      AssertionError: If the request and response do not match, indicating that</span>
+<span class="sd">        there was some problem executing the RPC under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="UnaryStreamTestMethodImplementation"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamTestMethodImplementation</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Method</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A controllable implementation of a unary-stream RPC method.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamTestMethodImplementation.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryStreamTestMethodImplementation.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Services an RPC that takes one message and produces a stream of messages.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The single request message for the RPC.</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the response</span>
+<span class="sd">        messages of the RPC.</span>
+<span class="sd">      context: A face_interfaces.RpcContext object.</span>
+<span class="sd">      control: A test_control.Control to control execution of this method.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      abandonment.Abandoned: May or may not be raised when the RPC has been</span>
+<span class="sd">        aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="UnaryStreamTestMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryStreamTestMessages">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamTestMessages</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A type for unary-request-stream-response message pairings.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamTestMessages.request"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryStreamTestMessages.request">[docs]</a>  <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords a request message.</span>
+
+<span class="sd">    Implementations of this method should return a different message with each</span>
+<span class="sd">    call so that multiple test executions of the test method may be made with</span>
+<span class="sd">    different inputs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A request message.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamTestMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.UnaryStreamTestMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Verifies that the computed responses match the given request.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: A request message.</span>
+<span class="sd">      responses: A sequence of response messages.</span>
+<span class="sd">      test_case: A unittest.TestCase object affording useful assertion methods.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      AssertionError: If the request and responses do not match, indicating that</span>
+<span class="sd">        there was some problem executing the RPC under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="StreamUnaryTestMethodImplementation"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryTestMethodImplementation</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Method</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A controllable implementation of a stream-unary RPC method.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryTestMethodImplementation.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamUnaryTestMethodImplementation.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Services an RPC that takes a stream of messages and produces one message.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      response_callback: A callback to be called to accept the response message</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">      context: A face_interfaces.RpcContext object.</span>
+<span class="sd">      control: A test_control.Control to control execution of this method.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A stream.Consumer with which to accept the request messages of the RPC.</span>
+<span class="sd">        The consumer returned from this method may or may not be invoked to</span>
+<span class="sd">        completion: in the case of RPC abortion, RPC Framework will simply stop</span>
+<span class="sd">        passing messages to this object. Implementations must not assume that</span>
+<span class="sd">        this object will be called to completion of the request stream or even</span>
+<span class="sd">        called at all.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      abandonment.Abandoned: May or may not be raised when the RPC has been</span>
+<span class="sd">        aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="StreamUnaryTestMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamUnaryTestMessages">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryTestMessages</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A type for stream-request-unary-response message pairings.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryTestMessages.requests"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamUnaryTestMessages.requests">[docs]</a>  <span class="k">def</span> <span class="nf">requests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords a sequence of request messages.</span>
+
+<span class="sd">    Implementations of this method should return a different sequences with each</span>
+<span class="sd">    call so that multiple test executions of the test method may be made with</span>
+<span class="sd">    different inputs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A sequence of request messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryTestMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamUnaryTestMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Verifies that the computed response matches the given requests.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      requests: A sequence of request messages.</span>
+<span class="sd">      response: A response message.</span>
+<span class="sd">      test_case: A unittest.TestCase object affording useful assertion methods.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      AssertionError: If the requests and response do not match, indicating that</span>
+<span class="sd">        there was some problem executing the RPC under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="StreamStreamTestMethodImplementation"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamStreamTestMethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamTestMethodImplementation</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Method</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A controllable implementation of a stream-stream RPC method.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamTestMethodImplementation.service"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamStreamTestMethodImplementation.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Services an RPC that accepts and produces streams of messages.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the response</span>
+<span class="sd">        messages of the RPC.</span>
+<span class="sd">      context: A face_interfaces.RpcContext object.</span>
+<span class="sd">      control: A test_control.Control to control execution of this method.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A stream.Consumer with which to accept the request messages of the RPC.</span>
+<span class="sd">        The consumer returned from this method may or may not be invoked to</span>
+<span class="sd">        completion: in the case of RPC abortion, RPC Framework will simply stop</span>
+<span class="sd">        passing messages to this object. Implementations must not assume that</span>
+<span class="sd">        this object will be called to completion of the request stream or even</span>
+<span class="sd">        called at all.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      abandonment.Abandoned: May or may not be raised when the RPC has been</span>
+<span class="sd">        aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="StreamStreamTestMessages"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamStreamTestMessages">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamTestMessages</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A type for stream-request-stream-response message pairings.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamTestMessages.requests"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamStreamTestMessages.requests">[docs]</a>  <span class="k">def</span> <span class="nf">requests</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords a sequence of request messages.</span>
+
+<span class="sd">    Implementations of this method should return a different sequences with each</span>
+<span class="sd">    call so that multiple test executions of the test method may be made with</span>
+<span class="sd">    different inputs.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A sequence of request messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamTestMessages.verify"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.StreamStreamTestMessages.verify">[docs]</a>  <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="n">test_case</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Verifies that the computed response matches the given requests.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      requests: A sequence of request messages.</span>
+<span class="sd">      responses: A sequence of response messages.</span>
+<span class="sd">      test_case: A unittest.TestCase object affording useful assertion methods.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      AssertionError: If the requests and responses do not match, indicating</span>
+<span class="sd">        that there was some problem executing the RPC under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="TestService"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.TestService">[docs]</a><span class="k">class</span> <span class="nc">TestService</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A specification of implemented RPC methods to use in tests.&quot;&quot;&quot;</span>
+
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TestService.name"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.TestService.name">[docs]</a>  <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Identifies the RPC service name used during the test.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The RPC service name to be used for the test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TestService.unary_unary_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.TestService.unary_unary_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">unary_unary_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords unary-request-unary-response test methods and their messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A dict from method name to pair. The first element of the pair</span>
+<span class="sd">        is a UnaryUnaryTestMethodImplementation object and the second element</span>
+<span class="sd">        is a sequence of UnaryUnaryTestMethodMessages objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TestService.unary_stream_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.TestService.unary_stream_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">unary_stream_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords unary-request-stream-response test methods and their messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A dict from method name to pair. The first element of the pair is a</span>
+<span class="sd">        UnaryStreamTestMethodImplementation object and the second element is a</span>
+<span class="sd">        sequence of UnaryStreamTestMethodMessages objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TestService.stream_unary_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.TestService.stream_unary_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">stream_unary_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords stream-request-unary-response test methods and their messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A dict from method name to pair. The first element of the pair is a</span>
+<span class="sd">        StreamUnaryTestMethodImplementation object and the second element is a</span>
+<span class="sd">        sequence of StreamUnaryTestMethodMessages objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TestService.stream_stream_scenarios"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.service.TestService.stream_stream_scenarios">[docs]</a>  <span class="k">def</span> <span class="nf">stream_stream_scenarios</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Affords stream-request-stream-response test methods and their messages.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A dict from method name to pair. The first element of the pair is a</span>
+<span class="sd">        StreamStreamTestMethodImplementation object and the second element is a</span>
+<span class="sd">        sequence of StreamStreamTestMethodMessages objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

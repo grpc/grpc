@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.foundation.future &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.foundation.future</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.foundation.future</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;A Future interface.</span>
+
+<span class="sd">Python doesn&#39;t have a Future interface in its standard library. In the absence</span>
+<span class="sd">of such a standard, three separate, incompatible implementations</span>
+<span class="sd">(concurrent.futures.Future, ndb.Future, and asyncio.Future) have appeared. This</span>
+<span class="sd">interface attempts to be as compatible as possible with</span>
+<span class="sd">concurrent.futures.Future. From ndb.Future it adopts a traceback-object accessor</span>
+<span class="sd">method.</span>
+
+<span class="sd">Unlike the concrete and implemented Future classes listed above, the Future</span>
+<span class="sd">class defined in this module is an entirely abstract interface that anyone may</span>
+<span class="sd">implement and use.</span>
+
+<span class="sd">The one known incompatibility between this interface and the interface of</span>
+<span class="sd">concurrent.futures.Future is that this interface defines its own CancelledError</span>
+<span class="sd">and TimeoutError exceptions rather than raising the implementation-private</span>
+<span class="sd">concurrent.futures._base.CancelledError and the</span>
+<span class="sd">built-in-but-only-in-3.3-and-later TimeoutError.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+
+
+<div class="viewcode-block" id="TimeoutError"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.TimeoutError">[docs]</a><span class="k">class</span> <span class="nc">TimeoutError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Indicates that a particular call timed out.&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="CancelledError"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.CancelledError">[docs]</a><span class="k">class</span> <span class="nc">CancelledError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Indicates that the computation underlying a Future was cancelled.&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="Future"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future">[docs]</a><span class="k">class</span> <span class="nc">Future</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A representation of a computation in another control flow.</span>
+
+<span class="sd">  Computations represented by a Future may be yet to be begun, may be ongoing,</span>
+<span class="sd">  or may have already completed.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="c"># NOTE(nathaniel): This isn&#39;t the return type that I would want to have if it</span>
+  <span class="c"># were up to me. Were this interface being written from scratch, the return</span>
+  <span class="c"># type of this method would probably be a sum type like:</span>
+  <span class="c">#</span>
+  <span class="c"># NOT_COMMENCED</span>
+  <span class="c"># COMMENCED_AND_NOT_COMPLETED</span>
+  <span class="c"># PARTIAL_RESULT&lt;Partial_Result_Type&gt;</span>
+  <span class="c"># COMPLETED&lt;Result_Type&gt;</span>
+  <span class="c"># UNCANCELLABLE</span>
+  <span class="c"># NOT_IMMEDIATELY_DETERMINABLE</span>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.cancel"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.cancel">[docs]</a>  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Attempts to cancel the computation.</span>
+
+<span class="sd">    This method does not block.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      True if the computation has not yet begun, will not be allowed to take</span>
+<span class="sd">        place, and determination of both was possible without blocking. False</span>
+<span class="sd">        under all other circumstances including but not limited to the</span>
+<span class="sd">        computation&#39;s already having begun, the computation&#39;s already having</span>
+<span class="sd">        finished, and the computation&#39;s having been scheduled for execution on a</span>
+<span class="sd">        remote system for which a determination of whether or not it commenced</span>
+<span class="sd">        before being cancelled cannot be made without blocking.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+  <span class="c"># NOTE(nathaniel): Here too this isn&#39;t the return type that I&#39;d want this</span>
+  <span class="c"># method to have if it were up to me. I think I&#39;d go with another sum type</span>
+  <span class="c"># like:</span>
+  <span class="c">#</span>
+  <span class="c"># NOT_CANCELLED (this object&#39;s cancel method hasn&#39;t been called)</span>
+  <span class="c"># NOT_COMMENCED</span>
+  <span class="c"># COMMENCED_AND_NOT_COMPLETED</span>
+  <span class="c"># PARTIAL_RESULT&lt;Partial_Result_Type&gt;</span>
+  <span class="c"># COMPLETED&lt;Result_Type&gt;</span>
+  <span class="c"># UNCANCELLABLE</span>
+  <span class="c"># NOT_IMMEDIATELY_DETERMINABLE</span>
+  <span class="c">#</span>
+  <span class="c"># Notice how giving the cancel method the right semantics obviates most</span>
+  <span class="c"># reasons for this method to exist.</span></div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.cancelled"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.cancelled">[docs]</a>  <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes whether the computation was cancelled.</span>
+
+<span class="sd">    This method does not block.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      True if the computation was cancelled any time before its result became</span>
+<span class="sd">        immediately available. False under all other circumstances including but</span>
+<span class="sd">        not limited to this object&#39;s cancel method not having been called and</span>
+<span class="sd">        the computation&#39;s result having become immediately available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.running"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.running">[docs]</a>  <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes whether the computation is taking place.</span>
+
+<span class="sd">    This method does not block.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      True if the computation is scheduled to take place in the future or is</span>
+<span class="sd">        taking place now, or False if the computation took place in the past or</span>
+<span class="sd">        was cancelled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+  <span class="c"># NOTE(nathaniel): These aren&#39;t quite the semantics I&#39;d like here either. I</span>
+  <span class="c"># would rather this only returned True in cases in which the underlying</span>
+  <span class="c"># computation completed successfully. A computation&#39;s having been cancelled</span>
+  <span class="c"># conflicts with considering that computation &quot;done&quot;.</span></div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.done"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.done">[docs]</a>  <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes whether the computation has taken place.</span>
+
+<span class="sd">    This method does not block.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      True if the computation is known to have either completed or have been</span>
+<span class="sd">        unscheduled or interrupted. False if the computation may possibly be</span>
+<span class="sd">        executing or scheduled to execute later.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.result"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.result">[docs]</a>  <span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Accesses the outcome of the computation or raises its exception.</span>
+
+<span class="sd">    This method may return immediately or may block.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      timeout: The length of time in seconds to wait for the computation to</span>
+<span class="sd">        finish or be cancelled, or None if this method should block until the</span>
+<span class="sd">        computation has finished or is cancelled no matter how long that takes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The return value of the computation.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      TimeoutError: If a timeout value is passed and the computation does not</span>
+<span class="sd">        terminate within the allotted time.</span>
+<span class="sd">      CancelledError: If the computation was cancelled.</span>
+<span class="sd">      Exception: If the computation raised an exception, this call will raise</span>
+<span class="sd">        the same exception.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.exception"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.exception">[docs]</a>  <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the exception raised by the computation.</span>
+
+<span class="sd">    This method may return immediately or may block.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      timeout: The length of time in seconds to wait for the computation to</span>
+<span class="sd">        terminate or be cancelled, or None if this method should block until</span>
+<span class="sd">        the computation is terminated or is cancelled no matter how long that</span>
+<span class="sd">        takes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The exception raised by the computation, or None if the computation did</span>
+<span class="sd">        not raise an exception.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      TimeoutError: If a timeout value is passed and the computation does not</span>
+<span class="sd">        terminate within the allotted time.</span>
+<span class="sd">      CancelledError: If the computation was cancelled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.traceback"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.traceback">[docs]</a>  <span class="k">def</span> <span class="nf">traceback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Access the traceback of the exception raised by the computation.</span>
+
+<span class="sd">    This method may return immediately or may block.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      timeout: The length of time in seconds to wait for the computation to</span>
+<span class="sd">        terminate or be cancelled, or None if this method should block until</span>
+<span class="sd">        the computation is terminated or is cancelled no matter how long that</span>
+<span class="sd">        takes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The traceback of the exception raised by the computation, or None if the</span>
+<span class="sd">        computation did not raise an exception.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      TimeoutError: If a timeout value is passed and the computation does not</span>
+<span class="sd">        terminate within the allotted time.</span>
+<span class="sd">      CancelledError: If the computation was cancelled.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Future.add_done_callback"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.future.Future.add_done_callback">[docs]</a>  <span class="k">def</span> <span class="nf">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds a function to be called at completion of the computation.</span>
+
+<span class="sd">    The callback will be passed this Future object describing the outcome of</span>
+<span class="sd">    the computation.</span>
+
+<span class="sd">    If the computation has already completed, the callback will be called</span>
+<span class="sd">    immediately.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      fn: A callable taking a this Future object as its single parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

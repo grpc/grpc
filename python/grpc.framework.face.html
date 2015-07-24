@@ -1,0 +1,1468 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
+        <link rel="next" title="grpc.framework.face.testing package" href="grpc.framework.face.testing.html"/>
+        <link rel="prev" title="grpc.framework.common package" href="grpc.framework.common.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+    <li>grpc.framework.face package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.face.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-face-package">
+<h1>grpc.framework.face package<a class="headerlink" href="#grpc-framework-face-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="grpc.framework.face.testing.html">grpc.framework.face.testing package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.base_util">grpc.framework.face.testing.base_util module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.blocking_invocation_inline_service_test_case">grpc.framework.face.testing.blocking_invocation_inline_service_test_case module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.callback">grpc.framework.face.testing.callback module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.control">grpc.framework.face.testing.control module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.coverage">grpc.framework.face.testing.coverage module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.digest">grpc.framework.face.testing.digest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case">grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case">grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.interfaces">grpc.framework.face.testing.interfaces module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.serial">grpc.framework.face.testing.serial module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.service">grpc.framework.face.testing.service module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.stock_service">grpc.framework.face.testing.stock_service module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.test_case">grpc.framework.face.testing.test_case module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.face.blocking_invocation_inline_service_test">
+<span id="grpc-framework-face-blocking-invocation-inline-service-test-module"></span><h2>grpc.framework.face.blocking_invocation_inline_service_test module<a class="headerlink" href="#module-grpc.framework.face.blocking_invocation_inline_service_test" title="Permalink to this headline">¶</a></h2>
+<p>One of the tests of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.blocking_invocation_inline_service_test.BlockingInvocationInlineServiceTest">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.blocking_invocation_inline_service_test.</code><code class="descname">BlockingInvocationInlineServiceTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/blocking_invocation_inline_service_test.html#BlockingInvocationInlineServiceTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.blocking_invocation_inline_service_test.BlockingInvocationInlineServiceTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face._test_case.FaceTestCase</span></code>, <a class="reference internal" href="grpc.framework.face.testing.html#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase" title="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.demonstration">
+<span id="grpc-framework-face-demonstration-module"></span><h2>grpc.framework.face.demonstration module<a class="headerlink" href="#module-grpc.framework.face.demonstration" title="Permalink to this headline">¶</a></h2>
+<p>Demonstration-suitable implementation of the face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.demonstration.LinkedPair">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.demonstration.</code><code class="descname">LinkedPair</code><a class="reference internal" href="_modules/grpc/framework/face/demonstration.html#LinkedPair"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.demonstration.LinkedPair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A Server and Stub that are linked to one another.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.demonstration.LinkedPair.server">
+<code class="descname">server</code><a class="headerlink" href="#grpc.framework.face.demonstration.LinkedPair.server" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Server.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.demonstration.LinkedPair.stub">
+<code class="descname">stub</code><a class="headerlink" href="#grpc.framework.face.demonstration.LinkedPair.stub" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Stub.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.demonstration.LinkedPair.shut_down">
+<code class="descname">shut_down</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/demonstration.html#LinkedPair.shut_down"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.demonstration.LinkedPair.shut_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shuts down this object and releases its resources.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.demonstration.server_and_stub">
+<code class="descclassname">grpc.framework.face.demonstration.</code><code class="descname">server_and_stub</code><span class="sig-paren">(</span><em>default_timeout</em>, <em>inline_value_in_value_out_methods=None</em>, <em>inline_value_in_stream_out_methods=None</em>, <em>inline_stream_in_value_out_methods=None</em>, <em>inline_stream_in_stream_out_methods=None</em>, <em>event_value_in_value_out_methods=None</em>, <em>event_value_in_stream_out_methods=None</em>, <em>event_stream_in_value_out_methods=None</em>, <em>event_stream_in_stream_out_methods=None</em>, <em>multi_method=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/demonstration.html#server_and_stub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.demonstration.server_and_stub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Server and Stub linked together for use.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.event_invocation_synchronous_event_service_test">
+<span id="grpc-framework-face-event-invocation-synchronous-event-service-test-module"></span><h2>grpc.framework.face.event_invocation_synchronous_event_service_test module<a class="headerlink" href="#module-grpc.framework.face.event_invocation_synchronous_event_service_test" title="Permalink to this headline">¶</a></h2>
+<p>One of the tests of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.event_invocation_synchronous_event_service_test.EventInvocationSynchronousEventServiceTest">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.event_invocation_synchronous_event_service_test.</code><code class="descname">EventInvocationSynchronousEventServiceTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/event_invocation_synchronous_event_service_test.html#EventInvocationSynchronousEventServiceTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.event_invocation_synchronous_event_service_test.EventInvocationSynchronousEventServiceTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face._test_case.FaceTestCase</span></code>, <a class="reference internal" href="grpc.framework.face.testing.html#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase" title="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.exceptions">
+<span id="grpc-framework-face-exceptions-module"></span><h2>grpc.framework.face.exceptions module<a class="headerlink" href="#module-grpc.framework.face.exceptions" title="Permalink to this headline">¶</a></h2>
+<p>Exceptions used in the Face layer of RPC Framework.</p>
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.CancellationError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">CancellationError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#CancellationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.CancellationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.exceptions.RpcError" title="grpc.framework.face.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.exceptions.RpcError</span></code></a></p>
+<p>Indicates that an RPC has been cancelled.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.ExpirationError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">ExpirationError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#ExpirationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.ExpirationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.exceptions.RpcError" title="grpc.framework.face.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.exceptions.RpcError</span></code></a></p>
+<p>Indicates that an RPC has expired (&#8220;timed out&#8221;).</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.NetworkError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">NetworkError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#NetworkError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.NetworkError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.exceptions.RpcError" title="grpc.framework.face.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.exceptions.RpcError</span></code></a></p>
+<p>Indicates that some error occurred on the network.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.NoSuchMethodError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">NoSuchMethodError</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#NoSuchMethodError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.NoSuchMethodError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Raised by customer code to indicate an unrecognized RPC method name.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.exceptions.NoSuchMethodError.name">
+<code class="descname">name</code><a class="headerlink" href="#grpc.framework.face.exceptions.NoSuchMethodError.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The unrecognized name.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.RpcError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">RpcError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#RpcError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.RpcError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Common super type for all exceptions raised by the Face layer.</p>
+<p>Only RPC Framework should instantiate and raise these exceptions.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.ServicedError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">ServicedError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#ServicedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.ServicedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.exceptions.RpcError" title="grpc.framework.face.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.exceptions.RpcError</span></code></a></p>
+<p>Indicates that the Serviced failed in the course of an RPC.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.face.exceptions.ServicerError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">ServicerError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#ServicerError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.ServicerError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.exceptions.RpcError" title="grpc.framework.face.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.exceptions.RpcError</span></code></a></p>
+<p>Indicates that the Servicer failed in the course of servicing an RPC.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.future_invocation_asynchronous_event_service_test">
+<span id="grpc-framework-face-future-invocation-asynchronous-event-service-test-module"></span><h2>grpc.framework.face.future_invocation_asynchronous_event_service_test module<a class="headerlink" href="#module-grpc.framework.face.future_invocation_asynchronous_event_service_test" title="Permalink to this headline">¶</a></h2>
+<p>One of the tests of the Face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.future_invocation_asynchronous_event_service_test.FutureInvocationAsynchronousEventServiceTest">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.future_invocation_asynchronous_event_service_test.</code><code class="descname">FutureInvocationAsynchronousEventServiceTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/future_invocation_asynchronous_event_service_test.html#FutureInvocationAsynchronousEventServiceTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.future_invocation_asynchronous_event_service_test.FutureInvocationAsynchronousEventServiceTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face._test_case.FaceTestCase</span></code>, <a class="reference internal" href="grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase" title="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.implementations">
+<span id="grpc-framework-face-implementations-module"></span><h2>grpc.framework.face.implementations module<a class="headerlink" href="#module-grpc.framework.face.implementations" title="Permalink to this headline">¶</a></h2>
+<p>Entry points into the Face layer of RPC Framework.</p>
+<dl class="function">
+<dt id="grpc.framework.face.implementations.dynamic_stub">
+<code class="descclassname">grpc.framework.face.implementations.</code><code class="descname">dynamic_stub</code><span class="sig-paren">(</span><em>cardinalities</em>, <em>front</em>, <em>pool</em>, <em>prefix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/implementations.html#dynamic_stub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.implementations.dynamic_stub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.DynamicStub.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cardinalities</strong> &#8211; A dict from RPC method name to cardinality.Cardinality
+value identifying the cardinality of every RPC method to be supported by
+the created interfaces.DynamicStub.</li>
+<li><strong>front</strong> &#8211; A base_interfaces.Front.</li>
+<li><strong>pool</strong> &#8211; A futures.ThreadPoolExecutor.</li>
+<li><strong>prefix</strong> &#8211; A string to prepend when mapping requested attribute name to RPC
+method name during attribute access on the created
+interfaces.DynamicStub.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.DynamicStub that performs RPCs via the given
+base_interfaces.Front.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.implementations.generic_stub">
+<code class="descclassname">grpc.framework.face.implementations.</code><code class="descname">generic_stub</code><span class="sig-paren">(</span><em>front</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/implementations.html#generic_stub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.implementations.generic_stub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.GenericStub.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>front</strong> &#8211; A base_interfaces.Front.</li>
+<li><strong>pool</strong> &#8211; A futures.ThreadPoolExecutor.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.GenericStub that performs RPCs via the given
+base_interfaces.Front.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.implementations.servicer">
+<code class="descclassname">grpc.framework.face.implementations.</code><code class="descname">servicer</code><span class="sig-paren">(</span><em>pool</em>, <em>method_implementations</em>, <em>multi_method_implementation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/implementations.html#servicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.implementations.servicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a base_interfaces.Servicer.</p>
+<p>It is guaranteed that any passed interfaces.MultiMethodImplementation will
+only be called to service an RPC if there is no
+interfaces.MethodImplementation for the RPC method in the passed
+method_implementations dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pool</strong> &#8211; A thread pool.</li>
+<li><strong>method_implementations</strong> &#8211; A dictionary from RPC method name to
+interfaces.MethodImplementation object to be used to service the named
+RPC method.</li>
+<li><strong>multi_method_implementation</strong> &#8211; An interfaces.MultiMethodImplementation to be
+used to service any RPCs not serviced by the
+interfaces.MethodImplementations given in the method_implementations
+dictionary, or None.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A base_interfaces.Servicer that services RPCs via the given implementations.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.interfaces">
+<span id="grpc-framework-face-interfaces-module"></span><h2>grpc.framework.face.interfaces module<a class="headerlink" href="#module-grpc.framework.face.interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Interfaces for the face layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.Abortion">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">Abortion</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#Abortion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.Abortion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Categories of RPC abortion.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.Call">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">Call</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#Call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.Call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Invocation-side representation of an RPC.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.Call.context">
+<code class="descname">context</code><a class="headerlink" href="#grpc.framework.face.interfaces.Call.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>An RpcContext affording information about the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.Call.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#Call.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.Call.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Requests cancellation of the RPC.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.CancellableIterator">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">CancellableIterator</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#CancellableIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.CancellableIterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Implements the Iterator protocol and affords a cancel method.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.CancellableIterator.__iter__">
+<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#CancellableIterator.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.CancellableIterator.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the self object in accordance with the Iterator protocol.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.CancellableIterator.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#CancellableIterator.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.CancellableIterator.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Requests cancellation of whatever computation underlies this iterator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.CancellableIterator.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#CancellableIterator.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.CancellableIterator.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a value or raises StopIteration per the Iterator protocol.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.DynamicStub">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">DynamicStub</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#DynamicStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.DynamicStub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A stub with RPC-method-bound multi-callable attributes.</p>
+<p>Instances of this type responsd to attribute access as follows: if the
+requested attribute is the name of a unary-unary RPC method, the value of the
+attribute will be a UnaryUnaryMultiCallable with which to invoke the RPC
+method; if the requested attribute is the name of a unary-stream RPC method,
+the value of the attribute will be a UnaryStreamMultiCallable with which to
+invoke the RPC method; if the requested attribute is the name of a
+stream-unary RPC method, the value of the attribute will be a
+StreamUnaryMultiCallable with which to invoke the RPC method; and if the
+requested attribute is the name of a stream-stream RPC method, the value of
+the attribute will be a StreamStreamMultiCallable with which to invoke the
+RPC method.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.GenericStub">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">GenericStub</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords RPC methods to callers.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.blocking_stream_in_value_out">
+<code class="descname">blocking_stream_in_value_out</code><span class="sig-paren">(</span><em>name</em>, <em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.blocking_stream_in_value_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.blocking_stream_in_value_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes a stream-request-unary-response RPC method.</p>
+<p>This method blocks until either returning the response value of the RPC
+(in the event of RPC completion) or raising an exception (in the event of
+RPC abortion).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request_iterator</strong> &#8211; An iterator that yields the request values of the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
+Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.blocking_value_in_value_out">
+<code class="descname">blocking_value_in_value_out</code><span class="sig-paren">(</span><em>name</em>, <em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.blocking_value_in_value_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.blocking_value_in_value_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes a unary-request-unary-response RPC method.</p>
+<p>This method blocks until either returning the response value of the RPC
+(in the event of RPC completion) or raising an exception (in the event of
+RPC abortion).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
+Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.event_stream_in_stream_out">
+<code class="descname">event_stream_in_stream_out</code><span class="sig-paren">(</span><em>name</em>, <em>response_consumer</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.event_stream_in_stream_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.event_stream_in_stream_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event-driven invocation of a unary-request-stream-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the response
+values of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A pair of a Call object for the RPC and a stream.Consumer to which the
+request values of the RPC should be passed.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.event_stream_in_value_out">
+<code class="descname">event_stream_in_value_out</code><span class="sig-paren">(</span><em>name</em>, <em>response_callback</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.event_stream_in_value_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.event_stream_in_value_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event-driven invocation of a unary-request-unary-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>response_callback</strong> &#8211; A callback to be called to accept the response value
+of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A pair of a Call object for the RPC and a stream.Consumer to which the
+request values of the RPC should be passed.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.event_value_in_stream_out">
+<code class="descname">event_value_in_stream_out</code><span class="sig-paren">(</span><em>name</em>, <em>request</em>, <em>response_consumer</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.event_value_in_stream_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.event_value_in_stream_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event-driven invocation of a unary-request-stream-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the response
+values of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Call object for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.event_value_in_value_out">
+<code class="descname">event_value_in_value_out</code><span class="sig-paren">(</span><em>name</em>, <em>request</em>, <em>response_callback</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.event_value_in_value_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.event_value_in_value_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event-driven invocation of a unary-request-unary-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>response_callback</strong> &#8211; A callback to be called to accept the response value
+of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Call object for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.future_stream_in_value_out">
+<code class="descname">future_stream_in_value_out</code><span class="sig-paren">(</span><em>name</em>, <em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.future_stream_in_value_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.future_stream_in_value_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes a stream-request-unary-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request_iterator</strong> &#8211; An iterator that yields the request values of the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A future.Future representing the RPC. In the event of RPC completion, the
+returned Future will return an outcome indicating that the RPC returned
+the response value of the RPC. In the event of RPC abortion, the
+returned Future will return an outcome indicating that the RPC raised
+an exceptions.RpcError.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.future_value_in_value_out">
+<code class="descname">future_value_in_value_out</code><span class="sig-paren">(</span><em>name</em>, <em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.future_value_in_value_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.future_value_in_value_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes a unary-request-unary-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A future.Future representing the RPC. In the event of RPC completion, the
+returned Future will return an outcome indicating that the RPC returned
+the response value of the RPC. In the event of RPC abortion, the
+returned Future will return an outcome indicating that the RPC raised
+an exceptions.RpcError.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.inline_stream_in_stream_out">
+<code class="descname">inline_stream_in_stream_out</code><span class="sig-paren">(</span><em>name</em>, <em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.inline_stream_in_stream_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.inline_stream_in_stream_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes a stream-request-stream-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request_iterator</strong> &#8211; An iterator that yields the request values of the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A CancellableIterator that yields the response values of the RPC and
+affords RPC cancellation. Drawing response values from the returned
+CancellableIterator may raise exceptions.RpcError indicating abortion of
+the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.inline_value_in_stream_out">
+<code class="descname">inline_value_in_stream_out</code><span class="sig-paren">(</span><em>name</em>, <em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.inline_value_in_stream_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.inline_value_in_stream_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes a unary-request-stream-response RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A CancellableIterator that yields the response values of the RPC and
+affords RPC cancellation. Drawing response values from the returned
+CancellableIterator may raise exceptions.RpcError indicating abortion of
+the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.stream_stream_multi_callable">
+<code class="descname">stream_stream_multi_callable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.stream_stream_multi_callable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.stream_stream_multi_callable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a StreamStreamMultiCallable for a stream-stream RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; The RPC method name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A StreamStreamMultiCallable value for the named stream-stream RPC method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.stream_unary_multi_callable">
+<code class="descname">stream_unary_multi_callable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.stream_unary_multi_callable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.stream_unary_multi_callable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a StreamUnaryMultiCallable for a stream-unary RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; The RPC method name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A StreamUnaryMultiCallable value for the named stream-unary RPC method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.unary_stream_multi_callable">
+<code class="descname">unary_stream_multi_callable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.unary_stream_multi_callable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.unary_stream_multi_callable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a UnaryStreamMultiCallable for a unary-stream RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; The RPC method name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A UnaryStreamMultiCallable value for the name unary-stream RPC method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.GenericStub.unary_unary_multi_callable">
+<code class="descname">unary_unary_multi_callable</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#GenericStub.unary_unary_multi_callable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.GenericStub.unary_unary_multi_callable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a UnaryUnaryMultiCallable for a unary-unary RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; The RPC method name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A UnaryUnaryMultiCallable value for the named unary-unary RPC method.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.MethodImplementation">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">MethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#MethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A sum type that describes an RPC method implementation.</p>
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.cardinality">
+<code class="descname">cardinality</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>A cardinality.Cardinality value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.style">
+<code class="descname">style</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.style" title="Permalink to this definition">¶</a></dt>
+<dd><p>A style.Service value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.unary_unary_inline">
+<code class="descname">unary_unary_inline</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.unary_unary_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes a request value and an RpcContext object and returns a
+response value. Only non-None if cardinality is
+cardinality.Cardinality.UNARY_UNARY and style is style.Service.INLINE.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.unary_stream_inline">
+<code class="descname">unary_stream_inline</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.unary_stream_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes a request value and an RpcContext object and returns an
+iterator of response values. Only non-None if cardinality is
+cardinality.Cardinality.UNARY_STREAM and style is style.Service.INLINE.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.stream_unary_inline">
+<code class="descname">stream_unary_inline</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.stream_unary_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes an iterator of request values and an RpcContext object
+and returns a response value. Only non-None if cardinality is
+cardinality.Cardinality.STREAM_UNARY and style is style.Service.INLINE.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.stream_stream_inline">
+<code class="descname">stream_stream_inline</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.stream_stream_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes an iterator of request values and an RpcContext object
+and returns an iterator of response values. Only non-None if cardinality
+is cardinality.Cardinality.STREAM_STREAM and style is
+style.Service.INLINE.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.unary_unary_event">
+<code class="descname">unary_unary_event</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.unary_unary_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable value
+that takes a request value, a response callback to which to pass the
+response value of the RPC, and an RpcContext. Only non-None if
+cardinality is cardinality.Cardinality.UNARY_UNARY and style is
+style.Service.EVENT.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.unary_stream_event">
+<code class="descname">unary_stream_event</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.unary_stream_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes a request value, a stream.Consumer to which to pass the
+the response values of the RPC, and an RpcContext. Only non-None if
+cardinality is cardinality.Cardinality.UNARY_STREAM and style is
+style.Service.EVENT.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.stream_unary_event">
+<code class="descname">stream_unary_event</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.stream_unary_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes a response callback to which to pass the response value
+of the RPC and an RpcContext and returns a stream.Consumer to which the
+request values of the RPC should be passed. Only non-None if cardinality
+is cardinality.Cardinality.STREAM_UNARY and style is style.Service.EVENT.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.face.interfaces.MethodImplementation.stream_stream_event">
+<code class="descname">stream_stream_event</code><a class="headerlink" href="#grpc.framework.face.interfaces.MethodImplementation.stream_stream_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>The implementation of the RPC method as a callable
+value that takes a stream.Consumer to which to pass the response values
+of the RPC and an RpcContext and returns a stream.Consumer to which the
+request values of the RPC should be passed. Only non-None if cardinality
+is cardinality.Cardinality.STREAM_STREAM and style is
+style.Service.EVENT.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.MultiMethodImplementation">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">MultiMethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#MultiMethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.MultiMethodImplementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A general type able to service many RPC methods.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.MultiMethodImplementation.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>name</em>, <em>response_consumer</em>, <em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#MultiMethodImplementation.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.MultiMethodImplementation.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Services an RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The RPC method name.</li>
+<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the response
+values of the RPC.</li>
+<li><strong>context</strong> &#8211; An RpcContext object.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A stream.Consumer with which to accept the request values of the RPC. The
+consumer returned from this method may or may not be invoked to
+completion: in the case of RPC abortion, RPC Framework will simply stop
+passing values to this object. Implementations must not assume that this
+object will be called to completion of the request stream or even called
+at all.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+May or may not be raised when the RPC has been
+aborted.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">exceptions.NoSuchMethodError</span></code> &#8211;
+If this MultiMethod does not recognize the
+given RPC method name and is not able to service the RPC.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.RpcContext">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">RpcContext</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#RpcContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.RpcContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Provides RPC-related information and action.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.RpcContext.add_abortion_callback">
+<code class="descname">add_abortion_callback</code><span class="sig-paren">(</span><em>abortion_callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#RpcContext.add_abortion_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.RpcContext.add_abortion_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a callback to be called if the RPC is aborted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>abortion_callback</strong> &#8211; A callable to be called and passed an Abortion value
+in the event of RPC abortion.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.RpcContext.is_active">
+<code class="descname">is_active</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#RpcContext.is_active"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.RpcContext.is_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes whether the RPC is active or has terminated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.RpcContext.time_remaining">
+<code class="descname">time_remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#RpcContext.time_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.RpcContext.time_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the length of allowed time remaining for the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A nonnegative float indicating the length of allowed time in seconds
+remaining for the RPC to complete before it is considered to have timed
+out.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.StreamStreamMultiCallable">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">StreamStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords invoking a stream-stream RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.StreamStreamMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A CancellableIterator that yields the response values of the RPC and
+affords RPC cancellation. Drawing response values from the returned
+CancellableIterator may raise exceptions.RpcError indicating abortion
+of the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.StreamStreamMultiCallable.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>response_consumer</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamStreamMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamStreamMultiCallable.event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<dl class="docutils">
+<dt>l    Args:</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>response_consumer: A stream.Consumer to be called to accept the restponse</dt>
+<dd>values of the RPC.</dd>
+<dt>abortion_callback: A callback to be called and passed an Abortion value</dt>
+<dd>in the event of RPC abortion.</dd>
+</dl>
+<p>timeout: A duration of time in seconds to allow for the RPC.</p>
+</div></blockquote>
+<dl class="last docutils">
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>A pair of a Call object for the RPC and a stream.Consumer to which the</dt>
+<dd>request values of the RPC should be passed.</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.StreamUnaryMultiCallable">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords invoking a stream-unary RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.StreamUnaryMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
+Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.StreamUnaryMultiCallable.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>response_callback</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamUnaryMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamUnaryMultiCallable.event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>response_callback</strong> &#8211; A callback to be called to accept the restponse value
+of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A pair of a Call object for the RPC and a stream.Consumer to which the
+request values of the RPC should be passed.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.StreamUnaryMultiCallable.future">
+<code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A future.Future representing the RPC. In the event of RPC completion, the
+returned Future&#8217;s result value will be the response value of the RPC.
+In the event of RPC abortion, the returned Future&#8217;s exception value
+will be an exceptions.RpcError.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.UnaryStreamMultiCallable">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords invoking a unary-stream RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.UnaryStreamMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A CancellableIterator that yields the response values of the RPC and
+affords RPC cancellation. Drawing response values from the returned
+CancellableIterator may raise exceptions.RpcError indicating abortion
+of the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.UnaryStreamMultiCallable.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>request</em>, <em>response_consumer</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryStreamMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryStreamMultiCallable.event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>response_consumer</strong> &#8211; A stream.Consumer to be called to accept the restponse
+values of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Call object for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.face.interfaces.UnaryUnaryMultiCallable">
+<em class="property">class </em><code class="descclassname">grpc.framework.face.interfaces.</code><code class="descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords invoking a unary-unary RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.UnaryUnaryMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
+Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.UnaryUnaryMultiCallable.event">
+<code class="descname">event</code><span class="sig-paren">(</span><em>request</em>, <em>response_callback</em>, <em>abortion_callback</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryUnaryMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryUnaryMultiCallable.event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>response_callback</strong> &#8211; A callback to be called to accept the restponse value
+of the RPC.</li>
+<li><strong>abortion_callback</strong> &#8211; A callback to be called and passed an Abortion value
+in the event of RPC abortion.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Call object for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.face.interfaces.UnaryUnaryMultiCallable.future">
+<code class="descname">future</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/interfaces.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.interfaces.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A future.Future representing the RPC. In the event of RPC completion, the
+returned Future&#8217;s result value will be the response value of the RPC.
+In the event of RPC abortion, the returned Future&#8217;s exception value
+will be an exceptions.RpcError.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face.utilities">
+<span id="grpc-framework-face-utilities-module"></span><h2>grpc.framework.face.utilities module<a class="headerlink" href="#module-grpc.framework.face.utilities" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for RPC framework&#8217;s face layer.</p>
+<dl class="function">
+<dt id="grpc.framework.face.utilities.stream_stream_event">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">stream_stream_event</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#stream_stream_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.stream_stream_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-stream RPC method as a callable
+value that takes a stream.Consumer to which to pass the response values
+of the RPC and an interfaces.RpcContext and returns a stream.Consumer to
+which the request values of the RPC should be passed.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.stream_stream_inline">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">stream_stream_inline</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#stream_stream_inline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.stream_stream_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-stream RPC method as a callable
+value that takes an iterator of request values and an
+interfaces.RpcContext object and returns an iterator of response values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.stream_unary_event">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">stream_unary_event</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#stream_unary_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.stream_unary_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-unary RPC method as a callable
+value that takes a response callback to which to pass the response value
+of the RPC and an interfaces.RpcContext and returns a stream.Consumer to
+which the request values of the RPC should be passed.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.stream_unary_inline">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">stream_unary_inline</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#stream_unary_inline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.stream_unary_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a stream-unary RPC method as a callable
+value that takes an iterator of request values and an
+interfaces.RpcContext object and returns a response value.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.unary_stream_event">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">unary_stream_event</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#unary_stream_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.unary_stream_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-stream RPC method as a callable
+value that takes a request value, a stream.Consumer to which to pass the
+the response values of the RPC, and an interfaces.RpcContext.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.unary_stream_inline">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">unary_stream_inline</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#unary_stream_inline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.unary_stream_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-stream RPC method as a callable
+value that takes a request value and an interfaces.RpcContext object and
+returns an iterator of response values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.unary_unary_event">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">unary_unary_event</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#unary_unary_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.unary_unary_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-unary RPC method as a callable
+value that takes a request value, a response callback to which to pass
+the response value of the RPC, and an interfaces.RpcContext.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.face.utilities.unary_unary_inline">
+<code class="descclassname">grpc.framework.face.utilities.</code><code class="descname">unary_unary_inline</code><span class="sig-paren">(</span><em>behavior</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/utilities.html#unary_unary_inline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.utilities.unary_unary_inline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.MethodImplementation for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>behavior</strong> &#8211; The implementation of a unary-unary RPC method as a callable value
+that takes a request value and an interfaces.RpcContext object and
+returns a response value.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.MethodImplementation derived from the given behavior.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.face">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.face" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.face.testing.html" class="btn btn-neutral float-right" title="grpc.framework.face.testing package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.framework.common.html" class="btn btn-neutral" title="grpc.framework.common package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

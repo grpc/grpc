@@ -1,0 +1,908 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.alpha package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
+        <link rel="next" title="grpc.framework.base package" href="grpc.framework.base.html"/>
+        <link rel="prev" title="grpc.framework package" href="grpc.framework.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+    <li>grpc.framework.alpha package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.alpha.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-alpha-package">
+<h1>grpc.framework.alpha package<a class="headerlink" href="#grpc-framework-alpha-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.alpha.exceptions">
+<span id="grpc-framework-alpha-exceptions-module"></span><h2>grpc.framework.alpha.exceptions module<a class="headerlink" href="#module-grpc.framework.alpha.exceptions" title="Permalink to this headline">¶</a></h2>
+<p>Exceptions raised by GRPC.</p>
+<p>Only GRPC should instantiate and raise these exceptions.</p>
+<dl class="exception">
+<dt id="grpc.framework.alpha.exceptions.CancellationError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.alpha.exceptions.</code><code class="descname">CancellationError</code><a class="reference internal" href="_modules/grpc/framework/alpha/exceptions.html#CancellationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.exceptions.CancellationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.alpha.exceptions.RpcError" title="grpc.framework.alpha.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.alpha.exceptions.RpcError</span></code></a></p>
+<p>Indicates that an RPC has been cancelled.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.alpha.exceptions.ExpirationError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.alpha.exceptions.</code><code class="descname">ExpirationError</code><a class="reference internal" href="_modules/grpc/framework/alpha/exceptions.html#ExpirationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.exceptions.ExpirationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.alpha.exceptions.RpcError" title="grpc.framework.alpha.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.alpha.exceptions.RpcError</span></code></a></p>
+<p>Indicates that an RPC has expired (&#8220;timed out&#8221;).</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="grpc.framework.alpha.exceptions.RpcError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.alpha.exceptions.</code><code class="descname">RpcError</code><a class="reference internal" href="_modules/grpc/framework/alpha/exceptions.html#RpcError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.exceptions.RpcError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Common super type for all exceptions raised by GRPC.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.alpha.interfaces">
+<span id="grpc-framework-alpha-interfaces-module"></span><h2>grpc.framework.alpha.interfaces module<a class="headerlink" href="#module-grpc.framework.alpha.interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Interfaces of GRPC.</p>
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.Abortion">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">Abortion</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Abortion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Abortion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Categories of RPC abortion.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.CancellableIterator">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">CancellableIterator</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Implements the Iterator protocol and affords a cancel method.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.CancellableIterator.__iter__">
+<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the self object in accordance with the Iterator protocol.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.CancellableIterator.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Requests cancellation of whatever computation underlies this iterator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.CancellableIterator.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#CancellableIterator.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.CancellableIterator.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a value or raises StopIteration per the Iterator protocol.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.Cardinality">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">Cardinality</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Constants for the four cardinalities of RPC.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.RpcContext">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">RpcContext</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Provides RPC-related information and action.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcContext.add_abortion_callback">
+<code class="descname">add_abortion_callback</code><span class="sig-paren">(</span><em>abortion_callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcContext.add_abortion_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcContext.add_abortion_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a callback to be called if the RPC is aborted.
+:param abortion_callback: A callable to be called and passed an Abortion value</p>
+<blockquote>
+<div>in the event of RPC abortion.</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcContext.is_active">
+<code class="descname">is_active</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcContext.is_active"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcContext.is_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes whether the RPC is active or has terminated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcContext.time_remaining">
+<code class="descname">time_remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcContext.time_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcContext.time_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the length of allowed time remaining for the RPC.
+:returns: A nonnegative float indicating the length of allowed time in seconds</p>
+<blockquote>
+<div>remaining for the RPC to complete before it is considered to have timed
+out.</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodDescription">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">RpcMethodDescription</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodDescription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A type for the common aspects of RPC method descriptions.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodDescription.cardinality">
+<code class="descname">cardinality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodDescription.cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodDescription.cardinality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identifies the cardinality of this RpcMethodDescription.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A Cardinality value identifying whether or not this
+RpcMethodDescription is request-unary or request-streaming and
+whether or not it is response-unary or response-streaming.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodInvocationDescription">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">RpcMethodInvocationDescription</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodInvocationDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodInvocationDescription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.alpha.interfaces.RpcMethodDescription" title="grpc.framework.alpha.interfaces.RpcMethodDescription"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.alpha.interfaces.RpcMethodDescription</span></code></a></p>
+<p>Invocation-side description of an RPC method.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodInvocationDescription.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodInvocationDescription.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodInvocationDescription.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserializes a response value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>serialized_response</strong> &#8211; A bytestring that is the serialization of a response
+value appropriate for the RPC method described by this
+RpcMethodInvocationDescription.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A response value corresponding to the given bytestring.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodInvocationDescription.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodInvocationDescription.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodInvocationDescription.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes a request value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> &#8211; A request value appropriate for the RPC method described by this
+RpcMethodInvocationDescription.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The serialization of the given request value as a
+bytestring.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">RpcMethodServiceDescription</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.alpha.interfaces.RpcMethodDescription" title="grpc.framework.alpha.interfaces.RpcMethodDescription"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.alpha.interfaces.RpcMethodDescription</span></code></a></p>
+<p>Service-side description of an RPC method.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserializes a request value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>serialized_request</strong> &#8211; A bytestring that is the serialization of a request
+value appropriate for the RPC method described by this
+RpcMethodServiceDescription.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A request value corresponding to the given bytestring.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes a response value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> &#8211; A response value appropriate for the RPC method described by
+this RpcMethodServiceDescription.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The serialization of the given response value as a
+bytestring.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_stream_stream">
+<code class="descname">service_stream_stream</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription.service_stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_stream_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out this RPC.</p>
+<p>This method may only be called if the cardinality of this
+RpcMethodServiceDescription is Cardinality.STREAM_STREAM.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator of request values appropriate for the RPC
+method described by this RpcMethodServiceDescription.</li>
+<li><strong>context</strong> &#8211; An RpcContext object for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><p class="first last">Zero or more response values appropriate for the RPC method described by
+this RpcMethodServiceDescription.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_stream_unary">
+<code class="descname">service_stream_unary</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription.service_stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_stream_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out this RPC.</p>
+<p>This method may only be called if the cardinality of this
+RpcMethodServiceDescription is Cardinality.STREAM_UNARY.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator of request values appropriate for the RPC
+method described by this RpcMethodServiceDescription.</li>
+<li><strong>context</strong> &#8211; An RpcContext object for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A response value appropriate for the RPC method described by this
+RpcMethodServiceDescription.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_unary_stream">
+<code class="descname">service_unary_stream</code><span class="sig-paren">(</span><em>request</em>, <em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription.service_unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_unary_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out this RPC.</p>
+<p>This method may only be called if the cardinality of this
+RpcMethodServiceDescription is Cardinality.UNARY_STREAM.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; A request value appropriate for the RPC method described by this
+RpcMethodServiceDescription.</li>
+<li><strong>context</strong> &#8211; An RpcContext object for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><p class="first last">Zero or more response values appropriate for the RPC method described by
+this RpcMethodServiceDescription.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_unary_unary">
+<code class="descname">service_unary_unary</code><span class="sig-paren">(</span><em>request</em>, <em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#RpcMethodServiceDescription.service_unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.RpcMethodServiceDescription.service_unary_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out this RPC.</p>
+<p>This method may only be called if the cardinality of this
+RpcMethodServiceDescription is Cardinality.UNARY_UNARY.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; A request value appropriate for the RPC method described by this
+RpcMethodServiceDescription.</li>
+<li><strong>context</strong> &#8211; An RpcContext object for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A response value appropriate for the RPC method described by this
+RpcMethodServiceDescription.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.Server">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">Server</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="grpc.framework.foundation.html#grpc.framework.foundation.activated.Activated" title="grpc.framework.foundation.activated.Activated"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.activated.Activated</span></code></a></p>
+<p>A GRPC Server.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.Server.port">
+<code class="descname">port</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Server.port"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Server.port" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports the port on which the server is serving.</p>
+<p>This method may only be called while the server is activated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The port on which the server is serving.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.StreamUnarySyncAsync">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">StreamUnarySyncAsync</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#StreamUnarySyncAsync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.StreamUnarySyncAsync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords invoking a stream-unary RPC synchronously or asynchronously.
+Values implementing this interface are directly callable and present an
+&#8220;async&#8221; method. Both calls take an iterator of request values and a numeric
+timeout. Direct invocation of a value of this type invokes its associated RPC
+and blocks until the RPC&#8217;s response is available. Calling the &#8220;async&#8221; method
+of a value of this type invokes its associated RPC and immediately returns a
+future.Future bound to the asynchronous execution of the RPC.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.StreamUnarySyncAsync.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#StreamUnarySyncAsync.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.StreamUnarySyncAsync.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
+Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.StreamUnarySyncAsync.async">
+<code class="descname">async</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#StreamUnarySyncAsync.async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.StreamUnarySyncAsync.async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A future.Future representing the RPC. In the event of RPC completion, the
+returned Future&#8217;s result value will be the response value of the RPC.
+In the event of RPC abortion, the returned Future&#8217;s exception value
+will be an exceptions.RpcError.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.Stub">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">Stub</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#Stub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.Stub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A stub with callable RPC method names for attributes.</p>
+<p>Instances of this type are context managers and only afford RPC invocation
+when used in context.</p>
+<p>Instances of this type, when used in context, respond to attribute access
+as follows: if the requested attribute is the name of a unary-unary RPC
+method, the value of the attribute will be a UnaryUnarySyncAsync with which
+to invoke the RPC method. If the requested attribute is the name of a
+unary-stream RPC method, the value of the attribute will be a callable taking
+a request object and a timeout parameter and returning a CancellableIterator
+that yields the response values of the RPC. If the requested attribute is the
+name of a stream-unary RPC method, the value of the attribute will be a
+StreamUnarySyncAsync with which to invoke the RPC method. If the requested
+attribute is the name of a stream-stream RPC method, the value of the
+attribute will be a callable taking an iterator of request objects and a
+timeout and returning a CancellableIterator that yields the response values
+of the RPC.</p>
+<p>In all cases indication of abortion is indicated by raising of
+exceptions.RpcError, exceptions.CancellationError,
+and exceptions.ExpirationError.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.alpha.interfaces.UnaryUnarySyncAsync">
+<em class="property">class </em><code class="descclassname">grpc.framework.alpha.interfaces.</code><code class="descname">UnaryUnarySyncAsync</code><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#UnaryUnarySyncAsync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.UnaryUnarySyncAsync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Affords invoking a unary-unary RPC synchronously or asynchronously.
+Values implementing this interface are directly callable and present an
+&#8220;async&#8221; method. Both calls take a request value and a numeric timeout.
+Direct invocation of a value of this type invokes its associated RPC and
+blocks until the RPC&#8217;s response is available. Calling the &#8220;async&#8221; method
+of a value of this type invokes its associated RPC and immediately returns a
+future.Future bound to the asynchronous execution of the RPC.</p>
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#UnaryUnarySyncAsync.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.
+:param request: The request value for the RPC.
+:param timeout: A duration of time in seconds to allow for the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The response value for the RPC.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">exceptions.RpcError</span></code> &#8211;
+Indicating that the RPC was aborted.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.async">
+<code class="descname">async</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/interfaces.html#UnaryUnarySyncAsync.async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.interfaces.UnaryUnarySyncAsync.async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asynchronously invokes the underlying RPC.
+:param request: The request value for the RPC.
+:param timeout: A duration of time in seconds to allow for the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A future.Future representing the RPC. In the event of RPC completion, the
+returned Future&#8217;s result value will be the response value of the RPC.
+In the event of RPC abortion, the returned Future&#8217;s exception value
+will be an exceptions.RpcError.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.alpha.utilities">
+<span id="grpc-framework-alpha-utilities-module"></span><h2>grpc.framework.alpha.utilities module<a class="headerlink" href="#module-grpc.framework.alpha.utilities" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for use with GRPC.</p>
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.stream_stream_invocation_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">stream_stream_invocation_description</code><span class="sig-paren">(</span><em>request_serializer</em>, <em>response_deserializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#stream_stream_invocation_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.stream_stream_invocation_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_serializer</strong> &#8211; A callable that when called on a request
+value returns a bytestring corresponding to that value.</li>
+<li><strong>response_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the response value corresponding to
+that bytestring.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
+arguments representing a  streaming-request/streaming-response RPC
+method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.stream_stream_service_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">stream_stream_service_description</code><span class="sig-paren">(</span><em>behavior</em>, <em>request_deserializer</em>, <em>response_serializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#stream_stream_service_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.stream_stream_service_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodServiceDescription for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> &#8211; A callable that implements a stream-stream RPC
+method that accepts an iterator of zero or more requests
+and an interfaces.RpcContext and returns an iterator of
+zero or more responses.</li>
+<li><strong>request_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the request value corresponding to that
+bytestring.</li>
+<li><strong>response_serializer</strong> &#8211; A callable that when called on a
+response value returns the bytestring corresponding to
+that value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
+arguments representing a
+streaming-request/streaming-response RPC method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.stream_unary_invocation_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">stream_unary_invocation_description</code><span class="sig-paren">(</span><em>request_serializer</em>, <em>response_deserializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#stream_unary_invocation_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.stream_unary_invocation_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_serializer</strong> &#8211; A callable that when called on a request
+value returns a bytestring corresponding to that value.</li>
+<li><strong>response_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the response value corresponding to
+that bytestring.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
+arguments representing a streaming-request/unary-response RPC method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.stream_unary_service_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">stream_unary_service_description</code><span class="sig-paren">(</span><em>behavior</em>, <em>request_deserializer</em>, <em>response_serializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#stream_unary_service_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.stream_unary_service_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodServiceDescription for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> &#8211; A callable that implements a stream-unary RPC
+method that accepts an iterator of zero or more requests
+and an interfaces.RpcContext and returns a single response.</li>
+<li><strong>request_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the request value corresponding to that
+bytestring.</li>
+<li><strong>response_serializer</strong> &#8211; A callable that when called on a
+response value returns the bytestring corresponding to
+that value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
+arguments representing a streaming-request/unary-response
+RPC method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.unary_stream_invocation_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">unary_stream_invocation_description</code><span class="sig-paren">(</span><em>request_serializer</em>, <em>response_deserializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#unary_stream_invocation_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.unary_stream_invocation_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_serializer</strong> &#8211; A callable that when called on a request
+value returns a bytestring corresponding to that value.</li>
+<li><strong>response_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the response value corresponding to
+that bytestring.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
+arguments representing a unary-request/streaming-response RPC method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.unary_stream_service_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">unary_stream_service_description</code><span class="sig-paren">(</span><em>behavior</em>, <em>request_deserializer</em>, <em>response_serializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#unary_stream_service_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.unary_stream_service_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodServiceDescription for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> &#8211; A callable that implements a unary-stream RPC
+method that accepts a single request and an interfaces.RpcContext
+and returns an iterator of zero or more responses.</li>
+<li><strong>request_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the request value corresponding to that
+bytestring.</li>
+<li><strong>response_serializer</strong> &#8211; A callable that when called on a
+response value returns the bytestring corresponding to
+that value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
+arguments representing a unary-request/streaming-response
+RPC method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.unary_unary_invocation_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">unary_unary_invocation_description</code><span class="sig-paren">(</span><em>request_serializer</em>, <em>response_deserializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#unary_unary_invocation_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.unary_unary_invocation_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_serializer</strong> &#8211; A callable that when called on a request
+value returns a bytestring corresponding to that value.</li>
+<li><strong>response_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the response value corresponding to
+that bytestring.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodInvocationDescription constructed from the given
+arguments representing a unary-request/unary-response RPC method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.alpha.utilities.unary_unary_service_description">
+<code class="descclassname">grpc.framework.alpha.utilities.</code><code class="descname">unary_unary_service_description</code><span class="sig-paren">(</span><em>behavior</em>, <em>request_deserializer</em>, <em>response_serializer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/alpha/utilities.html#unary_unary_service_description"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.alpha.utilities.unary_unary_service_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interfaces.RpcMethodServiceDescription for the given behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> &#8211; A callable that implements a unary-unary RPC
+method that accepts a single request and an interfaces.RpcContext and
+returns a single response.</li>
+<li><strong>request_deserializer</strong> &#8211; A callable that when called on a
+bytestring returns the request value corresponding to that
+bytestring.</li>
+<li><strong>response_serializer</strong> &#8211; A callable that when called on a
+response value returns the bytestring corresponding to
+that value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.RpcMethodServiceDescription constructed from the given
+arguments representing a unary-request/unary-response RPC
+method.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.alpha">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.alpha" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.base.html" class="btn btn-neutral float-right" title="grpc.framework.base package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.framework.html" class="btn btn-neutral" title="grpc.framework package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

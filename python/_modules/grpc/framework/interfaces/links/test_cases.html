@@ -1,0 +1,522 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.interfaces.links.test_cases &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.interfaces.links.test_cases</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.interfaces.links.test_cases</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Tests of the links interface of RPC Framework.&quot;&quot;&quot;</span>
+
+<span class="c"># unittest is referenced from specification in this module.</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">unittest</span>  <span class="c"># pylint: disable=unused-import</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">test_constants</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.links</span> <span class="kn">import</span> <span class="n">links</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.links</span> <span class="kn">import</span> <span class="n">test_utilities</span>
+
+
+<div class="viewcode-block" id="at_least_n_payloads_received_predicate"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.at_least_n_payloads_received_predicate">[docs]</a><span class="k">def</span> <span class="nf">at_least_n_payloads_received_predicate</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">predicate</span><span class="p">(</span><span class="n">ticket_sequence</span><span class="p">):</span>
+    <span class="n">payload_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ticket</span> <span class="ow">in</span> <span class="n">ticket_sequence</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">ticket</span><span class="o">.</span><span class="n">payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">payload_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">payload_count</span><span class="p">:</span>
+          <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="bp">False</span>
+  <span class="k">return</span> <span class="n">predicate</span>
+
+</div>
+<div class="viewcode-block" id="terminated"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.terminated">[docs]</a><span class="k">def</span> <span class="nf">terminated</span><span class="p">(</span><span class="n">ticket_sequence</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">ticket_sequence</span> <span class="ow">and</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">termination</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+</div>
+<span class="n">_TRANSMISSION_GROUP</span> <span class="o">=</span> <span class="s">&#39;test.Group&#39;</span>
+<span class="n">_TRANSMISSION_METHOD</span> <span class="o">=</span> <span class="s">&#39;TestMethod&#39;</span>
+
+
+<div class="viewcode-block" id="TransmissionTest"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest">[docs]</a><span class="k">class</span> <span class="nc">TransmissionTest</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Tests ticket transmission between two connected links.</span>
+
+<span class="sd">  This class must be mixed into a unittest.TestCase that implements the abstract</span>
+<span class="sd">  methods it provides.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="c"># This is a unittest.TestCase mix-in.</span>
+  <span class="c"># pylint: disable=invalid-name</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_transmitting_links"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_transmitting_links">[docs]</a>  <span class="k">def</span> <span class="nf">create_transmitting_links</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates two connected links for use in this test.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      Two links.Links, the first of which will be used on the invocation side</span>
+<span class="sd">        of RPCs and the second of which will be used on the service side of</span>
+<span class="sd">        RPCs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.destroy_transmitting_links"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.destroy_transmitting_links">[docs]</a>  <span class="k">def</span> <span class="nf">destroy_transmitting_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invocation_side_link</span><span class="p">,</span> <span class="n">service_side_link</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Destroys the two connected links created for this test.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">      invocation_side_link: The link used on the invocation side of RPCs in</span>
+<span class="sd">        this test.</span>
+<span class="sd">      service_side_link: The link used on the service side of RPCs in this</span>
+<span class="sd">        test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_invocation_initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_initial_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">create_invocation_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a value for use as invocation-side initial metadata.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A metadata value appropriate for use as invocation-side initial metadata</span>
+<span class="sd">        or None if invocation-side initial metadata transmission is not</span>
+<span class="sd">        supported by the links under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_invocation_terminal_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_terminal_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">create_invocation_terminal_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a value for use as invocation-side terminal metadata.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A metadata value appropriate for use as invocation-side terminal</span>
+<span class="sd">        metadata or None if invocation-side terminal metadata transmission is</span>
+<span class="sd">        not supported by the links under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_service_initial_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_initial_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">create_service_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a value for use as service-side initial metadata.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A metadata value appropriate for use as service-side initial metadata or</span>
+<span class="sd">        None if service-side initial metadata transmission is not supported by</span>
+<span class="sd">        the links under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_service_terminal_metadata"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_terminal_metadata">[docs]</a>  <span class="k">def</span> <span class="nf">create_service_terminal_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a value for use as service-side terminal metadata.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A metadata value appropriate for use as service-side terminal metadata or</span>
+<span class="sd">        None if service-side terminal metadata transmission is not supported by</span>
+<span class="sd">        the links under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_invocation_completion"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_completion">[docs]</a>  <span class="k">def</span> <span class="nf">create_invocation_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates values for use as invocation-side code and message.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      An invocation-side code value and an invocation-side message value.</span>
+<span class="sd">        Either or both may be None if invocation-side code and/or</span>
+<span class="sd">        invocation-side message transmission is not supported by the links</span>
+<span class="sd">        under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.create_service_completion"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_completion">[docs]</a>  <span class="k">def</span> <span class="nf">create_service_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates values for use as service-side code and message.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A service-side code value and a service-side message value. Either or</span>
+<span class="sd">        both may be None if service-side code and/or service-side message</span>
+<span class="sd">        transmission is not supported by the links under test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="TransmissionTest.assertMetadataTransmitted"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.assertMetadataTransmitted">[docs]</a>  <span class="k">def</span> <span class="nf">assertMetadataTransmitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original_metadata</span><span class="p">,</span> <span class="n">transmitted_metadata</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asserts that transmitted_metadata contains original_metadata.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      original_metadata: A metadata object used in this test.</span>
+<span class="sd">      transmitted_metadata: A metadata object obtained after transmission</span>
+<span class="sd">        through the system under test.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      AssertionError: if the transmitted_metadata object does not contain</span>
+<span class="sd">        original_metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.group_and_method"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.group_and_method">[docs]</a>  <span class="k">def</span> <span class="nf">group_and_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the group and method used in this test case.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A pair of the group and method used in this test case.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_TRANSMISSION_GROUP</span><span class="p">,</span> <span class="n">_TRANSMISSION_METHOD</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.serialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.serialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serializes a request value used in this test case.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: A request value created by this test case.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A bytestring that is the serialization of the given request.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">request</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.deserialize_request"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.deserialize_request">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deserializes a request value used in this test case.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      serialized_request: A bytestring that is the serialization of some request</span>
+<span class="sd">        used in this test case.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The request value encoded by the given bytestring.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">serialized_request</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.serialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.serialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">serialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Serializes a response value used in this test case.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      response: A response value created by this test case.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A bytestring that is the serialization of the given response.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">response</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.deserialize_response"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.deserialize_response">[docs]</a>  <span class="k">def</span> <span class="nf">deserialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deserializes a response value used in this test case.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      serialized_response: A bytestring that is the serialization of some</span>
+<span class="sd">        response used in this test case.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The response value encoded by the given bytestring.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">serialized_response</span>
+</div>
+  <span class="k">def</span> <span class="nf">_assert_is_valid_metadata_payload_sequence</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">,</span> <span class="n">payloads</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">):</span>
+    <span class="n">initial_metadata_seen</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">seen_payloads</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">terminal_metadata_seen</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">for</span> <span class="n">ticket</span> <span class="ow">in</span> <span class="n">ticket_sequence</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">ticket</span><span class="o">.</span><span class="n">initial_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">initial_metadata_seen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">seen_payloads</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">terminal_metadata_seen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertMetadataTransmitted</span><span class="p">(</span><span class="n">initial_metadata</span><span class="p">,</span> <span class="n">ticket</span><span class="o">.</span><span class="n">initial_metadata</span><span class="p">)</span>
+        <span class="n">initial_metadata_seen</span> <span class="o">=</span> <span class="bp">True</span>
+
+      <span class="k">if</span> <span class="n">ticket</span><span class="o">.</span><span class="n">payload</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">terminal_metadata_seen</span><span class="p">)</span>
+        <span class="n">seen_payloads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ticket</span><span class="o">.</span><span class="n">payload</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="n">ticket</span><span class="o">.</span><span class="n">terminal_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">terminal_metadata_seen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertMetadataTransmitted</span><span class="p">(</span><span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">ticket</span><span class="o">.</span><span class="n">terminal_metadata</span><span class="p">)</span>
+        <span class="n">terminal_metadata_seen</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertSequenceEqual</span><span class="p">(</span><span class="n">payloads</span><span class="p">,</span> <span class="n">seen_payloads</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">_assert_is_valid_invocation_sequence</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">payloads</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">,</span>
+      <span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">termination</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertLess</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ticket_sequence</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">group</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_assert_is_valid_metadata_payload_sequence</span><span class="p">(</span>
+        <span class="n">ticket_sequence</span><span class="p">,</span> <span class="n">payloads</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertIs</span><span class="p">(</span><span class="n">termination</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">termination</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">_assert_is_valid_service_sequence</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">,</span> <span class="n">payloads</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">,</span>
+      <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">termination</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertLess</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ticket_sequence</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_assert_is_valid_metadata_payload_sequence</span><span class="p">(</span>
+        <span class="n">ticket_sequence</span><span class="p">,</span> <span class="n">payloads</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">,</span> <span class="n">terminal_metadata</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertIs</span><span class="p">(</span><span class="n">termination</span><span class="p">,</span> <span class="n">ticket_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">termination</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransmissionTest.setUp"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.setUp">[docs]</a>  <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_link</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_transmitting_links</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_mate</span> <span class="o">=</span> <span class="n">test_utilities</span><span class="o">.</span><span class="n">RecordingLink</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_service_mate</span> <span class="o">=</span> <span class="n">test_utilities</span><span class="o">.</span><span class="n">RecordingLink</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_link</span><span class="o">.</span><span class="n">join_link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invocation_mate</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_service_link</span><span class="o">.</span><span class="n">join_link</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_mate</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.tearDown"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.tearDown">[docs]</a>  <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">destroy_transmitting_links</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invocation_link</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_link</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TransmissionTest.testSimplestRoundTrip"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.test_cases.TransmissionTest.testSimplestRoundTrip">[docs]</a>  <span class="k">def</span> <span class="nf">testSimplestRoundTrip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests transmission of one ticket in each direction.&quot;&quot;&quot;</span>
+    <span class="n">invocation_operation_id</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+    <span class="n">invocation_payload</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x07</span><span class="s">&#39;</span> <span class="o">*</span> <span class="mi">1023</span>
+    <span class="n">timeout</span> <span class="o">=</span> <span class="n">test_constants</span><span class="o">.</span><span class="n">LONG_TIMEOUT</span>
+    <span class="n">invocation_initial_metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_invocation_initial_metadata</span><span class="p">()</span>
+    <span class="n">invocation_terminal_metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_invocation_terminal_metadata</span><span class="p">()</span>
+    <span class="n">invocation_code</span><span class="p">,</span> <span class="n">invocation_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_invocation_completion</span><span class="p">()</span>
+    <span class="n">service_payload</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\x08</span><span class="s">&#39;</span> <span class="o">*</span> <span class="mi">1025</span>
+    <span class="n">service_initial_metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_service_initial_metadata</span><span class="p">()</span>
+    <span class="n">service_terminal_metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_service_terminal_metadata</span><span class="p">()</span>
+    <span class="n">service_code</span><span class="p">,</span> <span class="n">service_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_service_completion</span><span class="p">()</span>
+
+    <span class="n">original_invocation_ticket</span> <span class="o">=</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="p">(</span>
+        <span class="n">invocation_operation_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">_TRANSMISSION_GROUP</span><span class="p">,</span> <span class="n">_TRANSMISSION_METHOD</span><span class="p">,</span>
+        <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">invocation_initial_metadata</span><span class="p">,</span>
+        <span class="n">invocation_payload</span><span class="p">,</span> <span class="n">invocation_terminal_metadata</span><span class="p">,</span> <span class="n">invocation_code</span><span class="p">,</span>
+        <span class="n">invocation_message</span><span class="p">,</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Termination</span><span class="o">.</span><span class="n">COMPLETION</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_link</span><span class="o">.</span><span class="n">accept_ticket</span><span class="p">(</span><span class="n">original_invocation_ticket</span><span class="p">)</span>
+
+    <span class="c"># TODO(nathaniel): This shouldn&#39;t be necessary. Detecting the end of the</span>
+    <span class="c"># invocation-side ticket sequence shouldn&#39;t require granting allowance for</span>
+    <span class="c"># another payload.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_service_mate</span><span class="o">.</span><span class="n">block_until_tickets_satisfy</span><span class="p">(</span>
+        <span class="n">at_least_n_payloads_received_predicate</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">service_operation_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_mate</span><span class="o">.</span><span class="n">tickets</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">operation_id</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_service_link</span><span class="o">.</span><span class="n">accept_ticket</span><span class="p">(</span>
+        <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="p">(</span>
+            <span class="n">service_operation_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+            <span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_service_mate</span><span class="o">.</span><span class="n">block_until_tickets_satisfy</span><span class="p">(</span><span class="n">terminated</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_assert_is_valid_invocation_sequence</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_service_mate</span><span class="o">.</span><span class="n">tickets</span><span class="p">(),</span> <span class="n">_TRANSMISSION_GROUP</span><span class="p">,</span> <span class="n">_TRANSMISSION_METHOD</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">invocation_payload</span><span class="p">,),</span> <span class="n">invocation_initial_metadata</span><span class="p">,</span>
+        <span class="n">invocation_terminal_metadata</span><span class="p">,</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Termination</span><span class="o">.</span><span class="n">COMPLETION</span><span class="p">)</span>
+
+    <span class="n">original_service_ticket</span> <span class="o">=</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="p">(</span>
+        <span class="n">service_operation_id</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">service_initial_metadata</span><span class="p">,</span> <span class="n">service_payload</span><span class="p">,</span>
+        <span class="n">service_terminal_metadata</span><span class="p">,</span> <span class="n">service_code</span><span class="p">,</span> <span class="n">service_message</span><span class="p">,</span>
+        <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Termination</span><span class="o">.</span><span class="n">COMPLETION</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_service_link</span><span class="o">.</span><span class="n">accept_ticket</span><span class="p">(</span><span class="n">original_service_ticket</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_mate</span><span class="o">.</span><span class="n">block_until_tickets_satisfy</span><span class="p">(</span><span class="n">terminated</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_assert_is_valid_service_sequence</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_mate</span><span class="o">.</span><span class="n">tickets</span><span class="p">(),</span> <span class="p">(</span><span class="n">service_payload</span><span class="p">,),</span>
+        <span class="n">service_initial_metadata</span><span class="p">,</span> <span class="n">service_terminal_metadata</span><span class="p">,</span> <span class="n">service_code</span><span class="p">,</span>
+        <span class="n">service_message</span><span class="p">,</span> <span class="n">links</span><span class="o">.</span><span class="n">Ticket</span><span class="o">.</span><span class="n">Termination</span><span class="o">.</span><span class="n">COMPLETION</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

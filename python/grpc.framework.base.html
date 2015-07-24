@@ -1,0 +1,966 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.base package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
+        <link rel="next" title="grpc.framework.common package" href="grpc.framework.common.html"/>
+        <link rel="prev" title="grpc.framework.alpha package" href="grpc.framework.alpha.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+    <li>grpc.framework.base package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.base.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-base-package">
+<h1>grpc.framework.base package<a class="headerlink" href="#grpc-framework-base-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.base.exceptions">
+<span id="grpc-framework-base-exceptions-module"></span><h2>grpc.framework.base.exceptions module<a class="headerlink" href="#module-grpc.framework.base.exceptions" title="Permalink to this headline">¶</a></h2>
+<p>Exceptions defined and used by the base layer of RPC Framework.</p>
+<dl class="exception">
+<dt id="grpc.framework.base.exceptions.NoSuchMethodError">
+<em class="property">exception </em><code class="descclassname">grpc.framework.base.exceptions.</code><code class="descname">NoSuchMethodError</code><a class="reference internal" href="_modules/grpc/framework/base/exceptions.html#NoSuchMethodError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.exceptions.NoSuchMethodError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Indicates that an operation with an unrecognized name has been called.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base.implementations">
+<span id="grpc-framework-base-implementations-module"></span><h2>grpc.framework.base.implementations module<a class="headerlink" href="#module-grpc.framework.base.implementations" title="Permalink to this headline">¶</a></h2>
+<p>Entry points into the ticket-exchange-based base layer implementation.</p>
+<dl class="function">
+<dt id="grpc.framework.base.implementations.back_link">
+<code class="descclassname">grpc.framework.base.implementations.</code><code class="descname">back_link</code><span class="sig-paren">(</span><em>servicer</em>, <em>work_pool</em>, <em>transmission_pool</em>, <em>utility_pool</em>, <em>default_timeout</em>, <em>maximum_timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations.html#back_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations.back_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factory function for creating interfaces.BackLinks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>servicer</strong> &#8211; An interfaces.Servicer for servicing operations.</li>
+<li><strong>work_pool</strong> &#8211; A thread pool to be used for doing work within the created
+BackLink object.</li>
+<li><strong>transmission_pool</strong> &#8211; A thread pool to be used within the created BackLink
+object for transmitting values to a joined ForeLink object.</li>
+<li><strong>utility_pool</strong> &#8211; A thread pool to be used within the created BackLink object
+for utility tasks.</li>
+<li><strong>default_timeout</strong> &#8211; A length of time in seconds to be used as the default
+time alloted for a single operation.</li>
+<li><strong>maximum_timeout</strong> &#8211; A length of time in seconds to be used as the maximum
+time alloted for a single operation.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.BackLink.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.base.implementations.front_link">
+<code class="descclassname">grpc.framework.base.implementations.</code><code class="descname">front_link</code><span class="sig-paren">(</span><em>work_pool</em>, <em>transmission_pool</em>, <em>utility_pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations.html#front_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations.front_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Factory function for creating interfaces.FrontLinks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>work_pool</strong> &#8211; A thread pool to be used for doing work within the created
+FrontLink object.</li>
+<li><strong>transmission_pool</strong> &#8211; A thread pool to be used within the created FrontLink
+object for transmitting values to a joined RearLink object.</li>
+<li><strong>utility_pool</strong> &#8211; A thread pool to be used within the created FrontLink object
+for utility tasks.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.FrontLink.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base.implementations_test">
+<span id="grpc-framework-base-implementations-test-module"></span><h2>grpc.framework.base.implementations_test module<a class="headerlink" href="#module-grpc.framework.base.implementations_test" title="Permalink to this headline">¶</a></h2>
+<p>Tests for grpc.framework.base.implementations.</p>
+<dl class="class">
+<dt id="grpc.framework.base.implementations_test.ImplementationsTest">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.implementations_test.</code><code class="descname">ImplementationsTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations_test.html#ImplementationsTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations_test.ImplementationsTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest" title="grpc.framework.base.interfaces_test_case.FrontAndBackTest"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces_test_case.FrontAndBackTest</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
+<dl class="method">
+<dt id="grpc.framework.base.implementations_test.ImplementationsTest.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations_test.html#ImplementationsTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations_test.ImplementationsTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.implementations_test.ImplementationsTest.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations_test.html#ImplementationsTest.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations_test.ImplementationsTest.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base.in_memory">
+<span id="grpc-framework-base-in-memory-module"></span><h2>grpc.framework.base.in_memory module<a class="headerlink" href="#module-grpc.framework.base.in_memory" title="Permalink to this headline">¶</a></h2>
+<p>In-memory implementations of base layer interfaces.</p>
+<dl class="class">
+<dt id="grpc.framework.base.in_memory.Link">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.in_memory.</code><code class="descname">Link</code><span class="sig-paren">(</span><em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/in_memory.html#Link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.in_memory.Link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.ForeLink" title="grpc.framework.base.interfaces.ForeLink"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.ForeLink</span></code></a>, <a class="reference internal" href="#grpc.framework.base.interfaces.RearLink" title="grpc.framework.base.interfaces.RearLink"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.RearLink</span></code></a></p>
+<p>A trivial implementation of interfaces.ForeLink and interfaces.RearLink.</p>
+<dl class="method">
+<dt id="grpc.framework.base.in_memory.Link.accept_back_to_front_ticket">
+<code class="descname">accept_back_to_front_ticket</code><span class="sig-paren">(</span><em>ticket</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/in_memory.html#Link.accept_back_to_front_ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.in_memory.Link.accept_back_to_front_ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>See interfaces.RearLink.accept_back_to_front_ticket for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.in_memory.Link.accept_front_to_back_ticket">
+<code class="descname">accept_front_to_back_ticket</code><span class="sig-paren">(</span><em>ticket</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/in_memory.html#Link.accept_front_to_back_ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.in_memory.Link.accept_front_to_back_ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>See interfaces.ForeLink.accept_front_to_back_ticket for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.in_memory.Link.join_fore_link">
+<code class="descname">join_fore_link</code><span class="sig-paren">(</span><em>fore_link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/in_memory.html#Link.join_fore_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.in_memory.Link.join_fore_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>See interfaces.RearLink.join_fore_link for specification.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.in_memory.Link.join_rear_link">
+<code class="descname">join_rear_link</code><span class="sig-paren">(</span><em>rear_link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/in_memory.html#Link.join_rear_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.in_memory.Link.join_rear_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>See interfaces.ForeLink.join_rear_link for specification.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base.interfaces">
+<span id="grpc-framework-base-interfaces-module"></span><h2>grpc.framework.base.interfaces module<a class="headerlink" href="#module-grpc.framework.base.interfaces" title="Permalink to this headline">¶</a></h2>
+<p>Interfaces defined and used by the base layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.Back">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">Back</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Back"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Back" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.End" title="grpc.framework.base.interfaces.End"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.End</span></code></a></p>
+<p>Serverish objects that perform the work of operations.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.BackLink">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">BackLink</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#BackLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.BackLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.Back" title="grpc.framework.base.interfaces.Back"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.Back</span></code></a>, <a class="reference internal" href="#grpc.framework.base.interfaces.RearLink" title="grpc.framework.base.interfaces.RearLink"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.RearLink</span></code></a></p>
+<p>Serverish objects that operate by sending and receiving tickets.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.BackToFrontTicket">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">BackToFrontTicket</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#BackToFrontTicket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.BackToFrontTicket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.BackToFrontTicket" title="grpc.framework.base.interfaces.BackToFrontTicket"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.BackToFrontTicket</span></code></a></p>
+<p>A sum type for all values sent from a back to a front.</p>
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.BackToFrontTicket.operation_id">
+<code class="descname">operation_id</code><a class="headerlink" href="#grpc.framework.base.interfaces.BackToFrontTicket.operation_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unique-with-respect-to-equality hashable object identifying
+a particular operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.BackToFrontTicket.sequence_number">
+<code class="descname">sequence_number</code><a class="headerlink" href="#grpc.framework.base.interfaces.BackToFrontTicket.sequence_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>A zero-indexed integer sequence number identifying the
+ticket&#8217;s place among all the tickets sent from back to front for this
+particular operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.BackToFrontTicket.kind">
+<code class="descname">kind</code><a class="headerlink" href="#grpc.framework.base.interfaces.BackToFrontTicket.kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Kind value describing the overall kind of ticket.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.BackToFrontTicket.payload">
+<code class="descname">payload</code><a class="headerlink" href="#grpc.framework.base.interfaces.BackToFrontTicket.payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>A customer payload object. Must be present if kind is
+Kind.CONTINUATION. May be None if kind is Kind.COMPLETION. Must be None
+otherwise.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.BackToFrontTicket.Kind">
+<em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#BackToFrontTicket.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.BackToFrontTicket.Kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Identifies the overall kind of a BackToFrontTicket.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.End">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">End</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#End"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.End" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Common type for entry-point objects on both sides of an operation.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.End.add_idle_action">
+<code class="descname">add_idle_action</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#End.add_idle_action"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.End.add_idle_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an action to be called when this End has no ongoing operations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> &#8211; A callable that accepts no arguments.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.End.operation_stats">
+<code class="descname">operation_stats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#End.operation_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.End.operation_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports the number of terminated operations broken down by outcome.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary from Outcome value to an integer identifying the number
+of operations that terminated with that outcome.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.ForeLink">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">ForeLink</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ForeLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ForeLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Accepts back-to-front tickets and emits front-to-back tickets.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.ForeLink.accept_back_to_front_ticket">
+<code class="descname">accept_back_to_front_ticket</code><span class="sig-paren">(</span><em>ticket</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ForeLink.accept_back_to_front_ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ForeLink.accept_back_to_front_ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accept a BackToFrontTicket.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ticket</strong> &#8211; Any BackToFrontTicket.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.ForeLink.join_rear_link">
+<code class="descname">join_rear_link</code><span class="sig-paren">(</span><em>rear_link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ForeLink.join_rear_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ForeLink.join_rear_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mates this object with a peer with which it will exchange tickets.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.Front">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">Front</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Front"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Front" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.End" title="grpc.framework.base.interfaces.End"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.End</span></code></a></p>
+<p>Clientish objects that afford the invocation of operations.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.Front.operate">
+<code class="descname">operate</code><span class="sig-paren">(</span><em>name</em>, <em>payload</em>, <em>complete</em>, <em>timeout</em>, <em>subscription</em>, <em>trace_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Front.operate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Front.operate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commences an operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The name of the method invoked for the operation.</li>
+<li><strong>payload</strong> &#8211; An initial payload for the operation. May be None.</li>
+<li><strong>complete</strong> &#8211; A boolean indicating whether or not additional payloads to be
+sent to the servicer may be supplied after this call.</li>
+<li><strong>timeout</strong> &#8211; A length of time in seconds to allow for the operation.</li>
+<li><strong>subscription</strong> &#8211; A ServicedSubscription for the operation.</li>
+<li><strong>trace_id</strong> &#8211; A uuid.UUID identifying a set of related operations to which
+this operation belongs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An Operation object affording information and action about the operation
+in progress.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.FrontLink">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">FrontLink</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#FrontLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.FrontLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.Front" title="grpc.framework.base.interfaces.Front"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.Front</span></code></a>, <a class="reference internal" href="#grpc.framework.base.interfaces.ForeLink" title="grpc.framework.base.interfaces.ForeLink"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.ForeLink</span></code></a></p>
+<p>Clientish objects that operate by sending and receiving tickets.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">FrontToBackTicket</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#FrontToBackTicket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.FrontToBackTicket" title="grpc.framework.base.interfaces.FrontToBackTicket"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.FrontToBackTicket</span></code></a></p>
+<p>A sum type for all values sent from a front to a back.</p>
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.operation_id">
+<code class="descname">operation_id</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.operation_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unique-with-respect-to-equality hashable object identifying
+a particular operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.sequence_number">
+<code class="descname">sequence_number</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.sequence_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>A zero-indexed integer sequence number identifying the
+ticket&#8217;s place among all the tickets sent from front to back for this
+particular operation. Must be zero if kind is Kind.COMMENCEMENT or
+Kind.ENTIRE. Must be positive for any other kind.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.kind">
+<code class="descname">kind</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Kind value describing the overall kind of ticket.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.name">
+<code class="descname">name</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of an operation. Must be present if kind is Kind.COMMENCEMENT
+or Kind.ENTIRE. Must be None for any other kind.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.subscription">
+<code class="descname">subscription</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.subscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>An ServicedSubscription.Kind value describing the interest
+the front has in tickets sent from the back. Must be present if
+kind is Kind.COMMENCEMENT or Kind.ENTIRE. Must be None for any other kind.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.trace_id">
+<code class="descname">trace_id</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.trace_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>A uuid.UUID identifying a set of related operations to which this
+operation belongs. May be None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.payload">
+<code class="descname">payload</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>A customer payload object. Must be present if kind is
+Kind.CONTINUATION. Must be None if kind is Kind.CANCELLATION. May be None
+for any other kind.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.timeout">
+<code class="descname">timeout</code><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>An optional length of time (measured from the beginning of the
+operation) to allow for the entire operation. If None, a default value on
+the back will be used. If present and excessively large, the back may
+limit the operation to a smaller duration of its choice. May be present
+for any ticket kind; setting a value on a later ticket allows fronts
+to request time extensions (or even time reductions!) on in-progress
+operations.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.FrontToBackTicket.Kind">
+<em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#FrontToBackTicket.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.FrontToBackTicket.Kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Identifies the overall kind of a FrontToBackTicket.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.Operation">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">Operation</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Operation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Operation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Representation of an in-progress operation.</p>
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.Operation.consumer">
+<code class="descname">consumer</code><a class="headerlink" href="#grpc.framework.base.interfaces.Operation.consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>A stream.Consumer into which payloads constituting the operation&#8217;s
+input may be passed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.Operation.context">
+<code class="descname">context</code><a class="headerlink" href="#grpc.framework.base.interfaces.Operation.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>An OperationContext affording information and action about the
+operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.Operation.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Operation.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Operation.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels this operation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.OperationContext">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">OperationContext</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#OperationContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.OperationContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Provides operation-related information and action.</p>
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.OperationContext.trace_id">
+<code class="descname">trace_id</code><a class="headerlink" href="#grpc.framework.base.interfaces.OperationContext.trace_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>A uuid.UUID identifying a particular set of related operations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.OperationContext.add_termination_callback">
+<code class="descname">add_termination_callback</code><span class="sig-paren">(</span><em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#OperationContext.add_termination_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.OperationContext.add_termination_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a function to be called upon operation termination.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> &#8211; A callable that will be passed an Outcome value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.OperationContext.fail">
+<code class="descname">fail</code><span class="sig-paren">(</span><em>exception</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#OperationContext.fail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.OperationContext.fail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates that the operation has failed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exception</strong> &#8211; An exception germane to the operation failure. May be None.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.OperationContext.is_active">
+<code class="descname">is_active</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#OperationContext.is_active"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.OperationContext.is_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes whether the operation is active or has terminated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.OperationContext.time_remaining">
+<code class="descname">time_remaining</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#OperationContext.time_remaining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.OperationContext.time_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the length of allowed time remaining for the operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A nonnegative float indicating the length of allowed time in seconds
+remaining for the operation to complete before it is considered to have
+timed out.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.Outcome">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">Outcome</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Outcome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Outcome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Operation outcomes.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.RearLink">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">RearLink</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#RearLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.RearLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Accepts front-to-back tickets and emits back-to-front tickets.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.RearLink.accept_front_to_back_ticket">
+<code class="descname">accept_front_to_back_ticket</code><span class="sig-paren">(</span><em>ticket</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#RearLink.accept_front_to_back_ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.RearLink.accept_front_to_back_ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepts a FrontToBackTicket.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ticket</strong> &#8211; Any FrontToBackTicket.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.RearLink.join_fore_link">
+<code class="descname">join_fore_link</code><span class="sig-paren">(</span><em>fore_link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#RearLink.join_fore_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.RearLink.join_fore_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mates this object with a peer with which it will exchange tickets.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.ServicedIngestor">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">ServicedIngestor</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ServicedIngestor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ServicedIngestor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Responsible for accepting the result of an operation.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.ServicedIngestor.consumer">
+<code class="descname">consumer</code><span class="sig-paren">(</span><em>operation_context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ServicedIngestor.consumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ServicedIngestor.consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords a consumer to which operation results will be passed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>operation_context</strong> &#8211; An OperationContext object for the current operation.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A stream.Consumer to which the results of the current operation will be
+passed.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+If the operation has been aborted and there no
+longer is any reason to service the operation.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.ServicedSubscription">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">ServicedSubscription</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ServicedSubscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ServicedSubscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A sum type representing a serviced&#8217;s interest in an operation.</p>
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.ServicedSubscription.kind">
+<code class="descname">kind</code><a class="headerlink" href="#grpc.framework.base.interfaces.ServicedSubscription.kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Kind value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.base.interfaces.ServicedSubscription.ingestor">
+<code class="descname">ingestor</code><a class="headerlink" href="#grpc.framework.base.interfaces.ServicedSubscription.ingestor" title="Permalink to this definition">¶</a></dt>
+<dd><p>A ServicedIngestor. Must be present if kind is Kind.FULL. Must
+be None if kind is Kind.TERMINATION_ONLY or Kind.NONE.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.ServicedSubscription.Kind">
+<em class="property">class </em><code class="descname">Kind</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#ServicedSubscription.Kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.ServicedSubscription.Kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Kinds of subscription.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces.Servicer">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces.</code><code class="descname">Servicer</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Servicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Servicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Interface for service implementations.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces.Servicer.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>name</em>, <em>context</em>, <em>output_consumer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces.html#Servicer.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces.Servicer.service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Services an operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> &#8211; The name of the operation.</li>
+<li><strong>context</strong> &#8211; A ServicerContext object affording contextual information and
+actions.</li>
+<li><strong>output_consumer</strong> &#8211; A stream.Consumer that will accept output values of
+the operation.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A stream.Consumer that will accept input values for the operation.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">exceptions.NoSuchMethodError</span></code> &#8211;
+If this Servicer affords no method with the
+given name.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">abandonment.Abandoned</span></code> &#8211;
+If the operation has been aborted and there no
+longer is any reason to service the operation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base.interfaces_test_case">
+<span id="grpc-framework-base-interfaces-test-case-module"></span><h2>grpc.framework.base.interfaces_test_case module<a class="headerlink" href="#module-grpc.framework.base.interfaces_test_case" title="Permalink to this headline">¶</a></h2>
+<p>Abstract tests against the interfaces of the base layer of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">AsynchronousEcho</code><span class="sig-paren">(</span><em>output_consumer</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
+<p>A stream.Consumer that echoes its input to another stream.Consumer.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume">
+<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume_and_terminate">
+<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho.terminate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces_test_case.EasyServicedIngestor">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">EasyServicedIngestor</code><span class="sig-paren">(</span><em>consumer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#EasyServicedIngestor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.EasyServicedIngestor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.ServicedIngestor" title="grpc.framework.base.interfaces.ServicedIngestor"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.ServicedIngestor</span></code></a></p>
+<p>A trivial implementation of interfaces.ServicedIngestor.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.EasyServicedIngestor.consumer">
+<code class="descname">consumer</code><span class="sig-paren">(</span><em>operation_context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#EasyServicedIngestor.consumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.EasyServicedIngestor.consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>See interfaces.ServicedIngestor.consumer for specification.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">FrontAndBackTest</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A test suite usable against any joined Front and Back.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testBidirectionalStreamingEcho">
+<code class="descname">testBidirectionalStreamingEcho</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testBidirectionalStreamingEcho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testBidirectionalStreamingEcho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests sending multiple tickets each way.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testCancellation">
+<code class="descname">testCancellation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testCancellation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testCancellation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests cancelling a long-lived operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testEntireEcho">
+<code class="descname">testEntireEcho</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testEntireEcho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testEntireEcho" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests a very simple one-ticket-each-way round-trip.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testExpiration">
+<code class="descname">testExpiration</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testExpiration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testExpiration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests that operations time out.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testSimplestCall">
+<code class="descname">testSimplestCall</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testSimplestCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testSimplestCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests the absolute simplest call - a one-ticket fire-and-forget.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.base.interfaces_test_case.TestServicer">
+<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">TestServicer</code><span class="sig-paren">(</span><em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#TestServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.TestServicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.Servicer" title="grpc.framework.base.interfaces.Servicer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.Servicer</span></code></a></p>
+<p>An interfaces.Servicer with instrumented for testing.</p>
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.TestServicer.release">
+<code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#TestServicer.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.TestServicer.release" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.base.interfaces_test_case.TestServicer.service">
+<code class="descname">service</code><span class="sig-paren">(</span><em>name</em>, <em>context</em>, <em>output_consumer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#TestServicer.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.TestServicer.service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base.null">
+<span id="grpc-framework-base-null-module"></span><h2>grpc.framework.base.null module<a class="headerlink" href="#module-grpc.framework.base.null" title="Permalink to this headline">¶</a></h2>
+<p>Null links that ignore tickets passed to them.</p>
+</div>
+<div class="section" id="module-grpc.framework.base.util">
+<span id="grpc-framework-base-util-module"></span><h2>grpc.framework.base.util module<a class="headerlink" href="#module-grpc.framework.base.util" title="Permalink to this headline">¶</a></h2>
+<p>Utilities helpful for working with the base layer of RPC Framework.</p>
+<dl class="function">
+<dt id="grpc.framework.base.util.full_serviced_subscription">
+<code class="descclassname">grpc.framework.base.util.</code><code class="descname">full_serviced_subscription</code><span class="sig-paren">(</span><em>ingestor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/util.html#full_serviced_subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.util.full_serviced_subscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a &#8220;full&#8221; interfaces.ServicedSubscription object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ingestor</strong> &#8211; An interfaces.ServicedIngestor.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.ServicedSubscription object indicating a full
+subscription.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.base.util.none_serviced_subscription">
+<code class="descclassname">grpc.framework.base.util.</code><code class="descname">none_serviced_subscription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/util.html#none_serviced_subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.util.none_serviced_subscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a &#8220;none&#8221; interfaces.ServicedSubscription object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.ServicedSubscription indicating no subscription to an
+operation&#8217;s results (such as would be the case for a fire-and-forget
+operation invocation).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.base.util.termination_only_serviced_subscription">
+<code class="descclassname">grpc.framework.base.util.</code><code class="descname">termination_only_serviced_subscription</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/util.html#termination_only_serviced_subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.util.termination_only_serviced_subscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a &#8220;termination only&#8221; interfaces.ServicedSubscription object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An interfaces.ServicedSubscription indicating that the front-side customer
+is interested only in the overall termination outcome of the operation
+(such as completion or expiration) and would ignore the actual results of
+the operation.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.base.util.wait_for_idle">
+<code class="descclassname">grpc.framework.base.util.</code><code class="descname">wait_for_idle</code><span class="sig-paren">(</span><em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/util.html#wait_for_idle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.util.wait_for_idle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits for an interfaces.End to complete all operations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>end</strong> &#8211; Any interfaces.End.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.base">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.base" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.common.html" class="btn btn-neutral float-right" title="grpc.framework.common package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.framework.alpha.html" class="btn btn-neutral" title="grpc.framework.alpha package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

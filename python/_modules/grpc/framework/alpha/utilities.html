@@ -1,0 +1,458 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.alpha.utilities &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.alpha.utilities</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.alpha.utilities</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Utilities for use with GRPC.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.alpha</span> <span class="kn">import</span> <span class="n">interfaces</span>
+
+
+<span class="k">class</span> <span class="nc">_RpcMethodDescription</span><span class="p">(</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">RpcMethodInvocationDescription</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">RpcMethodServiceDescription</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">,</span> <span class="n">unary_unary</span><span class="p">,</span> <span class="n">unary_stream</span><span class="p">,</span> <span class="n">stream_unary</span><span class="p">,</span>
+      <span class="n">stream_stream</span><span class="p">,</span> <span class="n">request_serializer</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
+      <span class="n">response_serializer</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_cardinality</span> <span class="o">=</span> <span class="n">cardinality</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_unary_unary</span> <span class="o">=</span> <span class="n">unary_unary</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_unary_stream</span> <span class="o">=</span> <span class="n">unary_stream</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_stream_unary</span> <span class="o">=</span> <span class="n">stream_unary</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream</span> <span class="o">=</span> <span class="n">stream_stream</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span> <span class="o">=</span> <span class="n">request_serializer</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_request_deserializer</span> <span class="o">=</span> <span class="n">request_deserializer</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_response_serializer</span> <span class="o">=</span> <span class="n">response_serializer</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span> <span class="o">=</span> <span class="n">response_deserializer</span>
+
+  <span class="k">def</span> <span class="nf">cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodDescription.cardinality for specification.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cardinality</span>
+
+  <span class="k">def</span> <span class="nf">serialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodInvocationDescription.serialize_request.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">deserialize_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodServiceDescription.deserialize_request.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_deserializer</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">serialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodServiceDescription.serialize_response.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_serializer</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">deserialize_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serialized_response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodInvocationDescription.deserialize_response.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">(</span><span class="n">serialized_response</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">service_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodServiceDescription.service_unary_unary.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unary_unary</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">service_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodServiceDescription.service_unary_stream.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unary_stream</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">service_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodServiceDescription.service_stream_unary.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream_unary</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">service_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.RpcMethodServiceDescription.service_stream_stream.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="unary_unary_invocation_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.unary_unary_invocation_description">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_invocation_description</span><span class="p">(</span>
+    <span class="n">request_serializer</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    request_serializer: A callable that when called on a request</span>
+<span class="sd">      value returns a bytestring corresponding to that value.</span>
+<span class="sd">    response_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the response value corresponding to</span>
+<span class="sd">      that bytestring.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodInvocationDescription constructed from the given</span>
+<span class="sd">      arguments representing a unary-request/unary-response RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="n">request_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="unary_stream_invocation_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.unary_stream_invocation_description">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_invocation_description</span><span class="p">(</span>
+    <span class="n">request_serializer</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    request_serializer: A callable that when called on a request</span>
+<span class="sd">      value returns a bytestring corresponding to that value.</span>
+<span class="sd">    response_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the response value corresponding to</span>
+<span class="sd">      that bytestring.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodInvocationDescription constructed from the given</span>
+<span class="sd">      arguments representing a unary-request/streaming-response RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="n">request_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_unary_invocation_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.stream_unary_invocation_description">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_invocation_description</span><span class="p">(</span>
+    <span class="n">request_serializer</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    request_serializer: A callable that when called on a request</span>
+<span class="sd">      value returns a bytestring corresponding to that value.</span>
+<span class="sd">    response_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the response value corresponding to</span>
+<span class="sd">      that bytestring.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodInvocationDescription constructed from the given</span>
+<span class="sd">      arguments representing a streaming-request/unary-response RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="n">request_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_stream_invocation_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.stream_stream_invocation_description">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_invocation_description</span><span class="p">(</span>
+    <span class="n">request_serializer</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodInvocationDescription for an RPC method.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    request_serializer: A callable that when called on a request</span>
+<span class="sd">      value returns a bytestring corresponding to that value.</span>
+<span class="sd">    response_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the response value corresponding to</span>
+<span class="sd">      that bytestring.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodInvocationDescription constructed from the given</span>
+<span class="sd">      arguments representing a  streaming-request/streaming-response RPC</span>
+<span class="sd">      method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="n">request_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="unary_unary_service_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.unary_unary_service_description">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_service_description</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodServiceDescription for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: A callable that implements a unary-unary RPC</span>
+<span class="sd">      method that accepts a single request and an interfaces.RpcContext and</span>
+<span class="sd">      returns a single response.</span>
+<span class="sd">    request_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the request value corresponding to that</span>
+<span class="sd">      bytestring.</span>
+<span class="sd">    response_serializer: A callable that when called on a</span>
+<span class="sd">      response value returns the bytestring corresponding to</span>
+<span class="sd">      that value.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodServiceDescription constructed from the given</span>
+<span class="sd">      arguments representing a unary-request/unary-response RPC</span>
+<span class="sd">      method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="unary_stream_service_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.unary_stream_service_description">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_service_description</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodServiceDescription for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: A callable that implements a unary-stream RPC</span>
+<span class="sd">      method that accepts a single request and an interfaces.RpcContext</span>
+<span class="sd">      and returns an iterator of zero or more responses.</span>
+<span class="sd">    request_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the request value corresponding to that</span>
+<span class="sd">      bytestring.</span>
+<span class="sd">    response_serializer: A callable that when called on a</span>
+<span class="sd">      response value returns the bytestring corresponding to</span>
+<span class="sd">      that value.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodServiceDescription constructed from the given</span>
+<span class="sd">      arguments representing a unary-request/streaming-response</span>
+<span class="sd">      RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_unary_service_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.stream_unary_service_description">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_service_description</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodServiceDescription for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: A callable that implements a stream-unary RPC</span>
+<span class="sd">      method that accepts an iterator of zero or more requests</span>
+<span class="sd">      and an interfaces.RpcContext and returns a single response.</span>
+<span class="sd">    request_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the request value corresponding to that</span>
+<span class="sd">      bytestring.</span>
+<span class="sd">    response_serializer: A callable that when called on a</span>
+<span class="sd">      response value returns the bytestring corresponding to</span>
+<span class="sd">      that value.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodServiceDescription constructed from the given</span>
+<span class="sd">      arguments representing a streaming-request/unary-response</span>
+<span class="sd">      RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="stream_stream_service_description"><a class="viewcode-back" href="../../../../grpc.framework.alpha.html#grpc.framework.alpha.utilities.stream_stream_service_description">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_service_description</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an interfaces.RpcMethodServiceDescription for the given behavior.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: A callable that implements a stream-stream RPC</span>
+<span class="sd">      method that accepts an iterator of zero or more requests</span>
+<span class="sd">      and an interfaces.RpcContext and returns an iterator of</span>
+<span class="sd">      zero or more responses.</span>
+<span class="sd">    request_deserializer: A callable that when called on a</span>
+<span class="sd">      bytestring returns the request value corresponding to that</span>
+<span class="sd">      bytestring.</span>
+<span class="sd">    response_serializer: A callable that when called on a</span>
+<span class="sd">      response value returns the bytestring corresponding to</span>
+<span class="sd">      that value.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An interfaces.RpcMethodServiceDescription constructed from the given</span>
+<span class="sd">      arguments representing a</span>
+<span class="sd">      streaming-request/streaming-response RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_RpcMethodDescription</span><span class="p">(</span>
+      <span class="n">interfaces</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
+      <span class="bp">None</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span> <span class="n">response_serializer</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

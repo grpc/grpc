@@ -1,0 +1,565 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;A test to verify an implementation of the Face layer of RPC Framework.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">contextlib</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">exceptions</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">control</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">coverage</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">digest</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">stock_service</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">test_case</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">future</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">logging_pool</span>
+
+<span class="n">_TIMEOUT</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">_MAXIMUM_POOL_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<span class="k">class</span> <span class="nc">_PauseableIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_upstream</span> <span class="o">=</span> <span class="n">upstream</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+
+  <span class="nd">@contextlib.contextmanager</span>
+  <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">yield</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+
+  <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span>
+
+  <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_upstream</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase">[docs]</a><span class="k">class</span> <span class="nc">FutureInvocationAsynchronousEventServiceTestCase</span><span class="p">(</span>
+    <span class="n">test_case</span><span class="o">.</span><span class="n">FaceTestCase</span><span class="p">,</span> <span class="n">coverage</span><span class="o">.</span><span class="n">FullCoverage</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A test of the Face layer of RPC Framework.</span>
+
+<span class="sd">  Concrete subclasses must also extend unittest.TestCase.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.setUp"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.setUp">[docs]</a>  <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See unittest.TestCase.setUp for full specification.</span>
+
+<span class="sd">    Overriding implementations must call this implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">control</span> <span class="o">=</span> <span class="n">control</span><span class="o">.</span><span class="n">PauseFailControl</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">digest_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="n">_MAXIMUM_POOL_SIZE</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">digest</span> <span class="o">=</span> <span class="n">digest</span><span class="o">.</span><span class="n">digest</span><span class="p">(</span>
+        <span class="n">stock_service</span><span class="o">.</span><span class="n">STOCK_TEST_SERVICE</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">digest_pool</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_up_implementation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">methods</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">event_method_implementations</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.tearDown"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.tearDown">[docs]</a>  <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See unittest.TestCase.tearDown for full specification.</span>
+
+<span class="sd">    Overriding implementations must call this implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">tear_down_implementation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memo</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">digest_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testSuccessfulUnaryRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulUnaryRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testSuccessfulUnaryRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_value_in_stream_out</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">responses</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testSuccessfulStreamRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+        <span class="n">request_iterator</span> <span class="o">=</span> <span class="n">_PauseableIterator</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">))</span>
+
+        <span class="c"># Use of a paused iterator of requests allows us to test that control is</span>
+        <span class="c"># returned to calling code before the iterator yields any requests.</span>
+        <span class="k">with</span> <span class="n">request_iterator</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_stream_in_value_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSuccessfulStreamRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testSuccessfulStreamRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+        <span class="n">request_iterator</span> <span class="o">=</span> <span class="n">_PauseableIterator</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">))</span>
+
+        <span class="c"># Use of a paused iterator of requests allows us to test that control is</span>
+        <span class="c"># returned to calling code before the iterator yields any requests.</span>
+        <span class="k">with</span> <span class="n">request_iterator</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_stream_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">responses</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">responses</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testSequentialInvocations"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testSequentialInvocations">[docs]</a>  <span class="k">def</span> <span class="nf">testSequentialInvocations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">first_request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+        <span class="n">second_request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="n">first_response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">first_request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">first_response</span> <span class="o">=</span> <span class="n">first_response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">first_request</span><span class="p">,</span> <span class="n">first_response</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">second_response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">second_request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">second_response</span> <span class="o">=</span> <span class="n">second_response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">second_request</span><span class="p">,</span> <span class="n">second_response</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testExpiredUnaryRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">multi_callable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">unary_unary_multi_callable</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="n">multi_callable</span><span class="o">.</span><span class="n">future</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">assertIsInstance</span><span class="p">(</span>
+              <span class="n">response_future</span><span class="o">.</span><span class="n">exception</span><span class="p">(),</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">)</span>
+          <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+            <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredUnaryRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testExpiredUnaryRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_value_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testExpiredStreamRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">multi_callable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">stream_unary_multi_callable</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="n">multi_callable</span><span class="o">.</span><span class="n">future</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">assertIsInstance</span><span class="p">(</span>
+              <span class="n">response_future</span><span class="o">.</span><span class="n">exception</span><span class="p">(),</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">)</span>
+          <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+            <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testExpiredStreamRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testExpiredStreamRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_stream_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testFailedUnaryRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">fail</span><span class="p">():</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+
+          <span class="c"># Because the servicer fails outside of the thread from which the</span>
+          <span class="c"># servicer-side runtime called into it its failure is</span>
+          <span class="c"># indistinguishable from simply not having called its</span>
+          <span class="c"># response_callback before the expiration of the RPC.</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">assertIsInstance</span><span class="p">(</span>
+              <span class="n">response_future</span><span class="o">.</span><span class="n">exception</span><span class="p">(),</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">)</span>
+          <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+            <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedUnaryRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testFailedUnaryRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="c"># Because the servicer fails outside of the thread from which the</span>
+        <span class="c"># servicer-side runtime called into it its failure is indistinguishable</span>
+        <span class="c"># from simply not having called its response_consumer before the</span>
+        <span class="c"># expiration of the RPC.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">fail</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_value_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="nb">list</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testFailedStreamRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">fail</span><span class="p">():</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_stream_in_value_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+
+          <span class="c"># Because the servicer fails outside of the thread from which the</span>
+          <span class="c"># servicer-side runtime called into it its failure is</span>
+          <span class="c"># indistinguishable from simply not having called its</span>
+          <span class="c"># response_callback before the expiration of the RPC.</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">assertIsInstance</span><span class="p">(</span>
+              <span class="n">response_future</span><span class="o">.</span><span class="n">exception</span><span class="p">(),</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">)</span>
+          <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+            <span class="n">response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testFailedStreamRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testFailedStreamRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+
+        <span class="c"># Because the servicer fails outside of the thread from which the</span>
+        <span class="c"># servicer-side runtime called into it its failure is indistinguishable</span>
+        <span class="c"># from simply not having called its response_consumer before the</span>
+        <span class="c"># expiration of the RPC.</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">fail</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ExpirationError</span><span class="p">):</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_stream_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="nb">list</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testParallelInvocations"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testParallelInvocations">[docs]</a>  <span class="k">def</span> <span class="nf">testParallelInvocations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">first_request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+        <span class="n">second_request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="n">first_response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">first_request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">second_response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">second_request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+        <span class="n">first_response</span> <span class="o">=</span> <span class="n">first_response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="n">second_response</span> <span class="o">=</span> <span class="n">second_response_future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">first_request</span><span class="p">,</span> <span class="n">first_response</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">test_messages</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">second_request</span><span class="p">,</span> <span class="n">second_response</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+  <span class="nd">@unittest.skip</span><span class="p">(</span><span class="s">&#39;TODO(nathaniel): implement.&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testWaitingForSomeButNotAllParallelInvocations">[docs]</a>  <span class="k">def</span> <span class="nf">testWaitingForSomeButNotAllParallelInvocations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testCancelledUnaryRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_value_in_value_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="n">cancel_method_return_value</span> <span class="o">=</span> <span class="n">response_future</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">cancel_method_return_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">response_future</span><span class="o">.</span><span class="n">cancelled</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledUnaryRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testCancelledUnaryRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">unary_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">request</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_value_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="n">response_iterator</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">future</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">):</span>
+          <span class="nb">next</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestUnaryResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testCancelledStreamRequestUnaryResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_unary_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">future_stream_in_value_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="n">cancel_method_return_value</span> <span class="o">=</span> <span class="n">response_future</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">cancel_method_return_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">response_future</span><span class="o">.</span><span class="n">cancelled</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase.testCancelledStreamRequestStreamResponse">[docs]</a>  <span class="k">def</span> <span class="nf">testCancelledStreamRequestStreamResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">test_messages_sequence</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">stream_stream_messages_sequences</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">test_messages</span> <span class="ow">in</span> <span class="n">test_messages_sequence</span><span class="p">:</span>
+        <span class="n">requests</span> <span class="o">=</span> <span class="n">test_messages</span><span class="o">.</span><span class="n">requests</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pause</span><span class="p">():</span>
+          <span class="n">response_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stub</span><span class="o">.</span><span class="n">inline_stream_in_stream_out</span><span class="p">(</span>
+              <span class="n">name</span><span class="p">,</span> <span class="nb">iter</span><span class="p">(</span><span class="n">requests</span><span class="p">),</span> <span class="n">_TIMEOUT</span><span class="p">)</span>
+          <span class="n">response_iterator</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">future</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">):</span>
+          <span class="nb">next</span><span class="p">(</span><span class="n">response_iterator</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

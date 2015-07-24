@@ -1,0 +1,829 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.interfaces &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.face.interfaces</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.face.interfaces</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Interfaces for the face layer of RPC Framework.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+
+<span class="c"># cardinality, style, exceptions, abandonment, future, and stream are</span>
+<span class="c"># referenced from specification in this module.</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">cardinality</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">style</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">exceptions</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">abandonment</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">future</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>  <span class="c"># pylint: disable=unused-import</span>
+
+
+<span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="Abortion"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.Abortion">[docs]</a><span class="k">class</span> <span class="nc">Abortion</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Categories of RPC abortion.&quot;&quot;&quot;</span>
+  <span class="n">CANCELLED</span> <span class="o">=</span> <span class="s">&#39;cancelled&#39;</span>
+  <span class="n">EXPIRED</span> <span class="o">=</span> <span class="s">&#39;expired&#39;</span>
+  <span class="n">NETWORK_FAILURE</span> <span class="o">=</span> <span class="s">&#39;network failure&#39;</span>
+  <span class="n">SERVICED_FAILURE</span> <span class="o">=</span> <span class="s">&#39;serviced failure&#39;</span>
+  <span class="n">SERVICER_FAILURE</span> <span class="o">=</span> <span class="s">&#39;servicer failure&#39;</span>
+
+</div>
+<div class="viewcode-block" id="CancellableIterator"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.CancellableIterator">[docs]</a><span class="k">class</span> <span class="nc">CancellableIterator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Implements the Iterator protocol and affords a cancel method.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="CancellableIterator.__iter__"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.CancellableIterator.__iter__">[docs]</a>  <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the self object in accordance with the Iterator protocol.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="CancellableIterator.next"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.CancellableIterator.next">[docs]</a>  <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a value or raises StopIteration per the Iterator protocol.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="CancellableIterator.cancel"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.CancellableIterator.cancel">[docs]</a>  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Requests cancellation of whatever computation underlies this iterator.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="RpcContext"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.RpcContext">[docs]</a><span class="k">class</span> <span class="nc">RpcContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Provides RPC-related information and action.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.is_active"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.RpcContext.is_active">[docs]</a>  <span class="k">def</span> <span class="nf">is_active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes whether the RPC is active or has terminated.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.time_remaining"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.RpcContext.time_remaining">[docs]</a>  <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A nonnegative float indicating the length of allowed time in seconds</span>
+<span class="sd">      remaining for the RPC to complete before it is considered to have timed</span>
+<span class="sd">      out.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="RpcContext.add_abortion_callback"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.RpcContext.add_abortion_callback">[docs]</a>  <span class="k">def</span> <span class="nf">add_abortion_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Registers a callback to be called if the RPC is aborted.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      abortion_callback: A callable to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="Call"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.Call">[docs]</a><span class="k">class</span> <span class="nc">Call</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Invocation-side representation of an RPC.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    context: An RpcContext affording information about the RPC.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Call.cancel"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.Call.cancel">[docs]</a>  <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Requests cancellation of the RPC.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Affords invoking a unary-unary RPC in any call style.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryUnaryMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The response value for the RPC.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      exceptions.RpcError: Indicating that the RPC was aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.future"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryUnaryMultiCallable.future">[docs]</a>  <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A future.Future representing the RPC. In the event of RPC completion, the</span>
+<span class="sd">        returned Future&#39;s result value will be the response value of the RPC.</span>
+<span class="sd">        In the event of RPC abortion, the returned Future&#39;s exception value</span>
+<span class="sd">        will be an exceptions.RpcError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryMultiCallable.event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryUnaryMultiCallable.event">[docs]</a>  <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      response_callback: A callback to be called to accept the restponse value</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Call object for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="UnaryStreamMultiCallable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Affords invoking a unary-stream RPC in any call style.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryStreamMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A CancellableIterator that yields the response values of the RPC and</span>
+<span class="sd">        affords RPC cancellation. Drawing response values from the returned</span>
+<span class="sd">        CancellableIterator may raise exceptions.RpcError indicating abortion</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="UnaryStreamMultiCallable.event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.UnaryStreamMultiCallable.event">[docs]</a>  <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the restponse</span>
+<span class="sd">        values of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Call object for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="StreamUnaryMultiCallable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamUnaryMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Affords invoking a stream-unary RPC in any call style.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamUnaryMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The response value for the RPC.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      exceptions.RpcError: Indicating that the RPC was aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.future"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamUnaryMultiCallable.future">[docs]</a>  <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A future.Future representing the RPC. In the event of RPC completion, the</span>
+<span class="sd">        returned Future&#39;s result value will be the response value of the RPC.</span>
+<span class="sd">        In the event of RPC abortion, the returned Future&#39;s exception value</span>
+<span class="sd">        will be an exceptions.RpcError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamUnaryMultiCallable.event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamUnaryMultiCallable.event">[docs]</a>  <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      response_callback: A callback to be called to accept the restponse value</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A pair of a Call object for the RPC and a stream.Consumer to which the</span>
+<span class="sd">        request values of the RPC should be passed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="StreamStreamMultiCallable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamStreamMultiCallable">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Affords invoking a stream-stream RPC in any call style.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamStreamMultiCallable.__call__">[docs]</a>  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      request_iterator: An iterator that yields request values for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A CancellableIterator that yields the response values of the RPC and</span>
+<span class="sd">        affords RPC cancellation. Drawing response values from the returned</span>
+<span class="sd">        CancellableIterator may raise exceptions.RpcError indicating abortion</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="StreamStreamMultiCallable.event"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.StreamStreamMultiCallable.event">[docs]</a>  <span class="k">def</span> <span class="nf">event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
+
+<span class="sd">l    Args:</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the restponse</span>
+<span class="sd">        values of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A pair of a Call object for the RPC and a stream.Consumer to which the</span>
+<span class="sd">        request values of the RPC should be passed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="MethodImplementation"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.MethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">MethodImplementation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A sum type that describes an RPC method implementation.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    cardinality: A cardinality.Cardinality value.</span>
+<span class="sd">    style: A style.Service value.</span>
+<span class="sd">    unary_unary_inline: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes a request value and an RpcContext object and returns a</span>
+<span class="sd">      response value. Only non-None if cardinality is</span>
+<span class="sd">      cardinality.Cardinality.UNARY_UNARY and style is style.Service.INLINE.</span>
+<span class="sd">    unary_stream_inline: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes a request value and an RpcContext object and returns an</span>
+<span class="sd">      iterator of response values. Only non-None if cardinality is</span>
+<span class="sd">      cardinality.Cardinality.UNARY_STREAM and style is style.Service.INLINE.</span>
+<span class="sd">    stream_unary_inline: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes an iterator of request values and an RpcContext object</span>
+<span class="sd">      and returns a response value. Only non-None if cardinality is</span>
+<span class="sd">      cardinality.Cardinality.STREAM_UNARY and style is style.Service.INLINE.</span>
+<span class="sd">    stream_stream_inline: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes an iterator of request values and an RpcContext object</span>
+<span class="sd">      and returns an iterator of response values. Only non-None if cardinality</span>
+<span class="sd">      is cardinality.Cardinality.STREAM_STREAM and style is</span>
+<span class="sd">      style.Service.INLINE.</span>
+<span class="sd">    unary_unary_event: The implementation of the RPC method as a callable value</span>
+<span class="sd">      that takes a request value, a response callback to which to pass the</span>
+<span class="sd">      response value of the RPC, and an RpcContext. Only non-None if</span>
+<span class="sd">      cardinality is cardinality.Cardinality.UNARY_UNARY and style is</span>
+<span class="sd">      style.Service.EVENT.</span>
+<span class="sd">    unary_stream_event: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes a request value, a stream.Consumer to which to pass the</span>
+<span class="sd">      the response values of the RPC, and an RpcContext. Only non-None if</span>
+<span class="sd">      cardinality is cardinality.Cardinality.UNARY_STREAM and style is</span>
+<span class="sd">      style.Service.EVENT.</span>
+<span class="sd">    stream_unary_event: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes a response callback to which to pass the response value</span>
+<span class="sd">      of the RPC and an RpcContext and returns a stream.Consumer to which the</span>
+<span class="sd">      request values of the RPC should be passed. Only non-None if cardinality</span>
+<span class="sd">      is cardinality.Cardinality.STREAM_UNARY and style is style.Service.EVENT.</span>
+<span class="sd">    stream_stream_event: The implementation of the RPC method as a callable</span>
+<span class="sd">      value that takes a stream.Consumer to which to pass the response values</span>
+<span class="sd">      of the RPC and an RpcContext and returns a stream.Consumer to which the</span>
+<span class="sd">      request values of the RPC should be passed. Only non-None if cardinality</span>
+<span class="sd">      is cardinality.Cardinality.STREAM_STREAM and style is</span>
+<span class="sd">      style.Service.EVENT.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+</div>
+<div class="viewcode-block" id="MultiMethodImplementation"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.MultiMethodImplementation">[docs]</a><span class="k">class</span> <span class="nc">MultiMethodImplementation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A general type able to service many RPC methods.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="MultiMethodImplementation.service"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.MultiMethodImplementation.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Services an RPC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the response</span>
+<span class="sd">        values of the RPC.</span>
+<span class="sd">      context: An RpcContext object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A stream.Consumer with which to accept the request values of the RPC. The</span>
+<span class="sd">        consumer returned from this method may or may not be invoked to</span>
+<span class="sd">        completion: in the case of RPC abortion, RPC Framework will simply stop</span>
+<span class="sd">        passing values to this object. Implementations must not assume that this</span>
+<span class="sd">        object will be called to completion of the request stream or even called</span>
+<span class="sd">        at all.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      abandonment.Abandoned: May or may not be raised when the RPC has been</span>
+<span class="sd">        aborted.</span>
+<span class="sd">      exceptions.NoSuchMethodError: If this MultiMethod does not recognize the</span>
+<span class="sd">        given RPC method name and is not able to service the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="GenericStub"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub">[docs]</a><span class="k">class</span> <span class="nc">GenericStub</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Affords RPC methods to callers.&quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.blocking_value_in_value_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.blocking_value_in_value_out">[docs]</a>  <span class="k">def</span> <span class="nf">blocking_value_in_value_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invokes a unary-request-unary-response RPC method.</span>
+
+<span class="sd">    This method blocks until either returning the response value of the RPC</span>
+<span class="sd">    (in the event of RPC completion) or raising an exception (in the event of</span>
+<span class="sd">    RPC abortion).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The response value for the RPC.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      exceptions.RpcError: Indicating that the RPC was aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.future_value_in_value_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.future_value_in_value_out">[docs]</a>  <span class="k">def</span> <span class="nf">future_value_in_value_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invokes a unary-request-unary-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A future.Future representing the RPC. In the event of RPC completion, the</span>
+<span class="sd">        returned Future will return an outcome indicating that the RPC returned</span>
+<span class="sd">        the response value of the RPC. In the event of RPC abortion, the</span>
+<span class="sd">        returned Future will return an outcome indicating that the RPC raised</span>
+<span class="sd">        an exceptions.RpcError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.inline_value_in_stream_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.inline_value_in_stream_out">[docs]</a>  <span class="k">def</span> <span class="nf">inline_value_in_stream_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invokes a unary-request-stream-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A CancellableIterator that yields the response values of the RPC and</span>
+<span class="sd">        affords RPC cancellation. Drawing response values from the returned</span>
+<span class="sd">        CancellableIterator may raise exceptions.RpcError indicating abortion of</span>
+<span class="sd">        the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.blocking_stream_in_value_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.blocking_stream_in_value_out">[docs]</a>  <span class="k">def</span> <span class="nf">blocking_stream_in_value_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invokes a stream-request-unary-response RPC method.</span>
+
+<span class="sd">    This method blocks until either returning the response value of the RPC</span>
+<span class="sd">    (in the event of RPC completion) or raising an exception (in the event of</span>
+<span class="sd">    RPC abortion).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request_iterator: An iterator that yields the request values of the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The response value for the RPC.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      exceptions.RpcError: Indicating that the RPC was aborted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.future_stream_in_value_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.future_stream_in_value_out">[docs]</a>  <span class="k">def</span> <span class="nf">future_stream_in_value_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invokes a stream-request-unary-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request_iterator: An iterator that yields the request values of the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A future.Future representing the RPC. In the event of RPC completion, the</span>
+<span class="sd">        returned Future will return an outcome indicating that the RPC returned</span>
+<span class="sd">        the response value of the RPC. In the event of RPC abortion, the</span>
+<span class="sd">        returned Future will return an outcome indicating that the RPC raised</span>
+<span class="sd">        an exceptions.RpcError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.inline_stream_in_stream_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.inline_stream_in_stream_out">[docs]</a>  <span class="k">def</span> <span class="nf">inline_stream_in_stream_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Invokes a stream-request-stream-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request_iterator: An iterator that yields the request values of the RPC.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A CancellableIterator that yields the response values of the RPC and</span>
+<span class="sd">        affords RPC cancellation. Drawing response values from the returned</span>
+<span class="sd">        CancellableIterator may raise exceptions.RpcError indicating abortion of</span>
+<span class="sd">        the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.event_value_in_value_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.event_value_in_value_out">[docs]</a>  <span class="k">def</span> <span class="nf">event_value_in_value_out</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Event-driven invocation of a unary-request-unary-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      response_callback: A callback to be called to accept the response value</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Call object for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.event_value_in_stream_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.event_value_in_stream_out">[docs]</a>  <span class="k">def</span> <span class="nf">event_value_in_stream_out</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Event-driven invocation of a unary-request-stream-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      request: The request value for the RPC.</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the response</span>
+<span class="sd">        values of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Call object for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.event_stream_in_value_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.event_stream_in_value_out">[docs]</a>  <span class="k">def</span> <span class="nf">event_stream_in_value_out</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Event-driven invocation of a unary-request-unary-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      response_callback: A callback to be called to accept the response value</span>
+<span class="sd">        of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A pair of a Call object for the RPC and a stream.Consumer to which the</span>
+<span class="sd">        request values of the RPC should be passed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.event_stream_in_stream_out"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.event_stream_in_stream_out">[docs]</a>  <span class="k">def</span> <span class="nf">event_stream_in_stream_out</span><span class="p">(</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Event-driven invocation of a unary-request-stream-response RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+<span class="sd">      response_consumer: A stream.Consumer to be called to accept the response</span>
+<span class="sd">        values of the RPC.</span>
+<span class="sd">      abortion_callback: A callback to be called and passed an Abortion value</span>
+<span class="sd">        in the event of RPC abortion.</span>
+<span class="sd">      timeout: A duration of time in seconds to allow for the RPC.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A pair of a Call object for the RPC and a stream.Consumer to which the</span>
+<span class="sd">        request values of the RPC should be passed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.unary_unary_multi_callable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.unary_unary_multi_callable">[docs]</a>  <span class="k">def</span> <span class="nf">unary_unary_multi_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A UnaryUnaryMultiCallable value for the named unary-unary RPC method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.unary_stream_multi_callable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.unary_stream_multi_callable">[docs]</a>  <span class="k">def</span> <span class="nf">unary_stream_multi_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A UnaryStreamMultiCallable value for the name unary-stream RPC method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.stream_unary_multi_callable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.stream_unary_multi_callable">[docs]</a>  <span class="k">def</span> <span class="nf">stream_unary_multi_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A StreamUnaryMultiCallable value for the named stream-unary RPC method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="GenericStub.stream_stream_multi_callable"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.GenericStub.stream_stream_multi_callable">[docs]</a>  <span class="k">def</span> <span class="nf">stream_stream_multi_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream RPC method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      name: The RPC method name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A StreamStreamMultiCallable value for the named stream-stream RPC method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="DynamicStub"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.interfaces.DynamicStub">[docs]</a><span class="k">class</span> <span class="nc">DynamicStub</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A stub with RPC-method-bound multi-callable attributes.</span>
+
+<span class="sd">  Instances of this type responsd to attribute access as follows: if the</span>
+<span class="sd">  requested attribute is the name of a unary-unary RPC method, the value of the</span>
+<span class="sd">  attribute will be a UnaryUnaryMultiCallable with which to invoke the RPC</span>
+<span class="sd">  method; if the requested attribute is the name of a unary-stream RPC method,</span>
+<span class="sd">  the value of the attribute will be a UnaryStreamMultiCallable with which to</span>
+<span class="sd">  invoke the RPC method; if the requested attribute is the name of a</span>
+<span class="sd">  stream-unary RPC method, the value of the attribute will be a</span>
+<span class="sd">  StreamUnaryMultiCallable with which to invoke the RPC method; and if the</span>
+<span class="sd">  requested attribute is the name of a stream-stream RPC method, the value of</span>
+<span class="sd">  the attribute will be a StreamStreamMultiCallable with which to invoke the</span>
+<span class="sd">  RPC method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

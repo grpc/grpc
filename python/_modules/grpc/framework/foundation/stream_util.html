@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.foundation.stream_util &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.foundation.stream_util</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.foundation.stream_util</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Helpful utilities related to the stream module.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>
+
+<span class="n">_NO_VALUE</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="TransformingConsumer"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.TransformingConsumer">[docs]</a><span class="k">class</span> <span class="nc">TransformingConsumer</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A stream.Consumer that passes a transformation of its input to another.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transformation</span><span class="p">,</span> <span class="n">downstream</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_transformation</span> <span class="o">=</span> <span class="n">transformation</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_downstream</span> <span class="o">=</span> <span class="n">downstream</span>
+
+<div class="viewcode-block" id="TransformingConsumer.consume"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.TransformingConsumer.consume">[docs]</a>  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_downstream</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transformation</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="TransformingConsumer.terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.TransformingConsumer.terminate">[docs]</a>  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_downstream</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="TransformingConsumer.consume_and_terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.TransformingConsumer.consume_and_terminate">[docs]</a>  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_downstream</span><span class="o">.</span><span class="n">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transformation</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="IterableConsumer"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.IterableConsumer">[docs]</a><span class="k">class</span> <span class="nc">IterableConsumer</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A Consumer that when iterated over emits the values it has consumed.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">True</span>
+
+<div class="viewcode-block" id="IterableConsumer.consume"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.IterableConsumer.consume">[docs]</a>  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stock_reply</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stock_reply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="IterableConsumer.terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.IterableConsumer.terminate">[docs]</a>  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">False</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="IterableConsumer.consume_and_terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.IterableConsumer.consume_and_terminate">[docs]</a>  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stock_reply</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stock_reply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+</div>
+  <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="IterableConsumer.next"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.IterableConsumer.next">[docs]</a>  <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ThreadSwitchingConsumer"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer">[docs]</a><span class="k">class</span> <span class="nc">ThreadSwitchingConsumer</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A Consumer decorator that affords serialization and asynchrony.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sink</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span> <span class="o">=</span> <span class="n">sink</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+    <span class="c"># True if self._spin has been submitted to the pool to be called once and</span>
+    <span class="c"># that call has not yet returned, False otherwise.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">True</span>
+
+  <span class="k">def</span> <span class="nf">_spin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sink</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">terminate</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+      <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="n">_NO_VALUE</span><span class="p">:</span>
+          <span class="n">sink</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">terminate</span><span class="p">:</span>
+          <span class="n">sink</span><span class="o">.</span><span class="n">consume_and_terminate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="n">sink</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+      <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c"># pylint:disable=broad-except</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+      <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">terminate</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">False</span>
+          <span class="k">return</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">:</span>
+          <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+          <span class="n">terminate</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span><span class="p">:</span>
+          <span class="n">value</span> <span class="o">=</span> <span class="n">_NO_VALUE</span>
+          <span class="n">terminate</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">False</span>
+          <span class="k">return</span>
+
+<div class="viewcode-block" id="ThreadSwitchingConsumer.consume"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.consume">[docs]</a>  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="ThreadSwitchingConsumer.terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.terminate">[docs]</a>  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span><span class="p">,</span> <span class="n">_NO_VALUE</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="ThreadSwitchingConsumer.consume_and_terminate"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.stream_util.ThreadSwitchingConsumer.consume_and_terminate">[docs]</a>  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">True</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
