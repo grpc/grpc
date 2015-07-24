@@ -10,7 +10,7 @@ testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests
 jobset.run([cxx_job], maxjobs=3, xml_report=testsuite)
 
 tree = ET.ElementTree(root)
-tree.write('temp.xml', encoding='UTF-8')
+tree.write('report.xml', encoding='UTF-8')
 
 jobset.message ('Good', 'Just starting')
 
