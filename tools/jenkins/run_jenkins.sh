@@ -56,11 +56,11 @@ then
   then
     exit 0
   fi
-  if [ "$language" != "sanity" ]
+  if [ "$language" != "c++" ]
   then
     exit 0
   fi
-  python tools/run_tests/run_interops.py
+  python tools/run_tests/run_interops.py --language=$language
 elif [ "$platform" == "windows" ]
 then
   exit 0
