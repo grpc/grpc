@@ -158,59 +158,50 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void AsyncUnaryCall_ServerHandlerThrows()
+        public async Task AsyncUnaryCall_ServerHandlerThrows()
         {
-            Task.Run(async () =>
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            try
             {
-                var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-                try
-                {
-                    await Calls.AsyncUnaryCall(internalCall, "THROW", CancellationToken.None);
-                    Assert.Fail();
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
-                }
-            }).Wait();
+                await Calls.AsyncUnaryCall(internalCall, "THROW", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+            }
         }
 
         [Test]
-        public void ClientStreamingCall()
+        public async Task ClientStreamingCall()
         {
-            Task.Run(async () => 
-            {
-                var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-                var call = Calls.AsyncClientStreamingCall(internalCall, CancellationToken.None);
+            var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+            var call = Calls.AsyncClientStreamingCall(internalCall, CancellationToken.None);
 
-                await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
-                Assert.AreEqual("ABC", await call.ResponseAsync);
-            }).Wait();
+            await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
+            Assert.AreEqual("ABC", await call.ResponseAsync);
         }
 
         [Test]
-        public void ClientStreamingCall_CancelAfterBegin()
+        public async Task ClientStreamingCall_CancelAfterBegin()
         {
-            Task.Run(async () => 
+            var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(internalCall, cts.Token);
+
+            // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
+            await Task.Delay(1000);
+            cts.Cancel();
+
+            try
             {
-                var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-
-                var cts = new CancellationTokenSource();
-                var call = Calls.AsyncClientStreamingCall(internalCall, cts.Token);
-
-                // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
-                await Task.Delay(1000);
-                cts.Cancel();
-
-                try
-                {
-                    await call.ResponseAsync;
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode); 
-                }
-            }).Wait();
+                await call.ResponseAsync;
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+            }
         }
 
         [Test]
