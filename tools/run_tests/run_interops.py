@@ -3,7 +3,7 @@ import jobset
 
 cxx_steps = 'tools/run_tests/run_interops.sh'
 
-cxx_job = jobset.JobSpec(cmdline=cxx_steps)
+cxx_job = jobset.JobSpec(cmdline=cxx_steps, shortname=interop)
 root = ET.Element('testsuites')
 testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
 
