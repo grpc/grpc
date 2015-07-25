@@ -45,7 +45,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/config.h>
-#include <grpc++/fixed_size_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>

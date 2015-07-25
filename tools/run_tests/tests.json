@@ -678,6 +678,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "dynamic_thread_pool_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "end2end_test", 
     "platforms": [
       "windows", 

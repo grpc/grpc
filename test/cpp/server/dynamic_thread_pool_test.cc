@@ -31,19 +31,47 @@
  *
  */
 
-#include <grpc/support/cpu.h>
-#include <grpc++/dynamic_thread_pool.h>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
 
-#ifndef GRPC_CUSTOM_DEFAULT_THREAD_POOL
+#include <grpc++/dynamic_thread_pool.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
 
-ThreadPoolInterface* CreateDefaultThreadPool() {
-   int cores = gpr_cpu_num_cores();
-   if (!cores) cores = 4;
-   return new DynamicThreadPool(cores);
+class DynamicThreadPoolTest : public ::testing::Test {
+ public:
+  DynamicThreadPoolTest() : thread_pool_(0) {}
+
+ protected:
+  DynamicThreadPool thread_pool_;
+};
+
+void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
+  std::unique_lock<std::mutex> lock(*mu);
+  *done = true;
+  cv->notify_all();
+}
+
+TEST_F(DynamicThreadPoolTest, Add) {
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
+  thread_pool_.Add(callback);
+
+  // Wait for the callback to finish.
+  std::unique_lock<std::mutex> lock(mu);
+  while (!done) {
+    cv.wait(lock);
+  }
 }
 
 }  // namespace grpc
 
-#endif  // !GRPC_CUSTOM_DEFAULT_THREAD_POOL
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  int result = RUN_ALL_TESTS();
+  return result;
+}
