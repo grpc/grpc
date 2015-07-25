@@ -52,6 +52,8 @@ typedef enum {
   GRPC_CREDENTIALS_ERROR
 } grpc_credentials_status;
 
+#define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
+
 #define GRPC_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
 #define GRPC_CREDENTIALS_TYPE_JWT "Jwt"
@@ -111,6 +113,12 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
 void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
 
 /* --- grpc_credentials. --- */
+
+/* Creates a fake transport security credentials object for testing. */
+grpc_credentials *grpc_fake_transport_security_credentials_create(void);
+/* Creates a fake server transport security credentials object for testing. */
+grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
+    void);
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
 char *grpc_get_well_known_google_credentials_file_path(void);

@@ -611,7 +611,6 @@
       "headers": [
         "test/cpp/util/cli_call.h",
         "test/cpp/util/create_test_channel.h",
-        "test/cpp/util/fake_credentials.h",
         "test/cpp/util/subprocess.h"
       ],
       "src": [
@@ -620,7 +619,6 @@
         "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/cli_call.cc",
         "test/cpp/util/create_test_channel.cc",
-        "test/cpp/util/fake_credentials.cc",
         "test/cpp/util/subprocess.cc"
       ],
       "deps": [

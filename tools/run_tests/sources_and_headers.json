@@ -10789,7 +10789,6 @@
       "test/cpp/util/echo.pb.h", 
       "test/cpp/util/echo_duplicate.grpc.pb.h", 
       "test/cpp/util/echo_duplicate.pb.h", 
-      "test/cpp/util/fake_credentials.h", 
       "test/cpp/util/messages.grpc.pb.h", 
       "test/cpp/util/messages.pb.h", 
       "test/cpp/util/subprocess.h"
@@ -10801,8 +10800,6 @@
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
-      "test/cpp/util/fake_credentials.cc", 
-      "test/cpp/util/fake_credentials.h", 
       "test/cpp/util/subprocess.cc", 
       "test/cpp/util/subprocess.h"
     ]
