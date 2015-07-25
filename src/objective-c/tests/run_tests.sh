@@ -32,9 +32,21 @@ set -e
 
 cd $(dirname $0)
 
+# Compile the C++ interop server if it doesn't exist yet. This has to be done
+# before pod install because the latter renames some C gRPC files and not the
+# interop server references to them.
+cd ../../..
+[ -f bins/dbg/interop_server ] || make CONFIG=dbg interop_server
+cd -
+
 # TODO(jcanizales): Remove when Cocoapods issue #3823 is resolved.
 export COCOAPODS_DISABLE_DETERMINISTIC_UUIDS=YES
 pod install
+
+# Run the server.
+../../../bins/dbg/interop_server --port=5050 &
+# Kill it when this script exits.
+trap 'kill -9 `jobs -p`' EXIT
 
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.
