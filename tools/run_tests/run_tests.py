@@ -269,6 +269,8 @@ class CSharpLanguage(object):
   def __init__(self):
     if platform.system() == 'Windows':
       plat = 'windows'
+    elif platform.system() == 'Darwin':
+      plat = 'macos'
     else:
       plat = 'posix'
     self.platform = plat
@@ -287,9 +289,13 @@ class CSharpLanguage(object):
             for assembly in assemblies ]
 
   def make_targets(self):
-    # For Windows, this target doesn't really build anything,
-    # everything is build by buildall script later.
-    return ['grpc_csharp_ext']
+    if self.platform == 'macos':
+      # Mono on OS X is 32-bit by default and needs to load libgrpc_csharp_ext.dylib.
+      return ['DARWIN_ARCH=i386', 'HAS_SYSTEM_ZLIB=false', 'grpc_csharp_ext']
+    else:
+      # For Windows, this target doesn't really build anything,
+      # everything is build by buildall script later.
+      return ['grpc_csharp_ext']
 
   def build_steps(self):
     if self.platform == 'windows':
