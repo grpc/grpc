@@ -400,6 +400,15 @@ static void finish_start_new_rpc(grpc_server *server, grpc_call_element *elem,
   call_data *calld = elem->call_data;
   int request_id;
 
+  if (gpr_atm_acq_load(&server->shutdown_flag)) {
+    gpr_mu_lock(&calld->mu_state);
+    calld->state = ZOMBIED;
+    gpr_mu_unlock(&calld->mu_state);
+    grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+    grpc_iomgr_add_callback(&calld->kill_zombie_closure);
+    return;
+  }
+
   request_id = gpr_stack_lockfree_pop(request_matcher->requests);
   if (request_id == -1) {
     gpr_mu_lock(&server->mu_call);
@@ -530,6 +539,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
 static void server_on_recv(void *ptr, int success) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
+  gpr_timespec op_deadline;
 
   if (success && !calld->got_initial_metadata) {
     size_t i;
@@ -539,8 +549,9 @@ static void server_on_recv(void *ptr, int success) {
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA) continue;
       grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
-      if (0 != gpr_time_cmp(op->data.metadata.deadline,
-                            gpr_inf_future(GPR_CLOCK_REALTIME))) {
+      op_deadline = op->data.metadata.deadline;
+      if (0 !=
+          gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
         calld->deadline = op->data.metadata.deadline;
       }
       if (calld->host && calld->path) {

@@ -52,7 +52,7 @@ static double time_double(struct timeval* tv) {
 Timer::Result Timer::Sample() {
   struct rusage usage;
   struct timeval tv;
-  gettimeofday(&tv, nullptr);
+  gettimeofday(&tv, NULL);
   getrusage(RUSAGE_SELF, &usage);
 
   Result r;

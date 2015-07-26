@@ -56,26 +56,24 @@ namespace Grpc.Core
         /// Port will default to 80 for an unsecure channel and to 443 a secure channel.
         /// </summary>
         /// <param name="host">The DNS name of IP address of the host.</param>
-        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, Credentials credentials = null, IEnumerable<ChannelOption> options = null)
+        public Channel(string host, Credentials credentials, IEnumerable<ChannelOption> options = null)
         {
             this.environment = GrpcEnvironment.GetInstance();
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
 
             EnsureUserAgentChannelOption(this.options);
+            using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
             using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
-                if (credentials != null)
+                if (nativeCredentials != null)
                 {
-                    using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-                    {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
-                    }
+                    this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
                 }
                 else
                 {
-                    this.handle = ChannelSafeHandle.Create(host, nativeChannelArgs);
+                    this.handle = ChannelSafeHandle.CreateInsecure(host, nativeChannelArgs);
                 }
             }
             this.target = GetOverridenTarget(host, this.options);
@@ -86,9 +84,9 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="host">DNS name or IP address</param>
         /// <param name="port">the port</param>
-        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, int port, Credentials credentials = null, IEnumerable<ChannelOption> options = null) :
+        public Channel(string host, int port, Credentials credentials, IEnumerable<ChannelOption> options = null) :
             this(string.Format("{0}:{1}", host, port), credentials, options)
         {
         }

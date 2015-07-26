@@ -374,6 +374,19 @@ ServerDuplexStream.prototype._write = _write;
 ServerDuplexStream.prototype.sendMetadata = sendMetadata;
 
 /**
+ * Get the endpoint this call/stream is connected to.
+ * @return {string} The URI of the endpoint
+ */
+function getPeer() {
+  /* jshint validthis: true */
+  return this.call.getPeer();
+}
+
+ServerReadableStream.prototype.getPeer = getPeer;
+ServerWritableStream.prototype.getPeer = getPeer;
+ServerDuplexStream.prototype.getPeer = getPeer;
+
+/**
  * Fully handle a unary call
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
@@ -388,6 +401,9 @@ function handleUnary(call, handler, metadata) {
       batch[grpc.opType.SEND_INITIAL_METADATA] = responseMetadata;
       call.startBatch(batch, function() {});
     }
+  };
+  emitter.getPeer = function() {
+    return call.getPeer();
   };
   emitter.on('error', function(error) {
     handleError(call, error);
@@ -544,7 +560,7 @@ function Server(options) {
       if (err) {
         return;
       }
-      var details = event['new call'];
+      var details = event.new_call;
       var call = details.call;
       var method = details.method;
       var metadata = details.metadata;
