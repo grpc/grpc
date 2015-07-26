@@ -76,6 +76,8 @@ void Channel::Init(Handle<Object> exports) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   NanSetPrototypeTemplate(tpl, "close",
                           NanNew<FunctionTemplate>(Close)->GetFunction());
+  NanSetPrototypeTemplate(tpl, "getTarget",
+                          NanNew<FunctionTemplate>(GetTarget)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
   Handle<Function> ctr = tpl->GetFunction();
   constructor = new NanCallback(ctr);
@@ -183,6 +185,15 @@ NAN_METHOD(Channel::Close) {
     channel->wrapped_channel = NULL;
   }
   NanReturnUndefined();
+}
+
+NAN_METHOD(Channel::GetTarget) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError("getTarget can only be called on Channel objects");
+  }
+  Channel *channel = ObjectWrap::Unwrap<Channel>(args.This());
+  NanReturnValue(NanNew(grpc_channel_get_target(channel->wrapped_channel)));
 }
 
 }  // namespace node

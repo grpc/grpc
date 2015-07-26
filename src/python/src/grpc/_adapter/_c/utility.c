@@ -374,6 +374,7 @@ PyObject *pygrpc_consume_ops(grpc_op *op, size_t nops) {
 }
 
 double pygrpc_cast_gpr_timespec_to_double(gpr_timespec timespec) {
+  timespec = gpr_convert_clock_type(timespec, GPR_CLOCK_REALTIME);
   return timespec.tv_sec + 1e-9*timespec.tv_nsec;
 }
 

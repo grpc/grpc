@@ -460,7 +460,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
 
   while (wakeup_closures) {
     grpc_iomgr_closure *next = wakeup_closures->next;
-    grpc_iomgr_add_callback(wakeup_closures);
+    wakeup_closures->cb(wakeup_closures->cb_arg, 1);
     wakeup_closures = next;
   }
 
