@@ -103,8 +103,8 @@ void census_context_destroy(census_context *context);
 
 /* Distributed traces can have a number of options. */
 enum census_trace_mask_values {
-  CENSUS_TRACE_MASK_NONE = 0,       /* Default, empty flags */
-  CENSUS_TRACE_MASK_IS_SAMPLED = 1, /* RPC tracing enabled for this context. */
+  CENSUS_TRACE_MASK_NONE = 0,      /* Default, empty flags */
+  CENSUS_TRACE_MASK_IS_SAMPLED = 1 /* RPC tracing enabled for this context. */
 };
 
 /** Get the current trace mask associated with this context. The value returned

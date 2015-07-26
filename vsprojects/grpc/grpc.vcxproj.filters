@@ -409,6 +409,9 @@
     <ClCompile Include="..\..\src\core\census\record_stat.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\tracing.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\grpc_security.h">
