@@ -24,10 +24,9 @@ if args.language != 'c++':
   for test in _TESTS:
     jobset.message ('for each test', 'test %s' % (test))
     perTest = testCommand + test
-    job = jobset.JobSpec(cmdline=['%s' % perTest], shortname=test)
-    jobs.append(job)
+    jobs.append(jobset.JobSpec(cmdline=['%s' % perTest], shortname=test))
     jobNumber+=1
-    jobset.message ('end of each test', 'command %s' % (perTest))
+    jobset.message ('end of each test', 'number %d command %s' % (jobNumber, perTest))
 
 root = ET.Element('testsuites')
 testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
