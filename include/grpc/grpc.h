@@ -126,6 +126,8 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** Default authority to pass if none specified on call construction */
+#define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
     sent on each request */
 #define GRPC_ARG_PRIMARY_USER_AGENT_STRING "grpc.primary_user_agent"
