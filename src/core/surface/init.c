@@ -78,8 +78,11 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_tracer_init("GRPC_TRACE");
-    if (census_initialize(CENSUS_NONE)) {
-      gpr_log(GPR_ERROR, "Could not initialize census.");
+    /* Only initialize census if noone else has. */
+    if (census_enabled() == CENSUS_FEATURE_NONE) {
+      if (census_initialize(census_supported())) { /* enable all features. */
+        gpr_log(GPR_ERROR, "Could not initialize census.");
+      }
     }
     grpc_timers_global_init();
   }
