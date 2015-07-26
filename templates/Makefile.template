@@ -342,6 +342,19 @@ HOST_CXXFLAGS = $(CXXFLAGS)
 HOST_LDFLAGS = $(LDFLAGS)
 HOST_LDLIBS = $(LDLIBS)
 
+# Configure build on OS X
+DARWIN_ARCH ?= x86_64
+ifeq ($(DARWIN_ARCH),x86_64)
+OPENSSL_DARWIN_CONFIG = "darwin64-x86_64-cc"
+else ifeq ($(DARWIN_ARCH),i386)
+OPENSSL_DARWIN_CONFIG = "darwin-i386-cc"
+CFLAGS += -arch i386
+ZLIB_CFLAGS_EXTRA += -arch i386
+LDFLAGS += -arch i386
+STRIP = echo "Stripping temporarily disabled for i386. Skipping file"
+else
+$(error Unrecognized value of DARWIN_ARCH '$(DARWIN_ARCH)\')
+endif
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
@@ -535,6 +548,7 @@ ifeq ($(HAS_EMBEDDED_ZLIB),true)
 ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
 CPPFLAGS += -Ithird_party/zlib
 LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
+LDLIBS += $(LIBDIR)/$(CONFIG)/zlib/libz.a
 else
 DEP_MISSING += zlib
 endif
@@ -825,7 +839,7 @@ $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
 	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
 ifeq ($(SYSTEM),Darwin)
-	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./Configure darwin64-x86_64-cc)
+	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./Configure $(OPENSSL_DARWIN_CONFIG))
 else
 ifeq ($(SYSTEM),MINGW32)
 	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
@@ -1440,7 +1454,7 @@ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
 % endif
 % endif
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
 endif
 
 <%
