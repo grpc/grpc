@@ -40,6 +40,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/tcp_client.h"
@@ -163,6 +164,7 @@ grpc_channel *grpc_channel_create(const char *target,
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
     } */
+  filters[n++] = &grpc_compress_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
@@ -177,7 +179,8 @@ grpc_channel *grpc_channel_create(const char *target,
     return NULL;
   }
 
-  channel = grpc_channel_create_from_filters(filters, n, args, mdctx, 1);
+  channel =
+      grpc_channel_create_from_filters(target, filters, n, args, mdctx, 1);
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
                                    resolver);
   GRPC_RESOLVER_UNREF(resolver, "create");

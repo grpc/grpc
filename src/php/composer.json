@@ -1,7 +1,7 @@
 {
   "name": "grpc/grpc",
   "description": "gRPC library for PHP",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
   "repositories": [

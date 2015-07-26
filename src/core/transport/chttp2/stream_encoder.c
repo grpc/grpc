@@ -438,7 +438,7 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
   char timeout_str[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem *mdelem;
   grpc_chttp2_encode_timeout(
-      gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME)), timeout_str);
+      gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
       c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
       grpc_mdstr_from_string(c->mdctx, timeout_str));
@@ -477,6 +477,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
   gpr_uint32 flow_controlled_bytes_taken = 0;
   gpr_uint32 curop = 0;
   gpr_uint8 *p;
+  int compressed_flag_set = 0;
 
   while (curop < *inops_count) {
     GPR_ASSERT(flow_controlled_bytes_taken <= max_flow_controlled_bytes);
@@ -496,9 +497,12 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
       case GRPC_OP_BEGIN_MESSAGE:
         /* begin op: for now we just convert the op to a slice and fall
            through - this lets us reuse the slice framing code below */
+        compressed_flag_set =
+            (op->data.begin_message.flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
         slice = gpr_slice_malloc(5);
+
         p = GPR_SLICE_START_PTR(slice);
-        p[0] = 0;
+        p[0] = compressed_flag_set;
         p[1] = op->data.begin_message.length >> 24;
         p[2] = op->data.begin_message.length >> 16;
         p[3] = op->data.begin_message.length >> 8;
@@ -556,6 +560,7 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
   grpc_mdctx *mdctx = compressor->mdctx;
   grpc_linked_mdelem *l;
   int need_unref = 0;
+  gpr_timespec deadline;
 
   GPR_ASSERT(stream_id != 0);
 
@@ -585,8 +590,9 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
           l->md = hpack_enc(compressor, l->md, &st);
           need_unref |= l->md != NULL;
         }
-        if (gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future) != 0) {
-          deadline_enc(compressor, op->data.metadata.deadline, &st);
+        deadline = op->data.metadata.deadline;
+        if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
+          deadline_enc(compressor, deadline, &st);
         }
         curop++;
         break;

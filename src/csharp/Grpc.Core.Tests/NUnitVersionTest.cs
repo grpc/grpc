@@ -32,57 +32,48 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 using NUnit.Framework;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Tests
 {
-    public class TimespecTest
+    /// <summary>
+    /// Tests if the version of nunit-console used is sufficient to run async tests.
+    /// </summary>
+    public class NUnitVersionTest
     {
-        [Test]
-        public void Now()
+        private int testRunCount = 0;
+
+        [TestFixtureTearDown]
+        public void Cleanup()
         {
-            var timespec = Timespec.Now;
+            if (testRunCount != 2)
+            {
+                Console.Error.WriteLine("You are using and old version of NUnit that doesn't support async tests and skips them instead. " +
+                "This test has failed to indicate that.");
+                Console.Error.Flush();
+                Environment.Exit(1);
+            }
         }
 
         [Test]
-        public void InfFuture()
+        public void NUnitVersionTest1()
         {
-            var timespec = Timespec.InfFuture;
+            testRunCount++;
         }
 
+        // Old version of NUnit will skip this test
         [Test]
-        public void TimespecSizeIsNativeSize()
+        public async Task NUnitVersionTest2()
         {
-            Assert.AreEqual(Timespec.NativeSize, Marshal.SizeOf(typeof(Timespec)));
+            testRunCount ++;
+            await Task.Delay(10);
         }
 
-        [Test]
-        public void Add()
-        {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = new IntPtr(123456789) };
-            var result = t.Add(TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 10));
-            Assert.AreEqual(result.tv_sec, new IntPtr(12355));
-            Assert.AreEqual(result.tv_nsec, new IntPtr(123456789));
-        }
 
-        [Test]
-        public void Add_Nanos()
-        {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = new IntPtr(123456789) };
-            var result = t.Add(TimeSpan.FromTicks(10));
-            Assert.AreEqual(result.tv_sec, new IntPtr(12345));
-            Assert.AreEqual(result.tv_nsec, new IntPtr(123456789 + 1000));
-        }
-
-        [Test]
-        public void Add_NanosOverflow()
-        {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = new IntPtr(999999999) };
-            var result = t.Add(TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 10 + 10));
-            Assert.AreEqual(result.tv_sec, new IntPtr(12356));
-            Assert.AreEqual(result.tv_nsec, new IntPtr(999));
-        }
     }
 }

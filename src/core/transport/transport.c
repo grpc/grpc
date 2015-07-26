@@ -65,6 +65,10 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
   transport->vtable->destroy_stream(transport, stream);
 }
 
+char *grpc_transport_get_peer(grpc_transport *transport) {
+  return transport->vtable->get_peer(transport);
+}
+
 void grpc_transport_stream_op_finish_with_failure(
     grpc_transport_stream_op *op) {
   if (op->send_ops) {

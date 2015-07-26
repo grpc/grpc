@@ -31,21 +31,20 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_FAKE_CREDENTIALS_H
-#define GRPC_TEST_CPP_UTIL_FAKE_CREDENTIALS_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H
 
-#include <memory>
+#include <grpc/support/port_platform.h>
 
-namespace grpc {
-class Credentials;
-class ServerCredentials;
+#include "src/core/client_config/resolver_factory.h"
 
-namespace testing {
+grpc_resolver_factory *grpc_ipv4_resolver_factory_create(void);
 
-std::shared_ptr<Credentials> FakeTransportSecurityCredentials();
-std::shared_ptr<ServerCredentials> FakeTransportSecurityServerCredentials();
+grpc_resolver_factory *grpc_ipv6_resolver_factory_create(void);
 
-}  // namespace testing
-}  // namespace grpc
+#ifdef GPR_POSIX_SOCKET
+/** Create a unix resolver factory */
+grpc_resolver_factory *grpc_unix_resolver_factory_create(void);
+#endif
 
-#endif  // GRPC_TEST_CPP_UTIL_FAKE_CREDENTIALS_H
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H */

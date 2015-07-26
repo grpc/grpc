@@ -130,12 +130,12 @@ namespace Grpc.IntegrationTesting
                     client.HeaderInterceptor = OAuth2InterceptorFactory.Create(credential);
                 }
 
-                RunTestCase(options.testCase, client);
+                RunTestCaseAsync(options.testCase, client).Wait();
             }
             GrpcEnvironment.Shutdown();
         }
 
-        private void RunTestCase(string testCase, TestService.ITestServiceClient client)
+        private async Task RunTestCaseAsync(string testCase, TestService.TestServiceClient client)
         {
             switch (testCase)
             {
@@ -146,16 +146,16 @@ namespace Grpc.IntegrationTesting
                     RunLargeUnary(client);
                     break;
                 case "client_streaming":
-                    RunClientStreaming(client);
+                    await RunClientStreamingAsync(client);
                     break;
                 case "server_streaming":
-                    RunServerStreaming(client);
+                    await RunServerStreamingAsync(client);
                     break;
                 case "ping_pong":
-                    RunPingPong(client);
+                    await RunPingPongAsync(client);
                     break;
                 case "empty_stream":
-                    RunEmptyStream(client);
+                    await RunEmptyStreamAsync(client);
                     break;
                 case "service_account_creds":
                     RunServiceAccountCreds(client);
@@ -163,11 +163,17 @@ namespace Grpc.IntegrationTesting
                 case "compute_engine_creds":
                     RunComputeEngineCreds(client);
                     break;
+                case "oauth2_auth_token":
+                    RunOAuth2AuthToken(client);
+                    break;
+                case "per_rpc_creds":
+                    RunPerRpcCreds(client);
+                    break;
                 case "cancel_after_begin":
-                    RunCancelAfterBegin(client);
+                    await RunCancelAfterBeginAsync(client);
                     break;
                 case "cancel_after_first_response":
-                    RunCancelAfterFirstResponse(client);
+                    await RunCancelAfterFirstResponseAsync(client);
                     break;
                 case "benchmark_empty_unary":
                     RunBenchmarkEmptyUnary(client);
@@ -201,118 +207,106 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunClientStreaming(TestService.ITestServiceClient client)
+        public static async Task RunClientStreamingAsync(TestService.ITestServiceClient client)
         {
-            Task.Run(async () =>
+            Console.WriteLine("running client_streaming");
+
+            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => StreamingInputCallRequest.CreateBuilder().SetPayload(CreateZerosPayload(size)).Build());
+
+            using (var call = client.StreamingInputCall())
             {
-                Console.WriteLine("running client_streaming");
+                await call.RequestStream.WriteAll(bodySizes);
 
-                var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => StreamingInputCallRequest.CreateBuilder().SetPayload(CreateZerosPayload(size)).Build());
-
-                using (var call = client.StreamingInputCall())
-                {
-                    await call.RequestStream.WriteAll(bodySizes);
-
-                    var response = await call.Result;
-                    Assert.AreEqual(74922, response.AggregatedPayloadSize);
-                }
-                Console.WriteLine("Passed!");
-            }).Wait();
+                var response = await call.ResponseAsync;
+                Assert.AreEqual(74922, response.AggregatedPayloadSize);
+            }
+            Console.WriteLine("Passed!");
         }
 
-        public static void RunServerStreaming(TestService.ITestServiceClient client)
+        public static async Task RunServerStreamingAsync(TestService.ITestServiceClient client)
         {
-            Task.Run(async () =>
+            Console.WriteLine("running server_streaming");
+
+            var bodySizes = new List<int> { 31415, 9, 2653, 58979 };
+
+            var request = StreamingOutputCallRequest.CreateBuilder()
+            .SetResponseType(PayloadType.COMPRESSABLE)
+            .AddRangeResponseParameters(bodySizes.ConvertAll(
+                (size) => ResponseParameters.CreateBuilder().SetSize(size).Build()))
+            .Build();
+
+            using (var call = client.StreamingOutputCall(request))
             {
-                Console.WriteLine("running server_streaming");
+                var responseList = await call.ResponseStream.ToList();
+                foreach (var res in responseList)
+                {
+                    Assert.AreEqual(PayloadType.COMPRESSABLE, res.Payload.Type);
+                }
+                CollectionAssert.AreEqual(bodySizes, responseList.ConvertAll((item) => item.Payload.Body.Length));
+            }
+            Console.WriteLine("Passed!");
+        }
 
-                var bodySizes = new List<int> { 31415, 9, 2653, 58979 };
+        public static async Task RunPingPongAsync(TestService.ITestServiceClient client)
+        {
+            Console.WriteLine("running ping_pong");
 
-                var request = StreamingOutputCallRequest.CreateBuilder()
+            using (var call = client.FullDuplexCall())
+            {
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
                 .SetResponseType(PayloadType.COMPRESSABLE)
-                .AddRangeResponseParameters(bodySizes.ConvertAll(
-                    (size) => ResponseParameters.CreateBuilder().SetSize(size).Build()))
-                .Build();
+                .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
+                .SetPayload(CreateZerosPayload(27182)).Build());
 
-                using (var call = client.StreamingOutputCall(request))
-                {
-                    var responseList = await call.ResponseStream.ToList();
-                    foreach (var res in responseList)
-                    {
-                        Assert.AreEqual(PayloadType.COMPRESSABLE, res.Payload.Type);
-                    }
-                    CollectionAssert.AreEqual(bodySizes, responseList.ConvertAll((item) => item.Payload.Body.Length));
-                }
-                Console.WriteLine("Passed!");
-            }).Wait();
+                Assert.IsTrue(await call.ResponseStream.MoveNext());
+                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
+                Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
+
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
+                            .SetResponseType(PayloadType.COMPRESSABLE)
+                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(9))
+                            .SetPayload(CreateZerosPayload(8)).Build());
+
+                Assert.IsTrue(await call.ResponseStream.MoveNext());
+                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
+                Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
+
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
+                            .SetResponseType(PayloadType.COMPRESSABLE)
+                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(2653))
+                            .SetPayload(CreateZerosPayload(1828)).Build());
+
+                Assert.IsTrue(await call.ResponseStream.MoveNext());
+                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
+                Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
+
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
+                            .SetResponseType(PayloadType.COMPRESSABLE)
+                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
+                            .SetPayload(CreateZerosPayload(45904)).Build());
+
+                Assert.IsTrue(await call.ResponseStream.MoveNext());
+                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
+                Assert.AreEqual(58979, call.ResponseStream.Current.Payload.Body.Length);
+
+                await call.RequestStream.CompleteAsync();
+
+                Assert.IsFalse(await call.ResponseStream.MoveNext());
+            }
+            Console.WriteLine("Passed!");
         }
 
-        public static void RunPingPong(TestService.ITestServiceClient client)
+        public static async Task RunEmptyStreamAsync(TestService.ITestServiceClient client)
         {
-            Task.Run(async () =>
+            Console.WriteLine("running empty_stream");
+            using (var call = client.FullDuplexCall())
             {
-                Console.WriteLine("running ping_pong");
+                await call.RequestStream.CompleteAsync();
 
-                using (var call = client.FullDuplexCall())
-                {
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                    .SetResponseType(PayloadType.COMPRESSABLE)
-                    .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
-                    .SetPayload(CreateZerosPayload(27182)).Build());
-
-                    Assert.IsTrue(await call.ResponseStream.MoveNext());
-                    Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
-                    Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
-
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                              .SetResponseType(PayloadType.COMPRESSABLE)
-                              .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(9))
-                              .SetPayload(CreateZerosPayload(8)).Build());
-
-                    Assert.IsTrue(await call.ResponseStream.MoveNext());
-                    Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
-                    Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
-
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                              .SetResponseType(PayloadType.COMPRESSABLE)
-                              .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(2653))
-                              .SetPayload(CreateZerosPayload(1828)).Build());
-
-                    Assert.IsTrue(await call.ResponseStream.MoveNext());
-                    Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
-                    Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
-
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                              .SetResponseType(PayloadType.COMPRESSABLE)
-                              .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
-                              .SetPayload(CreateZerosPayload(45904)).Build());
-
-                    Assert.IsTrue(await call.ResponseStream.MoveNext());
-                    Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
-                    Assert.AreEqual(58979, call.ResponseStream.Current.Payload.Body.Length);
-
-                    await call.RequestStream.CompleteAsync();
-
-                    Assert.IsFalse(await call.ResponseStream.MoveNext());
-                }
-                Console.WriteLine("Passed!");
-            }).Wait();
-        }
-
-        public static void RunEmptyStream(TestService.ITestServiceClient client)
-        {
-            Task.Run(async () =>
-            {
-                Console.WriteLine("running empty_stream");
-                using (var call = client.FullDuplexCall())
-                {
-                    await call.RequestStream.CompleteAsync();
-
-                    var responseList = await call.ResponseStream.ToList();
-                    Assert.AreEqual(0, responseList.Count);
-                }
-                Console.WriteLine("Passed!");
-            }).Wait();
+                var responseList = await call.ResponseStream.ToList();
+                Assert.AreEqual(0, responseList.Count);
+            }
+            Console.WriteLine("Passed!");
         }
 
         public static void RunServiceAccountCreds(TestService.ITestServiceClient client)
@@ -355,65 +349,104 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunCancelAfterBegin(TestService.ITestServiceClient client)
+        public static void RunOAuth2AuthToken(TestService.TestServiceClient client)
         {
-            Task.Run(async () =>
+            Console.WriteLine("running oauth2_auth_token");
+            var credential = GoogleCredential.GetApplicationDefault().CreateScoped(new[] { AuthScope });
+            Assert.IsTrue(credential.RequestAccessTokenAsync(CancellationToken.None).Result);
+            string oauth2Token = credential.Token.AccessToken;
+
+            // Intercept calls with an OAuth2 token obtained out-of-band.
+            client.HeaderInterceptor = new MetadataInterceptorDelegate((metadata) =>
             {
-                Console.WriteLine("running cancel_after_begin");
+                metadata.Add(new Metadata.Entry("Authorization", "Bearer " + oauth2Token));
+            });
 
-                var cts = new CancellationTokenSource();
-                using (var call = client.StreamingInputCall(cancellationToken: cts.Token))
-                {
-                    // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
-                    await Task.Delay(1000);
-                    cts.Cancel();
+            var request = SimpleRequest.CreateBuilder()
+                .SetFillUsername(true)
+                .SetFillOauthScope(true)
+                .Build();
 
-                    try
-                    {
-                        var response = await call.Result;
-                        Assert.Fail();
-                    }
-                    catch (RpcException e)
-                    {
-                        Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
-                    }
-                }
-                Console.WriteLine("Passed!");
-            }).Wait();
+            var response = client.UnaryCall(request);
+
+            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
+            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Console.WriteLine("Passed!");
         }
 
-        public static void RunCancelAfterFirstResponse(TestService.ITestServiceClient client)
+        public static void RunPerRpcCreds(TestService.TestServiceClient client)
         {
-            Task.Run(async () =>
+            Console.WriteLine("running per_rpc_creds");
+
+            var credential = GoogleCredential.GetApplicationDefault().CreateScoped(new[] { AuthScope });
+            Assert.IsTrue(credential.RequestAccessTokenAsync(CancellationToken.None).Result);
+            string oauth2Token = credential.Token.AccessToken;
+
+            var request = SimpleRequest.CreateBuilder()
+                .SetFillUsername(true)
+                .SetFillOauthScope(true)
+                .Build();
+
+            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) });
+
+            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
+            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunCancelAfterBeginAsync(TestService.ITestServiceClient client)
+        {
+            Console.WriteLine("running cancel_after_begin");
+
+            var cts = new CancellationTokenSource();
+            using (var call = client.StreamingInputCall(cancellationToken: cts.Token))
             {
-                Console.WriteLine("running cancel_after_first_response");
+                // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
+                await Task.Delay(1000);
+                cts.Cancel();
 
-                var cts = new CancellationTokenSource();
-                using (var call = client.FullDuplexCall(cancellationToken: cts.Token))
+                try
                 {
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                        .SetResponseType(PayloadType.COMPRESSABLE)
-                        .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
-                        .SetPayload(CreateZerosPayload(27182)).Build());
-
-                    Assert.IsTrue(await call.ResponseStream.MoveNext());
-                    Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
-                    Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
-
-                    cts.Cancel();
-
-                    try
-                    {
-                        await call.ResponseStream.MoveNext();
-                        Assert.Fail();
-                    }
-                    catch (RpcException e)
-                    {
-                        Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
-                    }
+                    var response = await call.ResponseAsync;
+                    Assert.Fail();
                 }
-                Console.WriteLine("Passed!");
-            }).Wait();
+                catch (RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+                }
+            }
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunCancelAfterFirstResponseAsync(TestService.ITestServiceClient client)
+        {
+            Console.WriteLine("running cancel_after_first_response");
+
+            var cts = new CancellationTokenSource();
+            using (var call = client.FullDuplexCall(cancellationToken: cts.Token))
+            {
+                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
+                    .SetResponseType(PayloadType.COMPRESSABLE)
+                    .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
+                    .SetPayload(CreateZerosPayload(27182)).Build());
+
+                Assert.IsTrue(await call.ResponseStream.MoveNext());
+                Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
+                Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
+
+                cts.Cancel();
+
+                try
+                {
+                    await call.ResponseStream.MoveNext();
+                    Assert.Fail();
+                }
+                catch (RpcException e)
+                {
+                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+                }
+            }
+            Console.WriteLine("Passed!");
         }
 
         // This is not an official interop test, but it's useful.

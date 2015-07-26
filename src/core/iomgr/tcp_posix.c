@@ -44,14 +44,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/support/string.h"
-#include "src/core/debug/trace.h"
-#include "src/core/profiling/timers.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include "src/core/support/string.h"
+#include "src/core/debug/trace.h"
+#include "src/core/profiling/timers.h"
 
 #ifdef GPR_HAVE_MSG_NOSIGNAL
 #define SENDMSG_FLAGS MSG_NOSIGNAL
@@ -282,6 +284,8 @@ typedef struct {
   grpc_iomgr_closure write_closure;
 
   grpc_iomgr_closure handle_read_closure;
+
+  char *peer_string;
 } grpc_tcp;
 
 static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success);
@@ -296,6 +300,7 @@ static void grpc_tcp_unref(grpc_tcp *tcp) {
   int refcount_zero = gpr_unref(&tcp->refcount);
   if (refcount_zero) {
     grpc_fd_orphan(tcp->em_fd, NULL, "tcp_unref_orphan");
+    gpr_free(tcp->peer_string);
     gpr_free(tcp);
   }
 }
@@ -314,7 +319,7 @@ static void call_read_cb(grpc_tcp *tcp, gpr_slice *slices, size_t nslices,
     gpr_log(GPR_DEBUG, "read: status=%d", status);
     for (i = 0; i < nslices; i++) {
       char *dump = gpr_dump_slice(slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "READ: %s", dump);
+      gpr_log(GPR_DEBUG, "READ %p: %s", tcp, dump);
       gpr_free(dump);
     }
   }
@@ -443,7 +448,7 @@ static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
     grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
   } else {
     tcp->handle_read_closure.cb_arg = tcp;
-    grpc_iomgr_add_callback(&tcp->handle_read_closure);
+    grpc_iomgr_add_delayed_callback(&tcp->handle_read_closure, 1);
   }
 }
 
@@ -567,13 +572,20 @@ static void grpc_tcp_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
   grpc_pollset_add_fd(pollset, tcp->em_fd);
 }
 
-static const grpc_endpoint_vtable vtable = {
-    grpc_tcp_notify_on_read, grpc_tcp_write, grpc_tcp_add_to_pollset,
-    grpc_tcp_shutdown, grpc_tcp_destroy};
+static char *grpc_tcp_get_peer(grpc_endpoint *ep) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  return gpr_strdup(tcp->peer_string);
+}
 
-grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
+static const grpc_endpoint_vtable vtable = {
+    grpc_tcp_notify_on_read, grpc_tcp_write,   grpc_tcp_add_to_pollset,
+    grpc_tcp_shutdown,       grpc_tcp_destroy, grpc_tcp_get_peer};
+
+grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
+                               const char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
+  tcp->peer_string = gpr_strdup(peer_string);
   tcp->fd = em_fd->fd;
   tcp->read_cb = NULL;
   tcp->write_cb = NULL;

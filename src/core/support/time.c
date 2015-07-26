@@ -41,6 +41,7 @@
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
+  GPR_ASSERT(a.clock_type == b.clock_type);
   if (cmp == 0) {
     cmp = (a.tv_nsec > b.tv_nsec) - (a.tv_nsec < b.tv_nsec);
   }
@@ -71,19 +72,40 @@ gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b) {
   ((t)(TYPE_IS_SIGNED(t) ? (TOP_BIT_OF_TYPE(t) - 1) \
                          : ((TOP_BIT_OF_TYPE(t) - 1) << 1) + 1))
 
-const gpr_timespec gpr_time_0 = {0, 0};
-const gpr_timespec gpr_inf_future = {TYPE_MAX(time_t), 0};
-const gpr_timespec gpr_inf_past = {TYPE_MIN(time_t), 0};
+gpr_timespec gpr_time_0(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = 0;
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
+
+gpr_timespec gpr_inf_future(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = TYPE_MAX(time_t);
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
+
+gpr_timespec gpr_inf_past(gpr_clock_type type) {
+  gpr_timespec out;
+  out.tv_sec = TYPE_MIN(time_t);
+  out.tv_nsec = 0;
+  out.clock_type = type;
+  return out;
+}
 
 /* TODO(ctiller): consider merging _nanos, _micros, _millis into a single
    function for maintainability. Similarly for _seconds, _minutes, and _hours */
 
-gpr_timespec gpr_time_from_nanos(long ns) {
+gpr_timespec gpr_time_from_nanos(long ns, gpr_clock_type type) {
   gpr_timespec result;
+  result.clock_type = type;
   if (ns == LONG_MAX) {
-    result = gpr_inf_future;
+    result = gpr_inf_future(type);
   } else if (ns == LONG_MIN) {
-    result = gpr_inf_past;
+    result = gpr_inf_past(type);
   } else if (ns >= 0) {
     result.tv_sec = ns / GPR_NS_PER_SEC;
     result.tv_nsec = (int)(ns - result.tv_sec * GPR_NS_PER_SEC);
@@ -95,12 +117,13 @@ gpr_timespec gpr_time_from_nanos(long ns) {
   return result;
 }
 
-gpr_timespec gpr_time_from_micros(long us) {
+gpr_timespec gpr_time_from_micros(long us, gpr_clock_type type) {
   gpr_timespec result;
+  result.clock_type = type;
   if (us == LONG_MAX) {
-    result = gpr_inf_future;
+    result = gpr_inf_future(type);
   } else if (us == LONG_MIN) {
-    result = gpr_inf_past;
+    result = gpr_inf_past(type);
   } else if (us >= 0) {
     result.tv_sec = us / 1000000;
     result.tv_nsec = (int)((us - result.tv_sec * 1000000) * 1000);
@@ -112,12 +135,13 @@ gpr_timespec gpr_time_from_micros(long us) {
   return result;
 }
 
-gpr_timespec gpr_time_from_millis(long ms) {
+gpr_timespec gpr_time_from_millis(long ms, gpr_clock_type type) {
   gpr_timespec result;
+  result.clock_type = type;
   if (ms == LONG_MAX) {
-    result = gpr_inf_future;
+    result = gpr_inf_future(type);
   } else if (ms == LONG_MIN) {
-    result = gpr_inf_past;
+    result = gpr_inf_past(type);
   } else if (ms >= 0) {
     result.tv_sec = ms / 1000;
     result.tv_nsec = (int)((ms - result.tv_sec * 1000) * 1000000);
@@ -129,12 +153,13 @@ gpr_timespec gpr_time_from_millis(long ms) {
   return result;
 }
 
-gpr_timespec gpr_time_from_seconds(long s) {
+gpr_timespec gpr_time_from_seconds(long s, gpr_clock_type type) {
   gpr_timespec result;
+  result.clock_type = type;
   if (s == LONG_MAX) {
-    result = gpr_inf_future;
+    result = gpr_inf_future(type);
   } else if (s == LONG_MIN) {
-    result = gpr_inf_past;
+    result = gpr_inf_past(type);
   } else {
     result.tv_sec = s;
     result.tv_nsec = 0;
@@ -142,12 +167,13 @@ gpr_timespec gpr_time_from_seconds(long s) {
   return result;
 }
 
-gpr_timespec gpr_time_from_minutes(long m) {
+gpr_timespec gpr_time_from_minutes(long m, gpr_clock_type type) {
   gpr_timespec result;
+  result.clock_type = type;
   if (m >= LONG_MAX / 60) {
-    result = gpr_inf_future;
+    result = gpr_inf_future(type);
   } else if (m <= LONG_MIN / 60) {
-    result = gpr_inf_past;
+    result = gpr_inf_past(type);
   } else {
     result.tv_sec = m * 60;
     result.tv_nsec = 0;
@@ -155,12 +181,13 @@ gpr_timespec gpr_time_from_minutes(long m) {
   return result;
 }
 
-gpr_timespec gpr_time_from_hours(long h) {
+gpr_timespec gpr_time_from_hours(long h, gpr_clock_type type) {
   gpr_timespec result;
+  result.clock_type = type;
   if (h >= LONG_MAX / 3600) {
-    result = gpr_inf_future;
+    result = gpr_inf_future(type);
   } else if (h <= LONG_MIN / 3600) {
-    result = gpr_inf_past;
+    result = gpr_inf_past(type);
   } else {
     result.tv_sec = h * 3600;
     result.tv_nsec = 0;
@@ -171,6 +198,8 @@ gpr_timespec gpr_time_from_hours(long h) {
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
   gpr_timespec sum;
   int inc = 0;
+  GPR_ASSERT(b.clock_type == GPR_TIMESPAN);
+  sum.clock_type = a.clock_type;
   sum.tv_nsec = a.tv_nsec + b.tv_nsec;
   if (sum.tv_nsec >= GPR_NS_PER_SEC) {
     sum.tv_nsec -= GPR_NS_PER_SEC;
@@ -180,14 +209,14 @@ gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
     sum = a;
   } else if (b.tv_sec == TYPE_MAX(time_t) ||
              (b.tv_sec >= 0 && a.tv_sec >= TYPE_MAX(time_t) - b.tv_sec)) {
-    sum = gpr_inf_future;
+    sum = gpr_inf_future(sum.clock_type);
   } else if (b.tv_sec == TYPE_MIN(time_t) ||
              (b.tv_sec <= 0 && a.tv_sec <= TYPE_MIN(time_t) - b.tv_sec)) {
-    sum = gpr_inf_past;
+    sum = gpr_inf_past(sum.clock_type);
   } else {
     sum.tv_sec = a.tv_sec + b.tv_sec;
     if (inc != 0 && sum.tv_sec == TYPE_MAX(time_t) - 1) {
-      sum = gpr_inf_future;
+      sum = gpr_inf_future(sum.clock_type);
     } else {
       sum.tv_sec += inc;
     }
@@ -198,6 +227,12 @@ gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
 gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
   gpr_timespec diff;
   int dec = 0;
+  if (b.clock_type == GPR_TIMESPAN) {
+    diff.clock_type = a.clock_type;
+  } else {
+    GPR_ASSERT(a.clock_type == b.clock_type);
+    diff.clock_type = GPR_TIMESPAN;
+  }
   diff.tv_nsec = a.tv_nsec - b.tv_nsec;
   if (diff.tv_nsec < 0) {
     diff.tv_nsec += GPR_NS_PER_SEC;
@@ -207,14 +242,14 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
     diff = a;
   } else if (b.tv_sec == TYPE_MIN(time_t) ||
              (b.tv_sec <= 0 && a.tv_sec >= TYPE_MAX(time_t) + b.tv_sec)) {
-    diff = gpr_inf_future;
+    diff = gpr_inf_future(GPR_CLOCK_REALTIME);
   } else if (b.tv_sec == TYPE_MAX(time_t) ||
              (b.tv_sec >= 0 && a.tv_sec <= TYPE_MIN(time_t) + b.tv_sec)) {
-    diff = gpr_inf_past;
+    diff = gpr_inf_past(GPR_CLOCK_REALTIME);
   } else {
     diff.tv_sec = a.tv_sec - b.tv_sec;
     if (dec != 0 && diff.tv_sec == TYPE_MIN(time_t) + 1) {
-      diff = gpr_inf_past;
+      diff = gpr_inf_past(GPR_CLOCK_REALTIME);
     } else {
       diff.tv_sec -= dec;
     }
@@ -224,6 +259,9 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
 
 int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold) {
   int cmp_ab;
+
+  GPR_ASSERT(a.clock_type == b.clock_type);
+  GPR_ASSERT(threshold.clock_type == GPR_TIMESPAN);
 
   cmp_ab = gpr_time_cmp(a, b);
   if (cmp_ab == 0) return 1;
@@ -251,4 +289,31 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
 
 double gpr_timespec_to_micros(gpr_timespec t) {
   return (double)t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
+}
+
+gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
+  if (t.clock_type == clock_type) {
+    return t;
+  }
+
+  if (t.tv_nsec == 0) {
+    if (t.tv_sec == TYPE_MAX(time_t)) {
+      t.clock_type = clock_type;
+      return t;
+    }
+    if (t.tv_sec == TYPE_MIN(time_t)) {
+      t.clock_type = clock_type;
+      return t;
+    }
+  }
+
+  if (clock_type == GPR_TIMESPAN) {
+    return gpr_time_sub(t, gpr_now(t.clock_type));
+  }
+
+  if (t.clock_type == GPR_TIMESPAN) {
+    return gpr_time_add(gpr_now(clock_type), t);
+  }
+
+  return gpr_time_add(gpr_now(clock_type), gpr_time_sub(t, gpr_now(t.clock_type)));
 }

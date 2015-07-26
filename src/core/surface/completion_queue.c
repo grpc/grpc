@@ -148,6 +148,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
                                       gpr_timespec deadline) {
   grpc_event ret;
 
+  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
+
   GRPC_CQ_INTERNAL_REF(cc, "next");
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
@@ -187,6 +189,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   grpc_event ret;
   grpc_cq_completion *c;
   grpc_cq_completion *prev;
+
+  deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
   GRPC_CQ_INTERNAL_REF(cc, "pluck");
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
@@ -260,8 +264,9 @@ grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
 void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   grpc_pollset_kick(&cc->pollset);
-  grpc_pollset_work(&cc->pollset, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                               gpr_time_from_millis(100)));
+  grpc_pollset_work(&cc->pollset,
+                    gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_millis(100, GPR_TIMESPAN)));
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 

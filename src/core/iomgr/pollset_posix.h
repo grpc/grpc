@@ -66,8 +66,10 @@ typedef struct grpc_pollset {
 } grpc_pollset;
 
 struct grpc_pollset_vtable {
-  void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
-  void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
+  void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
+                 int and_unlock_pollset);
+  void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
+                 int and_unlock_pollset);
   void (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
                      gpr_timespec now, int allow_synchronous_callback);
   void (*kick)(grpc_pollset *pollset);

@@ -81,8 +81,8 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name, size_t read
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
-  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"));
-  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"));
+  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"), "endpoint:server");
+  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"), "endpoint:client");
   return p;
 }
 

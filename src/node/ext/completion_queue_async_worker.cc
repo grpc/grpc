@@ -62,7 +62,8 @@ CompletionQueueAsyncWorker::CompletionQueueAsyncWorker()
 CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {}
 
 void CompletionQueueAsyncWorker::Execute() {
-  result = grpc_completion_queue_next(queue, gpr_inf_future);
+  result =
+      grpc_completion_queue_next(queue, gpr_inf_future(GPR_CLOCK_REALTIME));
   if (!result.success) {
     SetErrorMessage("The batch encountered an error");
   }

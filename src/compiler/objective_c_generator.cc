@@ -186,9 +186,6 @@ string GetHeader(const ServiceDescriptor *service) {
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
-    printer.Print("@protocol GRXWriteable;\n");
-    printer.Print("@protocol GRXWriter;\n\n");
-
     map<string, string> vars = {{"service_class", ServiceClassName(service)}};
 
     printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");

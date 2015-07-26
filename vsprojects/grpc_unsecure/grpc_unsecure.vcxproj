@@ -159,6 +159,7 @@
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
+    <ClInclude Include="..\..\src\core\channel\compress_filter.h" />
     <ClInclude Include="..\..\src\core\channel\connected_channel.h" />
     <ClInclude Include="..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h" />
@@ -172,7 +173,7 @@
     <ClInclude Include="..\..\src\core\client_config\resolver_factory.h" />
     <ClInclude Include="..\..\src\core\client_config\resolver_registry.h" />
     <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h" />
-    <ClInclude Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h" />
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
@@ -250,6 +251,7 @@
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\src\core\census\context.h" />
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
@@ -261,6 +263,8 @@
     <ClCompile Include="..\..\src\core\channel\channel_stack.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\client_channel.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\compress_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
     </ClCompile>
@@ -286,7 +290,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.c">
+    <ClCompile Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
     </ClCompile>
@@ -473,6 +477,8 @@
     <ClCompile Include="..\..\src\core\census\context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

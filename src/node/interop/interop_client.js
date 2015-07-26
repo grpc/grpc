@@ -318,6 +318,51 @@ function authTest(expected_user, scope, client, done) {
   });
 }
 
+function oauth2Test(expected_user, scope, per_rpc, client, done) {
+  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+    assert.ifError(err);
+    var arg = {
+      fill_username: true,
+      fill_oauth_scope: true
+    };
+    credential = credential.createScoped(scope);
+    credential.getAccessToken(function(err, token) {
+      assert.ifError(err);
+      var updateMetadata = function(authURI, metadata, callback) {
+        metadata = _.clone(metadata);
+        if (metadata.Authorization) {
+          metadata.Authorization = _.clone(metadata.Authorization);
+        } else {
+          metadata.Authorization = [];
+        }
+        metadata.Authorization.push('Bearer ' + token);
+        callback(null, metadata);
+      };
+      var makeTestCall = function(error, client_metadata) {
+        assert.ifError(error);
+        var call = client.unaryCall(arg, function(err, resp) {
+          assert.ifError(err);
+          assert.strictEqual(resp.username, expected_user);
+          assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+        });
+        call.on('status', function(status) {
+          assert.strictEqual(status.code, grpc.status.OK);
+          if (done) {
+            done();
+          }
+        });
+      };
+      if (per_rpc) {
+        updateMetadata('', {}, makeTestCall);
+      } else {
+        client.updateMetadata = updateMetadata;
+        makeTestCall(null, {});
+      }
+
+    });
+  });
+}
+
 /**
  * Map from test case names to test functions
  */
@@ -333,7 +378,9 @@ var test_cases = {
   timeout_on_sleeping_server: timeoutOnSleepingServer,
   compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER, null),
   service_account_creds: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
-  jwt_token_creds: _.partial(authTest, AUTH_USER, null)
+  jwt_token_creds: _.partial(authTest, AUTH_USER, null),
+  oauth2_auth_token: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, false),
+  per_rpc_creds: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, true)
 };
 
 /**

@@ -132,7 +132,7 @@ static void handle_op_after_cancellation(grpc_call_element *elem,
     mdb.list.head = &calld->status;
     mdb.list.tail = &calld->details;
     mdb.garbage.head = mdb.garbage.tail = NULL;
-    mdb.deadline = gpr_inf_future;
+    mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     grpc_sopb_add_metadata(op->recv_ops, mdb);
     *op->recv_state = GRPC_STREAM_CLOSED;
     op->on_done_recv->cb(op->on_done_recv->cb_arg, 1);
@@ -236,21 +236,6 @@ static void picked_target(void *arg, int iomgr_success) {
   }
 }
 
-static void pick_target(grpc_lb_policy *lb_policy, call_data *calld) {
-  grpc_metadata_batch *initial_metadata;
-  grpc_transport_stream_op *op = &calld->waiting_op;
-
-  GPR_ASSERT(op->bind_pollset);
-  GPR_ASSERT(op->send_ops);
-  GPR_ASSERT(op->send_ops->nops >= 1);
-  GPR_ASSERT(op->send_ops->ops[0].type == GRPC_OP_METADATA);
-  initial_metadata = &op->send_ops->ops[0].data.metadata;
-
-  grpc_iomgr_closure_init(&calld->async_setup_task, picked_target, calld);
-  grpc_lb_policy_pick(lb_policy, op->bind_pollset, initial_metadata,
-                      &calld->picked_channel, &calld->async_setup_task);
-}
-
 static grpc_iomgr_closure *merge_into_waiting_op(
     grpc_call_element *elem, grpc_transport_stream_op *new_op) {
   call_data *calld = elem->call_data;
@@ -278,6 +263,26 @@ static grpc_iomgr_closure *merge_into_waiting_op(
     waiting_op->cancel_with_status = new_op->cancel_with_status;
   }
   return consumed_op;
+}
+
+static char *cc_get_peer(grpc_call_element *elem) {
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  grpc_subchannel_call *subchannel_call;
+  char *result;
+
+  gpr_mu_lock(&calld->mu_state);
+  if (calld->state == CALL_ACTIVE) {
+    subchannel_call = calld->subchannel_call;
+    GRPC_SUBCHANNEL_CALL_REF(subchannel_call, "get_peer");
+    gpr_mu_unlock(&calld->mu_state);
+    result = grpc_subchannel_call_get_peer(subchannel_call);
+    GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call, "get_peer");
+    return result;
+  } else {
+    gpr_mu_unlock(&calld->mu_state);
+    return grpc_channel_get_target(chand->master);
+  }
 }
 
 static void perform_transport_stream_op(grpc_call_element *elem,
@@ -358,12 +363,23 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           gpr_mu_lock(&chand->mu_config);
           lb_policy = chand->lb_policy;
           if (lb_policy) {
+            grpc_transport_stream_op *op = &calld->waiting_op;
+            grpc_pollset *bind_pollset = op->bind_pollset;
+            grpc_metadata_batch *initial_metadata = &op->send_ops->ops[0].data.metadata;
             GRPC_LB_POLICY_REF(lb_policy, "pick");
             gpr_mu_unlock(&chand->mu_config);
             calld->state = CALL_WAITING_FOR_PICK;
+
+            GPR_ASSERT(op->bind_pollset);
+            GPR_ASSERT(op->send_ops);
+            GPR_ASSERT(op->send_ops->nops >= 1);
+            GPR_ASSERT(
+                op->send_ops->ops[0].type == GRPC_OP_METADATA);
             gpr_mu_unlock(&calld->mu_state);
 
-            pick_target(lb_policy, calld);
+            grpc_iomgr_closure_init(&calld->async_setup_task, picked_target, calld);
+            grpc_lb_policy_pick(lb_policy, bind_pollset, initial_metadata,
+                                &calld->picked_channel, &calld->async_setup_task);
 
             GRPC_LB_POLICY_UNREF(lb_policy, "pick");
           } else if (chand->resolver != NULL) {
@@ -444,7 +460,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
 
   while (wakeup_closures) {
     grpc_iomgr_closure *next = wakeup_closures->next;
-    grpc_iomgr_add_callback(wakeup_closures);
+    wakeup_closures->cb(wakeup_closures->cb_arg, 1);
     wakeup_closures = next;
   }
 
@@ -518,7 +534,7 @@ static void init_call_elem(grpc_call_element *elem,
   gpr_mu_init(&calld->mu_state);
   calld->elem = elem;
   calld->state = CALL_CREATED;
-  calld->deadline = gpr_inf_future;
+  calld->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 /* Destructor for call_data */
@@ -594,6 +610,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    cc_get_peer,
     "client-channel",
 };
 
