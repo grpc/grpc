@@ -87,4 +87,10 @@ describe('channel', function() {
       });
     });
   });
+  describe('getTarget', function() {
+    it('should return a string', function() {
+      var channel = new grpc.Channel('localhost', {});
+      assert.strictEqual(typeof channel.getTarget(), 'string');
+    });
+  });
 });
