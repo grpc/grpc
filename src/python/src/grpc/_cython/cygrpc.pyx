@@ -82,12 +82,8 @@ client_credentials_compute_engine = (
     credentials.client_credentials_compute_engine)
 client_credentials_jwt = credentials.client_credentials_jwt
 client_credentials_refresh_token = credentials.client_credentials_refresh_token
-client_credentials_fake_transport_security = (
-    credentials.client_credentials_fake_transport_security)
 client_credentials_iam = credentials.client_credentials_iam
 server_credentials_ssl = credentials.server_credentials_ssl
-server_credentials_fake_transport_security = (
-    credentials.server_credentials_fake_transport_security)
 
 CompletionQueue = completion_queue.CompletionQueue
 Channel = channel.Channel

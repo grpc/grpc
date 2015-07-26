@@ -132,7 +132,7 @@ describe('call', function() {
                                                     'key2': ['value2']};
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -147,7 +147,7 @@ describe('call', function() {
         };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -182,6 +182,12 @@ describe('call', function() {
       assert.doesNotThrow(function() {
         call.cancel();
       });
+    });
+  });
+  describe('getPeer', function() {
+    it('should return a string', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.strictEqual(typeof call.getPeer(), 'string');
     });
   });
 });

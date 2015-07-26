@@ -250,6 +250,7 @@ static void on_accept(void *arg, int from_iocp) {
   DWORD transfered_bytes;
   DWORD flags;
   BOOL wsa_success;
+  int err;
 
   /* The general mechanism for shutting down is to queue abortion calls. While
      this is necessary in the read/write case, it's useless for the accept
@@ -281,10 +282,26 @@ static void on_accept(void *arg, int from_iocp) {
     }
   } else {
     if (!sp->shutting_down) {
-      getpeername(sock, (struct sockaddr*)&peer_name, &peer_name_len);
-      peer_name_string = grpc_sockaddr_to_uri((struct sockaddr*)&peer_name);
+      peer_name_string = NULL;
+      err = setsockopt(sock, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                       (char *)&sp->socket->socket,
+                       sizeof(sp->socket->socket));
+      if (err) {
+        char *utf8_message = gpr_format_message(WSAGetLastError());
+        gpr_log(GPR_ERROR, "setsockopt error: %s", utf8_message);
+        gpr_free(utf8_message);
+      }
+      err = getpeername(sock, (struct sockaddr*)&peer_name, &peer_name_len);
+      if (!err) {
+        peer_name_string = grpc_sockaddr_to_uri((struct sockaddr*)&peer_name);
+      } else {
+        char *utf8_message = gpr_format_message(WSAGetLastError());
+        gpr_log(GPR_ERROR, "getpeername error: %s", utf8_message);
+        gpr_free(utf8_message);
+      }
       gpr_asprintf(&fd_name, "tcp_server:%s", peer_name_string);
-      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name), peer_name_string);
+      ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name),
+                           peer_name_string);
       gpr_free(fd_name);
       gpr_free(peer_name_string);
     }

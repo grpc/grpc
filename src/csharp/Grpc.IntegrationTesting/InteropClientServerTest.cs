@@ -57,7 +57,7 @@ namespace Grpc.IntegrationTesting
         {
             server = new Server();
             server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
-            int port = server.AddListeningPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
+            int port = server.AddPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
             server.Start();
 
             var options = new List<ChannelOption>
@@ -89,39 +89,39 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public void ClientStreaming()
+        public async Task ClientStreaming()
         {
-            InteropClient.RunClientStreaming(client);
+            await InteropClient.RunClientStreamingAsync(client);
         }
 
         [Test]
-        public void ServerStreaming()
+        public async Task ServerStreaming()
         {
-            InteropClient.RunServerStreaming(client);
+            await InteropClient.RunServerStreamingAsync(client);
         }
 
         [Test]
-        public void PingPong()
+        public async Task PingPong()
         {
-            InteropClient.RunPingPong(client);
+            await InteropClient.RunPingPongAsync(client);
         }
 
         [Test]
-        public void EmptyStream()
+        public async Task EmptyStream()
         {
-            InteropClient.RunEmptyStream(client);
+            await InteropClient.RunEmptyStreamAsync(client);
         }
 
         [Test]
-        public void CancelAfterBegin()
+        public async Task CancelAfterBegin()
         {
-            InteropClient.RunCancelAfterBegin(client);
+            await InteropClient.RunCancelAfterBeginAsync(client);
         }
 
         [Test]
-        public void CancelAfterFirstResponse()
+        public async Task CancelAfterFirstResponse()
         {
-            InteropClient.RunCancelAfterFirstResponse(client);
+            await InteropClient.RunCancelAfterFirstResponseAsync(client);
         }
     }
 }
