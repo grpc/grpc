@@ -15,8 +15,8 @@ jobs = []
 jobNumber = 0
 
 build_job = jobset.JobSpec(cmdline='tools/run_tests/run_interops.sh', shortname='interop')
-#jobs.append(build_job)
-#jobNumber+=1
+jobs.append(build_job)
+jobNumber+=1
 
 if args.language != 'c++':
   jobset.message ('in c++', 'good')
@@ -24,7 +24,7 @@ if args.language != 'c++':
   for test in _TESTS:
     jobset.message ('for each test', 'test %s' % (test))
     perTest = testCommand + test
-    jobs.append(jobset.JobSpec(cmdline=['%s' % perTest], shortname=test))
+    #jobs.append(jobset.JobSpec(cmdline=['%s' % perTest], shortname=test))
     jobNumber+=1
     jobset.message ('end of each test', 'number %d command %s' % (jobNumber, perTest))
 
@@ -32,6 +32,9 @@ root = ET.Element('testsuites')
 testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
 
 jobset.run(jobs, maxjobs=jobNumber, xml_report=testsuite)
+#blah = testCommand + 'large_unary'
+#job = jobset.JobSpec(cmdline=['%s' % blah], shortname='blah')
+#jobset.run([job], maxjobs=jobNumber, xml_report=testsuite)
 
 tree = ET.ElementTree(root)
 tree.write('report.xml', encoding='UTF-8')
