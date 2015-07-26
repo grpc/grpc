@@ -18,7 +18,7 @@ build_job = jobset.JobSpec(cmdline='tools/run_tests/run_interops.sh', shortname=
 jobs.append(build_job)
 jobNumber+=1
 
-if args.language == 'cxx':
+if args.language == 'c++':
   testCommand = 'sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case='
   for test in _TESTS:
     job = jobset.JobSpec(cmdline=testCommand+test, shortname=test)
