@@ -23,7 +23,8 @@ if args.language != 'c++':
   testCommand = 'sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case='
   for test in _TESTS:
     jobset.message ('for each test', 'good')
-    job = jobset.JobSpec(cmdline=testCommand+test, shortname=test)
+    perTest = testCommand + test
+    job = jobset.JobSpec(cmdline=['%s' % perTest], shortname=test)
     jobs.append(job)
     jobNumber+=1
 
