@@ -15,18 +15,19 @@ jobs = []
 jobNumber = 0
 
 build_job = jobset.JobSpec(cmdline='tools/run_tests/run_interops.sh', shortname='interop')
-jobs.append(build_job)
-jobNumber+=1
+#jobs.append(build_job)
+#jobNumber+=1
 
 if args.language != 'c++':
   jobset.message ('in c++', 'good')
   testCommand = 'sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case='
   for test in _TESTS:
-    jobset.message ('for each test', 'good')
+    jobset.message ('for each test', 'test %s' % (test))
     perTest = testCommand + test
     job = jobset.JobSpec(cmdline=['%s' % perTest], shortname=test)
     jobs.append(job)
     jobNumber+=1
+    jobset.message ('end of each test', 'command %s' % (perTest))
 
 root = ET.Element('testsuites')
 testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
