@@ -29,18 +29,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#sudo docker run -d -e GCS_BUCKET=docker-interop-images -e STORAGE_PATH=/admin/docker_images -p 5000:5000 google/docker-registry
 set -e
+
+#clean up any old docker files
 sudo docker rmi -f grpc/cxx || true
 sudo docker rmi -f grpc/base || true
 sudo docker rmi -f 0.0.0.0:5000/grpc/base || true
+
+#prepare building by pulling down base images and necessary files
 sudo docker pull 0.0.0.0:5000/grpc/base
 sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
 gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
 gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
+
+#build docker file, add more languages later
 sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
-sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=large_unary
-#sleep 4 
-#sudo docker rmi grpc/cxx
-#sudo docker rmi grpc/base
-#sudo docker rmi 0.0.0.0:5000/grpc/base

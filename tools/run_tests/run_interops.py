@@ -20,7 +20,6 @@ jobNumber = 0
 
 for lang in args.language:
   for test in _TESTS:
-    jobset.message('lang %s and test %s' % (lang, test), 'what does it look like?')
     test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % lang, '%s' % test], shortname=test)
     jobs.append(test_job)
     jobNumber+=1
@@ -28,7 +27,8 @@ for lang in args.language:
 root = ET.Element('testsuites')
 testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
 
-#jobset.run([build_job], maxjobs=1, xml_report=testsuite)
+# always do the build of docker first, and then all the tests can run in parallel
+jobset.run([build_job], maxjobs=1, xml_report=testsuite)
 jobset.run(jobs, maxjobs=jobNumber, xml_report=testsuite)
 
 tree = ET.ElementTree(root)
