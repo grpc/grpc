@@ -195,6 +195,16 @@ PHP_METHOD(Channel, __construct) {
 }
 
 /**
+ * Get the endpoint this call/stream is connected to
+ * @return string The URI of the endpoint
+ */
+PHP_METHOD(Channel, getTarget) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  RETURN_STRING(grpc_channel_get_target(channel->wrapped), 1);
+}
+
+/**
  * Close the channel
  */
 PHP_METHOD(Channel, close) {
@@ -208,7 +218,9 @@ PHP_METHOD(Channel, close) {
 
 static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Channel, getTarget, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
+    PHP_FE_END};
 
 void grpc_init_channel(TSRMLS_D) {
   zend_class_entry ce;
