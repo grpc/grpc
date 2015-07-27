@@ -83,6 +83,8 @@ void Credentials::Init(Handle<Object> exports) {
            NanNew<FunctionTemplate>(CreateFake)->GetFunction());
   ctr->Set(NanNew("createIam"),
            NanNew<FunctionTemplate>(CreateIam)->GetFunction());
+  ctr->Set(NanNew("createInsecure"),
+           NanNew<FunctionTemplate>(CreateIam)->GetFunction());
   constructor = new NanCallback(ctr);
   exports->Set(NanNew("Credentials"), ctr);
 }
@@ -94,9 +96,6 @@ bool Credentials::HasInstance(Handle<Value> val) {
 
 Handle<Value> Credentials::WrapStruct(grpc_credentials *credentials) {
   NanEscapableScope();
-  if (credentials == NULL) {
-    return NanEscapeScope(NanNull());
-  }
   const int argc = 1;
   Handle<Value> argv[argc] = {
     NanNew<External>(reinterpret_cast<void *>(credentials))};
@@ -130,7 +129,11 @@ NAN_METHOD(Credentials::New) {
 
 NAN_METHOD(Credentials::CreateDefault) {
   NanScope();
-  NanReturnValue(WrapStruct(grpc_google_default_credentials_create()));
+  grpc_credentials *creds = grpc_google_default_credentials_create();
+  if (creds == NULL) {
+    NanReturnNull();
+  }
+  NanReturnValue(WrapStruct(creds));
 }
 
 NAN_METHOD(Credentials::CreateSsl) {
@@ -154,9 +157,12 @@ NAN_METHOD(Credentials::CreateSsl) {
     return NanThrowTypeError(
         "createSSl's third argument must be a Buffer if provided");
   }
-
-  NanReturnValue(WrapStruct(grpc_ssl_credentials_create(
-      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair)));
+  grpc_credentials *creds = grpc_ssl_credentials_create(
+      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair);
+  if (creds == NULL) {
+    NanReturnNull();
+  }
+  NanReturnValue(WrapStruct(creds));
 }
 
 NAN_METHOD(Credentials::CreateComposite) {
@@ -171,13 +177,21 @@ NAN_METHOD(Credentials::CreateComposite) {
   }
   Credentials *creds1 = ObjectWrap::Unwrap<Credentials>(args[0]->ToObject());
   Credentials *creds2 = ObjectWrap::Unwrap<Credentials>(args[1]->ToObject());
-  NanReturnValue(WrapStruct(grpc_composite_credentials_create(
-      creds1->wrapped_credentials, creds2->wrapped_credentials)));
+  grpc_credentials *creds = grpc_composite_credentials_create(
+      creds1->wrapped_credentials, creds2->wrapped_credentials);
+  if (creds == NULL) {
+    NanReturnNull();
+  }
+  NanReturnValue(WrapStruct(creds));
 }
 
 NAN_METHOD(Credentials::CreateGce) {
   NanScope();
-  NanReturnValue(WrapStruct(grpc_compute_engine_credentials_create()));
+  grpc_credentials *creds = grpc_compute_engine_credentials_create();
+  if (creds == NULL) {
+    NanReturnNull();
+  }
+  NanReturnValue(WrapStruct(creds));
 }
 
 NAN_METHOD(Credentials::CreateFake) {
@@ -195,8 +209,17 @@ NAN_METHOD(Credentials::CreateIam) {
   }
   NanUtf8String auth_token(args[0]);
   NanUtf8String auth_selector(args[1]);
-  NanReturnValue(
-      WrapStruct(grpc_iam_credentials_create(*auth_token, *auth_selector)));
+  grpc_credentisl *creds = grpc_iam_credentials_create(*auth_token,
+                                                       *auth_selector);
+  if (creds == NULL) {
+    NanReturnNull();
+  }
+  NanReturnValue(WrapStruct(creds));
+}
+
+NAN_METHOD(Credentials::CreateInsecure) {
+  NanScope();
+  NanReturnValue(WrapStruct(NULL));
 }
 
 }  // namespace node
