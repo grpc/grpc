@@ -20,7 +20,8 @@ jobNumber = 0
 
 for lang in args.language:
   for test in _TESTS:
-    test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % 'cxx', '%s' % test], shortname=test)
+    jobset.message('lang %s and test %s' % (lang, test))
+    test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % lang, '%s' % test], shortname=test)
     jobs.append(test_job)
     jobNumber+=1
 
@@ -33,5 +34,4 @@ jobset.run(jobs, maxjobs=jobNumber, xml_report=testsuite)
 tree = ET.ElementTree(root)
 tree.write('report.xml', encoding='UTF-8')
 
-jobset.message ('Good', 'Just starting')
 
