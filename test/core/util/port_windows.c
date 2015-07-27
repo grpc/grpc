@@ -115,6 +115,8 @@ int grpc_pick_unused_port(void) {
   int is_tcp = 1;
   int try = 0;
 
+  grpc_init();   //get WSAStartup() to run
+
   for (;;) {
     int port;
     try++;
