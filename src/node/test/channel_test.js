@@ -36,11 +36,13 @@
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
 
+var insecureCreds = grpc.Credentials.createInsecure();
+
 describe('channel', function() {
   describe('constructor', function() {
     it('should require a string for the first argument', function() {
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname');
+        new grpc.Channel('hostname', insecureCreds);
       });
       assert.throws(function() {
         new grpc.Channel();
@@ -49,38 +51,46 @@ describe('channel', function() {
         new grpc.Channel(5);
       });
     });
-    it('should accept an object for the second parameter', function() {
+    it('should accept a credential for the second argument', function() {
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname', {});
+        new grpc.Channel('hostname', insecureCreds);
       });
       assert.throws(function() {
         new grpc.Channel('hostname', 5);
       });
     });
+    it('should accept an object for the third argument', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Channel('hostname', insecureCreds, {});
+      });
+      assert.throws(function() {
+        new grpc.Channel('hostname', insecureCreds, 'abc');
+      });
+    });
     it('should only accept objects with string or int values', function() {
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname', {'key' : 'value'});
+        new grpc.Channel('hostname', insecureCreds,{'key' : 'value'});
       });
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname', {'key' : 5});
+        new grpc.Channel('hostname', insecureCreds, {'key' : 5});
       });
       assert.throws(function() {
-        new grpc.Channel('hostname', {'key' : null});
+        new grpc.Channel('hostname', insecureCreds, {'key' : null});
       });
       assert.throws(function() {
-        new grpc.Channel('hostname', {'key' : new Date()});
+        new grpc.Channel('hostname', insecureCreds, {'key' : new Date()});
       });
     });
   });
   describe('close', function() {
     it('should succeed silently', function() {
-      var channel = new grpc.Channel('hostname', {});
+      var channel = new grpc.Channel('hostname', insecureCreds, {});
       assert.doesNotThrow(function() {
         channel.close();
       });
     });
     it('should be idempotent', function() {
-      var channel = new grpc.Channel('hostname', {});
+      var channel = new grpc.Channel('hostname', insecureCreds, {});
       assert.doesNotThrow(function() {
         channel.close();
         channel.close();
@@ -89,7 +99,7 @@ describe('channel', function() {
   });
   describe('getTarget', function() {
     it('should return a string', function() {
-      var channel = new grpc.Channel('localhost', {});
+      var channel = new grpc.Channel('localhost', insecureCreds, {});
       assert.strictEqual(typeof channel.getTarget(), 'string');
     });
   });

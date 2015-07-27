@@ -82,7 +82,7 @@ void Credentials::Init(Handle<Object> exports) {
   ctr->Set(NanNew("createIam"),
            NanNew<FunctionTemplate>(CreateIam)->GetFunction());
   ctr->Set(NanNew("createInsecure"),
-           NanNew<FunctionTemplate>(CreateIam)->GetFunction());
+           NanNew<FunctionTemplate>(CreateInsecure)->GetFunction());
   constructor = new NanCallback(ctr);
   exports->Set(NanNew("Credentials"), ctr);
 }
@@ -202,7 +202,7 @@ NAN_METHOD(Credentials::CreateIam) {
   }
   NanUtf8String auth_token(args[0]);
   NanUtf8String auth_selector(args[1]);
-  grpc_credentisl *creds = grpc_iam_credentials_create(*auth_token,
+  grpc_credentials *creds = grpc_iam_credentials_create(*auth_token,
                                                        *auth_selector);
   if (creds == NULL) {
     NanReturnNull();
