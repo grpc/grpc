@@ -33,8 +33,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#define GRPC_ENDOSCOPE_PROFILER  /* TODO(yuzhouyuzhou) */
-
 #if defined(GRPC_ENDOSCOPE_PROFILER)
 
 #include "src/core/profiling/endoscope_backend.h"

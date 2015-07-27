@@ -57,6 +57,8 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#ifdef GRPC_ENDOSCOPE_PROFILER
+
 #include "src/cpp/profiling/endoscope_service.h"
 
 using perftools::endoscope::EndoRequestPB;
@@ -127,6 +129,8 @@ TEST_F(EndoscopeServerTest, BuiltInTagTest) {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_ENDOSCOPE_PROFILER
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);

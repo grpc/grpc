@@ -1,6 +1,8 @@
 #include "src/core/profiling/endoscope_backend.h"
 #include "src/cpp/profiling/endoscope.pb.h"
 
+#ifdef GRPC_ENDOSCOPE_PROFILER
+
 #ifndef ENDOSCOPE_FRONTEND_H_
 #define ENDOSCOPE_FRONTEND_H_
 
@@ -13,4 +15,6 @@ void WriteSnapshot(EndoBase *base, EndoSnapshotPB* snapshot,
 }  // namespace endoscope
 }  // namespace perftools
 
-#endif  /* ENDOSCOPE_FRONTEND_H_ */
+#endif  // ENDOSCOPE_FRONTEND_H_
+
+#endif  // GRPC_ENDOSCOPE_PROFILER

@@ -39,8 +39,9 @@
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
+
+#ifdef GRPC_ENDOSCOPE_PROFILER
 
 using perftools::endoscope::EndoRequestPB;
 using perftools::endoscope::EndoSnapshotPB;
@@ -148,6 +149,8 @@ TEST_F(EndoscopeServiceTest, ProtobufOutputTest) {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_ENDOSCOPE_PROFILER
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);

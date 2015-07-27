@@ -33,6 +33,8 @@
 
 #include "src/cpp/profiling/endoscope_service.h"
 
+#ifdef GRPC_ENDOSCOPE_PROFILER
+
 #include "src/core/profiling/timers.h"
 
 using perftools::endoscope::EndoSnapshotPB;
@@ -51,3 +53,5 @@ Status EndoscopeService::Action(ServerContext* context,
 
 }  // namespace endoscope
 }  // namespace grpc
+
+#endif  // GRPC_ENDOSCOPE_PROFILER

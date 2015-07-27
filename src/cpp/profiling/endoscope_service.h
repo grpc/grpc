@@ -31,6 +31,8 @@
  *
  */
 
+#ifdef GRPC_ENDOSCOPE_PROFILER
+
 #ifndef GRPCXX_ENDOSCOPE_SERVICE_H
 #define GRPCXX_ENDOSCOPE_SERVICE_H
 
@@ -55,3 +57,5 @@ class EndoscopeService : public Endoscope::Service {
 }  // namespace grpc
 
 #endif  // GRPCXX_ENDOSCOPE_SERVICE_H
+
+#endif  // GRPC_ENDOSCOPE_PROFILER

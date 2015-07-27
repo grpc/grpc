@@ -196,8 +196,10 @@ static void hs_mutate_op(grpc_call_element *elem,
       calld->sent_status = 1;
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
                                    GRPC_MDELEM_REF(channeld->status_ok));
+#ifdef GRPC_ENDOSCOPE_PROFILER
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->access_control_allow_origin,
                                    grpc_mdelem_ref(channeld->access_control_allow_origin));
+#endif
       break;
     }
   }

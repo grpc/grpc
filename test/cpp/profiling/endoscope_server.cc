@@ -31,6 +31,8 @@
  *
  */
 
+#ifdef GRPC_ENDOSCOPE_PROFILER
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -78,3 +80,14 @@ int main(int argc, char** argv) {
 
   return 0;
 }
+
+#else
+
+#include <stdio.h>
+
+int main(int argc, char** argv) {
+  printf("GRPC_ENDOSCOPE_PROFILER required to run endoscope server.\n");
+  return 0;
+}
+
+#endif  // GRPC_ENDOSCOPE_PROFILER

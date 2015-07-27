@@ -124,6 +124,15 @@ CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
 LDFLAGS_stapprof =
 DEFINES_stapprof = NDEBUG
 
+VALID_CONFIG_endoprof = 1
+CC_endoprof = $(DEFAULT_CC)
+CXX_endoprof = $(DEFAULT_CXX)
+LD_endoprof = $(DEFAULT_CC)
+LDXX_endoprof = $(DEFAULT_CXX)
+CPPFLAGS_endoprof = -O2 -DGRPC_ENDOSCOPE_PROFILER
+LDFLAGS_endoprof =
+DEFINES_endoprof = NDEBUG
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)

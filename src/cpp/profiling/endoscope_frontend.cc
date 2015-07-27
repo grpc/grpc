@@ -1,6 +1,8 @@
-#include <stdio.h>
-
 #include "src/cpp/profiling/endoscope_frontend.h"
+
+#ifdef GRPC_ENDOSCOPE_PROFILER
+
+#include <stdio.h>
 
 namespace perftools {
 namespace endoscope {
@@ -141,3 +143,5 @@ void WriteSnapshot(EndoBase *base, EndoSnapshotPB* snapshot,
 
 }  // namespace endoscope
 }  // namespace perftools
+
+#endif  // GRPC_ENDOSCOPE_PROFILER
