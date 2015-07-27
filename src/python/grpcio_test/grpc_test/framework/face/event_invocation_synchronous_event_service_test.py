@@ -27,29 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python interop testing package."""
+"""One of the tests of the Face layer of RPC Framework."""
 
-import setuptools
+import unittest
 
-_PACKAGES = setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
+from grpc_test.framework.face import _test_case
+from grpc_test.framework.face.testing import event_invocation_synchronous_event_service_test_case as test_case
 
-_PACKAGE_DIRECTORIES = {
-    '': '.',
-}
 
-_PACKAGE_DATA = {
-    'grpc_interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
-}
+class EventInvocationSynchronousEventServiceTest(
+    _test_case.FaceTestCase,
+    test_case.EventInvocationSynchronousEventServiceTestCase,
+    unittest.TestCase):
+  pass
 
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
 
-setuptools.setup(
-    name='grpcio_test',
-    version='0.0.1',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES
-)
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

@@ -26,30 +26,3 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""A setup module for the GRPC Python interop testing package."""
-
-import setuptools
-
-_PACKAGES = setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
-
-_PACKAGE_DIRECTORIES = {
-    '': '.',
-}
-
-_PACKAGE_DATA = {
-    'grpc_interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
-}
-
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
-
-setuptools.setup(
-    name='grpcio_test',
-    version='0.0.1',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES
-)
