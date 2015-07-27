@@ -105,7 +105,7 @@ NAN_METHOD(Channel::New) {
     NanUtf8String *host = new NanUtf8String(args[0]);
     NanUtf8String *host_override = NULL;
     if (args[1]->IsUndefined()) {
-      wrapped_channel = grpc_channel_create(**host, NULL);
+      wrapped_channel = grpc_insecure_channel_create(**host, NULL);
     } else if (args[1]->IsObject()) {
       grpc_credentials *creds = NULL;
       Handle<Object> args_hash(args[1]->ToObject()->Clone());
@@ -150,7 +150,7 @@ NAN_METHOD(Channel::New) {
         }
       }
       if (creds == NULL) {
-        wrapped_channel = grpc_channel_create(**host, &channel_args);
+        wrapped_channel = grpc_insecure_channel_create(**host, &channel_args);
       } else {
         wrapped_channel =
             grpc_secure_channel_create(creds, **host, &channel_args);
