@@ -79,4 +79,8 @@ class CallTest extends PHPUnit_Framework_TestCase{
     $result = $this->call->startBatch($batch);
     $this->assertTrue($result->send_metadata);
   }
+
+  public function testGetPeer() {
+    $this->assertTrue($this->call->getPeer() == 'localhost:' . self::$port);
+  }
 }
