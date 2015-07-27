@@ -108,7 +108,7 @@ class NewCallOp : public Op {
 
  protected:
   std::string GetTypeString() const {
-    return "new call";
+    return "new_call";
   }
 };
 

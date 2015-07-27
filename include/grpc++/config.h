@@ -79,6 +79,7 @@
 
 #ifdef GRPC_CXX0X_NO_NULLPTR
 #include <memory>
+namespace grpc {
 const class {
  public:
   template <class T>
@@ -98,6 +99,7 @@ const class {
  private:
   void operator&() const = delete;
 } nullptr = {};
+}
 #endif
 
 #ifndef GRPC_CUSTOM_STRING

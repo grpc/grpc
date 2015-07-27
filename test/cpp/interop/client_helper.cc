@@ -123,7 +123,8 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
-    creds = JWTCredentials(json_key, token_lifetime.count());
+    creds =
+        ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else if (test_case == "oauth2_auth_token") {

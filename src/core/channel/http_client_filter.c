@@ -98,6 +98,18 @@ static void hc_on_recv(void *user_data, int success) {
   calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }
 
+static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
+  grpc_call_element *elem = user_data;
+  channel_data *channeld = elem->channel_data;
+  /* eat the things we'd like to set ourselves */
+  if (md->key == channeld->method->key) return NULL;
+  if (md->key == channeld->scheme->key) return NULL;
+  if (md->key == channeld->te_trailers->key) return NULL;
+  if (md->key == channeld->content_type->key) return NULL;
+  if (md->key == channeld->user_agent->key) return NULL;
+  return md;
+}
+
 static void hc_mutate_op(grpc_call_element *elem,
                          grpc_transport_stream_op *op) {
   /* grab pointers to our data from the call element */
@@ -111,6 +123,7 @@ static void hc_mutate_op(grpc_call_element *elem,
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA) continue;
       calld->sent_initial_metadata = 1;
+      grpc_metadata_batch_filter(&op->data.metadata, client_strip_filter, elem);
       /* Send : prefixed headers, which have to be before any application
          layer headers. */
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->method,
@@ -220,7 +233,7 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 
   tmp = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
-  result = grpc_mdstr_from_string(mdctx, tmp);
+  result = grpc_mdstr_from_string(mdctx, tmp, 0);
   gpr_free(tmp);
 
   return result;
@@ -247,7 +260,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
   channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
   channeld->user_agent = grpc_mdelem_from_metadata_strings(
-      mdctx, grpc_mdstr_from_string(mdctx, "user-agent"),
+      mdctx, grpc_mdstr_from_string(mdctx, "user-agent", 0),
       user_agent_from_args(mdctx, args));
 }
 
@@ -267,4 +280,5 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 const grpc_channel_filter grpc_http_client_filter = {
     hc_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem,        destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem, "http-client"};
+    init_channel_elem,     destroy_channel_elem, grpc_call_next_get_peer,
+    "http-client"};

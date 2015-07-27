@@ -79,8 +79,6 @@ void Credentials::Init(Handle<Object> exports) {
            NanNew<FunctionTemplate>(CreateComposite)->GetFunction());
   ctr->Set(NanNew("createGce"),
            NanNew<FunctionTemplate>(CreateGce)->GetFunction());
-  ctr->Set(NanNew("createFake"),
-           NanNew<FunctionTemplate>(CreateFake)->GetFunction());
   ctr->Set(NanNew("createIam"),
            NanNew<FunctionTemplate>(CreateIam)->GetFunction());
   constructor = new NanCallback(ctr);
@@ -178,11 +176,6 @@ NAN_METHOD(Credentials::CreateComposite) {
 NAN_METHOD(Credentials::CreateGce) {
   NanScope();
   NanReturnValue(WrapStruct(grpc_compute_engine_credentials_create()));
-}
-
-NAN_METHOD(Credentials::CreateFake) {
-  NanScope();
-  NanReturnValue(WrapStruct(grpc_fake_transport_security_credentials_create()));
 }
 
 NAN_METHOD(Credentials::CreateIam) {

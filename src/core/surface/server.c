@@ -400,6 +400,15 @@ static void finish_start_new_rpc(grpc_server *server, grpc_call_element *elem,
   call_data *calld = elem->call_data;
   int request_id;
 
+  if (gpr_atm_acq_load(&server->shutdown_flag)) {
+    gpr_mu_lock(&calld->mu_state);
+    calld->state = ZOMBIED;
+    gpr_mu_unlock(&calld->mu_state);
+    grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+    grpc_iomgr_add_callback(&calld->kill_zombie_closure);
+    return;
+  }
+
   request_id = gpr_stack_lockfree_pop(request_matcher->requests);
   if (request_id == -1) {
     gpr_mu_lock(&server->mu_call);
@@ -530,6 +539,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
 static void server_on_recv(void *ptr, int success) {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
+  gpr_timespec op_deadline;
 
   if (success && !calld->got_initial_metadata) {
     size_t i;
@@ -539,8 +549,9 @@ static void server_on_recv(void *ptr, int success) {
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA) continue;
       grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
-      if (0 != gpr_time_cmp(op->data.metadata.deadline,
-                            gpr_inf_future(GPR_CLOCK_REALTIME))) {
+      op_deadline = op->data.metadata.deadline;
+      if (0 !=
+          gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
         calld->deadline = op->data.metadata.deadline;
       }
       calld->got_initial_metadata = 1;
@@ -677,8 +688,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(!is_last);
   chand->server = NULL;
   chand->channel = NULL;
-  chand->path_key = grpc_mdstr_from_string(metadata_context, ":path");
-  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority");
+  chand->path_key = grpc_mdstr_from_string(metadata_context, ":path", 0);
+  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority", 0);
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
@@ -722,6 +733,7 @@ static const grpc_channel_filter server_surface_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     "server",
 };
 
@@ -878,8 +890,8 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
     grpc_transport_perform_op(transport, &op);
   }
 
-  channel =
-      grpc_channel_create_from_filters(filters, num_filters, args, mdctx, 0);
+  channel = grpc_channel_create_from_filters(NULL, filters, num_filters, args,
+                                             mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;
@@ -899,8 +911,8 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
     chand->registered_methods = gpr_malloc(alloc);
     memset(chand->registered_methods, 0, alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host) : NULL;
-      method = grpc_mdstr_from_string(mdctx, rm->method);
+      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host, 0) : NULL;
+      method = grpc_mdstr_from_string(mdctx, rm->method, 0);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != NULL;

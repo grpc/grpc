@@ -32,57 +32,26 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
-using Grpc.Core.Internal;
-using NUnit.Framework;
+using System.Collections.Generic;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Logging
 {
-    public class TimespecTest
+    /// <summary>For logging messages.</summary>
+    public interface ILogger
     {
-        [Test]
-        public void Now()
-        {
-            var timespec = Timespec.Now;
-        }
+        /// <summary>Returns a logger associated with the specified type.</summary>
+        ILogger ForType<T>();
 
-        [Test]
-        public void InfFuture()
-        {
-            var timespec = Timespec.InfFuture;
-        }
+        void Debug(string message, params object[] formatArgs);
 
-        [Test]
-        public void TimespecSizeIsNativeSize()
-        {
-            Assert.AreEqual(Timespec.NativeSize, Marshal.SizeOf(typeof(Timespec)));
-        }
+        void Info(string message, params object[] formatArgs);
 
-        [Test]
-        public void Add()
-        {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 123456789 };
-            var result = t.Add(TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 10));
-            Assert.AreEqual(result.tv_sec, new IntPtr(12355));
-            Assert.AreEqual(result.tv_nsec, 123456789);
-        }
+        void Warning(string message, params object[] formatArgs);
 
-        [Test]
-        public void Add_Nanos()
-        {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 123456789 };
-            var result = t.Add(TimeSpan.FromTicks(10));
-            Assert.AreEqual(result.tv_sec, new IntPtr(12345));
-            Assert.AreEqual(result.tv_nsec, 123456789 + 1000);
-        }
+        void Warning(Exception exception, string message, params object[] formatArgs);
 
-        [Test]
-        public void Add_NanosOverflow()
-        {
-            var t = new Timespec { tv_sec = new IntPtr(12345), tv_nsec = 999999999 };
-            var result = t.Add(TimeSpan.FromTicks(TimeSpan.TicksPerSecond * 10 + 10));
-            Assert.AreEqual(result.tv_sec, new IntPtr(12356));
-            Assert.AreEqual(result.tv_nsec, 999);
-        }
+        void Error(string message, params object[] formatArgs);
+
+        void Error(Exception exception, string message, params object[] formatArgs);
     }
 }

@@ -73,8 +73,6 @@ void ServerCredentials::Init(Handle<Object> exports) {
   Handle<Function> ctr = tpl->GetFunction();
   ctr->Set(NanNew("createSsl"),
            NanNew<FunctionTemplate>(CreateSsl)->GetFunction());
-  ctr->Set(NanNew("createFake"),
-           NanNew<FunctionTemplate>(CreateFake)->GetFunction());
   constructor = new NanCallback(ctr);
   exports->Set(NanNew("ServerCredentials"), ctr);
 }
@@ -144,12 +142,6 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   // here.
   NanReturnValue(WrapStruct(
       grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1, 0)));
-}
-
-NAN_METHOD(ServerCredentials::CreateFake) {
-  NanScope();
-  NanReturnValue(
-      WrapStruct(grpc_fake_transport_security_server_credentials_create()));
 }
 
 }  // namespace node

@@ -258,6 +258,16 @@ describe('Echo metadata', function() {
     });
     call.end();
   });
+  it('shows the correct user-agent string', function(done) {
+    var version = require('../package.json').version;
+    var call = client.unary({}, function(err, data) {
+      assert.ifError(err);
+    }, {key: ['value']});
+    call.on('metadata', function(metadata) {
+      assert(_.startsWith(metadata['user-agent'], 'grpc-node/' + version));
+      done();
+    });
+  });
 });
 describe('Other conditions', function() {
   var client;
@@ -333,6 +343,9 @@ describe('Other conditions', function() {
   });
   after(function() {
     server.shutdown();
+  });
+  it('channel.getTarget should be available', function() {
+    assert.strictEqual(typeof client.channel.getTarget(), 'string');
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
@@ -535,6 +548,43 @@ describe('Other conditions', function() {
       call.on('error', function(error) {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);
         assert.strictEqual(error.message, 'Requested error');
+        done();
+      });
+    });
+  });
+  describe('call.getPeer should return the peer', function() {
+    it('for a unary call', function(done) {
+      var call = client.unary({error: false}, function(err, data) {
+        assert.ifError(err);
+        done();
+      });
+      assert.strictEqual(typeof call.getPeer(), 'string');
+    });
+    it('for a client stream call', function(done) {
+      var call = client.clientStream(function(err, data) {
+        assert.ifError(err);
+        done();
+      });
+      assert.strictEqual(typeof call.getPeer(), 'string');
+      call.write({error: false});
+      call.end();
+    });
+    it('for a server stream call', function(done) {
+      var call = client.serverStream({error: false});
+      assert.strictEqual(typeof call.getPeer(), 'string');
+      call.on('data', function(){});
+      call.on('status', function(status) {
+        assert.strictEqual(status.code, grpc.status.OK);
+        done();
+      });
+    });
+    it('for a bidi stream call', function(done) {
+      var call = client.bidiStream();
+      assert.strictEqual(typeof call.getPeer(), 'string');
+      call.write({error: false});
+      call.end();
+      call.on('data', function(){});
+      call.on('status', function(status) {
         done();
       });
     });
