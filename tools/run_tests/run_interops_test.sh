@@ -38,5 +38,6 @@ then
   sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
 else
   echo "interop testss not added for $language"
+  exit 1
 fi
 
