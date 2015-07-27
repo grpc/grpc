@@ -44,6 +44,16 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
+#ifdef GRPC_IOMGR_REFCOUNT_DEBUG
+static void iomgr_object_trace(const char *action, grpc_iomgr_object *obj,
+                               const char *file, int line) {
+  gpr_log(GPR_DEBUG, "iomgr object %s: %p - %s from %s:%i", action,
+          obj, obj->name, file, line);
+}
+#else
+#define iomgr_object_trace(action, obj, file, line)
+#endif
+
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
 static grpc_iomgr_closure *g_cbs_head = NULL;
@@ -185,8 +195,12 @@ void grpc_iomgr_shutdown(void) {
   gpr_cv_destroy(&g_rcv);
 }
 
-void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
+void grpc_iomgr_register_object_internal(grpc_iomgr_object *obj,
+                                         const char *name,
+                                         const char *file,
+                                         int line) {
   obj->name = gpr_strdup(name);
+  iomgr_object_trace("register", obj, file, line);
   gpr_mu_lock(&g_mu);
   obj->next = &g_root_object;
   obj->prev = obj->next->prev;
@@ -194,7 +208,10 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
+void grpc_iomgr_unregister_object_internal(grpc_iomgr_object *obj,
+                                           const char *file,
+                                           int line) {
+  iomgr_object_trace("unregister", obj, file, line);
   gpr_mu_lock(&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;
