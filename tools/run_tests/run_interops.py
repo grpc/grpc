@@ -28,7 +28,7 @@ for lang in args.language:
 root = ET.Element('testsuites')
 testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
 
-jobset.run([build_job], maxjobs=1, xml_report=testsuite)
+#jobset.run([build_job], maxjobs=1, xml_report=testsuite)
 jobset.run(jobs, maxjobs=jobNumber, xml_report=testsuite)
 
 tree = ET.ElementTree(root)
