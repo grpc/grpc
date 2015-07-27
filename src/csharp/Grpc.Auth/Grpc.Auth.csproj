@@ -79,7 +79,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GoogleCredential.cs" />
-    <Compile Include="OAuth2InterceptorFactory.cs" />
+    <Compile Include="OAuth2Interceptors.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
