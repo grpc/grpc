@@ -37,6 +37,7 @@
 
 #include <windows.h>
 #include <string.h>
+#include <tchar.h>
 
 #include <grpc/support/subprocess.h>
 #include <grpc/support/alloc.h>
@@ -45,36 +46,56 @@
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;
   int joined;
+  int interrupted;	//because ctrl-c can't be sent and ctrl-break is used instead, this allows ignoring the error code
 };
 
 const char *gpr_subprocess_binary_extension() { return ".exe"; }
 
 gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
   gpr_subprocess *r;
-  char **exec_args;
 
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
-  memset(&si, 0, sizeof(si);
+  memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
-  memset(&pi, 0, sizeof(pi);
+  memset(&pi, 0, sizeof(pi));
 
-  pi.dwCreationFlags = CREATE_NEW_PROCESS_GROUP;
+  //put all argv into one string
+  char args_concat[1000];
+  strcpy(args_concat, argv[0]);
+  for (int i = 1; i < argc; i++) {
+	  strcat(args_concat, " ");
+	  strcat(args_concat, argv[i]);
+  }
 
+  //createprocess has buth a utf8 and a unicode version.  convert as needed
+  TCHAR *tstrTo;
+  int tstrLen;
+#ifdef UNICODE
+  tstrLen = MultiByteToWideChar(CP_UTF8, 0, args_concat, strlen(args_concat) + 1, NULL, 0);
+  tstrTo = (TCHAR*)malloc(tstrLen * sizeof(TCHAR));
+  MultiByteToWideChar(CP_UTF8, 0, args_concat, strlen(args_concat) + 1, tstrTo, tstrLen);
+#else
+  tstrTo = strdup(args_concat);
+  tstrLen = strlen(tstrTo);
+#endif
+  
   if( !CreateProcess( NULL, // No module name (use command line)
-      argv[0],              // Command line
+      tstrTo,              // Command line
       NULL,                 // Process handle not inheritable
       NULL,                 // Thread handle not inheritable
       FALSE,                // Set handle inheritance to FALSE
-      0,                    // No creation flags
+      CREATE_NEW_PROCESS_GROUP,               // creation flags.  this is required to be able to send ctrl-break
       NULL,                 // Use parent's environment block
       NULL,                 // Use parent's starting directory
       &si,                  // Pointer to STARTUPINFO structure
       &pi ))                // Pointer to PROCESS_INFORMATION structure
   {
+    free(tstrTo);
     return NULL;
   }
+  free(tstrTo);
 
   r = gpr_malloc(sizeof(gpr_subprocess));
   memset(r, 0, sizeof(*r));
@@ -84,25 +105,60 @@ gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
 
 void gpr_subprocess_destroy(gpr_subprocess *p) {
   if (!p->joined) {
-    gpr_subprocess_interrupt();
+    gpr_subprocess_interrupt(p);
     gpr_subprocess_join(p);
   }
-
-  CloseHandle( p->pi.hProcess );
-  CloseHandle( p->pi.hThread );
+  if (p->pi.hProcess) {
+    CloseHandle(p->pi.hProcess);
+  }
+  if (p->pi.hThread) {
+    CloseHandle(p->pi.hThread);
+  }
   gpr_free(p);
 }
 
 int gpr_subprocess_join(gpr_subprocess *p) {
-  if(WaitForSingleObject(pi->hProcess, INFINITE) == WAIT_OBJECT_0) {
-    return 0;
-  }
-  return -1;
+	DWORD dwExitCode;
+	if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)){
+		if (dwExitCode == STILL_ACTIVE) {
+			if (WaitForSingleObject(p->pi.hProcess, INFINITE) == WAIT_OBJECT_0) {
+				p->joined = 1;
+				goto getExitCode;
+			}
+			return -1;	//failed to join
+		}
+		else {
+			goto getExitCode;
+		}
+	}
+	else {
+		return -1;	//failed to get exit code
+	}
+
+getExitCode:
+	if (p->interrupted)
+	{
+		return 0;
+	}
+	if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode))
+	{
+		return dwExitCode;
+	}
+	else
+	{
+		return -1;	//failed to get exit code
+	}
 }
 
 void gpr_subprocess_interrupt(gpr_subprocess *p) {
-  if (!p->joined) {
-    GenerateConsoleCtrlEvent(CTRL_C_EVENT, p->pi.hprocess)
+  DWORD dwExitCode;
+  if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)){
+    if (dwExitCode == STILL_ACTIVE) {
+      gpr_log(GPR_INFO, "sending ctrl-break");		//this method does not support sending ctrl-c
+	  GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, p->pi.dwProcessId);
+	  p->joined = 1;
+	  p->interrupted = 1;
+    }
   }
   return;
 }
