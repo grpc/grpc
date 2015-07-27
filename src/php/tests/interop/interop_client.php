@@ -333,7 +333,7 @@ if (in_array($args['test_case'], array(
 }
 
 $internal_stub = new Grpc\BaseStub($server_address, $opts);
-hardAssert($internal_stub->getTarget() == $server_address,
+hardAssert(is_string($internal_stub->getTarget()),
            'Unexpected target URI value');
 
 $stub = new grpc\testing\TestServiceClient($internal_stub);

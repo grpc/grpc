@@ -151,6 +151,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testGetTarget() {
-    $this->assertTrue($this->channel->getTarget() == 'localhost:' . $this->port);
+    $this->assertTrue(is_string($this->channel->getTarget()));
   }
 }

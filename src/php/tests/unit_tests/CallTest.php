@@ -81,6 +81,6 @@ class CallTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testGetPeer() {
-    $this->assertTrue($this->call->getPeer() == 'localhost:' . self::$port);
+    $this->assertTrue(is_string($this->call->getPeer()));
   }
 }
