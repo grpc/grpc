@@ -76,14 +76,6 @@ class TypeSmokeTest(unittest.TestCase):
     timespec = cygrpc.Timespec(now)
     self.assertAlmostEqual(now, float(timespec), places=8)
 
-  def testClientCredentialsUpDown(self):
-    credentials = cygrpc.client_credentials_fake_transport_security()
-    del credentials
-
-  def testServerCredentialsUpDown(self):
-    credentials = cygrpc.server_credentials_fake_transport_security()
-    del credentials
-
   def testCompletionQueueUpDown(self):
     completion_queue = cygrpc.CompletionQueue()
     del completion_queue
@@ -94,12 +86,6 @@ class TypeSmokeTest(unittest.TestCase):
 
   def testChannelUpDown(self):
     channel = cygrpc.Channel('[::]:0', cygrpc.ChannelArgs([]))
-    del channel
-
-  def testSecureChannelUpDown(self):
-    channel = cygrpc.Channel(
-        '[::]:0', cygrpc.ChannelArgs([]),
-        cygrpc.client_credentials_fake_transport_security())
     del channel
 
   @unittest.skip('TODO(atash): undo skip after #2229 is merged')

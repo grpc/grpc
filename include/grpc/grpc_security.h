@@ -140,9 +140,6 @@ grpc_credentials *grpc_access_token_credentials_create(
 grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
                                               const char *authority_selector);
 
-/* Creates a fake transport security credentials object for testing. */
-grpc_credentials *grpc_fake_transport_security_credentials_create(void);
-
 /* --- Secure channel creation. --- */
 
 /* The caller of the secure_channel_create functions may override the target
@@ -182,10 +179,6 @@ grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs);
 
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
-
 /* --- Server-side secure ports. --- */
 
 /* Add a HTTP2 over an encrypted link over tcp listener.
@@ -206,7 +199,6 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
 /* TODO(jboeuf): Define some well-known property names. */
 
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
-#define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"

@@ -152,7 +152,7 @@ PHP_METHOD(Channel, __construct) {
   override = target;
   override_len = target_length;
   if (args_array == NULL) {
-    channel->wrapped = grpc_channel_create(target, NULL);
+    channel->wrapped = grpc_insecure_channel_create(target, NULL);
   } else {
     array_hash = Z_ARRVAL_P(args_array);
     if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
@@ -182,7 +182,7 @@ PHP_METHOD(Channel, __construct) {
     }
     php_grpc_read_args_array(args_array, &args);
     if (creds == NULL) {
-      channel->wrapped = grpc_channel_create(target, &args);
+      channel->wrapped = grpc_insecure_channel_create(target, &args);
     } else {
       gpr_log(GPR_DEBUG, "Initialized secure channel");
       channel->wrapped =
@@ -192,6 +192,16 @@ PHP_METHOD(Channel, __construct) {
   }
   channel->target = ecalloc(override_len + 1, sizeof(char));
   memcpy(channel->target, override, override_len);
+}
+
+/**
+ * Get the endpoint this call/stream is connected to
+ * @return string The URI of the endpoint
+ */
+PHP_METHOD(Channel, getTarget) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  RETURN_STRING(grpc_channel_get_target(channel->wrapped), 1);
 }
 
 /**
@@ -208,7 +218,9 @@ PHP_METHOD(Channel, close) {
 
 static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Channel, getTarget, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
+    PHP_FE_END};
 
 void grpc_init_channel(TSRMLS_D) {
   zend_class_entry ce;

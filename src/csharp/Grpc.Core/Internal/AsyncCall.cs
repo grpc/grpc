@@ -38,6 +38,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -47,6 +48,8 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
+
         Channel channel;
 
         // Completion of a pending unary response if not null.
@@ -106,7 +109,7 @@ namespace Grpc.Core.Internal
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+                            Logger.Error(e, "Exception occured while invoking completion delegate.");
                         }
                     }
                 }

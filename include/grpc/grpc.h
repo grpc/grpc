@@ -452,8 +452,8 @@ char *grpc_channel_get_target(grpc_channel *channel);
     clients will want to simply pass NULL. See grpc_channel_args definition for
     more on this. The data in 'args' need only live through the invocation of
     this function. */
-grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args);
+grpc_channel *grpc_insecure_channel_create(const char *target,
+                                           const grpc_channel_args *args);
 
 /** Create a lame client: this client fails every operation attempted on it. */
 grpc_channel *grpc_lame_client_channel_create(const char *target);

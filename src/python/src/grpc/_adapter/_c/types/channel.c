@@ -104,7 +104,7 @@ Channel *pygrpc_Channel_new(
   if (creds) {
     self->c_chan = grpc_secure_channel_create(creds->c_creds, target, &c_args);
   } else {
-    self->c_chan = grpc_channel_create(target, &c_args);
+    self->c_chan = grpc_insecure_channel_create(target, &c_args);
   }
   pygrpc_discard_channel_args(c_args);
   return self;

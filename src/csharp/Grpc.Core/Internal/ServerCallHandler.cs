@@ -37,6 +37,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -50,6 +51,8 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
+
         readonly Method<TRequest, TResponse> method;
         readonly UnaryServerMethod<TRequest, TResponse> handler;
 
@@ -72,7 +75,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, asyncCall.CancellationToken);
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
@@ -85,7 +88,7 @@ namespace Grpc.Core.Internal
             } 
             catch (Exception e)
             {
-                Console.WriteLine("Exception occured in handler: " + e);
+                Logger.Error(e, "Exception occured in handler.");
                 status = HandlerUtils.StatusFromException(e);
             }
             try
@@ -104,6 +107,8 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
+
         readonly Method<TRequest, TResponse> method;
         readonly ServerStreamingServerMethod<TRequest, TResponse> handler;
 
@@ -126,7 +131,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, asyncCall.CancellationToken);
             try
             {
                 Preconditions.CheckArgument(await requestStream.MoveNext());
@@ -138,7 +143,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception occured in handler: " + e);
+                Logger.Error(e, "Exception occured in handler.");
                 status = HandlerUtils.StatusFromException(e);
             }
 
@@ -158,6 +163,8 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
+
         readonly Method<TRequest, TResponse> method;
         readonly ClientStreamingServerMethod<TRequest, TResponse> handler;
 
@@ -180,7 +187,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, asyncCall.CancellationToken);
             try
             {
                 var result = await handler(requestStream, context);
@@ -196,7 +203,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception occured in handler: " + e);
+                Logger.Error(e, "Exception occured in handler.");
                 status = HandlerUtils.StatusFromException(e);
             }
 
@@ -216,6 +223,8 @@ namespace Grpc.Core.Internal
         where TRequest : class
         where TResponse : class
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
+
         readonly Method<TRequest, TResponse> method;
         readonly DuplexStreamingServerMethod<TRequest, TResponse> handler;
 
@@ -238,7 +247,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, asyncCall.CancellationToken);
             try
             {
                 await handler(requestStream, responseStream, context);
@@ -246,7 +255,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception occured in handler: " + e);
+                Logger.Error(e, "Exception occured in handler.");
                 status = HandlerUtils.StatusFromException(e);
             }
             try
@@ -295,12 +304,12 @@ namespace Grpc.Core.Internal
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
 
-        public static ServerCallContext NewContext(ServerRpcNew newRpc, CancellationToken cancellationToken)
+        public static ServerCallContext NewContext(ServerRpcNew newRpc, string peer, CancellationToken cancellationToken)
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(GPRClockType.Realtime).ToDateTime();
 
             return new ServerCallContext(
-                newRpc.Method, newRpc.Host, realtimeDeadline,
+                newRpc.Method, newRpc.Host, peer, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken);
         }
     }

@@ -47,15 +47,29 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Auth
 {
-    public static class OAuth2InterceptorFactory
+    public static class OAuth2Interceptors
     {
         /// <summary>
-        /// Creates OAuth2 interceptor.
+        /// Creates OAuth2 interceptor that will obtain access token from GoogleCredentials.
         /// </summary>
-        public static MetadataInterceptorDelegate Create(GoogleCredential googleCredential)
+        public static MetadataInterceptorDelegate FromCredential(GoogleCredential googleCredential)
         {
             var interceptor = new OAuth2Interceptor(googleCredential.InternalCredential, SystemClock.Default);
             return new MetadataInterceptorDelegate(interceptor.InterceptHeaders);
+        }
+
+        /// <summary>
+        /// Creates OAuth2 interceptor that will use given OAuth2 token.
+        /// </summary>
+        /// <param name="oauth2Token"></param>
+        /// <returns></returns>
+        public static MetadataInterceptorDelegate FromAccessToken(string oauth2Token)
+        {
+            Preconditions.CheckNotNull(oauth2Token);
+            return new MetadataInterceptorDelegate((metadata) =>
+            {
+                metadata.Add(OAuth2Interceptor.CreateBearerTokenHeader(oauth2Token));
+            });
         }
 
         /// <summary>
@@ -97,8 +111,15 @@ namespace Grpc.Auth
             public void InterceptHeaders(Metadata metadata)
             {
                 var accessToken = GetAccessToken(CancellationToken.None);
-                metadata.Add(new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken));
+                metadata.Add(CreateBearerTokenHeader(accessToken));
+            }
+
+            public static Metadata.Entry CreateBearerTokenHeader(string accessToken)
+            {
+                return new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken);
             }
         }
+
+
     }
 }

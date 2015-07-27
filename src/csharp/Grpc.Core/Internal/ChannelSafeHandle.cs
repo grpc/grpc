@@ -41,7 +41,7 @@ namespace Grpc.Core.Internal
     internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
     {
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+        static extern ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
@@ -56,9 +56,9 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public static ChannelSafeHandle Create(string target, ChannelArgsSafeHandle channelArgs)
+        public static ChannelSafeHandle CreateInsecure(string target, ChannelArgsSafeHandle channelArgs)
         {
-            return grpcsharp_channel_create(target, channelArgs);
+            return grpcsharp_insecure_channel_create(target, channelArgs);
         }
 
         public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
