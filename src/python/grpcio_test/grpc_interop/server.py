@@ -27,49 +27,48 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Provides distutils command classes for the GRPC Python setup process."""
+"""The Python implementation of the GRPC interoperability test server."""
 
-import os
-import os.path
-import sys
+import argparse
+import logging
+import time
 
-import setuptools
+from grpc.early_adopter import implementations
 
-_CONF_PY_ADDENDUM = """
-extensions.append('sphinx.ext.napoleon')
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
+from grpc_interop import methods
+from grpc_interop import resources
 
-html_theme = 'sphinx_rtd_theme'
-"""
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-class SphinxDocumentation(setuptools.Command):
-  """Command to generate documentation via sphinx."""
 
-  description = ''
-  user_options = []
+def serve():
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      '--port', help='the port on which to serve', type=int)
+  parser.add_argument(
+      '--use_tls', help='require a secure connection', dest='use_tls',
+      action='store_true')
+  args = parser.parse_args()
 
-  def initialize_options(self):
-    pass
+  if args.use_tls:
+    private_key = resources.private_key()
+    certificate_chain = resources.certificate_chain()
+    server = implementations.server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port,
+        private_key=private_key, certificate_chain=certificate_chain)
+  else:
+    server = implementations.server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port)
 
-  def finalize_options(self):
-    pass
+  server.start()
+  logging.info('Server serving.')
+  try:
+    while True:
+      time.sleep(_ONE_DAY_IN_SECONDS)
+  except BaseException as e:
+    logging.info('Caught exception "%s"; stopping server...', e)
+    server.stop()
+    logging.info('Server stopped; exiting.')
 
-  def run(self):
-    # We import here to ensure that setup.py has had a chance to install the
-    # relevant package eggs first.
-    import sphinx
-    import sphinx.apidoc
-    metadata = self.distribution.metadata
-    src_dir = os.path.join(
-        os.getcwd(), self.distribution.package_dir['grpc'])
-    sys.path.append(src_dir)
-    sphinx.apidoc.main([
-        '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
-        '-V', metadata.version, '-R', metadata.version,
-        '-o', os.path.join('doc', 'src'), src_dir])
-    conf_filepath = os.path.join('doc', 'src', 'conf.py')
-    with open(conf_filepath, 'a') as conf_file:
-      conf_file.write(_CONF_PY_ADDENDUM)
-    sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
-
+if __name__ == '__main__':
+  serve()

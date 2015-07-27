@@ -27,31 +27,50 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python interop testing package."""
+"""Provides distutils command classes for the GRPC Python setup process."""
+
+import os
+import os.path
+import sys
 
 import setuptools
 
-_PACKAGES = (
-    'interop',
-)
+_CONF_PY_ADDENDUM = """
+extensions.append('sphinx.ext.napoleon')
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
 
-_PACKAGE_DIRECTORIES = {
-    'interop': 'interop',
-}
+html_theme = 'sphinx_rtd_theme'
+"""
 
-_PACKAGE_DATA = {
-    'interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
-}
 
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
+class SphinxDocumentation(setuptools.Command):
+  """Command to generate documentation via sphinx."""
 
-setuptools.setup(
-    name='interop',
-    version='0.0.1',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES
-)
+  description = ''
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    # We import here to ensure that setup.py has had a chance to install the
+    # relevant package eggs first.
+    import sphinx
+    import sphinx.apidoc
+    metadata = self.distribution.metadata
+    src_dir = os.path.join(
+        os.getcwd(), self.distribution.package_dir['grpc'])
+    sys.path.append(src_dir)
+    sphinx.apidoc.main([
+        '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
+        '-V', metadata.version, '-R', metadata.version,
+        '-o', os.path.join('doc', 'src'), src_dir])
+    conf_filepath = os.path.join('doc', 'src', 'conf.py')
+    with open(conf_filepath, 'a') as conf_file:
+      conf_file.write(_CONF_PY_ADDENDUM)
+    sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
+

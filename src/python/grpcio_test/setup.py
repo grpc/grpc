@@ -27,38 +27,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Secure client-server interoperability as a unit test."""
+"""A setup module for the GRPC Python interop testing package."""
 
-import unittest
+import setuptools
 
-from grpc.early_adopter import implementations
+_PACKAGES = setuptools.find_packages('.')
 
-from interop import _interop_test_case
-from interop import methods
-from interop import resources
+_PACKAGE_DIRECTORIES = {
+    '': '.',
+}
 
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+_PACKAGE_DATA = {
+    'grpc_interop': [
+        'credentials/ca.pem', 'credentials/server1.key',
+        'credentials/server1.pem',]
+}
 
+_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
 
-class SecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
-
-  def setUp(self):
-    self.server = implementations.server(
-        methods.SERVICE_NAME, methods.SERVER_METHODS, 0,
-        private_key=resources.private_key(),
-        certificate_chain=resources.certificate_chain())
-    self.server.start()
-    port = self.server.port()
-    self.stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, 'localhost', port,
-        secure=True, root_certificates=resources.test_root_certificates(),
-        server_host_override=_SERVER_HOST_OVERRIDE)
-
-  def tearDown(self):
-    self.server.stop()
-
-
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+setuptools.setup(
+    name='grpcio_test',
+    version='0.0.1',
+    packages=_PACKAGES,
+    package_dir=_PACKAGE_DIRECTORIES,
+    package_data=_PACKAGE_DATA,
+    install_requires=_INSTALL_REQUIRES
+)

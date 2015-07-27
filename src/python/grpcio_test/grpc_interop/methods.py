@@ -38,8 +38,8 @@ from oauth2client import client as oauth2client_client
 
 from grpc.framework.alpha import utilities
 
-from interop import empty_pb2
-from interop import messages_pb2
+from grpc_interop import empty_pb2
+from grpc_interop import messages_pb2
 
 _TIMEOUT = 7
 

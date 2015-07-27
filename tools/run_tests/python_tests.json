@@ -102,13 +102,13 @@
     ]
   },
   {
-    "module": "interop._insecure_interop_test",
+    "module": "grpc_interop._insecure_interop_test",
     "pythonVersions": [
       "2.7"
     ]
   },
   {
-    "module": "interop._secure_interop_test",
+    "module": "grpc_interop._secure_interop_test",
     "pythonVersions": [
       "2.7"
     ]

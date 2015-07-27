@@ -29,7 +29,7 @@
 
 """Common code for unit tests of the interoperability test code."""
 
-from interop import methods
+from grpc_interop import methods
 
 
 class InteropTestCase(object):

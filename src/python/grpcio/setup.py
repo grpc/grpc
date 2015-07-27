@@ -79,29 +79,11 @@ _C_EXTENSION_MODULE = _core.Extension(
 _EXTENSION_MODULES = [_C_EXTENSION_MODULE]
 
 _PACKAGES = (
-    'grpc',
-    'grpc._adapter',
-    'grpc._junkdrawer',
-    'grpc._links',
-    'grpc.early_adopter',
-    'grpc.framework',
-    'grpc.framework.alpha',
-    'grpc.framework.base',
-    'grpc.framework.common',
-    'grpc.framework.face',
-    'grpc.framework.face.testing',
-    'grpc.framework.foundation',
-    'grpc.framework.interfaces',
-    'grpc.framework.interfaces.links',
+    setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
 )
 
 _PACKAGE_DIRECTORIES = {
-    'grpc': 'grpc',
-    'grpc._adapter': 'grpc/_adapter',
-    'grpc._junkdrawer': 'grpc/_junkdrawer',
-    'grpc._links': 'grpc/_links',
-    'grpc.early_adopter': 'grpc/early_adopter',
-    'grpc.framework': 'grpc/framework',
+    '': '.',
 }
 
 _INSTALL_REQUIRES = (

@@ -33,8 +33,8 @@ import unittest
 
 from grpc.early_adopter import implementations
 
-from interop import _interop_test_case
-from interop import methods
+from grpc_interop import _interop_test_case
+from grpc_interop import methods
 
 
 class InsecureInteropTest(

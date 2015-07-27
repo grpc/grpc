@@ -34,8 +34,8 @@ from oauth2client import client as oauth2client_client
 
 from grpc.early_adopter import implementations
 
-from interop import methods
-from interop import resources
+from grpc_interop import methods
+from grpc_interop import resources
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
