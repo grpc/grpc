@@ -1,7 +1,7 @@
 import xml.etree.cElementTree as ET
 import jobset
 
-buid_steps = 'tools/run_tests/run_interops_build.sh'
+build_steps = 'tools/run_tests/run_interops_build.sh'
 cxx_steps = 'tools/run_tests/run_interops_test.sh'
 
 build_job = jobset.JobSpec(cmdline=build_steps, shortname='build')
