@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,47 +28,16 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and triggers a test run based on
-# env variable settings.
-#
-# Setting up rvm environment BEFORE we set -ex.
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-# To prevent cygwin bash complaining about empty lines ending with \r
-# we set the igncr option. The option doesn't exist on Linux, so we fallback
-# to just 'set -ex' there.
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-# Grabbing the machine's architecture
-arch=`uname -m`
+language=$1
+test_case=$2
 
-case $platform in
-  i386)
-    arch="i386"
-    platform="linux"
-    docker_suffix=_32bits
-    ;;
-esac
-
-if [ "$platform" == "linux" ]
+set -e
+if [ "$language" = "c++" ]
 then
-  if [ "$config" != "opt" ]
-  then
-    exit 0
-  fi
-  if [ "$language" != "c++" ]
-  then
-    exit 0
-  fi
-  python tools/run_tests/run_interops.py --language=$language
-elif [ "$platform" == "windows" ]
-then
-  exit 0
-elif [ "$platform" == "macos" ]
-then
-  exit 0
+  sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
 else
-  echo "Unknown platform $platform"
+  echo "interop testss not added for $language"
   exit 1
 fi
+

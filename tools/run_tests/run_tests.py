@@ -123,6 +123,7 @@ class CLanguage(object):
 
   def test_specs(self, config, travis):
     out = []
+    out.append(config.job_spec(['tools/run_tests/run_interops.sh'], ['tools/run_tests/run_interops.sh']))
     for target in self.binaries:
       if travis and target['flaky']:
         continue
@@ -308,7 +309,8 @@ class Sanity(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec('tools/run_tests/run_sanity.sh', None),
-            config.job_spec('tools/run_tests/check_sources_and_headers.py', None)]
+            config.job_spec('tools/run_tests/check_sources_and_headers.py', None),
+            config.job_spec('tools/run_tests/run_interops.sh', None)]
 
   def make_targets(self):
     return ['run_dep_checks']

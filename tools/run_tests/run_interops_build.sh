@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,47 +28,19 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and triggers a test run based on
-# env variable settings.
-#
-# Setting up rvm environment BEFORE we set -ex.
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-# To prevent cygwin bash complaining about empty lines ending with \r
-# we set the igncr option. The option doesn't exist on Linux, so we fallback
-# to just 'set -ex' there.
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
 
-# Grabbing the machine's architecture
-arch=`uname -m`
+set -e
 
-case $platform in
-  i386)
-    arch="i386"
-    platform="linux"
-    docker_suffix=_32bits
-    ;;
-esac
+#clean up any old docker files
+sudo docker rmi -f grpc/cxx || true
+sudo docker rmi -f grpc/base || true
+sudo docker rmi -f 0.0.0.0:5000/grpc/base || true
 
-if [ "$platform" == "linux" ]
-then
-  if [ "$config" != "opt" ]
-  then
-    exit 0
-  fi
-  if [ "$language" != "c++" ]
-  then
-    exit 0
-  fi
-  python tools/run_tests/run_interops.py --language=$language
-elif [ "$platform" == "windows" ]
-then
-  exit 0
-elif [ "$platform" == "macos" ]
-then
-  exit 0
-else
-  echo "Unknown platform $platform"
-  exit 1
-fi
+#prepare building by pulling down base images and necessary files
+sudo docker pull 0.0.0.0:5000/grpc/base
+sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
+gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
+gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
+
+#build docker file, add more languages later
+sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
