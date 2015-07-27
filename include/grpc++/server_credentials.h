@@ -58,6 +58,8 @@ class ServerCredentials {
 
 // Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
+  SslServerCredentialsOptions() : force_client_auth(false) {}
+
   struct PemKeyCertPair {
     grpc::string private_key;
     grpc::string cert_chain;
