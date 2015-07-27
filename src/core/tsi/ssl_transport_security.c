@@ -49,6 +49,8 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include "src/core/support/env.h"
+
 /* --- Constants. ---*/
 
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND 16384
@@ -1211,6 +1213,15 @@ static int server_handshaker_factory_npn_advertised_callback(
 
 /* --- tsi_ssl_handshaker_factory constructors. --- */
 
+static void set_verification_mode(SSL_CTX *ctx) {
+  int flags = SSL_VERIFY_PEER;
+  char *overridden = gpr_getenv("GRPC_SSL_VERIFY_FAIL_IF_NO_PEER_CERT");
+  if (overridden != NULL) {
+    flags |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+  }
+  SSL_CTX_set_verify(ctx, flags, NULL);
+}
+
 tsi_result tsi_create_ssl_client_handshaker_factory(
     const unsigned char* pem_private_key, size_t pem_private_key_size,
     const unsigned char* pem_cert_chain, size_t pem_cert_chain_size,
@@ -1278,7 +1289,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     ssl_client_handshaker_factory_destroy(&impl->base);
     return result;
   }
-  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NULL);
+  set_verification_mode(ssl_context);
   /* TODO(jboeuf): Add revocation verification. */
 
   impl->base.create_handshaker =
@@ -1307,6 +1318,12 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
   *factory = NULL;
   if (key_cert_pair_count == 0 || pem_private_keys == NULL ||
       pem_cert_chains == NULL) {
+    return TSI_INVALID_ARGUMENT;
+  }
+
+  if ((pem_client_root_certs == NULL) &&
+      (gpr_getenv("GRPC_SSL_VERIFY_FAIL_IF_NO_PEER_CERT") != NULL)) {
+    gpr_log(GPR_ERROR, "No client certs provided, but verification required.");
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -1358,7 +1375,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
           break;
         }
         SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
-        SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, NULL);
+        set_verification_mode(impl->ssl_contexts[i]);
         /* TODO(jboeuf): Add revocation verification. */
       }
 

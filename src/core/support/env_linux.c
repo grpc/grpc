@@ -43,6 +43,7 @@
 #include "src/core/support/env.h"
 
 #include <stdlib.h>
+#include <sys/auxv.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -51,6 +52,9 @@
 
 char *gpr_getenv(const char *name) {
   char *result = secure_getenv(name);
+  if ((result == NULL) && (getauxval(AT_SECURE) != 0)) {
+    gpr_log(GPR_INFO, "Invalid env variable lookup from secure mode.");
+  }
   return result == NULL ? result : gpr_strdup(result);
 }
 
