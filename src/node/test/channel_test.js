@@ -51,12 +51,15 @@ describe('channel', function() {
         new grpc.Channel(5);
       });
     });
-    it('should accept a credential for the second argument', function() {
+    it('should require a credential for the second argument', function() {
       assert.doesNotThrow(function() {
         new grpc.Channel('hostname', insecureCreds);
       });
       assert.throws(function() {
         new grpc.Channel('hostname', 5);
+      });
+      assert.throws(function() {
+        new grpc.Channel('hostname');
       });
     });
     it('should accept an object for the third argument', function() {
