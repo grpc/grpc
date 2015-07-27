@@ -3,7 +3,7 @@ import jobset
 
 build_steps = 'tools/run_tests/run_interops_build.sh'
 
-_TESTS = ['large_unary', 'empty_unary', 'ping_pong']
+_TESTS = ['large_unary', 'empty_unary', 'ping_pong', 'client_streaming', 'server_streaming']
 
 build_job = jobset.JobSpec(cmdline=build_steps, shortname='build')
 
