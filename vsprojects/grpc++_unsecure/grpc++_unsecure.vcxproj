@@ -159,6 +159,7 @@
     <ClInclude Include="..\..\include\grpc++\config_protobuf.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\credentials.h" />
+    <ClInclude Include="..\..\include\grpc++\dynamic_thread_pool.h" />
     <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h" />
     <ClInclude Include="..\..\include\grpc++\generic_stub.h" />
     <ClInclude Include="..\..\include\grpc++\impl\call.h" />
@@ -221,6 +222,8 @@
     <ClCompile Include="..\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\dynamic_thread_pool.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
     </ClCompile>

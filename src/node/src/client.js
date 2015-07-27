@@ -47,6 +47,7 @@ var Readable = stream.Readable;
 var Writable = stream.Writable;
 var Duplex = stream.Duplex;
 var util = require('util');
+var version = require('../package.json').version;
 
 util.inherits(ClientWritableStream, Writable);
 
@@ -187,6 +188,19 @@ ClientWritableStream.prototype.cancel = cancel;
 ClientDuplexStream.prototype.cancel = cancel;
 
 /**
+ * Get the endpoint this call/stream is connected to.
+ * @return {string} The URI of the endpoint
+ */
+function getPeer() {
+  /* jshint validthis: true */
+  return this.call.getPeer();
+}
+
+ClientReadableStream.prototype.getPeer = getPeer;
+ClientWritableStream.prototype.getPeer = getPeer;
+ClientDuplexStream.prototype.getPeer = getPeer;
+
+/**
  * Get a function that can make unary requests to the specified method.
  * @param {string} method The name of the method to request
  * @param {function(*):Buffer} serialize The serialization function for inputs
@@ -221,6 +235,9 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     }
     emitter.cancel = function cancel() {
       call.cancel();
+    };
+    emitter.getPeer = function getPeer() {
+      return call.getPeer();
     };
     this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
       if (error) {
@@ -517,9 +534,12 @@ function makeClientConstructor(methods, serviceName) {
         callback(null, metadata);
       };
     }
-
-    this.server_address = address.replace(/\/$/, '');
+    if (!options) {
+      options = {};
+    }
+    options['grpc.primary_user_agent'] = 'grpc-node/' + version;
     this.channel = new grpc.Channel(address, options);
+    this.server_address = address.replace(/\/$/, '');
     this.auth_uri = this.server_address + '/' + serviceName;
     this.updateMetadata = updateMetadata;
   }

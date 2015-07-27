@@ -121,21 +121,8 @@ PHP_METHOD(ServerCredentials, createSsl) {
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
-/**
- * Create fake credentials. Only to be used for testing.
- * @return ServerCredentials The new fake credentials object
- */
-PHP_METHOD(ServerCredentials, createFake) {
-  grpc_server_credentials *creds =
-      grpc_fake_transport_security_server_credentials_create();
-  zval *creds_object = grpc_php_wrap_server_credentials(creds);
-  RETURN_DESTROY_ZVAL(creds_object);
-}
-
 static zend_function_entry server_credentials_methods[] = {
     PHP_ME(ServerCredentials, createSsl, NULL,
-           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(ServerCredentials, createFake, NULL,
            ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
 
 void grpc_init_server_credentials(TSRMLS_D) {

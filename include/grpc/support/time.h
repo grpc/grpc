@@ -83,6 +83,9 @@ void gpr_time_init(void);
 /* Return the current time measured from the given clocks epoch. */
 gpr_timespec gpr_now(gpr_clock_type clock);
 
+/* Convert a timespec from one clock to another */
+gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type target_clock);
+
 /* Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
    respectively.  */
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b);

@@ -60,3 +60,7 @@ unix:path        - the unix scheme is used to create and connect to unix domain
                    sockets - the authority must be empty, and the path
                    represents the absolute or relative path to the desired
                    socket
+
+ipv4:host:port   - a pre-resolved ipv4 dotted decimal address/port combination
+
+ipv6:[host]:port - a pre-resolved ipv6 address/port combination

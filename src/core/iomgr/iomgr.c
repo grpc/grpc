@@ -44,6 +44,16 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 
+#ifdef GRPC_IOMGR_REFCOUNT_DEBUG
+static void iomgr_object_trace(const char *action, grpc_iomgr_object *obj,
+                               const char *file, int line) {
+  gpr_log(GPR_DEBUG, "iomgr object %s: %p - %s from %s:%i", action,
+          obj, obj->name, file, line);
+}
+#else
+#define iomgr_object_trace(action, obj, file, line)
+#endif
+
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
 static grpc_iomgr_closure *g_cbs_head = NULL;
@@ -57,9 +67,9 @@ static grpc_iomgr_object g_root_object;
 static void background_callback_executor(void *ignored) {
   gpr_mu_lock(&g_mu);
   while (!g_shutdown) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
     gpr_timespec short_deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN));
     if (g_cbs_head) {
       grpc_iomgr_closure *closure = g_cbs_head;
       g_cbs_head = closure->next;
@@ -67,7 +77,7 @@ static void background_callback_executor(void *ignored) {
       gpr_mu_unlock(&g_mu);
       closure->cb(closure->cb_arg, closure->success);
       gpr_mu_lock(&g_mu);
-    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_REALTIME),
+    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_MONOTONIC),
                                 &deadline)) {
     } else {
       gpr_mu_unlock(&g_mu);
@@ -88,9 +98,10 @@ void grpc_kick_poller(void) {
 
 void grpc_iomgr_init(void) {
   gpr_thd_id id;
+  g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
-  grpc_alarm_list_init(gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_iomgr_platform_init();
@@ -145,7 +156,7 @@ void grpc_iomgr_shutdown(void) {
       } while (g_cbs_head);
       continue;
     }
-    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)) {
+    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
       gpr_log(GPR_DEBUG, "got late alarm");
       continue;
     }
@@ -184,8 +195,12 @@ void grpc_iomgr_shutdown(void) {
   gpr_cv_destroy(&g_rcv);
 }
 
-void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
+void grpc_iomgr_register_object_internal(grpc_iomgr_object *obj,
+                                         const char *name,
+                                         const char *file,
+                                         int line) {
   obj->name = gpr_strdup(name);
+  iomgr_object_trace("register", obj, file, line);
   gpr_mu_lock(&g_mu);
   obj->next = &g_root_object;
   obj->prev = obj->next->prev;
@@ -193,7 +208,10 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
+void grpc_iomgr_unregister_object_internal(grpc_iomgr_object *obj,
+                                           const char *file,
+                                           int line) {
+  iomgr_object_trace("unregister", obj, file, line);
   gpr_mu_lock(&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;

@@ -43,9 +43,6 @@
 PyMethodDef pygrpc_ServerCredentials_methods[] = {
     {"ssl", (PyCFunction)pygrpc_ServerCredentials_ssl,
      METH_CLASS|METH_KEYWORDS, ""},
-    {"fake_transport_security",
-     (PyCFunction)pygrpc_ServerCredentials_fake_transport_security,
-     METH_CLASS|METH_NOARGS, ""},
     {NULL}
 };
 const char pygrpc_ServerCredentials_doc[] = "";
@@ -134,13 +131,6 @@ ServerCredentials *pygrpc_ServerCredentials_ssl(
   self->c_creds = grpc_ssl_server_credentials_create(
       root_certs, key_cert_pairs, num_key_cert_pairs);
   gpr_free(key_cert_pairs);
-  return self;
-}
-
-ServerCredentials *pygrpc_ServerCredentials_fake_transport_security(
-    PyTypeObject *type, PyObject *ignored) {
-  ServerCredentials *self = (ServerCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_fake_transport_security_server_credentials_create();
   return self;
 }
 
