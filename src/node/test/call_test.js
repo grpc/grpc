@@ -53,7 +53,8 @@ describe('call', function() {
   var server;
   before(function() {
     server = new grpc.Server();
-    var port = server.addHttp2Port('localhost:0');
+    var port = server.addHttp2Port('localhost:0',
+                                   grpc.ServerCredentials.createInsecure());
     server.start();
     channel = new grpc.Channel('localhost:' + port);
   });
