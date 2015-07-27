@@ -31,9 +31,10 @@
  *
  */
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <sstream>
-#include <thread>
 
 #include <signal.h>
 #include <unistd.h>
@@ -47,7 +48,6 @@
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
-#include <grpc++/stream.h>
 #include "test/core/util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/proto/test.grpc.pb.h"
@@ -76,7 +76,8 @@ static bool got_sigint = false;
 
 class ReconnectServiceImpl : public ReconnectService::Service {
  public:
-  explicit ReconnectServiceImpl(int retry_port) : retry_port_(retry_port) {
+  explicit ReconnectServiceImpl(int retry_port)
+      : retry_port_(retry_port), serving_(false), shutdown_(false) {
     reconnect_server_init(&tcp_server_);
   }
 
@@ -89,6 +90,16 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
   Status Start(ServerContext* context, const Empty* request, Empty* response) {
+    std::unique_lock<std::mutex> lock(mu_);
+    while (serving_ && !shutdown_) {
+      cv_.wait(lock);
+    }
+    if (shutdown_) {
+      return Status(grpc::StatusCode::UNAVAILABLE, "shutting down");
+    }
+    serving_ = true;
+    lock.unlock();
+
     if (!tcp_server_.tcp_server) {
       reconnect_server_start(&tcp_server_, retry_port_);
     } else {
@@ -102,6 +113,11 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     // extract timestamps and set response
     Verify(response);
     reconnect_server_clear_timestamps(&tcp_server_);
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      serving_ = false;
+    }
+    cv_.notify_one();
     return Status::OK;
   }
 
@@ -130,9 +146,21 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     response->set_passed(passed);
   }
 
+  void Shutdown() {
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      shutdown_ = true;
+    }
+    cv_.notify_all();
+  }
+
  private:
   int retry_port_;
   reconnect_server tcp_server_;
+  bool serving_;
+  bool shutdown_;
+  std::mutex mu_;
+  std::condition_variable cv_;
 };
 
 void RunServer() {
@@ -149,6 +177,7 @@ void RunServer() {
   while (!got_sigint) {
     service.Poll(5);
   }
+  service.Shutdown();
 }
 
 static void sigint_handler(int x) { got_sigint = true; }
