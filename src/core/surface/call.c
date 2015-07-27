@@ -1024,10 +1024,10 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
-          grpc_metadata_batch_add_tail(
+          /* grpc_metadata_batch_add_tail(
               &mdb, &call->status_link,
               grpc_channel_get_reffed_status_elem(call->channel,
-                                                  data.send_status.code));
+                                                  data.send_status.code)); */
           if (data.send_status.details) {
             grpc_metadata_batch_add_tail(
                 &mdb, &call->details_link,

@@ -732,6 +732,24 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "profiling_endoscope_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "profiling_endoscope_service_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "qps_openloop_test", 
     "platforms": [
       "windows", 

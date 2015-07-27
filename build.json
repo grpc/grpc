@@ -174,6 +174,7 @@
         "src/core/json/json_common.h",
         "src/core/json/json_reader.h",
         "src/core/json/json_writer.h",
+        "src/core/profiling/endoscope_backend.h",
         "src/core/profiling/timers.h",
         "src/core/profiling/timers_preciseclock.h",
         "src/core/surface/byte_buffer_queue.h",
@@ -276,6 +277,7 @@
         "src/core/json/json_string.c",
         "src/core/json/json_writer.c",
         "src/core/profiling/basic_timers.c",
+        "src/core/profiling/endoscope_backend.c",
         "src/core/profiling/stap_timers.c",
         "src/core/surface/byte_buffer.c",
         "src/core/surface/byte_buffer_queue.c",
@@ -757,6 +759,24 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "profiling_endoscope_service",
+      "build": "all",
+      "language": "c++",
+      "headers": [
+        "src/cpp/profiling/endoscope_frontend.h",
+        "src/cpp/profiling/endoscope_service.h"
+      ],
+      "src": [
+        "src/cpp/profiling/endoscope.proto",
+        "src/cpp/profiling/endoscope_frontend.cc",
+        "src/cpp/profiling/endoscope_service.cc"
+      ],
+      "deps": [
+        "grpc",
+        "grpc++"
       ]
     },
     {
@@ -2249,6 +2269,57 @@
         "test/cpp/end2end/mock_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "profiling_endoscope_server",
+      "build": "tool",
+      "language": "c++",
+      "src": [
+        "test/cpp/profiling/endoscope_server.cc"
+      ],
+      "deps": [
+        "profiling_endoscope_service",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "profiling_endoscope_server_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/profiling/endoscope_server_test.cc"
+      ],
+      "deps": [
+        "profiling_endoscope_service",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "profiling_endoscope_service_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/profiling/endoscope_service_test.cc"
+      ],
+      "deps": [
+        "profiling_endoscope_service",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",

@@ -209,6 +209,7 @@ cc_library(
     "src/core/json/json_common.h",
     "src/core/json/json_reader.h",
     "src/core/json/json_writer.h",
+    "src/core/profiling/endoscope_backend.h",
     "src/core/profiling/timers.h",
     "src/core/profiling/timers_preciseclock.h",
     "src/core/surface/byte_buffer_queue.h",
@@ -335,6 +336,7 @@ cc_library(
     "src/core/json/json_string.c",
     "src/core/json/json_writer.c",
     "src/core/profiling/basic_timers.c",
+    "src/core/profiling/endoscope_backend.c",
     "src/core/profiling/stap_timers.c",
     "src/core/surface/byte_buffer.c",
     "src/core/surface/byte_buffer_queue.c",
@@ -467,6 +469,7 @@ cc_library(
     "src/core/json/json_common.h",
     "src/core/json/json_reader.h",
     "src/core/json/json_writer.h",
+    "src/core/profiling/endoscope_backend.h",
     "src/core/profiling/timers.h",
     "src/core/profiling/timers_preciseclock.h",
     "src/core/surface/byte_buffer_queue.h",
@@ -570,6 +573,7 @@ cc_library(
     "src/core/json/json_string.c",
     "src/core/json/json_writer.c",
     "src/core/profiling/basic_timers.c",
+    "src/core/profiling/endoscope_backend.c",
     "src/core/profiling/stap_timers.c",
     "src/core/surface/byte_buffer.c",
     "src/core/surface/byte_buffer_queue.c",
@@ -856,6 +860,28 @@ cc_library(
 
 
 cc_library(
+  name = "profiling_endoscope_service",
+  srcs = [
+    "src/cpp/profiling/endoscope_frontend.h",
+    "src/cpp/profiling/endoscope_service.h",
+    "src/cpp/profiling/endoscope.proto",
+    "src/cpp/profiling/endoscope_frontend.cc",
+    "src/cpp/profiling/endoscope_service.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":grpc",
+    ":grpc++",
+  ],
+)
+
+
+cc_library(
   name = "grpc_csharp_ext",
   srcs = [
     "src/csharp/ext/grpc_csharp_ext.c",
@@ -1053,6 +1079,7 @@ objc_library(
     "src/core/json/json_string.c",
     "src/core/json/json_writer.c",
     "src/core/profiling/basic_timers.c",
+    "src/core/profiling/endoscope_backend.c",
     "src/core/profiling/stap_timers.c",
     "src/core/surface/byte_buffer.c",
     "src/core/surface/byte_buffer_queue.c",
@@ -1187,6 +1214,7 @@ objc_library(
     "src/core/json/json_common.h",
     "src/core/json/json_reader.h",
     "src/core/json/json_writer.h",
+    "src/core/profiling/endoscope_backend.h",
     "src/core/profiling/timers.h",
     "src/core/profiling/timers_preciseclock.h",
     "src/core/surface/byte_buffer_queue.h",

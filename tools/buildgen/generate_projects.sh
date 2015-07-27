@@ -48,3 +48,5 @@ fi
 tools/buildgen/generate_projects.py build.json $gen_build_files
 
 rm $gen_build_files
+
+echo

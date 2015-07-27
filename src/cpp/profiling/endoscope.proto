@@ -1,0 +1,127 @@
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+syntax = "proto3";
+
+option java_package = "io.grpc.examples";
+option objc_class_prefix = "ENDOSCOPE";
+
+package perftools.endoscope;
+
+service Endoscope {
+  rpc Action (EndoRequestPB) returns (EndoSnapshotPB) {}
+}
+
+message EndoMarkerPB {
+
+  // The values in endo_marker.js, endo.proto, and endo_marker.h _must_ match.
+  enum MarkerType {
+    INVALID = 0;
+    SCOPE = 1;
+    TASK = 2;
+    EVENT = 3;
+    ERROR = 4;
+  };
+
+  string name = 1;
+  MarkerType type = 2;
+  sint64 marker_id = 3;
+  string file = 4;
+  sint32 line = 5;
+  string function_name = 6;
+  sint64 cycle_created = 7;
+  double timeout = 8;
+};
+
+message EndoAtomPB {
+
+  // The values in endo_span.js, endo.proto, and endo_atom.h _must_ match.
+  enum AtomType {
+    INVALID = 0;
+    SCOPE_BEGIN = 1;     // param = marker ID
+    SCOPE_END = 2;       // param = work units
+    SUBTASK_BEGIN = 3;   // param = task ID
+    SUBTASK_END = 4;     // param = work units
+    EVENT = 5;           // param = marker ID
+    ERROR = 6;           // param = marker ID
+    UNITS = 7;           // param = work units
+    SENTINEL = 8;        // param = unused
+    BOOKMARK = 9;        // param = unused, but 'cycle' is actually a pointer.
+                         // Bookmarks should never be sent to the client.
+    CPU = 10;            // param = CPU ID for thread's CPU
+    CTXT_SWITCHES = 11;  // param = context switch count
+  };
+
+  sint64 cycle = 1;
+  AtomType type = 2;
+  sint64 param = 3;
+};
+
+message EndoTaskPB {
+  sint64 task_id = 1;
+  sint64 parent_id = 2;
+  sint64 marker_id = 3;
+  sint64 thread_id = 4;
+  string description = 5;
+  sint64 cycle_begin = 6;
+  sint64 cycle_end = 7;
+
+  repeated EndoAtomPB log = 8;
+}
+
+message EndoThreadPB {
+  sint64 thread_id = 1;
+  string name = 2;
+  sint64 cycle_created = 3;
+  sint64 cycle_terminated = 4;
+}
+
+message EndoSnapshotPB {
+  repeated EndoMarkerPB marker = 1;
+  repeated EndoTaskPB tasks_history = 2;
+  repeated EndoTaskPB tasks_active = 3;
+  repeated EndoThreadPB thread = 4;
+
+  sint64 cycle_begin = 5;
+  sint64 cycle_end = 6;
+  EndoSyncPB sync = 7;
+  sint64 timestamp = 8;
+};
+
+message EndoSyncPB {
+  sint64 cycle_begin = 1;
+  sint64 cycle_sync = 2;
+  double time_begin = 3;
+  double time_sync = 4;
+};
+
+message EndoRequestPB {
+  string cycle_begin = 1;
+  string cycle_end = 2;
+};

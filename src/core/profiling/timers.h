@@ -81,7 +81,18 @@ enum grpc_profiling_tags {
   GRPC_PTAG_OTHER_BASE = 1024
 };
 
-#if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
+#define GRPC_ENDOSCOPE_PROFILER  /* TODO(yuzhouyuzhou) */
+
+#if defined(GRPC_ENDOSCOPE_PROFILER)
+
+#include "src/core/profiling/endoscope_backend.h"
+extern EndoBase endoscope_grpc_base;
+#define GRPC_TIMER_BEGIN(tag, id) ENDOSCOPE_BEGIN(&endoscope_grpc_base, #tag)
+#define GRPC_TIMER_END(tag, id) ENDOSCOPE_END(&endoscope_grpc_base, #tag)
+#define GRPC_TIMER_MARK(tag, id) ENDOSCOPE_EVENT(&endoscope_grpc_base, #tag)
+#define GRPC_TIMER_IMPORTANT_MARK(tag, id) ENDOSCOPE_ERROR(&endoscope_grpc_base, #tag)
+
+#elif !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */
 #define GRPC_TIMER_MARK(tag, id) \
   do {                           \

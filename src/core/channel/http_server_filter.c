@@ -45,6 +45,7 @@ typedef struct call_data {
   gpr_uint8 seen_scheme;
   gpr_uint8 seen_te_trailers;
   grpc_linked_mdelem status;
+  grpc_linked_mdelem access_control_allow_origin;
 
   grpc_stream_op_buffer *recv_ops;
   /** Closure to call when finished with the hs_on_recv hook */
@@ -65,6 +66,7 @@ typedef struct channel_data {
   grpc_mdelem *content_type;
   grpc_mdelem *status_ok;
   grpc_mdelem *status_not_found;
+  grpc_mdelem *access_control_allow_origin;
   grpc_mdstr *path_key;
   grpc_mdstr *authority_key;
   grpc_mdstr *host_key;
@@ -153,7 +155,7 @@ static void hs_on_recv(void *user_data, int success) {
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
-      if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
+      if (calld->seen_post && calld->seen_scheme /*&& calld->seen_te_trailers*/ &&
           calld->seen_path) {
         /* do nothing */
       } else {
@@ -194,6 +196,8 @@ static void hs_mutate_op(grpc_call_element *elem,
       calld->sent_status = 1;
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
                                    GRPC_MDELEM_REF(channeld->status_ok));
+      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->access_control_allow_origin,
+                                   grpc_mdelem_ref(channeld->access_control_allow_origin));
       break;
     }
   }
@@ -255,6 +259,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->host_key = grpc_mdstr_from_string(mdctx, "host", 0);
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
+  channeld->access_control_allow_origin =
+      grpc_mdelem_from_strings(mdctx, "access-control-allow-origin", "*");
 
   channeld->mdctx = mdctx;
 }
@@ -272,6 +278,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   GRPC_MDELEM_UNREF(channeld->https_scheme);
   GRPC_MDELEM_UNREF(channeld->grpc_scheme);
   GRPC_MDELEM_UNREF(channeld->content_type);
+  GRPC_MDELEM_UNREF(channeld->access_control_allow_origin);
   GRPC_MDSTR_UNREF(channeld->path_key);
   GRPC_MDSTR_UNREF(channeld->authority_key);
   GRPC_MDSTR_UNREF(channeld->host_key);

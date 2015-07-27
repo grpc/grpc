@@ -59,6 +59,7 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
+  GRPC_TIMER_BEGIN(GRPC_PTAG_CPP_CALL_CREATE, c_call);
   auto c_call =
       method.channel_tag() && context->authority().empty()
           ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
@@ -72,6 +73,7 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
   grpc_census_call_set_context(c_call, context->get_census_context());
   GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
   context->set_call(c_call, shared_from_this());
+  GRPC_TIMER_END(GRPC_PTAG_CPP_CALL_CREATE, c_call);
   return Call(c_call, this, cq);
 }
 
