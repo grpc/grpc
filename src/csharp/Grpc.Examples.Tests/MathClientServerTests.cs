@@ -65,7 +65,7 @@ namespace math.Tests
             // for header support.
             client.HeaderInterceptor = (metadata) =>
             {
-                metadata.Add(new Metadata.Entry("customHeader", "abcdef"));
+                metadata.Add(new Metadata.Entry("custom-header", "abcdef"));
             };
         }
 
