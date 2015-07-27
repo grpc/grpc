@@ -20,7 +20,7 @@ jobNumber = 0
 
 for lang in args.language:
   for test in _TESTS:
-    test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % lang, '%s' % test], shortname=test)
+    test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % 'cxx', '%s' % test], shortname=test)
     jobs.append(test_job)
     jobNumber+=1
 
