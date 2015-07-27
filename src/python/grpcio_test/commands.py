@@ -27,46 +27,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python interop testing package."""
+"""Provides distutils command classes for the GRPC Python test setup process."""
 
 import os
 import os.path
+import sys
 
 import setuptools
 
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Break import-style to ensure we can actually find our commands module.
-import commands
+class RunTests(setuptools.Command):
+  """Command to run all tests via py.test."""
 
-_PACKAGES = setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
+  description = ''
+  user_options = [('pytest-args=', 'a', 'arguments to pass to py.test')]
 
-_PACKAGE_DIRECTORIES = {
-    '': '.',
-}
+  def initialize_options(self):
+    self.pytest_args = []
 
-_PACKAGE_DATA = {
-    'grpc_interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
-}
+  def finalize_options(self):
+    pass
 
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
-
-setuptools.setup(
-    name='grpcio_test',
-    version='0.0.1',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES,
-    setup_requires=(
-        'pytest>=2.6',
-        'pytest-cov>=2.0',
-        'pytest-xdist>=1.11',
-    ),
-    cmdclass={
-        'test': commands.RunTests
-    }
-)
+  def run(self):
+    # We import here to ensure that setup.py has had a chance to install the
+    # relevant package eggs first.
+    import pytest
+    pytest.main(self.pytest_args)
