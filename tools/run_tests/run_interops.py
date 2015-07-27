@@ -1,5 +1,13 @@
+import argparse
 import xml.etree.cElementTree as ET
 import jobset
+
+argp = argparse.ArgumentParser(description='Run interop tests.')
+argp.add_argument('-l', '--language',
+                  choices=['build_only', 'c++'],
+                  nargs='+',
+                  default=['build_only'])
+args = argp.parse_args()
 
 build_steps = 'tools/run_tests/run_interops_build.sh'
 
@@ -11,7 +19,7 @@ jobs = []
 jobNumber = 0
 
 for test in _TESTS:
-  test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % test], shortname=test)
+  test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % args.language, '%s' % test], shortname=test)
   jobs.append(test_job)
   jobNumber+=1
 

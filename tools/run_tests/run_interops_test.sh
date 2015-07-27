@@ -29,11 +29,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-test_case=$1
-#sudo docker run -d -e GCS_BUCKET=docker-interop-images -e STORAGE_PATH=/admin/docker_images -p 5000:5000 google/docker-registry
+language=$1
+test_case=$2
+
 set -e
-sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
-#sleep 4 
-#sudo docker rmi grpc/cxx
-#sudo docker rmi grpc/base
-#sudo docker rmi 0.0.0.0:5000/grpc/base
+if [ "$language" == "c++" ]
+then
+  sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
+else
+  echo "interop testss not added for $language"
+fi
+
