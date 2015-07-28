@@ -47,6 +47,27 @@ var mathService = math_proto.lookup('math.Math');
 
 var _ = require('lodash');
 
+/**
+ * This is used for testing functions with multiple asynchronous calls that
+ * can happen in different orders. This should be passed the number of async
+ * function invocations that can occur last, and each of those should call this
+ * function's return value
+ * @param {function()} done The function that should be called when a test is
+ *     complete.
+ * @param {number} count The number of calls to the resulting function if the
+ *     test passes.
+ * @return {function()} The function that should be called at the end of each
+ *     sequence of asynchronous functions.
+ */
+function multiDone(done, count) {
+  return function() {
+    count -= 1;
+    if (count <= 0) {
+      done();
+    }
+  };
+}
+
 describe('File loader', function() {
   it('Should load a proto file by default', function() {
     assert.doesNotThrow(function() {
@@ -108,6 +129,61 @@ describe('Server.prototype.addProtoService', function() {
     assert.throws(function() {
       server.addProtoService(mathService, dummyImpls);
     });
+  });
+});
+describe('Client#$waitForReady', function() {
+  var server;
+  var port;
+  var Client;
+  var client;
+  before(function() {
+    server = new grpc.Server();
+    port = server.bind('localhost:0');
+    server.start();
+    Client = surface_client.makeProtobufClientConstructor(mathService);
+  });
+  beforeEach(function() {
+    client = new Client('localhost:' + port);
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('should complete when a call is initiated', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+    var call = client.div({}, function(err, response) {});
+    call.cancel();
+  });
+  it('should complete if $tryConnect is called', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+    client.$tryConnect();
+  });
+  it('should complete if called more than once', function(done) {
+    done = multiDone(done, 2);
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+    client.$tryConnect();
+  });
+  it('should complete if called when already ready', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      client.$waitForReady(Infinity, function(error) {
+        assert.ifError(error);
+        done();
+      });
+    });
+    client.$tryConnect();
   });
 });
 describe('Echo service', function() {

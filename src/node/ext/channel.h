@@ -67,6 +67,8 @@ class Channel : public ::node::ObjectWrap {
   static NAN_METHOD(New);
   static NAN_METHOD(Close);
   static NAN_METHOD(GetTarget);
+  static NAN_METHOD(GetConnectivityState);
+  static NAN_METHOD(WatchConnectivityState);
   static NanCallback *constructor;
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 
