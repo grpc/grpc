@@ -11,10 +11,10 @@ The test has the following flow:
 1. The server starts listening on control_port.
 2. The client calls Start rpc on server control_port.
 3. The server starts listening on retry_port.
-4. The client calls Start rpc on server retry_port with a deadline of 540s.
-5. The client waits until the rpc finishes.
-6. The client calls Stop rpc on server control port.
-7. The client checks the response to see whether the server thinks the backoffs
+4. The client connects to server retry_port and retries with backoff for 540s,
+which translates to about 13 retries.
+5. The client calls Stop rpc on server control port.
+6. The client checks the response to see whether the server thinks the backoffs
 are conforming the spec or do its own check on the backoffs in the response.
 
 Client and server use
@@ -37,9 +37,11 @@ backoffs on its own.
 
 Procedure of client:
 
-1. Calls Start on server control port and checks it succeeded.
-2. Calls Start on server retry port with a deadline of 540s. Waits and checks it
-   got deadline exceeded status.
+1. Calls Start on server control port with a large deadline or no deadline,
+waits for its finish and checks it succeeded.
+2. Initiates a channel connection to server retry port, which should perform
+reconnections with proper backoffs. A convienent way to achieve this is to
+call Start with a deadline of 540s. The rpc should fail with deadline exceeded.
 3. Calls Stop on server control port and checks it succeeded.
 4. Checks the response to see whether the server thinks the backoffs passed the
    test.
@@ -60,7 +62,12 @@ all the reconnection timestamps and return the connection backoffs in the
 response in milliseconds. The server also checks the backoffs to see whether
 they conform the spec and returns whether the client passes the test.
 
-Servers should accept these arguments:
+If the server receives a Start call when another client is being tested, it
+finishes the call when the other client is done. If some other host connects
+to the server retry_port when a client is being tested, the server will log an
+error but likely would think the client fails the test.
+
+The server accepts these arguments:
 
 * --control_port=PORT
     * The port to listen on for control rpcs. For example, "8080"
