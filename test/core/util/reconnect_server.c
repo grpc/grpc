@@ -33,16 +33,17 @@
 
 #include "test/core/util/reconnect_server.h"
 
+#include <arpa/inet.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <string.h>
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
-#include <arpa/inet.h>
 
 static void pretty_print_backoffs(reconnect_server *server) {
   gpr_timespec diff;
@@ -65,11 +66,27 @@ static void pretty_print_backoffs(reconnect_server *server) {
 }
 
 static void on_connect(void *arg, grpc_endpoint *tcp) {
+  char *peer;
+  char *last_colon;
   reconnect_server *server = (reconnect_server *)arg;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list *new_tail;
+  peer = grpc_endpoint_get_peer(tcp);
   grpc_endpoint_shutdown(tcp);
   grpc_endpoint_destroy(tcp);
+  if (peer) {
+    last_colon = strrchr(peer, ':');
+    if (server->peer == NULL) {
+      server->peer = peer;
+    } else {
+      if (last_colon == NULL) {
+        gpr_log(GPR_ERROR, "peer does not contain a ':'");
+      } else if (strncmp(server->peer, peer, last_colon - peer) != 0) {
+        gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
+      }
+      gpr_free(peer);
+    }
+  }
   new_tail = gpr_malloc(sizeof(timestamp_list));
   new_tail->timestamp = now;
   new_tail->next = NULL;
@@ -90,6 +107,7 @@ void reconnect_server_init(reconnect_server *server) {
   server->pollsets[0] = &server->pollset;
   server->head = NULL;
   server->tail = NULL;
+  server->peer = NULL;
 }
 
 void reconnect_server_start(reconnect_server *server, int port) {
@@ -127,6 +145,8 @@ void reconnect_server_clear_timestamps(reconnect_server *server) {
     server->head = new_head;
   }
   server->tail = NULL;
+  gpr_free(server->peer);
+  server->peer = NULL;
 }
 
 static void do_nothing(void *ignored) {}

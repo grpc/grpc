@@ -53,6 +53,7 @@ typedef struct reconnect_server {
   grpc_pollset *pollsets[1];
   timestamp_list *head;
   timestamp_list *tail;
+  char *peer;
 } reconnect_server;
 
 void reconnect_server_init(reconnect_server *server);
