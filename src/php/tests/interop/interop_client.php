@@ -332,10 +332,11 @@ if (in_array($args['test_case'], array(
   $opts['update_metadata'] = $auth->getUpdateMetadataFunc();
 }
 
-$stub = new grpc\testing\TestServiceClient(
-    new Grpc\BaseStub(
-        $server_address,
-        $opts));
+$internal_stub = new Grpc\BaseStub($server_address, $opts);
+hardAssert(is_string($internal_stub->getTarget()),
+           'Unexpected target URI value');
+
+$stub = new grpc\testing\TestServiceClient($internal_stub);
 
 echo "Connecting to $server_address\n";
 echo "Running test case $args[test_case]\n";
