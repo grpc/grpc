@@ -34,8 +34,16 @@
 #ifndef GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
 #define GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /*  __cplusplus */
+
 extern const char test_root_cert[];
 extern const char test_server1_cert[];
 extern const char test_server1_key[];
+
+#ifdef __cplusplus
+}
+#endif /*  __cplusplus */
 
 #endif  /* GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H */
