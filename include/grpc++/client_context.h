@@ -118,6 +118,8 @@ class ClientContext {
 
   std::shared_ptr<const AuthContext> auth_context() const;
 
+  grpc::string peer() const;
+
   // Get and set census context
   void set_census_context(census_context* ccp) { census_context_ = ccp; }
   census_context* get_census_context() const { return census_context_; }
