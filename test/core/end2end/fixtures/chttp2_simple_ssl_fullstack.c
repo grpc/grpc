@@ -115,7 +115,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1);
+      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0);
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 
