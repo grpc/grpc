@@ -104,17 +104,19 @@ gpr_subprocess *gpr_subprocess_create(int argc, const char **argv) {
 }
 
 void gpr_subprocess_destroy(gpr_subprocess *p) {
-  if (!p->joined) {
-    gpr_subprocess_interrupt(p);
-    gpr_subprocess_join(p);
+  if (p) {
+    if (!p->joined) {
+      gpr_subprocess_interrupt(p);
+      gpr_subprocess_join(p);
+    }
+    if (p->pi.hProcess) {
+      CloseHandle(p->pi.hProcess);
+    }
+    if (p->pi.hThread) {
+      CloseHandle(p->pi.hThread);
+    }
+    gpr_free(p);
   }
-  if (p->pi.hProcess) {
-    CloseHandle(p->pi.hProcess);
-  }
-  if (p->pi.hThread) {
-    CloseHandle(p->pi.hThread);
-  }
-  gpr_free(p);
 }
 
 int gpr_subprocess_join(gpr_subprocess *p) {
