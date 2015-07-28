@@ -54,9 +54,6 @@ PyMethodDef pygrpc_ClientCredentials_methods[] = {
      METH_CLASS|METH_KEYWORDS, ""},
     {"refresh_token", (PyCFunction)pygrpc_ClientCredentials_refresh_token,
      METH_CLASS|METH_KEYWORDS, ""},
-    {"fake_transport_security",
-     (PyCFunction)pygrpc_ClientCredentials_fake_transport_security,
-     METH_CLASS|METH_NOARGS, ""},
     {"iam", (PyCFunction)pygrpc_ClientCredentials_iam,
      METH_CLASS|METH_KEYWORDS, ""},
     {NULL}
@@ -208,6 +205,7 @@ ClientCredentials *pygrpc_ClientCredentials_service_account(
   return self;
 }
 
+/* TODO: Rename this credentials to something like service_account_jwt_access */
 ClientCredentials *pygrpc_ClientCredentials_jwt(
     PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   ClientCredentials *self;
@@ -219,7 +217,7 @@ ClientCredentials *pygrpc_ClientCredentials_jwt(
     return NULL;
   }
   self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_jwt_credentials_create(
+  self->c_creds = grpc_service_account_jwt_access_credentials_create(
       json_key, pygrpc_cast_double_to_gpr_timespec(lifetime));
   if (!self->c_creds) {
     Py_DECREF(self);
@@ -244,20 +242,6 @@ ClientCredentials *pygrpc_ClientCredentials_refresh_token(
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "couldn't create credentials from refresh token");
-    return NULL;
-  }
-  return self;
-}
-
-ClientCredentials *pygrpc_ClientCredentials_fake_transport_security(
-    PyTypeObject *type, PyObject *ignored) {
-  ClientCredentials *self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_fake_transport_security_credentials_create();
-  if (!self->c_creds) {
-    Py_DECREF(self);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "couldn't create fake credentials; "
-                    "something is horribly wrong with the universe");
     return NULL;
   }
   return self;

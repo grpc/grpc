@@ -52,6 +52,7 @@ gpr_timespec MillisecondsToTimespec(double millis) {
 }
 
 double TimespecToMilliseconds(gpr_timespec timespec) {
+  timespec = gpr_convert_clock_type(timespec, GPR_CLOCK_REALTIME);
   if (gpr_time_cmp(timespec, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
     return std::numeric_limits<double>::infinity();
   } else if (gpr_time_cmp(timespec, gpr_inf_past(GPR_CLOCK_REALTIME)) == 0) {

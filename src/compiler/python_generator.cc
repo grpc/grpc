@@ -249,7 +249,7 @@ bool GetModuleAndMessagePath(const Descriptor* type,
   do {
     message_path.push_back(path_elem_type);
     path_elem_type = path_elem_type->containing_type();
-  } while (path_elem_type != nullptr);
+  } while (path_elem_type); // implicit nullptr comparison; don't be explicit
   grpc::string file_name = type->file()->name();
   static const int proto_suffix_length = strlen(".proto");
   if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&

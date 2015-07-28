@@ -31,21 +31,47 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_FAKE_CREDENTIALS_H
-#define GRPC_TEST_CPP_UTIL_FAKE_CREDENTIALS_H
+#include <condition_variable>
+#include <functional>
+#include <mutex>
 
-#include <memory>
+#include <grpc++/dynamic_thread_pool.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
-class Credentials;
-class ServerCredentials;
 
-namespace testing {
+class DynamicThreadPoolTest : public ::testing::Test {
+ public:
+  DynamicThreadPoolTest() : thread_pool_(0) {}
 
-std::shared_ptr<Credentials> FakeTransportSecurityCredentials();
-std::shared_ptr<ServerCredentials> FakeTransportSecurityServerCredentials();
+ protected:
+  DynamicThreadPool thread_pool_;
+};
 
-}  // namespace testing
+void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
+  std::unique_lock<std::mutex> lock(*mu);
+  *done = true;
+  cv->notify_all();
+}
+
+TEST_F(DynamicThreadPoolTest, Add) {
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
+  thread_pool_.Add(callback);
+
+  // Wait for the callback to finish.
+  std::unique_lock<std::mutex> lock(mu);
+  while (!done) {
+    cv.wait(lock);
+  }
+}
+
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_FAKE_CREDENTIALS_H
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  int result = RUN_ALL_TESTS();
+  return result;
+}

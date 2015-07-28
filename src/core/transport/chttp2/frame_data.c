@@ -92,7 +92,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       p->frame_type = *cur;
       switch (p->frame_type) {
         case 0:
-          /* noop */
+          p->is_frame_compressed = 0;  /* GPR_FALSE */
           break;
         case 1:
           p->is_frame_compressed = 1;  /* GPR_TRUE */

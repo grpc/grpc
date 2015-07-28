@@ -88,6 +88,7 @@ void grpc_kick_poller(void) {
 
 void grpc_iomgr_init(void) {
   gpr_thd_id id;
+  g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_alarm_list_init(gpr_now(GPR_CLOCK_MONOTONIC));

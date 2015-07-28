@@ -45,7 +45,7 @@ namespace Grpc.Core.Tests
 {
     public class ClientServerTest
     {
-        const string Host = "localhost";
+        const string Host = "127.0.0.1";
         const string ServiceName = "/tests.Test";
 
         static readonly Method<string, string> EchoMethod = new Method<string, string>(
@@ -79,9 +79,9 @@ namespace Grpc.Core.Tests
         {
             server = new Server();
             server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddListeningPort(Host, Server.PickUnusedPort);
+            int port = server.AddPort(Host, Server.PickUnusedPort, ServerCredentials.Insecure);
             server.Start();
-            channel = new Channel(Host, port);
+            channel = new Channel(Host, port, Credentials.Insecure);
         }
 
         [TearDown]
@@ -158,59 +158,50 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void AsyncUnaryCall_ServerHandlerThrows()
+        public async Task AsyncUnaryCall_ServerHandlerThrows()
         {
-            Task.Run(async () =>
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            try
             {
-                var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
-                try
-                {
-                    await Calls.AsyncUnaryCall(internalCall, "THROW", CancellationToken.None);
-                    Assert.Fail();
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
-                }
-            }).Wait();
+                await Calls.AsyncUnaryCall(internalCall, "THROW", CancellationToken.None);
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+            }
         }
 
         [Test]
-        public void ClientStreamingCall()
+        public async Task ClientStreamingCall()
         {
-            Task.Run(async () => 
-            {
-                var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-                var call = Calls.AsyncClientStreamingCall(internalCall, CancellationToken.None);
+            var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+            var call = Calls.AsyncClientStreamingCall(internalCall, CancellationToken.None);
 
-                await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
-                Assert.AreEqual("ABC", await call.ResponseAsync);
-            }).Wait();
+            await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
+            Assert.AreEqual("ABC", await call.ResponseAsync);
         }
 
         [Test]
-        public void ClientStreamingCall_CancelAfterBegin()
+        public async Task ClientStreamingCall_CancelAfterBegin()
         {
-            Task.Run(async () => 
+            var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(internalCall, cts.Token);
+
+            // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
+            await Task.Delay(1000);
+            cts.Cancel();
+
+            try
             {
-                var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, Metadata.Empty);
-
-                var cts = new CancellationTokenSource();
-                var call = Calls.AsyncClientStreamingCall(internalCall, cts.Token);
-
-                // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
-                await Task.Delay(1000);
-                cts.Cancel();
-
-                try
-                {
-                    await call.ResponseAsync;
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode); 
-                }
-            }).Wait();
+                await call.ResponseAsync;
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, e.Status.StatusCode);
+            }
         }
 
         [Test]
@@ -218,8 +209,8 @@ namespace Grpc.Core.Tests
         {
             var headers = new Metadata
             {
-                new Metadata.Entry("asciiHeader", "abcdefg"),
-                new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff }),
+                new Metadata.Entry("ascii-header", "abcdefg"),
+                new Metadata.Entry("binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff }),
             };
             var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, headers);
             var call = Calls.AsyncUnaryCall(internalCall, "ABC", CancellationToken.None);
@@ -277,6 +268,14 @@ namespace Grpc.Core.Tests
             Assert.IsTrue(userAgent.StartsWith("grpc-csharp/"));
         }
 
+        [Test]
+        public void PeerInfoPresent()
+        {
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            string peer = Calls.BlockingUnaryCall(internalCall, "RETURN-PEER", CancellationToken.None);
+            Assert.IsTrue(peer.Contains(Host));
+        }
+
         private static async Task<string> EchoHandler(string request, ServerCallContext context)
         {
             foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
@@ -290,6 +289,11 @@ namespace Grpc.Core.Tests
             if (request == "RETURN-USER-AGENT")
             {
                 return context.RequestHeaders.Where(entry => entry.Key == "user-agent").Single().Value;
+            }
+
+            if (request == "RETURN-PEER")
+            {
+                return context.Peer;
             }
 
             if (request == "THROW")
