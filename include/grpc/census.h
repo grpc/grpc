@@ -121,7 +121,7 @@ census_tag_set *census_tag_set_create(size_t size_hint);
    the number of tags in the tag set.
    Return values:
    -1: invalid length key or value
-   positive values: the number of tags in the tag set. */
+   non-negative value: the number of tags in the tag set. */
 int census_tag_set_add(census_tag_set *tags, const char *key,
                        const char *value);
 
