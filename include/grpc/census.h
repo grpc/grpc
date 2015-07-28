@@ -54,7 +54,7 @@ enum census_features {
       CENSUS_FEATURE_TRACING | CENSUS_FEATURE_STATS | CENSUS_FEATURE_CPU
 };
 
-/** Shutdown and startup census subsystem. The 'functions' argument should be
+/** Shutdown and startup census subsystem. The 'features' argument should be
  * the OR (|) of census_features values. If census fails to initialize, then
  * census_initialize() will return a non-zero value. It is an error to call
  * census_initialize() more than once (without an intervening
