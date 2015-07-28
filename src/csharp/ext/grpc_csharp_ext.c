@@ -366,8 +366,9 @@ grpcsharp_completion_queue_pluck(grpc_completion_queue *cq, void *tag) {
 /* Channel */
 
 GPR_EXPORT grpc_channel *GPR_CALLTYPE
-grpcsharp_channel_create(const char *target, const grpc_channel_args *args) {
-  return grpc_channel_create(target, args);
+
+grpcsharp_insecure_channel_create(const char *target, const grpc_channel_args *args) {
+  return grpc_insecure_channel_create(target, args);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel *channel) {
@@ -432,10 +433,20 @@ grpcsharp_channel_args_destroy(grpc_channel_args *args) {
 
 /* Timespec */
 
-GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(void) { return gpr_now(GPR_CLOCK_REALTIME); }
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_now(gpr_clock_type clock_type) {
+  return gpr_now(clock_type);
+}
 
-GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_future(void) {
-  return gpr_inf_future(GPR_CLOCK_REALTIME);
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_future(gpr_clock_type clock_type) {
+  return gpr_inf_future(clock_type);
+}
+
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_inf_past(gpr_clock_type clock_type) {
+  return gpr_inf_past(clock_type);
+}
+
+GPR_EXPORT gpr_timespec GPR_CALLTYPE gprsharp_convert_clock_type(gpr_timespec t, gpr_clock_type target_clock) {
+  return gpr_convert_clock_type(t, target_clock);
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE gprsharp_sizeof_timespec(void) {
@@ -452,6 +463,14 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_cancel_with_status(grpc_call *call, grpc_status_code status,
                                   const char *description) {
   return grpc_call_cancel_with_status(call, status, description);
+}
+
+GPR_EXPORT char *GPR_CALLTYPE grpcsharp_call_get_peer(grpc_call *call) {
+  return grpc_call_get_peer(call);
+}
+
+GPR_EXPORT void GPR_CALLTYPE gprsharp_free(void *p) {
+  gpr_free(p);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_destroy(grpc_call *call) {
@@ -695,7 +714,7 @@ grpcsharp_server_create(grpc_completion_queue *cq,
 }
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
-grpcsharp_server_add_http2_port(grpc_server *server, const char *addr) {
+grpcsharp_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   return grpc_server_add_http2_port(server, addr);
 }
 
@@ -772,8 +791,9 @@ grpcsharp_ssl_server_credentials_create(
       key_cert_pairs[i].private_key = key_cert_pair_private_key_array[i];
     }
   }
+  /* TODO: Add a force_client_auth parameter and pass it here. */
   creds = grpc_ssl_server_credentials_create(pem_root_certs, key_cert_pairs,
-                                             num_key_cert_pairs);
+                                             num_key_cert_pairs, 0);
   gpr_free(key_cert_pairs);
   return creds;
 }

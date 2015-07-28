@@ -126,6 +126,7 @@ def client_credentials_service_account(
   credentials.references.extend([json_key, scope])
   return credentials
 
+#TODO rename to something like client_credentials_service_account_jwt_access.
 def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
   if isinstance(json_key, bytes):
     pass
@@ -134,7 +135,7 @@ def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
   else:
     raise TypeError("expected json_key to be str or bytes")
   cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_jwt_credentials_create(
+  credentials.c_credentials = grpc.grpc_service_account_jwt_access_credentials_create(
       json_key, token_lifetime.c_time)
   credentials.references.append(json_key)
   return credentials
@@ -150,12 +151,6 @@ def client_credentials_refresh_token(json_refresh_token):
   credentials.c_credentials = grpc.grpc_refresh_token_credentials_create(
       json_refresh_token)
   credentials.references.append(json_refresh_token)
-  return credentials
-
-def client_credentials_fake_transport_security():
-  cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = (
-      grpc.grpc_fake_transport_security_credentials_create())
   return credentials
 
 def client_credentials_iam(authorization_token, authority_selector):
@@ -210,8 +205,3 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs):
   )
   return credentials
 
-def server_credentials_fake_transport_security():
-  cdef ServerCredentials credentials = ServerCredentials()
-  credentials.c_credentials = (
-      grpc.grpc_fake_transport_security_server_credentials_create())
-  return credentials

@@ -80,7 +80,7 @@ static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
   channel_data *chand = elem->channel_data;
   grpc_transport_stream_op_add_cancellation(
       &calld->op, GRPC_STATUS_UNAUTHENTICATED,
-      grpc_mdstr_from_string(chand->md_ctx, error_msg));
+      grpc_mdstr_from_string(chand->md_ctx, error_msg, 0));
   grpc_call_next_op(elem, &calld->op);
 }
 
@@ -316,10 +316,10 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
       (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(
           sc, "client_auth_filter");
   chand->md_ctx = metadata_context;
-  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority");
-  chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
-  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
-  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
+  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority", 0);
+  chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path", 0);
+  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message", 0);
+  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status", 0);
 }
 
 /* Destructor for channel data */

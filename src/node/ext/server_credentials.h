@@ -63,7 +63,6 @@ class ServerCredentials : public ::node::ObjectWrap {
 
   static NAN_METHOD(New);
   static NAN_METHOD(CreateSsl);
-  static NAN_METHOD(CreateFake);
   static NanCallback *constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;

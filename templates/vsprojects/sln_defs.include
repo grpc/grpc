@@ -15,6 +15,13 @@ cpp_proj_type = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 %>\
 % for project in solution_projects:
 Project("${cpp_proj_type}") = "${project.name}", "${project.name}\${project.name}.vcxproj", "${project.vs_project_guid}"
+	ProjectSection(myProperties) = preProject
+  % if project.is_library:
+        	lib = "True"
+  % else:
+        	lib = "False"
+  % endif
+	EndProjectSection
   % if project.get('deps', None):
 	ProjectSection(ProjectDependencies) = postProject
     % for dep in project.get('deps', []):

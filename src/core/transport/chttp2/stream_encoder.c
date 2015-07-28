@@ -441,7 +441,7 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
       gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
       c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
-      grpc_mdstr_from_string(c->mdctx, timeout_str));
+      grpc_mdstr_from_string(c->mdctx, timeout_str, 0));
   mdelem = hpack_enc(c, mdelem, st);
   if (mdelem) GRPC_MDELEM_UNREF(mdelem);
 }
@@ -456,7 +456,7 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *ctx) {
   memset(c, 0, sizeof(*c));
   c->mdctx = ctx;
-  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
+  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout", 0);
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {

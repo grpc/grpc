@@ -182,8 +182,7 @@ void grpc_chttp2_publish_reads(
       stream_global->max_recv_bytes -= 
           stream_parsing->incoming_window_delta;
       stream_parsing->incoming_window_delta = 0;
-      grpc_chttp2_list_add_writable_window_update_stream(transport_global,
-                                                         stream_global);
+      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
 
     /* update outgoing flow control window */
@@ -607,7 +606,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
     }
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &stream_parsing->incoming_metadata,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), *cached_timeout));
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), *cached_timeout));
     GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata,
