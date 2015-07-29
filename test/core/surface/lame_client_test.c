@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
   grpc_op *op;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
+  grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
 
@@ -59,9 +60,9 @@ int main(int argc, char **argv) {
 
   chan = grpc_lame_client_channel_create();
   GPR_ASSERT(chan);
-  cq = grpc_completion_queue_create();
+  cq = grpc_completion_queue_create(NULL);
   call = grpc_channel_create_call(chan, cq, "/Foo", "anywhere",
-                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100));
+                                  GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100), NULL);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
@@ -77,8 +78,8 @@ int main(int argc, char **argv) {
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, op - ops, tag(1)));
+  error = grpc_call_start_batch(call, ops, op - ops, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
   cq_expect_completion(cqv, tag(1), 1);

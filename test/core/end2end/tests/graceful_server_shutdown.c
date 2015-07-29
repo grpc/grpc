@@ -68,7 +68,7 @@ static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -108,12 +108,13 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_status_code status;
+  grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -141,11 +142,13 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
@@ -168,7 +171,8 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
   cq_expect_completion(cqv, tag(0xdead), 1);

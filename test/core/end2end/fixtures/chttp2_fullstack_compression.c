@@ -69,7 +69,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
 
   memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create(NULL);
 
   return f;
 }
@@ -82,7 +82,8 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
       client_args, GRPC_COMPRESS_GZIP);
-  f->client = grpc_channel_create(ffd->localaddr, ffd->client_args_compression);
+  f->client = grpc_channel_create(ffd->localaddr, ffd->client_args_compression,
+                                  NULL);
 }
 
 void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
@@ -96,8 +97,8 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(ffd->server_args_compression);
-  grpc_server_register_completion_queue(f->server, f->cq);
+  f->server = grpc_server_create(ffd->server_args_compression, NULL);
+  grpc_server_register_completion_queue(f->server, f->cq, NULL);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }

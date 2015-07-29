@@ -97,6 +97,7 @@ static void request_call(void) {
 
 static void handle_unary_method(void) {
   grpc_op *op;
+  grpc_call_error error;
 
   grpc_metadata_array_init(&initial_metadata_send);
 
@@ -122,41 +123,47 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, unary_ops, op - unary_ops,
-                                   tag(FLING_SERVER_BATCH_OPS_FOR_UNARY)));
+  error = grpc_call_start_batch(call, unary_ops, op - unary_ops,
+                                tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 }
 
 static void send_initial_metadata(void) {
+  grpc_call_error error;
+  void *tagarg = tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
   grpc_metadata_array_init(&initial_metadata_send);
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_send_op.data.send_initial_metadata.count = 0;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(
-                 call, &metadata_send_op, 1,
-                 tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING)));
+  error = grpc_call_start_batch(call, &metadata_send_op, 1, tagarg, NULL);
+
+  GPR_ASSERT(GRPC_CALL_OK == error);
 }
 
 static void start_read_op(int t) {
+  grpc_call_error error;
   /* Starting read at server */
   read_op.op = GRPC_OP_RECV_MESSAGE;
   read_op.data.recv_message = &payload_buffer;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &read_op, 1, tag(t)));
+  error = grpc_call_start_batch(call, &read_op, 1, tag(t), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 }
 
 static void start_write_op(void) {
+  grpc_call_error error;
+  void *tagarg = tag(FLING_SERVER_WRITE_FOR_STREAMING);
   /* Starting write at server */
   write_op.op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == NULL) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
   write_op.data.send_message = payload_buffer;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, &write_op, 1,
-                                   tag(FLING_SERVER_WRITE_FOR_STREAMING)));
+  error = grpc_call_start_batch(call, &write_op, 1, tagarg, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 }
 
 static void start_send_status(void) {
+  grpc_call_error error;
+  void *tagarg = tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING);
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
@@ -164,9 +171,8 @@ static void start_send_status(void) {
   status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
-                                 call, status_op, 2,
-                                 tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING)));
+  error = grpc_call_start_batch(call, status_op, 2, tagarg, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 }
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
@@ -205,20 +211,20 @@ int main(int argc, char **argv) {
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create();
+  cq = grpc_completion_queue_create(NULL);
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials *ssl_creds =
         grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
-    server = grpc_server_create(NULL);
+    server = grpc_server_create(NULL, NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(NULL);
+    server = grpc_server_create(NULL, NULL);
     GPR_ASSERT(grpc_server_add_http2_port(server, addr));
   }
-  grpc_server_register_completion_queue(server, cq);
+  grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
 
   gpr_free(addr_buf);
@@ -235,14 +241,14 @@ int main(int argc, char **argv) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       grpc_server_shutdown_and_notify(server, cq, tag(1000));
       GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
         cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000000, GPR_TIMESPAN)));
+                         gpr_time_from_micros(1000000, GPR_TIMESPAN)), NULL);
     s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:

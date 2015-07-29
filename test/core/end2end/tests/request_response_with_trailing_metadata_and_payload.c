@@ -68,7 +68,7 @@ static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -76,7 +76,8 @@ static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -109,12 +110,12 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-  grpc_metadata meta_c[2] = {{"key1", "val1", 4, {{NULL, NULL, NULL}}},
-                             {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}},
-                             {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
-  grpc_metadata meta_t[2] = {{"key5", "val5", 4, {{NULL, NULL, NULL}}},
-                             {"key6", "val6", 4, {{NULL, NULL, NULL}}}};
+  grpc_metadata meta_c[2] = {{"key1", "val1", 4, 0, {{NULL, NULL, NULL, NULL}}},
+                             {"key2", "val2", 4, 0, {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_s[2] = {{"key3", "val3", 4, 0, {{NULL, NULL, NULL, NULL}}},
+                             {"key4", "val4", 4, 0, {{NULL, NULL, NULL, NULL}}}};
+  grpc_metadata meta_t[2] = {{"key5", "val5", 4, 0, {{NULL, NULL, NULL, NULL}}},
+                             {"key6", "val6", 4, 0, {{NULL, NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -127,12 +128,13 @@ static void test_request_response_with_metadata_and_payload(
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
+  grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+                               deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -168,11 +170,13 @@ static void test_request_response_with_metadata_and_payload(
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
@@ -186,7 +190,8 @@ static void test_request_response_with_metadata_and_payload(
   op->data.recv_message = &request_payload_recv;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
@@ -207,7 +212,8 @@ static void test_request_response_with_metadata_and_payload(
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(103), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(103), 1);
   cq_expect_completion(cqv, tag(1), 1);
