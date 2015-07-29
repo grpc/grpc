@@ -110,6 +110,24 @@ describe('Server.prototype.addProtoService', function() {
     });
   });
 });
+describe('Client constructor building', function() {
+  var illegal_service_attrs = {
+    $method : {
+      path: '/illegal/$method',
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: _.identity,
+      requestDeserialize: _.identity,
+      responseSerialize: _.identity,
+      responseDeserialize: _.identity
+    }
+  };
+  it('Should reject method names starting with $', function() {
+    assert.throws(function() {
+      grpc.makeGenericClientConstructor(illegal_service_attrs);
+    }, /\$/);
+  });
+});
 describe('Echo service', function() {
   var server;
   var client;
@@ -344,7 +362,7 @@ describe('Other conditions', function() {
     server.shutdown();
   });
   it('channel.getTarget should be available', function() {
-    assert.strictEqual(typeof client.channel.getTarget(), 'string');
+    assert.strictEqual(typeof client.$channel.getTarget(), 'string');
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
