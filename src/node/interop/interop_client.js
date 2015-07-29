@@ -292,7 +292,7 @@ function authTest(expected_user, scope, client, done) {
     if (credential.createScopedRequired() && scope) {
       credential = credential.createScoped(scope);
     }
-    client.updateMetadata = grpc.getGoogleAuthDelegate(credential);
+    client.$updateMetadata = grpc.getGoogleAuthDelegate(credential);
     var arg = {
       response_type: 'COMPRESSABLE',
       response_size: 314159,
@@ -355,7 +355,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
       if (per_rpc) {
         updateMetadata('', {}, makeTestCall);
       } else {
-        client.updateMetadata = updateMetadata;
+        client.$updateMetadata = updateMetadata;
         makeTestCall(null, {});
       }
 
