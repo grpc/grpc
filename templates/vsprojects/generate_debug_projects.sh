@@ -36,7 +36,7 @@
 # to build.json
 
 # workflow is: run generate_projects once to get grpc.sln rebuilt with new test projects
-# then grep grpc.sln for the new projects and create tempaltes for them
+# then grep grpc.sln for the new projects and create templates for them
 # then re-run generate_projects to create projects from the new templates
 
 cd `dirname $0`/../..
