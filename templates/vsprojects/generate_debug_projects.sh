@@ -35,42 +35,49 @@
 #
 # to build.json
 
+# workflow is: run generate_projects once to get grpc.sln rebuilt with new test projects
+# then grep grpc.sln for the new projects and create tempaltes for them
+# then re-run generate_projects to create projects from the new templates
+
 cd `dirname $0`/../..
 
-git add .               #because we're using "git diff" to find changes to grpc.sln and then make files based on those changes, this prevents this file or other files from possibly being found in the diff
+./tools/buildgen/generate_projects.sh
 
-./tools/buildgen/generate_projects-old.sh
+echo    #generate_projects doesn't finish with a newline
 
 line_number=0
 
-git diff |
-grep -A2 \\+Project |       #find "Project" immediately after a backslash (escaped), plus 2 additional lines to capture the "libs = ", plus 1 line of "--".  matches will come from the generated grpc.sln
+cat ./vsprojects/grpc.sln |
+grep -A2 Project\(\"{ |       #find 'Project("{' , plus 2 additional lines to capture the "libs = ". there will also be 1 line of "--" (grep output)
 while read p ; do
   line_number=$((line_number + 1))
   if [ "$line_number" -gt "4" ]; then
     line_number=1;
   fi
-  echo $line_number
-  echo $p
   if [ "$line_number" -eq "1" ]; then
-    project_name=$(echo "$p" | cut -d\" -f 4)          #sed: extract line N only; cut with delimiter: ".  select only field 4
+    project_name=$(echo "$p" | cut -d\" -f 4)          #cut with delimiter " and select only field 4
   fi
   if [ "$line_number" -eq "3" ]; then
-    lib_setting=$(echo "$p" | cut -d\" -f 2)          #
-    echo "project_name"
-    echo $project_name
-    echo "lib_setting"
-    echo $lib_setting
-    mkdir -p templates/vsprojects/$project_name
-    if [ "$lib_setting" = "True" ]; then
-      echo "lib: true"
-      echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$project_name'", libs)}' > templates/vsprojects/$project_name/$project_name.vcxproj.template
+    lib_setting=$(echo "$p" | cut -d\" -f 2)          #cut with delimiter " and select only field 2
+    if [ -e ./templates/vsprojects/$project_name/$project_name.vcxproj.template ]; then
+      echo "skipping template creation for $project_name: template already exists"
     else
-      echo "lib: not true"
-      echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$project_name'", targets)}' > templates/vsprojects/$project_name/$project_name.vcxproj.template
+      if [ "$lib_setting" = "True" ]; then
+        echo "creating template for $project_name as library"
+        mkdir -p ./templates/vsprojects/$project_name
+        echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$project_name'", libs)}' > ./templates/vsprojects/$project_name/$project_name.vcxproj.template
+      else
+        if [ "$lib_setting" = "False" ]; then
+          echo "creating template for $project_name as target"
+          mkdir -p templates/vsprojects/$project_name
+          echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$project_name'", targets)}' > ./templates/vsprojects/$project_name/$project_name.vcxproj.template
+        else
+          echo "skipping template creation for $project_name: could not determine lib/target setting"
+        fi
+      fi
     fi
   fi
  # sleep .5     #for testing
 done
 
-./tools/buildgen/generate_projects-old.sh
+./tools/buildgen/generate_projects.sh
