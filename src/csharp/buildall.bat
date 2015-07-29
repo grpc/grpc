@@ -13,6 +13,11 @@ msbuild ..\..\vsprojects\grpc.sln /t:grpc_csharp_ext /p:PlatformToolset=v120 || 
 
 msbuild Grpc.sln /p:Configuration=Debug || goto :error
 msbuild Grpc.sln /p:Configuration=Release || goto :error
+
+if "%1" == "BUILD_SIGNED" (
+msbuild Grpc.sln /p:Configuration=ReleaseSigned || goto :error
+)
+
 endlocal
 
 goto :EOF

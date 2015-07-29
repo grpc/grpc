@@ -346,7 +346,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={

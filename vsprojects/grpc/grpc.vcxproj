@@ -76,6 +76,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>grpc</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>grpc</TargetName>
@@ -464,6 +467,8 @@
     <ClCompile Include="..\..\src\core\surface\call_log_batch.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
     </ClCompile>
