@@ -30,7 +30,7 @@ After that, you can build the solution using one of these options:
    *  gflags is automatically imported as a git submodule but it needs to have CMake run on it to be ready for a specific platform
     * download [CMake](http://www.cmake.org/) windows installer; install
     * open visual studio developer command prompt (not sure if dev command prompt is necessary)
-    * run `cmake <path to gtest directory>`
+    * run `cmake <path to gflags directory>`
     * this will build a `.sln` and fill up the `/third_party/gflags/include/gflags/` directory with headers
     * build all
    * install [NuGet](http://www.nuget.org)
