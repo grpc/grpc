@@ -34,6 +34,7 @@
 #include <grpc++/server_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
@@ -177,6 +178,16 @@ std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
     auth_context_ = CreateAuthContext(call_);
   }
   return auth_context_;
+}
+
+grpc::string ServerContext::peer() const {
+  grpc::string peer;
+  if (call_) {
+    char* c_peer = grpc_call_get_peer(call_);
+    peer = c_peer;
+    gpr_free(c_peer);
+  }
+  return peer;
 }
 
 }  // namespace grpc

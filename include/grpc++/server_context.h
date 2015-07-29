@@ -116,6 +116,8 @@ class ServerContext {
 
   std::shared_ptr<const AuthContext> auth_context() const;
 
+  grpc::string peer() const;
+
  private:
   friend class ::grpc::testing::InteropContextInspector;
   friend class ::grpc::Server;
