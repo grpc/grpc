@@ -117,7 +117,7 @@ class ServerContext {
 
   std::shared_ptr<const AuthContext> auth_context() const;
 
-  const census_context* get_census_context() const;
+  const struct census_context* census_context() const;
 
  private:
   friend class ::grpc::testing::InteropContextInspector;
