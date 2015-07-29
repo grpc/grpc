@@ -104,12 +104,12 @@ class ServerContext {
     return client_metadata_;
   }
 
-  grpc_compression_level get_compression_level() const {
+  grpc_compression_level compression_level() const {
     return compression_level_;
   }
   void set_compression_level(grpc_compression_level level);
 
-  grpc_compression_algorithm get_compression_algorithm() const {
+  grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
   }
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
