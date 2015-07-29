@@ -37,7 +37,7 @@ fail_log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-6
 
 main() {
   source grpc_docker.sh
-  test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response empty_stream timeout_on_sleeping_server slower_consumer half_duplex)
+  test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response empty_stream timeout_on_sleeping_server)
   clients=(cxx java go ruby node python csharp_mono php)
   servers=(cxx java go ruby node python csharp_mono)
   for test_case in "${test_cases[@]}"

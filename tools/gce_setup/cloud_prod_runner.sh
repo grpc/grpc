@@ -34,7 +34,7 @@ log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-ou
 
 main() {
   source grpc_docker.sh
-  test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response empty_stream timeout_on_sleeping_server slower_consumer half_duplex)
+  test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response empty_stream timeout_on_sleeping_server)
   auth_test_cases=(service_account_creds compute_engine_creds jwt_token_creds oauth2_auth_token per_rpc_creds)
   clients=(cxx java go ruby node csharp_mono csharp_dotnet python php)
   for test_case in "${test_cases[@]}"
