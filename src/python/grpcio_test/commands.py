@@ -52,4 +52,6 @@ class RunTests(setuptools.Command):
     # We import here to ensure that setup.py has had a chance to install the
     # relevant package eggs first.
     import pytest
-    pytest.main(self.pytest_args)
+    result = pytest.main(self.pytest_args)
+    if result != 0:
+      raise SystemExit(result)

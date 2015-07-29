@@ -1,3 +1,4 @@
 graft grpc_interop
 graft grpc_test
 include commands.py
+include requirements.txt
