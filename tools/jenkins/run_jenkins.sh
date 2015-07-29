@@ -92,7 +92,9 @@ then
   docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
   sleep 4
   docker rm $DOCKER_CID || true
-
+elif [ "$platform" == "interop" ]
+then
+  python tools/run_tests/run_interops.py --language=$language
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"
