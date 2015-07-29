@@ -466,14 +466,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "poll_kick_posix_test", 
-    "platforms": [
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "resolve_address_test", 
     "platforms": [
       "windows", 

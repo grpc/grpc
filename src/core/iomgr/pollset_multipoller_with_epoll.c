@@ -36,6 +36,7 @@
 #ifdef GPR_LINUX_MULTIPOLL_WITH_EPOLL
 
 #include <errno.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -44,9 +45,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+typedef struct wakeup_fd_hdl {
+  grpc_wakeup_fd wakeup_fd;
+  struct wakeup_fd_hdl *next;
+} wakeup_fd_hdl;
+
 typedef struct {
   int epoll_fd;
-  grpc_wakeup_fd_info wakeup_fd;
+  wakeup_fd_hdl *free_wakeup_fds;
 } pollset_hdr;
 
 static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
@@ -103,12 +109,14 @@ static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
 static void multipoll_with_epoll_pollset_maybe_work(
-    grpc_pollset *pollset, gpr_timespec deadline, gpr_timespec now,
-    int allow_synchronous_callback) {
+    grpc_pollset *pollset, grpc_pollset_worker *worker, gpr_timespec deadline,
+    gpr_timespec now, int allow_synchronous_callback) {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
   int ep_rv;
+  int poll_rv;
   pollset_hdr *h = pollset->data.ptr;
   int timeout_ms;
+  struct pollfd pfds[2];
 
   /* If you want to ignore epoll's ability to sanely handle parallel pollers,
    * for a more apples-to-apples performance comparison with poll, add a
@@ -116,43 +124,58 @@ static void multipoll_with_epoll_pollset_maybe_work(
    * here.
    */
 
-  pollset->counter += 1;
   gpr_mu_unlock(&pollset->mu);
 
   timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 
-  do {
-    ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
-    if (ep_rv < 0) {
-      if (errno != EINTR) {
-        gpr_log(GPR_ERROR, "epoll_wait() failed: %s", strerror(errno));
-      }
-    } else {
-      int i;
-      for (i = 0; i < ep_rv; ++i) {
-        if (ep_ev[i].data.ptr == 0) {
-          grpc_wakeup_fd_consume_wakeup(&h->wakeup_fd);
-        } else {
-          grpc_fd *fd = ep_ev[i].data.ptr;
-          /* TODO(klempner): We might want to consider making err and pri
-           * separate events */
-          int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
-          int read = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
-          int write = ep_ev[i].events & EPOLLOUT;
-          if (read || cancel) {
-            grpc_fd_become_readable(fd, allow_synchronous_callback);
+  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd);
+  pfds[0].events = POLLIN;
+  pfds[0].revents = 0;
+  pfds[1].fd = h->epoll_fd;
+  pfds[1].events = POLLIN;
+  pfds[1].revents = 0;
+
+  poll_rv = poll(pfds, 2, timeout_ms);
+
+  if (poll_rv < 0) {
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    }
+  } else if (poll_rv == 0) {
+    /* do nothing */
+  } else {
+    if (pfds[0].revents) {
+      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
+    }
+    if (pfds[1].revents) {
+      do {
+        ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
+        if (ep_rv < 0) {
+          if (errno != EINTR) {
+            gpr_log(GPR_ERROR, "epoll_wait() failed: %s", strerror(errno));
           }
-          if (write || cancel) {
-            grpc_fd_become_writable(fd, allow_synchronous_callback);
+        } else {
+          int i;
+          for (i = 0; i < ep_rv; ++i) {
+            grpc_fd *fd = ep_ev[i].data.ptr;
+            /* TODO(klempner): We might want to consider making err and pri
+             * separate events */
+            int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
+            int read = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
+            int write = ep_ev[i].events & EPOLLOUT;
+            if (read || cancel) {
+              grpc_fd_become_readable(fd, allow_synchronous_callback);
+            }
+            if (write || cancel) {
+              grpc_fd_become_writable(fd, allow_synchronous_callback);
+            }
           }
         }
-      }
+      } while (ep_rv == GRPC_EPOLL_MAX_EVENTS);
     }
-    timeout_ms = 0;
-  } while (ep_rv == GRPC_EPOLL_MAX_EVENTS);
+  }
 
   gpr_mu_lock(&pollset->mu);
-  pollset->counter -= 1;
 }
 
 static void multipoll_with_epoll_pollset_finish_shutdown(
@@ -160,21 +183,14 @@ static void multipoll_with_epoll_pollset_finish_shutdown(
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
-  grpc_wakeup_fd_destroy(&h->wakeup_fd);
   close(h->epoll_fd);
   gpr_free(h);
-}
-
-static void epoll_kick(grpc_pollset *pollset) {
-  pollset_hdr *h = pollset->data.ptr;
-  grpc_wakeup_fd_wakeup(&h->wakeup_fd);
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
     multipoll_with_epoll_pollset_add_fd,
     multipoll_with_epoll_pollset_del_fd,
     multipoll_with_epoll_pollset_maybe_work,
-    epoll_kick,
     multipoll_with_epoll_pollset_finish_shutdown,
     multipoll_with_epoll_pollset_destroy};
 
@@ -182,8 +198,6 @@ static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
                                      size_t nfds) {
   size_t i;
   pollset_hdr *h = gpr_malloc(sizeof(pollset_hdr));
-  struct epoll_event ev;
-  int err;
 
   pollset->vtable = &multipoll_with_epoll_pollset;
   pollset->data.ptr = h;
@@ -195,16 +209,6 @@ static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
   }
   for (i = 0; i < nfds; i++) {
     multipoll_with_epoll_pollset_add_fd(pollset, fds[i], 0);
-  }
-
-  grpc_wakeup_fd_create(&h->wakeup_fd);
-  ev.events = EPOLLIN;
-  ev.data.ptr = 0;
-  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD,
-                  GRPC_WAKEUP_FD_GET_READ_FD(&h->wakeup_fd), &ev);
-  if (err < 0) {
-    gpr_log(GPR_ERROR, "Wakeup fd epoll_ctl failed: %s", strerror(errno));
-    abort();
   }
 }
 

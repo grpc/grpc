@@ -108,7 +108,8 @@ grpc_fd *grpc_fd_create(int fd, const char *name);
    on_done is called when the underlying file descriptor is definitely close()d.
    If on_done is NULL, no callback will be made.
    Requires: *fd initialized; no outstanding notify_on_read or
-   notify_on_write. */
+   notify_on_write.
+   MUST NOT be called with a pollset lock taken */
 void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
                     const char *reason);
 
@@ -121,11 +122,13 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
    i.e. a combination of read_mask and write_mask determined by the fd's current
    interest in said events.
    Polling strategies that do not need to alter their behavior depending on the
-   fd's current interest (such as epoll) do not need to call this function. */
+   fd's current interest (such as epoll) do not need to call this function.
+   MUST NOT be called with a pollset lock taken */
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
                               gpr_uint32 read_mask, gpr_uint32 write_mask,
                               grpc_fd_watcher *rec);
-/* Complete polling previously started with grpc_fd_begin_poll */
+/* Complete polling previously started with grpc_fd_begin_poll
+   MUST NOT be called with a pollset lock taken */
 void grpc_fd_end_poll(grpc_fd_watcher *rec, int got_read, int got_write);
 
 /* Return 1 if this fd is orphaned, 0 otherwise */

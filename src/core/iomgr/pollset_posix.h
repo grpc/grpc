@@ -35,8 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H
 
 #include <grpc/support/sync.h>
-
-#include "src/core/iomgr/pollset_kick_posix.h"
+#include "src/core/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
@@ -45,6 +44,12 @@ typedef struct grpc_pollset_vtable grpc_pollset_vtable;
    use the struct tag */
 struct grpc_fd;
 
+typedef struct grpc_pollset_worker {
+  grpc_wakeup_fd wakeup_fd;
+  struct grpc_pollset_worker *next;
+  struct grpc_pollset_worker *prev;
+} grpc_pollset_worker;
+
 typedef struct grpc_pollset {
   /* pollsets under posix can mutate representation as fds are added and
      removed.
@@ -52,11 +57,11 @@ typedef struct grpc_pollset {
      few fds, and an epoll() based implementation for many fds */
   const grpc_pollset_vtable *vtable;
   gpr_mu mu;
-  grpc_pollset_kick_state kick_state;
-  int counter;
+  grpc_pollset_worker root_worker;
   int in_flight_cbs;
   int shutting_down;
   int called_shutdown;
+  int kicked_without_pollers;
   void (*shutdown_done_cb)(void *arg);
   void *shutdown_done_arg;
   union {
@@ -70,9 +75,9 @@ struct grpc_pollset_vtable {
                  int and_unlock_pollset);
   void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
                  int and_unlock_pollset);
-  void (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
-                     gpr_timespec now, int allow_synchronous_callback);
-  void (*kick)(grpc_pollset *pollset);
+  void (*maybe_work)(grpc_pollset *pollset, grpc_pollset_worker *worker,
+                     gpr_timespec deadline, gpr_timespec now,
+                     int allow_synchronous_callback);
   void (*finish_shutdown)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
@@ -85,22 +90,16 @@ void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
    poll after an fd is orphaned) */
 void grpc_pollset_del_fd(grpc_pollset *pollset, struct grpc_fd *fd);
 
-/* Force any current pollers to break polling: it's the callers responsibility
-   to ensure that the pollset indeed needs to be kicked - no verification that
-   the pollset is actually performing polling work is done. At worst this will
-   result in spurious wakeups if performed at the wrong moment.
-   Does not touch pollset->mu. */
-void grpc_pollset_force_kick(grpc_pollset *pollset);
 /* Returns the fd to listen on for kicks */
 int grpc_kick_read_fd(grpc_pollset *p);
 /* Call after polling has been kicked to leave the kicked state */
 void grpc_kick_drain(grpc_pollset *p);
 
 /* Convert a timespec to milliseconds:
-   - very small or negative poll times are clamped to zero to do a 
+   - very small or negative poll times are clamped to zero to do a
      non-blocking poll (which becomes spin polling)
    - other small values are rounded up to one millisecond
-   - longer than a millisecond polls are rounded up to the next nearest 
+   - longer than a millisecond polls are rounded up to the next nearest
      millisecond to avoid spinning
    - infinite timeouts are converted to -1 */
 int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now);
