@@ -508,7 +508,12 @@ grpc_cloud_prod_auth_test_args() {
   grpc_gen_test_cmd="grpc_cloud_prod_auth_"
   [[ -n $1 ]] && {  # test_case
     test_case=$1
-    grpc_gen_test_cmd+="$1"
+    test_command="service_account_creds"
+    if [ "$test_case" == "compute_engine_creds" ]
+    then
+      test_command="compute_engine_creds"
+    fi
+    grpc_gen_test_cmd+=$test_command
     shift
   } || {
     echo "$FUNCNAME: missing arg: test_case" 1>&2
