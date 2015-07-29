@@ -155,7 +155,7 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *cq,
                                     const char *method, const char *host,
                                     gpr_timespec deadline, void *reserved) {
-  (void) reserved;
+  GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, cq,
       grpc_mdelem_from_metadata_strings(
@@ -170,7 +170,7 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host, void *reserved) {
   registered_call *rc = gpr_malloc(sizeof(registered_call));
-  (void) reserved;
+  GPR_ASSERT(!reserved);
   rc->path = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, GRPC_MDSTR_REF(channel->path_string),
       grpc_mdstr_from_string(channel->metadata_context, method));
@@ -188,7 +188,7 @@ grpc_call *grpc_channel_create_registered_call(
     grpc_channel *channel, grpc_completion_queue *completion_queue,
     void *registered_call_handle, gpr_timespec deadline, void *reserved) {
   registered_call *rc = registered_call_handle;
-  (void) reserved;
+  GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, completion_queue, GRPC_MDELEM_REF(rc->path),
       GRPC_MDELEM_REF(rc->authority), deadline);

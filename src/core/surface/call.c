@@ -1187,7 +1187,7 @@ void grpc_call_destroy(grpc_call *c) {
 }
 
 grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
-  (void) reserved;
+  GPR_ASSERT(!reserved);
   return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
                                       NULL);
 }
@@ -1431,7 +1431,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   const grpc_op *op;
   grpc_ioreq *req;
   void (*finish_func)(grpc_call *, int, void *) = finish_batch;
-  (void) reserved;
+  GPR_ASSERT(!reserved);
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
@@ -1446,6 +1446,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   /* rewrite batch ops into ioreq ops */
   for (in = 0, out = 0; in < nops; in++) {
     op = &ops[in];
+    GPR_ASSERT(!op->reserved);
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         /* Flag validation: currently allow no flags */
