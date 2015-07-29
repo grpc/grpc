@@ -236,7 +236,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
       deadline = Infinity;
     }
     var emitter = new EventEmitter();
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = new grpc.Call(this.$channel, method, deadline);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
@@ -246,7 +246,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     emitter.getPeer = function getPeer() {
       return call.getPeer();
     };
-    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -309,12 +309,12 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
     if (deadline === undefined) {
       deadline = Infinity;
     }
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = new grpc.Call(this.$channel, method, deadline);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
     var stream = new ClientWritableStream(call, serialize);
-    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -383,12 +383,12 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
     if (deadline === undefined) {
       deadline = Infinity;
     }
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = new grpc.Call(this.$channel, method, deadline);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
     var stream = new ClientReadableStream(call, deserialize);
-    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -455,12 +455,12 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
     if (deadline === undefined) {
       deadline = Infinity;
     }
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = new grpc.Call(this.$channel, method, deadline);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
     var stream = new ClientDuplexStream(call, serialize, deserialize);
-    this.updateMetadata(this.auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -545,14 +545,17 @@ exports.makeClientConstructor = function(methods, serviceName) {
       options = {};
     }
     options['grpc.primary_user_agent'] = 'grpc-node/' + version;
-    this.channel = new grpc.Channel(address, options);
-    this.server_address = address.replace(/\/$/, '');
-    this.auth_uri = this.server_address + '/' + serviceName;
-    this.updateMetadata = updateMetadata;
+    this.$channel = new grpc.Channel(address, options);
+    this.$server_address = address.replace(/\/$/, '');
+    this.$auth_uri = this.$server_address + '/' + serviceName;
+    this.$updateMetadata = updateMetadata;
   }
 
   _.each(methods, function(attrs, name) {
     var method_type;
+    if (_.startsWith(name, '$')) {
+      throw new Error('Method names cannot start with $');
+    }
     if (attrs.requestStream) {
       if (attrs.responseStream) {
         method_type = 'bidi';
