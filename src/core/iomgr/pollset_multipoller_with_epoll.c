@@ -51,21 +51,21 @@ typedef struct wakeup_fd_hdl {
 } wakeup_fd_hdl;
 
 typedef struct {
+  grpc_pollset *pollset;
+  grpc_fd *fd;
+  grpc_iomgr_closure closure;
+} delayed_add;
+
+typedef struct {
   int epoll_fd;
   wakeup_fd_hdl *free_wakeup_fds;
 } pollset_hdr;
 
-static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
-                                                grpc_fd *fd,
-                                                int and_unlock_pollset) {
+static void finally_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   pollset_hdr *h = pollset->data.ptr;
   struct epoll_event ev;
   int err;
   grpc_fd_watcher watcher;
-
-  if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
-  }
 
   /* We pretend to be polling whilst adding an fd to keep the fd from being
      closed during the add. This may result in a spurious wakeup being assigned
@@ -84,6 +84,52 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
     }
   }
   grpc_fd_end_poll(&watcher, 0, 0);
+}
+
+static void perform_delayed_add(void *arg, int iomgr_status) {
+  delayed_add *da = arg;
+  int do_shutdown_cb = 0;
+
+  if (!grpc_fd_is_orphaned(da->fd)) {
+    finally_add_fd(da->pollset, da->fd);
+  }
+
+  gpr_mu_lock(&da->pollset->mu);
+  da->pollset->in_flight_cbs--;
+  if (da->pollset->shutting_down) {
+    /* We don't care about this pollset anymore. */
+    if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown) {
+      GPR_ASSERT(!grpc_pollset_has_workers(da->pollset));
+      da->pollset->called_shutdown = 1;
+      do_shutdown_cb = 1;
+    }
+  }
+  gpr_mu_unlock(&da->pollset->mu);
+
+  GRPC_FD_UNREF(da->fd, "delayed_add");
+
+  if (do_shutdown_cb) {
+    da->pollset->shutdown_done_cb(da->pollset->shutdown_done_arg);
+  }
+
+  gpr_free(da);
+}
+
+static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
+                                                grpc_fd *fd,
+                                                int and_unlock_pollset) {
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+    finally_add_fd(pollset, fd);
+  } else {
+    delayed_add *da = gpr_malloc(sizeof(*da));
+    da->pollset = pollset;
+    da->fd = fd;
+    GRPC_FD_REF(fd, "delayed_add");
+    grpc_iomgr_closure_init(&da->closure, perform_delayed_add, da);
+    pollset->in_flight_cbs++;
+    grpc_iomgr_add_callback(&da->closure);
+  }
 }
 
 static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,

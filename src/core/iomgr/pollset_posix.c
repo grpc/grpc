@@ -62,12 +62,12 @@ static void remove_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->next->prev = worker->prev;
 }
 
-static int has_workers(grpc_pollset *p) {
+int grpc_pollset_has_workers(grpc_pollset *p) {
   return p->root_worker.next != &p->root_worker;
 }
 
 static grpc_pollset_worker *pop_front_worker(grpc_pollset *p) {
-  if (has_workers(p)) {
+  if (grpc_pollset_has_workers(p)) {
     grpc_pollset_worker *w = p->root_worker.next;
     remove_worker(p, w);
     return w;
@@ -204,7 +204,7 @@ done:
     remove_worker(pollset, worker);
   }
   if (pollset->shutting_down) {
-    if (has_workers(pollset)) {
+    if (grpc_pollset_has_workers(pollset)) {
       grpc_pollset_kick(pollset, NULL);
     } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
       pollset->called_shutdown = 1;
@@ -228,7 +228,7 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
   GPR_ASSERT(!pollset->shutting_down);
   pollset->shutting_down = 1;
   if (!pollset->called_shutdown && pollset->in_flight_cbs == 0 &&
-      !has_workers(pollset)) {
+      !grpc_pollset_has_workers(pollset)) {
     pollset->called_shutdown = 1;
     call_shutdown = 1;
   }
@@ -245,7 +245,7 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->shutting_down);
   GPR_ASSERT(pollset->in_flight_cbs == 0);
-  GPR_ASSERT(!has_workers(pollset));
+  GPR_ASSERT(!grpc_pollset_has_workers(pollset));
   pollset->vtable->destroy(pollset);
   gpr_mu_destroy(&pollset->mu);
 }
@@ -297,7 +297,7 @@ static void basic_do_promote(void *args, int success) {
 
   gpr_mu_lock(&pollset->mu);
   /* First we need to ensure that nobody is polling concurrently */
-  if (has_workers(pollset)) {
+  if (grpc_pollset_has_workers(pollset)) {
     grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
     grpc_iomgr_add_callback(&up_args->promotion_closure);
     gpr_mu_unlock(&pollset->mu);
@@ -314,7 +314,7 @@ static void basic_do_promote(void *args, int success) {
   if (pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
     if (pollset->in_flight_cbs == 0 && !pollset->called_shutdown) {
-      GPR_ASSERT(!has_workers(pollset));
+      GPR_ASSERT(!grpc_pollset_has_workers(pollset));
       pollset->called_shutdown = 1;
       do_shutdown_cb = 1;
     }
@@ -357,7 +357,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
   GPR_ASSERT(fd);
   if (fd == pollset->data.ptr) goto exit;
 
-  if (!has_workers(pollset)) {
+  if (!grpc_pollset_has_workers(pollset)) {
     /* Fast path -- no in flight cbs */
     /* TODO(klempner): Comment this out and fix any test failures or establish
      * they are due to timing issues */

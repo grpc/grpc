@@ -113,4 +113,8 @@ extern grpc_platform_become_multipoller_type grpc_platform_become_multipoller;
 void grpc_poll_become_multipoller(grpc_pollset *pollset, struct grpc_fd **fds,
                                   size_t fd_count);
 
+/* Return 1 if the pollset has active threads in grpc_pollset_work (pollset must
+ * be locked) */
+int grpc_pollset_has_workers(grpc_pollset *pollset);
+
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */
