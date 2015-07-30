@@ -966,6 +966,7 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   op.set_accept_stream_user_data = chand;
   op.on_connectivity_state_change = &chand->channel_connectivity_changed;
   op.connectivity_state = &chand->connectivity_state;
+  op.disconnect = gpr_atm_acq_load(&s->shutdown_flag);
   grpc_transport_perform_op(transport, &op);
 }
 
