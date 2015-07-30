@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -29,14 +29,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+set -e
 
-export GRPC_CONFIG=${CONFIG:-opt}
+#clean up any old docker files and start mirroring repository if not started already
+sudo docker rmi -f grpc/cxx || true
+sudo docker rmi -f grpc/base || true
+sudo docker rmi -f 0.0.0.0:5000/grpc/base || true
+sudo docker run -d -e GCS_BUCKET=docker-interop-images  -e STORAGE_PATH=/admin/docker_images -p 5000:5000 google/docker-registry || true
 
-# change to grpc's ruby directory
-cd $(dirname $0)/../../src/ruby
+#prepare building by pulling down base images and necessary files
+sudo docker pull 0.0.0.0:5000/grpc/base
+sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
+gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
+gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
 
-rm -rf ./tmp
-
-bundle install
-rake compile:grpc
+#build docker file, add more languages later
+sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx

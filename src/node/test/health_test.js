@@ -56,7 +56,8 @@ describe('Health Checking', function() {
   before(function() {
     var port_num = healthServer.bind('0.0.0.0:0');
     healthServer.start();
-    healthClient = new health.Client('localhost:' + port_num);
+    healthClient = new health.Client('localhost:' + port_num,
+                                     grpc.Credentials.createInsecure());
   });
   after(function() {
     healthServer.shutdown();

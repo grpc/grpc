@@ -590,7 +590,6 @@
     "language": "c++", 
     "name": "async_streaming_ping_pong_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -599,7 +598,6 @@
     "language": "c++", 
     "name": "async_unary_ping_pong_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -635,7 +633,6 @@
     "language": "c++", 
     "name": "client_crash_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -716,7 +713,6 @@
     "language": "c++", 
     "name": "interop_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -734,7 +730,6 @@
     "language": "c++", 
     "name": "qps_openloop_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -743,7 +738,6 @@
     "language": "c++", 
     "name": "qps_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -761,7 +755,6 @@
     "language": "c++", 
     "name": "server_crash_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -779,7 +772,6 @@
     "language": "c++", 
     "name": "sync_streaming_ping_pong_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 
@@ -788,7 +780,6 @@
     "language": "c++", 
     "name": "sync_unary_ping_pong_test", 
     "platforms": [
-      "windows", 
       "posix"
     ]
   }, 

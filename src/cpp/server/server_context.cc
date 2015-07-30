@@ -179,4 +179,8 @@ std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
   return auth_context_;
 }
 
+const struct census_context* ServerContext::census_context() const {
+  return grpc_census_call_get_context(call_);
+}
+
 }  // namespace grpc

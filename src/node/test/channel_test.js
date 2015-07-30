@@ -56,12 +56,13 @@ function multiDone(done, count) {
     }
   };
 }
+var insecureCreds = grpc.Credentials.createInsecure();
 
 describe('channel', function() {
   describe('constructor', function() {
     it('should require a string for the first argument', function() {
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname');
+        new grpc.Channel('hostname', insecureCreds);
       });
       assert.throws(function() {
         new grpc.Channel();
@@ -70,33 +71,44 @@ describe('channel', function() {
         new grpc.Channel(5);
       });
     });
-    it('should accept an object for the second parameter', function() {
+    it('should require a credential for the second argument', function() {
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname', {});
+        new grpc.Channel('hostname', insecureCreds);
       });
       assert.throws(function() {
         new grpc.Channel('hostname', 5);
       });
+      assert.throws(function() {
+        new grpc.Channel('hostname');
+      });
+    });
+    it('should accept an object for the third argument', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Channel('hostname', insecureCreds, {});
+      });
+      assert.throws(function() {
+        new grpc.Channel('hostname', insecureCreds, 'abc');
+      });
     });
     it('should only accept objects with string or int values', function() {
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname', {'key' : 'value'});
+        new grpc.Channel('hostname', insecureCreds,{'key' : 'value'});
       });
       assert.doesNotThrow(function() {
-        new grpc.Channel('hostname', {'key' : 5});
+        new grpc.Channel('hostname', insecureCreds, {'key' : 5});
       });
       assert.throws(function() {
-        new grpc.Channel('hostname', {'key' : null});
+        new grpc.Channel('hostname', insecureCreds, {'key' : null});
       });
       assert.throws(function() {
-        new grpc.Channel('hostname', {'key' : new Date()});
+        new grpc.Channel('hostname', insecureCreds, {'key' : new Date()});
       });
     });
   });
   describe('close', function() {
     var channel;
     beforeEach(function() {
-      channel = new grpc.Channel('hostname', {});
+      channel = new grpc.Channel('hostname', insecureCreds, {});
     });
     it('should succeed silently', function() {
       assert.doesNotThrow(function() {
@@ -113,7 +125,7 @@ describe('channel', function() {
   describe('getTarget', function() {
     var channel;
     beforeEach(function() {
-      channel = new grpc.Channel('hostname', {});
+      channel = new grpc.Channel('hostname', insecureCreds, {});
     });
     it('should return a string', function() {
       assert.strictEqual(typeof channel.getTarget(), 'string');
@@ -122,7 +134,7 @@ describe('channel', function() {
   describe('getConnectivityState', function() {
     var channel;
     beforeEach(function() {
-      channel = new grpc.Channel('hostname', {});
+      channel = new grpc.Channel('hostname', insecureCreds, {});
     });
     it('should return IDLE for a new channel', function() {
       assert.strictEqual(channel.getConnectivityState(),
@@ -132,7 +144,7 @@ describe('channel', function() {
   describe('watchConnectivityState', function() {
     var channel;
     beforeEach(function() {
-      channel = new grpc.Channel('localhost', {});
+      channel = new grpc.Channel('localhost', insecureCreds, {});
     });
     afterEach(function() {
       channel.close();

@@ -75,6 +75,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>grpc_unsecure</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>grpc_unsecure</TargetName>
@@ -154,7 +156,6 @@
     <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h" />
     <ClInclude Include="..\..\src\core\channel\census_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />

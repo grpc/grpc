@@ -143,7 +143,7 @@ describe('Client#$waitForReady', function() {
     Client = surface_client.makeProtobufClientConstructor(mathService);
   });
   beforeEach(function() {
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
   });
   after(function() {
     server.shutdown();
@@ -200,7 +200,7 @@ describe('Echo service', function() {
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(echo_service);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -245,7 +245,8 @@ describe('Generic client and server', function() {
       var port = server.bind('localhost:0');
       server.start();
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
-      client = new Client('localhost:' + port);
+      client = new Client('localhost:' + port,
+                          grpc.Credentials.createInsecure());
     });
     after(function() {
       server.shutdown();
@@ -292,7 +293,7 @@ describe('Echo metadata', function() {
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -413,7 +414,7 @@ describe('Other conditions', function() {
     });
     port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -458,7 +459,8 @@ describe('Other conditions', function() {
       };
       var Client = surface_client.makeClientConstructor(test_service_attrs,
                                                         'TestService');
-      misbehavingClient = new Client('localhost:' + port);
+      misbehavingClient = new Client('localhost:' + port,
+                                     grpc.Credentials.createInsecure());
     });
     it('should respond correctly to a unary call', function(done) {
       misbehavingClient.unary(badArg, function(err, data) {
@@ -678,7 +680,7 @@ describe('Cancelling surface client', function() {
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(mathService);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {

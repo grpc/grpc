@@ -76,6 +76,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>grpc</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>grpc</TargetName>
@@ -173,7 +176,6 @@
     <ClInclude Include="..\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h" />
-    <ClInclude Include="..\..\src\core\census\grpc_context.h" />
     <ClInclude Include="..\..\src\core\channel\census_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
