@@ -113,11 +113,9 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     // extract timestamps and set response
     Verify(response);
     reconnect_server_clear_timestamps(&tcp_server_);
-    {
-      std::lock_guard<std::mutex> lock(mu_);
-      serving_ = false;
-      cv_.notify_one();
-    }
+    std::lock_guard<std::mutex> lock(mu_);
+    serving_ = false;
+    cv_.notify_one();
     return Status::OK;
   }
 
