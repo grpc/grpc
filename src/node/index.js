@@ -48,7 +48,7 @@ var grpc = require('bindings')('grpc');
  * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
  * @return {Object<string, *>} The resulting gRPC object
  */
-function loadObject(value) {
+exports.loadObject = function loadObject(value) {
   var result = {};
   if (value.className === 'Namespace') {
     _.each(value.children, function(child) {
@@ -62,7 +62,9 @@ function loadObject(value) {
   } else {
     return value;
   }
-}
+};
+
+var loadObject = exports.loadObject;
 
 /**
  * Load a gRPC object from a .proto file.
@@ -71,7 +73,7 @@ function loadObject(value) {
  *     'json'. Defaults to 'proto'
  * @return {Object<string, *>} The resulting gRPC object
  */
-function load(filename, format) {
+exports.load = function load(filename, format) {
   if (!format) {
     format = 'proto';
   }
@@ -88,7 +90,7 @@ function load(filename, format) {
   }
 
   return loadObject(builder.ns);
-}
+};
 
 /**
  * Get a function that a client can use to update metadata with authentication
@@ -97,7 +99,7 @@ function load(filename, format) {
  * @param {Object} credential The credential object to use
  * @return {function(Object, callback)} Metadata updater function
  */
-function getGoogleAuthDelegate(credential) {
+exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
   /**
    * Update a metadata object with authentication information.
    * @param {string} authURI The uri to authenticate to
@@ -120,20 +122,10 @@ function getGoogleAuthDelegate(credential) {
       callback(null, metadata);
     });
   };
-}
+};
 
 /**
- * See docs for loadObject
- */
-exports.loadObject = loadObject;
-
-/**
- * See docs for load
- */
-exports.load = load;
-
-/**
- * See docs for Server
+ * @see module:src/server.Server
  */
 exports.Server = server.Server;
 
@@ -141,6 +133,7 @@ exports.Server = server.Server;
  * Status name to code number mapping
  */
 exports.status = grpc.status;
+
 /**
  * Call error name to code number mapping
  */
@@ -156,6 +149,7 @@ exports.Credentials = grpc.Credentials;
  */
 exports.ServerCredentials = grpc.ServerCredentials;
 
-exports.getGoogleAuthDelegate = getGoogleAuthDelegate;
-
+/**
+ * @see module:src/client.makeClientConstructor
+ */
 exports.makeGenericClientConstructor = client.makeClientConstructor;

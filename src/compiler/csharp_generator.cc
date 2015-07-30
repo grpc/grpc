@@ -298,11 +298,13 @@ void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor *method = service->method(i);
-    out->Print("$returntype$ $methodname$($request$$response_stream_maybe$, ServerCallContext context);\n",
-               "methodname", method->name(), "returntype",
-               GetMethodReturnTypeServer(method), "request",
-               GetMethodRequestParamServer(method), "response_stream_maybe",
-               GetMethodResponseStreamMaybe(method));
+    out->Print(
+        "$returntype$ $methodname$($request$$response_stream_maybe$, "
+        "ServerCallContext context);\n",
+        "methodname", method->name(), "returntype",
+        GetMethodReturnTypeServer(method), "request",
+        GetMethodRequestParamServer(method), "response_stream_maybe",
+        GetMethodResponseStreamMaybe(method));
   }
   out->Outdent();
   out->Print("}\n");
