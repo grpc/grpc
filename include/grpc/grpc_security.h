@@ -87,7 +87,7 @@ typedef struct {
      directory).
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
-     not have such a key/cert pair.  */
+     not have such a key/cert pair. */
 grpc_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair);
 
@@ -174,10 +174,13 @@ void grpc_server_credentials_release(grpc_server_credentials *creds);
    - pem_key_cert_pairs is an array private key / certificate chains of the
      server. This parameter cannot be NULL.
    - num_key_cert_pairs indicates the number of items in the private_key_files
-     and cert_chain_files parameters. It should be at least 1. */
+     and cert_chain_files parameters. It should be at least 1.
+   - force_client_auth, if set to non-zero will force the client to authenticate
+     with an SSL cert. Note that this option is ignored if pem_root_certs is
+     NULL. */
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs);
+    size_t num_key_cert_pairs, int force_client_auth);
 
 /* --- Server-side secure ports. --- */
 

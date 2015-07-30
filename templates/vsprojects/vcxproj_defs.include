@@ -12,19 +12,21 @@
     if t.name == name:
       target = t
   if not configuration_type and target:
+    print target.name
     if target.build == 'test' or target.build == 'tool':
       configuration_type = 'Application'
   if not configuration_type:
     configuration_type = 'StaticLibrary'
   if not project_guid:
     project_guid = project.vs_project_guid
+  if target.build == 'test' and target.language == 'c++':
+    props.extend(['cpptest'])
   if configuration_type == 'Application':
+    print target.build
     if target.build == 'protoc':
       props.extend(['protoc'])
     else:
       props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
-    if target.language == 'c++':
-      props.extend(['protobuf'])
   props.extend(['global'])
 %>\
 <?xml version="1.0" encoding="utf-8"?>
@@ -113,6 +115,13 @@ ${gen_package_props(packages)}\
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>${name}</TargetName>
+    % if "zlib" in packages:
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
+    % endif
+    % if "openssl" in packages:
+    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
+    % endif
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>${name}</TargetName>
@@ -200,8 +209,20 @@ ${gen_package_props(packages)}\
   % if project.get('src',[]):
   <ItemGroup>
     % for src_name in project.src:
+      % if src_name.endswith(".proto"):
+<% src_name_parts = src_name.split(".") %>\
+    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".pb.cc")}">
+    </ClCompile>
+    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".pb.h")}">
+    </ClInclude>
+    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.cc")}">
+    </ClCompile>
+    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.h")}">
+    </ClInclude>
+      % else:
     <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name)}">
     </ClCompile>
+      % endif
     % endfor
   </ItemGroup>
   % elif configuration_type != 'StaticLibrary':

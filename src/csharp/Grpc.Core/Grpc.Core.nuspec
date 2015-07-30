@@ -21,9 +21,9 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin/Release/Grpc.Core.dll" target="lib/net45" />
-	<file src="bin/Release/Grpc.Core.pdb" target="lib/net45" />
-	<file src="bin/Release/Grpc.Core.xml" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Core.dll" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Core.pdb" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Core.xml" target="lib/net45" />
 	<file src="**\*.cs" target="src" />
   </files>
 </package>

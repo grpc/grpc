@@ -82,7 +82,8 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
   }
   ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
       client_args, GRPC_COMPRESS_GZIP);
-  f->client = grpc_channel_create(ffd->localaddr, ffd->client_args_compression);
+  f->client = grpc_insecure_channel_create(ffd->localaddr,
+                                           ffd->client_args_compression);
 }
 
 void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,

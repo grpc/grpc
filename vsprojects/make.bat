@@ -5,6 +5,7 @@ setlocal
 @rem Set VS variables (uses Visual Studio 2013)
 @call "%VS120COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
 
-nmake /f Grpc.mak %*
+@rem /K: continue on error
+nmake /K /f Grpc.mak %*
 exit /b %ERRORLEVEL%
 endlocal

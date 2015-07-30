@@ -87,7 +87,7 @@ class condition_variable {
   ~condition_variable() { gpr_cv_destroy(&cv_); }
   void wait(lock_guard<mutex> &mu) {
     mu.locked = false;
-    gpr_cv_wait(&cv_, &mu.mu_.mu_, gpr_inf_future(GPR_CLOCK_REALTIME);
+    gpr_cv_wait(&cv_, &mu.mu_.mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
     mu.locked = true;
   }
   void notify_one() { gpr_cv_signal(&cv_); }
