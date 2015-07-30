@@ -57,6 +57,8 @@ function multiDone(done, count) {
   };
 }
 
+var insecureCreds = grpc.Credentials.createInsecure();
+
 describe('end-to-end', function() {
   var server;
   var channel;
@@ -65,7 +67,7 @@ describe('end-to-end', function() {
     var port_num = server.addHttp2Port('0.0.0.0:0',
                                        grpc.ServerCredentials.createInsecure());
     server.start();
-    channel = new grpc.Channel('localhost:' + port_num);
+    channel = new grpc.Channel('localhost:' + port_num, insecureCreds);
   });
   after(function() {
     server.shutdown();

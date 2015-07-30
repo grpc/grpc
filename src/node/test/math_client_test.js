@@ -54,7 +54,8 @@ describe('Math client', function() {
     var port_num = server.bind('0.0.0.0:0',
                                grpc.ServerCredentials.createInsecure());
     server.start();
-    math_client = new math.Math('localhost:' + port_num);
+    math_client = new math.Math('localhost:' + port_num,
+                                grpc.Credentials.createInsecure());
     done();
   });
   after(function() {

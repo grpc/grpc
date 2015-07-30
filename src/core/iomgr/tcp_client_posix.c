@@ -89,11 +89,11 @@ error:
   return 0;
 }
 
-static void on_alarm(void *acp, int success) {
+static void tc_on_alarm(void *acp, int success) {
   int done;
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  if (ac->fd != NULL && success) {
+  if (ac->fd != NULL) {
     grpc_fd_shutdown(ac->fd);
   }
   done = (--ac->refs == 0);
@@ -110,11 +110,17 @@ static void on_writable(void *acp, int success) {
   int so_error = 0;
   socklen_t so_error_size;
   int err;
-  int fd = ac->fd->fd;
   int done;
   grpc_endpoint *ep = NULL;
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
+  grpc_fd *fd;
+
+  gpr_mu_lock(&ac->mu);
+  GPR_ASSERT(ac->fd);
+  fd = ac->fd;
+  ac->fd = NULL;
+  gpr_mu_unlock(&ac->mu);
 
   grpc_alarm_cancel(&ac->alarm);
 
@@ -122,7 +128,7 @@ static void on_writable(void *acp, int success) {
   if (success) {
     do {
       so_error_size = sizeof(so_error);
-      err = getsockopt(fd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
+      err = getsockopt(fd->fd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
     } while (err < 0 && errno == EINTR);
     if (err < 0) {
       gpr_log(GPR_ERROR, "getsockopt(ERROR): %s", strerror(errno));
@@ -145,7 +151,7 @@ static void on_writable(void *acp, int success) {
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
         gpr_mu_unlock(&ac->mu);
-        grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+        grpc_fd_notify_on_write(fd, &ac->write_closure);
         return;
       } else {
         switch (so_error) {
@@ -159,9 +165,9 @@ static void on_writable(void *acp, int success) {
         goto finish;
       }
     } else {
-      grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
-      ep = grpc_tcp_create(ac->fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE,
-                           ac->addr_str);
+      grpc_pollset_set_del_fd(ac->interested_parties, fd);
+      ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
+      fd = NULL;
       goto finish;
     }
   } else {
@@ -172,11 +178,10 @@ static void on_writable(void *acp, int success) {
   abort();
 
 finish:
-  if (ep == NULL) {
-    grpc_pollset_set_del_fd(ac->interested_parties, ac->fd);
-    grpc_fd_orphan(ac->fd, NULL, "tcp_client_orphan");
-  } else {
-    ac->fd = NULL;
+  if (fd != NULL) {
+    grpc_pollset_set_del_fd(ac->interested_parties, fd);
+    grpc_fd_orphan(fd, NULL, "tcp_client_orphan");
+    fd = NULL;
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -260,7 +265,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
 
   gpr_mu_lock(&ac->mu);
   grpc_alarm_init(&ac->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), 
-                  on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
+                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 
