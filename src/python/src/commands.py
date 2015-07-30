@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -29,14 +27,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Provides distutils command classes for the GRPC Python setup process."""
 
-export GRPC_CONFIG=${CONFIG:-opt}
+import os
+import os.path
+import sys
 
-# change to grpc's ruby directory
-cd $(dirname $0)/../../src/ruby
+import setuptools
 
-rm -rf ./tmp
+_CONF_PY_ADDENDUM = """
+extensions.append('sphinx.ext.napoleon')
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
 
-bundle install
-rake compile:grpc
+html_theme = 'sphinx_rtd_theme'
+"""
+
+class SphinxDocumentation(setuptools.Command):
+  """Command to generate documentation via sphinx."""
+
+  description = ''
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    # We import here to ensure that setup.py has had a chance to install the
+    # relevant package eggs first.
+    import sphinx
+    import sphinx.apidoc
+    metadata = self.distribution.metadata
+    src_dir = os.path.join(
+        os.getcwd(), self.distribution.package_dir['grpc'])
+    sys.path.append(src_dir)
+    sphinx.apidoc.main([
+        '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
+        '-V', metadata.version, '-R', metadata.version,
+        '-o', os.path.join('doc', 'src'), src_dir])
+    conf_filepath = os.path.join('doc', 'src', 'conf.py')
+    with open(conf_filepath, 'a') as conf_file:
+      conf_file.write(_CONF_PY_ADDENDUM)
+    sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
+

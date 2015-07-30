@@ -132,7 +132,7 @@ struct grpc_subchannel {
   /** our alarm */
   grpc_alarm alarm;
   /** current random value */
-  gpr_int32 random;
+  gpr_uint32 random;
 };
 
 struct grpc_subchannel_call {
@@ -272,8 +272,8 @@ void grpc_subchannel_del_interested_party(grpc_subchannel *c,
   grpc_pollset_set_del_pollset(c->pollset_set, pollset);
 }
 
-static gpr_int32 random_seed() {
-  return gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC));
+static gpr_uint32 random_seed() {
+  return (gpr_uint32)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
 }
 
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,

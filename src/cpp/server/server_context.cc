@@ -39,6 +39,7 @@
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
+#include "src/core/census/grpc_context.h"
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
@@ -177,6 +178,10 @@ std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
     auth_context_ = CreateAuthContext(call_);
   }
   return auth_context_;
+}
+
+const struct census_context* ServerContext::census_context() const {
+  return grpc_census_call_get_context(call_);
 }
 
 }  // namespace grpc
