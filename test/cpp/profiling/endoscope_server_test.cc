@@ -93,7 +93,8 @@ class EndoscopeServerTest : public ::testing::Test {
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
-    args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "endoscope_test");
+    args.SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36");
+    args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "");
     channel_ = CreateChannel(server_address_.str(), SslCredentials(ssl_opts),
                              args);
     stub_ = std::move(Endoscope::NewStub(channel_));
@@ -112,8 +113,13 @@ TEST_F(EndoscopeServerTest, BuiltInTagTest) {
   EndoSnapshotPB snapshot;
 
   ClientContext context;
+  context.AddMetadata("accept", "*/*");
+  context.AddMetadata("accept-language", "en-US,en;q=0.8");
+  context.AddMetadata("content-length", "5");
+  context.AddMetadata("origin", "https://foo.test.google.fr");
+  context.AddMetadata("referer", "https://foo.test.google.fr/endo_console.html");
   Status s = stub_->Action(&context, request, &snapshot);
-  // EXPECT_EQ(0, s.error_code());
+  // EXPECT_EQ(0, s.error_code());  // error_code == 2 if grpc_status is removed
 
   EXPECT_GE(snapshot.marker_size(), 2);
   EXPECT_EQ("GRPC_PTAG_CPP_CALL_CREATE", snapshot.marker(0).name());
