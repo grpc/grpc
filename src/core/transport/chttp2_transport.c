@@ -823,6 +823,12 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
                                                            stream_global);
       } else {
         stream_global->write_state = GRPC_WRITE_STATE_SENT_CLOSE;
+        if (stream_global->outgoing_sopb != NULL) {
+          grpc_sopb_reset(stream_global->outgoing_sopb);
+          stream_global->outgoing_sopb = NULL;
+          grpc_chttp2_schedule_closure(transport_global,
+                                       stream_global->send_done_closure, 1);
+        }
         stream_global->read_closed = 1;
         if (!stream_global->published_cancelled) {
           char buffer[GPR_LTOA_MIN_BUFSIZE];
