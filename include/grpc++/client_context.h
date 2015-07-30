@@ -45,6 +45,7 @@
 #include <grpc++/config.h>
 #include <grpc++/status.h>
 #include <grpc++/time.h>
+#include <grpc++/impl/sync.h>
 
 struct grpc_call;
 struct grpc_completion_queue;
@@ -176,6 +177,12 @@ class ClientContext {
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
   grpc_compression_algorithm compression_algorithm_;
+  grpc::mutex mu_;
+  enum State {
+    CREATED,
+    STARTED
+  };
+  State state_;
 };
 
 }  // namespace grpc

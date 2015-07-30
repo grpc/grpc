@@ -47,7 +47,8 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
       cq_(nullptr),
-      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
+      state_(CREATED) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -70,13 +71,26 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<ChannelInterface>& channel) {
+  {
+    grpc::lock_guard<grpc::mutex> lock(mu_);
+    if (state_ > CREATED) {
+      grpc_call_destroy(call_);
+      call_ = call;
+      channel_ = channel;
+      grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
+                                   "ClientContext should not be reused.");
+      return;
+    } else {
+      state_ = STARTED;
+    }
+  }
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
-  channel_ = channel;
   if (creds_ && !creds_->ApplyToCall(call_)) {
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.");
   }
+  channel_ = channel;
 }
 
 void ClientContext::set_compression_algorithm(
