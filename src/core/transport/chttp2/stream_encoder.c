@@ -491,7 +491,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
         grpc_metadata_batch_assert_ok(&op->data.metadata);
         /* these just get copied as they don't impact the number of flow
            controlled bytes */
-        if (op->data.metadata.list.head != NULL) {  /* add */
+        if (op->data.metadata.list.head != NULL) {  /* skip empty header */
           grpc_sopb_append(outops, op, 1);
         }
         curop++;

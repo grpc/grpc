@@ -155,7 +155,10 @@ static void hs_on_recv(void *user_data, int success) {
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
-      if (calld->seen_post && calld->seen_scheme /*&& calld->seen_te_trailers*/ &&
+      if (calld->seen_post && calld->seen_scheme &&
+#ifndef GRPC_BROWSER_SUPPORT
+          calld->seen_te_trailers &&
+#endif
           calld->seen_path) {
         /* do nothing */
       } else {
@@ -168,9 +171,11 @@ static void hs_on_recv(void *user_data, int success) {
         if (!calld->seen_scheme) {
           gpr_log(GPR_ERROR, "Missing :scheme header");
         }
+#ifndef GRPC_BROWSER_SUPPORT
         if (!calld->seen_te_trailers) {
           gpr_log(GPR_ERROR, "Missing te trailers header");
         }
+#endif
         /* Error this call out */
         success = 0;
         grpc_call_element_send_cancel(elem);
@@ -196,7 +201,7 @@ static void hs_mutate_op(grpc_call_element *elem,
       calld->sent_status = 1;
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
                                    GRPC_MDELEM_REF(channeld->status_ok));
-#ifdef GRPC_ENDOSCOPE_PROFILER
+#ifdef GRPC_BROWSER_SUPPORT
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->access_control_allow_origin,
                                    grpc_mdelem_ref(channeld->access_control_allow_origin));
 #endif
