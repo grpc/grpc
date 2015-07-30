@@ -31,10 +31,11 @@
 
 set -e
 
-#clean up any old docker files
+#clean up any old docker files and start mirroring repository if not started already
 sudo docker rmi -f grpc/cxx || true
 sudo docker rmi -f grpc/base || true
 sudo docker rmi -f 0.0.0.0:5000/grpc/base || true
+sudo docker run -d -e GCS_BUCKET=docker-interop-images  -e STORAGE_PATH=/admin/docker_images -p 5000:5000 google/docker-registry || true
 
 #prepare building by pulling down base images and necessary files
 sudo docker pull 0.0.0.0:5000/grpc/base
