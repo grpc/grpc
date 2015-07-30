@@ -258,9 +258,9 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
   channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
   channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
-  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
-  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority");
-  channeld->host_key = grpc_mdstr_from_string(mdctx, "host");
+  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path", 0);
+  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority", 0);
+  channeld->host_key = grpc_mdstr_from_string(mdctx, "host", 0);
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 

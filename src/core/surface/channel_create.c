@@ -154,8 +154,8 @@ static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args) {
+grpc_channel *grpc_insecure_channel_create(const char *target,
+                                           const grpc_channel_args *args) {
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];

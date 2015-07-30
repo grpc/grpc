@@ -932,7 +932,7 @@ static int prepare_application_metadata(grpc_call *call, size_t count,
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
-                                               md->value_length);
+                                               md->value_length, 1);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key");
       return 0;
@@ -1203,7 +1203,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
                                           const char *description) {
   grpc_mdstr *details =
-      description ? grpc_mdstr_from_string(c->metadata_context, description)
+      description ? grpc_mdstr_from_string(c->metadata_context, description, 0)
                   : NULL;
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
@@ -1497,7 +1497,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
             op->data.send_status_from_server.status_details != NULL
                 ? grpc_mdstr_from_string(
                       call->metadata_context,
-                      op->data.send_status_from_server.status_details)
+                      op->data.send_status_from_server.status_details, 0)
                 : NULL;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_CLOSE;

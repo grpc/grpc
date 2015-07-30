@@ -20,9 +20,9 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin/Release/Grpc.HealthCheck.dll" target="lib/net45" />
-	<file src="bin/Release/Grpc.HealthCheck.pdb" target="lib/net45" />
-	<file src="bin/Release/Grpc.HealthCheck.xml" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.HealthCheck.dll" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.HealthCheck.pdb" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.HealthCheck.xml" target="lib/net45" />
 	<file src="**\*.cs" target="src" />
   </files>
 </package>
