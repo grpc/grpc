@@ -36,14 +36,6 @@ from grpc._adapter import _types
 
 class CTypeSmokeTest(unittest.TestCase):
 
-  def testClientCredentialsUpDown(self):
-    credentials = _c.ClientCredentials.fake_transport_security()
-    del credentials
-
-  def testServerCredentialsUpDown(self):
-    credentials = _c.ServerCredentials.fake_transport_security()
-    del credentials
-
   def testCompletionQueueUpDown(self):
     completion_queue = _c.CompletionQueue()
     del completion_queue
@@ -56,10 +48,6 @@ class CTypeSmokeTest(unittest.TestCase):
 
   def testChannelUpDown(self):
     channel = _c.Channel('[::]:0', [])
-    del channel
-
-  def testSecureChannelUpDown(self):
-    channel = _c.Channel('[::]:0', [], _c.ClientCredentials.fake_transport_security())
     del channel
 
 

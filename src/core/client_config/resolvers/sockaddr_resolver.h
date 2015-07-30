@@ -38,7 +38,13 @@
 
 #include "src/core/client_config/resolver_factory.h"
 
+grpc_resolver_factory *grpc_ipv4_resolver_factory_create(void);
+
+grpc_resolver_factory *grpc_ipv6_resolver_factory_create(void);
+
+#ifdef GPR_POSIX_SOCKET
 /** Create a unix resolver factory */
 grpc_resolver_factory *grpc_unix_resolver_factory_create(void);
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_UNIX_RESOLVER_H */

@@ -35,8 +35,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Responses;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
@@ -86,18 +89,29 @@ namespace Grpc.Auth
                 return new GoogleCredential(new ComputeCredential(new ComputeCredential.Initializer()));
             }
 
-            JObject o1 = JObject.Parse(File.ReadAllText(credsPath));
-            string clientEmail = o1.GetValue(ClientEmailFieldName).Value<string>();
-            string privateKeyString = o1.GetValue(PrivateKeyFieldName).Value<string>();
-            var privateKey = ParsePrivateKeyFromString(privateKeyString);
+            JObject jsonCredentialParameters = JObject.Parse(File.ReadAllText(credsPath));
+            string clientEmail = jsonCredentialParameters.GetValue(ClientEmailFieldName).Value<string>();
+            string privateKeyString = jsonCredentialParameters.GetValue(PrivateKeyFieldName).Value<string>();
 
             var serviceCredential = new ServiceAccountCredential(
                 new ServiceAccountCredential.Initializer(clientEmail)
                 {
                     Scopes = scopes,
-                    Key = privateKey
-                });
+                }.FromPrivateKey(privateKeyString));
             return new GoogleCredential(serviceCredential);
+        }
+
+        public Task<bool> RequestAccessTokenAsync(CancellationToken taskCancellationToken)
+        {
+            return credential.RequestAccessTokenAsync(taskCancellationToken);
+        }
+
+        public TokenResponse Token
+        {
+            get
+            {
+                return credential.Token;
+            }
         }
 
         internal ServiceCredential InternalCredential
@@ -106,17 +120,6 @@ namespace Grpc.Auth
             {
                 return credential;
             }
-        }
-
-        private RSACryptoServiceProvider ParsePrivateKeyFromString(string base64PrivateKey)
-        {
-            // TODO(jtattermusch): temporary code to create RSACryptoServiceProvider.
-            base64PrivateKey = base64PrivateKey.Replace("-----BEGIN PRIVATE KEY-----", "").Replace("\n", "").Replace("-----END PRIVATE KEY-----", "");
-            RsaPrivateCrtKeyParameters key = (RsaPrivateCrtKeyParameters)PrivateKeyFactory.CreateKey(Convert.FromBase64String(base64PrivateKey));
-            RSAParameters rsaParameters = DotNetUtilities.ToRSAParameters(key);
-            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-            rsa.ImportParameters(rsaParameters);
-            return rsa;
         }
     }
 }

@@ -47,7 +47,10 @@ typedef struct {
   grpc_linked_mdelem details;
 } call_data;
 
-typedef struct { grpc_mdctx *mdctx; } channel_data;
+typedef struct {
+  grpc_mdctx *mdctx;
+  grpc_channel *master;
+} channel_data;
 
 static void lame_start_transport_stream_op(grpc_call_element *elem,
                                            grpc_transport_stream_op *op) {
@@ -82,6 +85,11 @@ static void lame_start_transport_stream_op(grpc_call_element *elem,
   }
 }
 
+static char *lame_get_peer(grpc_call_element *elem) {
+  channel_data *chand = elem->channel_data;
+  return grpc_channel_get_target(chand->master);
+}
+
 static void lame_start_transport_op(grpc_channel_element *elem,
                                     grpc_transport_op *op) {
   if (op->on_connectivity_state_change) {
@@ -112,6 +120,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(is_first);
   GPR_ASSERT(is_last);
   chand->mdctx = mdctx;
+  chand->master = master;
 }
 
 static void destroy_channel_elem(grpc_channel_element *elem) {}
@@ -125,11 +134,12 @@ static const grpc_channel_filter lame_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    lame_get_peer,
     "lame-client",
 };
 
-grpc_channel *grpc_lame_client_channel_create(void) {
+grpc_channel *grpc_lame_client_channel_create(const char *target) {
   static const grpc_channel_filter *filters[] = {&lame_filter};
-  return grpc_channel_create_from_filters(filters, 1, NULL, grpc_mdctx_create(),
-                                          1);
+  return grpc_channel_create_from_filters(target, filters, 1, NULL,
+                                          grpc_mdctx_create(), 1);
 }

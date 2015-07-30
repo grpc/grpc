@@ -99,8 +99,8 @@ std::shared_ptr<Credentials> ServiceAccountCredentials(
 }
 
 // Builds JWT credentials.
-std::shared_ptr<Credentials> JWTCredentials(const grpc::string& json_key,
-                                            long token_lifetime_seconds) {
+std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
+    const grpc::string& json_key, long token_lifetime_seconds) {
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
@@ -108,8 +108,8 @@ std::shared_ptr<Credentials> JWTCredentials(const grpc::string& json_key,
   }
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
-  return WrapCredentials(
-      grpc_jwt_credentials_create(json_key.c_str(), lifetime));
+  return WrapCredentials(grpc_service_account_jwt_access_credentials_create(
+      json_key.c_str(), lifetime));
 }
 
 // Builds refresh token credentials.

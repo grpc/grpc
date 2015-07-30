@@ -31,28 +31,47 @@
  *
  */
 
-#include <grpc/grpc_security.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/credentials.h>
-#include <grpc++/server_credentials.h>
-#include "src/cpp/client/channel.h"
-#include "src/cpp/client/secure_credentials.h"
-#include "src/cpp/server/secure_server_credentials.h"
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+
+#include <grpc++/dynamic_thread_pool.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
-namespace testing {
 
-std::shared_ptr<Credentials> FakeTransportSecurityCredentials() {
-  grpc_credentials* c_creds = grpc_fake_transport_security_credentials_create();
-  return std::shared_ptr<Credentials>(new SecureCredentials(c_creds));
+class DynamicThreadPoolTest : public ::testing::Test {
+ public:
+  DynamicThreadPoolTest() : thread_pool_(0) {}
+
+ protected:
+  DynamicThreadPool thread_pool_;
+};
+
+void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
+  std::unique_lock<std::mutex> lock(*mu);
+  *done = true;
+  cv->notify_all();
 }
 
-std::shared_ptr<ServerCredentials> FakeTransportSecurityServerCredentials() {
-  grpc_server_credentials* c_creds =
-      grpc_fake_transport_security_server_credentials_create();
-  return std::shared_ptr<ServerCredentials>(
-      new SecureServerCredentials(c_creds));
+TEST_F(DynamicThreadPoolTest, Add) {
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
+  thread_pool_.Add(callback);
+
+  // Wait for the callback to finish.
+  std::unique_lock<std::mutex> lock(mu);
+  while (!done) {
+    cv.wait(lock);
+  }
 }
 
-}  // namespace testing
 }  // namespace grpc
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  int result = RUN_ALL_TESTS();
+  return result;
+}

@@ -126,6 +126,12 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** Primary user agent: goes at the start of the user-agent metadata
+    sent on each request */
+#define GRPC_ARG_PRIMARY_USER_AGENT_STRING "grpc.primary_user_agent"
+/** Secondary user agent: goes at the end of the user-agent metadata
+    sent on each request */
+#define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
 
 /** Connectivity state of a channel. */
 typedef enum {
@@ -396,6 +402,23 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
     drained and no threads are executing grpc_completion_queue_next */
 void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
+/** Check the connectivity state of a channel. */
+grpc_connectivity_state grpc_channel_check_connectivity_state(
+    grpc_channel *channel, int try_to_connect);
+
+/** Watch for a change in connectivity state.
+    Once the channel connectivity state is different from last_observed_state,
+    tag will be enqueued on cq with success=1.
+    If deadline expires BEFORE the state is changed, tag will be enqueued on cq
+    with success=0.
+    If optional_new_state is non-NULL, it will be set to the newly observed
+    connectivity state of the channel at the same point as tag is enqueued onto 
+    the completion queue. */
+void grpc_channel_watch_connectivity_state(
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    grpc_connectivity_state *optional_new_state, gpr_timespec deadline,
+    grpc_completion_queue *cq, void *tag);
+
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function. */
@@ -427,16 +450,30 @@ grpc_call *grpc_channel_create_registered_call(
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                                       size_t nops, void *tag);
 
+/** Returns a newly allocated string representing the endpoint to which this
+    call is communicating with. The string is in the uri format accepted by
+    grpc_channel_create.
+    The returned string should be disposed of with gpr_free().
+
+    WARNING: this value is never authenticated or subject to any security
+    related code. It must not be used for any authentication related
+    functionality. Instead, use grpc_auth_context. */
+char *grpc_call_get_peer(grpc_call *call);
+
+/** Return a newly allocated string representing the target a channel was
+    created for. */
+char *grpc_channel_get_target(grpc_channel *channel);
+
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
     clients will want to simply pass NULL. See grpc_channel_args definition for
     more on this. The data in 'args' need only live through the invocation of
     this function. */
-grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args);
+grpc_channel *grpc_insecure_channel_create(const char *target,
+                                           const grpc_channel_args *args);
 
 /** Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(void);
+grpc_channel *grpc_lame_client_channel_create(const char *target);
 
 /** Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);

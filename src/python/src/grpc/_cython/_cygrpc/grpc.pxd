@@ -313,11 +313,10 @@ cdef extern from "grpc/grpc_security.h":
   grpc_credentials *grpc_compute_engine_credentials_create()
   grpc_credentials *grpc_service_account_credentials_create(
       const char *json_key, const char *scope, gpr_timespec token_lifetime)
-  grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
+  grpc_credentials *grpc_service_account_jwt_access_credentials_create(const char *json_key,
                                                 gpr_timespec token_lifetime)
   grpc_credentials *grpc_refresh_token_credentials_create(
       const char *json_refresh_token)
-  grpc_credentials *grpc_fake_transport_security_credentials_create()
   grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
                                                 const char *authority_selector)
   void grpc_credentials_release(grpc_credentials *creds)
@@ -334,7 +333,6 @@ cdef extern from "grpc/grpc_security.h":
       const char *pem_root_certs,
       grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
       size_t num_key_cert_pairs);
-  grpc_server_credentials *grpc_fake_transport_security_server_credentials_create()
   void grpc_server_credentials_release(grpc_server_credentials *creds)
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,

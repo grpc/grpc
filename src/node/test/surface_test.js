@@ -124,7 +124,7 @@ describe('Echo service', function() {
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(echo_service);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -169,7 +169,8 @@ describe('Generic client and server', function() {
       var port = server.bind('localhost:0');
       server.start();
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
-      client = new Client('localhost:' + port);
+      client = new Client('localhost:' + port,
+                          grpc.Credentials.createInsecure());
     });
     after(function() {
       server.shutdown();
@@ -216,7 +217,7 @@ describe('Echo metadata', function() {
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -257,6 +258,15 @@ describe('Echo metadata', function() {
       done();
     });
     call.end();
+  });
+  it('shows the correct user-agent string', function(done) {
+    var version = require('../package.json').version;
+    var call = client.unary({}, function(err, data) { assert.ifError(err); },
+                            {key: ['value']});
+    call.on('metadata', function(metadata) {
+      assert(_.startsWith(metadata['user-agent'], 'grpc-node/' + version));
+      done();
+    });
   });
 });
 describe('Other conditions', function() {
@@ -328,11 +338,14 @@ describe('Other conditions', function() {
     });
     port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {
     server.shutdown();
+  });
+  it('channel.getTarget should be available', function() {
+    assert.strictEqual(typeof client.channel.getTarget(), 'string');
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
@@ -370,7 +383,8 @@ describe('Other conditions', function() {
       };
       var Client = surface_client.makeClientConstructor(test_service_attrs,
                                                         'TestService');
-      misbehavingClient = new Client('localhost:' + port);
+      misbehavingClient = new Client('localhost:' + port,
+                                     grpc.Credentials.createInsecure());
     });
     it('should respond correctly to a unary call', function(done) {
       misbehavingClient.unary(badArg, function(err, data) {
@@ -539,6 +553,43 @@ describe('Other conditions', function() {
       });
     });
   });
+  describe('call.getPeer should return the peer', function() {
+    it('for a unary call', function(done) {
+      var call = client.unary({error: false}, function(err, data) {
+        assert.ifError(err);
+        done();
+      });
+      assert.strictEqual(typeof call.getPeer(), 'string');
+    });
+    it('for a client stream call', function(done) {
+      var call = client.clientStream(function(err, data) {
+        assert.ifError(err);
+        done();
+      });
+      assert.strictEqual(typeof call.getPeer(), 'string');
+      call.write({error: false});
+      call.end();
+    });
+    it('for a server stream call', function(done) {
+      var call = client.serverStream({error: false});
+      assert.strictEqual(typeof call.getPeer(), 'string');
+      call.on('data', function(){});
+      call.on('status', function(status) {
+        assert.strictEqual(status.code, grpc.status.OK);
+        done();
+      });
+    });
+    it('for a bidi stream call', function(done) {
+      var call = client.bidiStream();
+      assert.strictEqual(typeof call.getPeer(), 'string');
+      call.write({error: false});
+      call.end();
+      call.on('data', function(){});
+      call.on('status', function(status) {
+        done();
+      });
+    });
+  });
 });
 describe('Cancelling surface client', function() {
   var client;
@@ -553,7 +604,7 @@ describe('Cancelling surface client', function() {
     });
     var port = server.bind('localhost:0');
     var Client = surface_client.makeProtobufClientConstructor(mathService);
-    client = new Client('localhost:' + port);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
   });
   after(function() {

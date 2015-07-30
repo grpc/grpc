@@ -170,7 +170,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolver_factory.h',
                       'src/core/client_config/resolver_registry.h',
                       'src/core/client_config/resolvers/dns_resolver.h',
-                      'src/core/client_config/resolvers/unix_resolver_posix.h',
+                      'src/core/client_config/resolvers/sockaddr_resolver.h',
                       'src/core/client_config/subchannel.h',
                       'src/core/client_config/subchannel_factory.h',
                       'src/core/client_config/uri_parser.h',
@@ -248,6 +248,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/context.h',
+                      'src/core/census/rpc_stat_id.h',
                       'grpc/grpc_security.h',
                       'grpc/byte_buffer.h',
                       'grpc/byte_buffer_reader.h',
@@ -296,7 +297,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolver_factory.c',
                       'src/core/client_config/resolver_registry.c',
                       'src/core/client_config/resolvers/dns_resolver.c',
-                      'src/core/client_config/resolvers/unix_resolver_posix.c',
+                      'src/core/client_config/resolvers/sockaddr_resolver.c',
                       'src/core/client_config/subchannel.c',
                       'src/core/client_config/subchannel_factory.c',
                       'src/core/client_config/uri_parser.c',
@@ -351,6 +352,7 @@ Pod::Spec.new do |s|
                       'src/core/surface/call_details.c',
                       'src/core/surface/call_log_batch.c',
                       'src/core/surface/channel.c',
+                      'src/core/surface/channel_connectivity.c',
                       'src/core/surface/channel_create.c',
                       'src/core/surface/completion_queue.c',
                       'src/core/surface/event_string.c',
@@ -389,7 +391,8 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.c',
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
-                      'src/core/census/initialize.c'
+                      'src/core/census/initialize.c',
+                      'src/core/census/record_stat.c'
 
     ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
@@ -434,7 +437,7 @@ Pod::Spec.new do |s|
                               'src/core/client_config/resolver_factory.h',
                               'src/core/client_config/resolver_registry.h',
                               'src/core/client_config/resolvers/dns_resolver.h',
-                              'src/core/client_config/resolvers/unix_resolver_posix.h',
+                              'src/core/client_config/resolvers/sockaddr_resolver.h',
                               'src/core/client_config/subchannel.h',
                               'src/core/client_config/subchannel_factory.h',
                               'src/core/client_config/uri_parser.h',
@@ -511,7 +514,8 @@ Pod::Spec.new do |s|
                               'src/core/transport/stream_op.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
-                              'src/core/census/context.h'
+                              'src/core/census/context.h',
+                              'src/core/census/rpc_stat_id.h'
 
     ss.header_mappings_dir = '.'
 
