@@ -42,10 +42,17 @@
    nature of the IO completion ports. A Windows "pollset" is merely a mutex
    and a condition variable, used to synchronize with the IOCP. */
 
+typedef struct grpc_pollset_worker {
+  gpr_cv cv;
+  struct grpc_pollset_worker *next;
+  struct grpc_pollset_worker *prev;
+} grpc_pollset_worker;
+
 typedef struct grpc_pollset {
   gpr_mu mu;
-  gpr_cv cv;
   int shutting_down;
+  int kicked_without_pollers;
+  grpc_pollset_worker root_worker;
 } grpc_pollset;
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
