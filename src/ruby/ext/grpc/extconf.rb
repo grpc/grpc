@@ -88,10 +88,8 @@ else
     else
       grpc_lib_dir = File.join(File.join(grpc_root, 'libs'), grpc_config)
     end
-    unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
-      print "Building internal gRPC\n"
-      system("make -C #{grpc_root} static_c CONFIG=#{grpc_config}")
-    end
+    print "Building internal gRPC\n"
+    system("make -C #{grpc_root} static_c CONFIG=#{grpc_config}")
     $CFLAGS << ' -I' + File.join(grpc_root, 'include')
     $LDFLAGS << ' -L' + grpc_lib_dir
     raise 'gpr not found' unless have_library('gpr', 'gpr_now')
