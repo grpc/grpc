@@ -62,6 +62,7 @@ static grpc_subchannel *merge_args_factory_create_subchannel(
   grpc_channel_args *final_args =
       grpc_channel_args_merge(args->args, f->merge_args);
   grpc_subchannel *s;
+  args->args = final_args;
   s = grpc_subchannel_factory_create_subchannel(f->wrapped, args);
   grpc_channel_args_destroy(final_args);
   return s;
@@ -76,6 +77,7 @@ grpc_subchannel_factory *grpc_subchannel_factory_merge_channel_args(
   merge_args_factory *f = gpr_malloc(sizeof(*f));
   f->base.vtable = &merge_args_factory_vtable;
   gpr_ref_init(&f->refs, 1);
+  grpc_subchannel_factory_ref(input);
   f->wrapped = input;
   f->merge_args = grpc_channel_args_copy(args);
   return &f->base;
