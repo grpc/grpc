@@ -29,9 +29,6 @@
 
 syntax = "proto3";
 
-option java_package = "io.grpc.examples";
-option objc_class_prefix = "ENDOSCOPE";
-
 package perftools.endoscope;
 
 service Endoscope {
@@ -40,7 +37,6 @@ service Endoscope {
 
 message EndoMarkerPB {
 
-  // The values in endo_marker.js, endo.proto, and endo_marker.h _must_ match.
   enum MarkerType {
     INVALID = 0;
     SCOPE = 1;
@@ -61,7 +57,6 @@ message EndoMarkerPB {
 
 message EndoAtomPB {
 
-  // The values in endo_span.js, endo.proto, and endo_atom.h _must_ match.
   enum AtomType {
     INVALID = 0;
     SCOPE_BEGIN = 1;     // param = marker ID
