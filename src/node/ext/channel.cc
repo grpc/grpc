@@ -98,30 +98,29 @@ NAN_METHOD(Channel::New) {
 
   if (args.IsConstructCall()) {
     if (!args[0]->IsString()) {
-      return NanThrowTypeError("Channel expects a string and an object");
+      return NanThrowTypeError(
+          "Channel expects a string, a credential and an object");
     }
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
     NanUtf8String *host = new NanUtf8String(args[0]);
     NanUtf8String *host_override = NULL;
-    if (args[1]->IsUndefined()) {
+    grpc_credentials *creds;
+    if (!Credentials::HasInstance(args[1])) {
+      return NanThrowTypeError(
+          "Channel's second argument must be a credential");
+    }
+    Credentials *creds_object = ObjectWrap::Unwrap<Credentials>(
+        args[1]->ToObject());
+    creds = creds_object->GetWrappedCredentials();
+    grpc_channel_args *channel_args_ptr;
+    if (args[2]->IsUndefined()) {
+      channel_args_ptr = NULL;
       wrapped_channel = grpc_insecure_channel_create(**host, NULL);
-    } else if (args[1]->IsObject()) {
-      grpc_credentials *creds = NULL;
-      Handle<Object> args_hash(args[1]->ToObject()->Clone());
+    } else if (args[2]->IsObject()) {
+      Handle<Object> args_hash(args[2]->ToObject()->Clone());
       if (args_hash->HasOwnProperty(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG))) {
         host_override = new NanUtf8String(args_hash->Get(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
-      }
-      if (args_hash->HasOwnProperty(NanNew("credentials"))) {
-        Handle<Value> creds_value = args_hash->Get(NanNew("credentials"));
-        if (!Credentials::HasInstance(creds_value)) {
-          return NanThrowTypeError(
-              "credentials arg must be a Credentials object");
-        }
-        Credentials *creds_object =
-            ObjectWrap::Unwrap<Credentials>(creds_value->ToObject());
-        creds = creds_object->GetWrappedCredentials();
-        args_hash->Delete(NanNew("credentials"));
       }
       Handle<Array> keys(args_hash->GetOwnPropertyNames());
       grpc_channel_args channel_args;
@@ -149,15 +148,18 @@ NAN_METHOD(Channel::New) {
           return NanThrowTypeError("Arg values must be strings");
         }
       }
-      if (creds == NULL) {
-        wrapped_channel = grpc_insecure_channel_create(**host, &channel_args);
-      } else {
-        wrapped_channel =
-            grpc_secure_channel_create(creds, **host, &channel_args);
-      }
-      free(channel_args.args);
+      channel_args_ptr = &channel_args;
     } else {
       return NanThrowTypeError("Channel expects a string and an object");
+    }
+    if (creds == NULL) {
+      wrapped_channel = grpc_insecure_channel_create(**host, channel_args_ptr);
+    } else {
+      wrapped_channel =
+          grpc_secure_channel_create(creds, **host, channel_args_ptr);
+    }
+    if (channel_args_ptr != NULL) {
+      free(channel_args_ptr->args);
     }
     Channel *channel;
     if (host_override == NULL) {
@@ -168,8 +170,8 @@ NAN_METHOD(Channel::New) {
     channel->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
-    const int argc = 2;
-    Local<Value> argv[argc] = {args[0], args[1]};
+    const int argc = 3;
+    Local<Value> argv[argc] = {args[0], args[1], args[2]};
     NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
   }
 }

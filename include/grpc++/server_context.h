@@ -46,6 +46,7 @@
 struct gpr_timespec;
 struct grpc_metadata;
 struct grpc_call;
+struct census_context;
 
 namespace grpc {
 
@@ -115,6 +116,8 @@ class ServerContext {
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   std::shared_ptr<const AuthContext> auth_context() const;
+
+  const struct census_context* census_context() const;
 
  private:
   friend class ::grpc::testing::InteropContextInspector;
