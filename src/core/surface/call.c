@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/census/grpc_context.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
 #include "src/core/profiling/timers.h"
@@ -348,7 +347,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
-  if (gpr_time_cmp(send_deadline, gpr_inf_future(send_deadline.clock_type)) != 0) {
+  if (gpr_time_cmp(send_deadline, gpr_inf_future(send_deadline.clock_type)) !=
+      0) {
     set_deadline_alarm(call, send_deadline);
   }
   return call;
@@ -1283,8 +1283,9 @@ static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   }
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
-  grpc_alarm_init(&call->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), call_alarm, call,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_alarm_init(&call->alarm,
+                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                  call_alarm, call, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 /* we offset status by a small amount when storing it into transport metadata
@@ -1319,15 +1320,17 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
-    algorithm = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+    algorithm =
+        ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
     if (!grpc_compression_algorithm_parse(md_c_str, &algorithm)) {
       gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
       assert(0);
     }
-    grpc_mdelem_set_user_data(md, destroy_compression,
-                              (void *)(gpr_intptr)(algorithm + COMPRESS_OFFSET));
+    grpc_mdelem_set_user_data(
+        md, destroy_compression,
+        (void *)(gpr_intptr)(algorithm + COMPRESS_OFFSET));
   }
   return algorithm;
 }

@@ -32,7 +32,8 @@
  */
 
 #include <grpc/census.h>
-#include "src/core/census/grpc_context.h"
+#include <grpc/grpc.h>
+#include "src/core/surface/call.h"
 
 static void grpc_census_context_destroy(void *context) {
   census_context_destroy((census_context *)context);

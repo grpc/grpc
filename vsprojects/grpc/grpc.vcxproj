@@ -173,7 +173,6 @@
     <ClInclude Include="..\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h" />
-    <ClInclude Include="..\..\src\core\census\grpc_context.h" />
     <ClInclude Include="..\..\src\core\channel\census_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />

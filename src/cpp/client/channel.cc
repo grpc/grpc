@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/census/grpc_context.h"
 #include "src/core/profiling/timers.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
