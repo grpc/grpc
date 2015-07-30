@@ -41,6 +41,7 @@
 #include <grpc++/thread_pool_interface.h>
 
 #include <list>
+#include <memory>
 #include <queue>
 
 namespace grpc {

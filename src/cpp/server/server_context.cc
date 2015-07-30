@@ -40,6 +40,7 @@
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
+#include "src/core/census/grpc_context.h"
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
@@ -188,6 +189,10 @@ grpc::string ServerContext::peer() const {
     gpr_free(c_peer);
   }
   return peer;
+}
+
+const struct census_context* ServerContext::census_context() const {
+  return grpc_census_call_get_context(call_);
 }
 
 }  // namespace grpc

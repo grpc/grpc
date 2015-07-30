@@ -46,6 +46,7 @@
 struct gpr_timespec;
 struct grpc_metadata;
 struct grpc_call;
+struct census_context;
 
 namespace grpc {
 
@@ -121,6 +122,8 @@ class ServerContext {
   // related code. It must not be used for any authentication related
   // functionality. Instead, use auth_context.
   grpc::string peer() const;
+
+  const struct census_context* census_context() const;
 
  private:
   friend class ::grpc::testing::InteropContextInspector;
