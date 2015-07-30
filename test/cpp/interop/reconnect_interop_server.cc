@@ -116,8 +116,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     {
       std::lock_guard<std::mutex> lock(mu_);
       serving_ = false;
+      cv_.notify_one();
     }
-    cv_.notify_one();
     return Status::OK;
   }
 
@@ -147,10 +147,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   }
 
   void Shutdown() {
-    {
-      std::lock_guard<std::mutex> lock(mu_);
-      shutdown_ = true;
-    }
+    std::lock_guard<std::mutex> lock(mu_);
+    shutdown_ = true;
     cv_.notify_all();
   }
 
