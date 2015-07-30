@@ -511,14 +511,14 @@ Procedure:
 The client attaches custom metadata with the following keys and values:
     ```
     key: "x-grpc-test-echo-initial", value: "test_initial_metadata_value"
-    key: "x-grpc-test-echo-trailing", value: 0xababab
+    key: "x-grpc-test-echo-trailing-bin", value: 0xababab
     ```
  2. Client repeats step 1. with FullDuplexCall instead of UnaryCall.
 
 Asserts:
 * call was successful
 * metadata with key `"x-grpc-test-echo-initial"` and value `"test_initial_metadata_value"`is received in the initial metadata.
-* metadata with key `"x-grpc-test-echo-trailing"` and value `0xababab` is received in the trailing metadata.
+* metadata with key `"x-grpc-test-echo-trailing-bin"` and value `0xababab` is received in the trailing metadata.
 
 
 
@@ -557,7 +557,7 @@ Status: Ready for implementation. Blocking beta.
 This test verifies calling unimplemented RPC method returns the UNIMPLEMENTED status code.
 
 Procedure:
-* Client calls UnimplementedCall with an empty request (defined as `grpc.testing.Empty`):
+* Client calls `grpc.testing.UnimplementedService/UnimplementedCall` with an empty request (defined as `grpc.testing.Empty`):
 
     ```
     {
