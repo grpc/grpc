@@ -75,6 +75,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>grpc_unsecure</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>grpc_unsecure</TargetName>
@@ -190,7 +192,6 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
@@ -323,8 +324,6 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>

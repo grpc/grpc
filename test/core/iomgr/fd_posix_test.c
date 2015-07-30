@@ -179,7 +179,7 @@ static void listen_shutdown_cb(void *arg /*server*/, int success) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   sv->done = 1;
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
@@ -249,7 +249,8 @@ static int server_start(server *sv) {
 static void server_wait_and_shutdown(server *sv) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!sv->done) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&g_pollset, &worker, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
@@ -286,7 +287,7 @@ static void client_session_shutdown_cb(void *arg /*client*/, int success) {
   client *cl = arg;
   grpc_fd_orphan(cl->em_fd, NULL, "c");
   cl->done = 1;
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
 }
 
 /* Write as much as possible, then register notify_on_write. */
@@ -356,7 +357,8 @@ static void client_start(client *cl, int port) {
 static void client_wait_and_shutdown(client *cl) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!cl->done) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&g_pollset, &worker, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
@@ -392,7 +394,7 @@ static void first_read_callback(void *arg /* fd_change_data */, int success) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   fdc->cb_that_ran = first_read_callback;
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
@@ -401,7 +403,7 @@ static void second_read_callback(void *arg /* fd_change_data */, int success) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   fdc->cb_that_ran = second_read_callback;
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
@@ -445,7 +447,8 @@ static void test_grpc_fd_change(void) {
   /* And now wait for it to run. */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (a.cb_that_ran == NULL) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&g_pollset, &worker, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   GPR_ASSERT(a.cb_that_ran == first_read_callback);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -463,7 +466,8 @@ static void test_grpc_fd_change(void) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (b.cb_that_ran == NULL) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&g_pollset, &worker, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   /* Except now we verify that second_read_callback ran instead */
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
