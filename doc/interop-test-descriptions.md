@@ -783,7 +783,7 @@ associated status messages end-to-end.
 When the client sends metadata with the key `"x-grpc-test-echo-initial"` with its
 request, the server sends back exactly this key and the corresponding value back to
 the client as part of initial metadata. When the client sends metadata with the key
-`"x-grpc-test-echo-trailing"` with its request, the server sends back exactly this
+`"x-grpc-test-echo-trailing-bin"` with its request, the server sends back exactly this
 key and the corresponding value back to the client as trailing metadata.
 
 ### Observe ResponseParameters.interval_us
