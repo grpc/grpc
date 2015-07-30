@@ -36,30 +36,30 @@ import simplejson
 import collections
 
 
-FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack secure platforms')
-default_unsecure_fixture_options = FixtureOptions(True, False, ['windows', 'posix'])
-socketpair_unsecure_fixture_options = FixtureOptions(False, False, ['windows', 'posix'])
-default_secure_fixture_options = FixtureOptions(True, True, ['windows', 'posix'])
+FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack dns_resolver secure platforms')
+default_unsecure_fixture_options = FixtureOptions(True, True, False, ['windows', 'posix'])
+socketpair_unsecure_fixture_options = FixtureOptions(False, False, False, ['windows', 'posix'])
+default_secure_fixture_options = FixtureOptions(True, True, True, ['windows', 'posix'])
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'chttp2_fake_security': default_secure_fixture_options,
     'chttp2_fullstack_compression': default_unsecure_fixture_options,
     'chttp2_fullstack': default_unsecure_fixture_options,
-    'chttp2_fullstack_uds_posix': FixtureOptions(True, False, ['posix']),
-    'chttp2_fullstack_uds_posix_with_poll': FixtureOptions(True, False, ['posix']),
-    'chttp2_fullstack_with_poll': FixtureOptions(True, False, ['posix']),
+    'chttp2_fullstack_uds_posix': FixtureOptions(True, False, False, ['posix']),
+    'chttp2_fullstack_uds_posix_with_poll': FixtureOptions(True, False, False, ['posix']),
+    'chttp2_fullstack_with_poll': FixtureOptions(True, True, False, ['posix']),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
-    'chttp2_simple_ssl_fullstack_with_poll': FixtureOptions(True, True, ['posix']),
+    'chttp2_simple_ssl_fullstack_with_poll': FixtureOptions(True, True, True, ['posix']),
     'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
     'chttp2_socket_pair_one_byte_at_a_time': socketpair_unsecure_fixture_options,
     'chttp2_socket_pair': socketpair_unsecure_fixture_options,
     'chttp2_socket_pair_with_grpc_trace': socketpair_unsecure_fixture_options,
 }
 
-TestOptions = collections.namedtuple('TestOptions', 'needs_fullstack flaky secure')
-default_test_options = TestOptions(False, False, False)
-connectivity_test_options = TestOptions(True, False, False)
+TestOptions = collections.namedtuple('TestOptions', 'needs_fullstack needs_dns flaky secure')
+default_test_options = TestOptions(False, False, False, False)
+connectivity_test_options = TestOptions(True, False, False, False)
 
 # maps test names to options
 END2END_TESTS = {
@@ -71,7 +71,7 @@ END2END_TESTS = {
     'cancel_in_a_vacuum': default_test_options,
     'census_simple_request': default_test_options,
     'channel_connectivity': connectivity_test_options,
-    'default_host': connectivity_test_options,
+    'default_host': TestOptions(True, True, False, False),
     'disappearing_server': connectivity_test_options,
     'early_server_shutdown_finishes_inflight_calls': default_test_options,
     'early_server_shutdown_finishes_tags': default_test_options,
@@ -85,7 +85,7 @@ END2END_TESTS = {
     'registered_call': default_test_options,
     'request_response_with_binary_metadata_and_payload': default_test_options,
     'request_response_with_metadata_and_payload': default_test_options,
-    'request_response_with_payload_and_call_creds': TestOptions(needs_fullstack=False, flaky=False, secure=True),
+    'request_response_with_payload_and_call_creds': TestOptions(needs_fullstack=False, needs_dns=False, flaky=False, secure=True),
     'request_response_with_payload': default_test_options,
     'request_response_with_trailing_metadata_and_payload': default_test_options,
     'request_with_compressed_payload': default_test_options,
@@ -102,6 +102,9 @@ END2END_TESTS = {
 def compatible(f, t):
   if END2END_TESTS[t].needs_fullstack:
     if not END2END_FIXTURES[f].fullstack:
+      return False
+  if END2END_TESTS[t].needs_dns:
+    if not END2END_FIXTURES[f].dns_resolver:
       return False
   return True
 
@@ -177,7 +180,7 @@ def main():
               'language': 'c',
               'secure': 'no',
               'src': [],
-              'flaky': 'invoke_large_request' in t,
+              'flaky': END2END_TESTS[t].flaky,
               'platforms': END2END_FIXTURES[f].platforms,
               'deps': [
                   'end2end_fixture_%s' % f,
