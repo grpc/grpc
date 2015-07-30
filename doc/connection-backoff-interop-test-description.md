@@ -29,7 +29,7 @@ Clients should accept these arguments:
 * --server_control_port=PORT
     * The server port to connect to for rpc. For example, "8080"
 * --server_retry_port=PORT
-    * The server port to connect to for testing backoffs. For example, "8080"
+    * The server port to connect to for testing backoffs. For example, "8081"
 
 The client must connect to the control port without TLS. The client should
 either assert on the server returned backoff status or check the returned
@@ -53,7 +53,8 @@ Server
 
 A C++ server can be used for the test. Other languages do NOT need to implement
 a server. To minimize the network delay, the server binary should run on the
-same machine with the client binary.
+same machine or on a nearby machine (in terms of network distance) with the
+client binary.
 
 A server implements the ReconnectService to its state. It also opens a
 tcp server on the retry_port, which just shuts down all incoming tcp
@@ -72,5 +73,5 @@ The server accepts these arguments:
 * --control_port=PORT
     * The port to listen on for control rpcs. For example, "8080"
 * --retry_port=PORT
-    * The tcp server port. For example, "8080"
+    * The tcp server port. For example, "8081"
 
