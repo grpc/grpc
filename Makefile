@@ -3754,6 +3754,8 @@ LIBGRPC_SRC = \
     src/core/client_config/resolvers/sockaddr_resolver.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
+    src/core/client_config/subchannel_factory_decorators/add_channel_arg.c \
+    src/core/client_config/subchannel_factory_decorators/merge_channel_args.c \
     src/core/client_config/uri_parser.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
@@ -4020,6 +4022,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/resolvers/sockaddr_resolver.c \
     src/core/client_config/subchannel.c \
     src/core/client_config/subchannel_factory.c \
+    src/core/client_config/subchannel_factory_decorators/add_channel_arg.c \
+    src/core/client_config/subchannel_factory_decorators/merge_channel_args.c \
     src/core/client_config/uri_parser.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
