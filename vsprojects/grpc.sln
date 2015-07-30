@@ -4,18 +4,30 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpr", "gpr\gpr.vcxproj", "{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpr_test_util", "gpr_test_util\gpr_test_util.vcxproj", "{EAB0A629-17A9-44DB-B5FF-E91A721FE037}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc", "grpc\grpc.vcxproj", "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_test_util", "grpc_test_util\grpc_test_util.vcxproj", "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 		{EAB0A629-17A9-44DB-B5FF-E91A721FE037} = {EAB0A629-17A9-44DB-B5FF-E91A721FE037}
@@ -23,6 +35,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_test_util", "grpc_test
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_test_util_unsecure", "grpc_test_util_unsecure\grpc_test_util_unsecure.vcxproj", "{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 		{EAB0A629-17A9-44DB-B5FF-E91A721FE037} = {EAB0A629-17A9-44DB-B5FF-E91A721FE037}
@@ -30,23 +45,35 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_test_util_unsecure", "
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_unsecure", "grpc_unsecure\grpc_unsecure.vcxproj", "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++", "grpc++\grpc++.vcxproj", "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9} = {29D16885-7228-4C31-81ED-5F9187C7F2A9}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++_unsecure", "grpc++_unsecure\grpc++_unsecure.vcxproj", "{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5} = {46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_csharp_ext", "grpc_csharp_ext\grpc_csharp_ext.vcxproj", "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9} = {29D16885-7228-4C31-81ED-5F9187C7F2A9}
