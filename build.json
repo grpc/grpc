@@ -114,7 +114,6 @@
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/census/grpc_context.h",
         "src/core/channel/census_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",

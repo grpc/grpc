@@ -39,7 +39,6 @@
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
-#include "src/core/census/grpc_context.h"
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
