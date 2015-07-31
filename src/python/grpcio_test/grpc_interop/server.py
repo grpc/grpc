@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,38 +27,48 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""The Python implementation of the GRPC interoperability test server."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import argparse
+import logging
+import time
 
-root=`pwd`
+from grpc.early_adopter import implementations
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-    pip install -r src/python/requirements.txt
-    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio
-    pip install src/python/grpcio_test
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install src/python/grpcio_test
-  fi
-}
+from grpc_interop import methods
+from grpc_interop import resources
 
-make_virtualenv $1
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+
+
+def serve():
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      '--port', help='the port on which to serve', type=int)
+  parser.add_argument(
+      '--use_tls', help='require a secure connection', dest='use_tls',
+      action='store_true')
+  args = parser.parse_args()
+
+  if args.use_tls:
+    private_key = resources.private_key()
+    certificate_chain = resources.certificate_chain()
+    server = implementations.server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port,
+        private_key=private_key, certificate_chain=certificate_chain)
+  else:
+    server = implementations.server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port)
+
+  server.start()
+  logging.info('Server serving.')
+  try:
+    while True:
+      time.sleep(_ONE_DAY_IN_SECONDS)
+  except BaseException as e:
+    logging.info('Caught exception "%s"; stopping server...', e)
+    server.stop()
+    logging.info('Server stopped; exiting.')
+
+if __name__ == '__main__':
+  serve()

@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,38 +27,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Common code for unit tests of the interoperability test code."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from grpc_interop import methods
 
-root=`pwd`
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-    pip install -r src/python/requirements.txt
-    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio
-    pip install src/python/grpcio_test
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install src/python/grpcio_test
-  fi
-}
+class InteropTestCase(object):
+  """Unit test methods.
 
-make_virtualenv $1
+  This class must be mixed in with unittest.TestCase and a class that defines
+  setUp and tearDown methods that manage a stub attribute.
+  """
+
+  def testEmptyUnary(self):
+    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
+
+  def testLargeUnary(self):
+    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
+
+  def testServerStreaming(self):
+    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
+
+  def testClientStreaming(self):
+    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
+
+  def testPingPong(self):
+    methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
+
+  def testCancelAfterBegin(self):
+    methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
+
+  def testCancelAfterFirstResponse(self):
+    methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(self.stub, None)

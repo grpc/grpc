@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,38 +27,50 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Provides distutils command classes for the GRPC Python setup process."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import os
+import os.path
+import sys
 
-root=`pwd`
+import setuptools
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-    pip install -r src/python/requirements.txt
-    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio
-    pip install src/python/grpcio_test
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install src/python/grpcio_test
-  fi
-}
+_CONF_PY_ADDENDUM = """
+extensions.append('sphinx.ext.napoleon')
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
 
-make_virtualenv $1
+html_theme = 'sphinx_rtd_theme'
+"""
+
+
+class SphinxDocumentation(setuptools.Command):
+  """Command to generate documentation via sphinx."""
+
+  description = ''
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    # We import here to ensure that setup.py has had a chance to install the
+    # relevant package eggs first.
+    import sphinx
+    import sphinx.apidoc
+    metadata = self.distribution.metadata
+    src_dir = os.path.join(
+        os.getcwd(), self.distribution.package_dir['grpc'])
+    sys.path.append(src_dir)
+    sphinx.apidoc.main([
+        '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
+        '-V', metadata.version, '-R', metadata.version,
+        '-o', os.path.join('doc', 'src'), src_dir])
+    conf_filepath = os.path.join('doc', 'src', 'conf.py')
+    with open(conf_filepath, 'a') as conf_file:
+      conf_file.write(_CONF_PY_ADDENDUM)
+    sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
+
