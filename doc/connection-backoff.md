@@ -32,10 +32,13 @@ ConnectWithBackoff()
 
 With specific parameters of
 MIN_CONNECT_TIMEOUT = 20 seconds
-INITIAL_BACKOFF = 1 second
-MULTIPLIER = 1.6
+INITIAL_BACKOFF = 1.170820393 seconds
+MULTIPLIER = 1.618033989
 MAX_BACKOFF = 120 seconds
 JITTER = 0.2
+
+These parameters make each successive delay equal to the sum of the two previous
+delays (ignoring jitter and max backoff).
 
 Implementations with pressing concerns (such as minimizing the number of wakeups
 on a mobile phone) may wish to use a different algorithm, and in particular
