@@ -505,6 +505,7 @@
         "gpr"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc_base",
         "census"
@@ -560,6 +561,7 @@
         "gpr"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc_base",
         "census"
@@ -589,6 +591,7 @@
         "grpc"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc++_base"
       ],
@@ -640,6 +643,7 @@
         "grpc_unsecure"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc++_base"
       ],
@@ -828,6 +832,7 @@
         "gpr",
         "grpc"
       ],
+      "dll": "only",
       "vs_project_guid": "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
     }
   ],
