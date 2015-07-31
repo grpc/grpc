@@ -106,9 +106,6 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -468,9 +465,6 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
