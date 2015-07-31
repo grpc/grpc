@@ -311,10 +311,10 @@ class ObjCLanguage(object):
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
-    return []
+    return ['grpc_objective_c_plugin', 'interop_server']
 
   def build_steps(self):
-    return []
+    return [['src/objective-c/tests/build_tests.sh']]
 
   def supports_multi_config(self):
     return False

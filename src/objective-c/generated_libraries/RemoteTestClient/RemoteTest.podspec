@@ -8,10 +8,7 @@ Pod::Spec.new do |s|
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   s.prepare_command = <<-CMD
-    cd ../../../..
-    make CONFIG=dbg grpc_objective_c_plugin
-    cd -
-    protoc --plugin=protoc-gen-grpc=../../../../bins/dbg/grpc_objective_c_plugin --objc_out=. --grpc_out=. *.proto
+    protoc --plugin=protoc-gen-grpc=../../../../bins/$CONFIG/grpc_objective_c_plugin --objc_out=. --grpc_out=. *.proto
   CMD
 
   s.subspec "Messages" do |ms|
