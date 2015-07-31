@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,38 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Secure client-server interoperability as a unit test."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import unittest
 
-root=`pwd`
+from grpc.early_adopter import implementations
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-    pip install -r src/python/requirements.txt
-    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio
-    pip install src/python/grpcio_test
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install src/python/grpcio_test
-  fi
-}
+from grpc_interop import _interop_test_case
+from grpc_interop import methods
+from grpc_interop import resources
 
-make_virtualenv $1
+_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+
+
+class SecureInteropTest(
+    _interop_test_case.InteropTestCase,
+    unittest.TestCase):
+
+  def setUp(self):
+    self.server = implementations.server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, 0,
+        private_key=resources.private_key(),
+        certificate_chain=resources.certificate_chain())
+    self.server.start()
+    port = self.server.port()
+    self.stub = implementations.stub(
+        methods.SERVICE_NAME, methods.CLIENT_METHODS, 'localhost', port,
+        secure=True, root_certificates=resources.test_root_certificates(),
+        server_host_override=_SERVER_HOST_OVERRIDE)
+
+  def tearDown(self):
+    self.server.stop()
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,38 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""One of the tests of the Face layer of RPC Framework."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import unittest
 
-root=`pwd`
+from grpc_test._adapter import _face_test_case
+from grpc_test.framework.face.testing import blocking_invocation_inline_service_test_case as test_case
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-    pip install -r src/python/requirements.txt
-    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio
-    pip install src/python/grpcio_test
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install src/python/grpcio_test
-  fi
-}
 
-make_virtualenv $1
+class BlockingInvocationInlineServiceTest(
+    _face_test_case.FaceTestCase,
+    test_case.BlockingInvocationInlineServiceTestCase,
+    unittest.TestCase):
+  pass
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,38 +27,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Common lifecycle code for in-memory-ticket-exchange Face-layer tests."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from grpc.framework.face import implementations
+from grpc.framework.foundation import logging_pool
+from grpc_test.framework.face.testing import base_util
+from grpc_test.framework.face.testing import test_case
 
-root=`pwd`
+_TIMEOUT = 3
+_MAXIMUM_POOL_SIZE = 10
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-    pip install -r src/python/requirements.txt
-    CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio
-    pip install src/python/grpcio_test
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$root/include -std=c89" LDFLAGS=-L$root/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install src/python/grpcio) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install src/python/grpcio_test
-  fi
-}
 
-make_virtualenv $1
+class FaceTestCase(test_case.FaceTestCase):
+  """Provides abstract Face-layer tests an in-memory implementation."""
+
+  def set_up_implementation(
+      self, name, methods, method_implementations,
+      multi_method_implementation):
+    servicer_pool = logging_pool.pool(_MAXIMUM_POOL_SIZE)
+    stub_pool = logging_pool.pool(_MAXIMUM_POOL_SIZE)
+
+    servicer = implementations.servicer(
+        servicer_pool, method_implementations, multi_method_implementation)
+
+    linked_pair = base_util.linked_pair(servicer, _TIMEOUT)
+    stub = implementations.generic_stub(linked_pair.front, stub_pool)
+    return stub, (servicer_pool, stub_pool, linked_pair)
+
+  def tear_down_implementation(self, memo):
+    servicer_pool, stub_pool, linked_pair = memo
+    linked_pair.shut_down()
+    stub_pool.shutdown(wait=True)
+    servicer_pool.shutdown(wait=True)
