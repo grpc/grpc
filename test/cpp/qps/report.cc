@@ -34,10 +34,15 @@
 #include "test/cpp/qps/report.h"
 
 #include <grpc/support/log.h>
+#include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/stats.h"
 
 namespace grpc {
 namespace testing {
+
+static double WallTime(ResourceUsage u) { return u.wall_time(); }
+static double UserTime(ResourceUsage u) { return u.user_time(); }
+static double SystemTime(ResourceUsage u) { return u.system_time(); }
 
 void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
@@ -68,16 +73,14 @@ void CompositeReporter::ReportTimes(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          result.latencies.Count() /
-              average(result.client_resources,
-                      [](ResourceUsage u) { return u.wall_time; }));
+  gpr_log(
+      GPR_INFO, "QPS: %.1f",
+      result.latencies.Count() / average(result.client_resources, WallTime));
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps = result.latencies.Count() /
-             average(result.client_resources,
-                     [](ResourceUsage u) { return u.wall_time; });
+  auto qps =
+      result.latencies.Count() / average(result.client_resources, WallTime);
 
   gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
           qps / result.server_config.threads());
@@ -95,40 +98,30 @@ void GprLogReporter::ReportLatency(const ScenarioResult& result) {
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_resources,
-                      [](ResourceUsage u) { return u.system_time; }) /
-              sum(result.server_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
+          100.0 * sum(result.server_resources, SystemTime) /
+              sum(result.server_resources, WallTime));
   gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_resources,
-                      [](ResourceUsage u) { return u.user_time; }) /
-              sum(result.server_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
+          100.0 * sum(result.server_resources, UserTime) /
+              sum(result.server_resources, WallTime));
   gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_resources,
-                      [](ResourceUsage u) { return u.system_time; }) /
-              sum(result.client_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
+          100.0 * sum(result.client_resources, SystemTime) /
+              sum(result.client_resources, WallTime));
   gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_resources,
-                      [](ResourceUsage u) { return u.user_time; }) /
-              sum(result.client_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
+          100.0 * sum(result.client_resources, UserTime) /
+              sum(result.client_resources, WallTime));
 }
 
 void PerfDbReporter::ReportQPS(const ScenarioResult& result) {
-  auto qps = result.latencies.Count() /
-             average(result.client_resources,
-                     [](ResourceUsage u) { return u.wall_time; });
+  auto qps =
+      result.latencies.Count() / average(result.client_resources, WallTime);
 
   perf_db_client_.setQps(qps);
   perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps = result.latencies.Count() /
-             average(result.client_resources,
-                     [](ResourceUsage u) { return u.wall_time; });
+  auto qps =
+      result.latencies.Count() / average(result.client_resources, WallTime);
 
   auto qpsPerCore = qps / result.server_config.threads();
 
@@ -139,33 +132,25 @@ void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
 
 void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
   perf_db_client_.setLatencies(result.latencies.Percentile(50) / 1000,
-                             result.latencies.Percentile(90) / 1000,
-                             result.latencies.Percentile(95) / 1000,
-                             result.latencies.Percentile(99) / 1000,
-                             result.latencies.Percentile(99.9) / 1000);
+                               result.latencies.Percentile(90) / 1000,
+                               result.latencies.Percentile(95) / 1000,
+                               result.latencies.Percentile(99) / 1000,
+                               result.latencies.Percentile(99.9) / 1000);
   perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
 void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
-  double server_system_time =
-      100.0 * sum(result.server_resources,
-                  [](ResourceUsage u) { return u.system_time; }) /
-      sum(result.server_resources, [](ResourceUsage u) { return u.wall_time; });
-  double server_user_time =
-      100.0 * sum(result.server_resources,
-                  [](ResourceUsage u) { return u.user_time; }) /
-      sum(result.server_resources, [](ResourceUsage u) { return u.wall_time; });
-  double client_system_time =
-      100.0 * sum(result.client_resources,
-                  [](ResourceUsage u) { return u.system_time; }) /
-      sum(result.client_resources, [](ResourceUsage u) { return u.wall_time; });
-  double client_user_time =
-      100.0 * sum(result.client_resources,
-                  [](ResourceUsage u) { return u.user_time; }) /
-      sum(result.client_resources, [](ResourceUsage u) { return u.wall_time; });
+  double server_system_time = 100.0 * sum(result.server_resources, SystemTime) /
+                              sum(result.server_resources, WallTime);
+  double server_user_time = 100.0 * sum(result.server_resources, UserTime) /
+                            sum(result.server_resources, WallTime);
+  double client_system_time = 100.0 * sum(result.client_resources, SystemTime) /
+                              sum(result.client_resources, WallTime);
+  double client_user_time = 100.0 * sum(result.client_resources, UserTime) /
+                            sum(result.client_resources, WallTime);
 
-  perf_db_client_.setTimes(server_system_time, server_user_time, client_system_time,
-                         client_user_time);
+  perf_db_client_.setTimes(server_system_time, server_user_time,
+                           client_system_time, client_user_time);
   perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 

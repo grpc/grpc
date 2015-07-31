@@ -77,16 +77,33 @@ static deque<string> get_hosts(const string& name) {
   }
 }
 
+// Namespace for classes and functions used only in RunScenario
+// Using this rather than local definitions to workaround gcc-4.4 limitations
+namespace runsc {
+
+// ClientContext allocator
+static ClientContext* AllocContext(list<ClientContext>* contexts) {
+  contexts->emplace_back();
+  return &contexts->back();
+}
+
+struct ServerData {
+  unique_ptr<Worker::Stub> stub;
+  unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
+};
+
+struct ClientData {
+  unique_ptr<Worker::Stub> stub;
+  unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
+};
+}
+
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& server_config, size_t num_servers, int warmup_seconds,
     int benchmark_seconds, int spawn_local_worker_count) {
-  // ClientContext allocator (all are destroyed at scope exit)
+  // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
-  auto alloc_context = [&contexts]() {
-    contexts.emplace_back();
-    return &contexts.back();
-  };
 
   // To be added to the result, containing the final configuration used for
   // client and config (incluiding host, etc.)
@@ -131,10 +148,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   workers.resize(num_clients + num_servers);
 
   // Start servers
-  struct ServerData {
-    unique_ptr<Worker::Stub> stub;
-    unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
-  };
+  using runsc::ServerData;
   vector<ServerData> servers;
   for (size_t i = 0; i < num_servers; i++) {
     ServerData sd;
@@ -144,7 +158,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result_server_config = server_config;
     result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
-    sd.stream = std::move(sd.stub->RunServer(alloc_context()));
+    sd.stream = std::move(sd.stub->RunServer(runsc::AllocContext(&contexts)));
     GPR_ASSERT(sd.stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(sd.stream->Read(&init_status));
@@ -162,10 +176,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
 
   // Start clients
-  struct ClientData {
-    unique_ptr<Worker::Stub> stub;
-    unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
-  };
+  using runsc::ClientData;
   vector<ClientData> clients;
   for (size_t i = 0; i < num_clients; i++) {
     ClientData cd;
@@ -175,7 +186,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result_client_config = client_config;
     result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
-    cd.stream = std::move(cd.stub->RunTest(alloc_context()));
+    cd.stream = std::move(cd.stub->RunTest(runsc::AllocContext(&contexts)));
     GPR_ASSERT(cd.stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(cd.stream->Read(&init_status));
@@ -229,15 +240,15 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (auto server = servers.begin(); server != servers.end(); server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
-    result->server_resources.push_back(ResourceUsage{
-        stats.time_elapsed(), stats.time_user(), stats.time_system()});
+    result->server_resources.emplace_back(
+        stats.time_elapsed(), stats.time_user(), stats.time_system());
   }
   for (auto client = clients.begin(); client != clients.end(); client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result->latencies.MergeProto(stats.latencies());
-    result->client_resources.push_back(ResourceUsage{
-        stats.time_elapsed(), stats.time_user(), stats.time_system()});
+    result->client_resources.emplace_back(
+        stats.time_elapsed(), stats.time_user(), stats.time_system());
   }
 
   for (auto client = clients.begin(); client != clients.end(); client++) {
