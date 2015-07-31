@@ -71,7 +71,8 @@ class Client {
   explicit Client(const ClientConfig& config)
       : timer_(new Timer), interarrival_timer_() {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_.emplace_back(config.server_targets(i % config.server_targets_size()), config);
+      channels_.emplace_back(
+          config.server_targets(i % config.server_targets_size()), config);
     }
     request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
     request_.set_response_size(config.payload_size());
@@ -188,8 +189,11 @@ class Client {
   class Thread {
    public:
     Thread(Client* client, size_t idx)
-       : done_(false), new_(nullptr), client_(client), idx_(idx), 
-         impl_(&Thread::ThreadFunc, this) {}
+        : done_(false),
+          new_(nullptr),
+          client_(client),
+          idx_(idx),
+          impl_(&Thread::ThreadFunc, this) {}
 
     ~Thread() {
       {
@@ -215,23 +219,23 @@ class Client {
 
     void ThreadFunc() {
       for (;;) {
-	// run the loop body
-	bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
-	// lock, see if we're done
-	std::lock_guard<std::mutex> g(mu_);
-	if (!thread_still_ok) {
-	  gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-	  done_ = true;
-	}
-	if (done_) {
-	  return;
-	}
-	// check if we're marking, swap out the histogram if so
-	if (new_) {
-	  new_->Swap(&histogram_);
-	  new_ = nullptr;
-	  cv_.notify_one();
-	}
+        // run the loop body
+        bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
+        // lock, see if we're done
+        std::lock_guard<std::mutex> g(mu_);
+        if (!thread_still_ok) {
+          gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
+          done_ = true;
+        }
+        if (done_) {
+          return;
+        }
+        // check if we're marking, swap out the histogram if so
+        if (new_) {
+          new_->Swap(&histogram_);
+          new_ = nullptr;
+          cv_.notify_one();
+        }
       }
     }
 
@@ -242,7 +246,7 @@ class Client {
     bool done_;
     Histogram* new_;
     Histogram histogram_;
-    Client *client_;
+    Client* client_;
     size_t idx_;
     std::thread impl_;
   };
