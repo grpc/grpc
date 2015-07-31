@@ -19,7 +19,7 @@ typedef enum grpc_endo_warning_enum {  /* values match positions */
 
 /* system related functions */
 
-gpr_int64 grpc_endo_cyclenow() {
+__inline gpr_int64 grpc_endo_cyclenow() {
 #if defined(__i386__)
   gpr_int64 ret;
   __asm__ volatile("rdtsc" : "=A"(ret));
