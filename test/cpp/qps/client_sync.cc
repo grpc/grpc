@@ -45,8 +45,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/histogram.h>
-#include <grpc/support/log.h>
 #include <grpc/support/host_port.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <gflags/gflags.h>
 #include <grpc++/client_context.h>
 #include <grpc++/server.h>
@@ -79,7 +80,9 @@ class SynchronousClient : public Client {
   void WaitToIssue(int thread_idx) {
     grpc_time next_time;
     if (NextIssueTime(thread_idx, &next_time)) {
-      std::this_thread::sleep_until(next_time);
+      gpr_timespec next_timespec;
+      TimepointHR2Timespec(next_time, &next_timespec);
+      gpr_sleep_until(next_timespec);
     }
   }
 
