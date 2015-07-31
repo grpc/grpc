@@ -84,11 +84,11 @@ enum grpc_profiling_tags {
 #if defined(GRPC_ENDOSCOPE_PROFILER)
 
 #include "src/core/profiling/endoscope_backend.h"
-extern EndoBase endoscope_grpc_base;
-#define GRPC_TIMER_BEGIN(tag, id) ENDOSCOPE_BEGIN(&endoscope_grpc_base, #tag)
-#define GRPC_TIMER_END(tag, id) ENDOSCOPE_END(&endoscope_grpc_base, #tag)
-#define GRPC_TIMER_MARK(tag, id) ENDOSCOPE_EVENT(&endoscope_grpc_base, #tag)
-#define GRPC_TIMER_IMPORTANT_MARK(tag, id) ENDOSCOPE_ERROR(&endoscope_grpc_base, #tag)
+extern grpc_endo_base grpc_endo_instance;
+#define GRPC_TIMER_BEGIN(tag, id) GRPC_ENDO_BEGIN(&grpc_endo_instance, #tag)
+#define GRPC_TIMER_END(tag, id) GRPC_ENDO_END(&grpc_endo_instance, #tag)
+#define GRPC_TIMER_MARK(tag, id) GRPC_ENDO_EVENT(&grpc_endo_instance, #tag)
+#define GRPC_TIMER_IMPORTANT_MARK(tag, id) GRPC_ENDO_ERROR(&grpc_endo_instance, #tag)
 
 #elif !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */

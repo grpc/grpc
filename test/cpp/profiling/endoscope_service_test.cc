@@ -56,21 +56,21 @@ class EndoscopeServiceTest : public ::testing::Test {
 };
 
 TEST_F(EndoscopeServiceTest, EndoscopeCoreTest) {
-  EndoBase *base = &endoscope_grpc_base;
-  ENDOSCOPE_INIT(base);
-  ENDOSCOPE_BEGIN(base, "SOMEBODY SET UP US THE BOMB");
-  ENDOSCOPE_BEGIN(base, "ALL YOUR BASE ARE BELONG TO US");
-  ENDOSCOPE_EVENT(base, "YOU HAVE NO CHANCE TO SURVIVE MAKE YOUR TIME");
-  ENDOSCOPE_END(base, NULL);
-  ENDOSCOPE_END(base, NULL);
+  grpc_endo_base *base = &grpc_endo_instance;
+  GRPC_ENDO_INIT(base);
+  GRPC_ENDO_BEGIN(base, "SOMEBODY SET UP US THE BOMB");
+  GRPC_ENDO_BEGIN(base, "ALL YOUR BASE ARE BELONG TO US");
+  GRPC_ENDO_EVENT(base, "YOU HAVE NO CHANCE TO SURVIVE MAKE YOUR TIME");
+  GRPC_ENDO_END(base, NULL);
+  GRPC_ENDO_END(base, NULL);
 
   // marker
   EXPECT_EQ("SOMEBODY SET UP US THE BOMB",
-            string(endoscope_grpc_base.marker_pool[0].name));
+            string(base->marker_pool[0].name));
   EXPECT_EQ("ALL YOUR BASE ARE BELONG TO US",
-            string(endoscope_grpc_base.marker_pool[1].name));
+            string(base->marker_pool[1].name));
   EXPECT_EQ("YOU HAVE NO CHANCE TO SURVIVE MAKE YOUR TIME",
-            string(endoscope_grpc_base.marker_pool[2].name));
+            string(base->marker_pool[2].name));
   EXPECT_EQ(3, base->marker_count);
 
   // task
@@ -78,8 +78,8 @@ TEST_F(EndoscopeServiceTest, EndoscopeCoreTest) {
   EXPECT_EQ(0, base->task_pool[0].thread_index);
   EXPECT_EQ(0, base->task_pool[0].log_head);
   EXPECT_EQ(2, base->task_pool[0].log_tail);
-  EXPECT_EQ(ENDO_EMPTY, base->task_pool[0].next_task);
-  EXPECT_EQ(ENDO_EMPTY, base->task_pool[0].next_taskwithatom);
+  EXPECT_EQ(GRPC_ENDO_EMPTY, base->task_pool[0].next_task);
+  EXPECT_EQ(GRPC_ENDO_EMPTY, base->task_pool[0].next_taskwithatom);
   EXPECT_EQ(0, base->task_pool[0].scope_depth);
   EXPECT_LT(base->task_pool[0].cycle_begin, base->task_pool[0].cycle_end);
   EXPECT_EQ(1, base->task_stack);
@@ -97,24 +97,24 @@ TEST_F(EndoscopeServiceTest, EndoscopeCoreTest) {
   EXPECT_EQ(2, base->atom_pool[1].param);
   EXPECT_EQ(2, base->atom_pool[1].next_atom);
   EXPECT_EQ(2, base->atom_pool[2].type);  // EndoAtomPB::SCOPE_END
-  EXPECT_EQ(ENDO_EMPTY, base->atom_pool[2].next_atom);
+  EXPECT_EQ(GRPC_ENDO_EMPTY, base->atom_pool[2].next_atom);
   EXPECT_LT(base->atom_pool[0].cycle, base->atom_pool[1].cycle);
   EXPECT_LT(base->atom_pool[1].cycle, base->atom_pool[2].cycle);
   EXPECT_EQ(3, base->atom_stack);
 
   // thread
-  EXPECT_EQ(ENDO_EMPTY, base->thread_pool[0].task_active);
+  EXPECT_EQ(GRPC_ENDO_EMPTY, base->thread_pool[0].task_active);
   EXPECT_EQ(1, base->thread_count);
 }
 
 TEST_F(EndoscopeServiceTest, ProtobufOutputTest) {
-  EndoBase *base = &endoscope_grpc_base;
-  ENDOSCOPE_INIT(base);
-  ENDOSCOPE_BEGIN(base, "SOMEBODY SET UP US THE BOMB");
-  ENDOSCOPE_BEGIN(base, "ALL YOUR BASE ARE BELONG TO US");
-  ENDOSCOPE_EVENT(base, "YOU HAVE NO CHANCE TO SURVIVE MAKE YOUR TIME");
-  ENDOSCOPE_END(base, NULL);
-  ENDOSCOPE_END(base, NULL);
+  grpc_endo_base *base = &grpc_endo_instance;
+  GRPC_ENDO_INIT(base);
+  GRPC_ENDO_BEGIN(base, "SOMEBODY SET UP US THE BOMB");
+  GRPC_ENDO_BEGIN(base, "ALL YOUR BASE ARE BELONG TO US");
+  GRPC_ENDO_EVENT(base, "YOU HAVE NO CHANCE TO SURVIVE MAKE YOUR TIME");
+  GRPC_ENDO_END(base, NULL);
+  GRPC_ENDO_END(base, NULL);
 
   EndoRequestPB request;
   EndoSnapshotPB snapshot;

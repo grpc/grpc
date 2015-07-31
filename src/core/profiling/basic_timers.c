@@ -36,9 +36,9 @@
 #if defined(GRPC_ENDOSCOPE_PROFILER)
 
 #include "src/core/profiling/endoscope_backend.h"
-EndoBase endoscope_grpc_base;
-void grpc_timers_global_init(void) {ENDOSCOPE_INIT(&endoscope_grpc_base);}
-void grpc_timers_global_destroy(void) {ENDOSCOPE_DESTROY(&endoscope_grpc_base);}
+grpc_endo_base grpc_endo_instance;
+void grpc_timers_global_init(void) {GRPC_ENDO_INIT(&grpc_endo_instance);}
+void grpc_timers_global_destroy(void) {GRPC_ENDO_DESTROY(&grpc_endo_instance);}
 
 #elif defined(GRPC_BASIC_PROFILER)
 

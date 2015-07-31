@@ -3,18 +3,18 @@
 
 #ifdef GRPC_ENDOSCOPE_PROFILER
 
-#ifndef ENDOSCOPE_FRONTEND_H_
-#define ENDOSCOPE_FRONTEND_H_
+#ifndef GRPC_INTERNAL_CPP_PROFILING_ENDOSCOPE_FRONTEND_H
+#define GRPC_INTERNAL_CPP_PROFILING_ENDOSCOPE_FRONTEND_H
 
 namespace perftools {
 namespace endoscope {
 
-void WriteSnapshot(EndoBase *base, EndoSnapshotPB* snapshot,
-                   ENDO_INT64 url_cycle_begin, ENDO_INT64 url_cycle_end);
+void WriteSnapshot(grpc_endo_base *base, EndoSnapshotPB* snapshot,
+                   gpr_int64 url_cycle_begin, gpr_int64 url_cycle_end);
 
 }  // namespace endoscope
 }  // namespace perftools
 
-#endif  // ENDOSCOPE_FRONTEND_H_
+#endif  // GRPC_INTERNAL_CPP_PROFILING_ENDOSCOPE_FRONTEND_H
 
 #endif  // GRPC_ENDOSCOPE_PROFILER

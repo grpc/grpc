@@ -46,7 +46,7 @@ namespace endoscope {
 Status EndoscopeService::Action(ServerContext* context,
     const EndoRequestPB* request, EndoSnapshotPB* reply) {
   context->AddInitialMetadata("access-control-allow-origin", "*");
-  WriteSnapshot(&endoscope_grpc_base, reply,
+  WriteSnapshot(&grpc_endo_instance, reply,
               strtoll(request->cycle_begin().c_str(), NULL, 10),
               strtoll(request->cycle_end().c_str(), NULL, 10));
   return Status::OK;
