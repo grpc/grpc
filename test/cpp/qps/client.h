@@ -71,8 +71,7 @@ class Client {
   explicit Client(const ClientConfig& config)
       : timer_(new Timer), interarrival_timer_() {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_.push_back(ClientChannelInfo(
-          config.server_targets(i % config.server_targets_size()), config));
+      channels_.emplace_back(config.server_targets(i % config.server_targets_size()), config);
     }
     request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
     request_.set_response_size(config.payload_size());
