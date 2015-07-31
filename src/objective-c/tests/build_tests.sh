@@ -32,19 +32,8 @@ set -e
 
 cd $(dirname $0)
 
-# Run the tests server.
-../../../bins/$CONFIG/interop_server --port=5050 &
-# Kill it when this script exits.
-trap 'kill -9 `jobs -p`' EXIT
-
-# xcodebuild is very verbose. We filter its output and tell Bash to fail if any
-# element of the pipe fails.
-# TODO(jcanizales): Use xctool instead? Issue #2540.
-set -o pipefail
-XCODEBUILD_FILTER='(^===|^\*\*|\bfatal\b|\berror\b|\bwarning\b|\bfail)'
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme AllTests \
-    -destination name="iPhone 6" \
-    test \
-    | egrep "$XCODEBUILD_FILTER" -
+# The local test server needs to be compiled before this because pod install of
+# gRPC renames some C gRPC files and not the server's code references to them.
+#
+# Suppress error output because Cocoapods issue #3823 causes a flooding warning.
+pod install 2>/dev/null
