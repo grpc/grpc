@@ -242,6 +242,9 @@ failure:
 
 /* Event manager callback when reads are ready. */
 static void on_accept(void *arg, int from_iocp) {
+  DWORD transfered_bytes = 0;
+  DWORD flags;
+  BOOL wsa_success;
   server_port *sp = arg;
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
