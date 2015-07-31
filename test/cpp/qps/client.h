@@ -210,7 +210,9 @@ class Client {
 
     void EndSwap() {
       std::unique_lock<std::mutex> g(mu_);
-      cv_.wait(g, [this]() { return new_ == nullptr; });
+      while (new_ != nullptr) {
+        cv_.wait(g);
+      };
     }
 
    private:
