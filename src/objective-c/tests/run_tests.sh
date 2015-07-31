@@ -39,9 +39,8 @@ cd ../../..
 [ -f bins/dbg/interop_server ] || make CONFIG=dbg interop_server
 cd -
 
-# TODO(jcanizales): Remove when Cocoapods issue #3823 is resolved.
-export COCOAPODS_DISABLE_DETERMINISTIC_UUIDS=YES
-pod install
+# Suppress error output because Cocoapods issue #3823 causes a flooding warning.
+pod install 2>/dev/null
 
 # Run the server.
 ../../../bins/dbg/interop_server --port=5050 &
