@@ -242,6 +242,9 @@ failure:
 
 /* Event manager callback when reads are ready. */
 static void on_accept(void *arg, int from_iocp) {
+  DWORD transfered_bytes = 0;
+  DWORD flags;
+  BOOL wsa_success;
   server_port *sp = arg;
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info *info = &sp->socket->read_info;
@@ -262,9 +265,8 @@ static void on_accept(void *arg, int from_iocp) {
 
   /* The IOCP notified us of a completed operation. Let's grab the results,
       and act accordingly. */
-  DWORD transfered_bytes = 0;
-  DWORD flags;
-  BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
+  transfered_bytes = 0;
+  wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                             &transfered_bytes, FALSE, &flags);
   if (!wsa_success) {
     if (sp->shutting_down) {
