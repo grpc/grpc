@@ -98,6 +98,8 @@ _SETUP_REQUIRES = (
 
 _COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,
+    'build_project_metadata': commands.BuildProjectMetadata,
+    'build_py': commands.BuildPy,
 }
 
 setuptools.setup(
