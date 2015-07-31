@@ -199,8 +199,6 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
 
 /* --- Authentication Context. --- */
 
-/* TODO(jboeuf): Define some well-known property names. */
-
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
 
@@ -254,6 +252,57 @@ grpc_auth_context *grpc_call_auth_context(grpc_call *call);
 
 /* Releases the auth context returned from grpc_call_auth_context. */
 void grpc_auth_context_release(grpc_auth_context *context);
+
+/* --
+   The following auth context methods should only be called by a server metadata
+   processor that will augment the channel auth context (see below).
+   -- */
+
+/* Creates a new auth context based off a chained context. */
+grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
+
+/* Add a property. */
+void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
+                                    const char *value, size_t value_length);
+
+/* Add a C string property. */
+void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
+                                            const char *name,
+                                            const char *value);
+
+/* Sets the property name. Returns 1 if successful or 0 in case of failure
+   (which means that no property with this name exists). */
+int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
+                                                      const char *name);
+
+/* --- Auth Metadata Processing --- */
+
+/* Opaque data structure useful for processors defined in core. */
+typedef struct grpc_auth_ticket grpc_auth_ticket;
+
+/* Callback function that is called when the metadata processing is done.
+   success is 1 if processing succeeded, 0 otherwise. */
+typedef void (*grpc_process_auth_metadata_done_cb)(
+    void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
+    int success, grpc_auth_context *result);
+
+/* Pluggable server-side metadata processor object */
+typedef struct {
+  void (*process)(void *state, grpc_auth_ticket *ticket,
+                  grpc_auth_context *channel_ctx, const grpc_metadata *md,
+                  size_t md_count, grpc_process_auth_metadata_done_cb cb,
+                  void *user_data);
+  void *state;
+} grpc_auth_metadata_processor;
+
+/* XXXX: this is a temporarty interface. Please do NOT use.
+   This function will be moved to the server_credentials in a subsequent
+   pull request. XXXX
+
+   Registration function for metadata processing.
+   Should be called before the server is started. */
+void grpc_server_register_auth_metadata_processor(
+    grpc_auth_metadata_processor processor);
 
 #ifdef __cplusplus
 }

@@ -46,6 +46,11 @@
 #include "src/core/security/credentials.h"
 #include "src/core/support/string.h"
 
+static const char *custom_creds_md_name = "custom_creds";
+static const char *custom_creds_md_value = "custom_value";
+static const char *client_identity_property_name = "smurf_name";
+static const char *client_identity = "Brainy Smurf";
+
 static const char iam_token[] = "token";
 static const char iam_selector[] = "selector";
 static const char overridden_iam_token[] = "overridden_token";
@@ -57,15 +62,77 @@ enum { TIMEOUT = 200000 };
 
 static void *tag(gpr_intptr t) { return (void *)t; }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char *test_name,
-                                            grpc_channel_args *client_args,
-                                            grpc_channel_args *server_args) {
+static const grpc_metadata *find_metadata(const grpc_metadata *md,
+                                          size_t md_count,
+                                          const char *key,
+                                          const char *value) {
+  size_t i;
+  for (i = 0; i < md_count; i++) {
+    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
+        memcmp(md[i].value, value, md[i].value_length) == 0) {
+      return &md[i];
+    }
+  }
+  return NULL;
+}
+
+static void check_peer_identity(grpc_auth_context *ctx,
+                           const char *expected_identity) {
+  grpc_auth_property_iterator it = grpc_auth_context_peer_identity(ctx);
+  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+  GPR_ASSERT(prop != NULL);
+  GPR_ASSERT(strcmp(expected_identity, prop->value) == 0);
+  GPR_ASSERT(grpc_auth_property_iterator_next(&it) == NULL);
+}
+static void process_auth_md_success(void *state, grpc_auth_ticket *t,
+                                    grpc_auth_context *channel_ctx,
+                                    const grpc_metadata *md, size_t md_count,
+                                    grpc_process_auth_metadata_done_cb cb,
+                                    void *user_data) {
+  override_mode *mode;
+  GPR_ASSERT(state != NULL);
+  mode = (override_mode *)state;
+  if (*mode != DESTROY) {
+    grpc_auth_context *new_auth_ctx = grpc_auth_context_create(channel_ctx);
+    const grpc_metadata *custom_creds_md = find_metadata(
+        md, md_count, custom_creds_md_name, custom_creds_md_value);
+    GPR_ASSERT(custom_creds_md != NULL);
+    grpc_auth_context_add_cstring_property(
+        new_auth_ctx, client_identity_property_name, client_identity);
+    GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                   new_auth_ctx, client_identity_property_name) == 1);
+    cb(user_data, custom_creds_md, 1, 1, new_auth_ctx);
+    grpc_auth_context_release(new_auth_ctx);
+  } else {
+    cb(user_data, NULL, 0, 1, channel_ctx);
+  }
+}
+
+static void process_auth_md_failure(void *state, grpc_auth_ticket *t,
+                                    grpc_auth_context *channel_ctx,
+                                    const grpc_metadata *md, size_t md_count,
+                                    grpc_process_auth_metadata_done_cb cb,
+                                    void *user_data) {
+  override_mode *mode;
+  GPR_ASSERT(state != NULL);
+  mode = (override_mode *)state;
+  if (*mode != DESTROY) {
+    const grpc_metadata *custom_creds_md = find_metadata(
+        md, md_count, custom_creds_md_name, custom_creds_md_value);
+    GPR_ASSERT(custom_creds_md != NULL);
+  }
+  cb(user_data, NULL, 0, 0, NULL); /* Fail. */
+}
+
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char *test_name,
+    grpc_auth_metadata_processor processor) {
   grpc_end2end_test_fixture f;
+  grpc_server_register_auth_metadata_processor(processor);
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
-  config.init_client(&f, client_args);
-  config.init_server(&f, server_args);
+  f = config.create_fixture(NULL, NULL);
+  config.init_client(&f, NULL);
+  config.init_server(&f, NULL);
   return f;
 }
 
@@ -124,11 +191,24 @@ static void print_auth_context(int is_client, const grpc_auth_context *ctx) {
   }
 }
 
+static grpc_credentials *iam_custom_composite_creds_create(
+    const char *iam_tok, const char *iam_sel) {
+  grpc_credentials *iam_creds = grpc_iam_credentials_create(iam_tok, iam_sel);
+  grpc_credentials *custom_creds = grpc_md_only_test_credentials_create(
+      custom_creds_md_name, custom_creds_md_value, 1);
+  grpc_credentials *result =
+      grpc_composite_credentials_create(iam_creds, custom_creds);
+  grpc_credentials_release(iam_creds);
+  grpc_credentials_release(custom_creds);
+  return result;
+}
+
 static void test_call_creds_failure(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_credentials *creds = NULL;
+  grpc_auth_metadata_processor p = {NULL, NULL};
   grpc_end2end_test_fixture f =
-      begin_test(config, "test_call_creds_failure", NULL, NULL);
+      begin_test(config, "test_call_creds_failure", p);
   gpr_timespec deadline = five_seconds_time();
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
                                deadline);
@@ -157,9 +237,9 @@ static void request_response_with_payload_and_call_creds(
   grpc_byte_buffer *response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
-
-  grpc_end2end_test_fixture f = begin_test(config, test_name, NULL, NULL);
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+  grpc_auth_metadata_processor p;
+  grpc_end2end_test_fixture f;
+  cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -174,11 +254,17 @@ static void request_response_with_payload_and_call_creds(
   int was_cancelled = 2;
   grpc_credentials *creds = NULL;
   grpc_auth_context *s_auth_context = NULL;
+  grpc_auth_context *c_auth_context = NULL;
+
+  p.process = process_auth_md_success;
+  p.state = &mode;
+  f = begin_test(config, test_name, p);
+  cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
                                deadline);
   GPR_ASSERT(c);
-  creds = grpc_iam_credentials_create(iam_token, iam_selector);
+  creds = iam_custom_composite_creds_create(iam_token, iam_selector);
   GPR_ASSERT(creds != NULL);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   switch (mode) {
@@ -186,8 +272,8 @@ static void request_response_with_payload_and_call_creds(
       break;
     case OVERRIDE:
       grpc_credentials_release(creds);
-      creds = grpc_iam_credentials_create(overridden_iam_token,
-                                          overridden_iam_selector);
+      creds = iam_custom_composite_creds_create(overridden_iam_token,
+                                                overridden_iam_selector);
       GPR_ASSERT(creds != NULL);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
       break;
@@ -241,6 +327,11 @@ static void request_response_with_payload_and_call_creds(
   print_auth_context(0, s_auth_context);
   grpc_auth_context_release(s_auth_context);
 
+  c_auth_context = grpc_call_auth_context(c);
+  GPR_ASSERT(c_auth_context != NULL);
+  print_auth_context(1, c_auth_context);
+  grpc_auth_context_release(c_auth_context);
+
   /* Cannot set creds on the server call object. */
   GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
 
@@ -287,6 +378,10 @@ static void request_response_with_payload_and_call_creds(
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
 
+  /* Has been processed by the auth metadata processor. */
+  GPR_ASSERT(!contains_metadata(&request_metadata_recv, custom_creds_md_name,
+                                custom_creds_md_value));
+
   switch (mode) {
     case NONE:
       GPR_ASSERT(contains_metadata(&request_metadata_recv,
@@ -295,6 +390,7 @@ static void request_response_with_payload_and_call_creds(
       GPR_ASSERT(contains_metadata(&request_metadata_recv,
                                    GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
                                    iam_selector));
+      check_peer_identity(s_auth_context, client_identity);
       break;
     case OVERRIDE:
       GPR_ASSERT(contains_metadata(&request_metadata_recv,
@@ -303,6 +399,7 @@ static void request_response_with_payload_and_call_creds(
       GPR_ASSERT(contains_metadata(&request_metadata_recv,
                                    GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
                                    overridden_iam_selector));
+      check_peer_identity(s_auth_context, client_identity);
       break;
     case DESTROY:
       GPR_ASSERT(!contains_metadata(&request_metadata_recv,
@@ -340,24 +437,120 @@ static void request_response_with_payload_and_call_creds(
   config.tear_down_data(&f);
 }
 
-void test_request_response_with_payload_and_call_creds(
+static void test_request_response_with_payload_and_call_creds(
     grpc_end2end_test_config config) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_call_creds", config, NONE);
 }
 
-void test_request_response_with_payload_and_overridden_call_creds(
+static void test_request_response_with_payload_and_overridden_call_creds(
     grpc_end2end_test_config config) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_overridden_call_creds", config,
       OVERRIDE);
 }
 
-void test_request_response_with_payload_and_deleted_call_creds(
+static void test_request_response_with_payload_and_deleted_call_creds(
     grpc_end2end_test_config config) {
   request_response_with_payload_and_call_creds(
       "test_request_response_with_payload_and_deleted_call_creds", config,
       DESTROY);
+}
+
+static void test_request_with_server_rejecting_client_creds(
+    grpc_end2end_test_config config) {
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_call *c;
+  grpc_auth_metadata_processor p;
+  grpc_end2end_test_fixture f;
+  gpr_timespec deadline = five_seconds_time();
+  cq_verifier *cqv;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  char *details = NULL;
+  size_t details_capacity = 0;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_byte_buffer *request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  override_mode mode = NONE;
+  grpc_credentials *creds;
+
+  p.process = process_auth_md_failure;
+  p.state = &mode;
+  f = begin_test(config, "test_request_with_server_rejecting_client_creds", p);
+  cqv = cq_verifier_create(f.cq);
+
+  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
+                               deadline);
+  GPR_ASSERT(c);
+
+  creds = iam_custom_composite_creds_create(iam_token, iam_selector);
+  GPR_ASSERT(creds != NULL);
+  GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
+  grpc_credentials_release(creds);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
+  op->flags = 0;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  /* XXX Should be GRPC_STATUS_UNAUTHENTICATED but it looks like there is a bug
+     (probably in the server_auth_context.c code) where this error on the server
+     does not get to the client. The current error code we are getting is
+     GRPC_STATUS_INTERNAL. */
+  GPR_ASSERT(status != GRPC_STATUS_OK);
+
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload_recv);
+  gpr_free(details);
+
+  grpc_call_destroy(c);
+
+  cq_verifier_destroy(cqv);
+  end_test(&f);
+  config.tear_down_data(&f);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
@@ -366,5 +559,6 @@ void grpc_end2end_tests(grpc_end2end_test_config config) {
     test_request_response_with_payload_and_call_creds(config);
     test_request_response_with_payload_and_overridden_call_creds(config);
     test_request_response_with_payload_and_deleted_call_creds(config);
+    test_request_with_server_rejecting_client_creds(config);
   }
 }

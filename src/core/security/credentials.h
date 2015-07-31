@@ -190,9 +190,10 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 void grpc_flush_cached_google_default_credentials(void);
 
-/* Simulates an oauth2 token fetch with the specified value for testing. */
-grpc_credentials *grpc_fake_oauth2_credentials_create(
-    const char *token_md_value, int is_async);
+/* Metadata-only credentials with the specified key and value where
+   asynchronicity can be simulated for testing. */
+grpc_credentials *grpc_md_only_test_credentials_create(
+    const char *md_key, const char *md_value, int is_async);
 
 /* Private constructor for jwt credentials from an already parsed json key.
    Takes ownership of the key. */
@@ -297,13 +298,13 @@ typedef struct {
   grpc_credentials_md_store *access_token_md;
 } grpc_access_token_credentials;
 
-/* -- Fake Oauth2 credentials. -- */
+/* --  Metadata-only Test credentials. -- */
 
 typedef struct {
   grpc_credentials base;
-  grpc_credentials_md_store *access_token_md;
+  grpc_credentials_md_store *md_store;
   int is_async;
-} grpc_fake_oauth2_credentials;
+} grpc_md_only_test_credentials;
 
 /* -- IAM credentials. -- */
 
