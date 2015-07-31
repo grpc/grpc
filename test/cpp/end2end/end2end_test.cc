@@ -278,6 +278,7 @@ class End2endTest : public ::testing::Test {
   DynamicThreadPool thread_pool_;
 };
 
+#if 0
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
                     int num_rpcs) {
   EchoRequest request;
@@ -817,10 +818,12 @@ TEST_F(End2endTest, HugeResponse) {
   EXPECT_EQ(kResponseSize, response.message().size());
   EXPECT_TRUE(s.ok());
 }
+#endif
 
 namespace {
-void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream) {
+void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream, gpr_event *ev) {
   EchoResponse resp;
+  gpr_event_set(ev, (void*)1);
   while (stream->Read(&resp)) {
     gpr_log(GPR_INFO, "Read message");
   }
@@ -831,8 +834,11 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream) {
 TEST_F(End2endTest, SimuReadWritesDone) {
   ResetStub();
   ClientContext context;
+  gpr_event ev;
+  gpr_event_init(&ev);
   auto stream = stub_->BidiStream(&context);
-  std::thread reader_thread(ReaderThreadFunc, stream.get());
+  std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
+  gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   stream->WritesDone();
   Status s = stream->Finish();
   EXPECT_TRUE(s.ok());
