@@ -64,13 +64,13 @@ static void do_basic_init(void) {
 typedef struct grpc_plugin {
   void (*init)();
   void (*deinit)();
-  struct grpc_plugin* next;
+  struct grpc_plugin *next;
 } grpc_plugin;
 
-static grpc_plugin* g_plugins_head = NULL;
+static grpc_plugin *g_plugins_head = NULL;
 
-static grpc_plugin* new_plugin(void (*init)(void), void (*deinit)(void)) {
-  grpc_plugin* plugin = gpr_malloc(sizeof(*plugin));
+static grpc_plugin *new_plugin(void (*init)(void), void (*deinit)(void)) {
+  grpc_plugin *plugin = gpr_malloc(sizeof(*plugin));
   memset(plugin, 0, sizeof(*plugin));
   plugin->init = init;
   plugin->deinit = deinit;
@@ -79,13 +79,13 @@ static grpc_plugin* new_plugin(void (*init)(void), void (*deinit)(void)) {
 }
 
 void grpc_register_plugin(void (*init)(void), void (*deinit)(void)) {
-  grpc_plugin* old_head = g_plugins_head;
+  grpc_plugin *old_head = g_plugins_head;
   g_plugins_head = new_plugin(init, deinit);
   g_plugins_head->next = old_head;
 }
 
 void grpc_init(void) {
-  grpc_plugin* plugin;
+  grpc_plugin *plugin;
   gpr_once_init(&g_basic_init, do_basic_init);
 
   gpr_mu_lock(&g_init_mu);
@@ -121,8 +121,8 @@ void grpc_init(void) {
 }
 
 void grpc_shutdown(void) {
-  grpc_plugin* plugin;
-  grpc_plugin* next;
+  grpc_plugin *plugin;
+  grpc_plugin *next;
 
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {

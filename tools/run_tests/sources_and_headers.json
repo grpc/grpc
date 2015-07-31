@@ -1636,6 +1636,23 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "grpc_zookeeper"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "zookeeper_test", 
+    "src": [
+      "test/cpp/end2end/zookeeper_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_fake_security", 
       "end2end_test_bad_hostname", 

@@ -956,7 +956,7 @@ privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c: \
 % for lib in libs:
-% if lib.build == 'private' and lib.language == 'c':
+% if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None):
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -979,17 +979,30 @@ pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 privatelibs_cxx: \
 % for lib in libs:
-% if lib.build == 'private' and lib.language == 'c++':
+% if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None):
  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
 
 
-buildtests: buildtests_c buildtests_cxx
+ifeq ($(HAS_ZOOKEEPER),true)
+privatelibs_zookeeper: \
+% for lib in libs:
+% if lib.build == 'private' and lib.language == 'c++' and zookeeper in lib.get('external_deps', []):
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+% endif
+% endfor
+
+else
+privatelibs_zookeeper:
+endif
+
+
+buildtests: buildtests_c buildtests_cxx buildtests_zookeeper
 
 buildtests_c: privatelibs_c\
 % for tgt in targets:
-% if tgt.build == 'test' and not tgt.language == 'c++':
+% if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
  $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
@@ -997,19 +1010,32 @@ buildtests_c: privatelibs_c\
 
 buildtests_cxx: privatelibs_cxx\
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.language == 'c++':
+% if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
  $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
 
-test: test_c test_cxx
+ifeq ($(HAS_ZOOKEEPER),true)
+buildtests_zookeeper: privatelibs_zookeeper\
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.language == 'c++' and 'zookeeper' in tgt.get('external_deps', []):
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
+% endif
+% endfor
 
-flaky_test: flaky_test_c flaky_test_cxx
+else
+buildtests_zookeeper:
+endif
+
+
+test: test_c test_cxx test_zookeeper
+
+flaky_test: flaky_test_c flaky_test_cxx flaky_test_zookeeper
 
 test_c: buildtests_c
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False):
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -1018,7 +1044,7 @@ test_c: buildtests_c
 
 flaky_test_c: buildtests_c
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False):
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -1027,7 +1053,7 @@ flaky_test_c: buildtests_c
 
 test_cxx: buildtests_cxx
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False):
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -1036,11 +1062,35 @@ test_cxx: buildtests_cxx
 
 flaky_test_cxx: buildtests_cxx
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False):
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and not tgt.get('external_deps', None):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
 % endfor
+
+
+ifeq ($(HAS_ZOOKEEPER),true)
+test_zookeeper: buildtests_zookeeper
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and 'zookeeper' in tgt.get('external_deps', []):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+flaky_test_zookeeper: buildtests_zookeeper
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and 'zookeeper' in tgt.get('external_deps', []):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+else
+test_zookeeper:
+flaky_test_zookeeper:
+endif
 
 
 test_python: static_c
@@ -1738,6 +1788,9 @@ $(${tgt.name.upper()}_OBJS)\
 % for dep in tgt.deps:
  $(LIBDIR)/$(CONFIG)/lib${dep}.a\
 % endfor
+% if 'zookeeper' in tgt.get('external_deps', []):
+ -lzookeeper_mt\
+% endif
 % if tgt.language == "c++":
 % if tgt.build == 'protoc':
  $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\
