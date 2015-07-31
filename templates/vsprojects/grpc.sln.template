@@ -1,5 +1,5 @@
 <%namespace file="sln_defs.include" import="gen_solution"/>\
 <%
-solution_projects = [p for p in vsprojects if p.build != 'protoc']
+solution_projects = [p for p in vsprojects if p.build != 'protoc' and p.language in ['c', 'c++']]
 %>\
-${gen_solution(solution_projects)}
+${gen_solution(solution_projects, use_dlls='yes')}
