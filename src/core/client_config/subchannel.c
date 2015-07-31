@@ -511,8 +511,6 @@ static void publish_transport(grpc_subchannel *c) {
   connection *destroy_connection = NULL;
   grpc_channel_element *elem;
 
-  gpr_log(GPR_DEBUG, "publish_transport: %p", c->master);
-
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;
   filters = gpr_malloc(sizeof(*filters) * num_filters);
