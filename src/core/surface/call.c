@@ -143,6 +143,7 @@ typedef enum {
 struct grpc_call {
   grpc_completion_queue *cq;
   grpc_channel *channel;
+  grpc_call *parent;
   grpc_mdctx *metadata_context;
   /* TODO(ctiller): share with cq if possible? */
   gpr_mu mu;
@@ -290,7 +291,9 @@ static void finished_loose_op(void *call, int success);
 static void lock(grpc_call *call);
 static void unlock(grpc_call *call);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
+grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
+                            gpr_uint32 inheritance_mask,
+                            grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
@@ -309,7 +312,28 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   if (cq) {
     GRPC_CQ_INTERNAL_REF(cq, "bind");
   }
+  call->parent = parent_call;
   call->is_client = server_transport_data == NULL;
+  if (parent_call != NULL) {
+    GRPC_CALL_INTERNAL_REF(parent_call, "child");
+    GPR_ASSERT(call->is_client);
+    GPR_ASSERT(!parent_call->is_client);
+
+    if (inheritance_mask & GRPC_INHERIT_DEADLINE) {
+      send_deadline = gpr_time_min(
+          gpr_convert_clock_type(send_deadline,
+                                 parent_call->send_deadline.clock_type),
+          parent_call->send_deadline);
+    }
+    if (inheritance_mask & GRPC_INHERIT_CENSUS_CONTEXT) {
+      grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
+                            parent_call->context[GRPC_CONTEXT_TRACING].value,
+                            NULL);
+    }
+    /* cancellation is done last */
+  } else {
+    GPR_ASSERT(inheritance_mask == 0);
+  }
   for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
     call->request_set[i] = REQSET_EMPTY;
   }
@@ -404,6 +428,7 @@ void grpc_call_internal_ref(grpc_call *c) {
 static void destroy_call(void *call, int ignored_success) {
   size_t i;
   grpc_call *c = call;
+  grpc_call *parent = c->parent;
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
   GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
   gpr_mu_destroy(&c->mu);
@@ -436,6 +461,9 @@ static void destroy_call(void *call, int ignored_success) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
   gpr_free(c);
+  if (parent) {
+    GRPC_CALL_INTERNAL_UNREF(parent, "child", 1);
+  }
 }
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
@@ -1283,9 +1311,9 @@ static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   }
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
-  grpc_alarm_init(&call->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  call_alarm, call, gpr_now(GPR_CLOCK_MONOTONIC));
+  call->send_deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
+  grpc_alarm_init(&call->alarm, call->send_deadline, call_alarm, call,
+                  gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 /* we offset status by a small amount when storing it into transport metadata
