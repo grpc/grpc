@@ -348,15 +348,19 @@ class AsyncUnaryClient GRPC_FINAL : public AsyncClient {
   ~AsyncUnaryClient() GRPC_OVERRIDE { EndThreads(); }
 
  private:
+  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static std::unique_ptr<grpc::ClientAsyncResponseReader<SimpleResponse>>
+    StartReq(TestService::Stub* stub, grpc::ClientContext* ctx,
+	     const SimpleRequest& request, CompletionQueue* cq) {
+    return stub->AsyncUnaryCall(ctx, request, cq);
+  };
   static ClientRpcContext* SetupCtx(int channel_id, TestService::Stub* stub,
                                     const SimpleRequest& req) {
-    auto check_done = [](grpc::Status s, SimpleResponse* response) {};
-    auto start_req = [](TestService::Stub* stub, grpc::ClientContext* ctx,
-                        const SimpleRequest& request, CompletionQueue* cq) {
-      return stub->AsyncUnaryCall(ctx, request, cq);
-    };
-    return new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
-        channel_id, stub, req, start_req, check_done);
+    return new
+      ClientRpcContextUnaryImpl<SimpleRequest,
+				SimpleResponse>(channel_id, stub, req,
+						AsyncUnaryClient::StartReq,
+						AsyncUnaryClient::CheckDone);
   }
 };
 
@@ -442,16 +446,20 @@ class AsyncStreamingClient GRPC_FINAL : public AsyncClient {
   ~AsyncStreamingClient() GRPC_OVERRIDE { EndThreads(); }
 
  private:
+  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static std::unique_ptr<grpc::ClientAsyncReaderWriter<
+			   SimpleRequest,SimpleResponse>>
+    StartReq(TestService::Stub* stub, grpc::ClientContext* ctx,
+	     CompletionQueue* cq, void* tag) {
+    auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
+    return stream;
+  };
   static ClientRpcContext* SetupCtx(int channel_id, TestService::Stub* stub,
                                     const SimpleRequest& req) {
-    auto check_done = [](grpc::Status s, SimpleResponse* response) {};
-    auto start_req = [](TestService::Stub* stub, grpc::ClientContext* ctx,
-                        CompletionQueue* cq, void* tag) {
-      auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
-      return stream;
-    };
     return new ClientRpcContextStreamingImpl<SimpleRequest, SimpleResponse>(
-        channel_id, stub, req, start_req, check_done);
+        channel_id, stub, req,
+	AsyncStreamingClient::StartReq,
+	AsyncStreamingClient::CheckDone);
   }
 };
 
