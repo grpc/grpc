@@ -41,6 +41,8 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <grpc++/config.h>
+#include <grpc++/config.h>
 
 namespace grpc {
 
@@ -187,29 +189,8 @@ class Client {
   class Thread {
    public:
     Thread(Client* client, size_t idx)
-        : done_(false),
-          new_(nullptr),
-          impl_([this, idx, client]() {
-            for (;;) {
-              // run the loop body
-              bool thread_still_ok = client->ThreadFunc(&histogram_, idx);
-              // lock, see if we're done
-              std::lock_guard<std::mutex> g(mu_);
-              if (!thread_still_ok) {
-                gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-                done_ = true;
-              }
-              if (done_) {
-                return;
-              }
-              // check if we're marking, swap out the histogram if so
-              if (new_) {
-                new_->Swap(&histogram_);
-                new_ = nullptr;
-                cv_.notify_one();
-              }
-            }
-          }) {}
+       : done_(false), new_(nullptr), client_(client), idx_(idx), 
+         impl_(&Thread::ThreadFunc, this) {}
 
     ~Thread() {
       {
@@ -233,6 +214,28 @@ class Client {
     Thread(const Thread&);
     Thread& operator=(const Thread&);
 
+    void ThreadFunc() {
+      for (;;) {
+	// run the loop body
+	bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
+	// lock, see if we're done
+	std::lock_guard<std::mutex> g(mu_);
+	if (!thread_still_ok) {
+	  gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
+	  done_ = true;
+	}
+	if (done_) {
+	  return;
+	}
+	// check if we're marking, swap out the histogram if so
+	if (new_) {
+	  new_->Swap(&histogram_);
+	  new_ = nullptr;
+	  cv_.notify_one();
+	}
+      }
+    }
+
     TestService::Stub* stub_;
     ClientConfig config_;
     std::mutex mu_;
@@ -240,6 +243,8 @@ class Client {
     bool done_;
     Histogram* new_;
     Histogram histogram_;
+    Client *client_;
+    size_t idx_;
     std::thread impl_;
   };
 
