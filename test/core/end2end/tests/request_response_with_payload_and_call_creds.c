@@ -535,7 +535,7 @@ static void test_request_with_server_rejecting_client_creds(
      (probably in the server_auth_context.c code) where this error on the server
      does not get to the client. The current error code we are getting is
      GRPC_STATUS_INTERNAL. */
-  GPR_ASSERT(status != GRPC_STATUS_OK);
+  GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
