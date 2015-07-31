@@ -119,7 +119,7 @@ static void multipoll_with_poll_pollset_maybe_work(
   pfds[0].revents = POLLOUT;
   for (i = 0; i < h->fd_count; i++) {
     int remove = grpc_fd_is_orphaned(h->fds[i]);
-    for (j = 0; j < h->del_count; j++) {
+    for (j = 0; !remove && j < h->del_count; j++) {
       if (h->fds[i] == h->dels[j]) remove = 1;
     }
     if (remove) {
