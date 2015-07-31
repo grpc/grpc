@@ -57,6 +57,11 @@ static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
   *p = value;
 }
 
+static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
+  /* TODO(ctiller): Can we implement something better here? */
+  gpr_atm_rel_store(p, value);
+}
+
 static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
 /* InterlockedCompareExchangePointerNoFence() not available on vista or
    windows7 */

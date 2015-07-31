@@ -253,7 +253,7 @@ class RubyLanguage(object):
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
-    return ['run_dep_checks']
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
@@ -302,6 +302,25 @@ class CSharpLanguage(object):
 
   def __str__(self):
     return 'csharp'
+
+
+class ObjCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def make_targets(self):
+    return ['grpc_objective_c_plugin', 'interop_server']
+
+  def build_steps(self):
+    return [['src/objective-c/tests/build_tests.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'objc'
 
 
 class Sanity(object):
@@ -369,6 +388,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'objc' : ObjCLanguage(),
     'sanity': Sanity(),
     'build': Build(),
     }
