@@ -125,7 +125,7 @@
          ignored, which gives us the desired effect. -->
     <When Condition=" '$(OS)' != 'Unix' ">
       <ItemGroup>
-        <Content Include="..\..\..\vsprojects\Debug-DLL\grpc_csharp_ext.dll">
+        <Content Include="..\..\..\vsprojects\Debug\grpc_csharp_ext.dll">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
       </ItemGroup>
