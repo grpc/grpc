@@ -99,25 +99,7 @@ class AsyncQpsServerTest : public Server {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
     for (int i = 0; i < config.threads(); i++) {
-      threads_.push_back(std::thread([=]() {
-        // Wait until work is available or we are shutting down
-        bool ok;
-        void *got_tag;
-        while (srv_cqs_[i]->Next(&got_tag, &ok)) {
-          ServerRpcContext *ctx = detag(got_tag);
-          // The tag is a pointer to an RPC context to invoke
-          bool still_going = ctx->RunNextState(ok);
-          if (!shutdown_state_[i]->shutdown()) {
-            // this RPC context is done, so refresh it
-            if (!still_going) {
-              ctx->Reset();
-            }
-          } else {
-            return;
-          }
-        }
-        return;
-      }));
+      threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }
   ~AsyncQpsServerTest() {
@@ -142,6 +124,26 @@ class AsyncQpsServerTest : public Server {
   }
 
  private:
+  void ThreadFunc(int rank) {
+    // Wait until work is available or we are shutting down
+    bool ok;
+    void *got_tag;
+    while (srv_cqs_[rank]->Next(&got_tag, &ok)) {
+      ServerRpcContext *ctx = detag(got_tag);
+      // The tag is a pointer to an RPC context to invoke
+      bool still_going = ctx->RunNextState(ok);
+      if (!shutdown_state_[rank]->shutdown()) {
+        // this RPC context is done, so refresh it
+        if (!still_going) {
+          ctx->Reset();
+        }
+      } else {
+        return;
+      }
+    }
+    return;
+  }
+
   class ServerRpcContext {
    public:
     ServerRpcContext() {}
