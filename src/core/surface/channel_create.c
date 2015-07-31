@@ -109,6 +109,7 @@ typedef struct {
   gpr_refcount refs;
   grpc_mdctx *mdctx;
   grpc_channel_args *merge_args;
+  grpc_channel *master;
 } subchannel_factory;
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
@@ -119,6 +120,7 @@ static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
 static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
   subchannel_factory *f = (subchannel_factory *)scf;
   if (gpr_unref(&f->refs)) {
+    GRPC_CHANNEL_INTERNAL_UNREF(f->master, "subchannel_factory");
     grpc_channel_args_destroy(f->merge_args);
     grpc_mdctx_unref(f->mdctx);
     gpr_free(f);
@@ -137,6 +139,7 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
   args->args = final_args;
+  args->master = f->master;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(&c->base);
   grpc_channel_args_destroy(final_args);
@@ -151,8 +154,8 @@ static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args) {
+grpc_channel *grpc_insecure_channel_create(const char *target,
+                                           const grpc_channel_args *args) {
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
@@ -168,19 +171,22 @@ grpc_channel *grpc_channel_create(const char *target,
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
+  channel =
+      grpc_channel_create_from_filters(target, filters, n, args, mdctx, 1);
+
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;
   gpr_ref_init(&f->refs, 1);
   grpc_mdctx_ref(mdctx);
   f->mdctx = mdctx;
   f->merge_args = grpc_channel_args_copy(args);
+  f->master = channel;
+  GRPC_CHANNEL_INTERNAL_REF(f->master, "subchannel_factory");
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
     return NULL;
   }
 
-  channel =
-      grpc_channel_create_from_filters(target, filters, n, args, mdctx, 1);
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
                                    resolver);
   GRPC_RESOLVER_UNREF(resolver, "create");

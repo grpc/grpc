@@ -289,6 +289,9 @@
     <ClCompile Include="..\..\src\core\surface\channel.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -484,9 +487,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h">
       <Filter>src\core\tsi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h">
-      <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\census_filter.h">
       <Filter>src\core\channel</Filter>

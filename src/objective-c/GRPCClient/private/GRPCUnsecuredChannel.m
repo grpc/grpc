@@ -38,7 +38,7 @@
 @implementation GRPCUnsecuredChannel
 
 - (instancetype)initWithHost:(NSString *)host {
-  return (self = [super initWithChannel:grpc_channel_create(host.UTF8String, NULL)]);
+  return (self = [super initWithChannel:grpc_insecure_channel_create(host.UTF8String, NULL)]);
 }
 
 @end

@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  channel = grpc_channel_create(target, NULL);
+  channel = grpc_insecure_channel_create(target, NULL);
   cq = grpc_completion_queue_create();
   the_buffer = grpc_raw_byte_buffer_create(&slice, payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);

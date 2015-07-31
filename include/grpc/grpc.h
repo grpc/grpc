@@ -50,7 +50,7 @@ extern "C" {
  * \section intro_sec The GRPC Core library is a low-level library designed
  * to be wrapped by higher level libraries.
  *
- * The top-level API is provided in grpc.h. 
+ * The top-level API is provided in grpc.h.
  * Security related functionality lives in grpc_security.h.
  */
 
@@ -175,7 +175,7 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_FLAGS,
   /** invalid metadata was passed to this call */
   GRPC_CALL_ERROR_INVALID_METADATA,
-  /** completion queue for notification has not been registered with the 
+  /** completion queue for notification has not been registered with the
       server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
 } grpc_call_error;
@@ -198,7 +198,8 @@ typedef struct grpc_metadata {
   size_t value_length;
 
   /** The following fields are reserved for grpc internal use.
-      There is no need to initialize them, and they will be set to garbage during
+      There is no need to initialize them, and they will be set to garbage
+     during
       calls to grpc. */
   struct {
     void *obfuscated[3];
@@ -256,24 +257,25 @@ typedef enum {
   /** Send a message: 0 or more of these operations can occur for each call */
   GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
-      the client, unless the call was cancelled - in which case this can be 
+      the client, unless the call was cancelled - in which case this can be
       skipped */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
   /** Send status from the server: one and only one instance MUST be sent from
-      the server unless the call was cancelled - in which case this can be 
+      the server unless the call was cancelled - in which case this can be
       skipped */
   GRPC_OP_SEND_STATUS_FROM_SERVER,
-  /** Receive initial metadata: one and only one MUST be made on the client, 
+  /** Receive initial metadata: one and only one MUST be made on the client,
       must not be made on the server */
   GRPC_OP_RECV_INITIAL_METADATA,
-  /** Receive a message: 0 or more of these operations can occur for each call */
+  /** Receive a message: 0 or more of these operations can occur for each call
+     */
   GRPC_OP_RECV_MESSAGE,
   /** Receive status on the client: one and only one must be made on the client.
      This operation always succeeds, meaning ops paired with this operation
      will also appear to succeed, even though they may not have. In that case
      the status will indicate some failure. */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
-  /** Receive close on the server: one and only one must be made on the 
+  /** Receive close on the server: one and only one must be made on the
       server */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
@@ -284,7 +286,7 @@ typedef struct grpc_op {
   /** Operation type, as defined by grpc_op_type */
   grpc_op_type op;
   /** Write flags bitset for grpc_begin_messages */
-  gpr_uint32 flags; 
+  gpr_uint32 flags;
   union {
     struct {
       size_t count;
@@ -303,21 +305,23 @@ typedef struct grpc_op {
         After the operation completes, call grpc_metadata_array_destroy on this
         value, or reuse it in a future op. */
     grpc_metadata_array *recv_initial_metadata;
-    /** ownership of the byte buffer is moved to the caller; the caller must call
+    /** ownership of the byte buffer is moved to the caller; the caller must
+       call
         grpc_byte_buffer_destroy on this value, or reuse it in a future op. */
     grpc_byte_buffer **recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
-          elements stays with the call object (ie key, value members are owned 
+          elements stays with the call object (ie key, value members are owned
           by the call object, trailing_metadata->array is owned by the caller).
-          After the operation completes, call grpc_metadata_array_destroy on this
+          After the operation completes, call grpc_metadata_array_destroy on
+         this
           value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
       /** status_details is a buffer owned by the application before the op
           completes and after the op has completed. During the operation
-          status_details may be reallocated to a size larger than 
-          *status_details_capacity, in which case *status_details_capacity will 
+          status_details may be reallocated to a size larger than
+          *status_details_capacity, in which case *status_details_capacity will
           be updated with the new array capacity.
 
           Pre-allocating space:
@@ -402,6 +406,23 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
     drained and no threads are executing grpc_completion_queue_next */
 void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
+/** Check the connectivity state of a channel. */
+grpc_connectivity_state grpc_channel_check_connectivity_state(
+    grpc_channel *channel, int try_to_connect);
+
+/** Watch for a change in connectivity state.
+    Once the channel connectivity state is different from last_observed_state,
+    tag will be enqueued on cq with success=1.
+    If deadline expires BEFORE the state is changed, tag will be enqueued on cq
+    with success=0.
+    If optional_new_state is non-NULL, it will be set to the newly observed
+    connectivity state of the channel at the same point as tag is enqueued onto 
+    the completion queue. */
+void grpc_channel_watch_connectivity_state(
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    grpc_connectivity_state *optional_new_state, gpr_timespec deadline,
+    grpc_completion_queue *cq, void *tag);
+
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function. */
@@ -436,12 +457,22 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 /** Returns a newly allocated string representing the endpoint to which this
     call is communicating with. The string is in the uri format accepted by
     grpc_channel_create.
-    The returned string should be disposed of with gpr_free(). 
+    The returned string should be disposed of with gpr_free().
 
     WARNING: this value is never authenticated or subject to any security
     related code. It must not be used for any authentication related
     functionality. Instead, use grpc_auth_context. */
 char *grpc_call_get_peer(grpc_call *call);
+
+struct census_context;
+
+/* Set census context for a call; Must be called before first call to
+   grpc_call_start_batch(). */
+void grpc_census_call_set_context(grpc_call *call,
+                                  struct census_context *context);
+
+/* Retrieve the calls current census context. */
+struct census_context *grpc_census_call_get_context(grpc_call *call);
 
 /** Return a newly allocated string representing the target a channel was
     created for. */
@@ -452,8 +483,8 @@ char *grpc_channel_get_target(grpc_channel *channel);
     clients will want to simply pass NULL. See grpc_channel_args definition for
     more on this. The data in 'args' need only live through the invocation of
     this function. */
-grpc_channel *grpc_channel_create(const char *target,
-                                  const grpc_channel_args *args);
+grpc_channel *grpc_insecure_channel_create(const char *target,
+                                           const grpc_channel_args *args);
 
 /** Create a lame client: this client fails every operation attempted on it. */
 grpc_channel *grpc_lame_client_channel_create(const char *target);
@@ -489,7 +520,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 void grpc_call_destroy(grpc_call *call);
 
 /** Request notification of a new call. 'cq_for_notification' must
-    have been registered to the server via 
+    have been registered to the server via
     grpc_server_register_completion_queue. */
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
@@ -507,8 +538,8 @@ grpc_call_error grpc_server_request_call(
 void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host);
 
-/** Request notification of a new pre-registered call. 'cq_for_notification' 
-    must have been registered to the server via 
+/** Request notification of a new pre-registered call. 'cq_for_notification'
+    must have been registered to the server via
     grpc_server_register_completion_queue. */
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,

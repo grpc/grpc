@@ -253,7 +253,7 @@ class RubyLanguage(object):
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
-    return ['run_dep_checks']
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
@@ -346,7 +346,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
@@ -458,7 +458,7 @@ if platform.system() == 'Windows':
                           cwd='vsprojects', shell=True)
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make',
+    return jobset.JobSpec([os.getenv('MAKE', 'make'),
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,

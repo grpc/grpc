@@ -784,7 +784,6 @@ src/core/tsi/fake_transport_security.h \
 src/core/tsi/ssl_transport_security.h \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_interface.h \
-src/core/census/grpc_context.h \
 src/core/channel/census_filter.h \
 src/core/channel/channel_args.h \
 src/core/channel/channel_stack.h \
@@ -978,6 +977,7 @@ src/core/surface/call.c \
 src/core/surface/call_details.c \
 src/core/surface/call_log_batch.c \
 src/core/surface/channel.c \
+src/core/surface/channel_connectivity.c \
 src/core/surface/channel_create.c \
 src/core/surface/completion_queue.c \
 src/core/surface/event_string.c \

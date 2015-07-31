@@ -50,6 +50,10 @@ void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
   ep->vtable->add_to_pollset(ep, pollset);
 }
 
+void grpc_endpoint_add_to_pollset_set(grpc_endpoint *ep, grpc_pollset_set *pollset_set) {
+  ep->vtable->add_to_pollset_set(ep, pollset_set);
+}
+
 void grpc_endpoint_shutdown(grpc_endpoint *ep) { ep->vtable->shutdown(ep); }
 
 void grpc_endpoint_destroy(grpc_endpoint *ep) { ep->vtable->destroy(ep); }
