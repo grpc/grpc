@@ -30,11 +30,17 @@
 """A setup module for the GRPC Python package."""
 
 import os
+import os.path
 import sys
 
 from distutils import core as _core
 import setuptools
 
+# Ensure we're in the proper directory whether or not we're being used by pip.
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# Break import-style to ensure we can actually find our commands module.
+import commands
 
 # Use environment variables to determine whether or not the Cython extension
 # should *use* Cython or use the generated C files. Note that this requires the
@@ -98,15 +104,27 @@ _PACKAGE_DIRECTORIES = {
     'grpc.framework': 'grpc/framework',
 }
 
+_INSTALL_REQUIRES = (
+    'enum34==1.0.4',
+    'futures==2.2.0',
+    'protobuf==3.0.0a3'
+)
+
+_SETUP_REQUIRES = (
+    'sphinx>=1.3',
+) + _INSTALL_REQUIRES
+
+_COMMAND_CLASS = {
+    'doc': commands.SphinxDocumentation
+}
+
 setuptools.setup(
     name='grpcio',
     version='0.10.0a0',
     ext_modules=_EXTENSION_MODULES,
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
-    install_requires=[
-        'enum34==1.0.4',
-        'futures==2.2.0',
-        'protobuf==3.0.0a3'
-    ]
+    install_requires=_INSTALL_REQUIRES,
+    setup_requires=_SETUP_REQUIRES,
+    cmdclass=_COMMAND_CLASS
 )

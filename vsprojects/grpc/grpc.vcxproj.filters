@@ -494,9 +494,6 @@
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h">
-      <Filter>src\core\census</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\census_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>

@@ -253,7 +253,7 @@ class RubyLanguage(object):
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
-    return ['run_dep_checks']
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]

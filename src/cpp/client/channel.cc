@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/census/grpc_context.h"
 #include "src/core/profiling/timers.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
@@ -69,7 +68,7 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                                          ? target_.c_str()
                                          : context->authority().c_str(),
                                      context->raw_deadline());
-  grpc_census_call_set_context(c_call, context->get_census_context());
+  grpc_census_call_set_context(c_call, context->census_context());
   GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
   context->set_call(c_call, shared_from_this());
   return Call(c_call, this, cq);
