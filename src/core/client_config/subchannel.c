@@ -45,8 +45,8 @@
 #include "src/core/surface/channel.h"
 
 #define GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS 20
-#define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
-#define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_NANOS 1170820393
+#define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.618033989
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
@@ -320,8 +320,8 @@ static void continue_connect(grpc_subchannel *c) {
 }
 
 static void start_connect(grpc_subchannel *c) {
-  c->backoff_delta = gpr_time_from_seconds(
-      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS, GPR_TIMESPAN);
+  c->backoff_delta = gpr_time_from_nanos(
+      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_NANOS, GPR_TIMESPAN);
   c->next_attempt = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
   continue_connect(c);
