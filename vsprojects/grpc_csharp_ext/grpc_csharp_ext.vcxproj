@@ -2,20 +2,20 @@
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props')" />
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug-DLL|Win32">
-      <Configuration>Debug-DLL</Configuration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug-DLL|x64">
-      <Configuration>Debug-DLL</Configuration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release-DLL|Win32">
-      <Configuration>Release-DLL</Configuration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release-DLL|x64">
-      <Configuration>Release-DLL</Configuration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -32,12 +32,12 @@
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release-DLL'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -48,6 +48,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\zlib-dll.props" />
     <Import Project="..\winsock.props" />
     <Import Project="..\global.props" />
   </ImportGroup>
@@ -64,7 +65,7 @@
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -78,7 +79,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -92,7 +93,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -110,7 +111,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>

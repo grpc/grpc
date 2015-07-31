@@ -35,7 +35,7 @@
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 ${gen_package_props(packages)}\
   <ItemGroup Label="ProjectConfigurations">
-% if dll != 'no':
+% if dll == 'yes':
     <ProjectConfiguration Include="Debug-DLL|Win32">
       <Configuration>Debug-DLL</Configuration>
       <Platform>Win32</Platform>
@@ -53,7 +53,6 @@ ${gen_package_props(packages)}\
       <Platform>x64</Platform>
     </ProjectConfiguration>
 % endif
-% if dll != 'only':
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -70,7 +69,6 @@ ${gen_package_props(packages)}\
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-% endif
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
@@ -85,7 +83,6 @@ ${gen_package_props(packages)}\
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
-% if dll != 'only':
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>${configuration_type}</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -97,8 +94,7 @@ ${gen_package_props(packages)}\
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-% endif
-% if dll != 'no':
+% if dll == 'yes':
   <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
     <ConfigurationType>${configuration_type}</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -141,7 +137,7 @@ ${gen_package_props(packages)}\
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
     % endif
   </PropertyGroup>
-  % if dll != 'no':
+  % if dll == 'yes':
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -207,7 +203,6 @@ ${gen_package_props(packages)}\
     </Link>
   </ItemDefinitionGroup>
   % endif
-  % if dll != 'only':
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -272,7 +267,6 @@ ${gen_package_props(packages)}\
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  % endif
   % if project.get('public_headers',[]):
   <ItemGroup>
     % for public_header in project.public_headers:
