@@ -120,13 +120,16 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->data.send_initial_metadata.count = 0;
   op->data.send_initial_metadata.metadata = NULL;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -134,6 +137,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -149,6 +153,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);

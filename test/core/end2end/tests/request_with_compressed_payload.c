@@ -161,17 +161,21 @@ static void request_with_payload_template(
     op->data.send_initial_metadata.count = 0;
   }
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
   op->flags = send_flags_bitmask;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -179,6 +183,7 @@ static void request_with_payload_template(
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -194,10 +199,12 @@ static void request_with_payload_template(
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -209,12 +216,14 @@ static void request_with_payload_template(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s, ops, op - ops, tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
