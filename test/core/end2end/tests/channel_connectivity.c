@@ -65,7 +65,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);
-  GPR_ASSERT(state == GRPC_CHANNEL_CONNECTING);
+  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE || 
+             state == GRPC_CHANNEL_CONNECTING);
 
   /* quickly followed by a transition to TRANSIENT_FAILURE */
   grpc_channel_watch_connectivity_state(
