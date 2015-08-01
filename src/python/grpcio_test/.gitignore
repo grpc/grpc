@@ -1,0 +1,10 @@
+MANIFEST
+*.egg-info/
+build/
+dist/
+*.egg
+*.egg/
+*.eggs/
+.coverage
+.coverage.*
+nosetests.xml
