@@ -124,7 +124,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234", deadline);
   GPR_ASSERT(c);
 

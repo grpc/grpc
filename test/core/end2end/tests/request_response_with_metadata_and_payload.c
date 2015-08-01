@@ -129,7 +129,7 @@ static void test_request_response_with_metadata_and_payload(
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 

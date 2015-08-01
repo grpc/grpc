@@ -107,7 +107,7 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 

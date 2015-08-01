@@ -128,7 +128,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   f = begin_test(config, "test_max_message_length", NULL, &server_args);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234",
                                gpr_inf_future(GPR_CLOCK_REALTIME));
   GPR_ASSERT(c);
