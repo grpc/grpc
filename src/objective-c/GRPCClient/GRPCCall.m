@@ -107,11 +107,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
                 format:@"The requests writer can't be already started."];
   }
   if ((self = [super init])) {
-    static dispatch_once_t initialization;
-    dispatch_once(&initialization, ^{
-      grpc_init();
-    });
-
     _completionQueue = [GRPCCompletionQueue completionQueue];
 
     _channel = [GRPCChannel channelToHost:host];
