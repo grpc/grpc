@@ -54,17 +54,13 @@
   });
   GRPCChannel *channel = channelCache[host];
   if (!channel) {
-    channel = [[self alloc] initWithHost:host];
+    channel = [self uncachedChannelToHost:host];
     channelCache[host] = channel;
   }
   return channel;
 }
 
-- (instancetype)init {
-  return [self initWithHost:nil];
-}
-
-- (instancetype)initWithHost:(NSString *)host {
++ (instancetype)uncachedChannelToHost:(NSString *)host {
   if (![host rangeOfString:@"://"].length) {
     // No scheme provided; assume https.
     host = [@"https://" stringByAppendingString:host];
@@ -84,6 +80,10 @@
   [NSException raise:NSInvalidArgumentException
               format:@"URL scheme %@ isn't supported.", hostURL.scheme];
   return nil; // silence warning.
+}
+
+- (instancetype)init {
+  return [self initWithChannel:NULL hostName:nil];
 }
 
 - (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel
@@ -113,12 +113,8 @@
 }
 
 - (void)dealloc {
-  // _unmanagedChannel is NULL when deallocating an object of the base class (because the
-  // initializer returns a different object).
-  if (_unmanagedChannel) {
-    // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
-    // as in the past that made this call to crash.
-    grpc_channel_destroy(_unmanagedChannel);
-  }
+  // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
+  // as in the past that made this call to crash.
+  grpc_channel_destroy(_unmanagedChannel);
 }
 @end

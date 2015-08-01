@@ -43,7 +43,6 @@
 // Convenience constructor to allow for reuse of connections.
 + (instancetype)channelToHost:(NSString *)host;
 
-- (instancetype)initWithHost:(NSString *)host NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel
                        hostName:(NSString *)hostName NS_DESIGNATED_INITIALIZER;
 

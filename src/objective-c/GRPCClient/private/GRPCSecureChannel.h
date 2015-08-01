@@ -34,5 +34,5 @@
 #import "GRPCChannel.h"
 
 @interface GRPCSecureChannel : GRPCChannel
-
+- (instancetype)initWithHost:(NSString *)host NS_DESIGNATED_INITIALIZER;
 @end
