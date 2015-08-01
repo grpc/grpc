@@ -511,8 +511,9 @@ NAN_METHOD(Call::New) {
       double deadline = args[2]->NumberValue();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
       grpc_call *wrapped_call = grpc_channel_create_call(
-          wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
-          channel->GetHost(), MillisecondsToTimespec(deadline));
+          wrapped_channel, NULL, GRPC_INHERIT_DEFAULTS,
+          CompletionQueueAsyncWorker::GetQueue(), *method, channel->GetHost(),
+          MillisecondsToTimespec(deadline));
       call = new Call(wrapped_call);
       args.This()->SetHiddenValue(NanNew("channel_"), channel_object);
     }

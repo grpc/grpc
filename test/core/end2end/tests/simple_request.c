@@ -116,8 +116,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   int was_cancelled = 2;
   char *peer;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo",
-                               "foo.test.google.fr:1234", deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr:1234", deadline);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);

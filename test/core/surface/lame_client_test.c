@@ -60,7 +60,8 @@ int main(int argc, char **argv) {
   chan = grpc_lame_client_channel_create("lampoon:national");
   GPR_ASSERT(chan);
   cq = grpc_completion_queue_create();
-  call = grpc_channel_create_call(chan, cq, "/Foo", "anywhere",
+  call = grpc_channel_create_call(chan, NULL, GRPC_INHERIT_DEFAULTS, cq, "/Foo",
+                                  "anywhere",
                                   GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100));
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);

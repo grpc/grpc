@@ -128,7 +128,7 @@ Call *pygrpc_Channel_create_call(
   }
   call = pygrpc_Call_new_empty(cq);
   call->c_call = grpc_channel_create_call(
-      self->c_chan, cq->c_cq, method, host,
+      self->c_chan, NULL, GRPC_INHERIT_DEFAULTS, cq->c_cq, method, host,
       pygrpc_cast_double_to_gpr_timespec(deadline));
   return call;
 }

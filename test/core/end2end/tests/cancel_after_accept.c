@@ -126,8 +126,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

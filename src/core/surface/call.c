@@ -331,8 +331,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
                             NULL);
     }
     /* cancellation is done last */
-  } else {
-    GPR_ASSERT(inheritance_mask == 0);
   }
   for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
     call->request_set[i] = REQSET_EMPTY;
