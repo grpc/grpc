@@ -77,16 +77,22 @@
 @end
 
 @interface InteropTests : XCTestCase
+// Returns @"http://localhost:5050".
+// Override in a subclass to perform the same tests against a different address.
+// For interop tests, use @"grpc-test.sandbox.google.com".
++ (NSString *)host;
 @end
 
 @implementation InteropTests {
   RMTTestService *_service;
 }
 
-// grpc-test.sandbox.google.com
++ (NSString *)host {
+  return @"http://localhost:5050";
+}
 
 - (void)setUp {
-  _service = [[RMTTestService alloc] initWithHost:@"http://localhost:5050"];
+  _service = [[RMTTestService alloc] initWithHost:self.class.host];
 }
 
 // Tests as described here: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
