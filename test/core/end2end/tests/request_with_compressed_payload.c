@@ -141,7 +141,7 @@ static void request_with_payload_template(
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 

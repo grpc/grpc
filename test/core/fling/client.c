@@ -89,7 +89,7 @@ static void init_ping_pong_request(void) {
 }
 
 static void step_ping_pong_request(void) {
-  call = grpc_channel_create_call(channel, NULL, GRPC_INHERIT_DEFAULTS, cq,
+  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Reflector/reflectUnary", "localhost",
                                   gpr_inf_future(GPR_CLOCK_REALTIME));
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -101,7 +101,7 @@ static void step_ping_pong_request(void) {
 }
 
 static void init_ping_pong_stream(void) {
-  call = grpc_channel_create_call(channel, NULL, GRPC_INHERIT_DEFAULTS, cq,
+  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Reflector/reflectStream", "localhost",
                                   gpr_inf_future(GPR_CLOCK_REALTIME));
   stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;

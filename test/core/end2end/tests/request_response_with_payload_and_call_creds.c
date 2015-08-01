@@ -130,7 +130,7 @@ static void test_call_creds_failure(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_call_creds_failure", NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
@@ -175,7 +175,7 @@ static void request_response_with_payload_and_call_creds(
   grpc_credentials *creds = NULL;
   grpc_auth_context *s_auth_context = NULL;
 
-  c = grpc_channel_create_call(f.client, NULL, GRPC_INHERIT_DEFAULTS, f.cq,
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
   creds = grpc_iam_credentials_create(iam_token, iam_selector);

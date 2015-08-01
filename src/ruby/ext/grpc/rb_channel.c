@@ -212,7 +212,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
     return Qnil;
   }
 
-  call = grpc_channel_create_call(ch, NULL, GRPC_INHERIT_DEFAULTS, cq,
+  call = grpc_channel_create_call(ch, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   method_chars, host_chars,
                                   grpc_rb_time_timeval(deadline,
                                                        /* absolute time */ 0));

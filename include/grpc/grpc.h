@@ -351,14 +351,18 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
-#define GRPC_INHERIT_DEADLINE 1
-#define GRPC_INHERIT_CENSUS_CONTEXT 2
+/* Propagation bits: this can be bitwise or-ed to form propagation_mask for
+ * grpc_call */
+/** Propagate deadline */
+#define GRPC_PROPAGATE_DEADLINE 1
+/** Propagate census context */
+#define GRPC_PROPAGATE_CENSUS_CONTEXT 2
 /* TODO(ctiller):
-#define GRPC_INHERIT_CANCELLATION   4
+#define GRPC_PROPAGATE_CANCELLATION   4
 */
 
-#define GRPC_INHERIT_DEFAULTS \
-  (GRPC_INHERIT_DEADLINE | GRPC_INHERIT_CENSUS_CONTEXT)
+#define GRPC_PROPAGATE_DEFAULTS \
+  (GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_CONTEXT)
 
 /** Initialize the grpc library.
 
@@ -436,10 +440,13 @@ void grpc_channel_watch_connectivity_state(
 
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
-    live through the invocation of this function. */
+    live through the invocation of this function.
+    If parent_call is non-NULL, it must be a server-side call. It will be used
+    to propagate properties from the server call to this new client call. 
+    */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
-                                    gpr_uint32 inheritance_mask,
+                                    gpr_uint32 propagation_mask,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline);
@@ -450,7 +457,7 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 
 /** Create a call given a handle returned from grpc_channel_register_call */
 grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 inheritance_mask,
+    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
     grpc_completion_queue *completion_queue, void *registered_call_handle,
     gpr_timespec deadline);
 

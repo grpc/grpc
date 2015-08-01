@@ -292,7 +292,7 @@ static void lock(grpc_call *call);
 static void unlock(grpc_call *call);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
-                            gpr_uint32 inheritance_mask,
+                            gpr_uint32 propagation_mask,
                             grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
@@ -319,13 +319,13 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
     GPR_ASSERT(call->is_client);
     GPR_ASSERT(!parent_call->is_client);
 
-    if (inheritance_mask & GRPC_INHERIT_DEADLINE) {
+    if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
       send_deadline = gpr_time_min(
           gpr_convert_clock_type(send_deadline,
                                  parent_call->send_deadline.clock_type),
           parent_call->send_deadline);
     }
-    if (inheritance_mask & GRPC_INHERIT_CENSUS_CONTEXT) {
+    if (propagation_mask & GRPC_PROPAGATE_CENSUS_CONTEXT) {
       grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
                             parent_call->context[GRPC_CONTEXT_TRACING].value,
                             NULL);
