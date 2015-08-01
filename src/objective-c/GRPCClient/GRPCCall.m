@@ -100,10 +100,11 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestWriter {
   if (!host || !path) {
-    [NSException raise:NSInvalidArgumentException format:@"Neither host nor method can be nil."];
+    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
   if (requestWriter.state != GRXWriterStateNotStarted) {
-    [NSException raise:NSInvalidArgumentException format:@"The requests writer can't be already started."];
+    [NSException raise:NSInvalidArgumentException
+                format:@"The requests writer can't be already started."];
   }
   if ((self = [super init])) {
     static dispatch_once_t initialization;
