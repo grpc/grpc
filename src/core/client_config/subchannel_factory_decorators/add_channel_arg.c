@@ -31,42 +31,13 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_ATM_GCC_ATOMIC_H
-#define GRPC_SUPPORT_ATM_GCC_ATOMIC_H
+#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
+#include "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h"
 
-/* atm_platform.h for gcc and gcc-like compilers with the
-   __atomic_* interface.  */
-#include <grpc/support/port_platform.h>
-
-typedef gpr_intptr gpr_atm;
-
-#define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))
-
-#define gpr_atm_acq_load(p) (__atomic_load_n((p), __ATOMIC_ACQUIRE))
-#define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))
-#define gpr_atm_rel_store(p, value) \
-  (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELEASE))
-#define gpr_atm_no_barrier_store(p, value) \
-  (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELAXED))
-
-#define gpr_atm_no_barrier_fetch_add(p, delta) \
-  (__atomic_fetch_add((p), (gpr_intptr)(delta), __ATOMIC_RELAXED))
-#define gpr_atm_full_fetch_add(p, delta) \
-  (__atomic_fetch_add((p), (gpr_intptr)(delta), __ATOMIC_ACQ_REL))
-
-static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELAXED,
-                                     __ATOMIC_RELAXED);
+grpc_subchannel_factory *grpc_subchannel_factory_add_channel_arg(
+		grpc_subchannel_factory *input, const grpc_arg *arg) {
+	grpc_channel_args args;
+	args.num_args = 1;
+	args.args = (grpc_arg *)arg;
+	return grpc_subchannel_factory_merge_channel_args(input, &args);
 }
-
-static __inline int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_ACQUIRE,
-                                     __ATOMIC_RELAXED);
-}
-
-static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELEASE,
-                                     __ATOMIC_RELAXED);
-}
-
-#endif  /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */
