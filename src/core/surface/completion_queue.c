@@ -45,8 +45,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
-#define MAX_PLUCKERS 4
-
 typedef struct {
   grpc_pollset_worker *worker;
   void *tag;
@@ -68,7 +66,7 @@ struct grpc_completion_queue {
   int shutdown_called;
   int is_server_cq;
   int num_pluckers;
-  plucker pluckers[MAX_PLUCKERS];
+  plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
 };
 
 grpc_completion_queue *grpc_completion_queue_create(void) {
@@ -205,7 +203,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
 
 static void add_plucker(grpc_completion_queue *cc, void *tag,
                         grpc_pollset_worker *worker) {
-  GPR_ASSERT(cc->num_pluckers != MAX_PLUCKERS);
+  GPR_ASSERT(cc->num_pluckers != GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
   cc->pluckers[cc->num_pluckers].tag = tag;
   cc->pluckers[cc->num_pluckers].worker = worker;
   cc->num_pluckers++;
