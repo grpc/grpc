@@ -32,10 +32,13 @@
  */
 
 #import "GRPCWrappedCall.h"
+
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
+
+#import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
 #import "NSDictionary+GRPC.h"
 #import "NSData+GRPC.h"
@@ -219,21 +222,23 @@
 
 @end
 
+#pragma mark GRPCWrappedCall
+
 @implementation GRPCWrappedCall{
+  GRPCChannel *_channel;
   grpc_call *_call;
   GRPCCompletionQueue *_queue;
 }
 
 - (instancetype)init {
-  return [self initWithChannel:nil path:nil host:nil];
+  return [self initWithHost:nil path:nil];
 }
 
-- (instancetype)initWithChannel:(GRPCChannel *)channel
-                           path:(NSString *)path
-                           host:(NSString *)host {
-  if (!channel || !path || !host) {
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path {
+  if (!path || !host) {
     [NSException raise:NSInvalidArgumentException
-                format:@"channel, method, and host cannot be nil."];
+                format:@"path and host cannot be nil."];
   }
   
   if (self = [super init]) {
@@ -246,7 +251,11 @@
     if (!_queue) {
       return nil;
     }
-    _call = grpc_channel_create_call(channel.unmanagedChannel,
+    _channel = [GRPCChannel channelToHost:host];
+    if (!_channel) {
+      return nil;
+    }
+    _call = grpc_channel_create_call(_channel.unmanagedChannel,
                                      _queue.unmanagedQueue,
                                      path.UTF8String,
                                      host.UTF8String,
