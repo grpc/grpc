@@ -111,7 +111,8 @@ static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
   if (md->key == channeld->te_trailers->key) return NULL;
   if (md->key == channeld->content_type->key) return NULL;
   if (md->key == channeld->user_agent->key) return NULL;
-  if (channeld->default_authority && channeld->default_authority->key == md->key) {
+  if (channeld->default_authority &&
+      channeld->default_authority->key == md->key) {
     calld->sent_authority = 1;
   }
   return md;
@@ -138,7 +139,9 @@ static void hc_mutate_op(grpc_call_element *elem,
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->scheme,
                                    GRPC_MDELEM_REF(channeld->scheme));
       if (channeld->default_authority && !calld->sent_authority) {
-        grpc_metadata_batch_add_head(&op->data.metadata, &calld->authority, GRPC_MDELEM_REF(channeld->default_authority));
+        grpc_metadata_batch_add_head(
+            &op->data.metadata, &calld->authority,
+            GRPC_MDELEM_REF(channeld->default_authority));
       }
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->te_trailers,
                                    GRPC_MDELEM_REF(channeld->te_trailers));
@@ -252,8 +255,8 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
-                              const grpc_channel_args *channel_args, grpc_mdctx *mdctx,
-                              int is_first, int is_last) {
+                              const grpc_channel_args *channel_args,
+                              grpc_mdctx *mdctx, int is_first, int is_last) {
   size_t i;
 
   /* grab pointers to our data from the channel element */
@@ -267,13 +270,13 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->default_authority = NULL;
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
         if (channel_args->args[i].type != GRPC_ARG_STRING) {
           gpr_log(GPR_ERROR, "%s: must be an string",
-                  GRPC_ARG_MAX_CONCURRENT_STREAMS);
+                  GRPC_ARG_DEFAULT_AUTHORITY);
         } else {
-          channeld->default_authority = grpc_mdelem_from_strings(mdctx, ":authority", channel_args->args[i].value.string);
+          channeld->default_authority = grpc_mdelem_from_strings(
+              mdctx, ":authority", channel_args->args[i].value.string);
         }
       }
     }
@@ -282,8 +285,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
   channeld->method = grpc_mdelem_from_strings(mdctx, ":method", "POST");
-  channeld->scheme =
-      grpc_mdelem_from_strings(mdctx, ":scheme", scheme_from_args(channel_args));
+  channeld->scheme = grpc_mdelem_from_strings(mdctx, ":scheme",
+                                              scheme_from_args(channel_args));
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
   channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
