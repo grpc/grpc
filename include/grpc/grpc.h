@@ -349,7 +349,11 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+/* Propagation bits: this can be bitwise or-ed to form propagation_mask for
+ * grpc_call */
+/** Propagate deadline */
 #define GRPC_PROPAGATE_DEADLINE 1
+/** Propagate census context */
 #define GRPC_PROPAGATE_CENSUS_CONTEXT 2
 /* TODO(ctiller):
 #define GRPC_PROPAGATE_CANCELLATION   4
@@ -434,7 +438,10 @@ void grpc_channel_watch_connectivity_state(
 
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
-    live through the invocation of this function. */
+    live through the invocation of this function.
+    If parent_call is non-NULL, it must be a server-side call. It will be used
+    to propagate properties from the server call to this new client call. 
+    */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
                                     gpr_uint32 propagation_mask,
