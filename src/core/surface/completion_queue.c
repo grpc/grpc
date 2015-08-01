@@ -201,12 +201,15 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   return ret;
 }
 
-static void add_plucker(grpc_completion_queue *cc, void *tag,
-                        grpc_pollset_worker *worker) {
-  GPR_ASSERT(cc->num_pluckers != GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
+static int add_plucker(grpc_completion_queue *cc, void *tag,
+                       grpc_pollset_worker *worker) {
+  if (cc->num_pluckers == GRPC_MAX_COMPLETION_QUEUE_PLUCKERS) {
+    return 0;
+  }
   cc->pluckers[cc->num_pluckers].tag = tag;
   cc->pluckers[cc->num_pluckers].worker = worker;
   cc->num_pluckers++;
+  return 1;
 }
 
 static void del_plucker(grpc_completion_queue *cc, void *tag,
@@ -259,7 +262,16 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       ret.type = GRPC_QUEUE_SHUTDOWN;
       break;
     }
-    add_plucker(cc, tag, &worker);
+    if (!add_plucker(cc, tag, &worker)) {
+      gpr_log(GPR_DEBUG, 
+              "Too many outstanding grpc_completion_queue_pluck calls: maximum is %d".
+              GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
+      gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      memset(&ret, 0, sizeof(ret));
+      /* TODO(ctiller): should we use a different result here */
+      ret.type = GRPC_QUEUE_TIMEOUT;
+      break;
+    }
     if (!grpc_pollset_work(&cc->pollset, &worker, deadline)) {
       del_plucker(cc, tag, &worker);
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
