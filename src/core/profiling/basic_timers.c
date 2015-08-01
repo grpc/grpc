@@ -33,7 +33,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_BASIC_PROFILER
+#if defined(GRPC_ENDOSCOPE_PROFILER)
+
+#include "src/core/profiling/endoscope_backend.h"
+grpc_endo_base grpc_endo_instance;
+void grpc_timers_global_init(void) {GRPC_ENDO_INIT(&grpc_endo_instance);}
+void grpc_timers_global_destroy(void) {GRPC_ENDO_DESTROY(&grpc_endo_instance);}
+
+#elif defined(GRPC_BASIC_PROFILER)
 
 #include "src/core/profiling/timers.h"
 #include "src/core/profiling/timers_preciseclock.h"

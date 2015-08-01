@@ -1385,6 +1385,57 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "profiling_endoscope_service"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "profiling_endoscope_server", 
+    "src": [
+      "test/cpp/profiling/endoscope_server.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "profiling_endoscope_service"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "profiling_endoscope_server_test", 
+    "src": [
+      "test/cpp/profiling/endoscope_server_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "profiling_endoscope_service"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "profiling_endoscope_service_test", 
+    "src": [
+      "test/cpp/profiling/endoscope_service_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc_test_util", 
       "pubsub_client_lib"
@@ -10843,6 +10894,7 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
+      "src/core/profiling/endoscope_backend.h", 
       "src/core/profiling/timers.h", 
       "src/core/profiling/timers_preciseclock.h", 
       "src/core/security/auth_filters.h", 
@@ -11039,6 +11091,8 @@
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/basic_timers.c", 
+      "src/core/profiling/endoscope_backend.c", 
+      "src/core/profiling/endoscope_backend.h", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
       "src/core/profiling/timers_preciseclock.h", 
@@ -11303,6 +11357,7 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
+      "src/core/profiling/endoscope_backend.h", 
       "src/core/profiling/timers.h", 
       "src/core/profiling/timers_preciseclock.h", 
       "src/core/surface/byte_buffer_queue.h", 
@@ -11477,6 +11532,8 @@
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/basic_timers.c", 
+      "src/core/profiling/endoscope_backend.c", 
+      "src/core/profiling/endoscope_backend.h", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
       "src/core/profiling/timers_preciseclock.h", 
@@ -11990,6 +12047,26 @@
     "name": "interop_server_main", 
     "src": [
       "test/cpp/interop/server.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++"
+    ], 
+    "headers": [
+      "src/cpp/profiling/endoscope.grpc.pb.h", 
+      "src/cpp/profiling/endoscope.pb.h", 
+      "src/cpp/profiling/endoscope_frontend.h", 
+      "src/cpp/profiling/endoscope_service.h"
+    ], 
+    "language": "c++", 
+    "name": "profiling_endoscope_service", 
+    "src": [
+      "src/cpp/profiling/endoscope_frontend.cc", 
+      "src/cpp/profiling/endoscope_frontend.h", 
+      "src/cpp/profiling/endoscope_service.cc", 
+      "src/cpp/profiling/endoscope_service.h"
     ]
   }, 
   {

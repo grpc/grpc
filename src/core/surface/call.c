@@ -1024,10 +1024,14 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
+#ifndef GRPC_BROWSER_SUPPORT
           grpc_metadata_batch_add_tail(
               &mdb, &call->status_link,
               grpc_channel_get_reffed_status_elem(call->channel,
                                                   data.send_status.code));
+          /* Chrome crashes the webpage if it sees a trailer.
+             It is expected that they will fixed it. */
+#endif
           if (data.send_status.details) {
             grpc_metadata_batch_add_tail(
                 &mdb, &call->details_link,

@@ -265,6 +265,9 @@
     <ClCompile Include="..\..\src\core\profiling\basic_timers.c">
       <Filter>src\core\profiling</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\profiling\endoscope_backend.c">
+      <Filter>src\core\profiling</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
       <Filter>src\core\profiling</Filter>
     </ClCompile>
@@ -664,6 +667,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\profiling\endoscope_backend.h">
+      <Filter>src\core\profiling</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\profiling\timers.h">
       <Filter>src\core\profiling</Filter>

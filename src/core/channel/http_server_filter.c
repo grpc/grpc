@@ -153,7 +153,11 @@ static void hs_on_recv(void *user_data, int success) {
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
-      if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
+      if (calld->seen_post && calld->seen_scheme &&
+#ifndef GRPC_BROWSER_SUPPORT
+          calld->seen_te_trailers &&
+          /* Chrome does not allow JavaScript to set this header */
+#endif
           calld->seen_path) {
         /* do nothing */
       } else {
@@ -166,9 +170,11 @@ static void hs_on_recv(void *user_data, int success) {
         if (!calld->seen_scheme) {
           gpr_log(GPR_ERROR, "Missing :scheme header");
         }
+#ifndef GRPC_BROWSER_SUPPORT
         if (!calld->seen_te_trailers) {
           gpr_log(GPR_ERROR, "Missing te trailers header");
         }
+#endif
         /* Error this call out */
         success = 0;
         grpc_call_element_send_cancel(elem);
