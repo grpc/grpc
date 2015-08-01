@@ -38,7 +38,6 @@
 #import <RxLibrary/GRXConcurrentWriteable.h>
 
 #import "private/GRPCChannel.h"
-#import "private/GRPCCompletionQueue.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
@@ -72,7 +71,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   dispatch_once_t _callAlreadyInvoked;
 
   GRPCChannel *_channel;
-  GRPCCompletionQueue *_completionQueue;
 
   // The C gRPC library has less guarantees on the ordering of events than we
   // do. Particularly, in the face of errors, there's no ordering guarantee at
@@ -107,8 +105,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
                 format:@"The requests writer can't be already started."];
   }
   if ((self = [super init])) {
-    _completionQueue = [GRPCCompletionQueue completionQueue];
-
     _channel = [GRPCChannel channelToHost:host];
 
     _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel
