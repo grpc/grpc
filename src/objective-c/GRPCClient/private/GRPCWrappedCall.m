@@ -39,7 +39,6 @@
 #include <grpc/support/alloc.h>
 
 #import "GRPCChannel.h"
-#import "GRPCCompletionQueue.h"
 #import "NSDictionary+GRPC.h"
 #import "NSData+GRPC.h"
 #import "NSError+GRPC.h"
@@ -227,7 +226,6 @@
 @implementation GRPCWrappedCall{
   GRPCChannel *_channel;
   grpc_call *_call;
-  GRPCCompletionQueue *_queue;
 }
 
 - (instancetype)init {
@@ -240,26 +238,15 @@
     [NSException raise:NSInvalidArgumentException
                 format:@"path and host cannot be nil."];
   }
-  
+
   if (self = [super init]) {
     static dispatch_once_t initialization;
     dispatch_once(&initialization, ^{
       grpc_init();
     });
-    
-    _queue = [GRPCCompletionQueue completionQueue];
-    if (!_queue) {
-      return nil;
-    }
+
     _channel = [GRPCChannel channelToHost:host];
-    if (!_channel) {
-      return nil;
-    }
-    _call = grpc_channel_create_call(_channel.unmanagedChannel,
-                                     _queue.unmanagedQueue,
-                                     path.UTF8String,
-                                     host.UTF8String,
-                                     gpr_inf_future(GPR_CLOCK_REALTIME));
+    _call = [_channel unmanagedCallWithPath:path];
     if (_call == NULL) {
       return nil;
     }

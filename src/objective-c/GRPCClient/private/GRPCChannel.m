@@ -35,10 +35,15 @@
 
 #include <grpc/grpc.h>
 
+#import "GRPCCompletionQueue.h"
 #import "GRPCSecureChannel.h"
 #import "GRPCUnsecuredChannel.h"
 
-@implementation GRPCChannel
+@implementation GRPCChannel {
+  grpc_channel *_unmanagedChannel;
+  NSString *_hostName;
+  GRPCCompletionQueue *_queue;
+}
 
 + (instancetype)channelToHost:(NSString *)host {
   // TODO(mlumish): Investigate whether a cache with strong links is a good idea
@@ -81,11 +86,30 @@
   return nil; // silence warning.
 }
 
-- (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel {
+- (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel
+                       hostName:(NSString *)hostName {
+  if (!unmanagedChannel || !hostName) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"Neither unmanagedChannel nor hostName can be nil."];
+  }
   if ((self = [super init])) {
     _unmanagedChannel = unmanagedChannel;
+    _hostName = hostName;
+    // In case sharing the queue creates contention, we can change it to one per grpc_call.
+    _queue = [GRPCCompletionQueue completionQueue];
+    if (!_queue) {
+      return nil;
+    }
   }
   return self;
+}
+
+- (grpc_call *)unmanagedCallWithPath:(NSString *)path {
+  return grpc_channel_create_call(_unmanagedChannel,
+                                  _queue.unmanagedQueue,
+                                  path.UTF8String,
+                                  _hostName.UTF8String,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 - (void)dealloc {

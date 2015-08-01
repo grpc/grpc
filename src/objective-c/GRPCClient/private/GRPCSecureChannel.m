@@ -54,7 +54,8 @@
   });
   return (self = [super initWithChannel:grpc_secure_channel_create(kCredentials,
                                                                    host.UTF8String,
-                                                                   NULL)]);
+                                                                   NULL)
+                               hostName:host]);
 }
 
 @end
