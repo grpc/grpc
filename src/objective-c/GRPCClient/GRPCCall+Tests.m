@@ -31,18 +31,17 @@
  *
  */
 
-#import "GRPCUnsecuredChannel.h"
+#import "GRPCCall+Tests.h"
 
-#include <grpc/grpc.h>
+#import "private/GRPCHost.h"
 
-@implementation GRPCUnsecuredChannel
-
-- (instancetype)initWithHost:(NSString *)host {
-  return (self = [super initWithChannel:grpc_insecure_channel_create(host.UTF8String, NULL)]);
-}
-
-- (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
-  [NSException raise:NSInternalInconsistencyException format:@"use the other initializer"];
-  return [self initWithHost:nil]; // silence warnings
+@implementation GRPCCall (Tests)
++ (void)useTestCertsPath:(NSString *)certsPath
+                testName:(NSString *)testName
+                 forHost:(NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.secure = YES;
+  hostConfig.pathToCertificates = certsPath;
+  hostConfig.hostNameOverride = testName;
 }
 @end

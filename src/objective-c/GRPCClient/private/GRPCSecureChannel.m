@@ -33,12 +33,24 @@
 
 #import "GRPCSecureChannel.h"
 
-#import <grpc/grpc_security.h>
+grpc_credentials *CertificatesAtPath(NSString *path) {
+  NSData *certsData = [NSData dataWithContentsOfFile:path];
+  NSCAssert(certsData.length, @"No data read from %@", path);
+  NSString *certsString = [[NSString alloc] initWithData:certsData encoding:NSUTF8StringEncoding];
+  return grpc_ssl_credentials_create(certsString.UTF8String, NULL);
+}
 
 @implementation GRPCSecureChannel
 
 - (instancetype)initWithHost:(NSString *)host {
-  static grpc_credentials *kCredentials;
+  return [self initWithHost:host pathToCertificates:nil hostNameOverride:nil];
+}
+
+- (instancetype)initWithHost:(NSString *)host
+          pathToCertificates:(NSString *)path
+            hostNameOverride:(NSString *)hostNameOverride {
+  // Load default SSL certificates once.
+  static grpc_credentials *kDefaultCertificates;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
@@ -47,15 +59,34 @@
     NSAssert(certsPath.length,
              @"gRPCCertificates.bundle/roots.pem not found under %@. This file, with the root "
              "certificates, is needed to establish TLS (HTTPS) connections.", bundle.bundlePath);
-    NSData *certsData = [NSData dataWithContentsOfFile:certsPath];
-    NSAssert(certsData.length, @"No data read from %@", certsPath);
-    NSString *certsString = [[NSString alloc] initWithData:certsData encoding:NSUTF8StringEncoding];
-    kCredentials = grpc_ssl_credentials_create(certsString.UTF8String, NULL);
+    kDefaultCertificates = CertificatesAtPath(certsPath);
   });
-  return (self = [super initWithChannel:grpc_secure_channel_create(kCredentials,
-                                                                   host.UTF8String,
-                                                                   NULL)
-                               hostName:host]);
+  grpc_credentials *certificates = path ? CertificatesAtPath(path) : kDefaultCertificates;
+
+  // Ritual to pass the SSL host name override to the C library.
+  grpc_channel_args channelArgs;
+  grpc_arg nameOverrideArg;
+  channelArgs.num_args = 1;
+  channelArgs.args = &nameOverrideArg;
+  nameOverrideArg.type = GRPC_ARG_STRING;
+  nameOverrideArg.key = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
+  // Cast const away. Hope C gRPC doesn't modify it!
+  nameOverrideArg.value.string = (char *) hostNameOverride.UTF8String;
+  grpc_channel_args *args = hostNameOverride ? &channelArgs : NULL;
+
+  return [self initWithHost:host credentials:certificates args:args];
+}
+
+- (instancetype)initWithHost:(NSString *)host
+                 credentials:(grpc_credentials *)credentials
+                        args:(grpc_channel_args *)args {
+  return (self =
+          [super initWithChannel:grpc_secure_channel_create(credentials, host.UTF8String, args)]);
+}
+
+- (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
+  [NSException raise:NSInternalInconsistencyException format:@"use another initializer"];
+  return [self initWithHost:nil]; // silence warnings
 }
 
 @end

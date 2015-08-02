@@ -31,18 +31,15 @@
  *
  */
 
-#import "GRPCUnsecuredChannel.h"
+#import "GRPCCall.h"
 
-#include <grpc/grpc.h>
+@interface GRPCCall (Tests)
 
-@implementation GRPCUnsecuredChannel
+// Establish all SSL connections to the provided host using the passed SSL target name and the root
+// certificates found in the file at |certsPath|.
+// Must be called before any gRPC call to that host is made.
++ (void)useTestCertsPath:(NSString *)certsPath
+                testName:(NSString *)testName
+                 forHost:(NSString *)host;
 
-- (instancetype)initWithHost:(NSString *)host {
-  return (self = [super initWithChannel:grpc_insecure_channel_create(host.UTF8String, NULL)]);
-}
-
-- (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
-  [NSException raise:NSInternalInconsistencyException format:@"use the other initializer"];
-  return [self initWithHost:nil]; // silence warnings
-}
 @end

@@ -33,83 +33,21 @@
 
 #import "GRPCChannel.h"
 
-#include <grpc/grpc.h>
-
-#import "GRPCCompletionQueue.h"
-#import "GRPCSecureChannel.h"
-#import "GRPCUnsecuredChannel.h"
-
-@implementation GRPCChannel {
-  grpc_channel *_unmanagedChannel;
-  NSString *_hostName;
-  GRPCCompletionQueue *_queue;
-}
-
-+ (instancetype)channelToHost:(NSString *)host {
-  // TODO(mlumish): Investigate whether a cache with strong links is a good idea
-  static NSMutableDictionary *channelCache;
-  static dispatch_once_t cacheInitialization;
-  dispatch_once(&cacheInitialization, ^{
-    channelCache = [NSMutableDictionary dictionary];
-  });
-  GRPCChannel *channel = channelCache[host];
-  if (!channel) {
-    channel = [self uncachedChannelToHost:host];
-    channelCache[host] = channel;
-  }
-  return channel;
-}
-
-+ (instancetype)uncachedChannelToHost:(NSString *)host {
-  if (![host rangeOfString:@"://"].length) {
-    // No scheme provided; assume https.
-    host = [@"https://" stringByAppendingString:host];
-  }
-  NSURL *hostURL = [NSURL URLWithString:host];
-  if (!hostURL) {
-    [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", host];
-  }
-  if ([hostURL.scheme isEqualToString:@"https"]) {
-    host = [@[hostURL.host, hostURL.port ?: @443] componentsJoinedByString:@":"];
-    return [[GRPCSecureChannel alloc] initWithHost:host];
-  }
-  if ([hostURL.scheme isEqualToString:@"http"]) {
-    host = [@[hostURL.host, hostURL.port ?: @80] componentsJoinedByString:@":"];
-    return [[GRPCUnsecuredChannel alloc] initWithHost:host];
-  }
-  [NSException raise:NSInvalidArgumentException
-              format:@"URL scheme %@ isn't supported.", hostURL.scheme];
-  return nil; // silence warning.
-}
+@implementation GRPCChannel
 
 - (instancetype)init {
-  return [self initWithChannel:NULL hostName:nil];
+  return [self initWithChannel:NULL];
 }
 
-- (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel
-                       hostName:(NSString *)hostName {
-  if (!unmanagedChannel || !hostName) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"Neither unmanagedChannel nor hostName can be nil."];
+// Designated initializer
+- (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
+  if (!unmanagedChannel) {
+    [NSException raise:NSInvalidArgumentException format:@"unmanagedChannel can't be nil."];
   }
   if ((self = [super init])) {
     _unmanagedChannel = unmanagedChannel;
-    _hostName = hostName;
-    // In case sharing the queue creates contention, we can change it to one per grpc_call.
-    _queue = [GRPCCompletionQueue completionQueue];
-    if (!_queue) {
-      return nil;
-    }
   }
   return self;
-}
-
-- (grpc_call *)unmanagedCallWithPath:(NSString *)path {
-  return grpc_channel_create_call(_unmanagedChannel,
-                                  _queue.unmanagedQueue,
-                                  path.UTF8String,
-                                  _hostName.UTF8String,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 - (void)dealloc {

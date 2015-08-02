@@ -38,7 +38,8 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 
-#import "GRPCChannel.h"
+#import "GRPCCompletionQueue.h"
+#import "GRPCHost.h"
 #import "NSDictionary+GRPC.h"
 #import "NSData+GRPC.h"
 #import "NSError+GRPC.h"
@@ -223,8 +224,8 @@
 
 #pragma mark GRPCWrappedCall
 
-@implementation GRPCWrappedCall{
-  GRPCChannel *_channel;
+@implementation GRPCWrappedCall {
+  GRPCCompletionQueue *_queue;
   grpc_call *_call;
 }
 
@@ -245,8 +246,12 @@
       grpc_init();
     });
 
-    _channel = [GRPCChannel channelToHost:host];
-    _call = [_channel unmanagedCallWithPath:path];
+    // Each completion queue consumes one thread. There's a trade to be made between creating and
+    // consuming too many threads and having contention of multiple calls in a single completion
+    // queue. Currently we favor latency and use one per call.
+    _queue = [GRPCCompletionQueue completionQueue];
+
+    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path completionQueue:_queue];
     if (_call == NULL) {
       return nil;
     }

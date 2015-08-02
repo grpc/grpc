@@ -31,18 +31,26 @@
  *
  */
 
-#import "GRPCUnsecuredChannel.h"
+#import <Foundation/Foundation.h>
 
-#include <grpc/grpc.h>
+#import "GRPCCompletionQueue.h"
 
-@implementation GRPCUnsecuredChannel
+@interface GRPCHost : NSObject
 
-- (instancetype)initWithHost:(NSString *)host {
-  return (self = [super initWithChannel:grpc_insecure_channel_create(host.UTF8String, NULL)]);
-}
+@property(nonatomic, readonly) NSString *address;
 
-- (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
-  [NSException raise:NSInternalInconsistencyException format:@"use the other initializer"];
-  return [self initWithHost:nil]; // silence warnings
-}
+// The following properties should only be modified for testing:
+
+@property(nonatomic, getter=isSecure) BOOL secure;
+
+@property(nonatomic, copy) NSString *pathToCertificates;
+@property(nonatomic, copy) NSString *hostNameOverride;
+
+// Host objects initialized with the same address are the same.
++ (instancetype)hostWithAddress:(NSString *)address;
+- (instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
+
+// Create a grpc_call object to the provided path on this host.
+- (grpc_call *)unmanagedCallWithPath:(NSString *)path completionQueue:(GRPCCompletionQueue *)queue;
+
 @end
