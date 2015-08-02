@@ -36,12 +36,18 @@
 #import "private/GRPCHost.h"
 
 @implementation GRPCCall (Tests)
+
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
                  forHost:(NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.secure = YES;
   hostConfig.pathToCertificates = certsPath;
   hostConfig.hostNameOverride = testName;
 }
+
++ (void)useInsecureConnectionsForHost:(NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.secure = NO;
+}
+
 @end

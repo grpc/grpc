@@ -58,22 +58,12 @@
 // Default initializer.
 - (instancetype)initWithAddress:(NSString *)address {
 
-  // Verify and normalize the address, and decide whether to use SSL.
-  if (![address rangeOfString:@"://"].length) {
-    // No scheme provided; assume https.
-    address = [@"https://" stringByAppendingString:address];
+  // To provide a default port, we try to interpret the address.
+  // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass through.
+  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
+  if (hostURL && !hostURL.port) {
+    address = [hostURL.host stringByAppendingString:@":443"];
   }
-  NSURL *hostURL = [NSURL URLWithString:address];
-  if (!hostURL) {
-    [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", address];
-  }
-  NSString *scheme = hostURL.scheme;
-  if (![scheme isEqualToString:@"https"] && ![scheme isEqualToString:@"http"]) {
-    [NSException raise:NSInvalidArgumentException format:@"URL scheme %@ isn't supported.", scheme];
-  }
-  // If the user didn't specify a port (hostURL.port is nil), provide a default one.
-  NSNumber *port = hostURL.port ?: [scheme isEqualToString:@"https"] ? @443 : @80;
-  address = [@[hostURL.host, port] componentsJoinedByString:@":"];
 
   // Look up the GRPCHost in the cache.
   static NSMutableDictionary *hostCache;
@@ -84,19 +74,15 @@
   @synchronized(hostCache) {
     GRPCHost *cachedHost = hostCache[address];
     if (cachedHost) {
-      // We could verify here that the cached host uses the same protocol that we're expecting. But
-      // creating non-SSL channels by adding "http://" to the address is going away (to make the use
-      // of insecure channels less subtle), so it's not worth it now.
       return cachedHost;
     }
 
-    if ((self = [super init])) {
-      _address = address;
-      _secure = [scheme isEqualToString:@"https"];
-      hostCache[address] = self;
-    }
-    return self;
+  if ((self = [super init])) {
+    _address = address;
+    _secure = YES;
+    hostCache[address] = self;
   }
+  return self;
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path completionQueue:(GRPCCompletionQueue *)queue {
@@ -130,5 +116,8 @@
   // TODO(jcanizales): Default to nil instead of _address when Issue #2635 is clarified.
   return _hostNameOverride ?: _address;
 }
+
+// TODO(jcanizales): Don't let set |secure| to |NO| if |pathToCertificates| or |hostNameOverride|
+// have been set. Don't let set either of the latter if |secure| has been set to |NO|.
 
 @end

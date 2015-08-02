@@ -33,6 +33,8 @@
 
 #import "GRPCCall.h"
 
+// Methods to let tune down the security of gRPC connections for specific hosts. These shouldn't be
+// used in releases, but are sometimes needed for testing.
 @interface GRPCCall (Tests)
 
 // Establish all SSL connections to the provided host using the passed SSL target name and the root
@@ -42,4 +44,6 @@
                 testName:(NSString *)testName
                  forHost:(NSString *)host;
 
+// Establish all connections to the provided host using cleartext instead of SSL.
++ (void)useInsecureConnectionsForHost:(NSString *)host;
 @end
