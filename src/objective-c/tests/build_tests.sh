@@ -38,6 +38,4 @@ hash xcodebuild 2>/dev/null || { echo >&2 "XCode command-line tools need to be i
 
 # The local test server needs to be compiled before this because pod install of
 # gRPC renames some C gRPC files and not the server's code references to them.
-#
-# Suppress error output because Cocoapods issue #3823 causes a flooding warning.
-pod install 2>/dev/null
+pod install
