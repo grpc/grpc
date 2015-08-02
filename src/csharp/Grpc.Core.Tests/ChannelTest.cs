@@ -72,6 +72,15 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void Target()
+        {
+            using (var channel = new Channel("127.0.0.1", Credentials.Insecure))
+            {
+                Assert.IsTrue(channel.Target.Contains("127.0.0.1"));
+            }
+        }
+
+        [Test]
         public void Dispose_IsIdempotent()
         {
             var channel = new Channel("localhost", Credentials.Insecure);

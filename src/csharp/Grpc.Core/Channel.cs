@@ -131,6 +131,15 @@ namespace Grpc.Core
             return tcs.Task;
         }
 
+        /// <summary> Address of the remote endpoint in URI format.</summary>
+        public string Target
+        {
+            get
+            {
+                return handle.GetTarget();
+            }
+        }
+
         /// <summary>
         /// Allows explicitly requesting channel to connect without starting an RPC.
         /// Returned task completes once state Ready was seen. If the deadline is reached,

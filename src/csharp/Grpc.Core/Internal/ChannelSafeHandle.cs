@@ -57,6 +57,9 @@ namespace Grpc.Core.Internal
             Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern CStringSafeHandle grpcsharp_channel_get_target(ChannelSafeHandle call);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_channel_destroy(IntPtr channel);
 
         private ChannelSafeHandle()
@@ -91,6 +94,14 @@ namespace Grpc.Core.Internal
             var ctx = BatchContextSafeHandle.Create();
             completionRegistry.RegisterBatchCompletion(ctx, callback);
             grpcsharp_channel_watch_connectivity_state(this, lastObservedState, deadline, cq, ctx);
+        }
+
+        public string GetTarget()
+        {
+            using (var cstring = grpcsharp_channel_get_target(this))
+            {
+                return cstring.GetValue();
+            }
         }
 
         protected override bool ReleaseHandle()

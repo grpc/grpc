@@ -394,6 +394,10 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_watch_connectivity_state(
                                         deadline, cq, ctx);
 }
 
+GPR_EXPORT char *GPR_CALLTYPE grpcsharp_channel_get_target(grpc_channel *channel) {
+  return grpc_channel_get_target(channel);
+}
+
 /* Channel args */
 
 GPR_EXPORT grpc_channel_args *GPR_CALLTYPE
