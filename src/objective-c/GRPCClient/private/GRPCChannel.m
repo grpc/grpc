@@ -42,7 +42,7 @@
 // Designated initializer
 - (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
   if (!unmanagedChannel) {
-    [NSException raise:NSInvalidArgumentException format:@"unmanagedChannel can't be nil."];
+    return nil;
   }
   if ((self = [super init])) {
     _unmanagedChannel = unmanagedChannel;
