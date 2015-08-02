@@ -52,7 +52,6 @@ namespace Grpc.Core
         readonly GrpcEnvironment environment;
         readonly ChannelSafeHandle handle;
         readonly List<ChannelOption> options;
-        readonly string target;
         bool disposed;
 
         /// <summary>
@@ -81,7 +80,6 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(host, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(host, this.options);
         }
 
         /// <summary>
@@ -163,14 +161,6 @@ namespace Grpc.Core
             GC.SuppressFinalize(this);
         }
 
-        internal string Target
-        {
-            get
-            {
-                return target;
-            }
-        }
-
         internal ChannelSafeHandle Handle
         {
             get
@@ -224,27 +214,6 @@ namespace Grpc.Core
         {
             // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
             return string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
-        }
-
-        /// <summary>
-        /// Look for SslTargetNameOverride option and return its value instead of originalTarget
-        /// if found.
-        /// </summary>
-        private static string GetOverridenTarget(string originalTarget, IEnumerable<ChannelOption> options)
-        {
-            if (options == null)
-            {
-                return originalTarget;
-            }
-            foreach (var option in options)
-            {
-                if (option.Type == ChannelOption.OptionType.String
-                    && option.Name == ChannelOptions.SslTargetNameOverride)
-                {
-                    return option.StringValue;
-                }
-            }
-            return originalTarget;
         }
     }
 }
