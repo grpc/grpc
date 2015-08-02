@@ -38,7 +38,7 @@
 #import "GRPCUnsecuredChannel.h"
 
 @interface GRPCHost ()
-// TODO(mlumish): Investigate whether a caching channels with strong links is a good idea.
+// TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
 @property(nonatomic, strong) GRPCChannel *channel;
 @end
 
@@ -80,8 +80,8 @@
   });
   if (hostCache[address]) {
     // We could verify here that the cached host uses the same protocol that we're expecting. But
-    // picking HTTP by adding the scheme to the address is going away (to make the use of insecure
-    // channels less subtle), so it's not worth it now.
+    // creating non-SSL channels by adding "http://" to the address is going away (to make the use
+    // of insecure channels less subtle), so it's not worth it now.
     return hostCache[address];
   }
 
@@ -105,7 +105,8 @@
 }
 
 - (GRPCChannel *)channel {
-  // Create it lazily.
+  // Create it lazily, because we don't want to open a connection just because someone is
+  // configuring a host.
   if (!_channel) {
     if (_secure) {
       _channel = [[GRPCSecureChannel alloc] initWithHost:_address
