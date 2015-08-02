@@ -32,6 +32,10 @@ set -e
 
 cd $(dirname $0)
 
+hash protoc 2>/dev/null || { echo >&2 "protoc needs to be installed."; exit 1; }
+hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
+hash xcodebuild 2>/dev/null || { echo >&2 "XCode command-line tools need to be installed."; exit 1; }
+
 # The local test server needs to be compiled before this because pod install of
 # gRPC renames some C gRPC files and not the server's code references to them.
 #
