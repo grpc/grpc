@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,47 +27,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Provides distutils command classes for the GRPC Python test setup process."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import os
+import os.path
+import sys
 
-ROOT=`pwd`
-GRPCIO=$ROOT/src/python/grpcio
-GRPCIO_TEST=$ROOT/src/python/grpcio_test
+import setuptools
 
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
 
-    # Install grpcio
-    cd $GRPCIO
-    pip install -r requirements.txt
-    CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO
+class RunTests(setuptools.Command):
+  """Command to run all tests via py.test."""
 
-    # Install grpcio_test
-    cd $GRPCIO_TEST
-    pip install -r requirements.txt
-    pip install $GRPCIO_TEST
-  else
-    source $virtualenv_name/bin/activate
-    # Uninstall and re-install the packages we care about. Don't use
-    # --force-reinstall or --ignore-installed to avoid propagating this
-    # unnecessarily to dependencies. Don't use --no-deps to avoid missing
-    # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO) || (
-      # Fall back to rebuilding the entire environment
-      rm -rf $virtualenv_name
-      make_virtualenv $1
-    )
-    pip install $GRPCIO_TEST
-  fi
-}
+  description = ''
+  user_options = [('pytest-args=', 'a', 'arguments to pass to py.test')]
 
-make_virtualenv $1
+  def initialize_options(self):
+    self.pytest_args = []
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    # We import here to ensure that setup.py has had a chance to install the
+    # relevant package eggs first.
+    import pytest
+    result = pytest.main(self.pytest_args)
+    if result != 0:
+      raise SystemExit(result)

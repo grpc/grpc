@@ -51,7 +51,8 @@ var server = require('../examples/math_server.js');
 
 describe('Math client', function() {
   before(function(done) {
-    var port_num = server.bind('0.0.0.0:0');
+    var port_num = server.bind('0.0.0.0:0',
+                               grpc.ServerCredentials.createInsecure());
     server.start();
     math_client = new math.Math('localhost:' + port_num,
                                 grpc.Credentials.createInsecure());
