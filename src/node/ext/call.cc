@@ -510,9 +510,19 @@ NAN_METHOD(Call::New) {
       NanUtf8String method(args[1]);
       double deadline = args[2]->NumberValue();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
-      grpc_call *wrapped_call = grpc_channel_create_call(
+      grpc_call *wrapped_call;
+      if (args[3]->IsString()) {
+        NanUtf8String host_override(args[3]);
+        wrapped_call = grpc_channel_create_call(
           wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
-          channel->GetHost(), MillisecondsToTimespec(deadline));
+          *host_override, MillisecondsToTimespec(deadline));
+      } else if (args[3]->IsUndefined() || args[3]->IsNull()) {
+        wrapped_call = grpc_channel_create_call(
+          wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
+          NULL, MillisecondsToTimespec(deadline));
+      } else {
+        return NanThrowTypeError("Call's fourth argument must be a string");
+      }
       call = new Call(wrapped_call);
       args.This()->SetHiddenValue(NanNew("channel_"), channel_object);
     }
