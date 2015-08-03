@@ -64,6 +64,12 @@
     <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -425,6 +431,12 @@
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
@@ -679,6 +691,9 @@
     </Filter>
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{dd617c24-6f07-fdff-80d5-c8610d6f815e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\subchannel_factory_decorators">
+      <UniqueIdentifier>{64285d1a-ebd0-7637-ae20-15df5ca6cc83}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>

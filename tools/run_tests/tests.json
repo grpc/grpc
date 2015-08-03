@@ -859,6 +859,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fake_security_default_host_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fake_security_disappearing_server_test", 
     "platforms": [
       "windows", 
@@ -1147,6 +1156,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_default_host_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_disappearing_server_test", 
     "platforms": [
       "windows", 
@@ -1427,6 +1445,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_compression_channel_connectivity_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_compression_default_host_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2227,6 +2254,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_with_poll_default_host_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_with_poll_disappearing_server_test", 
     "platforms": [
       "posix"
@@ -2483,6 +2518,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_channel_connectivity_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_default_host_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2771,6 +2815,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_with_poll_default_host_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_with_poll_disappearing_server_test", 
     "platforms": [
       "posix"
@@ -3027,6 +3079,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_channel_connectivity_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_default_host_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -4106,6 +4167,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_default_host_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_disappearing_server_unsecure_test", 
     "platforms": [
       "windows", 
@@ -4149,7 +4219,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -4385,6 +4455,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_compression_default_host_unsecure_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_compression_disappearing_server_unsecure_test", 
     "platforms": [
       "windows", 
@@ -4428,7 +4507,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_compression_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -4694,7 +4773,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -4942,7 +5021,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_posix_with_poll_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -5152,6 +5231,14 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_with_poll_default_host_unsecure_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_with_poll_disappearing_server_unsecure_test", 
     "platforms": [
       "posix"
@@ -5190,7 +5277,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_with_poll_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -5433,7 +5520,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -5685,7 +5772,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_unsecure_test", 
     "platforms": [
@@ -5937,7 +6024,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_with_grpc_trace_invoke_large_request_unsecure_test", 
     "platforms": [
