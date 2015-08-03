@@ -4,8 +4,6 @@ import jobset
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-l', '--language',
-                  choices=['build_only', 'c++', 'node'],
-                  nargs='+',
                   default='build_only')
 args = argp.parse_args()
 
