@@ -10,8 +10,7 @@ argp.add_argument('-l', '--language',
 args = argp.parse_args()
 
 # build job
-build_steps = 'tools/run_tests/run_interops_build.sh'
-build_job = jobset.JobSpec(cmdline=build_steps, shortname='build')
+build_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_build.sh', '%s' % lang], shortname='build')
 
 # test jobs
 _TESTS = ['large_unary', 'empty_unary', 'ping_pong', 'client_streaming', 'server_streaming']
