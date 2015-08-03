@@ -197,7 +197,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor *service) {
   for (size_t i = 0; i < used_messages.size(); i++) {
     const Descriptor *message = used_messages[i];
     out->Print(
-        "static readonly Marshaller<$type$> $fieldname$ = Marshallers.Create((arg) => arg.ToByteArray(), $type$.ParseFrom);\n",
+        "static readonly Marshaller<$type$> $fieldname$ = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), $type$.Parser.ParseFrom);\n",
         "fieldname", GetMarshallerFieldName(message), "type",
         GetClassName(message));
   }
