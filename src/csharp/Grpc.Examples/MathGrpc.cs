@@ -7,38 +7,38 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace math {
+namespace Math {
   public static class Math
   {
     static readonly string __ServiceName = "math.Math";
 
-    static readonly Marshaller<global::math.DivArgs> __Marshaller_DivArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::math.DivArgs.ParseFrom);
-    static readonly Marshaller<global::math.DivReply> __Marshaller_DivReply = Marshallers.Create((arg) => arg.ToByteArray(), global::math.DivReply.ParseFrom);
-    static readonly Marshaller<global::math.FibArgs> __Marshaller_FibArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::math.FibArgs.ParseFrom);
-    static readonly Marshaller<global::math.Num> __Marshaller_Num = Marshallers.Create((arg) => arg.ToByteArray(), global::math.Num.ParseFrom);
+    static readonly Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.DivArgs.ParseFrom);
+    static readonly Marshaller<global::Math.DivReply> __Marshaller_DivReply = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.DivReply.ParseFrom);
+    static readonly Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.FibArgs.ParseFrom);
+    static readonly Marshaller<global::Math.Num> __Marshaller_Num = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.Num.ParseFrom);
 
-    static readonly Method<global::math.DivArgs, global::math.DivReply> __Method_Div = new Method<global::math.DivArgs, global::math.DivReply>(
+    static readonly Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new Method<global::Math.DivArgs, global::Math.DivReply>(
         MethodType.Unary,
         __ServiceName,
         "Div",
         __Marshaller_DivArgs,
         __Marshaller_DivReply);
 
-    static readonly Method<global::math.DivArgs, global::math.DivReply> __Method_DivMany = new Method<global::math.DivArgs, global::math.DivReply>(
+    static readonly Method<global::Math.DivArgs, global::Math.DivReply> __Method_DivMany = new Method<global::Math.DivArgs, global::Math.DivReply>(
         MethodType.DuplexStreaming,
         __ServiceName,
         "DivMany",
         __Marshaller_DivArgs,
         __Marshaller_DivReply);
 
-    static readonly Method<global::math.FibArgs, global::math.Num> __Method_Fib = new Method<global::math.FibArgs, global::math.Num>(
+    static readonly Method<global::Math.FibArgs, global::Math.Num> __Method_Fib = new Method<global::Math.FibArgs, global::Math.Num>(
         MethodType.ServerStreaming,
         __ServiceName,
         "Fib",
         __Marshaller_FibArgs,
         __Marshaller_Num);
 
-    static readonly Method<global::math.Num, global::math.Num> __Method_Sum = new Method<global::math.Num, global::math.Num>(
+    static readonly Method<global::Math.Num, global::Math.Num> __Method_Sum = new Method<global::Math.Num, global::Math.Num>(
         MethodType.ClientStreaming,
         __ServiceName,
         "Sum",
@@ -48,6 +48,7 @@ namespace math {
     // client interface
     public interface IMathClient
     {
+<<<<<<< HEAD
       global::math.DivReply Div(global::math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
       global::math.DivReply Div(global::math.DivArgs request, CallOptions options);
       AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -58,15 +59,22 @@ namespace math {
       AsyncServerStreamingCall<global::math.Num> Fib(global::math.FibArgs request, CallOptions options);
       AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
       AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(CallOptions options);
+=======
+      global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+>>>>>>> 708e8de... regenerate protos
     }
 
     // server-side interface
     public interface IMath
     {
-      Task<global::math.DivReply> Div(global::math.DivArgs request, ServerCallContext context);
-      Task DivMany(IAsyncStreamReader<global::math.DivArgs> requestStream, IServerStreamWriter<global::math.DivReply> responseStream, ServerCallContext context);
-      Task Fib(global::math.FibArgs request, IServerStreamWriter<global::math.Num> responseStream, ServerCallContext context);
-      Task<global::math.Num> Sum(IAsyncStreamReader<global::math.Num> requestStream, ServerCallContext context);
+      Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
+      Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context);
+      Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context);
+      Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context);
     }
 
     // client stub
@@ -75,7 +83,7 @@ namespace math {
       public MathClient(Channel channel) : base(channel)
       {
       }
-      public global::math.DivReply Div(global::math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         var call = CreateCall(__Method_Div, new CallOptions(headers, deadline, cancellationToken));
         return Calls.BlockingUnaryCall(call, request);
@@ -85,7 +93,7 @@ namespace math {
         var call = CreateCall(__Method_Div, options);
         return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         var call = CreateCall(__Method_Div, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncUnaryCall(call, request);
@@ -95,7 +103,7 @@ namespace math {
         var call = CreateCall(__Method_Div, options);
         return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncDuplexStreamingCall<global::math.DivArgs, global::math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         var call = CreateCall(__Method_DivMany, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncDuplexStreamingCall(call);
@@ -105,7 +113,7 @@ namespace math {
         var call = CreateCall(__Method_DivMany, options);
         return Calls.AsyncDuplexStreamingCall(call);
       }
-      public AsyncServerStreamingCall<global::math.Num> Fib(global::math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         var call = CreateCall(__Method_Fib, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncServerStreamingCall(call, request);
@@ -115,7 +123,7 @@ namespace math {
         var call = CreateCall(__Method_Fib, options);
         return Calls.AsyncServerStreamingCall(call, request);
       }
-      public AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         var call = CreateCall(__Method_Sum, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncClientStreamingCall(call);

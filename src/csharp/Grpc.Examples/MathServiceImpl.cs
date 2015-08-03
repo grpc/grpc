@@ -38,7 +38,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace math
+namespace Math
 {
     /// <summary>
     /// Implementation of MathService server
