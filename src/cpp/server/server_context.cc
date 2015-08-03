@@ -34,11 +34,13 @@
 #include <grpc++/server_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
+#include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
@@ -144,8 +146,26 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
-bool ServerContext::IsCancelled() {
+bool ServerContext::IsCancelled() const {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
+}
+
+void ServerContext::set_compression_level(grpc_compression_level level) {
+  const grpc_compression_algorithm algorithm_for_level =
+      grpc_compression_algorithm_for_level(level);
+  set_compression_algorithm(algorithm_for_level);
+}
+
+void ServerContext::set_compression_algorithm(
+    grpc_compression_algorithm algorithm) {
+  char* algorithm_name = NULL;
+  if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != NULL);
+  AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
 }
 
 void ServerContext::set_call(grpc_call* call) {
@@ -158,6 +178,20 @@ std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
     auth_context_ = CreateAuthContext(call_);
   }
   return auth_context_;
+}
+
+grpc::string ServerContext::peer() const {
+  grpc::string peer;
+  if (call_) {
+    char* c_peer = grpc_call_get_peer(call_);
+    peer = c_peer;
+    gpr_free(c_peer);
+  }
+  return peer;
+}
+
+const struct census_context* ServerContext::census_context() const {
+  return grpc_census_call_get_context(call_);
 }
 
 }  // namespace grpc

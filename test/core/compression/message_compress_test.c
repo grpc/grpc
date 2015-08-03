@@ -61,13 +61,15 @@ static void assert_passthrough(gpr_slice value,
   gpr_slice_buffer output;
   gpr_slice final;
   int was_compressed;
+  char *algorithm_name;
 
+  GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algorithm_name) != 0);
   gpr_log(GPR_INFO,
           "assert_passthrough: value_length=%d value_hash=0x%08x "
           "algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
           GPR_SLICE_LENGTH(value), gpr_murmur_hash3(GPR_SLICE_START_PTR(value),
                                                     GPR_SLICE_LENGTH(value), 0),
-          grpc_compression_algorithm_name(algorithm),
+          algorithm_name,
           grpc_slice_split_mode_name(uncompressed_split_mode),
           grpc_slice_split_mode_name(compressed_split_mode));
 

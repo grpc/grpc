@@ -1,0 +1,5 @@
+pytest>=2.6
+pytest-cov>=2.0
+pytest-xdist>=1.11
+oauth2client>=1.4.7
+grpcio>=0.10.0a0

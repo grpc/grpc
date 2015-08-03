@@ -51,10 +51,10 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public static ServerCredentialsSafeHandle CreateSslCredentials(string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray)
+        public static ServerCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray)
         {
             Preconditions.CheckArgument(keyCertPairCertChainArray.Length == keyCertPairPrivateKeyArray.Length);
-            return grpcsharp_ssl_server_credentials_create(null,
+            return grpcsharp_ssl_server_credentials_create(pemRootCerts,
                                                            keyCertPairCertChainArray, keyCertPairPrivateKeyArray,
                                                            new UIntPtr((ulong)keyCertPairCertChainArray.Length));
         }

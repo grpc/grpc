@@ -43,7 +43,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/fixed_size_thread_pool.h>
+#include <grpc++/dynamic_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -71,7 +71,7 @@ namespace {
 void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
                        EchoResponse* response) {
   if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future;
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     if (context->deadline() != system_clock::time_point::max()) {
       Timepoint2Timespec(context->deadline(), &deadline);
     }
@@ -97,14 +97,16 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us())));
+            gpr_time_from_micros(request->param().client_cancel_after_us(),
+                                 GPR_TIMESPAN)));
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us())));
+          gpr_time_from_micros(request->param().server_cancel_after_us(),
+                               GPR_TIMESPAN)));
       return Status::CANCELLED;
     } else {
       EXPECT_FALSE(context->IsCancelled());
@@ -206,7 +208,7 @@ class End2endTest : public ::testing::Test {
   const int kMaxMessageSize_;
   TestServiceImpl service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  FixedSizeThreadPool thread_pool_;
+  DynamicThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,

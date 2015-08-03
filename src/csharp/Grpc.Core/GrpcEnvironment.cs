@@ -35,6 +35,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -54,6 +55,8 @@ namespace Grpc.Core
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
+
+        static ILogger logger = new ConsoleLogger();
 
         readonly GrpcThreadPool threadPool;
         readonly CompletionRegistry completionRegistry;
@@ -93,17 +96,38 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Gets application-wide logger used by gRPC.
+        /// </summary>
+        /// <value>The logger.</value>
+        public static ILogger Logger
+        {
+            get
+            {
+                return logger;
+            }
+        }
+
+        /// <summary>
+        /// Sets the application-wide logger that should be used by gRPC.
+        /// </summary>
+        public static void SetLogger(ILogger customLogger)
+        {
+            Preconditions.CheckNotNull(customLogger);
+            logger = customLogger;
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
-            GrpcLog.RedirectNativeLogs(Console.Error);
+            NativeLogRedirector.Redirect();
             grpcsharp_init();
             completionRegistry = new CompletionRegistry(this);
             threadPool = new GrpcThreadPool(this, THREAD_POOL_SIZE);
             threadPool.Start();
             // TODO: use proper logging here
-            Console.WriteLine("GRPC initialized.");
+            Logger.Info("gRPC initialized.");
         }
 
         /// <summary>
@@ -154,8 +178,7 @@ namespace Grpc.Core
 
             debugStats.CheckOK();
 
-            // TODO: use proper logging here
-            Console.WriteLine("GRPC shutdown.");
+            Logger.Info("gRPC shutdown.");
         }
 
         /// <summary>
@@ -171,7 +194,7 @@ namespace Grpc.Core
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Error occured while shutting down GrpcEnvironment: " + e);
+                    Logger.Error(e, "Error occured while shutting down GrpcEnvironment.");
                 }
             });
         }

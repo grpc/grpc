@@ -182,8 +182,7 @@ void grpc_chttp2_publish_reads(
       stream_global->max_recv_bytes -= 
           stream_parsing->incoming_window_delta;
       stream_parsing->incoming_window_delta = 0;
-      grpc_chttp2_list_add_writable_window_update_stream(transport_global,
-                                                         stream_global);
+      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
 
     /* update outgoing flow control window */
@@ -588,7 +587,7 @@ static void on_header(void *tp, grpc_mdelem *md) {
   GPR_ASSERT(stream_parsing);
 
   GRPC_CHTTP2_IF_TRACING(gpr_log(
-      GPR_INFO, "HTTP:%d:HDR: %s: %s", stream_parsing->id,
+      GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", stream_parsing->id,
       transport_parsing->is_client ? "CLI" : "SVR",
       grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
@@ -601,13 +600,13 @@ static void on_header(void *tp, grpc_mdelem *md) {
                                       cached_timeout)) {
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'",
                 grpc_mdstr_as_c_string(md->value));
-        *cached_timeout = gpr_inf_future;
+        *cached_timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
       }
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }
     grpc_chttp2_incoming_metadata_buffer_set_deadline(
         &stream_parsing->incoming_metadata,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), *cached_timeout));
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), *cached_timeout));
     GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->incoming_metadata,

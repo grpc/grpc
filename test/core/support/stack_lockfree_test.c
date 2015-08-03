@@ -62,7 +62,7 @@ static void test_serial_sized(int size) {
   for (i = 1; i < size; i *= 2) {
     int j;
     for (j = 0; j <= i; j++) {
-      gpr_stack_lockfree_push(stack, j);
+      GPR_ASSERT(gpr_stack_lockfree_push(stack, j) == (j == 0));
     }
     for (j = 0; j <= i; j++) {
       GPR_ASSERT(gpr_stack_lockfree_pop(stack) == i - j);

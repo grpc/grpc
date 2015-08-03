@@ -52,7 +52,7 @@
 extern id const kGRPCStatusMetadataKey;
 
 // Represents a single gRPC remote call.
-@interface GRPCCall : NSObject<GRXWriter>
+@interface GRPCCall : GRXWriter
 
 // These HTTP headers will be passed to the server as part of this call. Each HTTP header is a
 // name-value pair with string names and either string or binary values.
@@ -89,7 +89,7 @@ extern id const kGRPCStatusMetadataKey;
 // To finish a call right away, invoke cancel.
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(id<GRXWriter>)requestsWriter NS_DESIGNATED_INITIALIZER;
+              requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
 
 // Finishes the request side of this call, notifies the server that the RPC
 // should be cancelled, and finishes the response side of the call with an error

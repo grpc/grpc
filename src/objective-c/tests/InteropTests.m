@@ -83,8 +83,10 @@
   RMTTestService *_service;
 }
 
+// grpc-test.sandbox.google.com
+
 - (void)setUp {
-  _service = [[RMTTestService alloc] initWithHost:@"grpc-test.sandbox.google.com"];
+  _service = [[RMTTestService alloc] initWithHost:@"http://localhost:5050"];
 }
 
 // Tests as described here: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
@@ -143,7 +145,7 @@
   RMTStreamingInputCallRequest *request4 = [RMTStreamingInputCallRequest message];
   request4.payload.body = [NSMutableData dataWithLength:45904];
 
-  id<GRXWriter> writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
+  GRXWriter *writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
 
   [_service streamingInputCallWithRequestsWriter:writer
                                          handler:^(RMTStreamingInputCallResponse *response,

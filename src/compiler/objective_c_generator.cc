@@ -67,7 +67,7 @@ void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
-    printer->Print("RequestsWriter:(id<GRXWriter>)requestWriter");
+    printer->Print("RequestsWriter:(GRXWriter *)requestWriter");
   } else {
     printer->Print(vars, "Request:($request_class$ *)request");
   }
@@ -185,9 +185,6 @@ string GetHeader(const ServiceDescriptor *service) {
     // Scope the output stream so it closes and finalizes output to the string.
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
-
-    printer.Print("@protocol GRXWriteable;\n");
-    printer.Print("@protocol GRXWriter;\n\n");
 
     map<string, string> vars = {{"service_class", ServiceClassName(service)}};
 

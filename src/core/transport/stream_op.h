@@ -102,6 +102,11 @@ void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
                                grpc_metadata_batch *add);
 
+/** Moves the metadata information from \a src to \a dst. Upon return, \a src is
+ * zeroed. */
+void grpc_metadata_batch_move(grpc_metadata_batch *dst,
+                              grpc_metadata_batch *src);
+
 /** Add \a storage to the beginning of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the

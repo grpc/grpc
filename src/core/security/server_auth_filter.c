@@ -111,7 +111,6 @@ static void on_md_processing_done(void *user_data,
                                   grpc_auth_context *result) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
 
   if (success) {
     calld->consumed_md = consumed_md;
@@ -125,10 +124,11 @@ static void on_md_processing_done(void *user_data,
         GRPC_AUTH_CONTEXT_REF(result, "refing new context.");
     calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
   } else {
-    grpc_transport_stream_op_add_cancellation(
-        &calld->transport_op, GRPC_STATUS_UNAUTHENTICATED,
-        grpc_mdstr_from_string(chand->mdctx,
-                               "Authentication metadata processing failed."));
+    gpr_slice message = gpr_slice_from_copied_string(
+        "Authentication metadata processing failed.");
+    grpc_sopb_reset(calld->recv_ops);
+    grpc_transport_stream_op_add_close(&calld->transport_op,
+                                       GRPC_STATUS_UNAUTHENTICATED, &message);
     grpc_call_next_op(elem, &calld->transport_op);
   }
 }
@@ -262,6 +262,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem,          destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,       destroy_channel_elem, "server-auth"};
+    auth_start_transport_op, grpc_channel_next_op,
+    sizeof(call_data),       init_call_elem,
+    destroy_call_elem,       sizeof(channel_data),
+    init_channel_elem,       destroy_channel_elem,
+    grpc_call_next_get_peer, "server-auth"};

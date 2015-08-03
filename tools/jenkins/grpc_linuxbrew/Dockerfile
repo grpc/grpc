@@ -55,7 +55,7 @@ RUN /bin/bash -l -c "\curl -sSL https://get.rvm.io | bash -s stable"
 RUN /bin/bash -l -c "rvm install ruby-2.1"
 
 # PHP dependency
-RUN apt-get update && apt-get install -y php5 php5-dev phpunit unzip
+RUN apt-get update && apt-get install -y php5 php5-dev php-pear phpunit unzip
 
 RUN /bin/bash -l -c "echo 'export PATH=/home/linuxbrew/.linuxbrew/bin:\$PATH' >> ~/.bashrc"
 

@@ -40,6 +40,7 @@
 
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/tcp_client.h"
@@ -133,6 +134,7 @@ typedef struct {
   grpc_mdctx *mdctx;
   grpc_channel_args *merge_args;
   grpc_channel_security_connector *security_connector;
+  grpc_channel *master;
 } subchannel_factory;
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
@@ -145,6 +147,7 @@ static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "subchannel_factory");
+    GRPC_CHANNEL_INTERNAL_UNREF(f->master, "subchannel_factory");
     grpc_channel_args_destroy(f->merge_args);
     grpc_mdctx_unref(f->mdctx);
     gpr_free(f);
@@ -164,6 +167,7 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
   args->args = final_args;
+  args->master = f->master;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(&c->base);
   grpc_channel_args_destroy(final_args);
@@ -195,13 +199,13 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
 
   if (grpc_find_security_connector_in_args(args) != NULL) {
     gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
-    return grpc_lame_client_channel_create();
+    return grpc_lame_client_channel_create(target);
   }
 
   if (grpc_credentials_create_security_connector(
           creds, target, args, NULL, &connector, &new_args_from_connector) !=
       GRPC_SECURITY_OK) {
-    return grpc_lame_client_channel_create();
+    return grpc_lame_client_channel_create(target);
   }
   mdctx = grpc_mdctx_create();
 
@@ -213,8 +217,12 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
     } */
+  filters[n++] = &grpc_compress_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
+
+  channel =
+      grpc_channel_create_from_filters(target, filters, n, args_copy, mdctx, 1);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;
@@ -224,12 +232,13 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   GRPC_SECURITY_CONNECTOR_REF(&connector->base, "subchannel_factory");
   f->security_connector = connector;
   f->merge_args = grpc_channel_args_copy(args_copy);
+  f->master = channel;
+  GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
     return NULL;
   }
 
-  channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
                                    resolver);
   GRPC_RESOLVER_UNREF(resolver, "create");

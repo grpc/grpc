@@ -192,7 +192,7 @@ class SendMetadataOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "send metadata";
+    return "send_metadata";
   }
 };
 
@@ -216,7 +216,7 @@ class SendMessageOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "send message";
+    return "send_message";
   }
 };
 
@@ -232,7 +232,7 @@ class SendClientCloseOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "client close";
+    return "client_close";
   }
 };
 
@@ -276,7 +276,7 @@ class SendServerStatusOp : public Op {
   }
  protected:
   std::string GetTypeString() const {
-    return "send status";
+    return "send_status";
   }
 };
 
@@ -453,6 +453,8 @@ void Call::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(StartBatch)->GetFunction());
   NanSetPrototypeTemplate(tpl, "cancel",
                           NanNew<FunctionTemplate>(Cancel)->GetFunction());
+  NanSetPrototypeTemplate(tpl, "getPeer",
+                          NanNew<FunctionTemplate>(GetPeer)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
   Handle<Function> ctr = tpl->GetFunction();
   ctr->Set(NanNew("WRITE_BUFFER_HINT"),
@@ -606,6 +608,18 @@ NAN_METHOD(Call::Cancel) {
     return NanThrowError("cancel failed", error);
   }
   NanReturnUndefined();
+}
+
+NAN_METHOD(Call::GetPeer) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError("getPeer can only be called on Call objects");
+  }
+  Call *call = ObjectWrap::Unwrap<Call>(args.This());
+  char *peer = grpc_call_get_peer(call->wrapped_call);
+  Handle<Value> peer_value = NanNew(peer);
+  gpr_free(peer);
+  NanReturnValue(peer_value);
 }
 
 }  // namespace node
