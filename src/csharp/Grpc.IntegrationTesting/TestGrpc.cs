@@ -62,6 +62,12 @@ namespace Grpc.Testing {
         __Marshaller_StreamingOutputCallRequest,
         __Marshaller_StreamingOutputCallResponse);
 
+    // service descriptor
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+      get { return global::Grpc.Testing.Test.Descriptor.Services[0]; }
+    }
+
     // client interface
     public interface ITestServiceClient
     {

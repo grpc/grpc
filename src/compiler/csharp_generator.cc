@@ -44,6 +44,7 @@
 using google::protobuf::compiler::csharp::GetFileNamespace;
 using google::protobuf::compiler::csharp::GetClassName;
 using google::protobuf::compiler::csharp::GetUmbrellaClassName;
+using google::protobuf::SimpleItoa;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::ServiceDescriptor;
@@ -224,6 +225,16 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor *method) {
   out->Print("\n");
   out->Outdent();
   out->Outdent();
+}
+
+void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *service) {
+  out->Print("// service descriptor\n");
+  out->Print("public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor\n");
+  out->Print("{\n");
+  out->Print("  get { return $umbrella$.Descriptor.Services[$index$]; }\n",
+             "umbrella", GetUmbrellaClassName(service->file()), "index", SimpleItoa(service->index()));
+  out->Print("}\n");
+  out->Print("\n");
 }
 
 void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
@@ -472,6 +483,7 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
   for (int i = 0; i < service->method_count(); i++) {
     GenerateStaticMethodField(out, service->method(i));
   }
+  GenerateServiceDescriptorProperty(out, service);
   GenerateClientInterface(out, service);
   GenerateServerInterface(out, service);
   GenerateClientStub(out, service);

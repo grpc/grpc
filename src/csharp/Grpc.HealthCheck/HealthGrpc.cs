@@ -22,6 +22,12 @@ namespace Grpc.Health.V1Alpha {
         __Marshaller_HealthCheckRequest,
         __Marshaller_HealthCheckResponse);
 
+    // service descriptor
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+      get { return global::Grpc.Health.V1Alpha.Proto.Health.Descriptor.Services[0]; }
+    }
+
     // client interface
     public interface IHealthClient
     {
