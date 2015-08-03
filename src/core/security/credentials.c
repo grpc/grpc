@@ -765,19 +765,19 @@ grpc_credentials *grpc_refresh_token_credentials_create(
       grpc_auth_refresh_token_create_from_string(json_refresh_token));
 }
 
-/* -- Fake Oauth2 credentials. -- */
+/* -- Metadata-only credentials. -- */
 
-static void fake_oauth2_destroy(grpc_credentials *creds) {
-  grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
-  grpc_credentials_md_store_unref(c->access_token_md);
+static void md_only_test_destroy(grpc_credentials *creds) {
+  grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
+  grpc_credentials_md_store_unref(c->md_store);
   gpr_free(c);
 }
 
-static int fake_oauth2_has_request_metadata(const grpc_credentials *creds) {
+static int md_only_test_has_request_metadata(const grpc_credentials *creds) {
   return 1;
 }
 
-static int fake_oauth2_has_request_metadata_only(
+static int md_only_test_has_request_metadata_only(
     const grpc_credentials *creds) {
   return 1;
 }
@@ -785,19 +785,19 @@ static int fake_oauth2_has_request_metadata_only(
 void on_simulated_token_fetch_done(void *user_data, int success) {
   grpc_credentials_metadata_request *r =
       (grpc_credentials_metadata_request *)user_data;
-  grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)r->creds;
+  grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
   GPR_ASSERT(success);
-  r->cb(r->user_data, c->access_token_md->entries,
-        c->access_token_md->num_entries, GRPC_CREDENTIALS_OK);
+  r->cb(r->user_data, c->md_store->entries,
+        c->md_store->num_entries, GRPC_CREDENTIALS_OK);
   grpc_credentials_metadata_request_destroy(r);
 }
 
-static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
+static void md_only_test_get_request_metadata(grpc_credentials *creds,
                                              grpc_pollset *pollset,
                                              const char *service_url,
                                              grpc_credentials_metadata_cb cb,
                                              void *user_data) {
-  grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
+  grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
   if (c->is_async) {
     grpc_credentials_metadata_request *cb_arg =
@@ -806,26 +806,26 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
                             on_simulated_token_fetch_done, cb_arg);
     grpc_iomgr_add_callback(cb_arg->on_simulated_token_fetch_done_closure);
   } else {
-    cb(user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
+    cb(user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK);
   }
 }
 
-static grpc_credentials_vtable fake_oauth2_vtable = {
-    fake_oauth2_destroy, fake_oauth2_has_request_metadata,
-    fake_oauth2_has_request_metadata_only, fake_oauth2_get_request_metadata,
+static grpc_credentials_vtable md_only_test_vtable = {
+    md_only_test_destroy, md_only_test_has_request_metadata,
+    md_only_test_has_request_metadata_only, md_only_test_get_request_metadata,
     NULL};
 
-grpc_credentials *grpc_fake_oauth2_credentials_create(
-    const char *token_md_value, int is_async) {
-  grpc_fake_oauth2_credentials *c =
-      gpr_malloc(sizeof(grpc_fake_oauth2_credentials));
-  memset(c, 0, sizeof(grpc_fake_oauth2_credentials));
+grpc_credentials *grpc_md_only_test_credentials_create(const char *md_key,
+                                                       const char *md_value,
+                                                       int is_async) {
+  grpc_md_only_test_credentials *c =
+      gpr_malloc(sizeof(grpc_md_only_test_credentials));
+  memset(c, 0, sizeof(grpc_md_only_test_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_OAUTH2;
-  c->base.vtable = &fake_oauth2_vtable;
+  c->base.vtable = &md_only_test_vtable;
   gpr_ref_init(&c->base.refcount, 1);
-  c->access_token_md = grpc_credentials_md_store_create(1);
-  grpc_credentials_md_store_add_cstrings(
-      c->access_token_md, GRPC_AUTHORIZATION_METADATA_KEY, token_md_value);
+  c->md_store = grpc_credentials_md_store_create(1);
+  grpc_credentials_md_store_add_cstrings(c->md_store, md_key, md_value);
   c->is_async = is_async;
   return &c->base;
 }

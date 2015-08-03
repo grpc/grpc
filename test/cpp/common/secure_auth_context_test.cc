@@ -31,10 +31,10 @@
  *
  */
 
+#include <grpc/grpc_security.h>
 #include <grpc++/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
-#include "src/core/security/security_context.h"
 
 namespace grpc {
 namespace {
@@ -52,11 +52,11 @@ TEST_F(SecureAuthContextTest, EmptyContext) {
 }
 
 TEST_F(SecureAuthContextTest, Properties) {
-  grpc_auth_context* ctx = grpc_auth_context_create(NULL, 3);
-  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-  ctx->peer_identity_property_name = ctx->properties[0].name;
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapi");
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapo");
+  grpc_auth_context_add_cstring_property(ctx, "foo", "bar");
+  EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(ctx, "name"));
 
   SecureAuthContext context(ctx);
   std::vector<grpc::string> peer_identity = context.GetPeerIdentity();
@@ -70,11 +70,11 @@ TEST_F(SecureAuthContextTest, Properties) {
 }
 
 TEST_F(SecureAuthContextTest, Iterators) {
-  grpc_auth_context* ctx = grpc_auth_context_create(NULL, 3);
-  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-  ctx->peer_identity_property_name = ctx->properties[0].name;
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapi");
+  grpc_auth_context_add_cstring_property(ctx, "name", "chapo");
+  grpc_auth_context_add_cstring_property(ctx, "foo", "bar");
+  EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(ctx, "name"));
 
   SecureAuthContext context(ctx);
   AuthPropertyIterator iter = context.begin();

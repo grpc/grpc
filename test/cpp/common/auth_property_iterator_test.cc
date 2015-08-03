@@ -31,10 +31,10 @@
  *
  */
 
+#include <grpc/grpc_security.h>
 #include <grpc++/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
-#include "src/core/security/security_context.h"
 
 namespace grpc {
 namespace {
@@ -50,14 +50,15 @@ class TestAuthPropertyIterator : public AuthPropertyIterator {
 class AuthPropertyIteratorTest : public ::testing::Test {
  protected:
   void SetUp() GRPC_OVERRIDE {
-    ctx_ = grpc_auth_context_create(NULL, 3);
-    ctx_->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-    ctx_->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-    ctx_->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-    ctx_->peer_identity_property_name = ctx_->properties[0].name;
+    ctx_ = grpc_auth_context_create(NULL);
+    grpc_auth_context_add_cstring_property(ctx_, "name", "chapi");
+    grpc_auth_context_add_cstring_property(ctx_, "name", "chapo");
+    grpc_auth_context_add_cstring_property(ctx_, "foo", "bar");
+    EXPECT_EQ(1,
+              grpc_auth_context_set_peer_identity_property_name(ctx_, "name"));
   }
   void TearDown() GRPC_OVERRIDE {
-    GRPC_AUTH_CONTEXT_UNREF(ctx_, "AuthPropertyIteratorTest");
+    grpc_auth_context_release(ctx_);
   }
   grpc_auth_context* ctx_;
 
