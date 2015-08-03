@@ -264,7 +264,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
     }
     if (!add_plucker(cc, tag, &worker)) {
       gpr_log(GPR_DEBUG, 
-              "Too many outstanding grpc_completion_queue_pluck calls: maximum is %d".
+              "Too many outstanding grpc_completion_queue_pluck calls: maximum is %d",
               GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
       memset(&ret, 0, sizeof(ret));
