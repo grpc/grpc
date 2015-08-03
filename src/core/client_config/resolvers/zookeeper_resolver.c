@@ -336,7 +336,7 @@ static void zookeeper_get_children_completion(
 
   for (i = 0; i < children->count; i++) {
     path_length = strlen(r->name) + strlen(children->data[i]) + 2;
-    path = gpr_malloc(path_length);
+    path = (char *)gpr_malloc(path_length);
     memset(path, 0, path_length);
     strcat(path, r->name);
     strcat(path, "/");
@@ -438,6 +438,7 @@ static grpc_resolver *zookeeper_create(
     grpc_subchannel_factory *subchannel_factory) {
   zookeeper_resolver *r;
   const char *path = uri->path;
+  
   if (0 == strcmp(uri->authority, "")) {
     gpr_log(GPR_ERROR, "No authority specified in zookeeper uri");
     return NULL;

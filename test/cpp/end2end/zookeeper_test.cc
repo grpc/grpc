@@ -75,7 +75,7 @@ class ZookeeperTest : public ::testing::Test {
 
     // Setup zookeeper
     // Require zookeeper server running in Jenkins master
-    const char* zookeeper_address = "localhost:2181";
+    const char* zookeeper_address = "grpc-jenkins-master:2181";
     ZookeeperSetUp(zookeeper_address, port);
 
     // Setup server
@@ -87,34 +87,62 @@ class ZookeeperTest : public ::testing::Test {
 
   void ZookeeperSetUp(const char* zookeeper_address, int port) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-    zookeeper_handle = zookeeper_init(zookeeper_address, NULL, 15000, 0, 0, 0);
-    GPR_ASSERT(zookeeper_handle != NULL);
+    zookeeper_handle_ = zookeeper_init(zookeeper_address, NULL, 15000, 0, 0, 0);
+    GPR_ASSERT(zookeeper_handle_ != NULL);
 
+    // Register service /test in zookeeper
     char service_path[] = "/test";
     char service_value[] = "test";
-
-    int status = zoo_exists(zookeeper_handle, service_path, 0, NULL);
+    int status = zoo_exists(zookeeper_handle_, service_path, 0, NULL);
     if (status != 0) {
-      status = zoo_create(zookeeper_handle, service_path, service_value,
+      status = zoo_create(zookeeper_handle_, service_path, service_value,
                           strlen(service_value), &ZOO_OPEN_ACL_UNSAFE, 0,
-                          service_path, strlen(service_path));
+                          service_path, sizeof(service_path));
       GPR_ASSERT(status == 0);
     }
 
+    // Register service instance /test/1 in zookeeper
     char instance_path[] = "/test/1";
     string instance_value =
         "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port) + "\"}";
-    status = zoo_create(zookeeper_handle, instance_path, instance_value.c_str(),
-                        instance_value.size(), &ZOO_OPEN_ACL_UNSAFE,
-                        ZOO_EPHEMERAL, instance_path, sizeof(instance_path));
+    status = zoo_exists(zookeeper_handle_, instance_path, 0, NULL);
+    if (status == ZNONODE) {
+      status =
+          zoo_create(zookeeper_handle_, instance_path, instance_value.c_str(),
+                     instance_value.size(), &ZOO_OPEN_ACL_UNSAFE, 0,
+                     instance_path, sizeof(instance_path));
+      GPR_ASSERT(status == 0);
+    } else {
+      status = zoo_set(zookeeper_handle_, instance_path, instance_value.c_str(),
+                       instance_value.size(), -1);
+      GPR_ASSERT(status == 0);
+    }
     GPR_ASSERT(status == 0);
 
+    // Register zookeeper name resolver in grpc
     grpc_zookeeper_register();
+  }
+
+  void ZookeeperStateChange() {
+    char instance_path[] = "/test/2";
+    string instance_value = "2222";
+
+    int status = zoo_exists(zookeeper_handle_, instance_path, 0, NULL);
+    if (status == ZNONODE) {
+      status =
+          zoo_create(zookeeper_handle_, instance_path, instance_value.c_str(),
+                     instance_value.size(), &ZOO_OPEN_ACL_UNSAFE, 0,
+                     instance_path, sizeof(instance_path));
+      GPR_ASSERT(status == 0);
+    } else {
+      status = zoo_delete(zookeeper_handle_, instance_path, -1);
+      GPR_ASSERT(status == 0);
+    }
   }
 
   void TearDown() GRPC_OVERRIDE {
     server_->Shutdown();
-    zookeeper_close(zookeeper_handle);
+    zookeeper_close(zookeeper_handle_);
   }
 
   void ResetStub() {
@@ -128,21 +156,34 @@ class ZookeeperTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   std::string server_address_;
   ZookeeperTestServiceImpl service_;
-  zhandle_t* zookeeper_handle;
+  zhandle_t* zookeeper_handle_;
 };
 
-// Send a simple echo RPC
-TEST_F(ZookeeperTest, SimpleRpc) {
+// Test zookeeper state change between two RPCs
+TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   ResetStub();
-  // Normal stub.
-  EchoRequest request;
-  EchoResponse response;
-  request.set_message("Hello");
 
-  ClientContext context;
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
+  // First RPC
+  EchoRequest request1;
+  EchoResponse response1;
+  ClientContext context1;
+  request1.set_message("Hello");
+  Status s1 = stub_->Echo(&context1, request1, &response1);
+  EXPECT_EQ(response1.message(), request1.message());
+  EXPECT_TRUE(s1.ok());
+
+  // Zookeeper state change
+  ZookeeperStateChange();
+  sleep(1);
+
+  // Second RPC
+  EchoRequest request2;
+  EchoResponse response2;
+  ClientContext context2;
+  request2.set_message("Hello");
+  Status s2 = stub_->Echo(&context2, request2, &response2);
+  EXPECT_EQ(response2.message(), request2.message());
+  EXPECT_TRUE(s2.ok());
 }
 
 }  // namespace testing
