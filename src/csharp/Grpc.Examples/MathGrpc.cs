@@ -5,6 +5,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Grpc.Core;
 
 namespace Math {
@@ -12,10 +13,10 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
-    static readonly Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.DivArgs.ParseFrom);
-    static readonly Marshaller<global::Math.DivReply> __Marshaller_DivReply = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.DivReply.ParseFrom);
-    static readonly Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.FibArgs.ParseFrom);
-    static readonly Marshaller<global::Math.Num> __Marshaller_Num = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.Num.ParseFrom);
+    static readonly Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.DivArgs.Parser.ParseFrom);
+    static readonly Marshaller<global::Math.DivReply> __Marshaller_DivReply = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.DivReply.Parser.ParseFrom);
+    static readonly Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.FibArgs.Parser.ParseFrom);
+    static readonly Marshaller<global::Math.Num> __Marshaller_Num = Marshallers.Create((arg) => arg.ToByteArray(), global::Math.Num.Parser.ParseFrom);
 
     static readonly Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new Method<global::Math.DivArgs, global::Math.DivReply>(
         MethodType.Unary,

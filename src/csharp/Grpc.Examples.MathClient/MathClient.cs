@@ -33,7 +33,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Grpc.Core;
 
-namespace math
+namespace Math
 {
     class MathClient
     {

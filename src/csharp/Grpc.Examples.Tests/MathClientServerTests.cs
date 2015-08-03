@@ -40,7 +40,7 @@ using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
-namespace math.Tests
+namespace Math.Tests
 {
     /// <summary>
     /// Math client talks to local math server.
