@@ -531,10 +531,6 @@ static void test_request_with_server_rejecting_client_creds(
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  /* XXX Should be GRPC_STATUS_UNAUTHENTICATED but it looks like there is a bug
-     (probably in the server_auth_context.c code) where this error on the server
-     does not get to the client. The current error code we are getting is
-     GRPC_STATUS_INTERNAL. */
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
