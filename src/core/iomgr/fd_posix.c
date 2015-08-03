@@ -102,6 +102,7 @@ static grpc_fd *alloc_fd(int fd) {
   r->freelist_next = NULL;
   r->read_watcher = r->write_watcher = NULL;
   r->on_done_closure = NULL;
+  r->closed = 0;
   return r;
 }
 
@@ -209,6 +210,8 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   gpr_mu_lock(&fd->watcher_mu);
   if (!has_watchers(fd)) {
+    GPR_ASSERT(!fd->closed);
+    fd->closed = 1;
     close(fd->fd);
     if (fd->on_done_closure) {
       grpc_iomgr_add_callback(fd->on_done_closure);
@@ -426,7 +429,8 @@ void grpc_fd_end_poll(grpc_fd_watcher *watcher, int got_read, int got_write) {
   if (kick) {
     maybe_wake_one_watcher_locked(fd);
   }
-  if (grpc_fd_is_orphaned(fd) && !has_watchers(fd)) {
+  if (grpc_fd_is_orphaned(fd) && !has_watchers(fd) && !fd->closed) {
+    fd->closed = 1;
     close(fd->fd);
     if (fd->on_done_closure != NULL) {
       grpc_iomgr_add_callback(fd->on_done_closure);

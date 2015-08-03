@@ -59,15 +59,10 @@ describe('server', function() {
     it('should bind to an unused port', function() {
       var port;
       assert.doesNotThrow(function() {
-        port = server.addHttp2Port('0.0.0.0:0');
+        port = server.addHttp2Port('0.0.0.0:0',
+                                   grpc.ServerCredentials.createInsecure());
       });
       assert(port > 0);
-    });
-  });
-  describe('addSecureHttp2Port', function() {
-    var server;
-    before(function() {
-      server = new grpc.Server();
     });
     it('should bind to an unused port with ssl credentials', function() {
       var port;
@@ -77,16 +72,22 @@ describe('server', function() {
       var pem_data = fs.readFileSync(pem_path);
       var creds = grpc.ServerCredentials.createSsl(null, key_data, pem_data);
       assert.doesNotThrow(function() {
-        port = server.addSecureHttp2Port('0.0.0.0:0', creds);
+        port = server.addHttp2Port('0.0.0.0:0', creds);
       });
       assert(port > 0);
+    });
+  });
+  describe('addSecureHttp2Port', function() {
+    var server;
+    before(function() {
+      server = new grpc.Server();
     });
   });
   describe('listen', function() {
     var server;
     before(function() {
       server = new grpc.Server();
-      server.addHttp2Port('0.0.0.0:0');
+      server.addHttp2Port('0.0.0.0:0', grpc.ServerCredentials.createInsecure());
     });
     after(function() {
       server.shutdown();
