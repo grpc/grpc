@@ -354,15 +354,19 @@ typedef struct grpc_op {
 /* Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
 /** Propagate deadline */
-#define GRPC_PROPAGATE_DEADLINE 1
+#define GRPC_PROPAGATE_DEADLINE ((gpr_uint32)1)
 /** Propagate census context */
-#define GRPC_PROPAGATE_CENSUS_CONTEXT 2
-/* TODO(ctiller):
-#define GRPC_PROPAGATE_CANCELLATION   4
-*/
+#define GRPC_PROPAGATE_CENSUS_CONTEXT ((gpr_uint32)2)
+#define GRPC_PROPAGATE_CANCELLATION   ((gpr_uint32)4)
+#define GRPC_PROPAGATE_AUTH ((gpr_uint32)8)
 
+/* Default propagation mask: clients of the core API are encouraged to encode
+   deltas from this in their implementations... ie write:
+   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
+   propagation. Doing so gives flexibility in the future to define new 
+   propagation types that are default inherited or not. */
 #define GRPC_PROPAGATE_DEFAULTS \
-  (GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_CONTEXT)
+  ((gpr_uint32)((0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_CONTEXT)))
 
 /** Initialize the grpc library.
 

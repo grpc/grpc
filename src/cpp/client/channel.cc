@@ -60,10 +60,10 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
   auto c_call = method.channel_tag() && context->authority().empty()
                     ? grpc_channel_create_registered_call(
-                          c_channel_, NULL, GRPC_INHERIT_DEFAULTS, cq->cq(),
+                          c_channel_, NULL, GRPC_PROPAGATE_DEFAULTS, cq->cq(),
                           method.channel_tag(), context->raw_deadline())
                     : grpc_channel_create_call(
-                          c_channel_, NULL, GRPC_INHERIT_DEFAULTS, cq->cq(),
+                          c_channel_, NULL, GRPC_PROPAGATE_DEFAULTS, cq->cq(),
                           method.name(), context->authority().empty()
                                              ? target_.c_str()
                                              : context->authority().c_str(),
