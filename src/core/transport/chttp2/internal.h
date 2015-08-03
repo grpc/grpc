@@ -60,7 +60,6 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_WRITTEN,
-  GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE,
   GRPC_CHTTP2_LIST_PARSING_SEEN,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
   GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING,
@@ -286,6 +285,7 @@ struct grpc_chttp2_transport {
   grpc_endpoint *ep;
   grpc_mdctx *metadata_context;
   gpr_refcount refs;
+  char *peer_string;
 
   gpr_mu mu;
 
@@ -382,6 +382,10 @@ typedef struct {
   gpr_uint8 published_cancelled;
   /** is this stream in the stream map? (boolean) */
   gpr_uint8 in_stream_map;
+  /** is this stream actively being written? */
+  gpr_uint8 writing_now;
+  /** has anything been written to this stream? */
+  gpr_uint8 written_anything;
 
   /** stream state already published to the upper layer */
   grpc_stream_state published_state;
@@ -474,11 +478,17 @@ void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global,
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
+void grpc_chttp2_list_add_first_writable_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_writing **stream_writing);
+void grpc_chttp2_list_remove_writable_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_incoming_window_updated(
     grpc_chttp2_transport_global *transport_global,
@@ -509,18 +519,6 @@ int grpc_chttp2_list_pop_written_stream(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_writing **stream_writing);
-
-void grpc_chttp2_list_add_writable_window_update_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
-int grpc_chttp2_list_pop_writable_window_update_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_writing **stream_writing);
-void grpc_chttp2_list_remove_writable_window_update_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_parsing_seen_stream(
     grpc_chttp2_transport_parsing *transport_parsing,

@@ -149,7 +149,7 @@ std::string GetMethodRequestParamMaybe(const MethodDescriptor *method) {
 std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
-      return "Task<" + GetClassName(method->output_type()) + ">";
+      return "AsyncUnaryCall<" + GetClassName(method->output_type()) + ">";
     case METHODTYPE_CLIENT_STREAMING:
       return "AsyncClientStreamingCall<" + GetClassName(method->input_type())
           + ", " + GetClassName(method->output_type()) + ">";
@@ -269,7 +269,7 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
       out->Print(
-          "$response$ $methodname$($request$ request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));\n",
+          "$response$ $methodname$($request$ request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
@@ -280,7 +280,7 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     out->Print(
-        "$returntype$ $methodname$($request_maybe$Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken));\n",
+        "$returntype$ $methodname$($request_maybe$Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
@@ -298,11 +298,13 @@ void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor *method = service->method(i);
-    out->Print("$returntype$ $methodname$(ServerCallContext context, $request$$response_stream_maybe$);\n",
-               "methodname", method->name(), "returntype",
-               GetMethodReturnTypeServer(method), "request",
-               GetMethodRequestParamServer(method), "response_stream_maybe",
-               GetMethodResponseStreamMaybe(method));
+    out->Print(
+        "$returntype$ $methodname$($request$$response_stream_maybe$, "
+        "ServerCallContext context);\n",
+        "methodname", method->name(), "returntype",
+        GetMethodReturnTypeServer(method), "request",
+        GetMethodRequestParamServer(method), "response_stream_maybe",
+        GetMethodResponseStreamMaybe(method));
   }
   out->Outdent();
   out->Print("}\n");
@@ -332,13 +334,13 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
       out->Print(
-          "public $response$ $methodname$($request$ request, Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))\n",
+          "public $response$ $methodname$($request$ request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("var call = CreateCall($servicenamefield$, $methodfield$, headers);\n",
+      out->Print("var call = CreateCall($servicenamefield$, $methodfield$, headers, deadline);\n",
                  "servicenamefield", GetServiceNameFieldName(), "methodfield",
                  GetMethodFieldName(method));
       out->Print("return Calls.BlockingUnaryCall(call, request, cancellationToken);\n");
@@ -351,13 +353,13 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     out->Print(
-        "public $returntype$ $methodname$($request_maybe$Metadata headers = null, CancellationToken cancellationToken = default(CancellationToken))\n",
+        "public $returntype$ $methodname$($request_maybe$Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    out->Print("var call = CreateCall($servicenamefield$, $methodfield$, headers);\n",
+    out->Print("var call = CreateCall($servicenamefield$, $methodfield$, headers, deadline);\n",
                "servicenamefield", GetServiceNameFieldName(), "methodfield",
                GetMethodFieldName(method));
     switch (GetMethodType(method)) {

@@ -70,7 +70,8 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
 }
 
 bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
-  auto ev = grpc_completion_queue_pluck(cq_, tag, gpr_inf_future);
+  auto ev =
+      grpc_completion_queue_pluck(cq_, tag, gpr_inf_future(GPR_CLOCK_REALTIME));
   bool ok = ev.success != 0;
   void* ignored = tag;
   GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
@@ -80,7 +81,8 @@ bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
 }
 
 void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
-  auto ev = grpc_completion_queue_pluck(cq_, tag, gpr_time_0);
+  auto ev =
+      grpc_completion_queue_pluck(cq_, tag, gpr_time_0(GPR_CLOCK_REALTIME));
   if (ev.type == GRPC_QUEUE_TIMEOUT) return;
   bool ok = ev.success != 0;
   void* ignored = tag;

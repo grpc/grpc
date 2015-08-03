@@ -250,9 +250,9 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
   channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
   channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
-  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
-  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority");
-  channeld->host_key = grpc_mdstr_from_string(mdctx, "host");
+  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path", 0);
+  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority", 0);
+  channeld->host_key = grpc_mdstr_from_string(mdctx, "host", 0);
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 
@@ -280,4 +280,5 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 const grpc_channel_filter grpc_http_server_filter = {
     hs_start_transport_op, grpc_channel_next_op, sizeof(call_data),
     init_call_elem,        destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem, "http-server"};
+    init_channel_elem,     destroy_channel_elem, grpc_call_next_get_peer,
+    "http-server"};

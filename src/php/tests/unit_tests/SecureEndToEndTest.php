@@ -73,7 +73,6 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
 
     $event = $this->server->requestCall();
     $this->assertSame('dummy_method', $event->method);
-    $this->assertSame([], $event->metadata);
     $server_call = $event->call;
 
     $event = $server_call->startBatch([

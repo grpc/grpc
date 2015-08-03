@@ -44,8 +44,8 @@
 namespace grpc {
 namespace testing {
 
-static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+static const int WARMUP = 20;
+static const int BENCHMARK = 40;
 
 static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test");
@@ -62,7 +62,7 @@ static void RunQPS() {
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
   server_config.set_enable_ssl(false);
-  server_config.set_threads(4);
+  server_config.set_threads(8);
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);

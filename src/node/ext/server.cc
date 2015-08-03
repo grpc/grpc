@@ -108,7 +108,7 @@ class NewCallOp : public Op {
 
  protected:
   std::string GetTypeString() const {
-    return "new call";
+    return "new_call";
   }
 };
 
@@ -161,7 +161,8 @@ void Server::ShutdownServer() {
     grpc_server_shutdown_and_notify(this->wrapped_server,
                                     this->shutdown_queue,
                                     NULL);
-    grpc_completion_queue_pluck(this->shutdown_queue, NULL, gpr_inf_future);
+    grpc_completion_queue_pluck(this->shutdown_queue, NULL,
+                                gpr_inf_future(GPR_CLOCK_REALTIME));
     this->wrapped_server = NULL;
   }
 }

@@ -44,26 +44,30 @@
 extern "C" {
 #endif
 
-/* Identify census functionality that can be enabled via census_initialize(). */
-enum census_functions {
-  CENSUS_NONE = 0,    /* Do not enable census. */
-  CENSUS_TRACING = 1, /* Enable census tracing. */
-  CENSUS_STATS = 2,   /* Enable Census stats collection. */
-  CENSUS_CPU = 4,     /* Enable Census CPU usage collection. */
-  CENSUS_ALL = CENSUS_TRACING | CENSUS_STATS | CENSUS_CPU
+/* Identify census features that can be enabled via census_initialize(). */
+enum census_features {
+  CENSUS_FEATURE_NONE = 0,    /* Do not enable census. */
+  CENSUS_FEATURE_TRACING = 1, /* Enable census tracing. */
+  CENSUS_FEATURE_STATS = 2,   /* Enable Census stats collection. */
+  CENSUS_FEATURE_CPU = 4,     /* Enable Census CPU usage collection. */
+  CENSUS_FEATURE_ALL =
+      CENSUS_FEATURE_TRACING | CENSUS_FEATURE_STATS | CENSUS_FEATURE_CPU
 };
 
-/* Shutdown and startup census subsystem. The 'functions' argument should be
- * the OR (|) of census_functions values. If census fails to initialize, then
+/** Shutdown and startup census subsystem. The 'features' argument should be
+ * the OR (|) of census_features values. If census fails to initialize, then
  * census_initialize() will return a non-zero value. It is an error to call
  * census_initialize() more than once (without an intervening
  * census_shutdown()). */
-int census_initialize(int functions);
-void census_shutdown();
+int census_initialize(int features);
+void census_shutdown(void);
 
-/* If any census feature has been initialized, this funtion will return a
- * non-zero value. */
-int census_available();
+/** Return the features supported by the current census implementation (not all
+ * features will be available on all platforms). */
+int census_supported(void);
+
+/** Return the census features currently enabled. */
+int census_enabled(void);
 
 /* Internally, Census relies on a context, which should be propagated across
  * RPC's. From the RPC subsystems viewpoint, this is an opaque data structure.
@@ -99,6 +103,17 @@ int census_context_deserialize(const char *buffer, census_context **context);
 /* The given context is destroyed. Once destroyed, using the context in
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
+
+/* A census statistic to be recorded comprises two parts: an ID for the
+ * particular statistic and the value to be recorded against it. */
+typedef struct {
+  int id;
+  double value;
+} census_stat;
+
+/* Record new stats against the given context. */
+void census_record_stat(census_context *context, census_stat *stats,
+                        size_t nstats);
 
 #ifdef __cplusplus
 }

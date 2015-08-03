@@ -38,6 +38,7 @@
 #include <memory>
 #include <string>
 
+#include <grpc/compression.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc++/auth_context.h>
@@ -109,11 +110,17 @@ class ClientContext {
     creds_ = creds;
   }
 
+  grpc_compression_algorithm compression_algorithm() const {
+    return compression_algorithm_;
+  }
+
+  void set_compression_algorithm(grpc_compression_algorithm algorithm);
+
   std::shared_ptr<const AuthContext> auth_context() const;
 
   // Get and set census context
-  void set_census_context(census_context* ccp) { census_context_ = ccp; }
-  census_context* get_census_context() const { return census_context_; }
+  void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
+  struct census_context* census_context() const { return census_context_; }
 
   void TryCancel();
 
@@ -163,10 +170,12 @@ class ClientContext {
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  census_context* census_context_;
+  struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
+
+  grpc_compression_algorithm compression_algorithm_;
 };
 
 }  // namespace grpc

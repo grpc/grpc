@@ -826,8 +826,9 @@ static void on_jwt_creds_get_metadata_failure(void *user_data,
 
 static void test_jwt_creds_success(void) {
   char *json_key_string = test_json_key_str();
-  grpc_credentials *jwt_creds = grpc_jwt_credentials_create(
-      json_key_string, grpc_max_auth_token_lifetime);
+  grpc_credentials *jwt_creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key_string, grpc_max_auth_token_lifetime);
   GPR_ASSERT(grpc_credentials_has_request_metadata(jwt_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
 
@@ -858,8 +859,9 @@ static void test_jwt_creds_success(void) {
 
 static void test_jwt_creds_signing_failure(void) {
   char *json_key_string = test_json_key_str();
-  grpc_credentials *jwt_creds = grpc_jwt_credentials_create(
-      json_key_string, grpc_max_auth_token_lifetime);
+  grpc_credentials *jwt_creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key_string, grpc_max_auth_token_lifetime);
   GPR_ASSERT(grpc_credentials_has_request_metadata(jwt_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
 
@@ -900,7 +902,7 @@ static grpc_credentials *composite_inner_creds(grpc_credentials *creds,
 }
 
 static void test_google_default_creds_auth_key(void) {
-  grpc_jwt_credentials *jwt;
+  grpc_service_account_jwt_access_credentials *jwt;
   grpc_credentials *creds;
   char *json_key = test_json_key_str();
   grpc_flush_cached_google_default_credentials();
@@ -909,7 +911,7 @@ static void test_google_default_creds_auth_key(void) {
   gpr_free(json_key);
   creds = grpc_google_default_credentials_create();
   GPR_ASSERT(creds != NULL);
-  jwt = (grpc_jwt_credentials *)composite_inner_creds(
+  jwt = (grpc_service_account_jwt_access_credentials *)composite_inner_creds(
       creds, GRPC_CREDENTIALS_TYPE_JWT);
   GPR_ASSERT(
       strcmp(jwt->key.client_id,

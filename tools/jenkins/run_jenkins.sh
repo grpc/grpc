@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -31,6 +31,8 @@
 # This script is invoked by Jenkins and triggers a test run based on
 # env variable settings.
 #
+# Bootstrap into bash
+[ -z $1 ] && exec bash $0 bootstrapped
 # Setting up rvm environment BEFORE we set -ex.
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 # To prevent cygwin bash complaining about empty lines ending with \r
@@ -46,6 +48,7 @@ case $platform in
   i386)
     arch="i386"
     platform="linux"
+    docker_suffix=_32bits
     ;;
 esac
 
@@ -57,11 +60,13 @@ then
   git_root=`pwd`
   cd -
 
+  mkdir -p /tmp/ccache
+
   # Use image name based on Dockerfile checksum
-  DOCKER_IMAGE_NAME=grpc_jenkins_slave_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+  DOCKER_IMAGE_NAME=grpc_jenkins_slave$docker_suffix_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
 
   # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave
+  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
 
   # Create a local branch so the child Docker script won't complain
   git branch jenkins-docker
@@ -74,8 +79,10 @@ then
     -e "config=$config" \
     -e "language=$language" \
     -e "arch=$arch" \
+    -e CCACHE_DIR=/tmp/ccache \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
+    -v /tmp/ccache:/tmp/ccache \
     --cidfile=docker.cid \
     $DOCKER_IMAGE_NAME \
     bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
@@ -85,7 +92,9 @@ then
   docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
   sleep 4
   docker rm $DOCKER_CID || true
-
+elif [ "$platform" == "interop" ]
+then
+  python tools/run_tests/run_interops.py --language=$language
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"
@@ -98,11 +107,18 @@ then
   /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
 
   python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
+
 elif [ "$platform" == "macos" ]
 then
   echo "building $language on MacOS"
 
   ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+
+elif [ "$platform" == "freebsd" ]
+then
+  echo "building $language on FreeBSD"
+
+  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
 else
   echo "Unknown platform $platform"
   exit 1

@@ -290,8 +290,8 @@ void infinite_interval_test(void) {
   int i;
   const int count = 100000;
   gpr_timespec increment = {0, 0};
-  struct census_window_stats* stats =
-      census_window_stats_create(1, &gpr_inf_future, 10, &kMyStatInfo);
+  struct census_window_stats* stats = census_window_stats_create(
+      1, &gpr_inf_future(GPR_CLOCK_REALTIME), 10, &kMyStatInfo);
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   for (i = 0; i < count; i++) {
     increment.tv_sec = rand() % 21600; /* 6 hours */

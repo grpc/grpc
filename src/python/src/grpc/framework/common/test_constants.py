@@ -35,3 +35,9 @@ SHORT_TIMEOUT = 4
 # Absurdly large value for maximum duration in seconds for should-not-time-out
 # RPCs made during tests.
 LONG_TIMEOUT = 3000
+
+# The number of payloads to transmit in streaming tests.
+STREAM_LENGTH = 200
+
+# The size of thread pools to use in tests.
+POOL_SIZE = 10

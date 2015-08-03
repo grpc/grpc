@@ -38,7 +38,8 @@ var examples = grpc.load(__dirname + '/stock.proto').examples;
  * This exports a client constructor for the Stock service. The usage looks like
  *
  * var StockClient = require('stock_client.js');
- * var stockClient = new StockClient(server_address);
+ * var stockClient = new StockClient(server_address,
+ *                                   grpc.Credentials.createInsecure());
  * stockClient.getLastTradePrice({symbol: 'GOOG'}, function(error, response) {
  *   console.log(error || response);
  * });

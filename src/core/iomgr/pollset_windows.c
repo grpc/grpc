@@ -70,7 +70,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
 
 int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   gpr_timespec now;
-  now = gpr_now(GPR_CLOCK_REALTIME);
+  now = gpr_now(GPR_CLOCK_MONOTONIC);
   if (gpr_time_cmp(now, deadline) > 0) {
     return 0 /* GPR_FALSE */;
   }

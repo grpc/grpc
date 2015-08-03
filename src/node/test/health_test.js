@@ -49,15 +49,15 @@ describe('Health Checking', function() {
       'grpc.test.TestService': 'SERVING'
     }
   };
-  var HealthServer = grpc.buildServer([health.service]);
-  var healthServer = new HealthServer({
-    'grpc.health.v1alpha.Health': new health.Implementation(statusMap)
-  });
+  var healthServer = new grpc.Server();
+  healthServer.addProtoService(health.service,
+                               new health.Implementation(statusMap));
   var healthClient;
   before(function() {
     var port_num = healthServer.bind('0.0.0.0:0');
-    healthServer.listen();
-    healthClient = new health.Client('localhost:' + port_num);
+    healthServer.start();
+    healthClient = new health.Client('localhost:' + port_num,
+                                     grpc.Credentials.createInsecure());
   });
   after(function() {
     healthServer.shutdown();

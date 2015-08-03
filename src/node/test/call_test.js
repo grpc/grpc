@@ -48,6 +48,8 @@ function getDeadline(timeout_secs) {
   return deadline;
 }
 
+var insecureCreds = grpc.Credentials.createInsecure();
+
 describe('call', function() {
   var channel;
   var server;
@@ -55,7 +57,7 @@ describe('call', function() {
     server = new grpc.Server();
     var port = server.addHttp2Port('localhost:0');
     server.start();
-    channel = new grpc.Channel('localhost:' + port);
+    channel = new grpc.Channel('localhost:' + port, insecureCreds);
   });
   after(function() {
     server.shutdown();
@@ -82,7 +84,7 @@ describe('call', function() {
          });
        });
     it('should fail with a closed channel', function() {
-      var local_channel = new grpc.Channel('hostname');
+      var local_channel = new grpc.Channel('hostname', insecureCreds);
       local_channel.close();
       assert.throws(function() {
         new grpc.Call(channel, 'method');
@@ -132,7 +134,7 @@ describe('call', function() {
                                                     'key2': ['value2']};
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -147,7 +149,7 @@ describe('call', function() {
         };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
-          assert.deepEqual(resp, {'send metadata': true});
+          assert.deepEqual(resp, {'send_metadata': true});
           done();
         });
       });
@@ -182,6 +184,12 @@ describe('call', function() {
       assert.doesNotThrow(function() {
         call.cancel();
       });
+    });
+  });
+  describe('getPeer', function() {
+    it('should return a string', function() {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.strictEqual(typeof call.getPeer(), 'string');
     });
   });
 });

@@ -31,27 +31,35 @@
  *
  */
 
-/* GRPC <--> CENSUS context interface */
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
+#define GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
 
-#ifndef CENSUS_GRPC_CONTEXT_H
-#define CENSUS_GRPC_CONTEXT_H
+#include "src/core/channel/channel_stack.h"
 
-#include <grpc/census.h>
-#include "src/core/surface/call.h"
+#define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "internal:grpc-encoding-request"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/** Compression filter for outgoing data.
+ *
+ * See <grpc/compression.h> for the available compression settings.
+ *
+ * Compression settings may come from:
+ *  - Channel configuration, as established at channel creation time.
+ *  - The metadata accompanying the outgoing data to be compressed. This is
+ *    taken as a request only. We may choose not to honor it. The metadata key
+ *    is given by \a GRPC_COMPRESS_REQUEST_ALGORITHM_KEY.
+ *
+ * Compression can be disabled for concrete messages (for instance in order to
+ * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
+ * the BEGIN_MESSAGE flags.
+ *
+ * The attempted compression mechanism is added to the resulting initial
+ * metadata under the'grpc-encoding' key.
+ *
+ * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
+ * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
+ * aforementioned 'grpc-encoding' metadata value, data will pass through
+ * uncompressed. */
 
-/* Set census context for the call; Must be called before first call to
-   grpc_call_start_batch(). */
-void grpc_census_call_set_context(grpc_call *call, census_context *context);
+extern const grpc_channel_filter grpc_compress_filter;
 
-/* Retrieve the calls current census context. */
-census_context *grpc_census_call_get_context(grpc_call *call);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* CENSUS_GRPC_CONTEXT_H */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */
