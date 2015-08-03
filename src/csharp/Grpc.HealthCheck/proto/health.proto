@@ -28,14 +28,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // TODO(jtattermusch): switch to proto3 once C# supports that.
-syntax = "proto2";
+syntax = "proto3";
 
 package grpc.health.v1alpha;
 option csharp_namespace = "Grpc.Health.V1Alpha";
 
 message HealthCheckRequest {
-  optional string host = 1;
-  optional string service = 2;
+  string host = 1;
+  string service = 2;
 }
 
 message HealthCheckResponse {
@@ -44,7 +44,7 @@ message HealthCheckResponse {
     SERVING = 1;
     NOT_SERVING = 2;
   }
-  optional ServingStatus status = 1;
+  ServingStatus status = 1;
 }
 
 service Health {
