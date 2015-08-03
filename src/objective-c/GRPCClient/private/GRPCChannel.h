@@ -38,7 +38,7 @@
 // Each separate instance of this class represents at least one TCP connection to the provided host.
 // Create them using one of the subclasses |GRPCSecureChannel| and |GRPCUnsecuredChannel|.
 @interface GRPCChannel : NSObject
-@property(nonatomic) grpc_channel *unmanagedChannel;
+@property(nonatomic, readonly) grpc_channel *unmanagedChannel;
 
 - (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel NS_DESIGNATED_INITIALIZER;
 @end
