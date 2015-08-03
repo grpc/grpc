@@ -32,10 +32,29 @@ set -e
 
 cd $(dirname $0)
 
-hash protoc 2>/dev/null || { echo >&2 "protoc needs to be installed."; exit 1; }
 hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
 hash xcodebuild 2>/dev/null || { echo >&2 "XCode command-line tools need to be installed."; exit 1; }
 
-# The local test server needs to be compiled before this because pod install of
-# gRPC renames some C gRPC files and not the server's code references to them.
+BINDIR=../../../bins/$CONFIG
+
+if [ ! -f $BINDIR/protobuf/protoc ]; then
+    hash protoc 2>/dev/null || {
+        echo >&2 "Can't find protoc. Make sure run_tests.py is making" \
+                 "grpc_objective_c_plugin before calling this script."
+        exit 1
+    }
+    # When protoc is already installed, make doesn't compile one. Put a link
+    # there so the podspecs can do codegen using that path.
+    mkdir -p $BINDIR/protobuf
+    ln -s `which protoc` $BINDIR/protobuf/protoc
+fi
+
+[ -f $BINDIR/interop_server ] || {
+    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
+             "interop_server before calling this script. It needs to be done" \
+             "before because pod install of gRPC renames some C gRPC files" \
+             "and not the server's code references to them."
+    exit 1
+}
+
 pod install
