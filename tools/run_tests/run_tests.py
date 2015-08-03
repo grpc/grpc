@@ -187,40 +187,18 @@ class PhpLanguage(object):
 class PythonLanguage(object):
 
   def __init__(self):
-    with open('tools/run_tests/python_tests.json') as f:
-      self._tests = json.load(f)
-    self._build_python_versions = set([
-        python_version
-        for test in self._tests
-        for python_version in test['pythonVersions']])
+    self._build_python_versions = ['2.7']
     self._has_python_versions = []
 
   def test_specs(self, config, travis):
-    job_specifications = []
-    for test in self._tests:
-      command = None
-      short_name = None
-      if 'module' in test:
-        command = ['tools/run_tests/run_python.sh', '-m', test['module']]
-        short_name = test['module']
-      elif 'file' in test:
-        command = ['tools/run_tests/run_python.sh', test['file']]
-        short_name = test['file']
-      else:
-        raise ValueError('expected input to be a module or file to run '
-                         'unittests from')
-      for python_version in test['pythonVersions']:
-        if python_version in self._has_python_versions:
-          environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-          environment['PYVER'] = python_version
-          job_specifications.append(config.job_spec(
-              command, None, environ=environment, shortname=short_name))
-        else:
-          jobset.message(
-              'WARNING',
-              'Could not find Python {}; skipping test'.format(python_version),
-              '{}\n'.format(command), do_newline=True)
-    return job_specifications
+    environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+    environment['PYVER'] = '2.7'
+    return [config.job_spec(
+        ['tools/run_tests/run_python.sh'],
+        None,
+        environ=environment,
+        shortname='py.test',
+    )]
 
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
@@ -304,6 +282,25 @@ class CSharpLanguage(object):
     return 'csharp'
 
 
+class ObjCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def make_targets(self):
+    return ['grpc_objective_c_plugin', 'interop_server']
+
+  def build_steps(self):
+    return [['src/objective-c/tests/build_tests.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'objc'
+
+
 class Sanity(object):
 
   def test_specs(self, config, travis):
@@ -369,6 +366,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'objc' : ObjCLanguage(),
     'sanity': Sanity(),
     'build': Build(),
     }
