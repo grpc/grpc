@@ -45,6 +45,12 @@ namespace Math {
         __Marshaller_Num,
         __Marshaller_Num);
 
+    // service descriptor
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+        get { return global::Math.Proto.Math.Descriptor.Services[0]; }
+    }
+
     // client interface
     public interface IMathClient
     {
