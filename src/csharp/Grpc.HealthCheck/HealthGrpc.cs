@@ -12,8 +12,8 @@ namespace Grpc.Health.V1Alpha {
   {
     static readonly string __ServiceName = "grpc.health.v1alpha.Health";
 
-    static readonly Marshaller<global::Grpc.Health.V1Alpha.HealthCheckRequest> __Marshaller_HealthCheckRequest = Marshallers.Create((arg) => arg.ToByteArray(), global::Grpc.Health.V1Alpha.HealthCheckRequest.ParseFrom);
-    static readonly Marshaller<global::Grpc.Health.V1Alpha.HealthCheckResponse> __Marshaller_HealthCheckResponse = Marshallers.Create((arg) => arg.ToByteArray(), global::Grpc.Health.V1Alpha.HealthCheckResponse.ParseFrom);
+    static readonly Marshaller<global::Grpc.Health.V1Alpha.HealthCheckRequest> __Marshaller_HealthCheckRequest = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1Alpha.HealthCheckRequest.Parser.ParseFrom);
+    static readonly Marshaller<global::Grpc.Health.V1Alpha.HealthCheckResponse> __Marshaller_HealthCheckResponse = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1Alpha.HealthCheckResponse.Parser.ParseFrom);
 
     static readonly Method<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckResponse> __Method_Check = new Method<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckResponse>(
         MethodType.Unary,
