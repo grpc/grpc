@@ -35,10 +35,15 @@
 #include <map>
 #include <vector>
 
+#include "src/compiler/csharp_generator.h"
 #include "src/compiler/config.h"
 #include "src/compiler/csharp_generator_helpers.h"
 #include "src/compiler/csharp_generator.h"
 
+
+using google::protobuf::compiler::csharp::GetFileNamespace;
+using google::protobuf::compiler::csharp::GetClassName;
+using google::protobuf::compiler::csharp::GetUmbrellaClassName;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::ServiceDescriptor;
@@ -55,46 +60,9 @@ using grpc_generator::StringReplace;
 using std::map;
 using std::vector;
 
+
 namespace grpc_csharp_generator {
 namespace {
-
-// TODO(jtattermusch): make GetFileNamespace part of libprotoc public API.
-// NOTE: Implementation needs to match exactly to GetFileNamespace
-// defined in csharp_helpers.h in protoc csharp plugin.
-// We cannot reference it directly because google3 protobufs
-// don't have a csharp protoc plugin.
-std::string GetFileNamespace(const FileDescriptor* file) {
-  if (file->options().has_csharp_namespace()) {
-    return file->options().csharp_namespace();
-  }
-  return file->package();
-}
-
-std::string ToCSharpName(const std::string& name, const FileDescriptor* file) {
-  std::string result = GetFileNamespace(file);
-  if (result != "") {
-    result += '.';
-  }
-  std::string classname;
-  if (file->package().empty()) {
-    classname = name;
-  } else {
-    // Strip the proto package from full_name since we've replaced it with
-    // the C# namespace.
-    classname = name.substr(file->package().size() + 1);
-  }
-  result += StringReplace(classname, ".", ".Types.", false);
-  return "global::" + result;
-}
-
-// TODO(jtattermusch): make GetClassName part of libprotoc public API.
-// NOTE: Implementation needs to match exactly to GetClassName
-// defined in csharp_helpers.h in protoc csharp plugin.
-// We cannot reference it directly because google3 protobufs
-// don't have a csharp protoc plugin.
-std::string GetClassName(const Descriptor* message) {
-  return ToCSharpName(message->full_name(), message->file());
-}
 
 std::string GetServiceClassName(const ServiceDescriptor* service) {
   return service->name();
@@ -539,7 +507,6 @@ grpc::string GetServices(const FileDescriptor *file) {
     out.Print("using System.Threading;\n");
     out.Print("using System.Threading.Tasks;\n");
     out.Print("using Grpc.Core;\n");
-    // TODO(jtattermusch): add using for protobuf message classes
     out.Print("\n");
 
     out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
