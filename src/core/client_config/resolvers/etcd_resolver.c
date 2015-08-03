@@ -164,8 +164,18 @@ static void etcd_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
 }
 
 static void etcd_resolve_address(etcd_resolver *r) {
-  grpc_httpcli_request req;
+  int path_length;
+  char *path;
+  grpc_httpcli_request request;
+  const char *prefix = "/v2/keys";
   
+  memset(&request, 0, sizeof(request));
+
+  path_length = 
+  request.host = r->authority;
+
+  int path_length = 
+  request.path = "/v2/keys"
 }
 
 static void etcd_start_resolving_locked(etcd_resolver *r) {
@@ -209,7 +219,7 @@ static grpc_resolver *etcd_create(
   const char *path = uri->path;
 
   if (0 == strcmp(uri->authority, "")) {
-    gpr_log(GPR_ERROR, "No authority specified in zookeeper uri");
+    gpr_log(GPR_ERROR, "No authority specified in etcd uri");
     return NULL;
   }
 
@@ -228,6 +238,15 @@ static grpc_resolver *etcd_create(
   return &r->base;
 }
 
+static void etcd_plugin_init() {
+  grpc_register_resolver_type("etcd",
+                              grpc_etcd_resolver_factory_create());
+}
+
+void grpc_etcd_register() {
+  grpc_register_plugin(etcd_plugin_init, NULL);
+}
+
 /*
  * FACTORY
  */
@@ -239,7 +258,7 @@ static void etcd_factory_unref(grpc_resolver_factory *factory) {}
 static grpc_resolver *etcd_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
-  return etcd_create(uri, "https", grpc_create_pick_first_lb_policy,
+  return etcd_create(uri, grpc_create_pick_first_lb_policy,
                     subchannel_factory);
 }
 
