@@ -5,4 +5,6 @@ dist/
 *.egg
 *.egg/
 *.eggs/
-doc/
+.coverage
+.coverage.*
+nosetests.xml

@@ -47,6 +47,8 @@ var mathService = math_proto.lookup('math.Math');
 
 var _ = require('lodash');
 
+var server_insecure_creds = grpc.ServerCredentials.createInsecure();
+
 describe('File loader', function() {
   it('Should load a proto file by default', function() {
     assert.doesNotThrow(function() {
@@ -122,7 +124,7 @@ describe('Echo service', function() {
         callback(null, call.request);
       }
     });
-    var port = server.bind('localhost:0');
+    var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(echo_service);
     client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
@@ -166,7 +168,7 @@ describe('Generic client and server', function() {
           callback(null, _.capitalize(call.request));
         }
       });
-      var port = server.bind('localhost:0');
+      var port = server.bind('localhost:0', server_insecure_creds);
       server.start();
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
       client = new Client('localhost:' + port,
@@ -215,7 +217,7 @@ describe('Echo metadata', function() {
         });
       }
     });
-    var port = server.bind('localhost:0');
+    var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
@@ -336,7 +338,7 @@ describe('Other conditions', function() {
         });
       }
     });
-    port = server.bind('localhost:0');
+    port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
@@ -602,7 +604,7 @@ describe('Cancelling surface client', function() {
       'fib': function(stream) {},
       'sum': function(stream) {}
     });
-    var port = server.bind('localhost:0');
+    var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(mathService);
     client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
