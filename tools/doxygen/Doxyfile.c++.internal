@@ -799,6 +799,7 @@ include/grpc++/slice.h \
 include/grpc++/status.h \
 include/grpc++/status_code_enum.h \
 include/grpc++/stream.h \
+include/grpc++/stub_options.h \
 include/grpc++/thread_pool_interface.h \
 include/grpc++/time.h \
 src/cpp/client/secure_credentials.h \
