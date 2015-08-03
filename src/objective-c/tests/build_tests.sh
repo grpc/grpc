@@ -28,12 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Don't run this script standalone. Instead, run from the repository root:
+# ./tools/run_tests/run_tests.py -l objc
+
 set -e
 
 cd $(dirname $0)
 
 hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
-hash xcodebuild 2>/dev/null || { echo >&2 "XCode command-line tools need to be installed."; exit 1; }
+hash xcodebuild 2>/dev/null || {
+    echo >&2 "XCode command-line tools need to be installed."
+    exit 1
+}
 
 BINDIR=../../../bins/$CONFIG
 
