@@ -80,7 +80,7 @@ stockServer.addProtoService(examples.Stock.service, {
 });
 
 if (require.main === module) {
-  stockServer.bind('0.0.0.0:50051');
+  stockServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
   stockServer.listen();
 }
 

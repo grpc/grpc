@@ -554,8 +554,10 @@ static void server_on_recv(void *ptr, int success) {
           gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
         calld->deadline = op->data.metadata.deadline;
       }
-      calld->got_initial_metadata = 1;
-      start_new_rpc(elem);
+      if (calld->host && calld->path) {
+        calld->got_initial_metadata = 1;
+        start_new_rpc(elem);
+      }
       break;
     }
   }
@@ -1271,6 +1273,8 @@ static void done_request_event(void *req, grpc_cq_completion *c) {
   } else {
     gpr_free(req);
   }
+
+  server_unref(server);
 }
 
 static void fail_call(grpc_server *server, requested_call *rc) {
@@ -1283,6 +1287,7 @@ static void fail_call(grpc_server *server, requested_call *rc) {
       rc->data.registered.initial_metadata->count = 0;
       break;
   }
+  server_ref(server);
   grpc_cq_end_op(rc->cq_for_notification, rc->tag, 0, done_request_event, rc,
                  &rc->completion);
 }
@@ -1293,6 +1298,8 @@ static void publish_registered_or_batch(grpc_call *call, int success,
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   requested_call *rc = prc;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  server_ref(chand->server);
   grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc,
                  &rc->completion);
   GRPC_CALL_INTERNAL_UNREF(call, "server", 0);

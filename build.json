@@ -114,7 +114,6 @@
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/census/grpc_context.h",
         "src/core/channel/census_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
@@ -136,6 +135,8 @@
         "src/core/client_config/resolvers/sockaddr_resolver.h",
         "src/core/client_config/subchannel.h",
         "src/core/client_config/subchannel_factory.h",
+        "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h",
+        "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h",
         "src/core/client_config/uri_parser.h",
         "src/core/compression/message_compress.h",
         "src/core/debug/trace.h",
@@ -232,6 +233,8 @@
         "src/core/client_config/resolvers/sockaddr_resolver.c",
         "src/core/client_config/subchannel.c",
         "src/core/client_config/subchannel_factory.c",
+        "src/core/client_config/subchannel_factory_decorators/add_channel_arg.c",
+        "src/core/client_config/subchannel_factory_decorators/merge_channel_args.c",
         "src/core/client_config/uri_parser.c",
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
@@ -506,6 +509,7 @@
         "gpr"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc_base",
         "census"
@@ -561,6 +565,7 @@
         "gpr"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc_base",
         "census"
@@ -607,6 +612,7 @@
         "grpc"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc++_base"
       ],
@@ -658,6 +664,7 @@
         "grpc_unsecure"
       ],
       "baselib": true,
+      "dll": "yes",
       "filegroups": [
         "grpc++_base"
       ],
@@ -846,6 +853,7 @@
         "gpr",
         "grpc"
       ],
+      "dll": "only",
       "vs_project_guid": "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
     }
   ],

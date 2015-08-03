@@ -32,9 +32,10 @@ set -e
 
 cd $(dirname $0)
 
-# TODO(jcanizales): Remove when Cocoapods issue #3823 is resolved.
-export COCOAPODS_DISABLE_DETERMINISTIC_UUIDS=YES
-pod install
+# Run the tests server.
+../../../bins/$CONFIG/interop_server --port=5050 &
+# Kill it when this script exits.
+trap 'kill -9 `jobs -p`' EXIT
 
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.

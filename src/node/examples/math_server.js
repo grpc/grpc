@@ -115,7 +115,7 @@ server.addProtoService(math.Math.service, {
 });
 
 if (require.main === module) {
-  server.bind('0.0.0.0:50051');
+  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
   server.start();
 }
 

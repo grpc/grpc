@@ -95,6 +95,8 @@ gpr_stack_lockfree *gpr_stack_lockfree_create(int entries) {
   memset(&stack->pushed, 0, sizeof(stack->pushed));
 #endif
 
+  GPR_ASSERT(sizeof(stack->entries->atm) == sizeof(stack->entries->contents));
+
   /* Point the head at reserved dummy entry */
   stack->head.contents.index = INVALID_ENTRY_INDEX;
   return stack;
@@ -108,11 +110,15 @@ void gpr_stack_lockfree_destroy(gpr_stack_lockfree *stack) {
 int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
   lockfree_node head;
   lockfree_node newhead;
+  lockfree_node curent;
+  lockfree_node newent;
 
   /* First fill in the entry's index and aba ctr for new head */
   newhead.contents.index = (gpr_uint16)entry;
   /* Also post-increment the aba_ctr */
-  newhead.contents.aba_ctr = stack->entries[entry].contents.aba_ctr++;
+  curent.atm = gpr_atm_no_barrier_load(&stack->entries[entry].atm);
+  newhead.contents.aba_ctr = ++curent.contents.aba_ctr;
+  gpr_atm_no_barrier_store(&stack->entries[entry].atm, curent.atm);
 
 #ifndef NDEBUG
   /* Check for double push */
@@ -131,7 +137,9 @@ int gpr_stack_lockfree_push(gpr_stack_lockfree *stack, int entry) {
     /* Atomically get the existing head value for use */
     head.atm = gpr_atm_no_barrier_load(&(stack->head.atm));
     /* Point to it */
-    stack->entries[entry].contents.index = head.contents.index;
+    newent.atm = gpr_atm_no_barrier_load(&stack->entries[entry].atm);
+    newent.contents.index = head.contents.index;
+    gpr_atm_no_barrier_store(&stack->entries[entry].atm, newent.atm);
   } while (!gpr_atm_rel_cas(&(stack->head.atm), head.atm, newhead.atm));
   /* Use rel_cas above to make sure that entry index is set properly */
   return head.contents.index == INVALID_ENTRY_INDEX;
