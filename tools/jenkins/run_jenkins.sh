@@ -58,7 +58,7 @@ then
   then
     exit 0
   fi
-  if [ "$language" != "sanity" ]
+  if [ "$language" != "node" ]
   then
     exit 0
   fi
