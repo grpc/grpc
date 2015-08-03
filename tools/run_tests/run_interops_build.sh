@@ -43,12 +43,12 @@ sudo docker run -d -e GCS_BUCKET=docker-interop-images  -e STORAGE_PATH=/admin/d
 sudo docker pull 0.0.0.0:5000/grpc/base
 sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
 
-if [ "$language" = "c++" ]
+if [ "$language" == "c++" ]
 then
   gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
   gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
   sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
-elif [ "$language" = "node" ]
+elif [ "$language" == "node" ]
 then
   sudo docker pull 0.0.0.0:5000/grpc/node_base
   sudo docker tag -f 0.0.0.0:5000/grpc/node_base grpc/node_base

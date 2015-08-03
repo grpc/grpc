@@ -33,10 +33,10 @@ language=$1
 test_case=$2
 
 set -e
-if [ "$language" = "c++" ]
+if [ "$language" == "c++" ]
 then
   sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
-elif [ "$language" = "node" ]
+elif [ "$language" == "node" ]
 then
   sudo docker run grpc/node /usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
 else
