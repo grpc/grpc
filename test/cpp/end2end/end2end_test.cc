@@ -278,7 +278,6 @@ class End2endTest : public ::testing::Test {
   DynamicThreadPool thread_pool_;
 };
 
-#if 0
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
                     int num_rpcs) {
   EchoRequest request;
@@ -818,7 +817,6 @@ TEST_F(End2endTest, HugeResponse) {
   EXPECT_EQ(kResponseSize, response.message().size());
   EXPECT_TRUE(s.ok());
 }
-#endif
 
 namespace {
 void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream, gpr_event *ev) {
@@ -831,7 +829,7 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream, gpr
 }  // namespace
 
 // Run a Read and a WritesDone simultaneously.
-TEST_F(End2endTest, SimuReadWritesDone) {
+TEST_F(End2endTest, SimultaneousReadWritesDone) {
   ResetStub();
   ClientContext context;
   gpr_event ev;
