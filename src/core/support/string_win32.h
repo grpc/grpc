@@ -38,8 +38,6 @@
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
-
 /* These allocate new strings using gpr_malloc to convert from and to utf-8. */
 LPTSTR gpr_char_to_tchar(LPCSTR input);
 LPSTR gpr_tchar_to_char(LPCTSTR input);

@@ -85,12 +85,8 @@ static void verify_sopb(size_t window_available, int eof,
   grpc_sopb_destroy(&encops);
 
   if (0 != gpr_slice_cmp(merged, expect)) {
-    char *expect_str =
-        gpr_hexdump((char *)GPR_SLICE_START_PTR(expect),
-                    GPR_SLICE_LENGTH(expect), GPR_HEXDUMP_PLAINTEXT);
-    char *got_str =
-        gpr_hexdump((char *)GPR_SLICE_START_PTR(merged),
-                    GPR_SLICE_LENGTH(merged), GPR_HEXDUMP_PLAINTEXT);
+    char *expect_str = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    char *got_str = gpr_dump_slice(merged, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     gpr_log(GPR_ERROR, "mismatched output for %s", expected);
     gpr_log(GPR_ERROR, "EXPECT: %s", expect_str);
     gpr_log(GPR_ERROR, "GOT:    %s", got_str);
@@ -266,7 +262,7 @@ static void chk_hdr(void *p, grpc_mdelem *el) {
   GPR_ASSERT(0 == gpr_slice_str_cmp(el->key->slice, st->key));
   GPR_ASSERT(0 == gpr_slice_str_cmp(el->value->slice, st->value));
   st->got_hdr = 1;
-  grpc_mdelem_unref(el);
+  GRPC_MDELEM_UNREF(el);
 }
 
 static void test_decode_random_headers_inner(int max_len) {

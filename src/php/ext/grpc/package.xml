@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.9.5" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+ <name>grpc</name>
+ <channel>pecl.php.net</channel>
+ <summary>A high performance, open source, general RPC framework that puts mobile and HTTP/2 first.</summary>
+ <description>Remote Procedure Calls (RPCs) provide a useful abstraction for building distributed applications and services. The libraries in this repository provide a concrete implementation of the gRPC protocol, layered over HTTP/2. These libraries enable communication between clients and servers using any combination of the supported languages.</description>
+ <lead>
+  <name>Stanley Cheung</name>
+  <user>stanleycheung</user>
+  <email>grpc-packages@google.com</email>
+  <active>yes</active>
+ </lead>
+ <date>2015-07-09</date>
+ <time>21:47:27</time>
+ <version>
+  <release>0.5.1</release>
+  <api>0.5.1</api>
+ </version>
+ <stability>
+  <release>alpha</release>
+  <api>alpha</api>
+ </stability>
+ <license>BSD</license>
+ <notes>
+Update to wrap gRPC C Core version 0.10.0
+ </notes>
+ <contents>
+  <dir baseinstalldir="/" name="/">
+   <file baseinstalldir="/" md5sum="6f19828fb869b7b8a590cbb76b4f996d" name="byte_buffer.c" role="src" />
+   <file baseinstalldir="/" md5sum="c8de0f819499c48adfc8d7f472c0196b" name="byte_buffer.h" role="src" />
+   <file baseinstalldir="/" md5sum="cb45b62f767ae7b4377761df696649fc" name="call.c" role="src" />
+   <file baseinstalldir="/" md5sum="26acbf04c30162c2d2aca4688bb2aec8" name="call.h" role="src" />
+   <file baseinstalldir="/" md5sum="50837fbdb2892795f1871b22e5979762" name="channel.c" role="src" />
+   <file baseinstalldir="/" md5sum="f1b66029daeced20b47cf00cc6523fc8" name="channel.h" role="src" />
+   <file baseinstalldir="/" md5sum="81a1193e93d8b6602add8ac360de565b" name="completion_queue.c" role="src" />
+   <file baseinstalldir="/" md5sum="f10b5bb232d74a6878e829e2e76cdaa2" name="completion_queue.h" role="src" />
+   <file baseinstalldir="/" md5sum="a22f8eac0164761058cc4d9eb2ceb069" name="config.m4" role="src" />
+   <file baseinstalldir="/" md5sum="8c3f1e11dac623001378bfd53b554f08" name="credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="6988d6e97c19c8f8e3eb92371cf8246b" name="credentials.h" role="src" />
+   <file baseinstalldir="/" md5sum="38a1bc979d810c36ebc2a52d4b7b5319" name="CREDITS" role="doc" />
+   <file baseinstalldir="/" md5sum="3f35b472bbdef5a788cd90617d7d0847" name="LICENSE" role="doc" />
+   <file baseinstalldir="/" md5sum="6aaa7a290122d230f2d8c4e4e05da4a9" name="php_grpc.c" role="src" />
+   <file baseinstalldir="/" md5sum="673b07859d9f69232f8a754c56780686" name="php_grpc.h" role="src" />
+   <file baseinstalldir="/" md5sum="c1d0b42fd77b7d6740bf7744bee90af5" name="README.md" role="doc" />
+   <file baseinstalldir="/" md5sum="30997dd423403e1f8ad09dcee598e5c4" name="server.c" role="src" />
+   <file baseinstalldir="/" md5sum="4b730f06d14cbbb0642bdbd194749595" name="server.h" role="src" />
+   <file baseinstalldir="/" md5sum="f6930beafb6c0e061899262f2f077e98" name="server_credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="9c4b4cc06356a8a39a16a085a9b85996" name="server_credentials.h" role="src" />
+   <file baseinstalldir="/" md5sum="c89c623cd17177ebde18313fc5c17122" name="timeval.c" role="src" />
+   <file baseinstalldir="/" md5sum="496e27a100b4d93ca3fb35c924c5e163" name="timeval.h" role="src" />
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>5.5.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>grpc</providesextension>
+ <extsrcrelease />
+ <changelog>
+  <release>
+   <version>
+    <release>0.5.0</release>
+    <api>0.5.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2015-06-16</date>
+   <license>BSD</license>
+   <notes>
+First alpha release
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.5.1</release>
+    <api>0.5.1</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2015-07-09</date>
+   <license>BSD</license>
+   <notes>
+Update to wrap gRPC C Core version 0.10.0
+   </notes>
+  </release>
+ </changelog>
+</package>

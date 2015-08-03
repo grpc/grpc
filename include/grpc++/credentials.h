@@ -120,6 +120,12 @@ std::shared_ptr<Credentials> JWTCredentials(const grpc::string& json_key,
 std::shared_ptr<Credentials> RefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
+// Builds access token credentials.
+// access_token is an oauth2 access token that was fetched using an out of band
+// mechanism.
+std::shared_ptr<Credentials> AccessTokenCredentials(
+    const grpc::string& access_token);
+
 // Builds IAM credentials.
 std::shared_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,

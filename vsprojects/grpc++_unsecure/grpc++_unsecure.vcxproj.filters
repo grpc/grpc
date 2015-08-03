@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\src\cpp\common\insecure_create_auth_context.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -8,9 +11,6 @@
       <Filter>src\cpp\client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\client_context.cc">
-      <Filter>src\cpp\client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\client\client_unary_call.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
@@ -84,6 +84,9 @@
     <ClInclude Include="..\..\include\grpc++\async_unary_call.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\auth_context.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -100,6 +103,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\config.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\config_protobuf.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\create_channel.h">
@@ -123,10 +129,16 @@
     <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\proto_utils.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\serialization_traits.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h">
@@ -185,8 +197,8 @@
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cpp\proto\proto_utils.h">
-      <Filter>src\cpp\proto</Filter>
+    <ClInclude Include="..\..\src\cpp\common\create_auth_context.h">
+      <Filter>src\cpp\common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h">
       <Filter>src\cpp\server</Filter>

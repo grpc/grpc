@@ -44,22 +44,22 @@ struct grpc_channel;
 
 namespace grpc {
 class Call;
-class CallOpBuffer;
+class CallOpSetInterface;
 class ChannelArguments;
 class CompletionQueue;
 class Credentials;
 class StreamContextInterface;
 
-class Channel GRPC_FINAL : public GrpcLibrary,
-                           public ChannelInterface {
+class Channel GRPC_FINAL : public GrpcLibrary, public ChannelInterface {
  public:
   Channel(const grpc::string& target, grpc_channel* c_channel);
   ~Channel() GRPC_OVERRIDE;
 
-  virtual void *RegisterMethod(const char *method) GRPC_OVERRIDE;
+  virtual void* RegisterMethod(const char* method) GRPC_OVERRIDE;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
                           CompletionQueue* cq) GRPC_OVERRIDE;
-  virtual void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
+  virtual void PerformOpsOnCall(CallOpSetInterface* ops,
+                                Call* call) GRPC_OVERRIDE;
 
  private:
   const grpc::string target_;

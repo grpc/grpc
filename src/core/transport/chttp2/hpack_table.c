@@ -43,68 +43,69 @@ static struct {
   const char *key;
   const char *value;
 } static_table[] = {
-      /* 0: */ {NULL, NULL},
-      /* 1: */ {":authority", ""},
-      /* 2: */ {":method", "GET"},
-      /* 3: */ {":method", "POST"},
-      /* 4: */ {":path", "/"},
-      /* 5: */ {":path", "/index.html"},
-      /* 6: */ {":scheme", "http"},
-      /* 7: */ {":scheme", "https"},
-      /* 8: */ {":status", "200"},
-      /* 9: */ {":status", "204"},
-      /* 10: */ {":status", "206"},
-      /* 11: */ {":status", "304"},
-      /* 12: */ {":status", "400"},
-      /* 13: */ {":status", "404"},
-      /* 14: */ {":status", "500"},
-      /* 15: */ {"accept-charset", ""},
-      /* 16: */ {"accept-encoding", "gzip, deflate"},
-      /* 17: */ {"accept-language", ""},
-      /* 18: */ {"accept-ranges", ""},
-      /* 19: */ {"accept", ""},
-      /* 20: */ {"access-control-allow-origin", ""},
-      /* 21: */ {"age", ""},
-      /* 22: */ {"allow", ""},
-      /* 23: */ {"authorization", ""},
-      /* 24: */ {"cache-control", ""},
-      /* 25: */ {"content-disposition", ""},
-      /* 26: */ {"content-encoding", ""},
-      /* 27: */ {"content-language", ""},
-      /* 28: */ {"content-length", ""},
-      /* 29: */ {"content-location", ""},
-      /* 30: */ {"content-range", ""},
-      /* 31: */ {"content-type", ""},
-      /* 32: */ {"cookie", ""},
-      /* 33: */ {"date", ""},
-      /* 34: */ {"etag", ""},
-      /* 35: */ {"expect", ""},
-      /* 36: */ {"expires", ""},
-      /* 37: */ {"from", ""},
-      /* 38: */ {"host", ""},
-      /* 39: */ {"if-match", ""},
-      /* 40: */ {"if-modified-since", ""},
-      /* 41: */ {"if-none-match", ""},
-      /* 42: */ {"if-range", ""},
-      /* 43: */ {"if-unmodified-since", ""},
-      /* 44: */ {"last-modified", ""},
-      /* 45: */ {"link", ""},
-      /* 46: */ {"location", ""},
-      /* 47: */ {"max-forwards", ""},
-      /* 48: */ {"proxy-authenticate", ""},
-      /* 49: */ {"proxy-authorization", ""},
-      /* 50: */ {"range", ""},
-      /* 51: */ {"referer", ""},
-      /* 52: */ {"refresh", ""},
-      /* 53: */ {"retry-after", ""},
-      /* 54: */ {"server", ""},
-      /* 55: */ {"set-cookie", ""},
-      /* 56: */ {"strict-transport-security", ""},
-      /* 57: */ {"transfer-encoding", ""},
-      /* 58: */ {"user-agent", ""},
-      /* 59: */ {"vary", ""},
-      /* 60: */ {"via", ""},
-      /* 61: */ {"www-authenticate", ""}, };
+    /* 0: */ {NULL, NULL},
+    /* 1: */ {":authority", ""},
+    /* 2: */ {":method", "GET"},
+    /* 3: */ {":method", "POST"},
+    /* 4: */ {":path", "/"},
+    /* 5: */ {":path", "/index.html"},
+    /* 6: */ {":scheme", "http"},
+    /* 7: */ {":scheme", "https"},
+    /* 8: */ {":status", "200"},
+    /* 9: */ {":status", "204"},
+    /* 10: */ {":status", "206"},
+    /* 11: */ {":status", "304"},
+    /* 12: */ {":status", "400"},
+    /* 13: */ {":status", "404"},
+    /* 14: */ {":status", "500"},
+    /* 15: */ {"accept-charset", ""},
+    /* 16: */ {"accept-encoding", "gzip, deflate"},
+    /* 17: */ {"accept-language", ""},
+    /* 18: */ {"accept-ranges", ""},
+    /* 19: */ {"accept", ""},
+    /* 20: */ {"access-control-allow-origin", ""},
+    /* 21: */ {"age", ""},
+    /* 22: */ {"allow", ""},
+    /* 23: */ {"authorization", ""},
+    /* 24: */ {"cache-control", ""},
+    /* 25: */ {"content-disposition", ""},
+    /* 26: */ {"content-encoding", ""},
+    /* 27: */ {"content-language", ""},
+    /* 28: */ {"content-length", ""},
+    /* 29: */ {"content-location", ""},
+    /* 30: */ {"content-range", ""},
+    /* 31: */ {"content-type", ""},
+    /* 32: */ {"cookie", ""},
+    /* 33: */ {"date", ""},
+    /* 34: */ {"etag", ""},
+    /* 35: */ {"expect", ""},
+    /* 36: */ {"expires", ""},
+    /* 37: */ {"from", ""},
+    /* 38: */ {"host", ""},
+    /* 39: */ {"if-match", ""},
+    /* 40: */ {"if-modified-since", ""},
+    /* 41: */ {"if-none-match", ""},
+    /* 42: */ {"if-range", ""},
+    /* 43: */ {"if-unmodified-since", ""},
+    /* 44: */ {"last-modified", ""},
+    /* 45: */ {"link", ""},
+    /* 46: */ {"location", ""},
+    /* 47: */ {"max-forwards", ""},
+    /* 48: */ {"proxy-authenticate", ""},
+    /* 49: */ {"proxy-authorization", ""},
+    /* 50: */ {"range", ""},
+    /* 51: */ {"referer", ""},
+    /* 52: */ {"refresh", ""},
+    /* 53: */ {"retry-after", ""},
+    /* 54: */ {"server", ""},
+    /* 55: */ {"set-cookie", ""},
+    /* 56: */ {"strict-transport-security", ""},
+    /* 57: */ {"transfer-encoding", ""},
+    /* 58: */ {"user-agent", ""},
+    /* 59: */ {"vary", ""},
+    /* 60: */ {"via", ""},
+    /* 61: */ {"www-authenticate", ""},
+};
 
 void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
   size_t i;
@@ -121,10 +122,10 @@ void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl) {
   size_t i;
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem_unref(tbl->static_ents[i]);
+    GRPC_MDELEM_UNREF(tbl->static_ents[i]);
   }
   for (i = 0; i < tbl->num_ents; i++) {
-    grpc_mdelem_unref(
+    GRPC_MDELEM_UNREF(
         tbl->ents[(tbl->first_ent + i) % GRPC_CHTTP2_MAX_TABLE_COUNT]);
   }
 }
@@ -154,7 +155,7 @@ static void evict1(grpc_chttp2_hptbl *tbl) {
                    GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   tbl->first_ent = (tbl->first_ent + 1) % GRPC_CHTTP2_MAX_TABLE_COUNT;
   tbl->num_ents--;
-  grpc_mdelem_unref(first_ent);
+  GRPC_MDELEM_UNREF(first_ent);
 }
 
 void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {

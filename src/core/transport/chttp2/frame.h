@@ -45,23 +45,9 @@ typedef enum {
   GRPC_CHTTP2_CONNECTION_ERROR
 } grpc_chttp2_parse_error;
 
-typedef struct {
-  gpr_uint8 end_of_stream;
-  gpr_uint8 need_flush_reads;
-  gpr_uint8 metadata_boundary;
-  gpr_uint8 ack_settings;
-  gpr_uint8 send_ping_ack;
-  gpr_uint8 process_ping_reply;
-  gpr_uint8 goaway;
-  gpr_uint8 rst_stream;
-
-  gpr_int64 initial_window_update;
-  gpr_uint32 window_update;
-  gpr_uint32 goaway_last_stream_index;
-  gpr_uint32 goaway_error;
-  gpr_slice goaway_text;
-  gpr_uint32 rst_stream_reason;
-} grpc_chttp2_parse_state;
+/* defined in internal.h */
+typedef struct grpc_chttp2_stream_parsing grpc_chttp2_stream_parsing;
+typedef struct grpc_chttp2_transport_parsing grpc_chttp2_transport_parsing;
 
 #define GRPC_CHTTP2_FRAME_DATA 0
 #define GRPC_CHTTP2_FRAME_HEADER 1
@@ -80,4 +66,4 @@ typedef struct {
 #define GRPC_CHTTP2_DATA_FLAG_PADDED 8
 #define GRPC_CHTTP2_FLAG_HAS_PRIORITY 0x20
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_H */

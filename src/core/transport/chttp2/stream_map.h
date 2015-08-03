@@ -66,6 +66,10 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, gpr_uint32 key,
 void *grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map *map,
                                     gpr_uint32 key);
 
+/* Move all elements of src into dst */
+void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
+                                      grpc_chttp2_stream_map *dst);
+
 /* Return an existing key, or NULL if it does not exist */
 void *grpc_chttp2_stream_map_find(grpc_chttp2_stream_map *map, gpr_uint32 key);
 
@@ -78,4 +82,4 @@ void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map *map,
                                                void *value),
                                      void *user_data);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H */

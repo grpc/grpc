@@ -36,6 +36,10 @@
 
 #include "src/core/security/credentials.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* --- grpc_auth_context ---
 
    High level authentication context object. Can optionally be chained. */
@@ -55,9 +59,22 @@ grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained,
                                             size_t property_count);
 
 /* Refcounting. */
-grpc_auth_context *grpc_auth_context_ref(
-    grpc_auth_context *ctx);
-void grpc_auth_context_unref(grpc_auth_context *ctx);
+#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+#define GRPC_AUTH_CONTEXT_REF(p, r) \
+  grpc_auth_context_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_AUTH_CONTEXT_UNREF(p, r) \
+  grpc_auth_context_unref((p), __FILE__, __LINE__, (r))
+grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy,
+                                         const char *file, int line,
+                                         const char *reason);
+void grpc_auth_context_unref(grpc_auth_context *policy, const char *file,
+                             int line, const char *reason);
+#else
+#define GRPC_AUTH_CONTEXT_REF(p, r) grpc_auth_context_ref((p))
+#define GRPC_AUTH_CONTEXT_UNREF(p, r) grpc_auth_context_unref((p))
+grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
+void grpc_auth_context_unref(grpc_auth_context *policy);
+#endif
 
 grpc_auth_property grpc_auth_property_init_from_cstring(const char *name,
                                                         const char *value);
@@ -89,6 +106,10 @@ typedef struct {
 
 grpc_server_security_context *grpc_server_security_context_create(void);
 void grpc_server_security_context_destroy(void *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
 

@@ -34,6 +34,38 @@
 #ifndef GRPC_SUPPORT_PORT_PLATFORM_H
 #define GRPC_SUPPORT_PORT_PLATFORM_H
 
+/* Get windows.h included everywhere (we need it) */
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
+#define WIN32_LEAN_AND_MEAN
+#endif /* WIN32_LEAN_AND_MEAN */
+
+#ifndef NOMINMAX
+#define GRPC_NOMINMX_WAS_NOT_DEFINED
+#define NOMINMAX
+#endif /* NOMINMAX */
+
+#if defined(_WIN32_WINNT)
+#if _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif /* _WIN32_WINNT < 0x0600 */
+#endif /* defined(_WIN32_WINNT) */
+
+#include <windows.h>
+
+#ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
+#undef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
+#undef WIN32_LEAN_AND_MEAN
+#endif /* GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED */
+
+#ifdef GRPC_NOMINMAX_WAS_NOT_DEFINED
+#undef GRPC_NOMINMAX_WAS_NOT_DEFINED
+#undef NOMINMAX
+#endif /* GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED */
+#endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32) */
+
 /* Override this file with one for your platform if you need to redefine
    things.  */
 
@@ -223,7 +255,9 @@
 #endif
 
 /* Validate platform combinations */
-#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + defined(GPR_WIN32_ATOMIC) != 1
+#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \
+        defined(GPR_WIN32_ATOMIC) !=                  \
+    1
 #error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WIN32_ATOMIC
 #endif
 
@@ -231,7 +265,9 @@
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) != 1
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + \
+        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=               \
+    1
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
@@ -239,11 +275,15 @@
 #error Must define GPR_POSIX_SOCKET to use GPR_POSIX_MULTIPOLL_WITH_POLL
 #endif
 
-#if defined(GPR_POSIX_SOCKET) + defined(GPR_WINSOCK_SOCKET) + defined(GPR_CUSTOM_SOCKET) != 1
+#if defined(GPR_POSIX_SOCKET) + defined(GPR_WINSOCK_SOCKET) + \
+        defined(GPR_CUSTOM_SOCKET) !=                         \
+    1
 #error Must define exactly one of GPR_POSIX_SOCKET, GPR_WINSOCK_SOCKET, GPR_CUSTOM_SOCKET
 #endif
 
-#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + defined(GPR_CUSTOM_TLS) != 1
+#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
+        defined(GPR_CUSTOM_TLS) !=                                            \
+    1
 #error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
 #endif
 
@@ -266,4 +306,12 @@ typedef uintptr_t gpr_uintptr;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
-#endif  /* GRPC_SUPPORT_PORT_PLATFORM_H */
+#ifndef GRPC_MUST_USE_RESULT
+#ifdef __GNUC__
+#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#else
+#define GRPC_MUST_USE_RESULT
+#endif
+#endif
+
+#endif /* GRPC_SUPPORT_PORT_PLATFORM_H */

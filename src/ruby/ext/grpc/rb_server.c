@@ -68,8 +68,12 @@ static void grpc_rb_server_free(void *p) {
 
   /* Deletes the wrapped object if the mark object is Qnil, which indicates
      that no other object is the actual owner. */
+  /* grpc_server_shutdown does not exist. Change this to something that does
+     or delete it */
   if (svr->wrapped != NULL && svr->mark == Qnil) {
-    grpc_server_shutdown(svr->wrapped);
+    // grpc_server_shutdown(svr->wrapped);
+    // Aborting to indicate a bug
+    abort();
     grpc_server_destroy(svr->wrapped);
   }
 

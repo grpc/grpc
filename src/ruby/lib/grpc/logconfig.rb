@@ -38,6 +38,6 @@ Logging.logger.root.appenders = Logging.appenders.stdout
 Logging.logger.root.level = :info
 
 # TODO: provide command-line configuration for logging
-Logging.logger['GRPC'].level = :debug
+Logging.logger['GRPC'].level = :info
 Logging.logger['GRPC::ActiveCall'].level = :info
 Logging.logger['GRPC::BidiCall'].level = :info

@@ -32,6 +32,7 @@
  */
 
 #include "src/core/transport/chttp2/frame_goaway.h"
+#include "src/core/transport/chttp2/internal.h"
 
 #include <string.h>
 
@@ -62,8 +63,8 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice,
-    int is_last) {
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
@@ -75,7 +76,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI0;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id = ((gpr_uint32) * cur) << 24;
+      p->last_stream_id = ((gpr_uint32)*cur) << 24;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI1:
@@ -83,7 +84,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32) * cur) << 16;
+      p->last_stream_id |= ((gpr_uint32)*cur) << 16;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI2:
@@ -91,7 +92,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32) * cur) << 8;
+      p->last_stream_id |= ((gpr_uint32)*cur) << 8;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI3:
@@ -99,7 +100,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32) * cur);
+      p->last_stream_id |= ((gpr_uint32)*cur);
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR0:
@@ -107,7 +108,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code = ((gpr_uint32) * cur) << 24;
+      p->error_code = ((gpr_uint32)*cur) << 24;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR1:
@@ -115,7 +116,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32) * cur) << 16;
+      p->error_code |= ((gpr_uint32)*cur) << 16;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR2:
@@ -123,7 +124,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32) * cur) << 8;
+      p->error_code |= ((gpr_uint32)*cur) << 8;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR3:
@@ -131,7 +132,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32) * cur);
+      p->error_code |= ((gpr_uint32)*cur);
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:
@@ -139,10 +140,11 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
       p->debug_pos += end - cur;
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
-        state->goaway = 1;
-        state->goaway_last_stream_index = p->last_stream_id;
-        state->goaway_error = p->error_code;
-        state->goaway_text =
+        transport_parsing->goaway_received = 1;
+        transport_parsing->goaway_last_stream_index = p->last_stream_id;
+        gpr_slice_unref(transport_parsing->goaway_text);
+        transport_parsing->goaway_error = p->error_code;
+        transport_parsing->goaway_text =
             gpr_slice_new(p->debug_data, p->debug_length, gpr_free);
         p->debug_data = NULL;
       }
