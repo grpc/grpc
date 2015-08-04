@@ -136,10 +136,6 @@ void Server::Init(Handle<Object> exports) {
       tpl, "addHttp2Port",
       NanNew<FunctionTemplate>(AddHttp2Port)->GetFunction());
 
-  NanSetPrototypeTemplate(
-      tpl, "addSecureHttp2Port",
-      NanNew<FunctionTemplate>(AddSecureHttp2Port)->GetFunction());
-
   NanSetPrototypeTemplate(tpl, "start",
                           NanNew<FunctionTemplate>(Start)->GetFunction());
 
@@ -248,43 +244,35 @@ NAN_METHOD(Server::RequestCall) {
 NAN_METHOD(Server::AddHttp2Port) {
   NanScope();
   if (!HasInstance(args.This())) {
-    return NanThrowTypeError("addHttp2Port can only be called on a Server");
-  }
-  if (!args[0]->IsString()) {
-    return NanThrowTypeError("addHttp2Port's argument must be a String");
-  }
-  Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  if (server->wrapped_server == NULL) {
-    return NanThrowError("addHttp2Port cannot be called on a shut down Server");
-  }
-  NanReturnValue(NanNew<Number>(grpc_server_add_http2_port(
-      server->wrapped_server, *NanUtf8String(args[0]))));
-}
-
-NAN_METHOD(Server::AddSecureHttp2Port) {
-  NanScope();
-  if (!HasInstance(args.This())) {
     return NanThrowTypeError(
-        "addSecureHttp2Port can only be called on a Server");
+        "addHttp2Port can only be called on a Server");
   }
   if (!args[0]->IsString()) {
     return NanThrowTypeError(
-        "addSecureHttp2Port's first argument must be a String");
+        "addHttp2Port's first argument must be a String");
   }
   if (!ServerCredentials::HasInstance(args[1])) {
     return NanThrowTypeError(
-        "addSecureHttp2Port's second argument must be ServerCredentials");
+        "addHttp2Port's second argument must be ServerCredentials");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
   if (server->wrapped_server == NULL) {
     return NanThrowError(
-        "addSecureHttp2Port cannot be called on a shut down Server");
+        "addHttp2Port cannot be called on a shut down Server");
   }
-  ServerCredentials *creds = ObjectWrap::Unwrap<ServerCredentials>(
+  ServerCredentials *creds_object = ObjectWrap::Unwrap<ServerCredentials>(
       args[1]->ToObject());
-  NanReturnValue(NanNew<Number>(grpc_server_add_secure_http2_port(
-      server->wrapped_server, *NanUtf8String(args[0]),
-      creds->GetWrappedServerCredentials())));
+  grpc_server_credentials *creds = creds_object->GetWrappedServerCredentials();
+  int port;
+  if (creds == NULL) {
+    port = grpc_server_add_http2_port(server->wrapped_server,
+                                      *NanUtf8String(args[0]));
+  } else {
+    port = grpc_server_add_secure_http2_port(server->wrapped_server,
+                                             *NanUtf8String(args[0]),
+                                             creds);
+  }
+  NanReturnValue(NanNew<Number>(port));
 }
 
 NAN_METHOD(Server::Start) {
