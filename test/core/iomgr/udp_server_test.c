@@ -101,7 +101,7 @@ static void test_no_op_with_port_and_start(void) {
 static void test_receive(int n) {
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
-  int clifd;
+  int clifd, svrfd;
   grpc_udp_server *s = grpc_udp_server_create();
   int i;
   int number_of_reads_before;
@@ -113,6 +113,11 @@ static void test_receive(int n) {
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len, on_read));
+
+  svrfd = grpc_udp_server_get_fd(s, 0);
+  GPR_ASSERT(svrfd >= 0);
+  GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
+  GPR_ASSERT(addr_len <= sizeof(addr));
 
   pollsets[0] = &g_pollset;
   grpc_udp_server_start(s, pollsets, 1, on_connect, NULL);
@@ -127,7 +132,7 @@ static void test_receive(int n) {
     clifd = socket(addr.ss_family, SOCK_DGRAM, 0);
     GPR_ASSERT(clifd >= 0);
     GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, addr_len) == 0);
-    GPR_ASSERT(write(clifd, "hello", 5));
+    GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now()) > 0) {
       grpc_pollset_work(&g_pollset, deadline);
