@@ -126,6 +126,8 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** Default authority to pass if none specified on call construction */
+#define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
     sent on each request */
 #define GRPC_ARG_PRIMARY_USER_AGENT_STRING "grpc.primary_user_agent"
@@ -389,9 +391,16 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    grpc_completion_queue_pluck simultaneously on the same completion queue. 
+    
+    Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+    concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                        gpr_timespec deadline);
+
+/** Maximum number of outstanding grpc_completion_queue_pluck executions per
+    completion queue */
+#define GRPC_MAX_COMPLETION_QUEUE_PLUCKERS 6
 
 /** Begin destruction of a completion queue. Once all possible events are
     drained then grpc_completion_queue_next will start to produce
@@ -414,14 +423,10 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
     Once the channel connectivity state is different from last_observed_state,
     tag will be enqueued on cq with success=1.
     If deadline expires BEFORE the state is changed, tag will be enqueued on cq
-    with success=0.
-    If optional_new_state is non-NULL, it will be set to the newly observed
-    connectivity state of the channel at the same point as tag is enqueued onto 
-    the completion queue. */
+    with success=0. */
 void grpc_channel_watch_connectivity_state(
     grpc_channel *channel, grpc_connectivity_state last_observed_state,
-    grpc_connectivity_state *optional_new_state, gpr_timespec deadline,
-    grpc_completion_queue *cq, void *tag);
+    gpr_timespec deadline, grpc_completion_queue *cq, void *tag);
 
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only

@@ -73,6 +73,8 @@ void ServerCredentials::Init(Handle<Object> exports) {
   Handle<Function> ctr = tpl->GetFunction();
   ctr->Set(NanNew("createSsl"),
            NanNew<FunctionTemplate>(CreateSsl)->GetFunction());
+  ctr->Set(NanNew("createInsecure"),
+           NanNew<FunctionTemplate>(CreateInsecure)->GetFunction());
   constructor = new NanCallback(ctr);
   exports->Set(NanNew("ServerCredentials"), ctr);
 }
@@ -85,9 +87,6 @@ bool ServerCredentials::HasInstance(Handle<Value> val) {
 Handle<Value> ServerCredentials::WrapStruct(
     grpc_server_credentials *credentials) {
   NanEscapableScope();
-  if (credentials == NULL) {
-    return NanEscapeScope(NanNull());
-  }
   const int argc = 1;
   Handle<Value> argv[argc] = {
     NanNew<External>(reinterpret_cast<void *>(credentials))};
@@ -140,8 +139,17 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   key_cert_pair.cert_chain = ::node::Buffer::Data(args[2]);
   // TODO Add a force_client_auth parameter and pass it as the last parameter
   // here.
-  NanReturnValue(WrapStruct(
-      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1, 0)));
+  grpc_server_credentials *creds =
+      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1, 0);
+  if (creds == NULL) {
+    NanReturnNull();
+  }
+  NanReturnValue(WrapStruct(creds));
+}
+
+NAN_METHOD(ServerCredentials::CreateInsecure) {
+  NanScope();
+  NanReturnValue(WrapStruct(NULL));
 }
 
 }  // namespace node

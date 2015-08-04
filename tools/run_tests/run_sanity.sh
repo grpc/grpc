@@ -48,3 +48,8 @@ diff -u $submodules - << EOF
  3e2c8a5dd79481e1d36572cdf65be93514ba6581 third_party/protobuf (v3.0.0-alpha-1-1048-g3e2c8a5)
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
 EOF
+
+if [ -f cache.mk ] ; then
+  echo "Please don't commit cache.mk"
+  exit 1
+fi

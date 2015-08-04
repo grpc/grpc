@@ -29,7 +29,16 @@
 
 """A setup module for the GRPC Python interop testing package."""
 
+import os
+import os.path
+
 import setuptools
+
+# Ensure we're in the proper directory whether or not we're being used by pip.
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# Break import-style to ensure we can actually find our commands module.
+import commands
 
 _PACKAGES = setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
 
@@ -43,13 +52,28 @@ _PACKAGE_DATA = {
         'credentials/server1.pem',]
 }
 
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.10.0a0']
+_SETUP_REQUIRES = (
+    'pytest>=2.6',
+    'pytest-cov>=2.0',
+    'pytest-xdist>=1.11',
+)
+
+_INSTALL_REQUIRES = (
+    'oauth2client>=1.4.7',
+    'grpcio>=0.10.0a0',
+)
+
+_COMMAND_CLASS = {
+    'test': commands.RunTests
+}
 
 setuptools.setup(
     name='grpcio_test',
-    version='0.0.1',
+    version='0.10.0a0',
     packages=_PACKAGES,
     package_dir=_PACKAGE_DIRECTORIES,
     package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES
+    install_requires=_INSTALL_REQUIRES + _SETUP_REQUIRES,
+    setup_requires=_SETUP_REQUIRES,
+    cmdclass=_COMMAND_CLASS
 )

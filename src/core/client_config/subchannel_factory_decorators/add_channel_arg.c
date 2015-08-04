@@ -31,31 +31,13 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
+#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
+#include "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h"
 
-#include <grpc/support/sync.h>
-
-#include "src/core/iomgr/socket_windows.h"
-
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   used to synchronize with the IOCP, and workers are condition variables
-   used to block threads until work is ready. */
-
-typedef struct grpc_pollset_worker {
-  gpr_cv cv;
-  struct grpc_pollset_worker *next;
-  struct grpc_pollset_worker *prev;
-} grpc_pollset_worker;
-
-typedef struct grpc_pollset {
-  gpr_mu mu;
-  int shutting_down;
-  int kicked_without_pollers;
-  grpc_pollset_worker root_worker;
-} grpc_pollset;
-
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-
-#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
+grpc_subchannel_factory *grpc_subchannel_factory_add_channel_arg(
+		grpc_subchannel_factory *input, const grpc_arg *arg) {
+	grpc_channel_args args;
+	args.num_args = 1;
+	args.args = (grpc_arg *)arg;
+	return grpc_subchannel_factory_merge_channel_args(input, &args);
+}
