@@ -43,7 +43,8 @@ void grpc_endo_syncclock(gpr_int64 *cycle, double *time) {
 
 /* warning span and warning print */
 
-static void grpc_endo_warning_span(grpc_endo_base *base, grpc_endo_warning_enum errortype) { /* display to client */
+static void grpc_endo_warning_span(grpc_endo_base *base, grpc_endo_warning_enum errortype) {
+  /* display to client */
   /* deterministic, no thread-safe issue */
   gpr_uint8 i;
   for (i = (gpr_uint8)errortype; grpc_endo_warning_str[i] != ' '; i++) {
@@ -177,7 +178,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
     grpc_endo_base *base, gpr_int32 line, const char *name) {
   /* thread safe applied */
   GRPC_ENDO_INDEX *q;
-  gpr_int16 fallback; /* cannot be unsigned */
+  gpr_int16 fallback;
   /* begin hash function */
   gpr_uint32 hash = line;
   const char *c;
@@ -191,7 +192,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
   hash += (hash << 15);
   /* end hash function */
   q = &(base->marker_map[hash % GRPC_ENDO_HASHSIZE]);
-  for (fallback = 100; fallback > 0; fallback--) {
+  for (fallback = 100; fallback > 1; fallback--) {
     if (*q == GRPC_ENDO_EMPTY) {  /* case 1: slot empty */
       gpr_mu_lock(&(base->mutex));
       if (*q == GRPC_ENDO_EMPTY) {  /* verify in lock - slot still empty */
@@ -204,7 +205,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
       }
     } else {
       GRPC_ENDO_INDEX p = *q;
-      for (; fallback > 0; fallback--) {
+      for (; fallback > 1; fallback--) {
         while (p != GRPC_ENDO_EMPTY) {  /* case 2: between elements q and p */
           if (line == base->marker_pool[p].line) {  /* same line number */
             if (strcmp(name, base->marker_pool[p].name) == 0) {  /* also same string, found */
@@ -240,6 +241,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
         }
       }
     }
+    break;  /* can never fallback to case 1 */
   }
   return GRPC_ENDO_EMPTY;
 }
