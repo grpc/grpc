@@ -1,0 +1,496 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.base.interfaces_test_case &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.base.interfaces_test_case</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.base.interfaces_test_case</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Abstract tests against the interfaces of the base layer of RPC Framework.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.base</span> <span class="kn">import</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream_testing</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream_util</span>
+
+<span class="n">TICK</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">SMALL_TIMEOUT</span> <span class="o">=</span> <span class="n">TICK</span> <span class="o">*</span> <span class="mi">50</span>
+<span class="n">STREAM_LENGTH</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="n">SYNCHRONOUS_ECHO</span> <span class="o">=</span> <span class="s">&#39;synchronous echo&#39;</span>
+<span class="n">ASYNCHRONOUS_ECHO</span> <span class="o">=</span> <span class="s">&#39;asynchronous echo&#39;</span>
+<span class="n">IMMEDIATE_FAILURE</span> <span class="o">=</span> <span class="s">&#39;immediate failure&#39;</span>
+<span class="n">TRIGGERED_FAILURE</span> <span class="o">=</span> <span class="s">&#39;triggered failure&#39;</span>
+<span class="n">WAIT_ON_CONDITION</span> <span class="o">=</span> <span class="s">&#39;wait on condition&#39;</span>
+
+<span class="n">EMPTY_OUTCOME_DICT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">EXPIRED</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">RECEPTION_FAILURE</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">TRANSMISSION_FAILURE</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">SERVICER_FAILURE</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">SERVICED_FAILURE</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_synchronous_echo</span><span class="p">(</span><span class="n">output_consumer</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">stream_util</span><span class="o">.</span><span class="n">TransformingConsumer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">output_consumer</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AsynchronousEcho"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.AsynchronousEcho">[docs]</a><span class="k">class</span> <span class="nc">AsynchronousEcho</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A stream.Consumer that echoes its input to another stream.Consumer.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_consumer</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_output_consumer</span> <span class="o">=</span> <span class="n">output_consumer</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">False</span>
+
+  <span class="k">def</span> <span class="nf">_spin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">complete</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">complete</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_output_consumer</span><span class="o">.</span><span class="n">consume_and_terminate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_output_consumer</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">complete</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_consumer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+      <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="p">:</span>
+          <span class="n">value</span><span class="p">,</span> <span class="n">complete</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">False</span>
+          <span class="k">return</span>
+
+<div class="viewcode-block" id="AsynchronousEcho.consume"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume">[docs]</a>  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">value</span><span class="p">,</span> <span class="bp">False</span><span class="p">))</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="AsynchronousEcho.terminate"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.AsynchronousEcho.terminate">[docs]</a>  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">))</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="AsynchronousEcho.consume_and_terminate"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume_and_terminate">[docs]</a>  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">value</span><span class="p">,</span> <span class="bp">True</span><span class="p">))</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="TestServicer"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.TestServicer">[docs]</a><span class="k">class</span> <span class="nc">TestServicer</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Servicer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;An interfaces.Servicer with instrumented for testing.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_released</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="TestServicer.service"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.TestServicer.service">[docs]</a>  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">output_consumer</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">SYNCHRONOUS_ECHO</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">_synchronous_echo</span><span class="p">(</span><span class="n">output_consumer</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">ASYNCHRONOUS_ECHO</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">AsynchronousEcho</span><span class="p">(</span><span class="n">output_consumer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">IMMEDIATE_FAILURE</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">TRIGGERED_FAILURE</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">WAIT_ON_CONDITION</span><span class="p">:</span>
+      <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="p">:</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_released</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+      <span class="k">return</span> <span class="n">_synchronous_echo</span><span class="p">(</span><span class="n">output_consumer</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="TestServicer.release"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.TestServicer.release">[docs]</a>  <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_released</span> <span class="o">=</span> <span class="bp">True</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="EasyServicedIngestor"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.EasyServicedIngestor">[docs]</a><span class="k">class</span> <span class="nc">EasyServicedIngestor</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">ServicedIngestor</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A trivial implementation of interfaces.ServicedIngestor.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consumer</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_consumer</span> <span class="o">=</span> <span class="n">consumer</span>
+
+<div class="viewcode-block" id="EasyServicedIngestor.consumer"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.EasyServicedIngestor.consumer">[docs]</a>  <span class="k">def</span> <span class="nf">consumer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation_context</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;See interfaces.ServicedIngestor.consumer for specification.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_consumer</span>
+
+</div></div>
+<div class="viewcode-block" id="FrontAndBackTest"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.FrontAndBackTest">[docs]</a><span class="k">class</span> <span class="nc">FrontAndBackTest</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A test suite usable against any joined Front and Back.&quot;&quot;&quot;</span>
+
+  <span class="c"># Pylint doesn&#39;t know that this is a unittest.TestCase mix-in.</span>
+  <span class="c"># pylint: disable=invalid-name</span>
+
+<div class="viewcode-block" id="FrontAndBackTest.testSimplestCall"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testSimplestCall">[docs]</a>  <span class="k">def</span> <span class="nf">testSimplestCall</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests the absolute simplest call - a one-ticket fire-and-forget.&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operate</span><span class="p">(</span>
+        <span class="n">SYNCHRONOUS_ECHO</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">SMALL_TIMEOUT</span><span class="p">,</span>
+        <span class="n">util</span><span class="o">.</span><span class="n">none_serviced_subscription</span><span class="p">(),</span> <span class="s">&#39;test trace ID&#39;</span><span class="p">)</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">])</span>
+
+    <span class="c"># Assuming nothing really pathological (such as pauses on the order of</span>
+    <span class="c"># SMALL_TIMEOUT interfering with this test) there are a two different ways</span>
+    <span class="c"># the back could have experienced execution up to this point:</span>
+    <span class="c"># (1) The ticket is still either in the front waiting to be transmitted</span>
+    <span class="c"># or is somewhere on the link between the front and the back. The back has</span>
+    <span class="c"># no idea that this test is even happening. Calling wait_for_idle on it</span>
+    <span class="c"># would do no good because in this case the back is idle and the call would</span>
+    <span class="c"># return with the ticket bound for it still in the front or on the link.</span>
+    <span class="n">back_operation_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()</span>
+    <span class="n">first_back_possibility</span> <span class="o">=</span> <span class="n">EMPTY_OUTCOME_DICT</span>
+    <span class="c"># (2) The ticket arrived at the back and the back completed the operation.</span>
+    <span class="n">second_back_possibility</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">EMPTY_OUTCOME_DICT</span><span class="p">)</span>
+    <span class="n">second_back_possibility</span><span class="p">[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertIn</span><span class="p">(</span>
+        <span class="n">back_operation_stats</span><span class="p">,</span> <span class="p">(</span><span class="n">first_back_possibility</span><span class="p">,</span> <span class="n">second_back_possibility</span><span class="p">))</span>
+    <span class="c"># It&#39;s true that if the ticket had arrived at the back and the back had</span>
+    <span class="c"># begun processing that wait_for_idle could hold test execution until the</span>
+    <span class="c"># back completed the operation, but that doesn&#39;t really collapse the</span>
+    <span class="c"># possibility space down to one solution.</span>
+</div>
+<div class="viewcode-block" id="FrontAndBackTest.testEntireEcho"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testEntireEcho">[docs]</a>  <span class="k">def</span> <span class="nf">testEntireEcho</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests a very simple one-ticket-each-way round-trip.&quot;&quot;&quot;</span>
+    <span class="n">test_payload</span> <span class="o">=</span> <span class="s">&#39;test payload&#39;</span>
+    <span class="n">test_consumer</span> <span class="o">=</span> <span class="n">stream_testing</span><span class="o">.</span><span class="n">TestConsumer</span><span class="p">()</span>
+    <span class="n">subscription</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">full_serviced_subscription</span><span class="p">(</span>
+        <span class="n">EasyServicedIngestor</span><span class="p">(</span><span class="n">test_consumer</span><span class="p">))</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operate</span><span class="p">(</span>
+        <span class="n">ASYNCHRONOUS_ECHO</span><span class="p">,</span> <span class="n">test_payload</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">SMALL_TIMEOUT</span><span class="p">,</span> <span class="n">subscription</span><span class="p">,</span>
+        <span class="s">&#39;test trace ID&#39;</span><span class="p">)</span>
+
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">])</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">])</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertListEqual</span><span class="p">([(</span><span class="n">test_payload</span><span class="p">,</span> <span class="bp">True</span><span class="p">)],</span> <span class="n">test_consumer</span><span class="o">.</span><span class="n">calls</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FrontAndBackTest.testBidirectionalStreamingEcho"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testBidirectionalStreamingEcho">[docs]</a>  <span class="k">def</span> <span class="nf">testBidirectionalStreamingEcho</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests sending multiple tickets each way.&quot;&quot;&quot;</span>
+    <span class="n">test_payload_template</span> <span class="o">=</span> <span class="s">&#39;test_payload: </span><span class="si">%03d</span><span class="s">&#39;</span>
+    <span class="n">test_payloads</span> <span class="o">=</span> <span class="p">[</span><span class="n">test_payload_template</span> <span class="o">%</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">STREAM_LENGTH</span><span class="p">)]</span>
+    <span class="n">test_consumer</span> <span class="o">=</span> <span class="n">stream_testing</span><span class="o">.</span><span class="n">TestConsumer</span><span class="p">()</span>
+    <span class="n">subscription</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">full_serviced_subscription</span><span class="p">(</span>
+        <span class="n">EasyServicedIngestor</span><span class="p">(</span><span class="n">test_consumer</span><span class="p">))</span>
+
+    <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operate</span><span class="p">(</span>
+        <span class="n">SYNCHRONOUS_ECHO</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">SMALL_TIMEOUT</span><span class="p">,</span> <span class="n">subscription</span><span class="p">,</span>
+        <span class="s">&#39;test trace ID&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">test_payload</span> <span class="ow">in</span> <span class="n">test_payloads</span><span class="p">:</span>
+      <span class="n">operation</span><span class="o">.</span><span class="n">consumer</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="n">test_payload</span><span class="p">)</span>
+    <span class="n">operation</span><span class="o">.</span><span class="n">consumer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">])</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">])</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertListEqual</span><span class="p">(</span><span class="n">test_payloads</span><span class="p">,</span> <span class="n">test_consumer</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="FrontAndBackTest.testCancellation"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testCancellation">[docs]</a>  <span class="k">def</span> <span class="nf">testCancellation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests cancelling a long-lived operation.&quot;&quot;&quot;</span>
+    <span class="n">test_consumer</span> <span class="o">=</span> <span class="n">stream_testing</span><span class="o">.</span><span class="n">TestConsumer</span><span class="p">()</span>
+    <span class="n">subscription</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">full_serviced_subscription</span><span class="p">(</span>
+        <span class="n">EasyServicedIngestor</span><span class="p">(</span><span class="n">test_consumer</span><span class="p">))</span>
+
+    <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operate</span><span class="p">(</span>
+        <span class="n">ASYNCHRONOUS_ECHO</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">SMALL_TIMEOUT</span><span class="p">,</span> <span class="n">subscription</span><span class="p">,</span>
+        <span class="s">&#39;test trace ID&#39;</span><span class="p">)</span>
+    <span class="n">operation</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">])</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertListEqual</span><span class="p">([],</span> <span class="n">test_consumer</span><span class="o">.</span><span class="n">calls</span><span class="p">)</span>
+
+    <span class="c"># Assuming nothing really pathological (such as pauses on the order of</span>
+    <span class="c"># SMALL_TIMEOUT interfering with this test) there are a two different ways</span>
+    <span class="c"># the back could have experienced execution up to this point:</span>
+    <span class="c"># (1) Both tickets are still either in the front waiting to be transmitted</span>
+    <span class="c"># or are somewhere on the link between the front and the back. The back has</span>
+    <span class="c"># no idea that this test is even happening. Calling wait_for_idle on it</span>
+    <span class="c"># would do no good because in this case the back is idle and the call would</span>
+    <span class="c"># return with the tickets bound for it still in the front or on the link.</span>
+    <span class="n">back_operation_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()</span>
+    <span class="n">first_back_possibility</span> <span class="o">=</span> <span class="n">EMPTY_OUTCOME_DICT</span>
+    <span class="c"># (2) Both tickets arrived within SMALL_TIMEOUT of one another at the back.</span>
+    <span class="c"># The back started processing based on the first ticket and then stopped</span>
+    <span class="c"># upon receiving the cancellation ticket.</span>
+    <span class="n">second_back_possibility</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">EMPTY_OUTCOME_DICT</span><span class="p">)</span>
+    <span class="n">second_back_possibility</span><span class="p">[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertIn</span><span class="p">(</span>
+        <span class="n">back_operation_stats</span><span class="p">,</span> <span class="p">(</span><span class="n">first_back_possibility</span><span class="p">,</span> <span class="n">second_back_possibility</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="FrontAndBackTest.testExpiration"><a class="viewcode-back" href="../../../../grpc.framework.base.html#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testExpiration">[docs]</a>  <span class="k">def</span> <span class="nf">testExpiration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests that operations time out.&quot;&quot;&quot;</span>
+    <span class="n">timeout</span> <span class="o">=</span> <span class="n">TICK</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="n">allowance</span> <span class="o">=</span> <span class="n">TICK</span>  <span class="c"># How much extra time to</span>
+    <span class="n">condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+    <span class="n">test_payload</span> <span class="o">=</span> <span class="s">&#39;test payload&#39;</span>
+    <span class="n">subscription</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">termination_only_serviced_subscription</span><span class="p">()</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="n">outcome_cell</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span>
+    <span class="n">termination_time_cell</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">termination_action</span><span class="p">(</span><span class="n">outcome</span><span class="p">):</span>
+      <span class="k">with</span> <span class="n">condition</span><span class="p">:</span>
+        <span class="n">outcome_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">outcome</span>
+        <span class="n">termination_time_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">condition</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">condition</span><span class="p">:</span>
+      <span class="n">operation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operate</span><span class="p">(</span>
+          <span class="n">SYNCHRONOUS_ECHO</span><span class="p">,</span> <span class="n">test_payload</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">subscription</span><span class="p">,</span>
+          <span class="s">&#39;test trace ID&#39;</span><span class="p">)</span>
+      <span class="n">operation</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">add_termination_callback</span><span class="p">(</span><span class="n">termination_action</span><span class="p">)</span>
+      <span class="k">while</span> <span class="n">outcome_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+    <span class="n">duration</span> <span class="o">=</span> <span class="n">termination_time_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">start_time</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertLessEqual</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertLess</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">+</span> <span class="n">allowance</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">EXPIRED</span><span class="p">,</span> <span class="n">outcome_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">front</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">EXPIRED</span><span class="p">])</span>
+    <span class="n">util</span><span class="o">.</span><span class="n">wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertLessEqual</span><span class="p">(</span>
+        <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="o">.</span><span class="n">operation_stats</span><span class="p">()[</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Outcome</span><span class="o">.</span><span class="n">EXPIRED</span><span class="p">])</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

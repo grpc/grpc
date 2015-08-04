@@ -1,0 +1,688 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.interfaces.links package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
+        <link rel="prev" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+      
+          <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
+      
+    <li>grpc.framework.interfaces.links package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.framework.interfaces.links.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-framework-interfaces-links-package">
+<h1>grpc.framework.interfaces.links package<a class="headerlink" href="#grpc-framework-interfaces-links-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.framework.interfaces.links.links">
+<span id="grpc-framework-interfaces-links-links-module"></span><h2>grpc.framework.interfaces.links.links module<a class="headerlink" href="#module-grpc.framework.interfaces.links.links" title="Permalink to this headline">¶</a></h2>
+<p>The low-level ticket-exchanging-links interface of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.interfaces.links.links.Link">
+<em class="property">class </em><code class="descclassname">grpc.framework.interfaces.links.links.</code><code class="descname">Link</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Accepts and emits tickets.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.links.Link.accept_ticket">
+<code class="descname">accept_ticket</code><span class="sig-paren">(</span><em>ticket</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Link.accept_ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Link.accept_ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accept a Ticket.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ticket</strong> &#8211; Any Ticket.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.links.Link.join_link">
+<code class="descname">join_link</code><span class="sig-paren">(</span><em>link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Link.join_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Link.join_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mates this object with a peer with which it will exchange tickets.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.interfaces.links.links.Ticket">
+<em class="property">class </em><code class="descclassname">grpc.framework.interfaces.links.links.</code><code class="descname">Ticket</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.interfaces.links.links.Ticket" title="grpc.framework.interfaces.links.links.Ticket"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.interfaces.links.links.Ticket</span></code></a></p>
+<p>A sum type for all values sent from a front to a back.</p>
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.operation_id">
+<code class="descname">operation_id</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.operation_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unique-with-respect-to-equality hashable object identifying
+a particular operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.sequence_number">
+<code class="descname">sequence_number</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.sequence_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>A zero-indexed integer sequence number identifying the
+ticket&#8217;s place in the stream of tickets sent in one direction for the
+particular operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.group">
+<code class="descname">group</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>The group to which the method of the operation belongs. Must be
+present in the first ticket from invocation side to service side. Ignored
+for all other tickets exchanged during the operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.method">
+<code class="descname">method</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of an operation. Must be present in the first ticket from
+invocation side to service side. Ignored for all other tickets exchanged
+during the operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.subscription">
+<code class="descname">subscription</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.subscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Subscription value describing the interest one side has in
+receiving information from the other side. Must be present in the first
+ticket from either side. Ignored for all other tickets exchanged during
+the operation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.timeout">
+<code class="descname">timeout</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>A nonzero length of time (measured from the beginning of the
+operation) to allow for the entire operation. Must be present in the first
+ticket from invocation side to service side. Optional for all other
+tickets exchanged during the operation. Receipt of a value from the other
+side of the operation indicates the value in use by that side. Setting a
+value on a later ticket allows either side to request time extensions (or
+even time reductions!) on in-progress operations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.allowance">
+<code class="descname">allowance</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.allowance" title="Permalink to this definition">¶</a></dt>
+<dd><p>A positive integer granting permission for a number of payloads
+to be transmitted to the communicating side of the operation, or None if
+no additional allowance is being granted with this ticket.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.initial_metadata">
+<code class="descname">initial_metadata</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>An optional metadata value communicated from one side to
+the other at the beginning of the operation. May be non-None in at most
+one ticket from each side. Any non-None value must appear no later than
+the first payload value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.payload">
+<code class="descname">payload</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>A customer payload object. May be None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.terminal_metadata">
+<code class="descname">terminal_metadata</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.terminal_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>A metadata value comminicated from one side to the other
+at the end of the operation. May be non-None in the same ticket as
+the code and message, but must be None for all earlier tickets.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.code">
+<code class="descname">code</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>A value communicated at operation completion. May be None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.message">
+<code class="descname">message</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>A value communicated at operation completion. May be None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.framework.interfaces.links.links.Ticket.termination">
+<code class="descname">termination</code><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Termination value describing the end of the operation, or
+None if the operation has not yet terminated. If set, no further tickets
+may be sent in the same direction.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Subscription">
+<em class="property">class </em><code class="descname">Subscription</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Ticket.Subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Subscription" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Identifies the level of subscription of a side of an operation.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc.framework.interfaces.links.links.Ticket.Termination">
+<em class="property">class </em><code class="descclassname">Ticket.</code><code class="descname">Termination</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Ticket.Termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Ticket.Termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">enum.Enum</span></code></p>
+<p>Identifies the termination of an operation.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.interfaces.links.test_cases">
+<span id="grpc-framework-interfaces-links-test-cases-module"></span><h2>grpc.framework.interfaces.links.test_cases module<a class="headerlink" href="#module-grpc.framework.interfaces.links.test_cases" title="Permalink to this headline">¶</a></h2>
+<p>Tests of the links interface of RPC Framework.</p>
+<dl class="class">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest">
+<em class="property">class </em><code class="descclassname">grpc.framework.interfaces.links.test_cases.</code><code class="descname">TransmissionTest</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Tests ticket transmission between two connected links.</p>
+<p>This class must be mixed into a unittest.TestCase that implements the abstract
+methods it provides.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.assertMetadataTransmitted">
+<code class="descname">assertMetadataTransmitted</code><span class="sig-paren">(</span><em>original_metadata</em>, <em>transmitted_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.assertMetadataTransmitted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.assertMetadataTransmitted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Asserts that transmitted_metadata contains original_metadata.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>original_metadata</strong> &#8211; A metadata object used in this test.</li>
+<li><strong>transmitted_metadata</strong> &#8211; A metadata object obtained after transmission
+through the system under test.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code> &#8211;
+if the transmitted_metadata object does not contain
+original_metadata.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_completion">
+<code class="descname">create_invocation_completion</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_invocation_completion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_completion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates values for use as invocation-side code and message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An invocation-side code value and an invocation-side message value.
+Either or both may be None if invocation-side code and/or
+invocation-side message transmission is not supported by the links
+under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_initial_metadata">
+<code class="descname">create_invocation_initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_invocation_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a value for use as invocation-side initial metadata.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A metadata value appropriate for use as invocation-side initial metadata
+or None if invocation-side initial metadata transmission is not
+supported by the links under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_terminal_metadata">
+<code class="descname">create_invocation_terminal_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_invocation_terminal_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_invocation_terminal_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a value for use as invocation-side terminal metadata.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A metadata value appropriate for use as invocation-side terminal
+metadata or None if invocation-side terminal metadata transmission is
+not supported by the links under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_completion">
+<code class="descname">create_service_completion</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_service_completion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_completion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates values for use as service-side code and message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A service-side code value and a service-side message value. Either or
+both may be None if service-side code and/or service-side message
+transmission is not supported by the links under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_initial_metadata">
+<code class="descname">create_service_initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_service_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a value for use as service-side initial metadata.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A metadata value appropriate for use as service-side initial metadata or
+None if service-side initial metadata transmission is not supported by
+the links under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_terminal_metadata">
+<code class="descname">create_service_terminal_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_service_terminal_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_service_terminal_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a value for use as service-side terminal metadata.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A metadata value appropriate for use as service-side terminal metadata or
+None if service-side terminal metadata transmission is not supported by
+the links under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.create_transmitting_links">
+<code class="descname">create_transmitting_links</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.create_transmitting_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.create_transmitting_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates two connected links for use in this test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Two links.Links, the first of which will be used on the invocation side
+of RPCs and the second of which will be used on the service side of
+RPCs.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.deserialize_request">
+<code class="descname">deserialize_request</code><span class="sig-paren">(</span><em>serialized_request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.deserialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.deserialize_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserializes a request value used in this test case.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>serialized_request</strong> &#8211; A bytestring that is the serialization of some request
+used in this test case.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The request value encoded by the given bytestring.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.deserialize_response">
+<code class="descname">deserialize_response</code><span class="sig-paren">(</span><em>serialized_response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.deserialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.deserialize_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserializes a response value used in this test case.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>serialized_response</strong> &#8211; A bytestring that is the serialization of some
+response used in this test case.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The response value encoded by the given bytestring.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.destroy_transmitting_links">
+<code class="descname">destroy_transmitting_links</code><span class="sig-paren">(</span><em>invocation_side_link</em>, <em>service_side_link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.destroy_transmitting_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.destroy_transmitting_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroys the two connected links created for this test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>invocation_side_link</strong> &#8211; The link used on the invocation side of RPCs in
+this test.</li>
+<li><strong>service_side_link</strong> &#8211; The link used on the service side of RPCs in this
+test.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.group_and_method">
+<code class="descname">group_and_method</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.group_and_method"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.group_and_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the group and method used in this test case.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A pair of the group and method used in this test case.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.serialize_request">
+<code class="descname">serialize_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.serialize_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.serialize_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes a request value used in this test case.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> &#8211; A request value created by this test case.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A bytestring that is the serialization of the given request.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.serialize_response">
+<code class="descname">serialize_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.serialize_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.serialize_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes a response value used in this test case.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> &#8211; A response value created by this test case.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A bytestring that is the serialization of the given response.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_cases.TransmissionTest.testSimplestRoundTrip">
+<code class="descname">testSimplestRoundTrip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#TransmissionTest.testSimplestRoundTrip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.TransmissionTest.testSimplestRoundTrip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests transmission of one ticket in each direction.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.interfaces.links.test_cases.at_least_n_payloads_received_predicate">
+<code class="descclassname">grpc.framework.interfaces.links.test_cases.</code><code class="descname">at_least_n_payloads_received_predicate</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#at_least_n_payloads_received_predicate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.at_least_n_payloads_received_predicate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grpc.framework.interfaces.links.test_cases.terminated">
+<code class="descclassname">grpc.framework.interfaces.links.test_cases.</code><code class="descname">terminated</code><span class="sig-paren">(</span><em>ticket_sequence</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_cases.html#terminated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_cases.terminated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.interfaces.links.test_utilities">
+<span id="grpc-framework-interfaces-links-test-utilities-module"></span><h2>grpc.framework.interfaces.links.test_utilities module<a class="headerlink" href="#module-grpc.framework.interfaces.links.test_utilities" title="Permalink to this headline">¶</a></h2>
+<p>State and behavior appropriate for use in tests.</p>
+<dl class="class">
+<dt id="grpc.framework.interfaces.links.test_utilities.RecordingLink">
+<em class="property">class </em><code class="descclassname">grpc.framework.interfaces.links.test_utilities.</code><code class="descname">RecordingLink</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_utilities.html#RecordingLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_utilities.RecordingLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.interfaces.links.links.Link" title="grpc.framework.interfaces.links.links.Link"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.interfaces.links.links.Link</span></code></a></p>
+<p>A Link that records every ticket passed to it.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_utilities.RecordingLink.accept_ticket">
+<code class="descname">accept_ticket</code><span class="sig-paren">(</span><em>ticket</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_utilities.html#RecordingLink.accept_ticket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_utilities.RecordingLink.accept_ticket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_utilities.RecordingLink.block_until_tickets_satisfy">
+<code class="descname">block_until_tickets_satisfy</code><span class="sig-paren">(</span><em>predicate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_utilities.html#RecordingLink.block_until_tickets_satisfy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_utilities.RecordingLink.block_until_tickets_satisfy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the received tickets satisfy the given predicate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>predicate</strong> &#8211; A callable that takes a sequence of tickets and returns a
+boolean value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_utilities.RecordingLink.join_link">
+<code class="descname">join_link</code><span class="sig-paren">(</span><em>link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_utilities.html#RecordingLink.join_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_utilities.RecordingLink.join_link" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.framework.interfaces.links.test_utilities.RecordingLink.tickets">
+<code class="descname">tickets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/links/test_utilities.html#RecordingLink.tickets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.test_utilities.RecordingLink.tickets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of the list of all tickets received by this Link.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.framework.interfaces.links.utilities">
+<span id="grpc-framework-interfaces-links-utilities-module"></span><h2>grpc.framework.interfaces.links.utilities module<a class="headerlink" href="#module-grpc.framework.interfaces.links.utilities" title="Permalink to this headline">¶</a></h2>
+<p>Utilities provided as part of the links interface.</p>
+</div>
+<div class="section" id="module-grpc.framework.interfaces.links">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.framework.interfaces.links" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="grpc.framework.interfaces.html" class="btn btn-neutral" title="grpc.framework.interfaces package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

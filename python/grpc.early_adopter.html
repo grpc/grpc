@@ -1,0 +1,326 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.early_adopter package &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+        <link rel="up" title="grpc package" href="grpc.html"/>
+        <link rel="next" title="grpc.framework package" href="grpc.framework.html"/>
+        <link rel="prev" title="grpc package" href="grpc.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+      
+    <li>grpc.early_adopter package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/grpc.early_adopter.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="grpc-early-adopter-package">
+<h1>grpc.early_adopter package<a class="headerlink" href="#grpc-early-adopter-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-grpc.early_adopter.implementations">
+<span id="grpc-early-adopter-implementations-module"></span><h2>grpc.early_adopter.implementations module<a class="headerlink" href="#module-grpc.early_adopter.implementations" title="Permalink to this headline">¶</a></h2>
+<p>Entry points into GRPC.</p>
+<dl class="function">
+<dt id="grpc.early_adopter.implementations.server">
+<code class="descclassname">grpc.early_adopter.implementations.</code><code class="descname">server</code><span class="sig-paren">(</span><em>service_name</em>, <em>methods</em>, <em>port</em>, <em>private_key=None</em>, <em>certificate_chain=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations.server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs an interfaces.Server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> &#8211; The package-qualified full name of the service.</li>
+<li><strong>methods</strong> &#8211; A dictionary from RPC method name to
+interfaces.RpcMethodServiceDescription describing the RPCs to
+be serviced by the created server. The RPC method names in the dictionary
+are not qualified by the service name or decorated in any other way.</li>
+<li><strong>port</strong> &#8211; The port on which to serve or zero to ask for a port to be
+automatically selected.</li>
+<li><strong>private_key</strong> &#8211; A pem-encoded private key, or None for an insecure server.</li>
+<li><strong>certificate_chain</strong> &#8211; A pem-encoded certificate chain, or None for an insecure
+server.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.Server that will serve secure traffic.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc.early_adopter.implementations.stub">
+<code class="descclassname">grpc.early_adopter.implementations.</code><code class="descname">stub</code><span class="sig-paren">(</span><em>service_name</em>, <em>methods</em>, <em>host</em>, <em>port</em>, <em>metadata_transformer=None</em>, <em>secure=False</em>, <em>root_certificates=None</em>, <em>private_key=None</em>, <em>certificate_chain=None</em>, <em>server_host_override=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations.html#stub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations.stub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs an interfaces.Stub.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_name</strong> &#8211; The package-qualified full name of the service.</li>
+<li><strong>methods</strong> &#8211; A dictionary from RPC method name to
+interfaces.RpcMethodInvocationDescription describing the RPCs to be
+supported by the created stub. The RPC method names in the dictionary are
+not qualified by the service name or decorated in any other way.</li>
+<li><strong>host</strong> &#8211; The host to which to connect for RPC service.</li>
+<li><strong>port</strong> &#8211; The port to which to connect for RPC service.</li>
+<li><strong>metadata_transformer</strong> &#8211; A callable that given a metadata object produces
+another metadata object to be used in the underlying communication on the
+wire.</li>
+<li><strong>secure</strong> &#8211; Whether or not to construct the stub with a secure connection.</li>
+<li><strong>root_certificates</strong> &#8211; The PEM-encoded root certificates or None to ask for
+them to be retrieved from a default location.</li>
+<li><strong>private_key</strong> &#8211; The PEM-encoded private key to use or None if no private key
+should be used.</li>
+<li><strong>certificate_chain</strong> &#8211; The PEM-encoded certificate chain to use or None if no
+certificate chain should be used.</li>
+<li><strong>server_host_override</strong> &#8211; (For testing only) the target name used for SSL
+host name checking.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An interfaces.Stub affording RPC invocation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.early_adopter.implementations_test">
+<span id="grpc-early-adopter-implementations-test-module"></span><h2>grpc.early_adopter.implementations_test module<a class="headerlink" href="#module-grpc.early_adopter.implementations_test" title="Permalink to this headline">¶</a></h2>
+<p>Test of the GRPC-backed ForeLink and RearLink.</p>
+<dl class="class">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest">
+<em class="property">class </em><code class="descclassname">grpc.early_adopter.implementations_test.</code><code class="descname">EarlyAdopterImplementationsTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.setUp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testStreamStream">
+<code class="descname">testStreamStream</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.testStreamStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testStreamStream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testStreamUnary">
+<code class="descname">testStreamUnary</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.testStreamUnary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testStreamUnary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUnaryStream">
+<code class="descname">testUnaryStream</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.testUnaryStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUnaryStream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUnaryUnary">
+<code class="descname">testUnaryUnary</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.testUnaryUnary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUnaryUnary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUpAndDown">
+<code class="descname">testUpAndDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/early_adopter/implementations_test.html#EarlyAdopterImplementationsTest.testUpAndDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.early_adopter.implementations_test.EarlyAdopterImplementationsTest.testUpAndDown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-grpc.early_adopter">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-grpc.early_adopter" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grpc.framework.html" class="btn btn-neutral float-right" title="grpc.framework package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="grpc.html" class="btn btn-neutral" title="grpc package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

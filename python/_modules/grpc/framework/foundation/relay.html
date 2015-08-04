@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.foundation.relay &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.foundation.relay</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.foundation.relay</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Implementations of in-order work deference.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">activated</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">logging_pool</span>
+
+<span class="n">_NULL_BEHAVIOR</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">unused_value</span><span class="p">:</span> <span class="bp">None</span>
+
+
+<div class="viewcode-block" id="Relay"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.relay.Relay">[docs]</a><span class="k">class</span> <span class="nc">Relay</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Performs work submitted to it in another thread.</span>
+
+<span class="sd">  Performs work in the order in which work was submitted to it; otherwise there</span>
+<span class="sd">  would be no reason to use an implementation of this interface instead of a</span>
+<span class="sd">  thread pool.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Relay.add_value"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.relay.Relay.add_value">[docs]</a>  <span class="k">def</span> <span class="nf">add_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds a value to be passed to the behavior registered with this Relay.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      value: A value that will be passed to a call made in another thread to the</span>
+<span class="sd">        behavior registered with this Relay.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+  <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="Relay.set_behavior"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.relay.Relay.set_behavior">[docs]</a>  <span class="k">def</span> <span class="nf">set_behavior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behavior</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sets the behavior that this Relay should call when passed values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      behavior: The behavior that this Relay should call in another thread when</span>
+<span class="sd">        passed a value, or None to have passed values ignored.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<span class="k">class</span> <span class="nc">_PoolRelay</span><span class="p">(</span><span class="n">activated</span><span class="o">.</span><span class="n">Activated</span><span class="p">,</span> <span class="n">Relay</span><span class="p">):</span>
+
+  <span class="nd">@enum.unique</span>
+  <span class="k">class</span> <span class="nc">_State</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">INACTIVE</span> <span class="o">=</span> <span class="s">&#39;inactive&#39;</span>
+    <span class="n">IDLE</span> <span class="o">=</span> <span class="s">&#39;idle&#39;</span>
+    <span class="n">SPINNING</span> <span class="o">=</span> <span class="s">&#39;spinning&#39;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="n">behavior</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_own_pool</span> <span class="o">=</span> <span class="n">pool</span> <span class="ow">is</span> <span class="bp">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">INACTIVE</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_activated</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_spinning</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_behavior</span> <span class="o">=</span> <span class="n">_NULL_BEHAVIOR</span> <span class="k">if</span> <span class="n">behavior</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">behavior</span>
+
+  <span class="k">def</span> <span class="nf">_spin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+      <span class="n">behavior</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+      <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">:</span>
+          <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+          <span class="n">behavior</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behavior</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">IDLE</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
+          <span class="k">break</span>
+
+  <span class="k">def</span> <span class="nf">add_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="ow">is</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">INACTIVE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;add_value not valid on inactive Relay!&#39;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="ow">is</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">IDLE</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behavior</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">SPINNING</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">set_behavior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behavior</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_behavior</span> <span class="o">=</span> <span class="n">_NULL_BEHAVIOR</span> <span class="k">if</span> <span class="n">behavior</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">behavior</span>
+
+  <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">IDLE</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_own_pool</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">return</span> <span class="bp">self</span>
+
+  <span class="k">def</span> <span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">:</span>
+      <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="ow">is</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">SPINNING</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_own_pool</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">_PoolRelay</span><span class="o">.</span><span class="n">_State</span><span class="o">.</span><span class="n">INACTIVE</span>
+
+  <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">()</span>
+
+  <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
+    <span class="k">return</span> <span class="bp">False</span>
+
+  <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start</span><span class="p">()</span>
+
+  <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="relay"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.relay.relay">[docs]</a><span class="k">def</span> <span class="nf">relay</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates a Relay.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    behavior: The behavior to be called by the created Relay, or None to have</span>
+<span class="sd">      passed values dropped until a different behavior is given to the returned</span>
+<span class="sd">      Relay later.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An object that is both an activated.Activated and a Relay. The object is</span>
+<span class="sd">      only valid for use as a Relay when activated.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_PoolRelay</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="pool_relay"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.relay.pool_relay">[docs]</a><span class="k">def</span> <span class="nf">pool_relay</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">behavior</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates a Relay that uses a given thread pool.</span>
+
+<span class="sd">  This object will make use of at most one thread in the given pool.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    pool: A futures.ThreadPoolExecutor for use by the created Relay.</span>
+<span class="sd">    behavior: The behavior to be called by the created Relay, or None to have</span>
+<span class="sd">      passed values dropped until a different behavior is given to the returned</span>
+<span class="sd">      Relay later.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An object that is both an activated.Activated and a Relay. The object is</span>
+<span class="sd">      only valid for use as a Relay when activated.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_PoolRelay</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">behavior</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,639 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>grpc.framework.face.testing.digest &mdash; grpcio 0.10.0a0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../../index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="../../../../../index.html" class="icon icon-home"> grpcio
+        
+
+        
+        </a>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.framework.html">grpc.framework package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.framework.html#module-grpc.framework">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#module-grpc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../../index.html">grpcio</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>grpc.framework.face.testing.digest</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <h1>Source code for grpc.framework.face.testing.digest</h1><div class="highlight"><pre>
+<span class="c"># Copyright 2015, Google Inc.</span>
+<span class="c"># All rights reserved.</span>
+<span class="c">#</span>
+<span class="c"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c"># modification, are permitted provided that the following conditions are</span>
+<span class="c"># met:</span>
+<span class="c">#</span>
+<span class="c">#     * Redistributions of source code must retain the above copyright</span>
+<span class="c"># notice, this list of conditions and the following disclaimer.</span>
+<span class="c">#     * Redistributions in binary form must reproduce the above</span>
+<span class="c"># copyright notice, this list of conditions and the following disclaimer</span>
+<span class="c"># in the documentation and/or other materials provided with the</span>
+<span class="c"># distribution.</span>
+<span class="c">#     * Neither the name of Google Inc. nor the names of its</span>
+<span class="c"># contributors may be used to endorse or promote products derived from</span>
+<span class="c"># this software without specific prior written permission.</span>
+<span class="c">#</span>
+<span class="c"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="sd">&quot;&quot;&quot;Code for making a service.TestService more amenable to use in tests.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="c"># testing_control, interfaces, and testing_service are referenced from</span>
+<span class="c"># specification in this module.</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">cardinality</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">style</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">exceptions</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">interfaces</span> <span class="k">as</span> <span class="n">face_interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">control</span> <span class="k">as</span> <span class="n">testing_control</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">interfaces</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">service</span> <span class="k">as</span> <span class="n">testing_service</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">stream_util</span>
+
+<span class="n">_IDENTITY</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+
+
+<div class="viewcode-block" id="TestServiceDigest"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.digest.TestServiceDigest">[docs]</a><span class="k">class</span> <span class="nc">TestServiceDigest</span><span class="p">(</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;TestServiceDigest&#39;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span>
+         <span class="s">&#39;methods&#39;</span><span class="p">,</span>
+         <span class="s">&#39;inline_method_implementations&#39;</span><span class="p">,</span>
+         <span class="s">&#39;event_method_implementations&#39;</span><span class="p">,</span>
+         <span class="s">&#39;multi_method_implementation&#39;</span><span class="p">,</span>
+         <span class="s">&#39;unary_unary_messages_sequences&#39;</span><span class="p">,</span>
+         <span class="s">&#39;unary_stream_messages_sequences&#39;</span><span class="p">,</span>
+         <span class="s">&#39;stream_unary_messages_sequences&#39;</span><span class="p">,</span>
+         <span class="s">&#39;stream_stream_messages_sequences&#39;</span><span class="p">])):</span>
+  <span class="sd">&quot;&quot;&quot;A transformation of a service.TestService.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    name: The RPC service name to be used in the test.</span>
+<span class="sd">    methods: A sequence of interfaces.Method objects describing the RPC</span>
+<span class="sd">      methods that will be called during the test.</span>
+<span class="sd">    inline_method_implementations: A dict from RPC method name to</span>
+<span class="sd">      face_interfaces.MethodImplementation object to be used in tests of</span>
+<span class="sd">      in-line calls to behaviors under test.</span>
+<span class="sd">    event_method_implementations: A dict from RPC method name to</span>
+<span class="sd">      face_interfaces.MethodImplementation object to be used in tests of</span>
+<span class="sd">      event-driven calls to behaviors under test.</span>
+<span class="sd">    multi_method_implementation: A face_interfaces.MultiMethodImplementation to</span>
+<span class="sd">      be used in tests of generic calls to behaviors under test.</span>
+<span class="sd">    unary_unary_messages_sequences: A dict from method name to sequence of</span>
+<span class="sd">      service.UnaryUnaryTestMessages objects to be used to test the method</span>
+<span class="sd">      with the given name.</span>
+<span class="sd">    unary_stream_messages_sequences: A dict from method name to sequence of</span>
+<span class="sd">      service.UnaryStreamTestMessages objects to be used to test the method</span>
+<span class="sd">      with the given name.</span>
+<span class="sd">    stream_unary_messages_sequences: A dict from method name to sequence of</span>
+<span class="sd">      service.StreamUnaryTestMessages objects to be used to test the method</span>
+<span class="sd">      with the given name.</span>
+<span class="sd">    stream_stream_messages_sequences: A dict from method name to sequence of</span>
+<span class="sd">      service.StreamStreamTestMessages objects to be used to test the</span>
+<span class="sd">      method with the given name.</span>
+<span class="sd">    serialization: A serial.Serialization object describing serialization</span>
+<span class="sd">      behaviors for all the RPC methods.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+</div>
+<span class="k">class</span> <span class="nc">_BufferingConsumer</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A trivial Consumer that dumps what it consumes in a user-mutable buffer.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">consumed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span> <span class="o">=</span> <span class="bp">False</span>
+
+  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">consumed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span> <span class="o">=</span> <span class="bp">True</span>
+
+  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">consumed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span> <span class="o">=</span> <span class="bp">True</span>
+
+
+<span class="k">class</span> <span class="nc">_InlineUnaryUnaryMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unary_unary_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">unary_unary_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span>
+
+  <span class="k">def</span> <span class="nf">unary_unary_inline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">response_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span> <span class="n">response_list</span><span class="o">.</span><span class="n">append</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_EventUnaryUnaryMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unary_unary_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">unary_unary_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span>
+
+  <span class="k">def</span> <span class="nf">unary_unary_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+          <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_InlineUnaryStreamMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unary_stream_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">unary_stream_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span>
+
+  <span class="k">def</span> <span class="nf">unary_stream_inline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">response_consumer</span> <span class="o">=</span> <span class="n">_BufferingConsumer</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">response</span> <span class="ow">in</span> <span class="n">response_consumer</span><span class="o">.</span><span class="n">consumed</span><span class="p">:</span>
+      <span class="k">yield</span> <span class="n">response</span>
+
+
+<span class="k">class</span> <span class="nc">_EventUnaryStreamMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unary_stream_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">unary_stream_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_STREAM</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span>
+
+  <span class="k">def</span> <span class="nf">unary_stream_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+          <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_InlineStreamUnaryMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_unary_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">stream_unary_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span>
+
+  <span class="k">def</span> <span class="nf">stream_unary_inline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">response_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">request_consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">response_list</span><span class="o">.</span><span class="n">append</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
+      <span class="n">request_consumer</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+    <span class="n">request_consumer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">response_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_EventStreamUnaryMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_unary_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">stream_unary_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_UNARY</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span>
+
+  <span class="k">def</span> <span class="nf">stream_unary_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">request_consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">response_callback</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">request_consumer</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">stream_util</span><span class="o">.</span><span class="n">ThreadSwitchingConsumer</span><span class="p">(</span><span class="n">request_consumer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_InlineStreamStreamMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_stream_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">stream_stream_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span>
+
+  <span class="k">def</span> <span class="nf">stream_stream_inline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">response_consumer</span> <span class="o">=</span> <span class="n">_BufferingConsumer</span><span class="p">()</span>
+    <span class="n">request_consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
+      <span class="n">request_consumer</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+      <span class="k">while</span> <span class="n">response_consumer</span><span class="o">.</span><span class="n">consumed</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">response_consumer</span><span class="o">.</span><span class="n">consumed</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">response_consumer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">_EventStreamStreamMethod</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_stream_test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span> <span class="o">=</span> <span class="n">stream_stream_test_method</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">STREAM_STREAM</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">EVENT</span>
+
+  <span class="k">def</span> <span class="nf">stream_stream_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">request_consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_test_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">request_consumer</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">stream_util</span><span class="o">.</span><span class="n">ThreadSwitchingConsumer</span><span class="p">(</span><span class="n">request_consumer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_UnaryConsumer</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Consumer</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;A Consumer that only allows consumption of exactly one value.&quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_action</span> <span class="o">=</span> <span class="n">action</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_consumed</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_terminated</span> <span class="o">=</span> <span class="bp">False</span>
+
+  <span class="k">def</span> <span class="nf">consume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_consumed</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unary consumer already consumed!&#39;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terminated</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unary consumer already terminated!&#39;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_consumed</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_action</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_consumed</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unary consumer hasn</span><span class="se">\&#39;</span><span class="s">t yet consumed!&#39;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terminated</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unary consumer already terminated!&#39;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terminated</span> <span class="o">=</span> <span class="bp">True</span>
+
+  <span class="k">def</span> <span class="nf">consume_and_terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_consumed</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unary consumer already consumed!&#39;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terminated</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unary consumer already terminated!&#39;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_consumed</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terminated</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_action</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_UnaryUnaryAdaptation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unary_unary_test_method</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">unary_unary_test_method</span>
+
+  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">action</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+          <span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="o">.</span><span class="n">consume_and_terminate</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_UnaryConsumer</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_UnaryStreamAdaptation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unary_stream_test_method</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">unary_stream_test_method</span>
+
+  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">action</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_UnaryConsumer</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_StreamUnaryAdaptation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_unary_test_method</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">stream_unary_test_method</span>
+
+  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="o">.</span><span class="n">service</span><span class="p">(</span>
+        <span class="n">response_consumer</span><span class="o">.</span><span class="n">consume_and_terminate</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">control</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_MultiMethodImplementation</span><span class="p">(</span><span class="n">face_interfaces</span><span class="o">.</span><span class="n">MultiMethodImplementation</span><span class="p">):</span>
+
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_methods</span> <span class="o">=</span> <span class="n">methods</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_control</span> <span class="o">=</span> <span class="n">control</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
+
+  <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_methods</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NoSuchMethodError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">request_consumer</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="n">response_consumer</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_control</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">stream_util</span><span class="o">.</span><span class="n">ThreadSwitchingConsumer</span><span class="p">(</span><span class="n">request_consumer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_Assembly</span><span class="p">(</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;_Assembly&#39;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s">&#39;methods&#39;</span><span class="p">,</span> <span class="s">&#39;inlines&#39;</span><span class="p">,</span> <span class="s">&#39;events&#39;</span><span class="p">,</span> <span class="s">&#39;adaptations&#39;</span><span class="p">,</span> <span class="s">&#39;messages&#39;</span><span class="p">])):</span>
+  <span class="sd">&quot;&quot;&quot;An intermediate structure created when creating a TestServiceDigest.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_assemble</span><span class="p">(</span>
+    <span class="n">scenarios</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">inline_method_constructor</span><span class="p">,</span> <span class="n">event_method_constructor</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates an _Assembly from the given scenarios.&quot;&quot;&quot;</span>
+  <span class="n">methods</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">inlines</span> <span class="o">=</span> <span class="p">{}</span>
+  <span class="n">events</span> <span class="o">=</span> <span class="p">{}</span>
+  <span class="n">adaptations</span> <span class="o">=</span> <span class="p">{}</span>
+  <span class="n">messages</span> <span class="o">=</span> <span class="p">{}</span>
+  <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">scenario</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Repeated name &quot;</span><span class="si">%s</span><span class="s">&quot;!&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="n">test_method</span> <span class="o">=</span> <span class="n">scenario</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">inline_method</span> <span class="o">=</span> <span class="n">inline_method_constructor</span><span class="p">(</span><span class="n">test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">)</span>
+    <span class="n">event_method</span> <span class="o">=</span> <span class="n">event_method_constructor</span><span class="p">(</span><span class="n">test_method</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+    <span class="n">adaptation</span> <span class="o">=</span> <span class="n">adapter</span><span class="p">(</span><span class="n">test_method</span><span class="p">)</span>
+
+    <span class="n">methods</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_method</span><span class="p">)</span>
+    <span class="n">inlines</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">inline_method</span>
+    <span class="n">events</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_method</span>
+    <span class="n">adaptations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">adaptation</span>
+    <span class="n">messages</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">scenario</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+  <span class="k">return</span> <span class="n">_Assembly</span><span class="p">(</span><span class="n">methods</span><span class="p">,</span> <span class="n">inlines</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">adaptations</span><span class="p">,</span> <span class="n">messages</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="digest"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.digest.digest">[docs]</a><span class="k">def</span> <span class="nf">digest</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates a TestServiceDigest from a TestService.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    service: A testing_service.TestService.</span>
+<span class="sd">    control: A testing_control.Control.</span>
+<span class="sd">    pool: If RPC methods should be serviced in a separate thread, a thread pool.</span>
+<span class="sd">      None if RPC methods should be serviced in the thread belonging to the</span>
+<span class="sd">      run-time that calls for their service.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    A TestServiceDigest synthesized from the given service.TestService.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+  <span class="n">unary_unary</span> <span class="o">=</span> <span class="n">_assemble</span><span class="p">(</span>
+      <span class="n">service</span><span class="o">.</span><span class="n">unary_unary_scenarios</span><span class="p">(),</span> <span class="n">names</span><span class="p">,</span> <span class="n">_InlineUnaryUnaryMethod</span><span class="p">,</span>
+      <span class="n">_EventUnaryUnaryMethod</span><span class="p">,</span> <span class="n">_UnaryUnaryAdaptation</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+  <span class="n">names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unary_unary</span><span class="o">.</span><span class="n">inlines</span><span class="p">))</span>
+
+  <span class="n">unary_stream</span> <span class="o">=</span> <span class="n">_assemble</span><span class="p">(</span>
+      <span class="n">service</span><span class="o">.</span><span class="n">unary_stream_scenarios</span><span class="p">(),</span> <span class="n">names</span><span class="p">,</span> <span class="n">_InlineUnaryStreamMethod</span><span class="p">,</span>
+      <span class="n">_EventUnaryStreamMethod</span><span class="p">,</span> <span class="n">_UnaryStreamAdaptation</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+  <span class="n">names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">unary_stream</span><span class="o">.</span><span class="n">inlines</span><span class="p">))</span>
+
+  <span class="n">stream_unary</span> <span class="o">=</span> <span class="n">_assemble</span><span class="p">(</span>
+      <span class="n">service</span><span class="o">.</span><span class="n">stream_unary_scenarios</span><span class="p">(),</span> <span class="n">names</span><span class="p">,</span> <span class="n">_InlineStreamUnaryMethod</span><span class="p">,</span>
+      <span class="n">_EventStreamUnaryMethod</span><span class="p">,</span> <span class="n">_StreamUnaryAdaptation</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+  <span class="n">names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">stream_unary</span><span class="o">.</span><span class="n">inlines</span><span class="p">))</span>
+
+  <span class="n">stream_stream</span> <span class="o">=</span> <span class="n">_assemble</span><span class="p">(</span>
+      <span class="n">service</span><span class="o">.</span><span class="n">stream_stream_scenarios</span><span class="p">(),</span> <span class="n">names</span><span class="p">,</span> <span class="n">_InlineStreamStreamMethod</span><span class="p">,</span>
+      <span class="n">_EventStreamStreamMethod</span><span class="p">,</span> <span class="n">_IDENTITY</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+  <span class="n">names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">stream_stream</span><span class="o">.</span><span class="n">inlines</span><span class="p">))</span>
+
+  <span class="n">methods</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">unary_unary</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span>
+  <span class="n">methods</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">unary_stream</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span>
+  <span class="n">methods</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">stream_unary</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span>
+  <span class="n">methods</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">stream_stream</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span>
+  <span class="n">adaptations</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">unary_unary</span><span class="o">.</span><span class="n">adaptations</span><span class="p">)</span>
+  <span class="n">adaptations</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unary_stream</span><span class="o">.</span><span class="n">adaptations</span><span class="p">)</span>
+  <span class="n">adaptations</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stream_unary</span><span class="o">.</span><span class="n">adaptations</span><span class="p">)</span>
+  <span class="n">adaptations</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stream_stream</span><span class="o">.</span><span class="n">adaptations</span><span class="p">)</span>
+  <span class="n">inlines</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">unary_unary</span><span class="o">.</span><span class="n">inlines</span><span class="p">)</span>
+  <span class="n">inlines</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unary_stream</span><span class="o">.</span><span class="n">inlines</span><span class="p">)</span>
+  <span class="n">inlines</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stream_unary</span><span class="o">.</span><span class="n">inlines</span><span class="p">)</span>
+  <span class="n">inlines</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stream_stream</span><span class="o">.</span><span class="n">inlines</span><span class="p">)</span>
+  <span class="n">events</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">unary_unary</span><span class="o">.</span><span class="n">events</span><span class="p">)</span>
+  <span class="n">events</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">unary_stream</span><span class="o">.</span><span class="n">events</span><span class="p">)</span>
+  <span class="n">events</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stream_unary</span><span class="o">.</span><span class="n">events</span><span class="p">)</span>
+  <span class="n">events</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stream_stream</span><span class="o">.</span><span class="n">events</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">TestServiceDigest</span><span class="p">(</span>
+      <span class="n">service</span><span class="o">.</span><span class="n">name</span><span class="p">(),</span>
+      <span class="n">methods</span><span class="p">,</span>
+      <span class="n">inlines</span><span class="p">,</span>
+      <span class="n">events</span><span class="p">,</span>
+      <span class="n">_MultiMethodImplementation</span><span class="p">(</span><span class="n">adaptations</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">pool</span><span class="p">),</span>
+      <span class="n">unary_unary</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span>
+      <span class="n">unary_stream</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span>
+      <span class="n">stream_unary</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span>
+      <span class="n">stream_stream</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Author.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../../',
+            VERSION:'0.10.0a0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
