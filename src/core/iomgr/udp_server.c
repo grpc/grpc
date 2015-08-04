@@ -234,6 +234,17 @@ error:
 static void on_read(void *arg, int success) {
   server_port *sp = arg;
 
+  if (success == 0) {
+    gpr_mu_lock(&sp->server->mu);
+    if (0 == --sp->server->active_ports) {
+      gpr_mu_unlock(&sp->server->mu);
+      deactivated_all_ports(sp->server);
+    } else {
+      gpr_mu_unlock(&sp->server->mu);
+    }
+    return;
+  }
+
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
   sp->read_cb(sp->fd, sp->server->cb, sp->server->cb_arg);
