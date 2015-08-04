@@ -390,7 +390,7 @@ grpcsharp_channel_check_connectivity_state(grpc_channel *channel, gpr_int32 try_
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_watch_connectivity_state(
     grpc_channel *channel, grpc_connectivity_state last_observed_state,
     gpr_timespec deadline, grpc_completion_queue *cq, grpcsharp_batch_context *ctx) {
-  grpc_channel_watch_connectivity_state(channel, last_observed_state, NULL,
+  grpc_channel_watch_connectivity_state(channel, last_observed_state,
                                         deadline, cq, ctx);
 }
 
