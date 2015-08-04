@@ -296,7 +296,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),FreeBSD)
-LIBS += pthread
+LIBS += m pthread
 LDFLAGS += -pthread
 endif
 
