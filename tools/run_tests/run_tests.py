@@ -254,6 +254,7 @@ class CSharpLanguage(object):
   def test_specs(self, config, travis):
     assemblies = ['Grpc.Core.Tests',
                   'Grpc.Examples.Tests',
+                  'Grpc.HealthCheck.Tests',
                   'Grpc.IntegrationTesting']
     if self.platform == 'windows':
       cmd = 'tools\\run_tests\\run_csharp.bat'
