@@ -247,8 +247,12 @@ static void start_accept(server_port *port) {
 failure:
   if (port->shutting_down) {
     /* We are abandoning the listener port, take that into account to prevent
-       occasional hangs on shutdown. */
+       occasional hangs on shutdown. The hang happens when sp->shutting_down
+       change is not seen by on_accept and we proceed to trying new accept,
+       but we fail there because the listening port has been closed in the
+       meantime. */
     decrement_active_ports_and_notify(port);
+    return;
   }
   utf8_message = gpr_format_message(WSAGetLastError());
   gpr_log(GPR_ERROR, message, utf8_message);
