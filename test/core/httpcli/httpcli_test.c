@@ -81,7 +81,7 @@ static void test_get(int use_ssl, int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.path = "/get";
-  req.use_ssl = use_ssl;
+  req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
 
   grpc_httpcli_get(&g_context, &g_pollset, &req, n_seconds_time(15), on_finish,
                    (void *)42);
@@ -106,7 +106,7 @@ static void test_post(int use_ssl, int port) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.path = "/post";
-  req.use_ssl = use_ssl;
+  req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
 
   grpc_httpcli_post(&g_context, &g_pollset, &req, "hello", 5,
                     n_seconds_time(15), on_finish, (void *)42);

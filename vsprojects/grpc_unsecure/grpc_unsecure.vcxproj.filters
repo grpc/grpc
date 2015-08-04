@@ -82,6 +82,15 @@
     <ClCompile Include="..\..\src\core\debug\trace.c">
       <Filter>src\core\debug</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\parser.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -449,6 +458,15 @@
     <ClInclude Include="..\..\src\core\debug\trace.h">
       <Filter>src\core\debug</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\format_request.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\httpcli.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\parser.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\alarm.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -706,6 +724,9 @@
     </Filter>
     <Filter Include="src\core\debug">
       <UniqueIdentifier>{6d8d5774-7291-554d-fafa-583463cd3fd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\httpcli">
+      <UniqueIdentifier>{1ba3a245-47e7-89b5-b0c9-aca758bd0277}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\iomgr">
       <UniqueIdentifier>{a9df8b24-ecea-ff6d-8999-d8fa54cd70bf}</UniqueIdentifier>

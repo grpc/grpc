@@ -140,6 +140,9 @@
         "src/core/client_config/uri_parser.h",
         "src/core/compression/message_compress.h",
         "src/core/debug/trace.h",
+        "src/core/httpcli/format_request.h",
+        "src/core/httpcli/httpcli.h",
+        "src/core/httpcli/parser.h",
         "src/core/iomgr/alarm.h",
         "src/core/iomgr/alarm_heap.h",
         "src/core/iomgr/alarm_internal.h",
@@ -239,6 +242,9 @@
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
         "src/core/debug/trace.c",
+        "src/core/httpcli/format_request.c",
+        "src/core/httpcli/httpcli.c",
+        "src/core/httpcli/parser.c",
         "src/core/iomgr/alarm.c",
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
@@ -461,10 +467,6 @@
         "include/grpc/grpc_security.h"
       ],
       "headers": [
-        "src/core/httpcli/format_request.h",
-        "src/core/httpcli/httpcli.h",
-        "src/core/httpcli/httpcli_security_connector.h",
-        "src/core/httpcli/parser.h",
         "src/core/security/auth_filters.h",
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
@@ -480,10 +482,7 @@
         "src/core/tsi/transport_security_interface.h"
       ],
       "src": [
-        "src/core/httpcli/format_request.c",
-        "src/core/httpcli/httpcli.c",
         "src/core/httpcli/httpcli_security_connector.c",
-        "src/core/httpcli/parser.c",
         "src/core/security/base64.c",
         "src/core/security/client_auth_filter.c",
         "src/core/security/credentials.c",

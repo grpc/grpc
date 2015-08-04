@@ -679,7 +679,7 @@ static void service_account_fetch_oauth2(
   request.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
   request.hdr_count = 1;
   request.hdrs = &header;
-  request.use_ssl = 1;
+  request.handshaker = &grpc_httpcli_ssl;
   grpc_httpcli_post(httpcli_context, pollset, &request, body, strlen(body),
                     deadline, response_cb, metadata_req);
   gpr_free(body);
@@ -738,7 +738,7 @@ static void refresh_token_fetch_oauth2(
   request.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
   request.hdr_count = 1;
   request.hdrs = &header;
-  request.use_ssl = 1;
+  request.handshaker = &grpc_httpcli_ssl;
   grpc_httpcli_post(httpcli_context, pollset, &request, body, strlen(body),
                     deadline, response_cb, metadata_req);
   gpr_free(body);
