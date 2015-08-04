@@ -1008,7 +1008,7 @@ buildtests_c: privatelibs_c\
 % endfor
 
 
-buildtests_cxx: privatelibs_cxx\
+buildtests_cxx: buildtests_zookeeper privatelibs_cxx\
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -1051,7 +1051,7 @@ flaky_test_c: buildtests_c
 % endfor
 
 
-test_cxx: buildtests_cxx
+test_cxx: test_zookeeper buildtests_cxx
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
 	$(E) "[RUN]     Testing ${tgt.name}"
