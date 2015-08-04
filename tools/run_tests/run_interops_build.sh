@@ -55,6 +55,13 @@ then
   gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_node
   gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_node
   sudo docker build --no-cache -t grpc/node tools/dockerfile/grpc_node
+elif [ "$language" = "ruby" ]
+then
+  sudo docker pull 0.0.0.0:5000/grpc/ruby_base
+  sudo docker tag -f 0.0.0.0:5000/grpc/ruby_base grpc/ruby_base
+  gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_ruby
+  gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_ruby
+  sudo docker build --no-cache -t grpc/node tools/dockerfile/grpc_ruby
 else
   echo "interop testss not added for $language"
   exit 1
