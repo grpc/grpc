@@ -14,7 +14,6 @@
 #include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -104,7 +103,6 @@ grpc_udp_server *grpc_udp_server_create(void) {
   s->nports = 0;
   s->port_capacity = INIT_PORT_CAP;
 
-  fprintf(stderr, "grpc_udp_server_create Created UDP server\n");
   return s;
 }
 
@@ -363,9 +361,6 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
   allocated_port2 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
 
 done:
-  fprintf(stderr,
-          "grpc_udp_server_add_port created FD: %d, listening port: %d\n", fd,
-          allocated_port1);
   gpr_free(allocated_addr);
   return allocated_port1 >= 0 ? allocated_port1 : allocated_port2;
 }
@@ -395,8 +390,6 @@ void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
-
-  fprintf(stderr, "grpc_udp_server_start Started UDP server\n");
 }
 
 /* TODO(rjshade): Add a test for this method. */
