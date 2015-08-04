@@ -69,12 +69,20 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-const grpc_auth_context *grpc_call_auth_context(grpc_call *call) {
+grpc_auth_context *grpc_call_auth_context(grpc_call *call) {
   void *sec_ctx = grpc_call_context_get(call, GRPC_CONTEXT_SECURITY);
   if (sec_ctx == NULL) return NULL;
   return grpc_call_is_client(call)
-             ? ((grpc_client_security_context *)sec_ctx)->auth_context
-             : ((grpc_server_security_context *)sec_ctx)->auth_context;
+             ? GRPC_AUTH_CONTEXT_REF(
+                   ((grpc_client_security_context *)sec_ctx)->auth_context,
+                   "grpc_call_auth_context client")
+             : GRPC_AUTH_CONTEXT_REF(
+                   ((grpc_server_security_context *)sec_ctx)->auth_context,
+                   "grpc_call_auth_context server");
+}
+
+void grpc_auth_context_release(grpc_auth_context *context) {
+  GRPC_AUTH_CONTEXT_UNREF(context, "grpc_auth_context_unref");
 }
 
 /* --- grpc_client_security_context --- */
@@ -89,7 +97,7 @@ grpc_client_security_context *grpc_client_security_context_create(void) {
 void grpc_client_security_context_destroy(void *ctx) {
   grpc_client_security_context *c = (grpc_client_security_context *)ctx;
   grpc_credentials_unref(c->creds);
-  grpc_auth_context_unref(c->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
   gpr_free(ctx);
 }
 
@@ -104,7 +112,7 @@ grpc_server_security_context *grpc_server_security_context_create(void) {
 
 void grpc_server_security_context_destroy(void *ctx) {
   grpc_server_security_context *c = (grpc_server_security_context *)ctx;
-  grpc_auth_context_unref(c->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "server_security_context");
   gpr_free(ctx);
 }
 
@@ -120,21 +128,40 @@ grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained,
   memset(ctx->properties, 0, property_count * sizeof(grpc_auth_property));
   ctx->property_count = property_count;
   gpr_ref_init(&ctx->refcount, 1);
-  if (chained != NULL) ctx->chained = grpc_auth_context_ref(chained);
+  if (chained != NULL) ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
   return ctx;
 }
 
+#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx,
+                                         const char *file, int line,
+                                         const char *reason) {
+  if (ctx == NULL) return NULL;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "AUTH_CONTEXT:%p   ref %d -> %d %s", ctx, (int)ctx->refcount.count,
+          (int)ctx->refcount.count + 1, reason);
+#else
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *ctx) {
   if (ctx == NULL) return NULL;
+#endif
   gpr_ref(&ctx->refcount);
   return ctx;
 }
 
+#ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
+void grpc_auth_context_unref(grpc_auth_context *ctx, const char *file, int line,
+                             const char *reason) {
+  if (ctx == NULL) return;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "AUTH_CONTEXT:%p unref %d -> %d %s", ctx, (int)ctx->refcount.count,
+          (int)ctx->refcount.count - 1, reason);
+#else
 void grpc_auth_context_unref(grpc_auth_context *ctx) {
   if (ctx == NULL) return;
+#endif
   if (gpr_unref(&ctx->refcount)) {
     size_t i;
-    grpc_auth_context_unref(ctx->chained);
+    GRPC_AUTH_CONTEXT_UNREF(ctx->chained, "chained");
     if (ctx->properties != NULL) {
       for (i = 0; i < ctx->property_count; i++) {
         grpc_auth_property_reset(&ctx->properties[i]);
@@ -223,8 +250,8 @@ grpc_auth_property grpc_auth_property_init(const char *name, const char *value,
 }
 
 void grpc_auth_property_reset(grpc_auth_property *property) {
-  if (property->name != NULL) gpr_free(property->name);
-  if (property->value != NULL) gpr_free(property->value);
+  gpr_free(property->name);
+  gpr_free(property->value);
   memset(property, 0, sizeof(grpc_auth_property));
 }
 

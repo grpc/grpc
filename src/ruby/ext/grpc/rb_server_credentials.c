@@ -89,7 +89,7 @@ static void grpc_rb_server_credentials_mark(void *p) {
 static const rb_data_type_t grpc_rb_server_credentials_data_type = {
     "grpc_server_credentials",
     {grpc_rb_server_credentials_mark, grpc_rb_server_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE},
+     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL, NULL,
     RUBY_TYPED_FREE_IMMEDIATELY
 };
@@ -176,11 +176,12 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   }
   key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
   key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
+  /* TODO Add a force_client_auth parameter and pass it here. */
   if (pem_root_certs == Qnil) {
-    creds = grpc_ssl_server_credentials_create(NULL, &key_cert_pair, 1);
+    creds = grpc_ssl_server_credentials_create(NULL, &key_cert_pair, 1, 0);
   } else {
     creds = grpc_ssl_server_credentials_create(RSTRING_PTR(pem_root_certs),
-                                               &key_cert_pair, 1);
+                                               &key_cert_pair, 1, 0);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

@@ -34,12 +34,12 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
+#include <grpc++/dynamic_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -102,7 +102,7 @@ class CliCallTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
-  ThreadPool thread_pool_;
+  DynamicThreadPool thread_pool_;
 };
 
 // Send a rpc with a normal stub and then a CliCall. Verify they match.

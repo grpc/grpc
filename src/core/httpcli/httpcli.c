@@ -60,14 +60,26 @@ typedef struct {
   int use_ssl;
   grpc_httpcli_response_cb on_response;
   void *user_data;
+  grpc_httpcli_context *context;
+  grpc_pollset *pollset;
+  grpc_iomgr_object iomgr_obj;
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
 static grpc_httpcli_post_override g_post_override = NULL;
 
+void grpc_httpcli_context_init(grpc_httpcli_context *context) {
+  grpc_pollset_set_init(&context->pollset_set);
+}
+
+void grpc_httpcli_context_destroy(grpc_httpcli_context *context) {
+  grpc_pollset_set_destroy(&context->pollset_set);
+}
+
 static void next_address(internal_request *req);
 
 static void finish(internal_request *req, int success) {
+  grpc_pollset_set_del_pollset(&req->context->pollset_set, req->pollset);
   req->on_response(req->user_data, success ? &req->parser.r : NULL);
   grpc_httpcli_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
@@ -78,6 +90,7 @@ static void finish(internal_request *req, int success) {
   }
   gpr_slice_unref(req->request_text);
   gpr_free(req->host);
+  grpc_iomgr_unregister_object(&req->iomgr_obj);
   gpr_free(req);
 }
 
@@ -152,6 +165,7 @@ static void start_write(internal_request *req) {
 
 static void on_secure_transport_setup_done(void *rp,
                                            grpc_security_status status,
+                                           grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   internal_request *req = rp;
   if (status != GRPC_SECURITY_OK) {
@@ -185,7 +199,7 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
                GRPC_SECURITY_OK);
     grpc_setup_secure_transport(&sc->base, tcp, on_secure_transport_setup_done,
                                 req);
-    grpc_security_connector_unref(&sc->base);
+    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
   } else {
     start_write(req);
   }
@@ -198,8 +212,9 @@ static void next_address(internal_request *req) {
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];
-  grpc_tcp_client_connect(on_connected, req, (struct sockaddr *)&addr->addr,
-                          addr->len, req->deadline);
+  grpc_tcp_client_connect(on_connected, req, &req->context->pollset_set,
+                          (struct sockaddr *)&addr->addr, addr->len,
+                          req->deadline);
 }
 
 static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
@@ -213,10 +228,12 @@ static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   next_address(req);
 }
 
-void grpc_httpcli_get(const grpc_httpcli_request *request,
+void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
+                      const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req;
+  char *name;
   if (g_get_override &&
       g_get_override(request, deadline, on_response, user_data)) {
     return;
@@ -229,19 +246,27 @@ void grpc_httpcli_get(const grpc_httpcli_request *request,
   req->user_data = user_data;
   req->deadline = deadline;
   req->use_ssl = request->use_ssl;
+  req->context = context;
+  req->pollset = pollset;
+  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
+  grpc_iomgr_register_object(&req->iomgr_obj, name);
+  gpr_free(name);
   if (req->use_ssl) {
     req->host = gpr_strdup(request->host);
   }
 
+  grpc_pollset_set_add_pollset(&req->context->pollset_set, req->pollset);
   grpc_resolve_address(request->host, req->use_ssl ? "https" : "http",
                        on_resolved, req);
 }
 
-void grpc_httpcli_post(const grpc_httpcli_request *request,
+void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
+                       const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req;
+  char *name;
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_response, user_data)) {
     return;
@@ -255,10 +280,16 @@ void grpc_httpcli_post(const grpc_httpcli_request *request,
   req->user_data = user_data;
   req->deadline = deadline;
   req->use_ssl = request->use_ssl;
+  req->context = context;
+  req->pollset = pollset;
+  gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
+  grpc_iomgr_register_object(&req->iomgr_obj, name);
+  gpr_free(name);
   if (req->use_ssl) {
     req->host = gpr_strdup(request->host);
   }
 
+  grpc_pollset_set_add_pollset(&req->context->pollset_set, req->pollset);
   grpc_resolve_address(request->host, req->use_ssl ? "https" : "http",
                        on_resolved, req);
 }

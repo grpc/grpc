@@ -28,11 +28,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Grpc.Core.Internal;
 
 namespace Grpc.Core
@@ -42,33 +45,38 @@ namespace Grpc.Core
     /// </summary>
     public class Channel : IDisposable
     {
+        readonly GrpcEnvironment environment;
         readonly ChannelSafeHandle handle;
+        readonly List<ChannelOption> options;
         readonly string target;
+        bool disposed;
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
         /// Port will default to 80 for an unsecure channel and to 443 a secure channel.
         /// </summary>
         /// <param name="host">The DNS name of IP address of the host.</param>
-        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, Credentials credentials = null, IEnumerable<ChannelOption> options = null)
+        public Channel(string host, Credentials credentials, IEnumerable<ChannelOption> options = null)
         {
-            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(options))
+            this.environment = GrpcEnvironment.GetInstance();
+            this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
+
+            EnsureUserAgentChannelOption(this.options);
+            using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
+            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
-                if (credentials != null)
+                if (nativeCredentials != null)
                 {
-                    using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-                    {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
-                    }
+                    this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, host, nativeChannelArgs);
                 }
                 else
                 {
-                    this.handle = ChannelSafeHandle.Create(host, nativeChannelArgs);
+                    this.handle = ChannelSafeHandle.CreateInsecure(host, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(host, options);
+            this.target = GetOverridenTarget(host, this.options);
         }
 
         /// <summary>
@@ -76,9 +84,9 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="host">DNS name or IP address</param>
         /// <param name="port">the port</param>
-        /// <param name="credentials">Optional credentials to create a secure channel.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, int port, Credentials credentials = null, IEnumerable<ChannelOption> options = null) :
+        public Channel(string host, int port, Credentials credentials, IEnumerable<ChannelOption> options = null) :
             this(string.Format("{0}:{1}", host, port), credentials, options)
         {
         }
@@ -105,12 +113,51 @@ namespace Grpc.Core
             }
         }
 
+        internal CompletionQueueSafeHandle CompletionQueue
+        {
+            get
+            {
+                return this.environment.CompletionQueue;
+            }
+        }
+
+        internal CompletionRegistry CompletionRegistry
+        {
+            get
+            {
+                return this.environment.CompletionRegistry;
+            }
+        }
+
+        internal GrpcEnvironment Environment
+        {
+            get
+            {
+                return this.environment;
+            }
+        }
+
         protected virtual void Dispose(bool disposing)
         {
-            if (handle != null && !handle.IsInvalid)
+            if (disposing && handle != null && !disposed)
             {
+                disposed = true;
                 handle.Dispose();
             }
+        }
+
+        private static void EnsureUserAgentChannelOption(List<ChannelOption> options)
+        {
+            if (!options.Any((option) => option.Name == ChannelOptions.PrimaryUserAgentString))
+            {
+                options.Add(new ChannelOption(ChannelOptions.PrimaryUserAgentString, GetUserAgentString()));
+            }
+        }
+
+        private static string GetUserAgentString()
+        {
+            // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
+            return string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
         }
 
         /// <summary>

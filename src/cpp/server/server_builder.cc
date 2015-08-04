@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include "src/cpp/server/thread_pool.h"
+#include <grpc++/thread_pool_interface.h>
 
 namespace grpc {
 
@@ -51,11 +51,21 @@ std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
 }
 
 void ServerBuilder::RegisterService(SynchronousService* service) {
-  services_.push_back(service->service());
+  services_.emplace_back(new NamedService<RpcService>(service->service()));
 }
 
 void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
-  async_services_.push_back(service);
+  async_services_.emplace_back(new NamedService<AsynchronousService>(service));
+}
+
+void ServerBuilder::RegisterService(
+    const grpc::string& addr, SynchronousService* service) {
+  services_.emplace_back(new NamedService<RpcService>(addr, service->service()));
+}
+
+void ServerBuilder::RegisterAsyncService(
+    const grpc::string& addr, AsynchronousService* service) {
+  async_services_.emplace_back(new NamedService<AsynchronousService>(addr, service));
 }
 
 void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
@@ -97,13 +107,13 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   for (auto service = services_.begin(); service != services_.end();
        service++) {
-    if (!server->RegisterService(*service)) {
+    if (!server->RegisterService((*service)->host.get(), (*service)->service)) {
       return nullptr;
     }
   }
   for (auto service = async_services_.begin();
        service != async_services_.end(); service++) {
-    if (!server->RegisterAsyncService(*service)) {
+    if (!server->RegisterAsyncService((*service)->host.get(), (*service)->service)) {
       return nullptr;
     }
   }

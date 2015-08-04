@@ -47,4 +47,4 @@ grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
 grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status);
 int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STATUS_CONVERSION_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STATUS_CONVERSION_H */

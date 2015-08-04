@@ -95,7 +95,7 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *mdctx);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str);
+grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int perform_key_canonicalization);
 /* Unrefs the slice. */
 grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
@@ -117,7 +117,8 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
                                                 const char *key,
                                                 const gpr_uint8 *value,
-                                                size_t value_length);
+                                                size_t value_length,
+                                                int canonicalize_key);
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
@@ -127,11 +128,25 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data);
 
 /* Reference counting */
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s), __FILE__, __LINE__)
+#define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s), __FILE__, __LINE__)
+#define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
+#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
+grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s, const char *file, int line);
+void grpc_mdstr_unref(grpc_mdstr *s, const char *file, int line);
+grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md, const char *file, int line);
+void grpc_mdelem_unref(grpc_mdelem *md, const char *file, int line);
+#else
+#define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s))
+#define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s))
+#define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
+#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s);
 void grpc_mdstr_unref(grpc_mdstr *s);
-
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
 void grpc_mdelem_unref(grpc_mdelem *md);
+#endif
 
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
@@ -147,8 +162,18 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 /* Lock the metadata context: it's only safe to call _locked_ functions against
    this context from the calling thread until grpc_mdctx_unlock is called */
 void grpc_mdctx_lock(grpc_mdctx *ctx);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+#define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
+  grpc_mdctx_locked_mdelem_unref((ctx), (elem), __FILE__, __LINE__)
+/* Unref a metadata element */
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem,
+                                    const char *file, int line);
+#else
+#define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
+  grpc_mdctx_locked_mdelem_unref((ctx), (elem))
 /* Unref a metadata element */
 void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem);
+#endif
 /* Unlock the metadata context */
 void grpc_mdctx_unlock(grpc_mdctx *ctx);
 

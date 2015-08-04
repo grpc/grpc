@@ -51,24 +51,17 @@ typedef struct channel_data {
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
 static void auth_start_transport_op(grpc_call_element *elem,
-                                    grpc_transport_op *op) {
+                                    grpc_transport_stream_op *op) {
   /* TODO(jboeuf): Get the metadata and get a new context from it. */
 
   /* pass control down the stack */
   grpc_call_next_op(elem, op);
 }
 
-/* Called on special channel events, such as disconnection or new incoming
-   calls on the server */
-static void channel_op(grpc_channel_element *elem,
-                       grpc_channel_element *from_elem, grpc_channel_op *op) {
-  grpc_channel_next_op(elem, op);
-}
-
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_op *initial_op) {
+                           grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -82,20 +75,23 @@ static void init_call_elem(grpc_call_element *elem,
 
   /* Create a security context for the call and reference the auth context from
      the channel. */
+  if (initial_op->context[GRPC_CONTEXT_SECURITY].value != NULL) {
+    initial_op->context[GRPC_CONTEXT_SECURITY].destroy(
+        initial_op->context[GRPC_CONTEXT_SECURITY].value);
+  }
   server_ctx = grpc_server_security_context_create();
-  server_ctx->auth_context =
-      grpc_auth_context_ref(chand->security_connector->auth_context);
+  server_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
+      chand->security_connector->auth_context, "server_security_context");
   initial_op->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
   initial_op->context[GRPC_CONTEXT_SECURITY].destroy =
       grpc_server_security_context_destroy;
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
-}
+static void destroy_call_elem(grpc_call_element *elem) {}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem,
+static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   grpc_security_connector *sc = grpc_find_security_connector_in_args(args);
@@ -111,17 +107,21 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   /* initialize members */
   GPR_ASSERT(!sc->is_client_side);
-  chand->security_connector = grpc_security_connector_ref(sc);
+  chand->security_connector =
+      GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
-  grpc_security_connector_unref(chand->security_connector);
+  GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector,
+                                "server_auth_filter");
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
-    auth_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
-    destroy_call_elem, sizeof(channel_data), init_channel_elem,
-    destroy_channel_elem, "server-auth"};
+    auth_start_transport_op, grpc_channel_next_op,
+    sizeof(call_data),       init_call_elem,
+    destroy_call_elem,       sizeof(channel_data),
+    init_channel_elem,       destroy_channel_elem,
+    grpc_call_next_get_peer, "server-auth"};

@@ -41,7 +41,7 @@
 #include "src/core/transport/metadata.h"
 
 /* this many stream ops are inlined into a sopb before allocating */
-#define GRPC_SOPB_INLINE_ELEMENTS 16
+#define GRPC_SOPB_INLINE_ELEMENTS 4
 
 /* Operations that can be performed on a stream.
    Used by grpc_stream_op. */
@@ -85,29 +85,67 @@ typedef struct grpc_mdelem_list {
 } grpc_mdelem_list;
 
 typedef struct grpc_metadata_batch {
+  /** Metadata elements in this batch */
   grpc_mdelem_list list;
+  /** Elements that have been removed from the batch, but have
+      not yet been unreffed - used to allow collecting garbage
+      under a single metadata context lock */
   grpc_mdelem_list garbage;
+  /** Used to calculate grpc-timeout at the point of sending,
+      or gpr_inf_future if this batch does not need to send a
+      grpc-timeout */
   gpr_timespec deadline;
 } grpc_metadata_batch;
 
-void grpc_metadata_batch_init(grpc_metadata_batch *comd);
-void grpc_metadata_batch_destroy(grpc_metadata_batch *comd);
+void grpc_metadata_batch_init(grpc_metadata_batch *batch);
+void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
                                grpc_metadata_batch *add);
 
-void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
+/** Moves the metadata information from \a src to \a dst. Upon return, \a src is
+ * zeroed. */
+void grpc_metadata_batch_move(grpc_metadata_batch *dst,
+                              grpc_metadata_batch *src);
+
+/** Add \a storage to the beginning of \a batch. storage->md is
+    assumed to be valid. 
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call. */
+void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
                                    grpc_linked_mdelem *storage);
-void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
+/** Add \a storage to the end of \a batch. storage->md is
+    assumed to be valid.
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call. */
+void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
                                    grpc_linked_mdelem *storage);
 
-void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
+/** Add \a elem_to_add as the first element in \a batch, using
+    \a storage as backing storage for the linked list element.
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call.
+    Takes ownership of \a elem_to_add */
+void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
                                   grpc_mdelem *elem_to_add);
-void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
+/** Add \a elem_to_add as the last element in \a batch, using
+    \a storage as backing storage for the linked list element.
+    \a storage is owned by the caller and must survive for the
+    lifetime of batch. This usually means it should be around
+    for the lifetime of the call.
+    Takes ownership of \a elem_to_add */
+void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
                                   grpc_linked_mdelem *storage,
                                   grpc_mdelem *elem_to_add);
 
-void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
+/** For each element in \a batch, execute \a filter.
+    The return value from \a filter will be substituted for the
+    grpc_mdelem passed to \a filter. If \a filter returns NULL,
+    the element will be moved to the garbage list. */
+void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
                                 grpc_mdelem *(*filter)(void *user_data,
                                                        grpc_mdelem *elem),
                                 void *user_data);
@@ -165,6 +203,8 @@ void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
+
+void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst);
 
 char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
 

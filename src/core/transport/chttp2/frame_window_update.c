@@ -32,6 +32,7 @@
  */
 
 #include "src/core/transport/chttp2/frame_window_update.h"
+#include "src/core/transport/chttp2/internal.h"
 
 #include <grpc/support/log.h>
 
@@ -73,15 +74,15 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
-    void *parser, grpc_chttp2_parse_state *state, gpr_slice slice,
-    int is_last) {
+    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_window_update_parser *p = parser;
 
   while (p->byte != 4 && cur != end) {
-    p->amount |= ((gpr_uint32) * cur) << (8 * (3 - p->byte));
+    p->amount |= ((gpr_uint32)*cur) << (8 * (3 - p->byte));
     cur++;
     p->byte++;
   }
@@ -92,7 +93,21 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
     GPR_ASSERT(is_last);
-    state->window_update = p->amount;
+
+    if (transport_parsing->incoming_stream_id != 0) {
+      if (stream_parsing != NULL) {
+        GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("update", transport_parsing,
+                                         stream_parsing, outgoing_window_update,
+                                         p->amount);
+        stream_parsing->outgoing_window_update += p->amount;
+        grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
+                                                 stream_parsing);
+      }
+    } else {
+      GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT("update", transport_parsing,
+                                          outgoing_window_update, p->amount);
+      transport_parsing->outgoing_window_update += p->amount;
+    }
   }
 
   return GRPC_CHTTP2_PARSE_OK;

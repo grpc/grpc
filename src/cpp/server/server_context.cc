@@ -34,21 +34,25 @@
 #include <grpc++/server_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
 
+#include "src/core/channel/compress_filter.h"
+#include "src/cpp/common/create_auth_context.h"
+
 namespace grpc {
 
 // CompletionOp
 
-class ServerContext::CompletionOp GRPC_FINAL : public CallOpBuffer {
+class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp() : refs_(2), finalized_(false), cancelled_(false) {
-    AddServerRecvClose(&cancelled_);
-  }
+  CompletionOp() : refs_(2), finalized_(false), cancelled_(0) {}
+
+  void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
   bool CheckCancelled(CompletionQueue* cq);
@@ -59,7 +63,7 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpBuffer {
   grpc::mutex mu_;
   int refs_;
   bool finalized_;
-  bool cancelled_;
+  int cancelled_;
 };
 
 void ServerContext::CompletionOp::Unref() {
@@ -73,14 +77,20 @@ void ServerContext::CompletionOp::Unref() {
 bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
   cq->TryPluck(this);
   grpc::lock_guard<grpc::mutex> g(mu_);
-  return finalized_ ? cancelled_ : false;
+  return finalized_ ? cancelled_ != 0 : false;
+}
+
+void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
+  ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  ops->data.recv_close_on_server.cancelled = &cancelled_;
+  ops->flags = 0;
+  *nops = 1;
 }
 
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  GPR_ASSERT(CallOpBuffer::FinalizeResult(tag, status));
   grpc::unique_lock<grpc::mutex> lock(mu_);
   finalized_ = true;
-  if (!*status) cancelled_ = true;
+  if (!*status) cancelled_ = 1;
   if (--refs_ == 0) {
     lock.unlock();
     delete this;
@@ -136,8 +146,52 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
-bool ServerContext::IsCancelled() {
+bool ServerContext::IsCancelled() const {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
+}
+
+void ServerContext::set_compression_level(grpc_compression_level level) {
+  const grpc_compression_algorithm algorithm_for_level =
+      grpc_compression_algorithm_for_level(level);
+  set_compression_algorithm(algorithm_for_level);
+}
+
+void ServerContext::set_compression_algorithm(
+    grpc_compression_algorithm algorithm) {
+  char* algorithm_name = NULL;
+  if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != NULL);
+  AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
+}
+
+void ServerContext::set_call(grpc_call* call) {
+  call_ = call;
+  auth_context_ = CreateAuthContext(call);
+}
+
+std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
+  if (auth_context_.get() == nullptr) {
+    auth_context_ = CreateAuthContext(call_);
+  }
+  return auth_context_;
+}
+
+grpc::string ServerContext::peer() const {
+  grpc::string peer;
+  if (call_) {
+    char* c_peer = grpc_call_get_peer(call_);
+    peer = c_peer;
+    gpr_free(c_peer);
+  }
+  return peer;
+}
+
+const struct census_context* ServerContext::census_context() const {
+  return grpc_census_call_get_context(call_);
 }
 
 }  // namespace grpc

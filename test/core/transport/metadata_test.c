@@ -63,17 +63,17 @@ static void test_create_string(void) {
   LOG_TEST("test_create_string");
 
   ctx = grpc_mdctx_create();
-  s1 = grpc_mdstr_from_string(ctx, "hello");
-  s2 = grpc_mdstr_from_string(ctx, "hello");
-  s3 = grpc_mdstr_from_string(ctx, "very much not hello");
+  s1 = grpc_mdstr_from_string(ctx, "hello", 0);
+  s2 = grpc_mdstr_from_string(ctx, "hello", 0);
+  s3 = grpc_mdstr_from_string(ctx, "very much not hello", 0);
   GPR_ASSERT(s1 == s2);
   GPR_ASSERT(s3 != s1);
   GPR_ASSERT(gpr_slice_str_cmp(s1->slice, "hello") == 0);
   GPR_ASSERT(gpr_slice_str_cmp(s3->slice, "very much not hello") == 0);
-  grpc_mdstr_unref(s1);
-  grpc_mdstr_unref(s2);
+  GRPC_MDSTR_UNREF(s1);
+  GRPC_MDSTR_UNREF(s2);
   grpc_mdctx_unref(ctx);
-  grpc_mdstr_unref(s3);
+  GRPC_MDSTR_UNREF(s3);
 }
 
 static void test_create_metadata(void) {
@@ -93,9 +93,9 @@ static void test_create_metadata(void) {
   GPR_ASSERT(gpr_slice_str_cmp(m1->key->slice, "a") == 0);
   GPR_ASSERT(gpr_slice_str_cmp(m1->value->slice, "b") == 0);
   GPR_ASSERT(gpr_slice_str_cmp(m3->value->slice, "c") == 0);
-  grpc_mdelem_unref(m1);
-  grpc_mdelem_unref(m2);
-  grpc_mdelem_unref(m3);
+  GRPC_MDELEM_UNREF(m1);
+  GRPC_MDELEM_UNREF(m2);
+  GRPC_MDELEM_UNREF(m3);
   grpc_mdctx_unref(ctx);
 }
 
@@ -112,7 +112,7 @@ static void test_create_many_ephemeral_metadata(void) {
   /* add, and immediately delete a bunch of different elements */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
-    grpc_mdelem_unref(grpc_mdelem_from_strings(ctx, "a", buffer));
+    GRPC_MDELEM_UNREF(grpc_mdelem_from_strings(ctx, "a", buffer));
   }
   /* capacity should not grow */
   GPR_ASSERT(mdtab_capacity_before ==
@@ -140,11 +140,11 @@ static void test_create_many_persistant_metadata(void) {
     gpr_ltoa(i, buffer);
     md = grpc_mdelem_from_strings(ctx, "a", buffer);
     GPR_ASSERT(md == created[i]);
-    grpc_mdelem_unref(md);
+    GRPC_MDELEM_UNREF(md);
   }
   /* cleanup phase */
   for (i = 0; i < MANY; i++) {
-    grpc_mdelem_unref(created[i]);
+    GRPC_MDELEM_UNREF(created[i]);
   }
   grpc_mdctx_unref(ctx);
 
@@ -160,15 +160,15 @@ static void test_spin_creating_the_same_thing(void) {
   GPR_ASSERT(grpc_mdctx_get_mdtab_count_test_only(ctx) == 0);
   GPR_ASSERT(grpc_mdctx_get_mdtab_free_test_only(ctx) == 0);
 
-  grpc_mdelem_unref(grpc_mdelem_from_strings(ctx, "a", "b"));
+  GRPC_MDELEM_UNREF(grpc_mdelem_from_strings(ctx, "a", "b"));
   GPR_ASSERT(grpc_mdctx_get_mdtab_count_test_only(ctx) == 1);
   GPR_ASSERT(grpc_mdctx_get_mdtab_free_test_only(ctx) == 1);
 
-  grpc_mdelem_unref(grpc_mdelem_from_strings(ctx, "a", "b"));
+  GRPC_MDELEM_UNREF(grpc_mdelem_from_strings(ctx, "a", "b"));
   GPR_ASSERT(grpc_mdctx_get_mdtab_count_test_only(ctx) == 1);
   GPR_ASSERT(grpc_mdctx_get_mdtab_free_test_only(ctx) == 1);
 
-  grpc_mdelem_unref(grpc_mdelem_from_strings(ctx, "a", "b"));
+  GRPC_MDELEM_UNREF(grpc_mdelem_from_strings(ctx, "a", "b"));
   GPR_ASSERT(grpc_mdctx_get_mdtab_count_test_only(ctx) == 1);
   GPR_ASSERT(grpc_mdctx_get_mdtab_free_test_only(ctx) == 1);
 
@@ -190,14 +190,14 @@ static void test_things_stick_around(void) {
 
   for (i = 0; i < nstrs; i++) {
     gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", i);
-    strs[i] = grpc_mdstr_from_string(ctx, buffer);
+    strs[i] = grpc_mdstr_from_string(ctx, buffer, 0);
     shuf[i] = i;
     gpr_free(buffer);
   }
 
   for (i = 0; i < nstrs; i++) {
-    grpc_mdstr_ref(strs[i]);
-    grpc_mdstr_unref(strs[i]);
+    GRPC_MDSTR_REF(strs[i]);
+    GRPC_MDSTR_UNREF(strs[i]);
   }
 
   for (i = 0; i < nstrs; i++) {
@@ -209,12 +209,12 @@ static void test_things_stick_around(void) {
   }
 
   for (i = 0; i < nstrs; i++) {
-    grpc_mdstr_unref(strs[shuf[i]]);
+    GRPC_MDSTR_UNREF(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
       gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", shuf[j]);
-      test = grpc_mdstr_from_string(ctx, buffer);
+      test = grpc_mdstr_from_string(ctx, buffer, 0);
       GPR_ASSERT(test == strs[shuf[j]]);
-      grpc_mdstr_unref(test);
+      GRPC_MDSTR_UNREF(test);
       gpr_free(buffer);
     }
   }
@@ -235,16 +235,16 @@ static void test_slices_work(void) {
   ctx = grpc_mdctx_create();
 
   str = grpc_mdstr_from_string(
-      ctx, "123456789012345678901234567890123456789012345678901234567890");
+      ctx, "123456789012345678901234567890123456789012345678901234567890", 0);
   slice = gpr_slice_ref(str->slice);
-  grpc_mdstr_unref(str);
+  GRPC_MDSTR_UNREF(str);
   gpr_slice_unref(slice);
 
   str = grpc_mdstr_from_string(
-      ctx, "123456789012345678901234567890123456789012345678901234567890");
+      ctx, "123456789012345678901234567890123456789012345678901234567890", 0);
   slice = gpr_slice_ref(str->slice);
   gpr_slice_unref(slice);
-  grpc_mdstr_unref(str);
+  GRPC_MDSTR_UNREF(str);
 
   grpc_mdctx_unref(ctx);
 }
@@ -258,13 +258,13 @@ static void test_base64_and_huffman_works(void) {
   LOG_TEST("test_base64_and_huffman_works");
 
   ctx = grpc_mdctx_create();
-  str = grpc_mdstr_from_string(ctx, "abcdefg");
+  str = grpc_mdstr_from_string(ctx, "abcdefg", 0);
   slice1 = grpc_mdstr_as_base64_encoded_and_huffman_compressed(str);
   slice2 = grpc_chttp2_base64_encode_and_huffman_compress(str->slice);
   GPR_ASSERT(0 == gpr_slice_cmp(slice1, slice2));
 
   gpr_slice_unref(slice2);
-  grpc_mdstr_unref(str);
+  GRPC_MDSTR_UNREF(str);
   grpc_mdctx_unref(ctx);
 }
 

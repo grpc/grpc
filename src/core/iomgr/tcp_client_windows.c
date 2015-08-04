@@ -52,12 +52,13 @@
 #include "src/core/iomgr/socket_windows.h"
 
 typedef struct {
-  void(*cb)(void *arg, grpc_endpoint *tcp);
+  void (*cb)(void *arg, grpc_endpoint *tcp);
   void *cb_arg;
   gpr_mu mu;
   grpc_winsocket *socket;
   gpr_timespec deadline;
   grpc_alarm alarm;
+  char *addr_name;
   int refs;
   int aborted;
 } async_connect;
@@ -67,6 +68,7 @@ static void async_connect_cleanup(async_connect *ac) {
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
+    gpr_free(ac->addr_name);
     gpr_free(ac);
   }
 }
@@ -86,7 +88,7 @@ static void on_connect(void *acp, int from_iocp) {
   SOCKET sock = ac->socket->socket;
   grpc_endpoint *ep = NULL;
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
-  void(*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
+  void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
   int aborted;
 
@@ -99,8 +101,7 @@ static void on_connect(void *acp, int from_iocp) {
     DWORD transfered_bytes = 0;
     DWORD flags;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                              &transfered_bytes, FALSE,
-                                              &flags);
+                                              &transfered_bytes, FALSE, &flags);
     info->outstanding = 0;
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
@@ -108,7 +109,7 @@ static void on_connect(void *acp, int from_iocp) {
       gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
       gpr_free(utf8_message);
     } else if (!aborted) {
-      ep = grpc_tcp_create(ac->socket);
+      ep = grpc_tcp_create(ac->socket, ac->addr_name);
     }
   } else {
     gpr_log(GPR_ERROR, "on_connect is shutting down");
@@ -138,9 +139,10 @@ static void on_connect(void *acp, int from_iocp) {
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, const struct sockaddr *addr,
-                             int addr_len, gpr_timespec deadline) {
+void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
+                             void *arg, grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -175,9 +177,9 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
 
   /* Grab the function pointer for ConnectEx for that specific socket.
      It may change depending on the interface. */
-  status = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
-                    &guid, sizeof(guid), &ConnectEx, sizeof(ConnectEx),
-                    &ioctl_num_bytes, NULL, NULL);
+  status =
+      WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
+               &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
     message = "Unable to retrieve ConnectEx pointer: %s";
@@ -186,8 +188,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status = bind(sock, (struct sockaddr *) &local_address,
-                sizeof(local_address));
+  status = bind(sock, (struct sockaddr *)&local_address, sizeof(local_address));
   if (status != 0) {
     message = "Unable to bind socket: %s";
     goto failure;
@@ -214,9 +215,11 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
   ac->socket = socket;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
+  ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->aborted = 0;
 
-  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
+  grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
+                  gpr_now(GPR_CLOCK_MONOTONIC));
   socket->write_info.outstanding = 1;
   grpc_socket_notify_on_write(socket, on_connect, ac);
   return;
@@ -233,4 +236,4 @@ failure:
   cb(arg, NULL);
 }
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */

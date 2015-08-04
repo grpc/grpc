@@ -40,7 +40,7 @@
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  srand(gpr_now().tv_nsec);
+  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   test_invalid_record_size();
   test_end_write_with_different_size();
   test_read_pending_record();

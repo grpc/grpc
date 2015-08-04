@@ -117,7 +117,7 @@ most Mac installations. Do the "git submodule" command listed above.
 Then execute the following for all the needed build dependencies
 
   $ sudo /opt/local/bin/port install autoconf automake libtool gflags cmake
-  $ mkdir ~/gtest
+  $ mkdir ~/gtest-svn
   $ svn checkout http://googletest.googlecode.com/svn/trunk/ gtest-svn
   $ mkdir mybuild
   $ cd mybuild

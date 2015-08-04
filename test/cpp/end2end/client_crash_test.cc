@@ -31,13 +31,10 @@
  *
  */
 
-#include <thread>
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -90,13 +87,36 @@ class CrashTest : public ::testing::Test {
 
   void KillServer() {
     server_.reset();
-    // give some time for the TCP connection to drop
-    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
   }
 
  private:
   std::unique_ptr<SubProcess> server_;
 };
+
+TEST_F(CrashTest, KillBeforeWrite) {
+  auto stub = CreateServerAndStub();
+
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  auto stream = stub->BidiStream(&context);
+
+  request.set_message("Hello");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  KillServer();
+
+  request.set_message("You should be dead");
+  // This may succeed or fail depending on the state of the TCP connection
+  stream->Write(request);
+  // But the read will definitely fail
+  EXPECT_FALSE(stream->Read(&response));
+
+  EXPECT_FALSE(stream->Finish().ok());
+}
 
 TEST_F(CrashTest, KillAfterWrite) {
   auto stub = CreateServerAndStub();
@@ -117,30 +137,8 @@ TEST_F(CrashTest, KillAfterWrite) {
 
   KillServer();
 
-  EXPECT_FALSE(stream->Read(&response));
-
-  EXPECT_FALSE(stream->Finish().ok());
-}
-
-TEST_F(CrashTest, KillBeforeWrite) {
-  auto stub = CreateServerAndStub();
-
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-
-  auto stream = stub->BidiStream(&context);
-
-  request.set_message("Hello");
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Read(&response));
-  EXPECT_EQ(response.message(), request.message());
-
-  KillServer();
-
-  request.set_message("You should be dead");
-  EXPECT_FALSE(stream->Write(request));
-  EXPECT_FALSE(stream->Read(&response));
+  // This may succeed or fail depending on how quick the server was
+  stream->Read(&response);
 
   EXPECT_FALSE(stream->Finish().ok());
 }
@@ -161,5 +159,11 @@ int main(int argc, char** argv) {
 
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  // Order seems to matter on these tests: run three times to eliminate that
+  for (int i = 0; i < 3; i++) {
+    if (RUN_ALL_TESTS() != 0) {
+      return 1;
+    }
+  }
+  return 0;
 }

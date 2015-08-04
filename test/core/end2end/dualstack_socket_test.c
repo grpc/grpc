@@ -37,6 +37,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -62,12 +63,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   char *server_hostport;
   grpc_channel *client;
   grpc_server *server;
-  grpc_completion_queue *client_cq;
-  grpc_completion_queue *server_cq;
+  grpc_completion_queue *cq;
   grpc_call *c;
   grpc_call *s;
-  cq_verifier *v_client;
-  cq_verifier *v_server;
+  cq_verifier *cqv;
   gpr_timespec deadline;
   int got_port;
   grpc_op ops[6];
@@ -80,6 +79,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   size_t details_capacity = 0;
   int was_cancelled = 2;
   grpc_call_details call_details;
+  char *peer;
 
   if (port == 0) {
     port = grpc_pick_unused_port_or_die();
@@ -93,9 +93,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
-  server_cq = grpc_completion_queue_create();
+  cq = grpc_completion_queue_create();
   server = grpc_server_create(NULL);
-  grpc_server_register_completion_queue(server, server_cq);
+  grpc_server_register_completion_queue(server, cq);
   GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
              0);
   if (port == 0) {
@@ -104,13 +104,16 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(port == got_port);
   }
   grpc_server_start(server);
-  v_server = cq_verifier_create(server_cq);
+  cqv = cq_verifier_create(cq);
 
   /* Create client. */
-  gpr_join_host_port(&client_hostport, client_host, port);
-  client_cq = grpc_completion_queue_create();
-  client = grpc_channel_create(client_hostport, NULL);
-  v_client = cq_verifier_create(client_cq);
+  if (client_host[0] == 'i') {
+    /* for ipv4:/ipv6: addresses, just concatenate the port */
+    gpr_asprintf(&client_hostport, "%s:%d", client_host, port);
+  } else {
+    gpr_join_host_port(&client_hostport, client_host, port);
+  }
+  client = grpc_insecure_channel_create(client_hostport, NULL);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");
@@ -128,7 +131,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
-  c = grpc_channel_create_call(client, client_cq, "/foo", "foo.test.google.fr",
+  c = grpc_channel_create_call(client, cq, "/foo", "foo.test.google.fr",
                                deadline);
   GPR_ASSERT(c);
 
@@ -155,12 +158,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   if (expect_ok) {
     /* Check for a successful request. */
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_call(server, &s, &call_details,
-                                        &request_metadata_recv, server_cq,
-                                        server_cq, tag(101)));
-    cq_expect_completion(v_server, tag(101), 1);
-    cq_verify(v_server);
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                   server, &s, &call_details,
+                                   &request_metadata_recv, cq, cq, tag(101)));
+    cq_expect_completion(cqv, tag(101), 1);
+    cq_verify(cqv);
 
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -180,45 +182,49 @@ void test_connect(const char *server_host, const char *client_host, int port,
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-    cq_expect_completion(v_server, tag(102), 1);
-    cq_verify(v_server);
+    cq_expect_completion(cqv, tag(102), 1);
+    cq_expect_completion(cqv, tag(1), 1);
+    cq_verify(cqv);
 
-    cq_expect_completion(v_client, tag(1), 1);
-    cq_verify(v_client);
+    peer = grpc_call_get_peer(c);
+    gpr_log(GPR_DEBUG, "got peer: '%s'", peer);
+    gpr_free(peer);
 
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
     GPR_ASSERT(0 == strcmp(details, "xyz"));
     GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
     GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
-    GPR_ASSERT(was_cancelled == 0);
+    GPR_ASSERT(was_cancelled == 1);
 
     grpc_call_destroy(s);
   } else {
     /* Check for a failed connection. */
-    cq_expect_completion(v_client, tag(1), 1);
-    cq_verify(v_client);
+    cq_expect_completion(cqv, tag(1), 1);
+    cq_verify(cqv);
 
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
   }
 
   grpc_call_destroy(c);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
 
   /* Destroy client. */
   grpc_channel_destroy(client);
-  grpc_completion_queue_shutdown(client_cq);
-  drain_cq(client_cq);
-  grpc_completion_queue_destroy(client_cq);
 
   /* Destroy server. */
-  grpc_server_shutdown_and_notify(server, server_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(server_cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(server, cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
-  grpc_completion_queue_shutdown(server_cq);
-  drain_cq(server_cq);
-  grpc_completion_queue_destroy(server_cq);
+  grpc_completion_queue_shutdown(cq);
+  drain_cq(cq);
+  grpc_completion_queue_destroy(cq);
+
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
 
   grpc_call_details_destroy(&call_details);
   gpr_free(details);
@@ -242,21 +248,31 @@ int main(int argc, char **argv) {
     /* :: and 0.0.0.0 are handled identically. */
     test_connect("::", "127.0.0.1", 0, 1);
     test_connect("::", "::ffff:127.0.0.1", 0, 1);
+    test_connect("::", "ipv4:127.0.0.1", 0, 1);
+    test_connect("::", "ipv6:[::ffff:127.0.0.1]", 0, 1);
     test_connect("::", "localhost", 0, 1);
     test_connect("0.0.0.0", "127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "::ffff:127.0.0.1", 0, 1);
+    test_connect("0.0.0.0", "ipv4:127.0.0.1", 0, 1);
+    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1]", 0, 1);
     test_connect("0.0.0.0", "localhost", 0, 1);
     if (do_ipv6) {
       test_connect("::", "::1", 0, 1);
       test_connect("0.0.0.0", "::1", 0, 1);
+      test_connect("::", "ipv6:[::1]", 0, 1);
+      test_connect("0.0.0.0", "ipv6:[::1]", 0, 1);
     }
 
     /* These only work when the families agree. */
     test_connect("127.0.0.1", "127.0.0.1", 0, 1);
+    test_connect("127.0.0.1", "ipv4:127.0.0.1", 0, 1);
     if (do_ipv6) {
       test_connect("::1", "::1", 0, 1);
       test_connect("::1", "127.0.0.1", 0, 0);
       test_connect("127.0.0.1", "::1", 0, 0);
+      test_connect("::1", "ipv6:[::1]", 0, 1);
+      test_connect("::1", "ipv4:127.0.0.1", 0, 0);
+      test_connect("127.0.0.1", "ipv6:[::1]", 0, 0);
     }
   }
 

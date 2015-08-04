@@ -50,27 +50,46 @@ typedef struct {
 } pollset_hdr;
 
 static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
-                                                grpc_fd *fd) {
+                                                grpc_fd *fd,
+                                                int and_unlock_pollset) {
   pollset_hdr *h = pollset->data.ptr;
   struct epoll_event ev;
   int err;
+  grpc_fd_watcher watcher;
 
-  ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-  ev.data.ptr = fd;
-  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
-  if (err < 0) {
-    /* FDs may be added to a pollset multiple times, so EEXIST is normal. */
-    if (errno != EEXIST) {
-      gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", fd->fd,
-              strerror(errno));
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
+
+  /* We pretend to be polling whilst adding an fd to keep the fd from being
+     closed during the add. This may result in a spurious wakeup being assigned
+     to this pollset whilst adding, but that should be benign. */
+  GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, 0, 0, &watcher) == 0);
+  if (watcher.fd != NULL) {
+    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+    ev.data.ptr = fd;
+    err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
+    if (err < 0) {
+      /* FDs may be added to a pollset multiple times, so EEXIST is normal. */
+      if (errno != EEXIST) {
+        gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", fd->fd,
+                strerror(errno));
+      }
     }
   }
+  grpc_fd_end_poll(&watcher, 0, 0);
 }
 
 static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,
-                                                grpc_fd *fd) {
+                                                grpc_fd *fd,
+                                                int and_unlock_pollset) {
   pollset_hdr *h = pollset->data.ptr;
   int err;
+
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
+
   /* Note that this can race with concurrent poll, but that should be fine since
    * at worst it creates a spurious read event on a reused grpc_fd object. */
   err = epoll_ctl(h->epoll_fd, EPOLL_CTL_DEL, fd->fd, NULL);
@@ -83,7 +102,7 @@ static void multipoll_with_epoll_pollset_del_fd(grpc_pollset *pollset,
 /* TODO(klempner): We probably want to turn this down a bit */
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
-static int multipoll_with_epoll_pollset_maybe_work(
+static void multipoll_with_epoll_pollset_maybe_work(
     grpc_pollset *pollset, gpr_timespec deadline, gpr_timespec now,
     int allow_synchronous_callback) {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
@@ -97,16 +116,10 @@ static int multipoll_with_epoll_pollset_maybe_work(
    * here.
    */
 
-  if (gpr_time_cmp(deadline, gpr_inf_future) == 0) {
-    timeout_ms = -1;
-  } else {
-    timeout_ms = gpr_time_to_millis(gpr_time_sub(deadline, now));
-    if (timeout_ms <= 0) {
-      return 1;
-    }
-  }
   pollset->counter += 1;
   gpr_mu_unlock(&pollset->mu);
+
+  timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 
   do {
     ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms);
@@ -140,12 +153,10 @@ static int multipoll_with_epoll_pollset_maybe_work(
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter -= 1;
-  /* TODO(klempner): This should signal once per event rather than broadcast,
-   * although it probably doesn't matter because threads will generally be
-   * blocked in epoll_wait rather than being blocked on the cv. */
-  gpr_cv_broadcast(&pollset->cv);
-  return 1;
 }
+
+static void multipoll_with_epoll_pollset_finish_shutdown(
+    grpc_pollset *pollset) {}
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
@@ -160,8 +171,11 @@ static void epoll_kick(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
-    multipoll_with_epoll_pollset_add_fd, multipoll_with_epoll_pollset_del_fd,
-    multipoll_with_epoll_pollset_maybe_work, epoll_kick,
+    multipoll_with_epoll_pollset_add_fd,
+    multipoll_with_epoll_pollset_del_fd,
+    multipoll_with_epoll_pollset_maybe_work,
+    epoll_kick,
+    multipoll_with_epoll_pollset_finish_shutdown,
     multipoll_with_epoll_pollset_destroy};
 
 static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
@@ -180,7 +194,7 @@ static void epoll_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
     abort();
   }
   for (i = 0; i < nfds; i++) {
-    multipoll_with_epoll_pollset_add_fd(pollset, fds[i]);
+    multipoll_with_epoll_pollset_add_fd(pollset, fds[i], 0);
   }
 
   grpc_wakeup_fd_create(&h->wakeup_fd);

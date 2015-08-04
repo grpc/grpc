@@ -55,4 +55,4 @@ struct grpc_byte_buffer_reader {
 }
 #endif
 
-#endif  /* GRPC_BYTE_BUFFER_READER_H */
+#endif /* GRPC_BYTE_BUFFER_READER_H */

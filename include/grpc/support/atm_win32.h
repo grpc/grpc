@@ -37,8 +37,6 @@
 /* Win32 variant of atm_platform.h */
 #include <grpc/support/port_platform.h>
 
-#include <windows.h>
-
 typedef gpr_intptr gpr_atm;
 
 #define gpr_atm_full_barrier MemoryBarrier
@@ -57,6 +55,11 @@ static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm *p) {
 static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
   gpr_atm_full_barrier();
   *p = value;
+}
+
+static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
+  /* TODO(ctiller): Can we implement something better here? */
+  gpr_atm_rel_store(p, value);
 }
 
 static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {

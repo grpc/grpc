@@ -30,7 +30,7 @@
 # A work-in-progress Dockerfile that allows running gRPC test suites
 # inside a docker container.
 
-FROM debian:wheezy
+FROM debian:jessie
 
 # Install Git.
 RUN apt-get update && apt-get install -y \
@@ -38,8 +38,10 @@ RUN apt-get update && apt-get install -y \
   autotools-dev \
   build-essential \
   bzip2 \
+  ccache \
   curl \
   gcc \
+  gcc-multilib \
   git \
   libc6 \
   libc6-dbg \
@@ -55,9 +57,17 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
 ##################
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
 
 #################
 # C# dependencies
@@ -65,9 +75,12 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev
 # Update to a newer version of mono
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     mono-devel \
     nunit \
     nunit-console \
@@ -132,6 +145,8 @@ RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
+
+RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]

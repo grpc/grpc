@@ -84,12 +84,12 @@ static const char *ssl_cipher_suites(void) {
 /* -- Common methods. -- */
 
 /* Returns the first property with that name. */
-const tsi_peer_property *tsi_peer_get_property_by_name(
-    const tsi_peer *peer, const char *name) {
+const tsi_peer_property *tsi_peer_get_property_by_name(const tsi_peer *peer,
+                                                       const char *name) {
   size_t i;
   if (peer == NULL) return NULL;
   for (i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property* property = &peer->properties[i];
+    const tsi_peer_property *property = &peer->properties[i];
     if (name == NULL && property->name == NULL) {
       return property;
     }
@@ -124,24 +124,44 @@ grpc_security_status grpc_channel_security_connector_check_call_host(
   return sc->check_call_host(sc, host, cb, user_data);
 }
 
-void grpc_security_connector_unref(grpc_security_connector *sc) {
-  if (sc == NULL) return;
-  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
-}
-
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+grpc_security_connector *grpc_security_connector_ref(
+    grpc_security_connector *sc, const char *file, int line,
+    const char *reason) {
+  if (sc == NULL) return NULL;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "SECURITY_CONNECTOR:%p   ref %d -> %d %s", sc,
+          (int)sc->refcount.count, (int)sc->refcount.count + 1, reason);
+#else
 grpc_security_connector *grpc_security_connector_ref(
     grpc_security_connector *sc) {
   if (sc == NULL) return NULL;
+#endif
   gpr_ref(&sc->refcount);
   return sc;
 }
 
+#ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
+void grpc_security_connector_unref(grpc_security_connector *sc,
+                                   const char *file, int line,
+                                   const char *reason) {
+  if (sc == NULL) return;
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "SECURITY_CONNECTOR:%p unref %d -> %d %s", sc,
+          (int)sc->refcount.count, (int)sc->refcount.count - 1, reason);
+#else
+void grpc_security_connector_unref(grpc_security_connector *sc) {
+  if (sc == NULL) return;
+#endif
+  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
+}
+
 static void connector_pointer_arg_destroy(void *p) {
-  grpc_security_connector_unref(p);
+  GRPC_SECURITY_CONNECTOR_UNREF(p, "connector_pointer_arg");
 }
 
 static void *connector_pointer_arg_copy(void *p) {
-  return grpc_security_connector_ref(p);
+  return GRPC_SECURITY_CONNECTOR_REF(p, "connector_pointer_arg");
 }
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector *sc) {
@@ -196,12 +216,12 @@ typedef struct {
 static void fake_channel_destroy(grpc_security_connector *sc) {
   grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
   grpc_credentials_unref(c->request_metadata_creds);
-  grpc_auth_context_unref(sc->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
 static void fake_server_destroy(grpc_security_connector *sc) {
-  grpc_auth_context_unref(sc->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
@@ -242,7 +262,7 @@ static grpc_security_status fake_check_peer(grpc_security_connector *sc,
     status = GRPC_SECURITY_ERROR;
     goto end;
   }
-  grpc_auth_context_unref(sc->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   sc->auth_context = grpc_auth_context_create(NULL, 1);
   sc->auth_context->properties[0] = grpc_auth_property_init_from_cstring(
       GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
@@ -323,7 +343,7 @@ static void ssl_channel_destroy(grpc_security_connector *sc) {
   if (c->target_name != NULL) gpr_free(c->target_name);
   if (c->overridden_target_name != NULL) gpr_free(c->overridden_target_name);
   tsi_peer_destruct(&c->peer);
-  grpc_auth_context_unref(sc->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
@@ -333,7 +353,7 @@ static void ssl_server_destroy(grpc_security_connector *sc) {
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
-  grpc_auth_context_unref(sc->auth_context);
+  GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
@@ -386,29 +406,13 @@ static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
   return r;
 }
 
-static grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
-  /* We bet that iterating over a handful of properties twice will be faster
-     than having to realloc on average . */
-  size_t auth_prop_count = 1; /* for transport_security_type. */
+grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
   size_t i;
-  const char *peer_identity_property_name = NULL;
   grpc_auth_context *ctx = NULL;
-  for (i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property *prop = &peer->properties[i];
-    if (prop->name == NULL) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
-      auth_prop_count++;
-      /* If there is no subject alt name, have the CN as the identity. */
-      if (peer_identity_property_name == NULL) {
-        peer_identity_property_name = prop->name;
-      }
-    } else if (strcmp(prop->name,
-                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
-      auth_prop_count++;
-      peer_identity_property_name = prop->name;
-    }
-  }
-  ctx = grpc_auth_context_create(NULL, auth_prop_count);
+
+  /* The caller has checked the certificate type property. */
+  GPR_ASSERT(peer->property_count >= 1);
+  ctx = grpc_auth_context_create(NULL, peer->property_count);
   ctx->properties[0] = grpc_auth_property_init_from_cstring(
       GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -417,15 +421,19 @@ static grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
     const tsi_peer_property *prop = &peer->properties[i];
     if (prop->name == NULL) continue;
     if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      /* If there is no subject alt name, have the CN as the identity. */
+      if (ctx->peer_identity_property_name == NULL) {
+        ctx->peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
+      }
       ctx->properties[ctx->property_count++] = grpc_auth_property_init(
           GRPC_X509_CN_PROPERTY_NAME, prop->value.data, prop->value.length);
     } else if (strcmp(prop->name,
                       TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      ctx->peer_identity_property_name = GRPC_X509_SAN_PROPERTY_NAME;
       ctx->properties[ctx->property_count++] = grpc_auth_property_init(
           GRPC_X509_SAN_PROPERTY_NAME, prop->value.data, prop->value.length);
     }
   }
-  GPR_ASSERT(auth_prop_count == ctx->property_count);
   return ctx;
 }
 
@@ -448,6 +456,9 @@ static grpc_security_status ssl_check_peer(grpc_security_connector *sc,
   if (peer_name != NULL && !ssl_host_matches_name(peer, peer_name)) {
     gpr_log(GPR_ERROR, "Peer name %s is not in peer certificate", peer_name);
     return GRPC_SECURITY_ERROR;
+  }
+  if (sc->auth_context != NULL) {
+    GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   }
   sc->auth_context = tsi_ssl_peer_to_auth_context(peer);
   return GRPC_SECURITY_OK;
@@ -550,7 +561,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     alpn_protocol_strings[i] =
         (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
     alpn_protocol_string_lengths[i] =
-        strlen(grpc_chttp2_get_alpn_version_index(i));
+        (unsigned char)strlen(grpc_chttp2_get_alpn_version_index(i));
   }
 
   if (config == NULL || target_name == NULL) {
@@ -589,7 +600,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
       config->pem_private_key, config->pem_private_key_size,
       config->pem_cert_chain, config->pem_cert_chain_size, pem_root_certs,
       pem_root_certs_size, ssl_cipher_suites(), alpn_protocol_strings,
-      alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);
+      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
+      &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -623,7 +635,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     alpn_protocol_strings[i] =
         (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
     alpn_protocol_string_lengths[i] =
-        strlen(grpc_chttp2_get_alpn_version_index(i));
+        (unsigned char)strlen(grpc_chttp2_get_alpn_version_index(i));
   }
 
   if (config == NULL || config->num_key_cert_pairs == 0) {
@@ -641,8 +653,9 @@ grpc_security_status grpc_ssl_server_security_connector_create(
       config->pem_private_keys_sizes,
       (const unsigned char **)config->pem_cert_chains,
       config->pem_cert_chains_sizes, config->num_key_cert_pairs,
-      config->pem_root_certs, config->pem_root_certs_size, ssl_cipher_suites(),
-      alpn_protocol_strings, alpn_protocol_string_lengths, num_alpn_protocols,
+      config->pem_root_certs, config->pem_root_certs_size,
+      config->force_client_auth, ssl_cipher_suites(), alpn_protocol_strings,
+      alpn_protocol_string_lengths, (uint16_t)num_alpn_protocols,
       &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -661,4 +674,3 @@ error:
   gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_ERROR;
 }
-

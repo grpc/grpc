@@ -30,55 +30,163 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Runtime.InteropServices;
 using System.Text;
+
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// gRPC call metadata.
+    /// Provides access to read and write metadata values to be exchanged during a call.
     /// </summary>
-    public class Metadata
+    public sealed class Metadata : IList<Metadata.Entry>
     {
-        public static readonly Metadata Empty = new Metadata(ImmutableList<MetadataEntry>.Empty);
+        /// <summary>
+        /// An read-only instance of metadata containing no entries.
+        /// </summary>
+        public static readonly Metadata Empty = new Metadata().Freeze();
 
-        readonly ImmutableList<MetadataEntry> entries;
+        readonly List<Entry> entries;
+        bool readOnly;
 
-        public Metadata(ImmutableList<MetadataEntry> entries)
+        public Metadata()
         {
-            this.entries = entries;
+            this.entries = new List<Entry>();
         }
 
-        public ImmutableList<MetadataEntry> Entries
+        public Metadata(ICollection<Entry> entries)
+        {
+            this.entries = new List<Entry>(entries);
+        }
+
+        /// <summary>
+        /// Makes this object read-only.
+        /// </summary>
+        /// <returns>this object</returns>
+        public Metadata Freeze()
+        {
+            this.readOnly = true;
+            return this;
+        }
+
+        // TODO: add support for access by key
+
+        #region IList members
+
+        public int IndexOf(Metadata.Entry item)
+        {
+            return entries.IndexOf(item);
+        }
+
+        public void Insert(int index, Metadata.Entry item)
+        {
+            CheckWriteable();
+            entries.Insert(index, item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            CheckWriteable();
+            entries.RemoveAt(index);
+        }
+
+        public Metadata.Entry this[int index]
         {
             get
             {
-                return this.entries;
+                return entries[index];
+            }
+
+            set
+            {
+                CheckWriteable();
+                entries[index] = value;
             }
         }
 
-        public static Builder CreateBuilder()
+        public void Add(Metadata.Entry item)
         {
-            return new Builder();
+            CheckWriteable();
+            entries.Add(item);
         }
-       
-        public struct MetadataEntry
+
+        public void Clear()
         {
+            CheckWriteable();
+            entries.Clear();
+        }
+
+        public bool Contains(Metadata.Entry item)
+        {
+            return entries.Contains(item);
+        }
+
+        public void CopyTo(Metadata.Entry[] array, int arrayIndex)
+        {
+            entries.CopyTo(array, arrayIndex);
+        }
+
+        public int Count
+        {
+            get { return entries.Count; }
+        }
+
+        public bool IsReadOnly
+        {
+            get { return readOnly; }
+        }
+
+        public bool Remove(Metadata.Entry item)
+        {
+            CheckWriteable();
+            return entries.Remove(item);
+        }
+
+        public IEnumerator<Metadata.Entry> GetEnumerator()
+        {
+            return entries.GetEnumerator();
+        }
+
+        IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return entries.GetEnumerator();
+        }
+
+        private void CheckWriteable()
+        {
+            Preconditions.CheckState(!readOnly, "Object is read only");
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Metadata entry
+        /// </summary>
+        public struct Entry
+        {
+            private static readonly Encoding Encoding = Encoding.ASCII;
+
             readonly string key;
-            readonly byte[] valueBytes;
+            string value;
+            byte[] valueBytes;
 
-            public MetadataEntry(string key, byte[] valueBytes)
+            public Entry(string key, byte[] valueBytes)
             {
-                this.key = key;
-                this.valueBytes = valueBytes;
+                this.key = Preconditions.CheckNotNull(key);
+                this.value = null;
+                this.valueBytes = Preconditions.CheckNotNull(valueBytes);
             }
 
-            public MetadataEntry(string key, string value)
+            public Entry(string key, string value)
             {
-                this.key = key;
-                this.valueBytes = Encoding.ASCII.GetBytes(value);
+                this.key = Preconditions.CheckNotNull(key);
+                this.value = Preconditions.CheckNotNull(value);
+                this.valueBytes = null;
             }
 
             public string Key
@@ -89,37 +197,33 @@ namespace Grpc.Core
                 }
             }
 
-            // TODO: using ByteString would guarantee immutability.
             public byte[] ValueBytes
             {
                 get
                 {
-                    return this.valueBytes;
+                    if (valueBytes == null)
+                    {
+                        valueBytes = Encoding.GetBytes(value);
+                    }
+                    return valueBytes;
                 }
             }
-        }
 
-        public class Builder
-        {
-            readonly List<Metadata.MetadataEntry> entries = new List<Metadata.MetadataEntry>();
-
-            public List<MetadataEntry> Entries
+            public string Value
             {
                 get
                 {
-                    return entries;
+                    if (value == null)
+                    {
+                        value = Encoding.GetString(valueBytes);
+                    }
+                    return value;
                 }
             }
-
-            public Builder Add(MetadataEntry entry)
+                
+            public override string ToString()
             {
-                entries.Add(entry);
-                return this;
-            }
-
-            public Metadata Build()
-            {
-                return new Metadata(entries.ToImmutableList());
+                return string.Format("[Entry: key={0}, value={1}]", Key, Value);
             }
         }
     }

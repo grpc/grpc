@@ -90,4 +90,19 @@ namespace Grpc.Core.Internal
         /* operation completion */
         OpComplete
     }
+
+    /// <summary>
+    /// gpr_clock_type from grpc/support/time.h
+    /// </summary>
+    internal enum GPRClockType
+    {
+        /* Monotonic clock */
+        Monotonic,
+
+        /* Realtime clock */
+        Realtime,
+
+        /* Timespan - the distance between two time points */
+        Timespan
+    }
 }

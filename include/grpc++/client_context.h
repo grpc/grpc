@@ -38,18 +38,20 @@
 #include <memory>
 #include <string>
 
+#include <grpc/compression.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc++/auth_context.h>
 #include <grpc++/config.h>
 #include <grpc++/status.h>
 #include <grpc++/time.h>
 
 struct grpc_call;
 struct grpc_completion_queue;
+struct census_context;
 
 namespace grpc {
 
-class CallOpBuffer;
 class ChannelInterface;
 class CompletionQueue;
 class Credentials;
@@ -108,6 +110,24 @@ class ClientContext {
     creds_ = creds;
   }
 
+  grpc_compression_algorithm compression_algorithm() const {
+    return compression_algorithm_;
+  }
+
+  void set_compression_algorithm(grpc_compression_algorithm algorithm);
+
+  std::shared_ptr<const AuthContext> auth_context() const;
+
+  // Return the peer uri in a string.
+  // WARNING: this value is never authenticated or subject to any security
+  // related code. It must not be used for any authentication related
+  // functionality. Instead, use auth_context.
+  grpc::string peer() const;
+
+  // Get and set census context
+  void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
+  struct census_context* census_context() const { return census_context_; }
+
   void TryCancel();
 
  private:
@@ -115,7 +135,8 @@ class ClientContext {
   ClientContext(const ClientContext&);
   ClientContext& operator=(const ClientContext&);
 
-  friend class CallOpBuffer;
+  friend class CallOpClientRecvStatus;
+  friend class CallOpRecvInitialMetadata;
   friend class Channel;
   template <class R>
   friend class ::grpc::ClientReader;
@@ -131,6 +152,12 @@ class ClientContext {
   friend class ::grpc::ClientAsyncReaderWriter;
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
+  template <class InputMessage, class OutputMessage>
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
+                                  ClientContext* context,
+                                  const InputMessage& request,
+                                  OutputMessage* result);
 
   grpc_call* call() { return call_; }
   void set_call(grpc_call* call,
@@ -148,9 +175,13 @@ class ClientContext {
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;
+  mutable std::shared_ptr<const AuthContext> auth_context_;
+  struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
+
+  grpc_compression_algorithm compression_algorithm_;
 };
 
 }  // namespace grpc

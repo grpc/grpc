@@ -43,7 +43,12 @@ grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src);
 /** Copy some arguments and add the to_add parameter in the end.
    If to_add is NULL, it is equivalent to call grpc_channel_args_copy. */
 grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
-                                                  const grpc_arg *to_add);
+                                                  const grpc_arg *to_add,
+                                                  size_t num_to_add);
+
+/** Copy args from a then args from b into a new channel args */
+grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
+                                           const grpc_channel_args *b);
 
 /** Destroy arguments created by grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_channel_args *a);
@@ -52,13 +57,14 @@ void grpc_channel_args_destroy(grpc_channel_args *a);
  * is specified in channel args, otherwise returns 0. */
 int grpc_channel_args_is_census_enabled(const grpc_channel_args *a);
 
-/** Returns the compression level set in \a a. */
-grpc_compression_level grpc_channel_args_get_compression_level(
+/** Returns the compression algorithm set in \a a. */
+grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a);
 
-/** Sets the compression level in \a a to \a level. Setting it to
- * GRPC_COMPRESS_LEVEL_NONE disables compression for the channel. */
-void grpc_channel_args_set_compression_level(
-    grpc_channel_args **a, grpc_compression_level level);
+/** Returns a channel arg instance with compression enabled. If \a a is
+ * non-NULL, its args are copied. N.B. GRPC_COMPRESS_NONE disables compression
+ * for the channel. */
+grpc_channel_args *grpc_channel_args_set_compression_algorithm(
+    grpc_channel_args *a, grpc_compression_algorithm algorithm);
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */

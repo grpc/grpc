@@ -36,7 +36,7 @@
 
 #include <grpc/support/sync.h>
 
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/pollset_kick_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
@@ -52,11 +52,11 @@ typedef struct grpc_pollset {
      few fds, and an epoll() based implementation for many fds */
   const grpc_pollset_vtable *vtable;
   gpr_mu mu;
-  gpr_cv cv;
   grpc_pollset_kick_state kick_state;
   int counter;
   int in_flight_cbs;
   int shutting_down;
+  int called_shutdown;
   void (*shutdown_done_cb)(void *arg);
   void *shutdown_done_arg;
   union {
@@ -66,16 +66,18 @@ typedef struct grpc_pollset {
 } grpc_pollset;
 
 struct grpc_pollset_vtable {
-  void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
-  void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
-  int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
-                    gpr_timespec now, int allow_synchronous_callback);
+  void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
+                 int and_unlock_pollset);
+  void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
+                 int and_unlock_pollset);
+  void (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
+                     gpr_timespec now, int allow_synchronous_callback);
   void (*kick)(grpc_pollset *pollset);
+  void (*finish_shutdown)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
-#define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
@@ -94,11 +96,14 @@ int grpc_kick_read_fd(grpc_pollset *p);
 /* Call after polling has been kicked to leave the kicked state */
 void grpc_kick_drain(grpc_pollset *p);
 
-/* All fds get added to a backup pollset to ensure that progress is made
-   regardless of applications listening to events. Relying on this is slow
-   however (the backup pollset only listens every 100ms or so) - so it's not
-   to be relied on. */
-grpc_pollset *grpc_backup_pollset(void);
+/* Convert a timespec to milliseconds:
+   - very small or negative poll times are clamped to zero to do a 
+     non-blocking poll (which becomes spin polling)
+   - other small values are rounded up to one millisecond
+   - longer than a millisecond polls are rounded up to the next nearest 
+     millisecond to avoid spinning
+   - infinite timeouts are converted to -1 */
+int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_pollset *pollset,

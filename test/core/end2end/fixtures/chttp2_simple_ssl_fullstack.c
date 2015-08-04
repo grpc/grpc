@@ -63,8 +63,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.client_cq = grpc_completion_queue_create();
-  f.server_cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create();
 
   return f;
 }
@@ -86,8 +85,9 @@ static void chttp2_init_server_secure_fullstack(
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args);
-  grpc_server_register_completion_queue(f->server, f->server_cq);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr, server_creds));
+  grpc_server_register_completion_queue(f->server, f->cq);
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
+                                               server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
@@ -105,7 +105,7 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.fr"}};
   grpc_channel_args *new_client_args =
-      grpc_channel_args_copy_and_add(client_args, &ssl_name_override);
+      grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
   grpc_channel_args_destroy(new_client_args);
 }
@@ -115,7 +115,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1);
+      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0);
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 

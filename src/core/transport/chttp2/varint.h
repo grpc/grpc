@@ -56,19 +56,18 @@ void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
   ((n) < GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits)   \
        ? 1                                        \
        : grpc_chttp2_hpack_varint_length(         \
-             (n) - GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits)))
+             (n)-GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits)))
 
-#define GRPC_CHTTP2_WRITE_VARINT(n, prefix_bits, prefix_or, target, length) \
-  do {                                                                      \
-    gpr_uint8* tgt = target;                                                \
-    if ((length) == 1) {                                                    \
-      (tgt)[0] = (prefix_or) | (n);                                         \
-    } else {                                                                \
-      (tgt)[0] = (prefix_or) | GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits);      \
-      grpc_chttp2_hpack_write_varint_tail(                                  \
-          (n) - GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits), (tgt) + 1,          \
-          (length) - 1);                                                    \
-    }                                                                       \
+#define GRPC_CHTTP2_WRITE_VARINT(n, prefix_bits, prefix_or, target, length)   \
+  do {                                                                        \
+    gpr_uint8* tgt = target;                                                  \
+    if ((length) == 1) {                                                      \
+      (tgt)[0] = (prefix_or) | (n);                                           \
+    } else {                                                                  \
+      (tgt)[0] = (prefix_or) | GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits);        \
+      grpc_chttp2_hpack_write_varint_tail(                                    \
+          (n)-GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits), (tgt) + 1, (length)-1); \
+    }                                                                         \
   } while (0)
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H */

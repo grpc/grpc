@@ -33,16 +33,18 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
   build_from_project_file = set(['gpr',
-                                 'grpc',
-                                 'grpc_unsecure',
                                  'gpr_test_util',
+                                 'grpc',
                                  'grpc_test_util',
                                  'grpc_test_util_unsecure',
+                                 'grpc_unsecure',
+                                 'grpc++',
+                                 'grpc++_unsecure'
                                 ])
   buildable_targets = [ target for target in targets + libs
                         if target.build in ['all', 'test', 'private', 'tool', 'benchmark'] and
                         target.language in ['c', 'c++'] and
-                        all([src.endswith('.c') for src in target.src]) and
+                        all([(src.endswith('.c') or src.endswith('.cc') or src.endswith('.proto')) for src in target.src]) and
                         'windows' in target.get('platforms', ['windows']) ]
   c_test_targets = [ target for target in buildable_targets if target.build == 'test' and not target.language == 'c++' ]
   cxx_test_targets = [ target for target in buildable_targets if target.build == 'test' and target.language == 'c++' ]
@@ -60,8 +62,19 @@ REPO_ROOT=..
 OPENSSL_INCLUDES = .\packages\${get_openssl()}\build\native\include
 ZLIB_INCLUDES = .\packages\${get_zlib()}\build\native\include
 INCLUDES=/I$(REPO_ROOT) /I$(REPO_ROOT)\include /I$(OPENSSL_INCLUDES) /I$(ZLIB_INCLUDES)
-DEFINES=/D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /D _CRT_SECURE_NO_WARNINGS
+
+GFLAGS_INCLUDES = .\..\third_party\gflags\include
+GTEST_INCLUDES = .\..\third_party\gtest\include
+PROTOBUF_INCLUDES = .\..\third_party\protobuf\src
+CXX_INCLUDES=/I$(GFLAGS_INCLUDES) /I$(GTEST_INCLUDES) /I$(PROTOBUF_INCLUDES)
+
+#_SCL_SECURE_NO_WARNINGS supresses a ton of "potentially unsafe use of std lib" warnings
+DEFINES=/D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /D _CRT_SECURE_NO_WARNINGS /D _SCL_SECURE_NO_WARNINGS
+
+#important options: /TC vs. /TP: compile as C vs. compile as C++
 CFLAGS=/c $(INCLUDES) /Z7 /W3 /WX- /sdl $(DEFINES) /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze-
+CXXFLAGS=/c $(INCLUDES) $(CXX_INCLUDES) /Z7 /W3 /WX- /sdl $(DEFINES) /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TP /analyze-
+
 LFLAGS=/DEBUG /INCREMENTAL /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86
 
 OPENSSL_LIBS=.\packages\${get_openssl()}\build\native\lib\v120\Win32\Debug\static\ssleay32.lib .\packages\${get_openssl()}\build\native\lib\v120\Win32\Debug\static\libeay32.lib
@@ -70,7 +83,19 @@ GENERAL_LIBS=advapi32.lib comdlg32.lib gdi32.lib kernel32.lib odbc32.lib odbccp3
 ZLIB_LIBS=.\packages\${get_zlib()}\build\native\lib\v120\Win32\Debug\static\cdecl\zlib.lib
 LIBS=$(OPENSSL_LIBS) $(ZLIB_LIBS) $(GENERAL_LIBS) $(WINSOCK_LIBS)
 
+#shlwapi.lib provides PathMatchSpec() for gflags in windows
+GFLAGS_LIBS=.\..\third_party\gflags\lib\Debug\gflags.lib shlwapi.lib
+GTEST_LIBS=.\..\third_party\gtest\msvc\gtest\Debug\gtestd.lib
+PROTOBUF_LIBS=.\..\third_party\protobuf\vsprojects\Debug\libprotobuf.lib
+CXX_LIBS=$(GFLAGS_LIBS) $(GTEST_LIBS) $(PROTOBUF_LIBS)
+
 all: buildtests
+
+tools:
+
+tools_c:
+
+tools_cxx:
 
 $(OUT_DIR):
 	mkdir $(OUT_DIR)
@@ -93,16 +118,33 @@ buildtests_c: \
 ${target.name}.exe \
 % endfor
 
-	echo All tests built.
+	echo All C tests built.
 
 buildtests_cxx: \
 % for target in cxx_test_targets:
 ${target.name}.exe \
 % endfor
 
-	echo All tests built.
+	echo All C++ tests built.
 
 % for target in buildable_targets:
+
+## replace all .proto includes with .pb.cc / .grpc.pb.cc
+%if target.src:
+%for source in target.src:
+%if source.endswith(".proto"):
+<%
+      src_name_parts = source.split(".")
+      target.src.append(src_name_parts[0] + ".pb.cc")
+      target.src.append(src_name_parts[0] + ".grpc.pb.cc")
+%>\
+%endif
+%endfor
+%endif
+## remove all .proto includes
+<%
+  target.src = [item for item in target.src if not re.search('([^/]+)\.proto$', item)]
+%>\
 %if target.name in build_from_project_file:
 build_${target.name}:
 	msbuild grpc.sln /t:${target.name} /p:Configuration=Debug /p:Linkage-grpc_dependencies_zlib=static
@@ -110,11 +152,22 @@ build_${target.name}:
 %if target.build == 'private':
 Debug\${target.name}.lib: \
 %else:
-${target.name}.exe: build_libs \
+${target.name}.exe: \
+%for dep in target.get('deps', []):
+%if dep in build_from_project_file:
+build_${dep} \
+%else:
+Debug\${dep}.lib \
+%endif
+%endfor
 %endif
 $(OUT_DIR)
 	echo Building ${target.name}
+%if target.language == 'c++':
+    $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ \
+%else:
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ \
+%endif
 %for source in target.src:
 $(REPO_ROOT)\${to_windows_path(source)} \
 %endfor
@@ -129,13 +182,19 @@ $(REPO_ROOT)\${to_windows_path('vsprojects/dummy.c')} \
 %for dep in target.get('deps', []):
 Debug\${dep}.lib \
 %endfor
+%if target.language == 'c++':
+$(CXX_LIBS) \
+%endif
 $(LIBS) \
 %endif
-%for source in target.src:
-$(OUT_DIR)\${re.search('([^/]+)\.c$', source).group(1)}.obj \
-%endfor
 %if not target.src:
 $(OUT_DIR)\dummy.obj \
+%else:
+%for source in target.src:
+%if re.search('([^/]+)\.c{1,2}$', source):
+$(OUT_DIR)\${re.search('([^/]+)\.c{1,2}$', source).group(1)}.obj \
+%endif
+%endfor
 %endif
 
 %if target.build != 'private':

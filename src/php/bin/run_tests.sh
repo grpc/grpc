@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -32,17 +32,6 @@
 # against it
 set -e
 cd $(dirname $0)
-default_extension_dir=`php -i | grep extension_dir | sed 's/.*=> //g'`
-
-module_dir=../ext/grpc/modules
-
-# sym-link in system supplied extensions
-for f in $default_extension_dir/*.so
-do
-  ln -s $f $module_dir/$(basename $f) &> /dev/null || true
-done
-
-php \
-  -d extension_dir=$module_dir \
-  -d extension=grpc.so \
-  `which phpunit` -v --debug --strict ../tests/unit_tests
+source ./determine_extension_dir.sh
+php $extension_dir $(which phpunit) -v --debug --strict \
+  ../tests/unit_tests

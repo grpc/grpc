@@ -79,7 +79,7 @@ static void test(void) {
   }
   gpr_mu_lock(&t.mu);
   while (!t.is_done) {
-    gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future);
+    gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&t.mu);
   GPR_ASSERT(t.n == 0);

@@ -408,7 +408,7 @@ PHP_METHOD(Call, startBatch) {
     goto cleanup;
   }
   event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
-                                      gpr_inf_future);
+                                      gpr_inf_future(GPR_CLOCK_REALTIME));
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "The batch failed for some reason",
@@ -473,6 +473,16 @@ cleanup:
 }
 
 /**
+ * Get the endpoint this call/stream is connected to
+ * @return string The URI of the endpoint
+ */
+PHP_METHOD(Call, getPeer) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
+}
+
+/**
  * Cancel the call. This will cause the call to end with STATUS_CANCELLED if it
  * has not already ended with another status.
  */
@@ -485,7 +495,9 @@ PHP_METHOD(Call, cancel) {
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Call, startBatch, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Call, getPeer, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
+    PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;

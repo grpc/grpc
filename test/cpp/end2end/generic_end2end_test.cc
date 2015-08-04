@@ -33,10 +33,10 @@
 
 #include <memory>
 
-#include "src/cpp/proto/proto_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo.grpc.pb.h"
+#include <grpc++/impl/proto_utils.h>
 #include <grpc++/async_generic_service.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/byte_buffer.h>
@@ -227,6 +227,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   GenericServerContext srv_ctx;
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
+  cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));

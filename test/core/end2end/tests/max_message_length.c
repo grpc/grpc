@@ -74,8 +74,10 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->server_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->server_cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -90,12 +92,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
   shutdown_server(f);
   shutdown_client(f);
 
-  grpc_completion_queue_shutdown(f->server_cq);
-  drain_cq(f->server_cq);
-  grpc_completion_queue_destroy(f->server_cq);
-  grpc_completion_queue_shutdown(f->client_cq);
-  drain_cq(f->client_cq);
-  grpc_completion_queue_destroy(f->client_cq);
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
+  grpc_completion_queue_destroy(f->cq);
 }
 
 static void test_max_message_length(grpc_end2end_test_config config) {
@@ -104,8 +103,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_channel_args server_args;
   grpc_call *c;
   grpc_call *s;
-  cq_verifier *v_client;
-  cq_verifier *v_server;
+  cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
@@ -128,11 +126,11 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   server_args.args = &server_arg;
 
   f = begin_test(config, "test_max_message_length", NULL, &server_args);
-  v_client = cq_verifier_create(f.client_cq);
-  v_server = cq_verifier_create(f.server_cq);
+  cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
-                               "foo.test.google.fr:1234", gpr_inf_future);
+  c = grpc_channel_create_call(f.client, f.cq, "/foo",
+                               "foo.test.google.fr:1234",
+                               gpr_inf_future(GPR_CLOCK_REALTIME));
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -165,12 +163,11 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.server_cq,
-                                      f.server_cq, tag(101)));
-  cq_expect_completion(v_server, tag(101), 1);
-  cq_verify(v_server);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  cq_expect_completion(cqv, tag(101), 1);
+  cq_verify(cqv);
 
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -179,11 +176,9 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
 
-  cq_expect_completion(v_server, tag(102), 1);
-  cq_verify(v_server);
-
-  cq_expect_completion(v_client, tag(1), 1);
-  cq_verify(v_client);
+  cq_expect_completion(cqv, tag(102), 1);
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_verify(cqv);
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
@@ -200,8 +195,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_call_destroy(c);
   grpc_call_destroy(s);
 
-  cq_verifier_destroy(v_client);
-  cq_verifier_destroy(v_server);
+  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

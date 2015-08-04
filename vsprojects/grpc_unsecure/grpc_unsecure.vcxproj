@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-DLL|Win32">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-DLL|x64">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|Win32">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|x64">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -31,23 +47,23 @@
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release-DLL'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -56,35 +72,86 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\global.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\winsock.props" />
     <Import Project="..\global.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <TargetName>grpc_unsecure</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <TargetName>grpc_unsecure</TargetName>
+    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
+    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>grpc_unsecure</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>grpc_unsecure</TargetName>
-  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -92,6 +159,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -105,6 +173,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -120,6 +189,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -137,6 +207,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,16 +225,30 @@
     <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h" />
+    <ClInclude Include="..\..\src\core\channel\census_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
-    <ClInclude Include="..\..\src\core\channel\child_channel.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
-    <ClInclude Include="..\..\src\core\channel\client_setup.h" />
+    <ClInclude Include="..\..\src\core\channel\compress_filter.h" />
     <ClInclude Include="..\..\src\core\channel\connected_channel.h" />
+    <ClInclude Include="..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h" />
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
+    <ClInclude Include="..\..\src\core\client_config\client_config.h" />
+    <ClInclude Include="..\..\src\core\client_config\connector.h" />
+    <ClInclude Include="..\..\src\core\client_config\lb_policies\pick_first.h" />
+    <ClInclude Include="..\..\src\core\client_config\lb_policy.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolver.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolver_factory.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolver_registry.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h" />
+    <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
+    <ClInclude Include="..\..\src\core\client_config\subchannel.h" />
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h" />
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
+    <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
@@ -177,10 +262,11 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\resolve_address.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr.h" />
@@ -205,7 +291,6 @@
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
-    <ClInclude Include="..\..\src\core\surface\client.h" />
     <ClInclude Include="..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\src\core\surface\event_string.h" />
     <ClInclude Include="..\..\src\core\surface\init.h" />
@@ -224,17 +309,21 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\hpack_table.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\http2_errors.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\incoming_metadata.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\internal.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\status_conversion.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_encoder.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_map.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\timeout_encoding.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\varint.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2_transport.h" />
+    <ClInclude Include="..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\src\core\transport\metadata.h" />
     <ClInclude Include="..\..\src\core\transport\stream_op.h" />
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\src\core\census\context.h" />
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
@@ -245,11 +334,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_stack.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\child_channel.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\client_channel.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\client_setup.c">
+    <ClCompile Include="..\..\src\core\channel\compress_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
     </ClCompile>
@@ -258,6 +345,34 @@
     <ClCompile Include="..\..\src\core\channel\http_server_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\noop_filter.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\client_config.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\connector.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\lb_policies\pick_first.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\lb_policy.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_factory.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_registry.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\compression\algorithm.c">
     </ClCompile>
@@ -285,13 +400,17 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
     </ClCompile>
@@ -357,9 +476,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\channel_create.c">
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\client.c">
+    <ClCompile Include="..\..\src\core\surface\channel_create.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\completion_queue.c">
     </ClCompile>
@@ -378,6 +497,8 @@
     <ClCompile Include="..\..\src\core\surface\server_create.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\surface_trace.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\version.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>
@@ -401,9 +522,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\incoming_metadata.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\status_conversion.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_encoder.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_lists.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\stream_map.c">
     </ClCompile>
@@ -411,7 +538,11 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\writing.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\connectivity_state.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\metadata.c">
     </ClCompile>
@@ -424,6 +555,8 @@
     <ClCompile Include="..\..\src\core\census\context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

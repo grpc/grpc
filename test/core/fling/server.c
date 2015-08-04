@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials *ssl_creds =
-        grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
+        grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0);
     server = grpc_server_create(NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
@@ -234,12 +234,15 @@ int main(int argc, char **argv) {
     if (got_sigint && !shutdown_started) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       grpc_server_shutdown_and_notify(server, cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)).type == GRPC_OP_COMPLETE);
+      GPR_ASSERT(grpc_completion_queue_pluck(
+                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+                     .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
+        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(1000000, GPR_TIMESPAN)));
     s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:

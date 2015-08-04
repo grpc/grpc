@@ -42,12 +42,16 @@ import re
 import subprocess
 import sys
 import time
+import xml.etree.cElementTree as ET
 
 import jobset
 import watch_dirs
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
+
+
+_FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -97,7 +101,7 @@ class ValgrindConfig(object):
   def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
-                          shortname='valgrind %s' % binary,
+                          shortname='valgrind %s' % cmdline[0],
                           hash_targets=None)
 
 
@@ -130,7 +134,7 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
-    return ['buildtests_%s' % self.make_target]
+    return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def build_steps(self):
     return []
@@ -146,7 +150,7 @@ class NodeLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -165,7 +169,7 @@ class PhpLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -183,29 +187,35 @@ class PhpLanguage(object):
 class PythonLanguage(object):
 
   def __init__(self):
-    with open('tools/run_tests/python_tests.json') as f:
-      self._tests = json.load(f)
+    self._build_python_versions = ['2.7']
+    self._has_python_versions = []
 
   def test_specs(self, config, travis):
-    modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']],
-                               None,
-                               environ={'GRPC_TRACE': 'surface,batch'},
-                               shortname=test['module'])
-               for test in self._tests if 'module' in test]
-    files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']],
-                             None,
-                             environ={'GRPC_TRACE': 'surface,batch'},
-                             shortname=test['file'])
-            for test in self._tests if 'file' in test]
-    return files + modules
+    environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+    environment['PYVER'] = '2.7'
+    return [config.job_spec(
+        ['tools/run_tests/run_python.sh'],
+        None,
+        environ=environment,
+        shortname='py.test',
+    )]
 
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh']]
+    commands = []
+    for python_version in self._build_python_versions:
+      try:
+        with open(os.devnull, 'w') as output:
+          subprocess.check_call(['which', 'python' + python_version],
+                                stdout=output, stderr=output)
+        commands.append(['tools/run_tests/build_python.sh', python_version])
+        self._has_python_versions.append(python_version)
+      except:
+        jobset.message('WARNING', 'Missing Python ' + python_version,
+                       do_newline=True)
+    return commands
 
   def supports_multi_config(self):
     return False
@@ -218,10 +228,10 @@ class RubyLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
-                            environ={'GRPC_TRACE': 'surface,batch'})]
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
-    return ['run_dep_checks']
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
@@ -251,7 +261,7 @@ class CSharpLanguage(object):
       cmd = 'tools/run_tests/run_csharp.sh'
     return [config.job_spec([cmd, assembly],
             None, shortname=assembly,
-            environ={'GRPC_TRACE': 'surface,batch'})
+            environ=_FORCE_ENVIRON_FOR_WRAPPERS)
             for assembly in assemblies ]
 
   def make_targets(self):
@@ -272,10 +282,30 @@ class CSharpLanguage(object):
     return 'csharp'
 
 
+class ObjCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def make_targets(self):
+    return ['grpc_objective_c_plugin', 'interop_server']
+
+  def build_steps(self):
+    return [['src/objective-c/tests/build_tests.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'objc'
+
+
 class Sanity(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_sanity.sh', None)]
+    return [config.job_spec('tools/run_tests/run_sanity.sh', None),
+            config.job_spec('tools/run_tests/check_sources_and_headers.py', None)]
 
   def make_targets(self):
     return ['run_dep_checks']
@@ -313,7 +343,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
@@ -336,6 +366,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'objc' : ObjCLanguage(),
     'sanity': Sanity(),
     'build': Build(),
     }
@@ -385,14 +416,16 @@ argp.add_argument('--newline_on_success',
                   action='store_const',
                   const=True)
 argp.add_argument('-l', '--language',
-                  choices=sorted(_LANGUAGES.keys()),
+                  choices=['all'] + sorted(_LANGUAGES.keys()),
                   nargs='+',
-                  default=sorted(_LANGUAGES.keys()))
+                  default=['all'])
 argp.add_argument('-S', '--stop_on_failure',
                   default=False,
                   action='store_const',
                   const=True)
 argp.add_argument('-a', '--antagonists', default=0, type=int)
+argp.add_argument('-x', '--xml_report', default=None, type=str,
+        help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
 
 # grab config
@@ -402,8 +435,14 @@ run_configs = set(_CONFIGS[cfg]
                       for x in args.config))
 build_configs = set(cfg.build_config for cfg in run_configs)
 
+if args.travis:
+  _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
+
 make_targets = []
-languages = set(_LANGUAGES[l] for l in args.language)
+languages = set(_LANGUAGES[l]
+                for l in itertools.chain.from_iterable(
+                      _LANGUAGES.iterkeys() if x == 'all' else [x]
+                      for x in args.language))
 
 if len(build_configs) > 1:
   for language in languages:
@@ -417,7 +456,7 @@ if platform.system() == 'Windows':
                           cwd='vsprojects', shell=True)
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make',
+    return jobset.JobSpec([os.getenv('MAKE', 'make'),
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,
@@ -435,8 +474,8 @@ build_steps.extend(set(
 one_run = set(
     spec
     for config in run_configs
-    for language in args.language
-    for spec in _LANGUAGES[language].test_specs(config, args.travis)
+    for language in languages
+    for spec in language.test_specs(config, args.travis)
     if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test
@@ -483,7 +522,7 @@ class TestCache(object):
         self.parse(json.loads(f.read()))
 
 
-def _build_and_run(check_cancelled, newline_on_success, travis, cache):
+def _build_and_run(check_cancelled, newline_on_success, travis, cache, xml_report=None):
   """Do one pass of building & running tests."""
   # build latest sequentially
   if not jobset.run(build_steps, maxjobs=1,
@@ -504,19 +543,29 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache):
       # chance to run.
       massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
       random.shuffle(massaged_one_run)  # which it modifies in-place.
+    if infinite_runs:
+      assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
     runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
+
+    root = ET.Element('testsuites') if xml_report else None
+    testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
+
     if not jobset.run(all_runs, check_cancelled,
                       newline_on_success=newline_on_success, travis=travis,
                       infinite_runs=infinite_runs,
                       maxjobs=args.jobs,
                       stop_on_failure=args.stop_on_failure,
-                      cache=cache):
+                      cache=cache if not xml_report else None,
+                      xml_report=testsuite):
       return 2
   finally:
     for antagonist in antagonists:
       antagonist.kill()
+    if xml_report:
+      tree = ET.ElementTree(root)
+      tree.write(xml_report, encoding='UTF-8')
 
   if cache: cache.save()
 
@@ -548,7 +597,8 @@ else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
                           travis=args.travis,
-                          cache=test_cache)
+                          cache=test_cache,
+                          xml_report=args.xml_report)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
