@@ -125,6 +125,11 @@ class ServerContext {
 
   const struct census_context* census_context() const;
 
+  // Async only. Has to be called before the rpc starts.
+  // Returns the tag in completion queue when the rpc finishes.
+  // IsCancelled() can then be called to check whether the rpc was cancelled.
+  void AsyncNotifyWhenDone(void* tag) { async_notify_when_done_tag_ = tag; }
+
  private:
   friend class ::grpc::testing::InteropContextInspector;
   friend class ::grpc::Server;
@@ -165,6 +170,7 @@ class ServerContext {
   void set_call(grpc_call* call);
 
   CompletionOp* completion_op_;
+  void* async_notify_when_done_tag_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
