@@ -58,6 +58,7 @@ typedef struct {
   grpc_winsocket *socket;
   gpr_timespec deadline;
   grpc_alarm alarm;
+  char *addr_name;
   int refs;
   int aborted;
 } async_connect;
@@ -67,6 +68,7 @@ static void async_connect_cleanup(async_connect *ac) {
   gpr_mu_unlock(&ac->mu);
   if (done) {
     gpr_mu_destroy(&ac->mu);
+    gpr_free(ac->addr_name);
     gpr_free(ac);
   }
 }
@@ -107,7 +109,7 @@ static void on_connect(void *acp, int from_iocp) {
       gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
       gpr_free(utf8_message);
     } else if (!aborted) {
-      ep = grpc_tcp_create(ac->socket);
+      ep = grpc_tcp_create(ac->socket, ac->addr_name);
     }
   } else {
     gpr_log(GPR_ERROR, "on_connect is shutting down");
@@ -213,10 +215,11 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
   ac->socket = socket;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
+  ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->aborted = 0;
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
-                  gpr_now(GPR_CLOCK_REALTIME));
+                  gpr_now(GPR_CLOCK_MONOTONIC));
   socket->write_info.outstanding = 1;
   grpc_socket_notify_on_write(socket, on_connect, ac);
   return;

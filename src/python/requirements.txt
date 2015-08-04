@@ -1,4 +1,0 @@
-enum34==1.0.4
-futures==2.2.0
-protobuf==3.0.0a3
-cython>=0.22

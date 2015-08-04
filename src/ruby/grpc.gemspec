@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.license       = 'BSD-3-Clause'
 
   s.required_ruby_version = '>= 2.0.0'
-  s.requirements << 'libgrpc ~> 0.9.1 needs to be installed'
+  s.requirements << 'libgrpc ~> 0.10.0 needs to be installed'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- spec/*`.split("\n")

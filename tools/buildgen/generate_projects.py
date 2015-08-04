@@ -50,7 +50,10 @@ jobs = []
 for root, dirs, files in os.walk('templates'):
   for f in files:
     if os.path.splitext(f)[1] == '.template':
-      out = '.' + root[len('templates'):] + '/' + os.path.splitext(f)[0]
+      out_dir = '.' + root[len('templates'):]
+      out = out_dir + '/' + os.path.splitext(f)[0]
+      if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
       cmd = ['python', 'tools/buildgen/mako_renderer.py']
       for plugin in plugins:
         cmd.append('-p')

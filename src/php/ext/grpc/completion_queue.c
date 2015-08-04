@@ -43,8 +43,9 @@ void grpc_php_init_completion_queue(TSRMLS_D) {
 
 void grpc_php_shutdown_completion_queue(TSRMLS_D) {
   grpc_completion_queue_shutdown(completion_queue);
-  while (grpc_completion_queue_next(completion_queue, gpr_inf_future).type !=
-         GRPC_QUEUE_SHUTDOWN)
+  while (grpc_completion_queue_next(completion_queue,
+                                    gpr_inf_future(GPR_CLOCK_REALTIME))
+             .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(completion_queue);
 }

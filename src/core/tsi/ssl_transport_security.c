@@ -1293,8 +1293,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
     const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
     const unsigned char* pem_client_root_certs,
-    size_t pem_client_root_certs_size, const char* cipher_list,
-    const unsigned char** alpn_protocols,
+    size_t pem_client_root_certs_size, int force_client_auth,
+    const char* cipher_list, const unsigned char** alpn_protocols,
     const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
     tsi_ssl_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_factory* impl = NULL;
@@ -1349,6 +1349,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
       if (result != TSI_OK) break;
 
       if (pem_client_root_certs != NULL) {
+        int flags = SSL_VERIFY_PEER;
         STACK_OF(X509_NAME)* root_names = NULL;
         result = ssl_ctx_load_verification_certs(
             impl->ssl_contexts[i], pem_client_root_certs,
@@ -1358,7 +1359,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
           break;
         }
         SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
-        SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, NULL);
+        if (force_client_auth) flags |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+        SSL_CTX_set_verify(impl->ssl_contexts[i], flags, NULL);
         /* TODO(jboeuf): Add revocation verification. */
       }
 

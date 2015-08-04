@@ -91,7 +91,7 @@ static int is_stack_running_on_compute_engine(void) {
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  gpr_timespec max_detection_delay = {1, 0};
+  gpr_timespec max_detection_delay = gpr_time_from_seconds(1, GPR_TIMESPAN);
 
   grpc_pollset_init(&detector.pollset);
   detector.is_done = 0;
@@ -112,7 +112,7 @@ static int is_stack_running_on_compute_engine(void) {
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    grpc_pollset_work(&detector.pollset, gpr_inf_future);
+    grpc_pollset_work(&detector.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
@@ -140,8 +140,9 @@ static grpc_credentials *create_default_creds_from_path(char *creds_path) {
   /* First, try an auth json key. */
   key = grpc_auth_json_key_create_from_json(json);
   if (grpc_auth_json_key_is_valid(&key)) {
-    result = grpc_jwt_credentials_create_from_auth_json_key(
-        key, grpc_max_auth_token_lifetime);
+    result =
+        grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
+            key, grpc_max_auth_token_lifetime);
     goto end;
   }
 

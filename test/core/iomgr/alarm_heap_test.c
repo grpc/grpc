@@ -44,6 +44,7 @@ static gpr_timespec random_deadline(void) {
   gpr_timespec ts;
   ts.tv_sec = rand();
   ts.tv_nsec = rand();
+  ts.clock_type = GPR_CLOCK_REALTIME;
   return ts;
 }
 
@@ -101,7 +102,7 @@ static int *all_top(grpc_alarm_heap *pq, int *n) {
 
 static void check_pq_top(grpc_alarm *elements, grpc_alarm_heap *pq,
                          gpr_uint8 *inpq, int num_elements) {
-  gpr_timespec max_deadline = gpr_inf_past;
+  gpr_timespec max_deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
   int *max_deadline_indices = gpr_malloc(num_elements * sizeof(int));
   int *top_elements;
   int num_max_deadline_indices = 0;

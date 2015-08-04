@@ -159,7 +159,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -169,7 +169,7 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer
+CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
 LDFLAGS_asan = -fsanitize=address
 DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
@@ -179,7 +179,7 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-error=unused-command-line-argument
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
@@ -190,7 +190,7 @@ CC_ubsan = clang
 CXX_ubsan = clang++
 LD_ubsan = clang
 LDXX_ubsan = clang++
-CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
+CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
 OPENSSL_CFLAGS_ubsan = -DPURIFY
 LDFLAGS_ubsan = -fsanitize=undefined
 DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
@@ -255,10 +255,6 @@ HOST_CXX = $(CXX)
 HOST_LD = $(LD)
 HOST_LDXX = $(LDXX)
 
-CPPFLAGS += $(CPPFLAGS_$(CONFIG))
-DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
-LDFLAGS += $(LDFLAGS_$(CONFIG))
-
 ifdef EXTRA_DEFINES
 DEFINES += $(EXTRA_DEFINES)
 endif
@@ -272,6 +268,10 @@ endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g
 
+CPPFLAGS += $(CPPFLAGS_$(CONFIG))
+DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
+LDFLAGS += $(LDFLAGS_$(CONFIG))
+
 ifneq ($(SYSTEM),MINGW32)
 PIC_CPPFLAGS = -fPIC
 CPPFLAGS += -fPIC
@@ -282,34 +282,21 @@ INCLUDES = . include $(GENDIR)
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
-ifneq ($(wildcard /usr/local/ssl/include),)
-INCLUDES += /usr/local/ssl/include
-endif
-ifneq ($(wildcard /opt/local/include),)
-INCLUDES += /opt/local/include
-endif
-ifneq ($(wildcard /usr/local/include),)
-INCLUDES += /usr/local/include
-endif
-LIBS = m z
-ifneq ($(wildcard /usr/local/ssl/lib),)
-LDFLAGS += -L/usr/local/ssl/lib
-endif
-ifneq ($(wildcard /opt/local/lib),)
-LDFLAGS += -L/opt/local/lib
-endif
-ifneq ($(wildcard /usr/local/lib),)
-LDFLAGS += -L/usr/local/lib
-endif
+LIBS += m
 endif
 
 ifeq ($(SYSTEM),Linux)
-LIBS = rt m z pthread
+LIBS += rt m pthread
 LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m z pthread
+LIBS += m pthread
+LDFLAGS += -pthread
+endif
+
+ifeq ($(SYSTEM),FreeBSD)
+LIBS += pthread
 LDFLAGS += -pthread
 endif
 
@@ -353,20 +340,20 @@ CACHE_MK =
 HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
 
 ifeq ($(HAS_PKG_CONFIG), true)
-CACHE_MK += HAS_PKG_CONFIG = true\n
+CACHE_MK += HAS_PKG_CONFIG = true,
 endif
 
-PC_TEMPLATE = prefix=$(prefix)\n\
-exec_prefix=${'\$${prefix}'}\n\
-includedir=${'\$${prefix}'}/include\n\
-libdir=${'\$${exec_prefix}'}/lib\n\
-\n\
-Name: $(PC_NAME)\n\
-Description: $(PC_DESCRIPTION)\n\
-Version: $(VERSION)\n\
-Cflags: -I${'\$${includedir}'} $(PC_CFLAGS)\n\
-Requires.private: $(PC_REQUIRES_PRIVATE)\n\
-Libs: -L${'\$${libdir}'} $(PC_LIB)\n\
+PC_TEMPLATE = prefix=$(prefix),\
+exec_prefix=${'\$${prefix}'},\
+includedir=${'\$${prefix}'}/include,\
+libdir=${'\$${exec_prefix}'}/lib,\
+,\
+Name: $(PC_NAME),\
+Description: $(PC_DESCRIPTION),\
+Version: $(VERSION),\
+Cflags: -I${'\$${includedir}'} $(PC_CFLAGS),\
+Requires.private: $(PC_REQUIRES_PRIVATE),\
+Libs: -L${'\$${libdir}'} $(PC_LIB),\
 Libs.private: $(PC_LIBS_PRIVATE)
 
 # gpr .pc file
@@ -412,6 +399,39 @@ ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
 PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
 else # HAS_PKG_CONFIG
 
+ifeq ($(SYSTEM),Darwin)
+ifneq ($(wildcard /usr/local/ssl/include),)
+INCLUDES += /usr/local/ssl/include
+endif
+ifneq ($(wildcard /opt/local/include),)
+INCLUDES += /opt/local/include
+endif
+ifneq ($(wildcard /usr/local/include),)
+INCLUDES += /usr/local/include
+endif
+ifneq ($(wildcard /usr/local/ssl/lib),)
+LDFLAGS += -L/usr/local/ssl/lib
+endif
+ifneq ($(wildcard /opt/local/lib),)
+LDFLAGS += -L/opt/local/lib
+endif
+ifneq ($(wildcard /usr/local/lib),)
+LDFLAGS += -L/usr/local/lib
+endif
+endif
+
+ifeq ($(SYSTEM),Linux)
+LIBS += z
+endif
+
+ifeq ($(SYSTEM),MINGW32)
+LIBS += z
+endif
+
+ifeq ($(SYSTEM),FreeBSD)
+LIBS += z
+endif
+
 ifeq ($(SYSTEM),MINGW32)
 OPENSSL_LIBS = ssl32 eay32
 else
@@ -442,7 +462,7 @@ HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true
 ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
 DEFINES += GRPC_HAVE_PERFTOOLS
 LIBS += profiler
-CACHE_MK += HAS_SYSTEM_PERFTOOLS = true\n
+CACHE_MK += HAS_SYSTEM_PERFTOOLS = true,
 endif
 endif
 
@@ -451,20 +471,20 @@ ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 HAS_SYSTEM_OPENSSL_NPN = true
-CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true\n
+CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
 else
 HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 endif
 ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true\n
+CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true,
 endif
 HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_ZLIB),true)
-CACHE_MK += HAS_SYSTEM_ZLIB = true\n
+CACHE_MK += HAS_SYSTEM_ZLIB = true,
 endif
 HAS_SYSTEM_PROTOBUF ?= $(HAS_SYSTEM_PROTOBUF_VERIFY)
 ifeq ($(HAS_SYSTEM_PROTOBUF),true)
-CACHE_MK += HAS_SYSTEM_PROTOBUF = true\n
+CACHE_MK += HAS_SYSTEM_PROTOBUF = true,
 endif
 else
 # override system libraries if the config requires a custom compiled library
@@ -476,10 +496,10 @@ endif
 
 HAS_PROTOC ?= $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
-CACHE_MK += HAS_PROTOC = true\n
+CACHE_MK += HAS_PROTOC = true,
 HAS_VALID_PROTOC ?= $(shell $(PROTOC_CHECK_VERSION_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_VALID_PROTOC),true)
-CACHE_MK += HAS_VALID_PROTOC = true\n
+CACHE_MK += HAS_VALID_PROTOC = true,
 endif
 else
 HAS_VALID_PROTOC = false
@@ -500,7 +520,7 @@ endif
 endif
 
 ifeq ($(HAS_SYSTEMTAP),true)
-CACHE_MK += HAS_SYSTEMTAP = true\n
+CACHE_MK += HAS_SYSTEMTAP = true,
 endif
 
 # Note that for testing purposes, one can do:
@@ -816,7 +836,7 @@ run_dep_checks:
 
 $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
-	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
+	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="$(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(ZLIB_CFLAGS_EXTRA)" ./configure --static)
 	$(Q)$(MAKE) -C third_party/zlib clean
 	$(Q)$(MAKE) -C third_party/zlib
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
@@ -825,7 +845,7 @@ $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
 	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
 ifeq ($(SYSTEM),Darwin)
-	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc)
+	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./Configure darwin64-x86_64-cc)
 else
 ifeq ($(SYSTEM),MINGW32)
 	@echo "We currently don't have a good way to compile OpenSSL in-place under msys."
@@ -846,7 +866,7 @@ ifeq ($(SYSTEM),MINGW32)
 	@echo "  CPPFLAGS=-I/c/OpenSSL-Win64/include LDFLAGS=-L/c/OpenSSL-Win64 make"
 	@false
 else
-	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
 endif
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
@@ -860,7 +880,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -1108,32 +1128,32 @@ endif
 
 cache.mk::
 	$(E) "[MAKE]    Generating $@"
-	$(Q) echo -e "$(CACHE_MK)" >$@
+	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GPR_PC_FILE)" >$@
+	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_UNSECURE_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPCXX_PC_FILE)" >$@
+	$(Q) echo "$(GRPCXX_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPCXX_UNSECURE_PC_FILE)" >$@
+	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 % for p in protos:
 ifeq ($(NO_PROTOC),true)
@@ -1468,10 +1488,14 @@ endif
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
     mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
-  if lib.get('secure', 'check') == 'yes':
+  security = lib.get('secure', 'check')
+  if security == 'yes':
     common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
+
+  if security in ['yes', 'check']:
     for src in lib.src:
-      sources_that_need_openssl.add(src)
+      if not proto_re.match(src):
+        sources_that_need_openssl.add(src)
   else:
     for src in lib.src:
       sources_that_don_t_need_openssl.add(src)

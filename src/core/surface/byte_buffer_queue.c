@@ -62,6 +62,7 @@ int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
 }
 
 void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
+  q->bytes += grpc_byte_buffer_length(buffer);
   bba_push(&q->filling, buffer);
 }
 
@@ -72,8 +73,11 @@ void grpc_bbq_flush(grpc_byte_buffer_queue *q) {
   }
 }
 
+size_t grpc_bbq_bytes(grpc_byte_buffer_queue *q) { return q->bytes; }
+
 grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
   grpc_bbq_array temp_array;
+  grpc_byte_buffer *out;
 
   if (q->drain_pos == q->draining.count) {
     if (q->filling.count == 0) {
@@ -87,5 +91,7 @@ grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
     q->draining = temp_array;
   }
 
-  return q->draining.data[q->drain_pos++];
+  out = q->draining.data[q->drain_pos++];
+  q->bytes -= grpc_byte_buffer_length(out);
+  return out;
 }

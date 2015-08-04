@@ -36,9 +36,11 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 
@@ -201,6 +203,9 @@ static grpc_resolver *dns_create(
     grpc_subchannel_factory *subchannel_factory) {
   dns_resolver *r;
   const char *path = uri->path;
+  grpc_arg default_host_arg;
+  char *host;
+  char *port;
 
   if (0 != strcmp(uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported");
@@ -208,6 +213,16 @@ static grpc_resolver *dns_create(
   }
 
   if (path[0] == '/') ++path;
+
+  gpr_split_host_port(path, &host, &port);
+
+  default_host_arg.type = GRPC_ARG_STRING;
+  default_host_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
+  default_host_arg.value.string = host;
+  subchannel_factory = grpc_subchannel_factory_add_channel_arg(subchannel_factory, &default_host_arg);
+
+  gpr_free(host);
+  gpr_free(port);
 
   r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
@@ -218,7 +233,6 @@ static grpc_resolver *dns_create(
   r->default_port = gpr_strdup(default_port);
   r->subchannel_factory = subchannel_factory;
   r->lb_policy_factory = lb_policy_factory;
-  grpc_subchannel_factory_ref(subchannel_factory);
   return &r->base;
 }
 

@@ -37,6 +37,7 @@
 #include <map>
 #include <memory>
 
+#include <grpc/compression.h>
 #include <grpc/support/time.h>
 #include <grpc++/auth_context.h>
 #include <grpc++/config.h>
@@ -45,6 +46,7 @@
 struct gpr_timespec;
 struct grpc_metadata;
 struct grpc_call;
+struct census_context;
 
 namespace grpc {
 
@@ -76,6 +78,10 @@ class CallOpBuffer;
 class CompletionQueue;
 class Server;
 
+namespace testing {
+class InteropContextInspector;
+}  // namespace testing
+
 // Interface of server side rpc context.
 class ServerContext {
  public:
@@ -93,17 +99,34 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  bool IsCancelled();
+  bool IsCancelled() const;
 
   const std::multimap<grpc::string, grpc::string>& client_metadata() {
     return client_metadata_;
   }
 
-  std::shared_ptr<const AuthContext> auth_context() const {
-    return auth_context_;
+  grpc_compression_level compression_level() const {
+    return compression_level_;
   }
+  void set_compression_level(grpc_compression_level level);
+
+  grpc_compression_algorithm compression_algorithm() const {
+    return compression_algorithm_;
+  }
+  void set_compression_algorithm(grpc_compression_algorithm algorithm);
+
+  std::shared_ptr<const AuthContext> auth_context() const;
+
+  // Return the peer uri in a string.
+  // WARNING: this value is never authenticated or subject to any security
+  // related code. It must not be used for any authentication related
+  // functionality. Instead, use auth_context.
+  grpc::string peer() const;
+
+  const struct census_context* census_context() const;
 
  private:
+  friend class ::grpc::testing::InteropContextInspector;
   friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
@@ -147,10 +170,13 @@ class ServerContext {
   grpc_call* call_;
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
-  std::shared_ptr<const AuthContext> auth_context_;
+  mutable std::shared_ptr<const AuthContext> auth_context_;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
+
+  grpc_compression_level compression_level_;
+  grpc_compression_algorithm compression_algorithm_;
 };
 
 }  // namespace grpc

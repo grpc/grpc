@@ -249,7 +249,7 @@ static int server_start(server *sv) {
 static void server_wait_and_shutdown(server *sv) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!sv->done) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future);
+    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
@@ -356,7 +356,7 @@ static void client_start(client *cl, int port) {
 static void client_wait_and_shutdown(client *cl) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!cl->done) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future);
+    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
@@ -445,7 +445,7 @@ static void test_grpc_fd_change(void) {
   /* And now wait for it to run. */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (a.cb_that_ran == NULL) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future);
+    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   GPR_ASSERT(a.cb_that_ran == first_read_callback);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -463,7 +463,7 @@ static void test_grpc_fd_change(void) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (b.cb_that_ran == NULL) {
-    grpc_pollset_work(&g_pollset, gpr_inf_future);
+    grpc_pollset_work(&g_pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   /* Except now we verify that second_read_callback ran instead */
   GPR_ASSERT(b.cb_that_ran == second_read_callback);

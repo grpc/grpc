@@ -85,6 +85,9 @@
     <ClCompile Include="..\..\src\core\channel\client_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\compress_filter.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -121,7 +124,7 @@
     <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.c">
+    <ClCompile Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.c">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
@@ -129,6 +132,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
@@ -286,6 +295,9 @@
     <ClCompile Include="..\..\src\core\surface\channel.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -403,6 +415,9 @@
     <ClCompile Include="..\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\grpc_security.h">
@@ -479,9 +494,6 @@
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h">
-      <Filter>src\core\census</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\census_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -492,6 +504,9 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\client_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\compress_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
@@ -533,7 +548,7 @@
     <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.h">
+    <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel.h">
@@ -541,6 +556,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
@@ -767,6 +788,9 @@
     <ClInclude Include="..\..\src\core\census\context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -796,6 +820,9 @@
     </Filter>
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{6d97b8d9-2c15-927a-892a-709d073c02ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\subchannel_factory_decorators">
+      <UniqueIdentifier>{428cdbb1-c777-2c64-79b3-43d6ee413061}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{263cb913-dfe6-42a4-096b-cac231f76305}</UniqueIdentifier>

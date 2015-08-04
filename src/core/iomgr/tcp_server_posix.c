@@ -142,6 +142,7 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
 
 static void finish_shutdown(grpc_tcp_server *s) {
   s->shutdown_complete(s->shutdown_complete_arg);
+  s->shutdown_complete = NULL;
 
   gpr_mu_destroy(&s->mu);
 
@@ -157,6 +158,7 @@ static void destroyed_port(void *server, int success) {
     gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
   } else {
+    GPR_ASSERT(s->destroyed_ports < s->nports);
     gpr_mu_unlock(&s->mu);
   }
 }
@@ -332,7 +334,7 @@ static void on_read(void *arg, int success) {
 
     grpc_set_socket_no_sigpipe_if_possible(fd);
 
-    grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
+    addr_str = grpc_sockaddr_to_uri((struct sockaddr *)&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
     fdobj = grpc_fd_create(fd, name);
@@ -342,8 +344,9 @@ static void on_read(void *arg, int success) {
     for (i = 0; i < sp->server->pollset_count; i++) {
       grpc_pollset_add_fd(sp->server->pollsets[i], fdobj);
     }
-    sp->server->cb(sp->server->cb_arg,
-                   grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
+    sp->server->cb(
+        sp->server->cb_arg,
+        grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));
 
     gpr_free(name);
     gpr_free(addr_str);

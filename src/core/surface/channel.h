@@ -38,7 +38,7 @@
 #include "src/core/client_config/subchannel_factory.h"
 
 grpc_channel *grpc_channel_create_from_filters(
-    const grpc_channel_filter **filters, size_t count,
+    const char *target, const grpc_channel_filter **filters, size_t count,
     const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
@@ -54,7 +54,8 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel,
                                                  int status_code);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
-grpc_mdstr *grpc_channel_get_compresssion_level_string(grpc_channel *channel);
+grpc_mdstr *grpc_channel_get_compression_algorithm_string(
+    grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 

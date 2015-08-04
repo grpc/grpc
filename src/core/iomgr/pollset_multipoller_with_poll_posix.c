@@ -66,12 +66,13 @@ typedef struct {
 } pollset_hdr;
 
 static void multipoll_with_poll_pollset_add_fd(grpc_pollset *pollset,
-                                               grpc_fd *fd) {
+                                               grpc_fd *fd,
+                                               int and_unlock_pollset) {
   size_t i;
   pollset_hdr *h = pollset->data.ptr;
   /* TODO(ctiller): this is O(num_fds^2); maybe switch to a hash set here */
   for (i = 0; i < h->fd_count; i++) {
-    if (h->fds[i] == fd) return;
+    if (h->fds[i] == fd) goto exit;
   }
   if (h->fd_count == h->fd_capacity) {
     h->fd_capacity = GPR_MAX(h->fd_capacity + 8, h->fd_count * 3 / 2);
@@ -79,10 +80,15 @@ static void multipoll_with_poll_pollset_add_fd(grpc_pollset *pollset,
   }
   h->fds[h->fd_count++] = fd;
   GRPC_FD_REF(fd, "multipoller");
+exit:  
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
 }
 
 static void multipoll_with_poll_pollset_del_fd(grpc_pollset *pollset,
-                                               grpc_fd *fd) {
+                                               grpc_fd *fd,
+                                               int and_unlock_pollset) {
   /* will get removed next poll cycle */
   pollset_hdr *h = pollset->data.ptr;
   if (h->del_count == h->del_capacity) {
@@ -91,6 +97,9 @@ static void multipoll_with_poll_pollset_del_fd(grpc_pollset *pollset,
   }
   h->dels[h->del_count++] = fd;
   GRPC_FD_REF(fd, "multipoller_del");
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
 }
 
 static void end_polling(grpc_pollset *pollset) {

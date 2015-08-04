@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
 
@@ -174,6 +175,12 @@ int gpr_ltoa(long value, char *string) {
 }
 
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
+  return gpr_strjoin_sep(strs, nstrs, "", final_length);
+}
+
+char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
+                      size_t *final_length) {
+  const size_t sep_len = strlen(sep);
   size_t out_length = 0;
   size_t i;
   char *out;
@@ -181,10 +188,17 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
     out_length += strlen(strs[i]);
   }
   out_length += 1;  /* null terminator */
+  if (nstrs > 0) {
+    out_length += sep_len * (nstrs - 1);  /* separators */
+  }
   out = gpr_malloc(out_length);
   out_length = 0;
   for (i = 0; i < nstrs; i++) {
-    size_t slen = strlen(strs[i]);
+    const size_t slen = strlen(strs[i]);
+    if (i != 0) {
+      memcpy(out + out_length, sep, sep_len);
+      out_length += sep_len;
+    }
     memcpy(out + out_length, strs[i], slen);
     out_length += slen;
   }
@@ -193,6 +207,52 @@ char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
     *final_length = out_length;
   }
   return out;
+}
+
+/** Finds the initial (\a begin) and final (\a end) offsets of the next
+ * substring from \a str + \a read_offset until the next \a sep or the end of \a
+ * str.
+ *
+ * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
+static int slice_find_separator_offset(const gpr_slice str,
+                                       const char *sep,
+                                       const size_t read_offset,
+                                       size_t *begin,
+                                       size_t *end) {
+  size_t i;
+  const gpr_uint8 *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
+  const size_t str_len = GPR_SLICE_LENGTH(str) - read_offset;
+  const size_t sep_len = strlen(sep);
+  if (str_len < sep_len) {
+    return 0;
+  }
+
+  for (i = 0; i <= str_len - sep_len; i++) {
+    if (memcmp(str_ptr + i, sep, sep_len) == 0) {
+      *begin = read_offset;
+      *end = read_offset + i;
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst) {
+  const size_t sep_len = strlen(sep);
+  size_t begin, end;
+
+  GPR_ASSERT(sep_len > 0);
+
+  if (slice_find_separator_offset(str, sep, 0, &begin, &end) != 0) {
+    do {
+      gpr_slice_buffer_add_indexed(dst, gpr_slice_sub(str, begin, end));
+    } while (slice_find_separator_offset(str, sep, end + sep_len, &begin,
+                                         &end) != 0);
+    gpr_slice_buffer_add_indexed(
+        dst, gpr_slice_sub(str, end + sep_len, GPR_SLICE_LENGTH(str)));
+  } else { /* no sep found, add whole input */
+    gpr_slice_buffer_add_indexed(dst, gpr_slice_ref(str));
+  }
 }
 
 void gpr_strvec_init(gpr_strvec *sv) {

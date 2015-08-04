@@ -71,6 +71,7 @@
 
 #if !defined(GPR_NO_AUTODETECT_PLATFORM)
 #if defined(_WIN64) || defined(WIN64)
+#define GPR_PLATFORM_STRING "windows"
 #define GPR_WIN32 1
 #define GPR_ARCH_64 1
 #define GPR_GETPID_IN_PROCESS_H 1
@@ -82,7 +83,9 @@
 #define GPR_WIN32_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
+#define GPR_WINDOWS_CRASH_HANDLER 1
 #elif defined(_WIN32) || defined(WIN32)
+#define GPR_PLATFORM_STRING "windows"
 #define GPR_ARCH_32 1
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
@@ -94,7 +97,9 @@
 #define GPR_WIN32_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
+#define GPR_WINDOWS_CRASH_HANDLER 1
 #elif defined(ANDROID) || defined(__ANDROID__)
+#define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
 #define GPR_CPU_LINUX 1
@@ -115,6 +120,7 @@
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_HAVE_MSG_NOSIGNAL 1
 #elif defined(__linux__)
+#define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -171,9 +177,11 @@
 #define _BSD_SOURCE
 #endif
 #if TARGET_OS_IPHONE
+#define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
 #else /* TARGET_OS_IPHONE */
+#define GPR_PLATFORM_STRING "osx"
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_TLS 1
 #endif
@@ -199,6 +207,7 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__FreeBSD__)
+#define GPR_PLATFORM_STRING "freebsd"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -229,6 +238,11 @@
 #error Could not auto-detect platform
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
+
+#ifndef GPR_PLATFORM_STRING
+#warning "GPR_PLATFORM_STRING not auto-detected"
+#define GPR_PLATFORM_STRING "unknown"
+#endif
 
 /* For a common case, assume that the platform has a C99-like stdint.h */
 

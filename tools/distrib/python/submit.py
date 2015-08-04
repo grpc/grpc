@@ -59,7 +59,7 @@ args = parser.parse_args()
 
 # Move to the root directory of Python GRPC.
 pkgdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                      '../../../src/python/src')
+                      '../../../src/python/grpcio')
 # Remove previous distributions; they somehow confuse twine.
 try:
   shutil.rmtree(os.path.join(pkgdir, 'dist/'))

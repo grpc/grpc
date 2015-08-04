@@ -48,6 +48,7 @@ TEST_F(SecureAuthContextTest, EmptyContext) {
   EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(context.FindPropertyValues("").empty());
   EXPECT_TRUE(context.FindPropertyValues("whatever").empty());
+  EXPECT_TRUE(context.begin() == context.end());
 }
 
 TEST_F(SecureAuthContextTest, Properties) {
@@ -66,6 +67,31 @@ TEST_F(SecureAuthContextTest, Properties) {
   std::vector<grpc::string> bar = context.FindPropertyValues("foo");
   EXPECT_EQ(1u, bar.size());
   EXPECT_EQ("bar", bar[0]);
+}
+
+TEST_F(SecureAuthContextTest, Iterators) {
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL, 3);
+  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
+  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
+  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
+  ctx->peer_identity_property_name = ctx->properties[0].name;
+
+  SecureAuthContext context(ctx);
+  AuthPropertyIterator iter = context.begin();
+  EXPECT_TRUE(context.end() != iter);
+  AuthProperty p0 = *iter;
+  ++iter;
+  AuthProperty p1 = *iter;
+  iter++;
+  AuthProperty p2 = *iter;
+  EXPECT_EQ("name", p0.first);
+  EXPECT_EQ("chapi", p0.second);
+  EXPECT_EQ("name", p1.first);
+  EXPECT_EQ("chapo", p1.second);
+  EXPECT_EQ("foo", p2.first);
+  EXPECT_EQ("bar", p2.second);
+  ++iter;
+  EXPECT_EQ(context.end(), iter);
 }
 
 }  // namespace

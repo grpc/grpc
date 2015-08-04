@@ -107,10 +107,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
    - key_cert_pair_count indicates the number of items in the private_key_files
      and cert_chain_files parameters.
    - pem_client_roots is the buffer containing the PEM encoding of the client
-     root certificates. This parameter may be NULL in which case the server
-     will not ask the client to authenticate itself with a certificate (server-
-     only authentication mode).
-   - pem_client_roots_size is the size of the associated buffer.
+     root certificates. This parameter may be NULL in which case the server will
+     not authenticate the client. If not NULL, the force_client_auth parameter
+     specifies if the server will accept only authenticated clients or both
+     authenticated and non-authenticated clients.
+   - pem_client_root_certs_size is the size of the associated buffer.
+   - force_client_auth, if set to non-zero will force the client to authenticate
+     with an SSL cert. Note that this option is ignored if pem_client_root_certs
+     is NULL or pem_client_roots_certs_size is 0
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -131,8 +135,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
     const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
     const unsigned char* pem_client_root_certs,
-    size_t pem_client_root_certs_size, const char* cipher_suites,
-    const unsigned char** alpn_protocols,
+    size_t pem_client_root_certs_size, int force_client_auth,
+    const char* cipher_suites, const unsigned char** alpn_protocols,
     const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
     tsi_ssl_handshaker_factory** factory);
 

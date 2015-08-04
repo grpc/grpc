@@ -51,10 +51,16 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
+typedef struct tcp_endpoint_list {
+  grpc_endpoint *tcp_endpoint;
+  struct tcp_endpoint_list *next;
+} tcp_endpoint_list;
+
 typedef struct grpc_server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
   grpc_security_connector *sc;
+  tcp_endpoint_list *handshaking_tcp_endpoints;
   int is_shutdown;
   gpr_mu mu;
   gpr_refcount refcount;
@@ -88,14 +94,37 @@ static void setup_transport(void *statep, grpc_transport *transport,
   grpc_channel_args_destroy(args_copy);
 }
 
+static int remove_tcp_from_list_locked(grpc_server_secure_state *state,
+                                       grpc_endpoint *tcp) {
+  tcp_endpoint_list *node = state->handshaking_tcp_endpoints;
+  tcp_endpoint_list *tmp = NULL;
+  if (node && node->tcp_endpoint == tcp) {
+    state->handshaking_tcp_endpoints = state->handshaking_tcp_endpoints->next;
+    gpr_free(node);
+    return 0;
+  }
+  while (node) {
+    if (node->next->tcp_endpoint == tcp) {
+      tmp = node->next;
+      node->next = node->next->next;
+      gpr_free(tmp);
+      return 0;
+    }
+    node = node->next;
+  }
+  return -1;
+}
+
 static void on_secure_transport_setup_done(void *statep,
                                            grpc_security_status status,
+                                           grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
   grpc_mdctx *mdctx;
   if (status == GRPC_SECURITY_OK) {
     gpr_mu_lock(&state->mu);
+    remove_tcp_from_list_locked(state, wrapped_endpoint);
     if (!state->is_shutdown) {
       mdctx = grpc_mdctx_create();
       transport = grpc_create_chttp2_transport(
@@ -110,6 +139,9 @@ static void on_secure_transport_setup_done(void *statep,
     }
     gpr_mu_unlock(&state->mu);
   } else {
+    gpr_mu_lock(&state->mu);
+    remove_tcp_from_list_locked(state, wrapped_endpoint);
+    gpr_mu_unlock(&state->mu);
     gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
   }
   state_unref(state);
@@ -117,7 +149,14 @@ static void on_secure_transport_setup_done(void *statep,
 
 static void on_accept(void *statep, grpc_endpoint *tcp) {
   grpc_server_secure_state *state = statep;
+  tcp_endpoint_list *node;
   state_ref(state);
+  node = gpr_malloc(sizeof(tcp_endpoint_list));
+  node->tcp_endpoint = tcp;
+  gpr_mu_lock(&state->mu);
+  node->next = state->handshaking_tcp_endpoints;
+  state->handshaking_tcp_endpoints = node;
+  gpr_mu_unlock(&state->mu);
   grpc_setup_secure_transport(state->sc, tcp, on_secure_transport_setup_done,
                               state);
 }
@@ -132,6 +171,13 @@ static void start(grpc_server *server, void *statep, grpc_pollset **pollsets,
 static void destroy_done(void *statep) {
   grpc_server_secure_state *state = statep;
   grpc_server_listener_destroy_done(state->server);
+  gpr_mu_lock(&state->mu);
+  while (state->handshaking_tcp_endpoints != NULL) {
+    grpc_endpoint_shutdown(state->handshaking_tcp_endpoints->tcp_endpoint);
+    remove_tcp_from_list_locked(state,
+                                state->handshaking_tcp_endpoints->tcp_endpoint);
+  }
+  gpr_mu_unlock(&state->mu);
   state_unref(state);
 }
 
@@ -209,6 +255,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   state->server = server;
   state->tcp = tcp;
   state->sc = sc;
+  state->handshaking_tcp_endpoints = NULL;
   state->is_shutdown = 0;
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);

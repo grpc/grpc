@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel_arguments.h>
@@ -47,6 +48,8 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/stream.h>
+#include "src/cpp/client/secure_credentials.h"
+#include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
 
 DECLARE_bool(enable_ssl);
@@ -62,6 +65,16 @@ DECLARE_string(oauth_scope);
 namespace grpc {
 namespace testing {
 
+namespace {
+std::shared_ptr<Credentials> CreateServiceAccountCredentials() {
+  GPR_ASSERT(FLAGS_enable_ssl);
+  grpc::string json_key = GetServiceAccountJsonKey();
+  std::chrono::seconds token_lifetime = std::chrono::hours(1);
+  return ServiceAccountCredentials(json_key, FLAGS_oauth_scope,
+                                   token_lifetime.count());
+}
+}  // namespace
+
 grpc::string GetServiceAccountJsonKey() {
   static grpc::string json_key;
   if (json_key.empty()) {
@@ -73,6 +86,20 @@ grpc::string GetServiceAccountJsonKey() {
   return json_key;
 }
 
+grpc::string GetOauth2AccessToken() {
+  std::shared_ptr<Credentials> creds = CreateServiceAccountCredentials();
+  SecureCredentials* secure_creds =
+      dynamic_cast<SecureCredentials*>(creds.get());
+  GPR_ASSERT(secure_creds != nullptr);
+  grpc_credentials* c_creds = secure_creds->GetRawCreds();
+  char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
+  GPR_ASSERT(token != nullptr);
+  gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
+  grpc::string access_token(token + sizeof("Bearer ") - 1);
+  gpr_free(token);
+  return access_token;
+}
+
 std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     const grpc::string& test_case) {
   GPR_ASSERT(FLAGS_server_port);
@@ -82,12 +109,7 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
            FLAGS_server_port);
 
   if (test_case == "service_account_creds") {
-    std::shared_ptr<Credentials> creds;
-    GPR_ASSERT(FLAGS_enable_ssl);
-    grpc::string json_key = GetServiceAccountJsonKey();
-    std::chrono::seconds token_lifetime = std::chrono::hours(1);
-    creds = ServiceAccountCredentials(json_key, FLAGS_oauth_scope,
-                                      token_lifetime.count());
+    std::shared_ptr<Credentials> creds = CreateServiceAccountCredentials();
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else if (test_case == "compute_engine_creds") {
@@ -101,7 +123,13 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
-    creds = JWTCredentials(json_key, token_lifetime.count());
+    creds =
+        ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
+    return CreateTestChannel(host_port, FLAGS_server_host_override,
+                             FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
+  } else if (test_case == "oauth2_auth_token") {
+    grpc::string raw_token = GetOauth2AccessToken();
+    std::shared_ptr<Credentials> creds = AccessTokenCredentials(raw_token);
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {

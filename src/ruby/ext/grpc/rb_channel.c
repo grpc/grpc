@@ -107,7 +107,8 @@ static void grpc_rb_channel_mark(void *p) {
 
 static rb_data_type_t grpc_channel_data_type = {
     "grpc_channel",
-    {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    {grpc_rb_channel_mark, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
     NULL, NULL,
     RUBY_TYPED_FREE_IMMEDIATELY
 };
@@ -145,7 +146,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   if (credentials == Qnil) {
-    ch = grpc_channel_create(target_chars, &args);
+    ch = grpc_insecure_channel_create(target_chars, &args);
   } else {
     creds = grpc_rb_get_wrapped_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args);

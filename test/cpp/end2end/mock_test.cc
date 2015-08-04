@@ -37,12 +37,12 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
+#include <grpc++/dynamic_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -86,7 +86,9 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
     msg->set_message(last_message_);
     return true;
   }
-  bool Write(const EchoRequest& msg) GRPC_OVERRIDE {
+
+  bool Write(const EchoRequest& msg,
+             const WriteOptions& options) GRPC_OVERRIDE {
     gpr_log(GPR_INFO, "mock recv msg %s", msg.message().c_str());
     last_message_ = msg.message();
     return true;
@@ -258,7 +260,7 @@ class MockTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
-  ThreadPool thread_pool_;
+  DynamicThreadPool thread_pool_;
 };
 
 // Do one real rpc and one mocked one

@@ -43,7 +43,8 @@
 // These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
 // rather than a generated proto library on top of it.
 
-static NSString * const kHostAddress = @"grpc-test.sandbox.google.com";
+// grpc-test.sandbox.google.com
+static NSString * const kHostAddress = @"http://localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 
@@ -87,7 +88,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testEmptyRPC {
@@ -109,7 +110,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
@@ -120,7 +121,7 @@ static ProtoMethod *kUnaryCallMethod;
   request.responseSize = 100;
   request.fillUsername = YES;
   request.fillOauthScope = YES;
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
                                              path:kUnaryCallMethod.HTTPPath
@@ -141,7 +142,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testMetadata {
@@ -150,7 +151,7 @@ static ProtoMethod *kUnaryCallMethod;
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.fillUsername = YES;
   request.fillOauthScope = YES;
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
                                              path:kUnaryCallMethod.HTTPPath
@@ -173,7 +174,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end
