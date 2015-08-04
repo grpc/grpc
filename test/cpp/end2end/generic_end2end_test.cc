@@ -100,11 +100,11 @@ std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
 
 class GenericEnd2endTest : public ::testing::Test {
  protected:
-  GenericEnd2endTest() : generic_service_("*") {}
+  GenericEnd2endTest() : generic_service_("*"), server_host_("localhost") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    server_address_ << server_host_ << ":" << port;
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
@@ -165,7 +165,7 @@ class GenericEnd2endTest : public ::testing::Test {
                                    srv_cq_.get(), tag(4));
 
       verify_ok(srv_cq_.get(), 4, true);
-      EXPECT_EQ(server_address_.str(), srv_ctx.host());
+      EXPECT_EQ(server_host_, srv_ctx.host());
       EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
       stream.Read(&recv_buffer, tag(5));
@@ -200,6 +200,7 @@ class GenericEnd2endTest : public ::testing::Test {
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;
+  const grpc::string server_host_;
   std::ostringstream server_address_;
 };
 
@@ -237,7 +238,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
                                srv_cq_.get(), tag(2));
 
   verify_ok(srv_cq_.get(), 2, true);
-  EXPECT_EQ(server_address_.str(), srv_ctx.host());
+  EXPECT_EQ(server_host_, srv_ctx.host());
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
   std::unique_ptr<ByteBuffer> send_buffer =

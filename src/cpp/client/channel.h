@@ -52,7 +52,8 @@ class StreamContextInterface;
 
 class Channel GRPC_FINAL : public GrpcLibrary, public ChannelInterface {
  public:
-  Channel(const grpc::string& target, grpc_channel* c_channel);
+  explicit Channel(grpc_channel* c_channel);
+  Channel(const grpc::string& host, grpc_channel* c_channel);
   ~Channel() GRPC_OVERRIDE;
 
   virtual void* RegisterMethod(const char* method) GRPC_OVERRIDE;
@@ -62,7 +63,7 @@ class Channel GRPC_FINAL : public GrpcLibrary, public ChannelInterface {
                                 Call* call) GRPC_OVERRIDE;
 
  private:
-  const grpc::string target_;
+  const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
 };
 
