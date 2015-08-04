@@ -177,6 +177,8 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_FLAGS,
   /** invalid metadata was passed to this call */
   GRPC_CALL_ERROR_INVALID_METADATA,
+  /** invalid message was passed to this call */
+  GRPC_CALL_ERROR_INVALID_MESSAGE,
   /** completion queue for notification has not been registered with the
       server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
@@ -308,8 +310,8 @@ typedef struct grpc_op {
         value, or reuse it in a future op. */
     grpc_metadata_array *recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
-       call
-        grpc_byte_buffer_destroy on this value, or reuse it in a future op. */
+        call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
+       */
     grpc_byte_buffer **recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the

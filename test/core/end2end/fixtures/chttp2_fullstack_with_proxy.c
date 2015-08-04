@@ -35,7 +35,6 @@
 
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_server_filter.h"
@@ -48,76 +47,73 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-typedef struct fullstack_compression_fixture_data {
-  char *localaddr;
-  grpc_channel_args *client_args_compression;
-  grpc_channel_args *server_args_compression;
-} fullstack_compression_fixture_data;
+typedef struct fullstack_fixture_data {
+  grpc_end2end_proxy *proxy;
+} fullstack_fixture_data;
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
+static grpc_server *create_proxy_server(const char *port) {
+  grpc_server *s = grpc_server_create(NULL);
+  GPR_ASSERT(grpc_server_add_http2_port(s, port));
+  return s;
+}
+
+static grpc_channel *create_proxy_client(const char *target) {
+  return grpc_insecure_channel_create(target, NULL);
+}
+
+static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,
+                                                 create_proxy_client};
+
+static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  int port = grpc_pick_unused_port_or_die();
-  fullstack_compression_fixture_data *ffd =
-      gpr_malloc(sizeof(fullstack_compression_fixture_data));
-  memset(ffd, 0, sizeof(fullstack_compression_fixture_data));
-
-  gpr_join_host_port(&ffd->localaddr, "localhost", port);
-
+  fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
+
+  ffd->proxy = grpc_end2end_proxy_create(&proxy_def);
+
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create();
 
   return f;
 }
 
-void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
-                                              grpc_channel_args *client_args) {
-  fullstack_compression_fixture_data *ffd = f->fixture_data;
-  if (ffd->client_args_compression != NULL) {
-    grpc_channel_args_destroy(ffd->client_args_compression);
-  }
-  ffd->client_args_compression = grpc_channel_args_set_compression_algorithm(
-      client_args, GRPC_COMPRESS_GZIP);
-  f->client = grpc_insecure_channel_create(ffd->localaddr,
-                                           ffd->client_args_compression);
+void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *client_args) {
+  fullstack_fixture_data *ffd = f->fixture_data;
+  f->client = grpc_insecure_channel_create(
+      grpc_end2end_proxy_get_client_target(ffd->proxy), client_args);
+  GPR_ASSERT(f->client);
 }
 
-void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
-                                              grpc_channel_args *server_args) {
-  fullstack_compression_fixture_data *ffd = f->fixture_data;
-  if (ffd->server_args_compression != NULL) {
-    grpc_channel_args_destroy(ffd->server_args_compression);
-  }
-  ffd->server_args_compression = grpc_channel_args_set_compression_algorithm(
-      server_args, GRPC_COMPRESS_GZIP);
+void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
+                                  grpc_channel_args *server_args) {
+  fullstack_fixture_data *ffd = f->fixture_data;
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(ffd->server_args_compression);
+  f->server = grpc_server_create(server_args);
   grpc_server_register_completion_queue(f->server, f->cq);
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
+  GPR_ASSERT(grpc_server_add_http2_port(
+      f->server, grpc_end2end_proxy_get_server_port(ffd->proxy)));
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack_compression(grpc_end2end_test_fixture *f) {
-  fullstack_compression_fixture_data *ffd = f->fixture_data;
-  grpc_channel_args_destroy(ffd->client_args_compression);
-  grpc_channel_args_destroy(ffd->server_args_compression);
-  gpr_free(ffd->localaddr);
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
+  fullstack_fixture_data *ffd = f->fixture_data;
+  grpc_end2end_proxy_destroy(ffd->proxy);
   gpr_free(ffd);
 }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack_compression", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
-     chttp2_create_fixture_fullstack_compression,
-     chttp2_init_client_fullstack_compression,
-     chttp2_init_server_fullstack_compression,
-     chttp2_tear_down_fullstack_compression},
+    {"chttp2/fullstack+proxy", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+     chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
+     chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 
 int main(int argc, char **argv) {

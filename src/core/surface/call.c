@@ -461,6 +461,7 @@ static void destroy_call(void *call, int ignored_success) {
       c->sibling_next->sibling_prev = c->sibling_prev;
     }
     gpr_mu_unlock(&parent->mu);
+    GRPC_CALL_INTERNAL_UNREF(parent, "child", 1);
   }
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
   GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
@@ -1450,7 +1451,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     }
   }
   if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
-      0) {
+          0 &&
+      !call->is_client) {
     set_deadline_alarm(call, md->deadline);
   }
   if (!is_trailing) {
@@ -1538,6 +1540,9 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         if (!are_write_flags_valid(op->flags)) {
           return GRPC_CALL_ERROR_INVALID_FLAGS;
         }
+        if (op->data.send_message == NULL) {
+          return GRPC_CALL_ERROR_INVALID_MESSAGE;
+        }
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_MESSAGE;
         req->data.send_message = op->data.send_message;
@@ -1587,6 +1592,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req = &reqs[out++];
         req->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
         req->data.recv_metadata = op->data.recv_initial_metadata;
+        req->data.recv_metadata->count = 0;
         req->flags = op->flags;
         break;
       case GRPC_OP_RECV_MESSAGE:
@@ -1618,6 +1624,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->op = GRPC_IOREQ_RECV_TRAILING_METADATA;
         req->data.recv_metadata =
             op->data.recv_status_on_client.trailing_metadata;
+        req->data.recv_metadata->count = 0;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_RECV_CLOSE;
         finish_func = finish_batch_with_close;
