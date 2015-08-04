@@ -40,7 +40,8 @@
 
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   and a condition variable, used to synchronize with the IOCP. */
+   used to synchronize with the IOCP, and workers are condition variables
+   used to block threads until work is ready. */
 
 typedef struct grpc_pollset_worker {
   gpr_cv cv;

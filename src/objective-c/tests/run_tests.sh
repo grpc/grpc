@@ -28,6 +28,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Don't run this script standalone. Instead, run from the repository root:
+# ./tools/run_tests/run_tests.py -l objc
+
 set -e
 
 cd $(dirname $0)
