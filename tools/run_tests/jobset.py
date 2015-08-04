@@ -206,7 +206,9 @@ class Job(object):
                 do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > 900:
+    # TODO(jcanizales): Bring timeout back to 900 (15 min) after Cocoapods in the
+    # Jenkins Mac machine has a compiled OpenSSL pod cached.
+    elif self._state == _RUNNING and time.time() - self._start > 1800:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
