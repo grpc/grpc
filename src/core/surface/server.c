@@ -1247,12 +1247,6 @@ static void done_request_event(void *req, grpc_cq_completion *c) {
     gpr_free(req);
   }
 
-  if (gpr_atm_acq_load(&server->shutdown_flag)) {
-    gpr_mu_lock(&server->mu_global);
-    maybe_finish_shutdown(server);
-    gpr_mu_unlock(&server->mu_global);
-  }
-
   server_unref(server);
 }
 
