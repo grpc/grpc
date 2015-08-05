@@ -131,7 +131,7 @@ class JobSpec(object):
   """Specifies what to run for a job."""
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
-               cwd=None, shell=False, timeout_seconds=300):
+               cwd=None, shell=False, timeout_seconds=5*60):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
