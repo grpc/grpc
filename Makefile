@@ -18739,7 +18739,6 @@ test/cpp/qps/timer.cc: $(OPENSSL_DEP)
 test/cpp/util/benchmark_config.cc: $(OPENSSL_DEP)
 test/cpp/util/cli_call.cc: $(OPENSSL_DEP)
 test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
-test/cpp/util/fake_credentials.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
 test/cpp/util/test_config.cc: $(OPENSSL_DEP)
 endif
