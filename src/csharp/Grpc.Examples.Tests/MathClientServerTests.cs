@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -46,7 +47,7 @@ namespace math.Tests
     /// </summary>
     public class MathClientServerTest
     {
-        string host = "localhost";
+        const string Host = "localhost";
         Server server;
         Channel channel;
         Math.MathClient client;
@@ -54,21 +55,14 @@ namespace math.Tests
         [TestFixtureSetUp]
         public void Init()
         {
-            server = new Server()
+            server = new Server
             {
-                Services = { Math.BindService(new MathServiceImpl()) }
+                Services = { Math.BindService(new MathServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
-            int port = server.AddPort(host, Server.PickUnusedPort, ServerCredentials.Insecure);
             server.Start();
-            channel = new Channel(host, port, Credentials.Insecure);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
             client = Math.NewClient(channel);
-
-            // TODO(jtattermusch): get rid of the custom header here once we have dedicated tests
-            // for header support.
-            client.HeaderInterceptor = (metadata) =>
-            {
-                metadata.Add(new Metadata.Entry("custom-header", "abcdef"));
-            };
         }
 
         [TestFixtureTearDown]

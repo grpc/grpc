@@ -77,13 +77,13 @@ namespace Grpc.Core.Tests
         [SetUp]
         public void Init()
         {
-            server = new Server()
+            server = new Server
             {
-                Services = { ServiceDefinition }
+                Services = { ServiceDefinition },
+                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
-            int port = server.AddPort(Host, Server.PickUnusedPort, ServerCredentials.Insecure);
             server.Start();
-            channel = new Channel(Host, port, Credentials.Insecure);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
         }
 
         [TearDown]
