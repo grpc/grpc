@@ -149,19 +149,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Start servers
   using runsc::ServerData;
-  vector<ServerData> servers;
+  ServerData servers[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
-    ServerData sd;
-    sd.stub = std::move(Worker::NewStub(
+    servers[i].stub = std::move(Worker::NewStub(
         CreateChannel(workers[i], InsecureCredentials(), ChannelArguments())));
     ServerArgs args;
     result_server_config = server_config;
     result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
-    sd.stream = std::move(sd.stub->RunServer(runsc::AllocContext(&contexts)));
-    GPR_ASSERT(sd.stream->Write(args));
+    servers[i].stream = std::move(servers[i].stub->RunServer(runsc::AllocContext(&contexts)));
+    GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
-    GPR_ASSERT(sd.stream->Read(&init_status));
+    GPR_ASSERT(servers[i].stream->Read(&init_status));
     char* host;
     char* driver_port;
     char* cli_target;
@@ -171,27 +170,22 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_free(host);
     gpr_free(driver_port);
     gpr_free(cli_target);
-
-    servers.push_back(std::move(sd));
   }
 
   // Start clients
   using runsc::ClientData;
-  vector<ClientData> clients;
+  ClientData clients[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
-    ClientData cd;
-    cd.stub = std::move(Worker::NewStub(CreateChannel(
+    clients[i].stub = std::move(Worker::NewStub(CreateChannel(
         workers[i + num_servers], InsecureCredentials(), ChannelArguments())));
     ClientArgs args;
     result_client_config = client_config;
     result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
-    cd.stream = std::move(cd.stub->RunTest(runsc::AllocContext(&contexts)));
-    GPR_ASSERT(cd.stream->Write(args));
+    clients[i].stream = std::move(clients[i].stub->RunTest(runsc::AllocContext(&contexts)));
+    GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
-    GPR_ASSERT(cd.stream->Read(&init_status));
-
-    clients.push_back(std::move(cd));
+    GPR_ASSERT(clients[i].stream->Read(&init_status));
   }
 
   // Let everything warmup
@@ -206,18 +200,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
   server_mark.mutable_mark();
   ClientArgs client_mark;
   client_mark.mutable_mark();
-  for (auto server = servers.begin(); server != servers.end(); server++) {
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Write(server_mark));
   }
-  for (auto client = clients.begin(); client != clients.end(); client++) {
+  for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Write(client_mark));
   }
   ServerStatus server_status;
   ClientStatus client_status;
-  for (auto server = servers.begin(); server != servers.end(); server++) {
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
   }
-  for (auto client = clients.begin(); client != clients.end(); client++) {
+  for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
   }
 
@@ -231,19 +225,19 @@ std::unique_ptr<ScenarioResult> RunScenario(
   result->client_config = result_client_config;
   result->server_config = result_server_config;
   gpr_log(GPR_INFO, "Finishing");
-  for (auto server = servers.begin(); server != servers.end(); server++) {
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Write(server_mark));
   }
-  for (auto client = clients.begin(); client != clients.end(); client++) {
+  for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Write(client_mark));
   }
-  for (auto server = servers.begin(); server != servers.end(); server++) {
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
     result->server_resources.emplace_back(
         stats.time_elapsed(), stats.time_user(), stats.time_system());
   }
-  for (auto client = clients.begin(); client != clients.end(); client++) {
+  for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result->latencies.MergeProto(stats.latencies());
@@ -251,11 +245,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
         stats.time_elapsed(), stats.time_user(), stats.time_system());
   }
 
-  for (auto client = clients.begin(); client != clients.end(); client++) {
+  for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->WritesDone());
     GPR_ASSERT(client->stream->Finish().ok());
   }
-  for (auto server = servers.begin(); server != servers.end(); server++) {
+  for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->WritesDone());
     GPR_ASSERT(server->stream->Finish().ok());
   }

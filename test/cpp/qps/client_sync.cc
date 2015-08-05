@@ -113,9 +113,10 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
 class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
  public:
   SynchronousStreamingClient(const ClientConfig& config)
-      : SynchronousClient(config),
-        context_(num_threads_),
-        stream_(num_threads_) {
+    : SynchronousClient(config) {
+    context_ = new grpc::ClientContext[num_threads_];
+    stream_ = new std::unique_ptr<
+      grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>[num_threads_];
     for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
       stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
@@ -124,12 +125,14 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   }
   ~SynchronousStreamingClient() {
     EndThreads();
-    for (auto stream = stream_.begin(); stream != stream_.end(); stream++) {
+    for (auto stream = &stream_[0]; stream != &stream_[num_threads_]; stream++) {
       if (*stream) {
         (*stream)->WritesDone();
         EXPECT_TRUE((*stream)->Finish().ok());
       }
     }
+    delete[] stream_;
+    delete[] context_;
   }
 
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
@@ -144,9 +147,11 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   }
 
  private:
-  std::vector<grpc::ClientContext> context_;
-  std::vector<std::unique_ptr<
-      grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>> stream_;
+  // These are both conceptually std::vector but cannot be for old compilers
+  // that expect contained classes to support copy constructors
+  grpc::ClientContext *context_;
+  std::unique_ptr<
+      grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>* stream_;
 };
 
 std::unique_ptr<Client> CreateSynchronousUnaryClient(

@@ -36,6 +36,7 @@
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
+#include <signal.h>
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
