@@ -76,7 +76,7 @@ typedef struct grpc_endo_atom {
 typedef struct grpc_endo_thread {
   gpr_int64 cycle_created;
   gpr_int64 timestamp;
-  gpr_int32 thread_id;
+  gpr_uint64 thread_id;
   GRPC_ENDO_INDEX task_active;
 } grpc_endo_thread;
 

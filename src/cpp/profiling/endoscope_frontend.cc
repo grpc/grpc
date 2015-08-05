@@ -58,7 +58,7 @@ static void WriteMarker(grpc_endo_base *base, EndoMarkerPB *marker, grpc_endo_ma
 
 static void WriteThread(grpc_endo_base *base, EndoThreadPB *thread, grpc_endo_thread *mythread) {
   char thread_name[20];
-  sprintf(thread_name, "Thread_%d", mythread->thread_id);
+  sprintf(thread_name, "%lu", mythread->thread_id);
   thread->set_thread_id(mythread->thread_id);
   thread->set_name(thread_name);
   thread->set_cycle_created(mythread->cycle_created);

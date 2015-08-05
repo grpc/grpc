@@ -46,6 +46,9 @@ namespace endoscope {
 Status EndoscopeService::Action(ServerContext* context,
     const EndoRequestPB* request, EndoSnapshotPB* reply) {
   context->AddInitialMetadata("access-control-allow-origin", "*");
+  context->AddInitialMetadata("access-control-allow-methods", "POST, GET, OPTIONS");
+  context->AddInitialMetadata("access-control-allow-headers", "X-PINGOTHER");
+  context->AddInitialMetadata("access-control-max-age", "1728000");
   WriteSnapshot(&grpc_endo_instance, reply,
               strtoll(request->cycle_begin().c_str(), NULL, 10),
               strtoll(request->cycle_end().c_str(), NULL, 10));

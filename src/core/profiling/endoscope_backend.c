@@ -246,7 +246,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
   return GRPC_ENDO_EMPTY;
 }
 
-static GRPC_ENDO_INDEX grpc_endo_get_or_create_thread(grpc_endo_base *base, gpr_int32 thread_id) {
+static GRPC_ENDO_INDEX grpc_endo_get_or_create_thread(grpc_endo_base *base, gpr_uint64 thread_id) {
   /* thread safe applied */
   GRPC_ENDO_INDEX i;
   for (i = 0; i < base->thread_count; i++) {
@@ -266,7 +266,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_thread(grpc_endo_base *base, gpr_
   }
 }
 
-static GRPC_ENDO_INDEX grpc_endo_get_thread(grpc_endo_base *base, gpr_int32 thread_id) {
+static GRPC_ENDO_INDEX grpc_endo_get_thread(grpc_endo_base *base, gpr_uint64 thread_id) {
   /* extremely unlikely thread-safe issue */
   GRPC_ENDO_INDEX i;
   for (i = 0; i < base->thread_count; i++) {
@@ -354,7 +354,7 @@ gpr_int64* grpc_endo_begin(grpc_endo_base *base, const char *name, const char *f
     const char* function_name) {  /* return the position to set for cycle_now() */
   /* no thread safety needed assuming no conflict on the same thread */
   GRPC_ENDO_INDEX marker_id;
-  gpr_int32 thread_id;
+  gpr_uint64 thread_id;
   GRPC_ENDO_INDEX thread_index;
   grpc_endo_thread *mythread;
   gpr_int64 cycle_created = grpc_endo_cyclenow();
@@ -437,7 +437,7 @@ gpr_int64* grpc_endo_begin(grpc_endo_base *base, const char *name, const char *f
 
 void grpc_endo_end(grpc_endo_base *base, const char *name, gpr_int64 cycle_end) {
   /* thread safe applied */
-  gpr_int32 thread_id = gpr_thd_currentid();
+  gpr_uint64 thread_id = gpr_thd_currentid();
   GRPC_ENDO_INDEX thread_index = grpc_endo_get_thread(base, thread_id);
   if (thread_index == GRPC_ENDO_EMPTY) {
     grpc_endo_warning_print("grpc_endo_end: cannot find thread item (begin-end mispair)");
@@ -504,7 +504,7 @@ static void grpc_endo_midpoint(grpc_endo_base *base, const char *name, const cha
     const char* function_name, gpr_int64 cycle_event, GRPC_ENDO_INDEX marker_type, GRPC_ENDO_INDEX atom_type) {
   GRPC_ENDO_INDEX marker_id;
   grpc_endo_marker *mymarker;
-  gpr_int32 thread_id;
+  gpr_uint64 thread_id;
   GRPC_ENDO_INDEX thread_index;
   grpc_endo_thread *mythread;
 
