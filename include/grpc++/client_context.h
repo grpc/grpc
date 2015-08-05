@@ -85,23 +85,23 @@ class PropagationOptions {
     return *this;
   }
 
-  PropagationOptions& enable_stats_propagation() {
-    propagate_ |= GRPC_PROPAGATE_STATS_CONTEXT;
+  PropagationOptions& enable_census_stats_propagation() {
+    propagate_ |= GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& disable_stats_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_STATS_CONTEXT;
+  PropagationOptions& disable_census_stats_propagation() {
+    propagate_ &= ~GRPC_PROPAGATE_CENSUS_STATS_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& enable_tracing_propagation() {
-    propagate_ |= GRPC_PROPAGATE_TRACING_CONTEXT;
+  PropagationOptions& enable_census_tracing_propagation() {
+    propagate_ |= GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
-  PropagationOptions& disable_tracing_propagation() {
-    propagate_ &= ~GRPC_PROPAGATE_TRACING_CONTEXT;
+  PropagationOptions& disable_census_tracing_propagation() {
+    propagate_ &= ~GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT;
     return *this;
   }
 
@@ -127,7 +127,7 @@ class ClientContext {
   ~ClientContext();
 
   /// Create a new ClientContext that propagates some or all of its attributes
-  static ClientContext FromServerContext(
+  static std::unique_ptr<ClientContext> FromServerContext(
       const ServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 

@@ -66,11 +66,11 @@ ClientContext::~ClientContext() {
   }
 }
 
-ClientContext ClientContext::FromServerContext(const ServerContext& context,
-                                               PropagationOptions options) {
-  ClientContext ctx;
-  ctx.propagate_from_call_ = context.call_;
-  ctx.propagation_options_ = options;
+std::unique_ptr<ClientContext> ClientContext::FromServerContext(
+    const ServerContext& context, PropagationOptions options) {
+  std::unique_ptr<ClientContext> ctx(new ClientContext);
+  ctx->propagate_from_call_ = context.call_;
+  ctx->propagation_options_ = options;
   return ctx;
 }
 
