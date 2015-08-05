@@ -374,13 +374,15 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
     }
     /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
      * GRPC_PROPAGATE_STATS_CONTEXT */
-    if (propagation_mask & GRPC_PROPAGATE_TRACING_CONTEXT) {
-      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_STATS_CONTEXT);
+    /* TODO(ctiller): This should change to use the appropriate census start_op
+     * call. */
+    if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
+      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
       grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
                             parent_call->context[GRPC_CONTEXT_TRACING].value,
                             NULL);
     } else {
-      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_STATS_CONTEXT);
+      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT);
     }
     if (propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;
