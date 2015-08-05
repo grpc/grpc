@@ -826,20 +826,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "poll_kick_posix_test", 
-    "src": [
-      "test/core/iomgr/poll_kick_posix_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "resolve_address_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.c"
@@ -10968,7 +10954,6 @@
       "src/core/iomgr/iomgr_internal.h", 
       "src/core/iomgr/iomgr_posix.h", 
       "src/core/iomgr/pollset.h", 
-      "src/core/iomgr/pollset_kick_posix.h", 
       "src/core/iomgr/pollset_posix.h", 
       "src/core/iomgr/pollset_set.h", 
       "src/core/iomgr/pollset_set_posix.h", 
@@ -11138,8 +11123,6 @@
       "src/core/iomgr/iomgr_posix.h", 
       "src/core/iomgr/iomgr_windows.c", 
       "src/core/iomgr/pollset.h", 
-      "src/core/iomgr/pollset_kick_posix.c", 
-      "src/core/iomgr/pollset_kick_posix.h", 
       "src/core/iomgr/pollset_multipoller_with_epoll.c", 
       "src/core/iomgr/pollset_multipoller_with_poll_posix.c", 
       "src/core/iomgr/pollset_posix.c", 
@@ -11434,7 +11417,6 @@
       "src/core/iomgr/iomgr_internal.h", 
       "src/core/iomgr/iomgr_posix.h", 
       "src/core/iomgr/pollset.h", 
-      "src/core/iomgr/pollset_kick_posix.h", 
       "src/core/iomgr/pollset_posix.h", 
       "src/core/iomgr/pollset_set.h", 
       "src/core/iomgr/pollset_set_posix.h", 
@@ -11582,8 +11564,6 @@
       "src/core/iomgr/iomgr_posix.h", 
       "src/core/iomgr/iomgr_windows.c", 
       "src/core/iomgr/pollset.h", 
-      "src/core/iomgr/pollset_kick_posix.c", 
-      "src/core/iomgr/pollset_kick_posix.h", 
       "src/core/iomgr/pollset_multipoller_with_epoll.c", 
       "src/core/iomgr/pollset_multipoller_with_poll_posix.c", 
       "src/core/iomgr/pollset_posix.c", 
