@@ -79,6 +79,8 @@ struct grpc_tcp_server {
 
   /* active port count: how many ports are actually still listening */
   int active_ports;
+  /* number of iomgr callbacks that have been explicitly scheduled during shutdown */
+  int iomgr_callbacks_pending;
 
   /* all listening ports */
   server_port *ports;
@@ -93,6 +95,7 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   gpr_mu_init(&s->mu);
   gpr_cv_init(&s->cv);
   s->active_ports = 0;
+  s->iomgr_callbacks_pending = 0;
   s->cb = NULL;
   s->cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
@@ -112,10 +115,10 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
     sp->shutting_down = 1;
-    grpc_winsocket_shutdown(sp->socket);
+    s->iomgr_callbacks_pending += grpc_winsocket_shutdown(sp->socket);
   }
   /* This happens asynchronously. Wait while that happens. */
-  while (s->active_ports) {
+  while (s->active_ports || s->iomgr_callbacks_pending) {
     gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&s->mu);
@@ -183,6 +186,17 @@ error:
   return -1;
 }
 
+static void decrement_active_ports_and_notify(server_port *sp) {
+  sp->shutting_down = 0;
+  sp->socket->read_info.outstanding = 0;
+  gpr_mu_lock(&sp->server->mu);
+  GPR_ASSERT(sp->server->active_ports > 0);
+  if (0 == --sp->server->active_ports) {
+    gpr_cv_broadcast(&sp->server->cv);
+  }
+  gpr_mu_unlock(&sp->server->mu);
+}
+
 /* start_accept will reference that for the IOCP notification request. */
 static void on_accept(void *arg, int from_iocp);
 
@@ -231,6 +245,15 @@ static void start_accept(server_port *port) {
   return;
 
 failure:
+  if (port->shutting_down) {
+    /* We are abandoning the listener port, take that into account to prevent
+       occasional hangs on shutdown. The hang happens when sp->shutting_down
+       change is not seen by on_accept and we proceed to trying new accept,
+       but we fail there because the listening port has been closed in the
+       meantime. */
+    decrement_active_ports_and_notify(port);
+    return;
+  }
   utf8_message = gpr_format_message(WSAGetLastError());
   gpr_log(GPR_ERROR, message, utf8_message);
   gpr_free(utf8_message);
@@ -254,8 +277,16 @@ static void on_accept(void *arg, int from_iocp) {
 
   /* The general mechanism for shutting down is to queue abortion calls. While
      this is necessary in the read/write case, it's useless for the accept
-     case. Let's do nothing. */
-  if (!from_iocp) return;
+     case. We only need to adjust the pending callback count */
+  if (!from_iocp) {
+    gpr_mu_lock(&sp->server->mu);
+    GPR_ASSERT(sp->server->iomgr_callbacks_pending > 0);
+    if (0 == --sp->server->iomgr_callbacks_pending) {
+      gpr_cv_broadcast(&sp->server->cv);
+    }
+    gpr_mu_unlock(&sp->server->mu);
+    return;
+  }
 
   /* The IOCP notified us of a completed operation. Let's grab the results,
       and act accordingly. */
@@ -264,15 +295,9 @@ static void on_accept(void *arg, int from_iocp) {
                                             &transfered_bytes, FALSE, &flags);
   if (!wsa_success) {
     if (sp->shutting_down) {
-      /* During the shutdown case, we ARE expecting an error. So that's swell,
+      /* During the shutdown case, we ARE expecting an error. So that's well,
          and we can wake up the shutdown thread. */
-      sp->shutting_down = 0;
-      sp->socket->read_info.outstanding = 0;
-      gpr_mu_lock(&sp->server->mu);
-      if (0 == --sp->server->active_ports) {
-        gpr_cv_broadcast(&sp->server->cv);
-      }
-      gpr_mu_unlock(&sp->server->mu);
+      decrement_active_ports_and_notify(sp);
       return;
     } else {
       char *utf8_message = gpr_format_message(WSAGetLastError());

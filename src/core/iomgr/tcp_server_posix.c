@@ -142,6 +142,7 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
 
 static void finish_shutdown(grpc_tcp_server *s) {
   s->shutdown_complete(s->shutdown_complete_arg);
+  s->shutdown_complete = NULL;
 
   gpr_mu_destroy(&s->mu);
 
@@ -157,6 +158,7 @@ static void destroyed_port(void *server, int success) {
     gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
   } else {
+    GPR_ASSERT(s->destroyed_ports < s->nports);
     gpr_mu_unlock(&s->mu);
   }
 }

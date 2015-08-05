@@ -68,6 +68,11 @@ static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
   *p = value;
 }
 
+static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
+  GPR_ATM_COMPILE_BARRIER_();
+  *p = value;
+}
+
 #undef GPR_ATM_LS_BARRIER_
 #undef GPR_ATM_COMPILE_BARRIER_
 

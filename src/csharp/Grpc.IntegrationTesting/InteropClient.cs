@@ -127,7 +127,7 @@ namespace Grpc.IntegrationTesting
                     {
                         credential = credential.CreateScoped(new[] { AuthScope });
                     }
-                    client.HeaderInterceptor = OAuth2InterceptorFactory.Create(credential);
+                    client.HeaderInterceptor = OAuth2Interceptors.FromCredential(credential);
                 }
 
                 RunTestCaseAsync(options.testCase, client).Wait();
@@ -356,11 +356,7 @@ namespace Grpc.IntegrationTesting
             Assert.IsTrue(credential.RequestAccessTokenAsync(CancellationToken.None).Result);
             string oauth2Token = credential.Token.AccessToken;
 
-            // Intercept calls with an OAuth2 token obtained out-of-band.
-            client.HeaderInterceptor = new MetadataInterceptorDelegate((metadata) =>
-            {
-                metadata.Add(new Metadata.Entry("Authorization", "Bearer " + oauth2Token));
-            });
+            client.HeaderInterceptor = OAuth2Interceptors.FromAccessToken(oauth2Token);
 
             var request = SimpleRequest.CreateBuilder()
                 .SetFillUsername(true)
@@ -381,13 +377,16 @@ namespace Grpc.IntegrationTesting
             var credential = GoogleCredential.GetApplicationDefault().CreateScoped(new[] { AuthScope });
             Assert.IsTrue(credential.RequestAccessTokenAsync(CancellationToken.None).Result);
             string oauth2Token = credential.Token.AccessToken;
+            var headerInterceptor = OAuth2Interceptors.FromAccessToken(oauth2Token);
 
             var request = SimpleRequest.CreateBuilder()
                 .SetFillUsername(true)
                 .SetFillOauthScope(true)
                 .Build();
 
-            var response = client.UnaryCall(request, headers: new Metadata { new Metadata.Entry("Authorization", "Bearer " + oauth2Token) });
+            var headers = new Metadata();
+            headerInterceptor(headers);
+            var response = client.UnaryCall(request, headers: headers);
 
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
             Assert.AreEqual(ServiceAccountUser, response.Username);

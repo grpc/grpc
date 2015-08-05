@@ -93,6 +93,15 @@ void CheckServerAuthContext(const ServerContext* context) {
   EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
 }
 
+bool CheckIsLocalhost(const grpc::string& addr) {
+  const grpc::string kIpv6("ipv6:[::1]:");
+  const grpc::string kIpv4MappedIpv6("ipv6:[::ffff:127.0.0.1]:");
+  const grpc::string kIpv4("ipv4:127.0.0.1:");
+  return addr.substr(0, kIpv4.size()) == kIpv4 ||
+         addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
+         addr.substr(0, kIpv6.size()) == kIpv6;
+}
+
 }  // namespace
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
@@ -147,6 +156,9 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
         request->param().response_message_length() > 0) {
       response->set_message(
           grpc::string(request->param().response_message_length(), '\0'));
+    }
+    if (request->has_param() && request->param().echo_peer()) {
+      response->mutable_param()->set_peer(context->peer());
     }
     return Status::OK;
   }
@@ -236,7 +248,7 @@ class End2endTest : public ::testing::Test {
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
@@ -516,7 +528,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
   std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
-  EXPECT_EQ(static_cast<Credentials *>(nullptr), bad_creds.get());
+  EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
@@ -816,6 +828,21 @@ TEST_F(End2endTest, HugeResponse) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(kResponseSize, response.message().size());
   EXPECT_TRUE(s.ok());
+}
+
+TEST_F(End2endTest, Peer) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("hello");
+  request.mutable_param()->set_echo_peer(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(CheckIsLocalhost(response.param().peer()));
+  EXPECT_TRUE(CheckIsLocalhost(context.peer()));
 }
 
 }  // namespace testing

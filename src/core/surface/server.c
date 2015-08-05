@@ -554,8 +554,10 @@ static void server_on_recv(void *ptr, int success) {
           gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
         calld->deadline = op->data.metadata.deadline;
       }
-      calld->got_initial_metadata = 1;
-      start_new_rpc(elem);
+      if (calld->host && calld->path) {
+        calld->got_initial_metadata = 1;
+        start_new_rpc(elem);
+      }
       break;
     }
   }
@@ -688,8 +690,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(!is_last);
   chand->server = NULL;
   chand->channel = NULL;
-  chand->path_key = grpc_mdstr_from_string(metadata_context, ":path");
-  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority");
+  chand->path_key = grpc_mdstr_from_string(metadata_context, ":path", 0);
+  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority", 0);
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
@@ -911,8 +913,8 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
     chand->registered_methods = gpr_malloc(alloc);
     memset(chand->registered_methods, 0, alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host) : NULL;
-      method = grpc_mdstr_from_string(mdctx, rm->method);
+      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host, 0) : NULL;
+      method = grpc_mdstr_from_string(mdctx, rm->method, 0);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != NULL;
@@ -1271,6 +1273,8 @@ static void done_request_event(void *req, grpc_cq_completion *c) {
   } else {
     gpr_free(req);
   }
+
+  server_unref(server);
 }
 
 static void fail_call(grpc_server *server, requested_call *rc) {
@@ -1283,6 +1287,7 @@ static void fail_call(grpc_server *server, requested_call *rc) {
       rc->data.registered.initial_metadata->count = 0;
       break;
   }
+  server_ref(server);
   grpc_cq_end_op(rc->cq_for_notification, rc->tag, 0, done_request_event, rc,
                  &rc->completion);
 }
@@ -1293,6 +1298,8 @@ static void publish_registered_or_batch(grpc_call *call, int success,
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   requested_call *rc = prc;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  server_ref(chand->server);
   grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc,
                  &rc->completion);
   GRPC_CALL_INTERNAL_UNREF(call, "server", 0);

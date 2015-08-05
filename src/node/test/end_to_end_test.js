@@ -57,14 +57,17 @@ function multiDone(done, count) {
   };
 }
 
+var insecureCreds = grpc.Credentials.createInsecure();
+
 describe('end-to-end', function() {
   var server;
   var channel;
   before(function() {
     server = new grpc.Server();
-    var port_num = server.addHttp2Port('0.0.0.0:0');
+    var port_num = server.addHttp2Port('0.0.0.0:0',
+                                       grpc.ServerCredentials.createInsecure());
     server.start();
-    channel = new grpc.Channel('localhost:' + port_num);
+    channel = new grpc.Channel('localhost:' + port_num, insecureCreds);
   });
   after(function() {
     server.shutdown();

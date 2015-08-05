@@ -95,7 +95,7 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *mdctx);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str);
+grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int perform_key_canonicalization);
 /* Unrefs the slice. */
 grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
@@ -117,7 +117,8 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
                                                 const char *key,
                                                 const gpr_uint8 *value,
-                                                size_t value_length);
+                                                size_t value_length,
+                                                int canonicalize_key);
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */

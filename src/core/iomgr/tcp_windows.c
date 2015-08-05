@@ -368,8 +368,17 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
   return GRPC_ENDPOINT_WRITE_PENDING;
 }
 
-static void win_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
-  grpc_tcp *tcp = (grpc_tcp *) ep;
+static void win_add_to_pollset(grpc_endpoint *ep, grpc_pollset *ps) {
+  grpc_tcp *tcp;
+  (void) ps;
+  tcp = (grpc_tcp *) ep;
+  grpc_iocp_add_socket(tcp->socket);
+}
+
+static void win_add_to_pollset_set(grpc_endpoint *ep, grpc_pollset_set *pss) {
+  grpc_tcp *tcp;
+  (void) pss;
+  tcp = (grpc_tcp *) ep;
   grpc_iocp_add_socket(tcp->socket);
 }
 
@@ -401,9 +410,10 @@ static char *win_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_endpoint_vtable vtable = {
-  win_notify_on_read, win_write, win_add_to_pollset, win_shutdown, win_destroy, win_get_peer
-};
+static grpc_endpoint_vtable vtable = {win_notify_on_read, win_write,
+                                      win_add_to_pollset, win_add_to_pollset_set,
+                                      win_shutdown,       win_destroy,
+                                      win_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *) gpr_malloc(sizeof(grpc_tcp));

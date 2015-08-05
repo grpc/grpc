@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/census/grpc_context.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/iomgr/alarm.h"
 #include "src/core/profiling/timers.h"
@@ -348,7 +347,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
-  if (gpr_time_cmp(send_deadline, gpr_inf_future(send_deadline.clock_type)) != 0) {
+  if (gpr_time_cmp(send_deadline, gpr_inf_future(send_deadline.clock_type)) !=
+      0) {
     set_deadline_alarm(call, send_deadline);
   }
   return call;
@@ -932,7 +932,7 @@ static int prepare_application_metadata(grpc_call *call, size_t count,
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
-                                               md->value_length);
+                                               md->value_length, 1);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key");
       return 0;
@@ -1203,7 +1203,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
 static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
                                           const char *description) {
   grpc_mdstr *details =
-      description ? grpc_mdstr_from_string(c->metadata_context, description)
+      description ? grpc_mdstr_from_string(c->metadata_context, description, 0)
                   : NULL;
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
@@ -1283,8 +1283,9 @@ static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   }
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
-  grpc_alarm_init(&call->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC), call_alarm, call,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_alarm_init(&call->alarm,
+                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+                  call_alarm, call, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 /* we offset status by a small amount when storing it into transport metadata
@@ -1319,15 +1320,17 @@ static gpr_uint32 decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
   if (user_data) {
-    algorithm = ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
+    algorithm =
+        ((grpc_compression_level)(gpr_intptr)user_data) - COMPRESS_OFFSET;
   } else {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
     if (!grpc_compression_algorithm_parse(md_c_str, &algorithm)) {
       gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
       assert(0);
     }
-    grpc_mdelem_set_user_data(md, destroy_compression,
-                              (void *)(gpr_intptr)(algorithm + COMPRESS_OFFSET));
+    grpc_mdelem_set_user_data(
+        md, destroy_compression,
+        (void *)(gpr_intptr)(algorithm + COMPRESS_OFFSET));
   }
   return algorithm;
 }
@@ -1497,7 +1500,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
             op->data.send_status_from_server.status_details != NULL
                 ? grpc_mdstr_from_string(
                       call->metadata_context,
-                      op->data.send_status_from_server.status_details)
+                      op->data.send_status_from_server.status_details, 0)
                 : NULL;
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_CLOSE;

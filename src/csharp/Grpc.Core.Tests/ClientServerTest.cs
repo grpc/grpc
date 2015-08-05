@@ -209,8 +209,8 @@ namespace Grpc.Core.Tests
         {
             var headers = new Metadata
             {
-                new Metadata.Entry("asciiHeader", "abcdefg"),
-                new Metadata.Entry("binaryHeader-bin", new byte[] { 1, 2, 3, 0, 0xff }),
+                new Metadata.Entry("ascii-header", "abcdefg"),
+                new Metadata.Entry("binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff }),
             };
             var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, headers);
             var call = Calls.AsyncUnaryCall(internalCall, "ABC", CancellationToken.None);
@@ -274,6 +274,30 @@ namespace Grpc.Core.Tests
             var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
             string peer = Calls.BlockingUnaryCall(internalCall, "RETURN-PEER", CancellationToken.None);
             Assert.IsTrue(peer.Contains(Host));
+        }
+
+        [Test]
+        public async Task Channel_WaitForStateChangedAsync()
+        {
+            Assert.Throws(typeof(TaskCanceledException), 
+                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
+
+            var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
+
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            await Calls.AsyncUnaryCall(internalCall, "abc", CancellationToken.None);
+
+            await stateChangedTask;
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+        }
+
+        [Test]
+        public async Task Channel_ConnectAsync()
+        {
+            await channel.ConnectAsync();
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(1000));
+            Assert.AreEqual(ChannelState.Ready, channel.State);
         }
 
         private static async Task<string> EchoHandler(string request, ServerCallContext context)

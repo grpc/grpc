@@ -43,7 +43,8 @@
 // These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
 // rather than a generated proto library on top of it.
 
-static NSString * const kHostAddress = @"grpc-test.sandbox.google.com";
+// grpc-test.sandbox.google.com
+static NSString * const kHostAddress = @"http://localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 

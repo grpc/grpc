@@ -47,7 +47,7 @@ class CredentialsTest : public ::testing::Test {
 
 TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
   std::shared_ptr<Credentials> bad1 = ServiceAccountCredentials("", "", 1);
-  EXPECT_EQ(static_cast<Credentials *>(nullptr), bad1.get());
+  EXPECT_EQ(static_cast<Credentials*>(nullptr), bad1.get());
 }
 
 }  // namespace testing
