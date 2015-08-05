@@ -67,7 +67,8 @@ class ChannelInterface : public CallHook,
                                    const T& deadline,
                                    CompletionQueue* cq, void* tag) = 0;
   template <typename T>
-  virtual bool WaitForStateChange(grpc_connectivity_state* new_state,
+  virtual bool WaitForStateChange(grpc_connectivity_state last_observed,
+                                  grpc_connectivity_state* new_state,
                                   const T& deadline) = 0;
 };
 
