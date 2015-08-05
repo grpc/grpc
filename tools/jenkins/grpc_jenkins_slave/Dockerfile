@@ -146,6 +146,16 @@ RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
 
+##################
+# Zookeeper dependencies
+
+# Install dependencies
+
+RUN wget http://mirror.olnevhost.net/pub/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
+RUN tar xvf zookeeper-3.4.6.tar.gz
+RUN cd zookeeper-3.4.6/src/c && ./configure && make install && ldconfig
+
+
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
