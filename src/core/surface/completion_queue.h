@@ -77,8 +77,6 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
-void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc);
-
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
 int grpc_cq_is_server_cq(grpc_completion_queue *cc);
 

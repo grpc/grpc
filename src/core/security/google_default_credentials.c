@@ -80,7 +80,7 @@ static void on_compute_engine_detection_http_response(
   }
   gpr_mu_lock(GRPC_POLLSET_MU(&detector->pollset));
   detector->is_done = 1;
-  grpc_pollset_kick(&detector->pollset);
+  grpc_pollset_kick(&detector->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
 
@@ -112,7 +112,9 @@ static int is_stack_running_on_compute_engine(void) {
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    grpc_pollset_work(&detector.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&detector.pollset, &worker,
+                      gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 

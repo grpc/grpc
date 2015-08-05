@@ -830,6 +830,31 @@ TEST_F(End2endTest, HugeResponse) {
   EXPECT_TRUE(s.ok());
 }
 
+namespace {
+void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream, gpr_event *ev) {
+  EchoResponse resp;
+  gpr_event_set(ev, (void*)1);
+  while (stream->Read(&resp)) {
+    gpr_log(GPR_INFO, "Read message");
+  }
+}
+}  // namespace
+
+// Run a Read and a WritesDone simultaneously.
+TEST_F(End2endTest, SimultaneousReadWritesDone) {
+  ResetStub();
+  ClientContext context;
+  gpr_event ev;
+  gpr_event_init(&ev);
+  auto stream = stub_->BidiStream(&context);
+  std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
+  gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
+  stream->WritesDone();
+  Status s = stream->Finish();
+  EXPECT_TRUE(s.ok());
+  reader_thread.join();
+}
+
 TEST_F(End2endTest, Peer) {
   ResetStub();
   EchoRequest request;

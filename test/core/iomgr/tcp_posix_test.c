@@ -186,7 +186,8 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (state.read_bytes < state.target_read_bytes) {
-    grpc_pollset_work(&g_pollset, deadline);
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&g_pollset, &worker, deadline);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -222,7 +223,8 @@ static void large_read_test(ssize_t slice_size) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (state.read_bytes < state.target_read_bytes) {
-    grpc_pollset_work(&g_pollset, deadline);
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&g_pollset, &worker, deadline);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -265,7 +267,7 @@ static void write_done(void *user_data /* write_socket_state */,
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
@@ -281,8 +283,9 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   GPR_ASSERT(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) == 0);
 
   for (;;) {
+    grpc_pollset_worker worker;
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-    grpc_pollset_work(&g_pollset, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
+    grpc_pollset_work(&g_pollset, &worker, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     do {
       bytes_read =
@@ -358,10 +361,11 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
     drain_socket_blocking(sv[0], num_bytes, num_bytes);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
     for (;;) {
+      grpc_pollset_worker worker;
       if (state.write_done) {
         break;
       }
-      grpc_pollset_work(&g_pollset, deadline);
+      grpc_pollset_work(&g_pollset, &worker, deadline);
     }
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   }
@@ -387,6 +391,7 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
   size_t num_blocks;
   gpr_slice *slices;
   int current_data = 0;
+  grpc_pollset_worker worker;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
 
   gpr_log(GPR_INFO, "Start write error test with %d bytes, slice size %d",
@@ -417,7 +422,7 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
         if (state.write_done) {
           break;
         }
-        grpc_pollset_work(&g_pollset, deadline);
+        grpc_pollset_work(&g_pollset, &worker, deadline);
       }
       gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
       break;

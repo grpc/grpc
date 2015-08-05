@@ -31,31 +31,39 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
-#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
+#ifndef GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H
+#define GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H
 
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+#include "src/core/iomgr/tcp_server.h"
 
-#include "src/core/iomgr/socket_windows.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   used to synchronize with the IOCP, and workers are condition variables
-   used to block threads until work is ready. */
+typedef struct timestamp_list {
+  gpr_timespec timestamp;
+  struct timestamp_list *next;
+} timestamp_list;
 
-typedef struct grpc_pollset_worker {
-  gpr_cv cv;
-  struct grpc_pollset_worker *next;
-  struct grpc_pollset_worker *prev;
-} grpc_pollset_worker;
+typedef struct reconnect_server {
+  grpc_tcp_server *tcp_server;
+  grpc_pollset pollset;
+  grpc_pollset *pollsets[1];
+  timestamp_list *head;
+  timestamp_list *tail;
+  char *peer;
+} reconnect_server;
 
-typedef struct grpc_pollset {
-  gpr_mu mu;
-  int shutting_down;
-  int kicked_without_pollers;
-  grpc_pollset_worker root_worker;
-} grpc_pollset;
+void reconnect_server_init(reconnect_server *server);
+void reconnect_server_start(reconnect_server *server, int port);
+void reconnect_server_poll(reconnect_server *server, int seconds);
+void reconnect_server_destroy(reconnect_server *server);
+void reconnect_server_clear_timestamps(reconnect_server *server);
 
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
+#endif /* GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H */
