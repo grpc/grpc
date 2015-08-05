@@ -37,10 +37,10 @@ import collections
 
 
 FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack includes_proxy dns_resolver secure platforms')
-default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'posix'])
+default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'linux', 'mac', 'posix'])
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
-uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['posix'])
+uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
@@ -48,11 +48,11 @@ END2END_FIXTURES = {
     'chttp2_fullstack': default_unsecure_fixture_options,
     'chttp2_fullstack_compression': default_unsecure_fixture_options,
     'chttp2_fullstack_uds_posix': uds_fixture_options,
-    'chttp2_fullstack_uds_posix_with_poll': uds_fixture_options,
-    'chttp2_fullstack_with_poll': default_unsecure_fixture_options._replace(platforms=['posix']),
+    'chttp2_fullstack_uds_posix_with_poll': uds_fixture_options._replace(platforms=['linux']),
+    'chttp2_fullstack_with_poll': default_unsecure_fixture_options._replace(platforms=['linux']),
     'chttp2_fullstack_with_proxy': default_unsecure_fixture_options._replace(includes_proxy=True),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
-    'chttp2_simple_ssl_fullstack_with_poll': default_secure_fixture_options._replace(platforms=['posix']),
+    'chttp2_simple_ssl_fullstack_with_poll': default_secure_fixture_options._replace(platforms=['linux']),
     'chttp2_simple_ssl_fullstack_with_proxy': default_secure_fixture_options._replace(includes_proxy=True),
     'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
     #'chttp2_simple_ssl_with_oauth2_fullstack_with_proxy': default_secure_fixture_options._replace(includes_proxy=True),
@@ -139,7 +139,7 @@ def main():
               'language': 'c',
               'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
               'src': ['test/core/end2end/fixtures/%s.c' % f],
-              'platforms': [ 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
+              'platforms': [ 'linux', 'mac', 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
               'deps': sec_deps if END2END_FIXTURES[f].secure else unsec_deps,
               'headers': ['test/core/end2end/end2end_tests.h'],
           }

@@ -54,6 +54,17 @@ os.chdir(ROOT)
 _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
+def platform_string():
+  if platform.system() == 'Windows':
+    return 'windows'
+  elif platform.system() == 'Darwin':
+    return 'mac'
+  elif platform.system() == 'Linux':
+    return 'linux'
+  else:
+    return 'posix'
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
@@ -109,11 +120,7 @@ class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
-    if platform.system() == 'Windows':
-      plat = 'windows'
-    else:
-      plat = 'posix'
-    self.platform = plat
+    self.platform = platform_string()
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
       self.binaries = [tgt
@@ -245,11 +252,7 @@ class RubyLanguage(object):
 
 class CSharpLanguage(object):
   def __init__(self):
-    if platform.system() == 'Windows':
-      plat = 'windows'
-    else:
-      plat = 'posix'
-    self.platform = plat
+    self.platform = platform_string()
 
   def test_specs(self, config, travis):
     assemblies = ['Grpc.Core.Tests',
@@ -262,7 +265,7 @@ class CSharpLanguage(object):
     return [config.job_spec([cmd, assembly],
             None, shortname=assembly,
             environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-            for assembly in assemblies ]
+            for assembly in assemblies]
 
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
