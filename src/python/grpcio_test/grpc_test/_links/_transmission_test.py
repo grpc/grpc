@@ -35,6 +35,7 @@ from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
 from grpc.framework.interfaces.links import links
+from grpc_test import test_common
 from grpc_test._links import _proto_scenarios
 from grpc_test.framework.common import test_constants
 from grpc_test.framework.interfaces.links import test_cases
@@ -94,12 +95,11 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
     return _intermediary_low.Code.OK, 'An exuberant test "details" message!'
 
   def assertMetadataTransmitted(self, original_metadata, transmitted_metadata):
-    # we need to filter out any additional metadata added in transmitted_metadata
-    # since implementations are allowed to add to what is sent (in any position)
-    keys, _ = zip(*original_metadata)
-    self.assertSequenceEqual(
-        original_metadata,
-        [x for x in transmitted_metadata if x[0] in keys])
+    self.assertTrue(
+        test_common.metadata_transmitted(
+            original_metadata, transmitted_metadata),
+        '%s erroneously transmitted as %s' % (
+            original_metadata, transmitted_metadata))
 
 
 class RoundTripTest(unittest.TestCase):

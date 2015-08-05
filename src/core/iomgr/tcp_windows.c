@@ -369,14 +369,16 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
 }
 
 static void win_add_to_pollset(grpc_endpoint *ep, grpc_pollset *ps) {
+  grpc_tcp *tcp;
   (void) ps;
-  grpc_tcp *tcp = (grpc_tcp *) ep;
+  tcp = (grpc_tcp *) ep;
   grpc_iocp_add_socket(tcp->socket);
 }
 
 static void win_add_to_pollset_set(grpc_endpoint *ep, grpc_pollset_set *pss) {
+  grpc_tcp *tcp;
   (void) pss;
-  grpc_tcp *tcp = (grpc_tcp *) ep;
+  tcp = (grpc_tcp *) ep;
   grpc_iocp_add_socket(tcp->socket);
 }
 
