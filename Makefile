@@ -268,21 +268,34 @@ INCLUDES = . include $(GENDIR)
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
-LIBS += m
+ifneq ($(wildcard /usr/local/ssl/include),)
+INCLUDES += /usr/local/ssl/include
+endif
+ifneq ($(wildcard /opt/local/include),)
+INCLUDES += /opt/local/include
+endif
+ifneq ($(wildcard /usr/local/include),)
+INCLUDES += /usr/local/include
+endif
+LIBS = m z
+ifneq ($(wildcard /usr/local/ssl/lib),)
+LDFLAGS += -L/usr/local/ssl/lib
+endif
+ifneq ($(wildcard /opt/local/lib),)
+LDFLAGS += -L/opt/local/lib
+endif
+ifneq ($(wildcard /usr/local/lib),)
+LDFLAGS += -L/usr/local/lib
+endif
 endif
 
 ifeq ($(SYSTEM),Linux)
-LIBS += rt m pthread
+LIBS = rt m z pthread
 LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS += m pthread
-LDFLAGS += -pthread
-endif
-
-ifeq ($(SYSTEM),FreeBSD)
-LIBS += pthread
+LIBS = m z pthread
 LDFLAGS += -pthread
 endif
 
@@ -373,39 +386,6 @@ OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
 PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
 else # HAS_PKG_CONFIG
-
-ifeq ($(SYSTEM),Darwin)
-ifneq ($(wildcard /usr/local/ssl/include),)
-INCLUDES += /usr/local/ssl/include
-endif
-ifneq ($(wildcard /opt/local/include),)
-INCLUDES += /opt/local/include
-endif
-ifneq ($(wildcard /usr/local/include),)
-INCLUDES += /usr/local/include
-endif
-ifneq ($(wildcard /usr/local/ssl/lib),)
-LDFLAGS += -L/usr/local/ssl/lib
-endif
-ifneq ($(wildcard /opt/local/lib),)
-LDFLAGS += -L/opt/local/lib
-endif
-ifneq ($(wildcard /usr/local/lib),)
-LDFLAGS += -L/usr/local/lib
-endif
-endif
-
-ifeq ($(SYSTEM),Linux)
-LIBS += z
-endif
-
-ifeq ($(SYSTEM),MINGW32)
-LIBS += z
-endif
-
-ifeq ($(SYSTEM),FreeBSD)
-LIBS += z
-endif
 
 ifeq ($(SYSTEM),MINGW32)
 OPENSSL_LIBS = ssl32 eay32
