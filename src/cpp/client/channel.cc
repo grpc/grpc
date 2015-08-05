@@ -48,6 +48,7 @@
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
+#include <grpc++/time.h>
 
 namespace grpc {
 
@@ -93,4 +94,48 @@ void* Channel::RegisterMethod(const char* method) {
                                     host_.empty() ? NULL : host_.c_str());
 }
 
+grpc_connectivity_state Channel::GetState(bool try_to_connect) {
+  return grpc_channel_check_connectivity_state(c_channel_, try_to_connect);
+}
+
+void Channel::NotifyOnStateChange(grpc_connectivity_state last_observed,
+                                  gpr_timespec deadline,
+                                  CompletionQueue* cq, void* tag) {
+  grpc_channel_watch_connectivity_state(c_channel_, last_observed, deadline,
+                                        cq->cq(), tag);
+}
+
+bool Channel::WaitForStateChange(grpc_connectivity_state last_observed,
+                                 gpr_timespec deadline) {
+  CompletionQueue cq;
+  bool ok = false;
+  void* tag = NULL;
+  NotifyOnStateChange(last_observed, deadline, &cq, NULL);
+  cq.Next(&tag, &ok);
+  GPR_ASSERT(tag == NULL);
+  return ok;
+}
+
+#ifndef GRPC_CXX0X_NO_CHRONO
+void Channel::NotifyOnStateChange(
+      grpc_connectivity_state last_observed,
+      const std::chrono::system_clock::time_point& deadline,
+      CompletionQueue* cq, void* tag) {
+  TimePoint<std::chrono::system_clock::time_point> deadline_tp(deadline);
+  grpc_channel_watch_connectivity_state(c_channel_, last_observed,
+                                        deadline_tp.raw_time(), cq->cq(), tag);
+}
+
+bool Channel::WaitForStateChange(
+      grpc_connectivity_state last_observed,
+      const std::chrono::system_clock::time_point& deadline) {
+  CompletionQueue cq;
+  bool ok = false;
+  void* tag = NULL;
+  NotifyOnStateChange(last_observed, deadline, &cq, NULL);
+  cq.Next(&tag, &ok);
+  GPR_ASSERT(tag == NULL);
+  return ok;
+}
+#endif  // !GRPC_CXX0X_NO_CHRONO
 }  // namespace grpc

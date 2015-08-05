@@ -65,16 +65,24 @@ class ChannelInterface : public CallHook,
 
   // Return the tag on cq when the channel state is changed or deadline expires.
   // GetState needs to called to get the current state.
-  template <typename T>
   virtual void NotifyOnStateChange(grpc_connectivity_state last_observed,
-                                   const T& deadline,
+                                   gpr_timespec deadline,
                                    CompletionQueue* cq, void* tag) = 0;
 
   // Blocking wait for channel state change or deadline expires.
   // GetState needs to called to get the current state.
-  template <typename T>
   virtual bool WaitForStateChange(grpc_connectivity_state last_observed,
-                                  const T& deadline) = 0;
+                                  gpr_timespec deadline) = 0;
+#ifndef GRPC_CXX0X_NO_CHRONO
+  virtual void NotifyOnStateChange(
+      grpc_connectivity_state last_observed,
+      const std::chrono::system_clock::time_point& deadline,
+      CompletionQueue* cq, void* tag) = 0;
+  virtual bool WaitForStateChange(
+      grpc_connectivity_state last_observed,
+      const std::chrono::system_clock::time_point& deadline) = 0;
+#endif  // !GRPC_CXX0X_NO_CHRONO
+
 };
 
 }  // namespace grpc
