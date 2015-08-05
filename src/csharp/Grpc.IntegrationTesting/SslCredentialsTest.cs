@@ -65,8 +65,10 @@ namespace Grpc.IntegrationTesting
             var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
             var clientCredentials = new SslCredentials(rootCert, keyCertPair);
 
-            server = new Server();
-            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
+            server = new Server
+            {
+                Services = { TestService.BindService(new TestServiceImpl()) }
+            };
             int port = server.AddPort(host, Server.PickUnusedPort, serverCredentials);
             server.Start();
 

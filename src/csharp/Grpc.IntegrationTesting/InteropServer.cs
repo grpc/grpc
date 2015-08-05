@@ -88,8 +88,10 @@ namespace Grpc.IntegrationTesting
 
         private void Run()
         {
-            var server = new Server();
-            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
+            var server = new Server
+            {
+                Services = { TestService.BindService(new TestServiceImpl()) }
+            };
 
             string host = "0.0.0.0";
             int port = options.port.Value;

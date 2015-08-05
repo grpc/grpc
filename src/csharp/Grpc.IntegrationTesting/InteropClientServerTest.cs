@@ -55,8 +55,10 @@ namespace Grpc.IntegrationTesting
         [TestFixtureSetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
+            server = new Server()
+            {
+                Services = { TestService.BindService(new TestServiceImpl()) }
+            };
             int port = server.AddPort(host, Server.PickUnusedPort, TestCredentials.CreateTestServerCredentials());
             server.Start();
 

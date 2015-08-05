@@ -54,8 +54,10 @@ namespace math.Tests
         [TestFixtureSetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
+            server = new Server()
+            {
+                Services = { Math.BindService(new MathServiceImpl()) }
+            };
             int port = server.AddPort(host, Server.PickUnusedPort, ServerCredentials.Insecure);
             server.Start();
             channel = new Channel(host, port, Credentials.Insecure);

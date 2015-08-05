@@ -57,8 +57,10 @@ namespace Grpc.HealthCheck.Tests
         {
             serviceImpl = new HealthServiceImpl();
 
-            server = new Server();
-            server.AddServiceDefinition(Grpc.Health.V1Alpha.Health.BindService(serviceImpl));
+            server = new Server()
+            {
+                Services = { Grpc.Health.V1Alpha.Health.BindService(serviceImpl) }
+            };
             int port = server.AddPort(Host, Server.PickUnusedPort, ServerCredentials.Insecure);
             server.Start();
             channel = new Channel(Host, port, Credentials.Insecure);

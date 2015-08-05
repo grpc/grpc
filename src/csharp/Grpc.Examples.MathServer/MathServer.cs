@@ -42,8 +42,10 @@ namespace math
         {
             string host = "0.0.0.0";
 
-            Server server = new Server();
-            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
+            Server server = new Server()
+            {
+                Services = { Math.BindService(new MathServiceImpl()) },
+            };
             int port = server.AddPort(host, 23456, ServerCredentials.Insecure);
             server.Start();
 

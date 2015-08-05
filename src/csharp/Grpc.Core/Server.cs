@@ -32,7 +32,7 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -55,11 +55,13 @@ namespace Grpc.Core
 
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
+        readonly ServiceDefinitionCollection serviceDefinitions;
         readonly GrpcEnvironment environment;
         readonly List<ChannelOption> options;
         readonly ServerSafeHandle handle;
         readonly object myLock = new object();
 
+        readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
@@ -72,6 +74,7 @@ namespace Grpc.Core
         /// <param name="options">Channel options.</param>
         public Server(IEnumerable<ChannelOption> options = null)
         {
+            this.serviceDefinitions = new ServiceDefinitionCollection(this);
             this.environment = GrpcEnvironment.GetInstance();
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
             using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
@@ -81,19 +84,14 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Adds a service definition to the server. This is how you register
-        /// handlers for a service with the server.
-        /// Only call this before Start().
+        /// Services that will be exported by the server once started. Register a service with this
+        /// server by adding its definition to this collection.
         /// </summary>
-        public void AddServiceDefinition(ServerServiceDefinition serviceDefinition)
+        public ServiceDefinitionCollection Services
         {
-            lock (myLock)
+            get
             {
-                Preconditions.CheckState(!startRequested);
-                foreach (var entry in serviceDefinition.CallHandlers)
-                {
-                    callHandlers.Add(entry.Key, entry.Value);
-                }
+                return serviceDefinitions;
             }
         }
 
@@ -190,6 +188,22 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Adds a service definition.
+        /// </summary>
+        private void AddServiceDefinitionInternal(ServerServiceDefinition serviceDefinition)
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckState(!startRequested);
+                foreach (var entry in serviceDefinition.CallHandlers)
+                {
+                    callHandlers.Add(entry.Key, entry.Value);
+                }
+                serviceDefinitionsList.Add(serviceDefinition);
+            }
+        }
+
+        /// <summary>
         /// Allows one new RPC call to be received by server.
         /// </summary>
         private void AllowOneRpc()
@@ -248,6 +262,38 @@ namespace Grpc.Core
         private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx)
         {
             shutdownTcs.SetResult(null);
+        }
+
+        /// <summary>
+        /// Collection of service definitions.
+        /// </summary>
+        public class ServiceDefinitionCollection : IEnumerable<ServerServiceDefinition>
+        {
+            readonly Server server;
+
+            internal ServiceDefinitionCollection(Server server)
+            {
+                this.server = server;
+            }
+
+            /// <summary>
+            /// Adds a service definition to the server. This is how you register
+            /// handlers for a service with the server. Only call this before Start().
+            /// </summary>
+            public void Add(ServerServiceDefinition serviceDefinition)
+            {
+                server.AddServiceDefinitionInternal(serviceDefinition);
+            }
+
+            public IEnumerator<ServerServiceDefinition> GetEnumerator()
+            {
+                return server.serviceDefinitionsList.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return server.serviceDefinitionsList.GetEnumerator();
+            }
         }
     }
 }
