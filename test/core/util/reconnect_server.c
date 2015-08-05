@@ -129,11 +129,12 @@ void reconnect_server_start(reconnect_server *server, int port) {
 }
 
 void reconnect_server_poll(reconnect_server *server, int seconds) {
+  grpc_pollset_worker worker;
   gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
   gpr_mu_lock(GRPC_POLLSET_MU(&server->pollset));
-  grpc_pollset_work(&server->pollset, deadline);
+  grpc_pollset_work(&server->pollset, &worker, deadline);
   gpr_mu_unlock(GRPC_POLLSET_MU(&server->pollset));
 }
 
