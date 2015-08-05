@@ -126,7 +126,7 @@ class CLanguage(object):
       self.binaries = [tgt
                        for tgt in js
                        if tgt['language'] == test_lang and
-                          plat in tgt['platforms']]
+                          platform_string() in tgt['platforms']]
 
   def test_specs(self, config, travis):
     out = []
