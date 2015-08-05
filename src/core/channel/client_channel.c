@@ -56,6 +56,8 @@ typedef struct {
   grpc_mdctx *mdctx;
   /** resolver for this channel */
   grpc_resolver *resolver;
+  /** have we started resolving this channel */
+  int started_resolving;
   /** master channel - the grpc_channel instance that ultimately owns
       this channel_data via its channel stack.
       We occasionally use this to bump the refcount on the master channel
@@ -398,6 +400,12 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           } else if (chand->resolver != NULL) {
             calld->state = CALL_WAITING_FOR_CONFIG;
             add_to_lb_policy_wait_queue_locked_state_config(elem);
+            if (!chand->started_resolving && chand->resolver != NULL) {
+              chand->started_resolving = 1;
+              grpc_resolver_next(chand->resolver,
+                                 &chand->incoming_configuration,
+                                 &chand->on_config_changed);
+            }
             gpr_mu_unlock(&chand->mu_config);
             gpr_mu_unlock(&calld->mu_state);
           } else {
@@ -690,12 +698,18 @@ void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
   /* post construction initialization: set the transport setup pointer */
   grpc_channel_element *elem = grpc_channel_stack_last_element(channel_stack);
   channel_data *chand = elem->channel_data;
+  gpr_mu_lock(&chand->mu_config);
   GPR_ASSERT(!chand->resolver);
   chand->resolver = resolver;
   GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
   GRPC_RESOLVER_REF(resolver, "channel");
-  grpc_resolver_next(resolver, &chand->incoming_configuration,
-                     &chand->on_config_changed);
+  if (chand->waiting_for_config_closures != NULL ||
+      chand->exit_idle_when_lb_policy_arrives) {
+    chand->started_resolving = 1;
+    grpc_resolver_next(resolver, &chand->incoming_configuration,
+                       &chand->on_config_changed);
+  }
+  gpr_mu_unlock(&chand->mu_config);
 }
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
@@ -709,6 +723,11 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
       grpc_lb_policy_exit_idle(chand->lb_policy);
     } else {
       chand->exit_idle_when_lb_policy_arrives = 1;
+      if (!chand->started_resolving && chand->resolver != NULL) {
+        chand->started_resolving = 1;
+        grpc_resolver_next(chand->resolver, &chand->incoming_configuration,
+                           &chand->on_config_changed);
+      }
     }
   }
   gpr_mu_unlock(&chand->mu_config);
