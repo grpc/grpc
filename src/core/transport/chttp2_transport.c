@@ -855,7 +855,7 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
     if (!stream_global->publish_sopb) {
       continue;
     }
-    if (stream_global->writing_now) {
+    if (stream_global->writing_now != 0) {
       continue;
     }
     /* FIXME(ctiller): we include in_stream_map in our computation of
