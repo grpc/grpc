@@ -107,6 +107,11 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 }
 
 void grpc_cq_begin_op(grpc_completion_queue *cc) {
+#ifndef NDEBUG
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  GPR_ASSERT(!cc->shutdown_called);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+#endif
   gpr_ref(&cc->pending_events);
 }
 

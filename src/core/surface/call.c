@@ -317,7 +317,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
   gpr_mu_init(&call->completion_mu);
   call->channel = channel;
   call->cq = cq;
-  if (cq) {
+  if (cq != NULL) {
     GRPC_CQ_INTERNAL_REF(cq, "bind");
   }
   call->parent = parent_call;
@@ -372,10 +372,15 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
                                  parent_call->send_deadline.clock_type),
           parent_call->send_deadline);
     }
-    if (propagation_mask & GRPC_PROPAGATE_CENSUS_CONTEXT) {
+    /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
+     * GRPC_PROPAGATE_STATS_CONTEXT */
+    if (propagation_mask & GRPC_PROPAGATE_TRACING_CONTEXT) {
+      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_STATS_CONTEXT);
       grpc_call_context_set(call, GRPC_CONTEXT_TRACING,
                             parent_call->context[GRPC_CONTEXT_TRACING].value,
                             NULL);
+    } else {
+      GPR_ASSERT(propagation_mask & GRPC_PROPAGATE_STATS_CONTEXT);
     }
     if (propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
       call->cancellation_is_inherited = 1;

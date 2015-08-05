@@ -52,6 +52,8 @@ struct grpc_end2end_proxy {
   grpc_server *server;
   grpc_channel *client;
 
+  int shutdown;
+
   /* requested call */
   grpc_call *new_call;
   grpc_call_details new_call_details;
@@ -65,6 +67,7 @@ typedef struct {
 
 typedef struct {
   gpr_refcount refs;
+  grpc_end2end_proxy *proxy;
 
   grpc_call *c2p;
   grpc_call *p2s;
@@ -119,12 +122,15 @@ static closure *new_closure(void (*func)(void *arg, int success), void *arg) {
   return cl;
 }
 
-static void shutdown_complete(void *arg, int success) {}
+static void shutdown_complete(void *arg, int success) {
+  grpc_end2end_proxy *proxy = arg;
+  proxy->shutdown = 1;
+  grpc_completion_queue_shutdown(proxy->cq);
+}
 
 void grpc_end2end_proxy_destroy(grpc_end2end_proxy *proxy) {
   grpc_server_shutdown_and_notify(proxy->server, proxy->cq,
-                                  new_closure(shutdown_complete, NULL));
-  grpc_completion_queue_shutdown(proxy->cq);
+                                  new_closure(shutdown_complete, proxy));
   gpr_thd_join(proxy->thd);
   gpr_free(proxy->proxy_port);
   gpr_free(proxy->server_port);
@@ -165,14 +171,16 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  op.op = GRPC_OP_SEND_INITIAL_METADATA;
-  op.flags = 0;
-  op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
-  op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
-  refpc(pc, "on_c2p_sent_initial_metadata");
-  err = grpc_call_start_batch(pc->c2p, &op, 1,
-                              new_closure(on_c2p_sent_initial_metadata, pc));
-  GPR_ASSERT(err == GRPC_CALL_OK);
+  if (!pc->proxy->shutdown) {
+    op.op = GRPC_OP_SEND_INITIAL_METADATA;
+    op.flags = 0;
+    op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
+    op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
+    refpc(pc, "on_c2p_sent_initial_metadata");
+    err = grpc_call_start_batch(pc->c2p, &op, 1,
+                                new_closure(on_c2p_sent_initial_metadata, pc));
+    GPR_ASSERT(err == GRPC_CALL_OK);
+  }
 
   unrefpc(pc, "on_p2s_recv_initial_metadata");
 }
@@ -190,7 +198,7 @@ static void on_p2s_sent_message(void *arg, int success) {
   grpc_call_error err;
 
   grpc_byte_buffer_destroy(pc->c2p_msg);
-  if (success) {
+  if (!pc->proxy->shutdown && success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.data.recv_message = &pc->c2p_msg;
@@ -213,7 +221,7 @@ static void on_c2p_recv_msg(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  if (success) {
+  if (!pc->proxy->shutdown && success) {
     if (pc->c2p_msg != NULL) {
       op.op = GRPC_OP_SEND_MESSAGE;
       op.flags = 0;
@@ -243,7 +251,7 @@ static void on_c2p_sent_message(void *arg, int success) {
   grpc_call_error err;
 
   grpc_byte_buffer_destroy(pc->p2s_msg);
-  if (success) {
+  if (!pc->proxy->shutdown && success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.data.recv_message = &pc->p2s_msg;
@@ -261,7 +269,7 @@ static void on_p2s_recv_msg(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  if (success && pc->p2s_msg) {
+  if (!pc->proxy->shutdown && success && pc->p2s_msg) {
     op.op = GRPC_OP_SEND_MESSAGE;
     op.flags = 0;
     op.data.send_message = pc->p2s_msg;
@@ -283,19 +291,21 @@ static void on_p2s_status(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  GPR_ASSERT(success);
-  op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op.flags = 0;
-  op.data.send_status_from_server.trailing_metadata_count =
-      pc->p2s_trailing_metadata.count;
-  op.data.send_status_from_server.trailing_metadata =
-      pc->p2s_trailing_metadata.metadata;
-  op.data.send_status_from_server.status = pc->p2s_status;
-  op.data.send_status_from_server.status_details = pc->p2s_status_details;
-  refpc(pc, "on_c2p_sent_status");
-  err = grpc_call_start_batch(pc->c2p, &op, 1,
-                              new_closure(on_c2p_sent_status, pc));
-  GPR_ASSERT(err == GRPC_CALL_OK);
+  if (!pc->proxy->shutdown) {
+    GPR_ASSERT(success);
+    op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op.flags = 0;
+    op.data.send_status_from_server.trailing_metadata_count =
+        pc->p2s_trailing_metadata.count;
+    op.data.send_status_from_server.trailing_metadata =
+        pc->p2s_trailing_metadata.metadata;
+    op.data.send_status_from_server.status = pc->p2s_status;
+    op.data.send_status_from_server.status_details = pc->p2s_status_details;
+    refpc(pc, "on_c2p_sent_status");
+    err = grpc_call_start_batch(pc->c2p, &op, 1,
+                                new_closure(on_c2p_sent_status, pc));
+    GPR_ASSERT(err == GRPC_CALL_OK);
+  }
 
   unrefpc(pc, "on_p2s_status");
 }
@@ -313,6 +323,7 @@ static void on_new_call(void *arg, int success) {
     grpc_op op;
     proxy_call *pc = gpr_malloc(sizeof(*pc));
     memset(pc, 0, sizeof(*pc));
+    pc->proxy = proxy;
     GPR_SWAP(grpc_metadata_array, pc->c2p_initial_metadata,
              proxy->new_call_metadata);
     pc->c2p = proxy->new_call;
