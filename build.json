@@ -572,6 +572,23 @@
       "vs_project_guid": "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
     },
     {
+      "name": "reconnect_server",
+      "build": "private",
+      "language": "c",
+      "headers": [
+        "test/core/util/reconnect_server.h"
+      ],
+      "src": [
+        "test/core/util/reconnect_server.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc++",
       "build": "all",
       "language": "c++",
@@ -2411,6 +2428,49 @@
       ],
       "deps": [
         "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "reconnect_interop_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/proto/empty.proto",
+        "test/proto/messages.proto",
+        "test/proto/test.proto",
+        "test/cpp/interop/reconnect_interop_client.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr",
+        "grpc++_test_config"
+      ]
+    },
+    {
+      "name": "reconnect_interop_server",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/proto/empty.proto",
+        "test/proto/messages.proto",
+        "test/proto/test.proto",
+        "test/cpp/interop/reconnect_interop_server.cc"
+      ],
+      "deps": [
+        "reconnect_server",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
