@@ -830,6 +830,22 @@ TEST_F(End2endTest, HugeResponse) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_F(End2endTest, ReuseClientContext) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+
+  Status s2 = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(StatusCode::CANCELLED, s2.error_code());
+  EXPECT_EQ("ClientContext should not be reused.", s2.error_message());
+}
+
 TEST_F(End2endTest, Peer) {
   ResetStub();
   EchoRequest request;
@@ -841,6 +857,7 @@ TEST_F(End2endTest, Peer) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
+
   EXPECT_TRUE(CheckIsLocalhost(response.param().peer()));
   EXPECT_TRUE(CheckIsLocalhost(context.peer()));
 }

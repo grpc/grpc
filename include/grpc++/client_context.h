@@ -45,6 +45,7 @@
 #include <grpc++/config.h>
 #include <grpc++/status.h>
 #include <grpc++/time.h>
+#include <grpc++/impl/sync.h>
 
 struct grpc_call;
 struct grpc_completion_queue;
@@ -163,15 +164,11 @@ class ClientContext {
   void set_call(grpc_call* call,
                 const std::shared_ptr<ChannelInterface>& channel);
 
-  grpc_completion_queue* cq() { return cq_; }
-  void set_cq(grpc_completion_queue* cq) { cq_ = cq; }
-
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
   std::shared_ptr<ChannelInterface> channel_;
   grpc_call* call_;
-  grpc_completion_queue* cq_;
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;
@@ -182,6 +179,12 @@ class ClientContext {
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
   grpc_compression_algorithm compression_algorithm_;
+  grpc::mutex mu_;
+  enum State {
+    CREATED,
+    STARTED
+  };
+  State state_;
 };
 
 }  // namespace grpc
