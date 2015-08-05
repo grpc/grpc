@@ -37,8 +37,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <grpc/grpc_etcd.h>
 
 #include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 #include "src/core/httpcli/httpcli.h"
@@ -50,8 +52,8 @@ typedef struct {
   gpr_refcount refs;
   /** name to resolve */
   char *name;
-  /** default port to use */
-  char *default_port;
+  /** authority */
+  char *authority;
   /** subchannel factory */
   grpc_subchannel_factory *subchannel_factory;
   /** load balancing policy factory */
@@ -126,7 +128,7 @@ static void etcd_next(grpc_resolver *resolver,
   gpr_mu_unlock(&r->mu);
 }
 
-static void etcd_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
+/*static void etcd_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   etcd_resolver *r = arg;
   grpc_client_config *config = NULL;
   grpc_subchannel **subchannels;
@@ -161,21 +163,72 @@ static void etcd_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   gpr_mu_unlock(&r->mu);
 
   GRPC_RESOLVER_UNREF(&r->base, "etcd-resolving");
+}*/
+
+/** Parse json format address of a etcd node */
+/*static char *etcd_parse_address(char *buffer, int buffer_len) {
+  const char *host;
+  const char *port;
+  char *address;
+  grpc_json *json;
+  grpc_json *cur;
+
+  address = NULL;
+  json = grpc_json_parse_string_with_len(buffer, buffer_len);
+  if (json != NULL) {
+    host = NULL;
+    port = NULL;
+    for (cur = json->child; cur != NULL; cur = cur->next) {
+      if (!strcmp(cur->key, "host")) {
+        host = cur->value;
+        if (port != NULL) {
+          break;
+        }
+      } else if (!strcmp(cur->key, "port")) {
+        port = cur->value;
+        if (host != NULL) {
+          break;
+        }
+      }
+    }
+    if (host != NULL && port != NULL) {
+      address = gpr_malloc(GRPC_MAX_SOCKADDR_SIZE);
+      memset(address, 0, GRPC_MAX_SOCKADDR_SIZE);
+      strcat(address, host);
+      strcat(address, ":");
+      strcat(address, port);
+    }
+    grpc_json_destroy(json);
+  }
+
+  return address;
+}*/
+
+static void etcd_get_node_completion(void *arg, const grpc_httpcli_response *response) {
+  etcd_resolver *r = (etcd_resolver *)arg;
+  if (response == NULL || response->status != 200) {
+    gpr_log(GPR_ERROR, "Error in getting etcd node %s", r->name);
+    return;
+  }
+  gpr_log(GPR_INFO, response->body);
 }
 
 static void etcd_resolve_address(etcd_resolver *r) {
-  int path_length;
-  char *path;
   grpc_httpcli_request request;
-  const char *prefix = "/v2/keys";
-  
+  grpc_httpcli_context context;
+  grpc_pollset pollset;
+  gpr_timespec max_delay;
+  char *path;
+  gpr_asprintf(&path, "/v2/keys/%s", r->name);
+
   memset(&request, 0, sizeof(request));
-
-  path_length = 
   request.host = r->authority;
+  request.path = path;
+  request.use_ssl = 0;
 
-  int path_length = 
-  request.path = "/v2/keys"
+  max_delay = gpr_time_from_seconds(5, GPR_TIMESPAN);
+  grpc_httpcli_get(&context, &pollset, &request, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_delay), etcd_get_node_completion, r);
+  gpr_free(path);
 }
 
 static void etcd_start_resolving_locked(etcd_resolver *r) {
@@ -206,12 +259,12 @@ static void etcd_destroy(grpc_resolver *gr) {
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
   gpr_free(r->name);
-  gpr_free(r->default_port);
+  gpr_free(r->authority);
   gpr_free(r);
 }
 
 static grpc_resolver *etcd_create(
-    grpc_uri *uri, const char *default_port,
+    grpc_uri *uri,
     grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
                                          size_t num_subchannels),
     grpc_subchannel_factory *subchannel_factory) {
@@ -223,15 +276,16 @@ static grpc_resolver *etcd_create(
     return NULL;
   }
 
-  if (path[0] == '/') ++path;
-
   r = gpr_malloc(sizeof(etcd_resolver));
   memset(r, 0, sizeof(*r));
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &etcd_resolver_vtable);
   r->name = gpr_strdup(path);
-  r->default_port = gpr_strdup(default_port);
+  if (r->name[strlen(r->name) - 1] == '/') {
+    r->name[strlen(r->name) - 1] = 0;
+  }
+  r->authority = gpr_strdup(uri->authority);
   r->subchannel_factory = subchannel_factory;
   r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);

@@ -11161,6 +11161,23 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [
+      "include/grpc/grpc_etcd.h", 
+      "src/core/client_config/resolvers/etcd_resolver.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_etcd", 
+    "src": [
+      "include/grpc/grpc_etcd.h", 
+      "src/core/client_config/resolvers/etcd_resolver.c", 
+      "src/core/client_config/resolvers/etcd_resolver.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc"
     ], 

@@ -1562,13 +1562,13 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_etcd.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 
 static_cxx: pc_cxx pc_cxx_unsecure pc_gpr cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
-shared_c: pc_c pc_c_unsecure pc_gpr  cache.mk $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+shared_c: pc_c pc_c_unsecure pc_gpr  cache.mk $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 
 shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
 
@@ -3059,6 +3059,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[STRIP]   Stripping libgrpc.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[STRIP]   Stripping libgrpc_etcd.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
@@ -3077,6 +3079,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping libgrpc_etcd.so"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 endif
@@ -3353,6 +3357,9 @@ install-static_c: static_c strip-static_c install-pkg-config_c
 	$(E) "[INSTALL] Installing libgrpc.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.a $(prefix)/lib/libgrpc.a
+	$(E) "[INSTALL] Installing libgrpc_etcd.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.a $(prefix)/lib/libgrpc_etcd.a
 	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
@@ -3394,6 +3401,20 @@ else
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.so.0
 	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc_etcd.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_etcd.$(SHARED_EXT) $(prefix)/lib/grpc_etcd.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_etcd-imp.a $(prefix)/lib/libgrpc_etcd-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc_etcd.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.$(SHARED_EXT) $(prefix)/lib/libgrpc_etcd.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc_etcd.$(SHARED_EXT) $(prefix)/lib/libgrpc_etcd.so.0
+	$(Q) ln -sf libgrpc_etcd.$(SHARED_EXT) $(prefix)/lib/libgrpc_etcd.so
 endif
 endif
 ifeq ($(SYSTEM),MINGW32)
@@ -3874,6 +3895,48 @@ ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_OBJS:.o=.dep)
 endif
+endif
+
+
+LIBGRPC_ETCD_SRC = \
+    src/core/client_config/resolvers/etcd_resolver.c \
+
+PUBLIC_HEADERS_C += \
+    include/grpc/grpc_etcd.h \
+
+LIBGRPC_ETCD_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ETCD_SRC))))
+
+$(LIBDIR)/$(CONFIG)/libgrpc_etcd.a: $(ZLIB_DEP) $(LIBGRPC_ETCD_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_etcd.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc_etcd.a $(LIBGRPC_ETCD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc_etcd.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc_etcd.$(SHARED_EXT): $(LIBGRPC_ETCD_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_etcd.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_etcd-imp.a -o $(LIBDIR)/$(CONFIG)/grpc_etcd.$(SHARED_EXT) $(LIBGRPC_ETCD_OBJS) $(LDLIBS) -lgpr-imp -lgrpc-imp
+else
+$(LIBDIR)/$(CONFIG)/libgrpc_etcd.$(SHARED_EXT): $(LIBGRPC_ETCD_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name libgrpc_etcd.$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_etcd.$(SHARED_EXT) $(LIBGRPC_ETCD_OBJS) $(LDLIBS) -lgpr -lgrpc
+else
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_etcd.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_etcd.$(SHARED_EXT) $(LIBGRPC_ETCD_OBJS) $(LDLIBS) -lgpr -lgrpc
+	$(Q) ln -sf libgrpc_etcd.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.so.0
+	$(Q) ln -sf libgrpc_etcd.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_etcd.so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC_ETCD_OBJS:.o=.dep)
 endif
 
 

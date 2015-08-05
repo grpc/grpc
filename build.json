@@ -514,6 +514,26 @@
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
     },
     {
+      "name": "grpc_etcd",
+      "build": "all",
+      "language": "c",
+      "public_headers": [
+        "include/grpc/grpc_etcd.h"
+      ],
+      "headers": [
+        "src/core/client_config/resolvers/etcd_resolver.h"
+      ],
+      "src": [
+        "src/core/client_config/resolvers/etcd_resolver.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
+      "secure": "no",
+      "vs_project_guid": "{F3089A9A-1C12-4315-A4F5-92D6736F8DDD}"
+    },
+    {
       "name": "grpc_test_util",
       "build": "private",
       "language": "c",
