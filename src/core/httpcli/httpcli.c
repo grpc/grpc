@@ -41,7 +41,6 @@
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/httpcli/format_request.h"
 #include "src/core/httpcli/parser.h"
-#include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
