@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -29,27 +27,45 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Common code used throughout tests of gRPC."""
 
-set -e
+import collections
 
-export TEST=true
 
-cd `dirname $0`/../..
+def metadata_transmitted(original_metadata, transmitted_metadata):
+  """Judges whether or not metadata was acceptably transmitted.
 
-./tools/buildgen/generate_projects.sh
+  gRPC is allowed to insert key-value pairs into the metadata values given by
+  applications and to reorder key-value pairs with different keys but it is not
+  allowed to alter existing key-value pairs or to reorder key-value pairs with
+  the same key.
 
-submodules=`mktemp`
+  Args:
+    original_metadata: A metadata value used in a test of gRPC.
+    transmitted_metadata: A metadata value corresponding to original_metadata
+      after having been transmitted via gRPC.
 
-git submodule > $submodules
+  Returns:
+     A boolean indicating whether transmitted_metadata accurately reflects
+      original_metadata after having been transmitted via gRPC.
+  """
+  original = collections.defaultdict(list)
+  for key, value in original_metadata:
+    original[key].append(value)
+  transmitted = collections.defaultdict(list)
+  for key, value in transmitted_metadata:
+    transmitted[key].append(value)
 
-diff -u $submodules - << EOF
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- 33dd08320648ac71d7d9d732be774ed3818dccc5 third_party/openssl (OpenSSL_1_0_2d)
- 3e2c8a5dd79481e1d36572cdf65be93514ba6581 third_party/protobuf (v3.0.0-alpha-1-1048-g3e2c8a5)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
-EOF
-
-if [ -f cache.mk ] ; then
-  echo "Please don't commit cache.mk"
-  exit 1
-fi
+  for key, values in original.iteritems():
+    transmitted_values = transmitted[key]
+    transmitted_iterator = iter(transmitted_values)
+    try:
+      for value in values:
+        while True:
+          transmitted_value = next(transmitted_iterator)
+          if value == transmitted_value:
+            break
+    except StopIteration:
+      return False
+  else:
+    return True

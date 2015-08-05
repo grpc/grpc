@@ -265,8 +265,8 @@ NAN_METHOD(Server::AddHttp2Port) {
   grpc_server_credentials *creds = creds_object->GetWrappedServerCredentials();
   int port;
   if (creds == NULL) {
-    port = grpc_server_add_http2_port(server->wrapped_server,
-                                      *NanUtf8String(args[0]));
+    port = grpc_server_add_insecure_http2_port(server->wrapped_server,
+                                               *NanUtf8String(args[0]));
   } else {
     port = grpc_server_add_secure_http2_port(server->wrapped_server,
                                              *NanUtf8String(args[0]),
