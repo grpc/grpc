@@ -38,7 +38,6 @@ import json
 import multiprocessing
 import os
 import platform
-import psutil
 import random
 import re
 import subprocess
@@ -532,8 +531,7 @@ def _start_port_server(port_server_port):
   # if not running ==> start a new one
   # otherwise, leave it up
   try:
-    version, _, pid = urllib2.urlopen(
-        'http://localhost:%d/version_and_pid' % port_server_port).read().partition('+')
+    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port).read()
     running = True
   except Exception:
     running = False
@@ -542,7 +540,8 @@ def _start_port_server(port_server_port):
       current_version = hashlib.sha1(f.read()).hexdigest()
       running = (version == current_version)
       if not running:
-        psutil.Process(int(pid)).terminate()
+        urllib2.urlopen('http://localhost:%d/quit' % port_server_port).read()
+        time.sleep(1)
   if not running:
     port_log = open('portlog.txt', 'w')
     port_server = subprocess.Popen(

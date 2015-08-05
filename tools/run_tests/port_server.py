@@ -81,9 +81,13 @@ def allocate_port():
   return port
 
 
+keep_running = True
+
+
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
   def do_GET(self):
+    global keep_running
     if self.path == '/get':
       # allocate a new port, it will stay bound for ten minutes and until
       # it's unused
@@ -93,13 +97,21 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       p = allocate_port()
       self.log_message('allocated port %d' % p)
       self.wfile.write('%d' % p)
-    elif self.path == '/version_and_pid':
+    elif self.path == '/version':
       # fetch a version string and the current process pid
       self.send_response(200)
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
-      self.wfile.write('%s+%d' % (_MY_VERSION, os.getpid()))
+      self.wfile.write(_MY_VERSION)
+    elif self.path == '/quit':
+      self.send_response(200)
+      self.end_headers()
+      keep_running = False
 
 
-BaseHTTPServer.HTTPServer(('', args.port), Handler).serve_forever()
+httpd = BaseHTTPServer.HTTPServer(('', args.port), Handler)
+while keep_running:
+  httpd.handle_request()
+
+print 'done'
 
