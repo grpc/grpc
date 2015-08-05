@@ -33,6 +33,8 @@
 
 #import "GRPCChannel.h"
 
+#include <grpc/grpc.h>
+
 @implementation GRPCChannel
 
 - (instancetype)init {
