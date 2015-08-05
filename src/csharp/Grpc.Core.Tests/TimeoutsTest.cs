@@ -126,8 +126,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void DeadlineInThePast()
         {
-            var deadline = DateTime.MinValue;
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext(deadline: DateTime.MinValue));
 
             try
             {

@@ -53,6 +53,7 @@ namespace Grpc.Core
             this.name = method.GetFullName(serviceName);
             this.requestMarshaller = method.RequestMarshaller;
             this.responseMarshaller = method.ResponseMarshaller;
+            this.channel = channel;
             this.context = context;
         }
 
