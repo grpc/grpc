@@ -115,6 +115,7 @@
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Internal\NativeLogRedirector.cs" />
+    <Compile Include="ChannelState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
