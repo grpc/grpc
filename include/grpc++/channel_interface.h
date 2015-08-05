@@ -59,16 +59,21 @@ class ChannelInterface : public CallHook,
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
                           CompletionQueue* cq) = 0;
 
+  // Get the current channel state. If the channel is in IDLE and try_to_connect
+  // is set to true, try to connect.
   virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
 
+  // Return the tag on cq when the channel state is changed or deadline expires.
+  // GetState needs to called to get the current state.
   template <typename T>
   virtual void NotifyOnStateChange(grpc_connectivity_state last_observed,
-                                   grpc_connectivity_state* optional_new_state,
                                    const T& deadline,
                                    CompletionQueue* cq, void* tag) = 0;
+
+  // Blocking wait for channel state change or deadline expires.
+  // GetState needs to called to get the current state.
   template <typename T>
   virtual bool WaitForStateChange(grpc_connectivity_state last_observed,
-                                  grpc_connectivity_state* new_state,
                                   const T& deadline) = 0;
 };
 
