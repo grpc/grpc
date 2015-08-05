@@ -42,19 +42,22 @@ namespace Grpc.Core
     /// </summary>
     public class Call<TRequest, TResponse>
     {
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
         readonly Channel channel;
+        readonly Method<TRequest, TResponse> method;
+        readonly string host;
         readonly CallContext context;
 
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, CallContext context)
+        public Call(Channel channel, Method<TRequest, TResponse> method, CallContext context)
+            : this(channel, method, null, context)
         {
-            this.name = method.GetFullName(serviceName);
-            this.requestMarshaller = method.RequestMarshaller;
-            this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = channel;
-            this.context = context;
+        }
+
+        public Call(Channel channel, Method<TRequest, TResponse> method, string host, CallContext context)
+        {
+            this.channel = Preconditions.CheckNotNull(channel);
+            this.method = Preconditions.CheckNotNull(method);
+            this.host = host;
+            this.context = Preconditions.CheckNotNull(context);
         }
 
         public Channel Channel
@@ -65,14 +68,19 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary>
-        /// Full methods name including the service name.
-        /// </summary>
-        public string Name
+        public Method<TRequest, TResponse> Method
         {
             get
             {
-                return name;
+                return this.method;
+            }
+        }
+
+        public string Host
+        {
+            get
+            {
+                return this.host;
             }
         }
 
@@ -84,22 +92,6 @@ namespace Grpc.Core
             get
             {
                 return context;
-            }
-        }
-
-        public Marshaller<TRequest> RequestMarshaller
-        {
-            get
-            {
-                return requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return responseMarshaller;
             }
         }
     }
