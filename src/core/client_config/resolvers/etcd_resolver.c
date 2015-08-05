@@ -74,6 +74,9 @@ typedef struct {
   grpc_client_config **target_config;
   /** current (fully resolved) config */
   grpc_client_config *resolved_config;
+  /** is HTTP request/response done?*/
+  int http_done;
+  grpc_pollset pollset;
 } etcd_resolver;
 
 static void etcd_destroy(grpc_resolver *r);
@@ -204,30 +207,53 @@ static void etcd_next(grpc_resolver *resolver,
   return address;
 }*/
 
-static void etcd_get_node_completion(void *arg, const grpc_httpcli_response *response) {
+static void etcd_on_response(void *arg, const grpc_httpcli_response *response) {
   etcd_resolver *r = (etcd_resolver *)arg;
+  gpr_log(GPR_INFO, "etcd resolver");
   if (response == NULL || response->status != 200) {
     gpr_log(GPR_ERROR, "Error in getting etcd node %s", r->name);
     return;
   }
   gpr_log(GPR_INFO, response->body);
+  gpr_mu_lock(GRPC_POLLSET_MU(&r->pollset));
+  r->http_done = 1;
+  grpc_pollset_kick(&r->pollset);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&r->pollset));
 }
 
 static void etcd_resolve_address(etcd_resolver *r) {
   grpc_httpcli_request request;
   grpc_httpcli_context context;
-  grpc_pollset pollset;
-  gpr_timespec max_delay;
+  gpr_timespec deadline;
   char *path;
-  gpr_asprintf(&path, "/v2/keys/%s", r->name);
+  gpr_asprintf(&path, "/v2/keys%s", r->name);
 
   memset(&request, 0, sizeof(request));
   request.host = r->authority;
   request.path = path;
   request.use_ssl = 0;
 
-  max_delay = gpr_time_from_seconds(5, GPR_TIMESPAN);
-  grpc_httpcli_get(&context, &pollset, &request, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_delay), etcd_get_node_completion, r);
+  grpc_httpcli_context_init(&context);
+  grpc_pollset_init(&r->pollset);
+
+  gpr_log(GPR_INFO, "authority: %s, name: %s", r->authority, r->name);
+  gpr_log(GPR_INFO, path);
+  deadline = gpr_time_from_seconds(5, GPR_TIMESPAN);
+
+  grpc_httpcli_get(&context, &r->pollset, &request, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), deadline), etcd_on_response, r);
+
+  gpr_log(GPR_INFO, "hello");
+
+  gpr_mu_lock(GRPC_POLLSET_MU(&r->pollset));
+  while (r->http_done == 0) {
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&r->pollset, &worker,
+                      gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(GRPC_POLLSET_MU(&r->pollset));
+
+  grpc_httpcli_context_destroy(&context);
+  grpc_pollset_destroy(&r->pollset);
   gpr_free(path);
 }
 

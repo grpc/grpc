@@ -693,6 +693,15 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "etcd_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "fixed_size_thread_pool_test", 
     "platforms": [
       "windows", 

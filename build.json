@@ -2139,6 +2139,23 @@
       ]
     },
     {
+      "name": "etcd_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/etcd_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc_etcd",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "fixed_size_thread_pool_test",
       "build": "test",
       "language": "c++",
