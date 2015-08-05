@@ -1638,10 +1638,14 @@ endif
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
     mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
-  if lib.get('secure', 'check') == 'yes':
+  security = lib.get('secure', 'check')
+  if security == 'yes':
     common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
+
+  if security in ['yes', 'check']:
     for src in lib.src:
-      sources_that_need_openssl.add(src)
+      if not proto_re.match(src):
+        sources_that_need_openssl.add(src)
   else:
     for src in lib.src:
       sources_that_don_t_need_openssl.add(src)

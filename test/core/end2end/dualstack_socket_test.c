@@ -96,8 +96,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
   cq = grpc_completion_queue_create();
   server = grpc_server_create(NULL);
   grpc_server_register_completion_queue(server, cq);
-  GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
-             0);
+  GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
+                  server, server_hostport)) > 0);
   if (port == 0) {
     port = got_port;
   } else {

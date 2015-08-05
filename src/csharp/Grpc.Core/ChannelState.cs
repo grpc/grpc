@@ -32,46 +32,38 @@
 #endregion
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core
 {
     /// <summary>
-    /// Tests if the version of nunit-console used is sufficient to run async tests.
+    /// Connectivity state of a channel.
+    /// Based on grpc_connectivity_state from grpc/grpc.h
     /// </summary>
-    public class NUnitVersionTest
+    public enum ChannelState
     {
-        private int testRunCount = 0;
+        /// <summary>
+        /// Channel is idle
+        /// </summary>
+        Idle,
 
-        [TestFixtureTearDown]
-        public void Cleanup()
-        {
-            if (testRunCount != 2)
-            {
-                Console.Error.WriteLine("You are using and old version of NUnit that doesn't support async tests and skips them instead. " +
-                "This test has failed to indicate that.");
-                Console.Error.Flush();
-                Environment.Exit(1);
-            }
-        }
+        /// <summary>
+        /// Channel is connecting
+        /// </summary>
+        Connecting,
 
-        [Test]
-        public void NUnitVersionTest1()
-        {
-            testRunCount++;
-        }
+        /// <summary>
+        /// Channel is ready for work
+        /// </summary>
+        Ready,
 
-        // Old version of NUnit will skip this test
-        [Test]
-        public async Task NUnitVersionTest2()
-        {
-            testRunCount++;
-            await Task.Delay(10);
-        }
+        /// <summary>
+        /// Channel has seen a failure but expects to recover
+        /// </summary>
+        TransientFailure,
+
+        /// <summary>
+        /// Channel has seen a failure that it cannot recover from
+        /// </summary>
+        FatalFailure
     }
 }

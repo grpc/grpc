@@ -382,6 +382,22 @@ grpcsharp_channel_create_call(grpc_channel *channel, grpc_completion_queue *cq,
   return grpc_channel_create_call(channel, cq, method, host, deadline);
 }
 
+GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE
+grpcsharp_channel_check_connectivity_state(grpc_channel *channel, gpr_int32 try_to_connect) {
+  return grpc_channel_check_connectivity_state(channel, try_to_connect);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_watch_connectivity_state(
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    gpr_timespec deadline, grpc_completion_queue *cq, grpcsharp_batch_context *ctx) {
+  grpc_channel_watch_connectivity_state(channel, last_observed_state,
+                                        deadline, cq, ctx);
+}
+
+GPR_EXPORT char *GPR_CALLTYPE grpcsharp_channel_get_target(grpc_channel *channel) {
+  return grpc_channel_get_target(channel);
+}
+
 /* Channel args */
 
 GPR_EXPORT grpc_channel_args *GPR_CALLTYPE
@@ -715,7 +731,7 @@ grpcsharp_server_create(grpc_completion_queue *cq,
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
 grpcsharp_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
-  return grpc_server_add_http2_port(server, addr);
+  return grpc_server_add_insecure_http2_port(server, addr);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {

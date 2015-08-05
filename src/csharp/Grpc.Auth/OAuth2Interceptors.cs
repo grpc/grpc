@@ -119,7 +119,5 @@ namespace Grpc.Auth
                 return new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken);
             }
         }
-
-
     }
 }
