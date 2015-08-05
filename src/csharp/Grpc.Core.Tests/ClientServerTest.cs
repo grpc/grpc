@@ -276,6 +276,30 @@ namespace Grpc.Core.Tests
             Assert.IsTrue(peer.Contains(Host));
         }
 
+        [Test]
+        public async Task Channel_WaitForStateChangedAsync()
+        {
+            Assert.Throws(typeof(TaskCanceledException), 
+                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
+
+            var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
+
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            await Calls.AsyncUnaryCall(internalCall, "abc", CancellationToken.None);
+
+            await stateChangedTask;
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+        }
+
+        [Test]
+        public async Task Channel_ConnectAsync()
+        {
+            await channel.ConnectAsync();
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(1000));
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+        }
+
         private static async Task<string> EchoHandler(string request, ServerCallContext context)
         {
             foreach (Metadata.Entry metadataEntry in context.RequestHeaders)
