@@ -731,7 +731,7 @@ grpcsharp_server_create(grpc_completion_queue *cq,
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
 grpcsharp_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
-  return grpc_server_add_http2_port(server, addr);
+  return grpc_server_add_insecure_http2_port(server, addr);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {
