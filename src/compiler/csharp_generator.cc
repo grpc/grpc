@@ -356,9 +356,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
           GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("var call = CreateCall($servicenamefield$, $methodfield$, new CallContext(headers, deadline, cancellationToken));\n",
-                 "servicenamefield", GetServiceNameFieldName(), "methodfield",
-                 GetMethodFieldName(method));
+      out->Print("var call = CreateCall($methodfield$, new CallContext(headers, deadline, cancellationToken));\n",
+                 "methodfield", GetMethodFieldName(method));
       out->Print("return Calls.BlockingUnaryCall(call, request);\n");
       out->Outdent();
       out->Print("}\n");
@@ -371,9 +370,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
                 GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("var call = CreateCall($servicenamefield$, $methodfield$, context);\n",
-                 "servicenamefield", GetServiceNameFieldName(), "methodfield",
-                 GetMethodFieldName(method));
+      out->Print("var call = CreateCall($methodfield$, context);\n",
+                 "methodfield", GetMethodFieldName(method));
       out->Print("return Calls.BlockingUnaryCall(call, request);\n");
       out->Outdent();
       out->Print("}\n");
@@ -390,9 +388,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    out->Print("var call = CreateCall($servicenamefield$, $methodfield$, new CallContext(headers, deadline, cancellationToken));\n",
-               "servicenamefield", GetServiceNameFieldName(), "methodfield",
-               GetMethodFieldName(method));
+    out->Print("var call = CreateCall($methodfield$, new CallContext(headers, deadline, cancellationToken));\n",
+               "methodfield", GetMethodFieldName(method));
     switch (GetMethodType(method)) {
       case METHODTYPE_NO_STREAMING:
         out->Print("return Calls.AsyncUnaryCall(call, request);\n");
@@ -421,9 +418,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    out->Print("var call = CreateCall($servicenamefield$, $methodfield$, context);\n",
-               "servicenamefield", GetServiceNameFieldName(), "methodfield",
-               GetMethodFieldName(method));
+    out->Print("var call = CreateCall($methodfield$, context);\n",
+               "methodfield", GetMethodFieldName(method));
     switch (GetMethodType(method)) {
       case METHODTYPE_NO_STREAMING:
         out->Print("return Calls.AsyncUnaryCall(call, request);\n");
