@@ -67,7 +67,7 @@ namespace Grpc.Core.Internal
         public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName, Timespec deadline)
         {
             this.channel = channel;
-            var call = channel.Handle.CreateCall(channel.CompletionRegistry, cq, methodName, null, deadline);
+            var call = channel.Handle.CreateCall(channel.Environment.CompletionRegistry, cq, methodName, null, deadline);
             channel.Environment.DebugStats.ActiveClientCalls.Increment();
             InitializeInternal(call);
         }

@@ -32,61 +32,58 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
+using System.Threading;
 
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
-    public delegate void MetadataInterceptorDelegate(Metadata metadata);
-
     /// <summary>
-    /// Base class for client-side stubs.
+    /// Context for calls made by client.
     /// </summary>
-    public abstract class ClientBase
+    public class CallContext
     {
-        readonly Channel channel;
+        readonly Metadata headers;
+        readonly DateTime deadline;
+        readonly CancellationToken cancellationToken;
 
-        public ClientBase(Channel channel)
+        /// <summary>
+        /// Creates a new call context.
+        /// </summary>
+        /// <param name="headers">Headers to be sent with the call.</param>
+        /// <param name="deadline">Deadline for the call to finish. null means no deadline.</param>
+        /// <param name="cancellationToken">Can be used to request cancellation of the call.</param>
+        public CallContext(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.channel = channel;
+            // TODO(jtattermusch): consider only creating metadata object once it's really needed.
+            this.headers = headers != null ? headers : new Metadata();
+            this.deadline = deadline.HasValue ? deadline.Value : DateTime.MaxValue;
+            this.cancellationToken = cancellationToken;
         }
 
         /// <summary>
-        /// Can be used to register a custom header (initial metadata) interceptor.
-        /// The delegate each time before a new call on this client is started.
+        /// Headers to send at the beginning of the call.
         /// </summary>
-        public MetadataInterceptorDelegate HeaderInterceptor
+        public Metadata Headers
         {
-            get;
-            set;
+            get { return headers; }
         }
 
         /// <summary>
-        /// Channel associated with this client.
+        /// Call deadline.
         /// </summary>
-        public Channel Channel
+        public DateTime Deadline
         {
-            get
-            {
-                return this.channel;
-            }
+            get { return deadline; }
         }
 
         /// <summary>
-        /// Creates a new call to given method.
+        /// Token that can be used for cancelling the call.
         /// </summary>
-        protected Call<TRequest, TResponse> CreateCall<TRequest, TResponse>(string serviceName, Method<TRequest, TResponse> method, CallContext context)
-            where TRequest : class
-            where TResponse : class
+        public CancellationToken CancellationToken
         {
-            var interceptor = HeaderInterceptor;
-            if (interceptor != null)
-            {
-                interceptor(context.Headers);
-                context.Headers.Freeze();
-            }
-            return new Call<TRequest, TResponse>(serviceName, method, channel, context);
+            get { return cancellationToken; }
         }
     }
 }

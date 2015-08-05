@@ -46,22 +46,14 @@ namespace Grpc.Core
         readonly Marshaller<TRequest> requestMarshaller;
         readonly Marshaller<TResponse> responseMarshaller;
         readonly Channel channel;
-        readonly Metadata headers;
-        readonly DateTime deadline;
+        readonly CallContext context;
 
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
-            : this(serviceName, method, channel, headers, DateTime.MaxValue)
-        {
-        }
-
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers, DateTime deadline)
+        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, CallContext context)
         {
             this.name = method.GetFullName(serviceName);
             this.requestMarshaller = method.RequestMarshaller;
             this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.headers = Preconditions.CheckNotNull(headers);
-            this.deadline = deadline;
+            this.context = context;
         }
 
         public Channel Channel
@@ -84,21 +76,13 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Headers to send at the beginning of the call.
+        /// Call context.
         /// </summary>
-        public Metadata Headers
+        public CallContext Context
         {
             get
             {
-                return headers;
-            }
-        }
-
-        public DateTime Deadline
-        {
-            get
-            {
-                return this.deadline;
+                return context;
             }
         }
 

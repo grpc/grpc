@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="AsyncDuplexStreamingCall.cs" />
     <Compile Include="AsyncServerStreamingCall.cs" />
+    <Compile Include="CallContext.cs" />
     <Compile Include="IClientStreamWriter.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
