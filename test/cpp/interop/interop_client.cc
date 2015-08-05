@@ -423,5 +423,24 @@ void InteropClient::DoTimeoutOnSleepingServer() {
   gpr_log(GPR_INFO, "Pingpong streaming timeout done.");
 }
 
+void InteropClient::DoStatusWithMessage() {
+  gpr_log(GPR_INFO, "Sending RPC with a request for status code 2 and message");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  SimpleRequest request;
+  SimpleResponse response;
+  EchoStatus *requested_status = request.mutable_response_status();
+  requested_status->set_code(grpc::StatusCode::UNKNOWN);
+  grpc::string test_msg = "This is a test message";
+  requested_status->set_message(test_msg);
+
+  Status s = stub->UnaryCall(&context, request, &response);
+
+  GPR_ASSERT(s.error_code() == grpc::StatusCode::UNKNOWN);
+  GPR_ASSERT(s.error_message() == test_msg);
+  gpr_log(GPR_INFO, "Done testing Status and Message");
+}
+
 }  // namespace testing
 }  // namespace grpc
