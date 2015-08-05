@@ -276,9 +276,9 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
 
-      // overload taking CallContext as a param
+      // overload taking CallOptions as a param
       out->Print(
-          "$response$ $methodname$($request$ request, CallContext context);\n",
+          "$response$ $methodname$($request$ request, CallOptions options);\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
@@ -294,9 +294,9 @@ void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
 
-    // overload taking CallContext as a param
+    // overload taking CallOptions as a param
     out->Print(
-        "$returntype$ $methodname$($request_maybe$CallContext context);\n",
+        "$returntype$ $methodname$($request_maybe$CallOptions options);\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
@@ -356,21 +356,21 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
           GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("var call = CreateCall($methodfield$, new CallContext(headers, deadline, cancellationToken));\n",
+      out->Print("var call = CreateCall($methodfield$, new CallOptions(headers, deadline, cancellationToken));\n",
                  "methodfield", GetMethodFieldName(method));
       out->Print("return Calls.BlockingUnaryCall(call, request);\n");
       out->Outdent();
       out->Print("}\n");
 
-      // overload taking CallContext as a param
+      // overload taking CallOptions as a param
       out->Print(
-                "public $response$ $methodname$($request$ request, CallContext context)\n",
+                "public $response$ $methodname$($request$ request, CallOptions options)\n",
                 "methodname", method->name(), "request",
                 GetClassName(method->input_type()), "response",
                 GetClassName(method->output_type()));
       out->Print("{\n");
       out->Indent();
-      out->Print("var call = CreateCall($methodfield$, context);\n",
+      out->Print("var call = CreateCall($methodfield$, options);\n",
                  "methodfield", GetMethodFieldName(method));
       out->Print("return Calls.BlockingUnaryCall(call, request);\n");
       out->Outdent();
@@ -388,7 +388,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    out->Print("var call = CreateCall($methodfield$, new CallContext(headers, deadline, cancellationToken));\n",
+    out->Print("var call = CreateCall($methodfield$, new CallOptions(headers, deadline, cancellationToken));\n",
                "methodfield", GetMethodFieldName(method));
     switch (GetMethodType(method)) {
       case METHODTYPE_NO_STREAMING:
@@ -410,15 +410,15 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     out->Outdent();
     out->Print("}\n");
 
-    // overload taking CallContext as a param
+    // overload taking CallOptions as a param
     out->Print(
-        "public $returntype$ $methodname$($request_maybe$CallContext context)\n",
+        "public $returntype$ $methodname$($request_maybe$CallOptions options)\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    out->Print("var call = CreateCall($methodfield$, context);\n",
+    out->Print("var call = CreateCall($methodfield$, options);\n",
                "methodfield", GetMethodFieldName(method));
     switch (GetMethodType(method)) {
       case METHODTYPE_NO_STREAMING:
