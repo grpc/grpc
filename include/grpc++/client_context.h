@@ -39,6 +39,7 @@
 #include <string>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc++/auth_context.h>
@@ -46,8 +47,6 @@
 #include <grpc++/status.h>
 #include <grpc++/time.h>
 
-struct grpc_call;
-struct grpc_completion_queue;
 struct census_context;
 
 namespace grpc {
@@ -70,11 +69,67 @@ template <class R, class W>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
+class ServerContext;
+
+class PropagationOptions {
+ public:
+  PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
+
+  PropagationOptions& enable_deadline_propagation() {
+    propagate_ |= GRPC_PROPAGATE_DEADLINE;
+    return *this;
+  }
+
+  PropagationOptions& disable_deadline_propagation() {
+    propagate_ &= ~GRPC_PROPAGATE_DEADLINE;
+    return *this;
+  }
+
+  PropagationOptions& enable_stats_propagation() {
+    propagate_ |= GRPC_PROPAGATE_STATS_CONTEXT;
+    return *this;
+  }
+
+  PropagationOptions& disable_stats_propagation() {
+    propagate_ &= ~GRPC_PROPAGATE_STATS_CONTEXT;
+    return *this;
+  }
+
+  PropagationOptions& enable_tracing_propagation() {
+    propagate_ |= GRPC_PROPAGATE_TRACING_CONTEXT;
+    return *this;
+  }
+
+  PropagationOptions& disable_tracing_propagation() {
+    propagate_ &= ~GRPC_PROPAGATE_TRACING_CONTEXT;
+    return *this;
+  }
+
+  PropagationOptions& enable_cancellation_propagation() {
+    propagate_ |= GRPC_PROPAGATE_CANCELLATION;
+    return *this;
+  }
+
+  PropagationOptions& disable_cancellation_propagation() {
+    propagate_ &= ~GRPC_PROPAGATE_CANCELLATION;
+    return *this;
+  }
+
+  gpr_uint32 c_bitmask() const { return propagate_; }
+
+ private:
+  gpr_uint32 propagate_;
+};
 
 class ClientContext {
  public:
   ClientContext();
   ~ClientContext();
+
+  /// Create a new ClientContext that propagates some or all of its attributes
+  static ClientContext FromServerContext(
+      const ServerContext& server_context,
+      PropagationOptions options = PropagationOptions());
 
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
@@ -180,6 +235,9 @@ class ClientContext {
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
+
+  grpc_call* propagate_from_call_;
+  PropagationOptions propagation_options_;
 
   grpc_compression_algorithm compression_algorithm_;
 };

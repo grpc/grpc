@@ -37,6 +37,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc++/credentials.h>
+#include <grpc++/server_context.h>
 #include <grpc++/time.h>
 
 #include "src/core/channel/compress_filter.h"
@@ -48,7 +49,8 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
       cq_(nullptr),
-      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
+      propagate_from_call_(nullptr) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -62,6 +64,14 @@ ClientContext::~ClientContext() {
       ;
     grpc_completion_queue_destroy(cq_);
   }
+}
+
+ClientContext ClientContext::FromServerContext(const ServerContext& context,
+                                               PropagationOptions options) {
+  ClientContext ctx;
+  ctx.propagate_from_call_ = context.call_;
+  ctx.propagation_options_ = options;
+  return ctx;
 }
 
 void ClientContext::AddMetadata(const grpc::string& meta_key,
