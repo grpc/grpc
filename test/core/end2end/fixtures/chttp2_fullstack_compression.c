@@ -99,7 +99,7 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
   }
   f->server = grpc_server_create(ffd->server_args_compression);
   grpc_server_register_completion_queue(f->server, f->cq);
-  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
+  GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }
 

@@ -478,16 +478,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "poll_kick_posix_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "resolve_address_test", 
     "platforms": [
       "posix", 

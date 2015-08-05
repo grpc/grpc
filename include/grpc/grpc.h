@@ -358,17 +358,19 @@ typedef struct grpc_op {
 /** Propagate deadline */
 #define GRPC_PROPAGATE_DEADLINE ((gpr_uint32)1)
 /** Propagate census context */
-#define GRPC_PROPAGATE_CENSUS_CONTEXT ((gpr_uint32)2)
-#define GRPC_PROPAGATE_CANCELLATION   ((gpr_uint32)4)
-#define GRPC_PROPAGATE_AUTH ((gpr_uint32)8)
+#define GRPC_PROPAGATE_STATS_CONTEXT ((gpr_uint32)2)
+#define GRPC_PROPAGATE_TRACING_CONTEXT ((gpr_uint32)4)
+#define GRPC_PROPAGATE_CANCELLATION ((gpr_uint32)8)
 
 /* Default propagation mask: clients of the core API are encouraged to encode
    deltas from this in their implementations... ie write:
    GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
    propagation. Doing so gives flexibility in the future to define new 
    propagation types that are default inherited or not. */
-#define GRPC_PROPAGATE_DEFAULTS \
-  ((gpr_uint32)((0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_CONTEXT)))
+#define GRPC_PROPAGATE_DEFAULTS                     \
+  ((gpr_uint32)((0xffff | GRPC_PROPAGATE_DEADLINE | \
+                 GRPC_PROPAGATE_STATS_CONTEXT |     \
+                 GRPC_PROPAGATE_TRACING_CONTEXT)))
 
 /** Initialize the grpc library.
 
@@ -410,9 +412,16 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    grpc_completion_queue_pluck simultaneously on the same completion queue. 
+    
+    Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+    concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                        gpr_timespec deadline);
+
+/** Maximum number of outstanding grpc_completion_queue_pluck executions per
+    completion queue */
+#define GRPC_MAX_COMPLETION_QUEUE_PLUCKERS 6
 
 /** Begin destruction of a completion queue. Once all possible events are
     drained then grpc_completion_queue_next will start to produce
@@ -587,7 +596,7 @@ void grpc_server_register_completion_queue(grpc_server *server,
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */
-int grpc_server_add_http2_port(grpc_server *server, const char *addr);
+int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr);
 
 /** Start a server - tells all listeners to start listening */
 void grpc_server_start(grpc_server *server);

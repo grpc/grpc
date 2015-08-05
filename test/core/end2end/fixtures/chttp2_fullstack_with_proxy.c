@@ -57,7 +57,7 @@ typedef struct fullstack_fixture_data {
 
 static grpc_server *create_proxy_server(const char *port) {
   grpc_server *s = grpc_server_create(NULL);
-  GPR_ASSERT(grpc_server_add_http2_port(s, port));
+  GPR_ASSERT(grpc_server_add_insecure_http2_port(s, port));
   return s;
 }
 
@@ -98,7 +98,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
   }
   f->server = grpc_server_create(server_args);
   grpc_server_register_completion_queue(f->server, f->cq);
-  GPR_ASSERT(grpc_server_add_http2_port(
+  GPR_ASSERT(grpc_server_add_insecure_http2_port(
       f->server, grpc_end2end_proxy_get_server_port(ffd->proxy)));
   grpc_server_start(f->server);
 }
