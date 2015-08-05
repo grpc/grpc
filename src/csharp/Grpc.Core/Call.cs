@@ -47,14 +47,21 @@ namespace Grpc.Core
         readonly Marshaller<TResponse> responseMarshaller;
         readonly Channel channel;
         readonly Metadata headers;
+        readonly DateTime deadline;
 
         public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
+            : this(serviceName, method, channel, headers, DateTime.MaxValue)
+        {
+        }
+
+        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers, DateTime deadline)
         {
             this.name = method.GetFullName(serviceName);
             this.requestMarshaller = method.RequestMarshaller;
             this.responseMarshaller = method.ResponseMarshaller;
             this.channel = Preconditions.CheckNotNull(channel);
             this.headers = Preconditions.CheckNotNull(headers);
+            this.deadline = deadline;
         }
 
         public Channel Channel
@@ -84,6 +91,14 @@ namespace Grpc.Core
             get
             {
                 return headers;
+            }
+        }
+
+        public DateTime Deadline
+        {
+            get
+            {
+                return this.deadline;
             }
         }
 

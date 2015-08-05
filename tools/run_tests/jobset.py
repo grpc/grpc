@@ -130,7 +130,8 @@ def which(filename):
 class JobSpec(object):
   """Specifies what to run for a job."""
 
-  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None, cwd=None, shell=False):
+  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
+               cwd=None, shell=False, timeout_seconds=900):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -148,6 +149,7 @@ class JobSpec(object):
     self.hash_targets = hash_targets or []
     self.cwd = cwd
     self.shell = shell
+    self.timeout_seconds = timeout_seconds
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -206,7 +208,7 @@ class Job(object):
                 do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > 600:
+    elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))

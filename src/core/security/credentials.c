@@ -259,8 +259,10 @@ static void ssl_build_config(const char *pem_root_certs,
 
 static void ssl_build_server_config(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, grpc_ssl_server_config *config) {
+    size_t num_key_cert_pairs, int force_client_auth,
+    grpc_ssl_server_config *config) {
   size_t i;
+  config->force_client_auth = force_client_auth;
   if (pem_root_certs != NULL) {
     ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
                           &config->pem_root_certs_size);
@@ -302,20 +304,20 @@ grpc_credentials *grpc_ssl_credentials_create(
 
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs) {
+    size_t num_key_cert_pairs, int force_client_auth) {
   grpc_ssl_server_credentials *c =
       gpr_malloc(sizeof(grpc_ssl_server_credentials));
   memset(c, 0, sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_server_vtable;
   ssl_build_server_config(pem_root_certs, pem_key_cert_pairs,
-                          num_key_cert_pairs, &c->config);
+                          num_key_cert_pairs, force_client_auth, &c->config);
   return &c->base;
 }
 
 /* -- Jwt credentials -- */
 
-static void jwt_reset_cache(grpc_jwt_credentials *c) {
+static void jwt_reset_cache(grpc_service_account_jwt_access_credentials *c) {
   if (c->cached.jwt_md != NULL) {
     grpc_credentials_md_store_unref(c->cached.jwt_md);
     c->cached.jwt_md = NULL;
@@ -328,7 +330,8 @@ static void jwt_reset_cache(grpc_jwt_credentials *c) {
 }
 
 static void jwt_destroy(grpc_credentials *creds) {
-  grpc_jwt_credentials *c = (grpc_jwt_credentials *)creds;
+  grpc_service_account_jwt_access_credentials *c =
+      (grpc_service_account_jwt_access_credentials *)creds;
   grpc_auth_json_key_destruct(&c->key);
   jwt_reset_cache(c);
   gpr_mu_destroy(&c->cache_mu);
@@ -346,7 +349,8 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
                                      const char *service_url,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {
-  grpc_jwt_credentials *c = (grpc_jwt_credentials *)creds;
+  grpc_service_account_jwt_access_credentials *c =
+      (grpc_service_account_jwt_access_credentials *)creds;
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
@@ -399,15 +403,16 @@ static grpc_credentials_vtable jwt_vtable = {
     jwt_destroy, jwt_has_request_metadata, jwt_has_request_metadata_only,
     jwt_get_request_metadata, NULL};
 
-grpc_credentials *grpc_jwt_credentials_create_from_auth_json_key(
+grpc_credentials *
+grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime) {
-  grpc_jwt_credentials *c;
+  grpc_service_account_jwt_access_credentials *c;
   if (!grpc_auth_json_key_is_valid(&key)) {
     gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
     return NULL;
   }
-  c = gpr_malloc(sizeof(grpc_jwt_credentials));
-  memset(c, 0, sizeof(grpc_jwt_credentials));
+  c = gpr_malloc(sizeof(grpc_service_account_jwt_access_credentials));
+  memset(c, 0, sizeof(grpc_service_account_jwt_access_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_JWT;
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &jwt_vtable;
@@ -418,9 +423,9 @@ grpc_credentials *grpc_jwt_credentials_create_from_auth_json_key(
   return &c->base;
 }
 
-grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
-                                              gpr_timespec token_lifetime) {
-  return grpc_jwt_credentials_create_from_auth_json_key(
+grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+    const char *json_key, gpr_timespec token_lifetime) {
+  return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
       grpc_auth_json_key_create_from_string(json_key), token_lifetime);
 }
 

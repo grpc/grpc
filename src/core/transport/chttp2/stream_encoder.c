@@ -438,10 +438,10 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
   char timeout_str[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem *mdelem;
   grpc_chttp2_encode_timeout(
-      gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME)), timeout_str);
+      gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
       c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
-      grpc_mdstr_from_string(c->mdctx, timeout_str));
+      grpc_mdstr_from_string(c->mdctx, timeout_str, 0));
   mdelem = hpack_enc(c, mdelem, st);
   if (mdelem) GRPC_MDELEM_UNREF(mdelem);
 }
@@ -456,7 +456,7 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *ctx) {
   memset(c, 0, sizeof(*c));
   c->mdctx = ctx;
-  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
+  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout", 0);
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {
@@ -560,6 +560,7 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
   grpc_mdctx *mdctx = compressor->mdctx;
   grpc_linked_mdelem *l;
   int need_unref = 0;
+  gpr_timespec deadline;
 
   GPR_ASSERT(stream_id != 0);
 
@@ -589,9 +590,9 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
           l->md = hpack_enc(compressor, l->md, &st);
           need_unref |= l->md != NULL;
         }
-        if (gpr_time_cmp(op->data.metadata.deadline,
-                         gpr_inf_future(GPR_CLOCK_REALTIME)) != 0) {
-          deadline_enc(compressor, op->data.metadata.deadline, &st);
+        deadline = op->data.metadata.deadline;
+        if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
+          deadline_enc(compressor, deadline, &st);
         }
         curop++;
         break;

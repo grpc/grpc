@@ -57,9 +57,9 @@ static grpc_iomgr_object g_root_object;
 static void background_callback_executor(void *ignored) {
   gpr_mu_lock(&g_mu);
   while (!g_shutdown) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
     gpr_timespec short_deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN));
     if (g_cbs_head) {
       grpc_iomgr_closure *closure = g_cbs_head;
       g_cbs_head = closure->next;
@@ -67,7 +67,7 @@ static void background_callback_executor(void *ignored) {
       gpr_mu_unlock(&g_mu);
       closure->cb(closure->cb_arg, closure->success);
       gpr_mu_lock(&g_mu);
-    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_REALTIME),
+    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_MONOTONIC),
                                 &deadline)) {
     } else {
       gpr_mu_unlock(&g_mu);
@@ -88,9 +88,10 @@ void grpc_kick_poller(void) {
 
 void grpc_iomgr_init(void) {
   gpr_thd_id id;
+  g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
-  grpc_alarm_list_init(gpr_now(GPR_CLOCK_REALTIME));
+  grpc_alarm_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_iomgr_platform_init();
@@ -145,8 +146,7 @@ void grpc_iomgr_shutdown(void) {
       } while (g_cbs_head);
       continue;
     }
-    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)) {
-      gpr_log(GPR_DEBUG, "got late alarm");
+    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
       continue;
     }
     if (g_root_object.next != &g_root_object) {

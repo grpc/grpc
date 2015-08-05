@@ -38,7 +38,6 @@
 #import <RxLibrary/GRXConcurrentWriteable.h>
 
 #import "private/GRPCChannel.h"
-#import "private/GRPCCompletionQueue.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
@@ -72,7 +71,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   dispatch_once_t _callAlreadyInvoked;
 
   GRPCChannel *_channel;
-  GRPCCompletionQueue *_completionQueue;
 
   // The C gRPC library has less guarantees on the ordering of events than we
   // do. Particularly, in the face of errors, there's no ordering guarantee at
@@ -100,19 +98,13 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestWriter {
   if (!host || !path) {
-    [NSException raise:NSInvalidArgumentException format:@"Neither host nor method can be nil."];
+    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
   if (requestWriter.state != GRXWriterStateNotStarted) {
-    [NSException raise:NSInvalidArgumentException format:@"The requests writer can't be already started."];
+    [NSException raise:NSInvalidArgumentException
+                format:@"The requests writer can't be already started."];
   }
   if ((self = [super init])) {
-    static dispatch_once_t initialization;
-    dispatch_once(&initialization, ^{
-      grpc_init();
-    });
-
-    _completionQueue = [GRPCCompletionQueue completionQueue];
-
     _channel = [GRPCChannel channelToHost:host];
 
     _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel

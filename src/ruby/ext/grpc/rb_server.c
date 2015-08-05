@@ -213,6 +213,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
+  gpr_timespec deadline;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
@@ -245,15 +246,13 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     }
 
     /* build the NewServerRpc struct result */
+    deadline = gpr_convert_clock_type(st.details.deadline, GPR_CLOCK_REALTIME);
     result = rb_struct_new(
-        grpc_rb_sNewServerRpc,
-        rb_str_new2(st.details.method),
+        grpc_rb_sNewServerRpc, rb_str_new2(st.details.method),
         rb_str_new2(st.details.host),
-        rb_funcall(rb_cTime, id_at, 2, INT2NUM(st.details.deadline.tv_sec),
-                   INT2NUM(st.details.deadline.tv_nsec)),
-        grpc_rb_md_ary_to_h(&st.md_ary),
-        grpc_rb_wrap_call(call),
-        NULL);
+        rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
+                   INT2NUM(deadline.tv_nsec)),
+        grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call), NULL);
     grpc_request_call_stack_cleanup(&st);
     return result;
   }

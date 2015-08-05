@@ -109,6 +109,8 @@ typedef struct grpc_transport_op {
   void *set_accept_stream_user_data;
   /** add this transport to a pollset */
   grpc_pollset *bind_pollset;
+  /** add this transport to a pollset_set */
+  grpc_pollset_set *bind_pollset_set;
   /** send a ping, call this back if not NULL */
   grpc_iomgr_closure *send_ping;
 } grpc_transport_op;
@@ -181,5 +183,8 @@ void grpc_transport_close(grpc_transport *transport);
 
 /* Destroy the transport */
 void grpc_transport_destroy(grpc_transport *transport);
+
+/* Get the transports peer */
+char *grpc_transport_get_peer(grpc_transport *transport);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */
