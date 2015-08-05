@@ -246,6 +246,8 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor *method) {
   out->Indent();
   out->Print("$methodtype$,\n", "methodtype",
              GetCSharpMethodType(GetMethodType(method)));
+  out->Print("$servicenamefield$,\n", "servicenamefield",
+               GetServiceNameFieldName());
   out->Print("\"$methodname$\",\n", "methodname", method->name());
   out->Print("$requestmarshaller$,\n", "requestmarshaller",
              GetMarshallerFieldName(method->input_type()));

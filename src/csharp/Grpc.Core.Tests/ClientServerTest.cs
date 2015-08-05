@@ -50,19 +50,22 @@ namespace Grpc.Core.Tests
 
         static readonly Method<string, string> EchoMethod = new Method<string, string>(
             MethodType.Unary,
-            "/tests.Test/Echo",
+            "tests.Test",
+            "Echo",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
         static readonly Method<string, string> ConcatAndEchoMethod = new Method<string, string>(
             MethodType.ClientStreaming,
-            "/tests.Test/ConcatAndEcho",
+            "tests.Test",
+            "ConcatAndEcho",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
         static readonly Method<string, string> NonexistentMethod = new Method<string, string>(
             MethodType.Unary,
-            "/tests.Test/NonexistentMethod",
+            "tests.Test",
+            "NonexistentMethod",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
@@ -102,14 +105,14 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             Assert.AreEqual("ABC", Calls.BlockingUnaryCall(internalCall, "ABC"));
         }
 
         [Test]
         public void UnaryCall_ServerHandlerThrows()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             try
             {
                 Calls.BlockingUnaryCall(internalCall, "THROW");
@@ -124,7 +127,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerThrowsRpcException()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             try
             {
                 Calls.BlockingUnaryCall(internalCall, "THROW_UNAUTHENTICATED");
@@ -139,7 +142,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerSetsStatus()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             try
             {
                 Calls.BlockingUnaryCall(internalCall, "SET_UNAUTHENTICATED");
@@ -154,7 +157,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task AsyncUnaryCall()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             var result = await Calls.AsyncUnaryCall(internalCall, "ABC");
             Assert.AreEqual("ABC", result);
         }
@@ -162,7 +165,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task AsyncUnaryCall_ServerHandlerThrows()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             try
             {
                 await Calls.AsyncUnaryCall(internalCall, "THROW");
@@ -177,7 +180,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task ClientStreamingCall()
         {
-            var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, ConcatAndEchoMethod, new CallContext());
             var call = Calls.AsyncClientStreamingCall(internalCall);
 
             await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
@@ -188,7 +191,7 @@ namespace Grpc.Core.Tests
         public async Task ClientStreamingCall_CancelAfterBegin()
         {
             var cts = new CancellationTokenSource();
-            var internalCall = new Call<string, string>(ServiceName, ConcatAndEchoMethod, channel, new CallContext(cancellationToken: cts.Token));
+            var internalCall = new Call<string, string>(channel, ConcatAndEchoMethod, new CallContext(cancellationToken: cts.Token));
             var call = Calls.AsyncClientStreamingCall(internalCall);
 
             // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
@@ -213,7 +216,7 @@ namespace Grpc.Core.Tests
                 new Metadata.Entry("ascii-header", "abcdefg"),
                 new Metadata.Entry("binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff }),
             };
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext(headers: headers));
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext(headers: headers));
             var call = Calls.AsyncUnaryCall(internalCall, "ABC");
 
             Assert.AreEqual("ABC", call.ResponseAsync.Result);
@@ -234,14 +237,14 @@ namespace Grpc.Core.Tests
         {
             channel.Dispose();
 
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(internalCall, "ABC"));
         }
 
         [Test]
         public void UnaryCallPerformance()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             BenchmarkUtil.RunBenchmark(100, 100,
                                        () => { Calls.BlockingUnaryCall(internalCall, "ABC"); });
         }
@@ -249,7 +252,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnknownMethodHandler()
         {
-            var internalCall = new Call<string, string>(ServiceName, NonexistentMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, NonexistentMethod, new CallContext());
             try
             {
                 Calls.BlockingUnaryCall(internalCall, "ABC");
@@ -264,7 +267,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UserAgentStringPresent()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             string userAgent = Calls.BlockingUnaryCall(internalCall, "RETURN-USER-AGENT");
             Assert.IsTrue(userAgent.StartsWith("grpc-csharp/"));
         }
@@ -272,7 +275,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void PeerInfoPresent()
         {
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             string peer = Calls.BlockingUnaryCall(internalCall, "RETURN-PEER");
             Assert.IsTrue(peer.Contains(Host));
         }
@@ -285,7 +288,7 @@ namespace Grpc.Core.Tests
 
             var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
 
-            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, EchoMethod, new CallContext());
             await Calls.AsyncUnaryCall(internalCall, "abc");
 
             await stateChangedTask;

@@ -53,7 +53,8 @@ namespace Grpc.Core.Tests
 
         static readonly Method<string, string> TestMethod = new Method<string, string>(
             MethodType.Unary,
-            "/tests.Test/Test",
+            "tests.Test",
+            "Test",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
@@ -98,11 +99,11 @@ namespace Grpc.Core.Tests
         public void InfiniteDeadline()
         {
             // no deadline specified, check server sees infinite deadline
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext());
+            var internalCall = new Call<string, string>(channel, TestMethod, new CallContext());
             Assert.AreEqual("DATETIME_MAXVALUE", Calls.BlockingUnaryCall(internalCall, "RETURN_DEADLINE"));
 
             // DateTime.MaxValue deadline specified, check server sees infinite deadline
-            var internalCall2 = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext());
+            var internalCall2 = new Call<string, string>(channel, TestMethod, new CallContext());
             Assert.AreEqual("DATETIME_MAXVALUE", Calls.BlockingUnaryCall(internalCall2, "RETURN_DEADLINE"));
         }
 
@@ -112,7 +113,7 @@ namespace Grpc.Core.Tests
             var remainingTimeClient = TimeSpan.FromDays(7);
             var deadline = DateTime.UtcNow + remainingTimeClient;
             Thread.Sleep(1000);
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext(deadline: deadline));
+            var internalCall = new Call<string, string>(channel, TestMethod, new CallContext(deadline: deadline));
 
             var serverDeadlineTicksString = Calls.BlockingUnaryCall(internalCall, "RETURN_DEADLINE");
             var serverDeadline = new DateTime(long.Parse(serverDeadlineTicksString), DateTimeKind.Utc);
@@ -126,7 +127,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void DeadlineInThePast()
         {
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext(deadline: DateTime.MinValue));
+            var internalCall = new Call<string, string>(channel, TestMethod, new CallContext(deadline: DateTime.MinValue));
 
             try
             {
@@ -144,7 +145,7 @@ namespace Grpc.Core.Tests
         public void DeadlineExceededStatusOnTimeout()
         {
             var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext(deadline: deadline));
+            var internalCall = new Call<string, string>(channel, TestMethod, new CallContext(deadline: deadline));
 
             try
             {
@@ -162,7 +163,7 @@ namespace Grpc.Core.Tests
         public void ServerReceivesCancellationOnTimeout()
         {
             var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, new CallContext(deadline: deadline));
+            var internalCall = new Call<string, string>(channel, TestMethod, new CallContext(deadline: deadline));
 
             try
             {
