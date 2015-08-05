@@ -36,6 +36,7 @@
 
 #include <memory>
 
+#include <grpc/grpc.h>
 #include <grpc++/status.h>
 #include <grpc++/impl/call.h>
 
@@ -57,6 +58,17 @@ class ChannelInterface : public CallHook,
   virtual void* RegisterMethod(const char* method_name) = 0;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
                           CompletionQueue* cq) = 0;
+
+  virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
+
+  template <typename T>
+  virtual void NotifyOnStateChange(grpc_connectivity_state last_observed,
+                                   grpc_connectivity_state* optional_new_state,
+                                   const T& deadline,
+                                   CompletionQueue* cq, void* tag) = 0;
+  template <typename T>
+  virtual bool WaitForStateChange(grpc_connectivity_state* new_state,
+                                  const T& deadline) = 0;
 };
 
 }  // namespace grpc
