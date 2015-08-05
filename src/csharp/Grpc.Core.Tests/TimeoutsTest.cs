@@ -49,11 +49,11 @@ namespace Grpc.Core.Tests
     public class TimeoutsTest
     {
         const string Host = "localhost";
-        const string ServiceName = "/tests.Test";
+        const string ServiceName = "tests.Test";
 
         static readonly Method<string, string> TestMethod = new Method<string, string>(
             MethodType.Unary,
-            "tests.Test",
+            ServiceName,
             "Test",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);

@@ -46,25 +46,25 @@ namespace Grpc.Core.Tests
     public class ClientServerTest
     {
         const string Host = "127.0.0.1";
-        const string ServiceName = "/tests.Test";
+        const string ServiceName = "tests.Test";
 
         static readonly Method<string, string> EchoMethod = new Method<string, string>(
             MethodType.Unary,
-            "tests.Test",
+            ServiceName,
             "Echo",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
         static readonly Method<string, string> ConcatAndEchoMethod = new Method<string, string>(
             MethodType.ClientStreaming,
-            "tests.Test",
+            ServiceName,
             "ConcatAndEcho",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
         static readonly Method<string, string> NonexistentMethod = new Method<string, string>(
             MethodType.Unary,
-            "tests.Test",
+            ServiceName,
             "NonexistentMethod",
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
