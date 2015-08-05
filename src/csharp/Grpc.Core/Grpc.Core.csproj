@@ -58,7 +58,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
-    <Compile Include="Call.cs" />
     <Compile Include="AsyncClientStreamingCall.cs" />
     <Compile Include="GrpcEnvironment.cs" />
     <Compile Include="Status.cs" />
@@ -115,6 +114,7 @@
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Internal\NativeLogRedirector.cs" />
     <Compile Include="ChannelState.cs" />
+    <Compile Include="CallInvocationDetails.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

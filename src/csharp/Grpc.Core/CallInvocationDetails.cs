@@ -38,25 +38,30 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Abstraction of a call to be invoked on a client.
+    /// Details about a client-side call to be invoked.
     /// </summary>
-    public class Call<TRequest, TResponse>
+    public class CallInvocationDetails<TRequest, TResponse>
     {
         readonly Channel channel;
-        readonly Method<TRequest, TResponse> method;
+        readonly string method;
         readonly string host;
+        readonly Marshaller<TRequest> requestMarshaller;
+        readonly Marshaller<TResponse> responseMarshaller;
         readonly CallContext context;
 
-        public Call(Channel channel, Method<TRequest, TResponse> method, CallContext context)
-            : this(channel, method, null, context)
+
+        public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallContext context) :
+            this(channel, method.FullName, null, method.RequestMarshaller, method.ResponseMarshaller, context)
         {
         }
 
-        public Call(Channel channel, Method<TRequest, TResponse> method, string host, CallContext context)
+        public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallContext context)
         {
             this.channel = Preconditions.CheckNotNull(channel);
             this.method = Preconditions.CheckNotNull(method);
             this.host = host;
+            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
+            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
             this.context = Preconditions.CheckNotNull(context);
         }
 
@@ -68,7 +73,7 @@ namespace Grpc.Core
             }
         }
 
-        public Method<TRequest, TResponse> Method
+        public string Method
         {
             get
             {
@@ -81,6 +86,22 @@ namespace Grpc.Core
             get
             {
                 return this.host;
+            }
+        }
+
+        public Marshaller<TRequest> RequestMarshaller
+        {
+            get
+            {
+                return this.requestMarshaller;
+            }
+        }
+
+        public Marshaller<TResponse> ResponseMarshaller
+        {
+            get
+            {
+                return this.responseMarshaller;
             }
         }
 
