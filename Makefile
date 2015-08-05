@@ -268,34 +268,21 @@ INCLUDES = . include $(GENDIR)
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
-ifneq ($(wildcard /usr/local/ssl/include),)
-INCLUDES += /usr/local/ssl/include
-endif
-ifneq ($(wildcard /opt/local/include),)
-INCLUDES += /opt/local/include
-endif
-ifneq ($(wildcard /usr/local/include),)
-INCLUDES += /usr/local/include
-endif
-LIBS = m z
-ifneq ($(wildcard /usr/local/ssl/lib),)
-LDFLAGS += -L/usr/local/ssl/lib
-endif
-ifneq ($(wildcard /opt/local/lib),)
-LDFLAGS += -L/opt/local/lib
-endif
-ifneq ($(wildcard /usr/local/lib),)
-LDFLAGS += -L/usr/local/lib
-endif
+LIBS += m
 endif
 
 ifeq ($(SYSTEM),Linux)
-LIBS = rt m z pthread
+LIBS += rt m pthread
 LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m z pthread
+LIBS += m pthread
+LDFLAGS += -pthread
+endif
+
+ifeq ($(SYSTEM),FreeBSD)
+LIBS += pthread
 LDFLAGS += -pthread
 endif
 
@@ -386,6 +373,39 @@ OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
 PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0-alpha-3 protobuf
 else # HAS_PKG_CONFIG
+
+ifeq ($(SYSTEM),Darwin)
+ifneq ($(wildcard /usr/local/ssl/include),)
+INCLUDES += /usr/local/ssl/include
+endif
+ifneq ($(wildcard /opt/local/include),)
+INCLUDES += /opt/local/include
+endif
+ifneq ($(wildcard /usr/local/include),)
+INCLUDES += /usr/local/include
+endif
+ifneq ($(wildcard /usr/local/ssl/lib),)
+LDFLAGS += -L/usr/local/ssl/lib
+endif
+ifneq ($(wildcard /opt/local/lib),)
+LDFLAGS += -L/opt/local/lib
+endif
+ifneq ($(wildcard /usr/local/lib),)
+LDFLAGS += -L/usr/local/lib
+endif
+endif
+
+ifeq ($(SYSTEM),Linux)
+LIBS += z
+endif
+
+ifeq ($(SYSTEM),MINGW32)
+LIBS += z
+endif
+
+ifeq ($(SYSTEM),FreeBSD)
+LIBS += z
+endif
 
 ifeq ($(SYSTEM),MINGW32)
 OPENSSL_LIBS = ssl32 eay32
@@ -18683,6 +18703,8 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+examples/pubsub/publisher.cc: $(OPENSSL_DEP)
+examples/pubsub/subscriber.cc: $(OPENSSL_DEP)
 src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/client_auth_filter.c: $(OPENSSL_DEP)
@@ -18704,6 +18726,41 @@ src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
+src/cpp/client/secure_channel_arguments.cc: $(OPENSSL_DEP)
+src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
+src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
+src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
+src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
+test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
+test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
+test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
+test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
+test/core/end2end/fixtures/chttp2_fake_security.c: $(OPENSSL_DEP)
+test/core/end2end/fixtures/chttp2_simple_ssl_fullstack.c: $(OPENSSL_DEP)
+test/core/end2end/fixtures/chttp2_simple_ssl_fullstack_with_poll.c: $(OPENSSL_DEP)
+test/core/end2end/fixtures/chttp2_simple_ssl_with_oauth2_fullstack.c: $(OPENSSL_DEP)
+test/core/end2end/tests/request_response_with_payload_and_call_creds.c: $(OPENSSL_DEP)
+test/cpp/interop/client.cc: $(OPENSSL_DEP)
+test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)
+test/cpp/interop/interop_client.cc: $(OPENSSL_DEP)
+test/cpp/interop/server.cc: $(OPENSSL_DEP)
+test/cpp/interop/server_helper.cc: $(OPENSSL_DEP)
+test/cpp/qps/client_async.cc: $(OPENSSL_DEP)
+test/cpp/qps/client_sync.cc: $(OPENSSL_DEP)
+test/cpp/qps/driver.cc: $(OPENSSL_DEP)
+test/cpp/qps/perf_db_client.cc: $(OPENSSL_DEP)
+test/cpp/qps/qps_worker.cc: $(OPENSSL_DEP)
+test/cpp/qps/report.cc: $(OPENSSL_DEP)
+test/cpp/qps/server_async.cc: $(OPENSSL_DEP)
+test/cpp/qps/server_sync.cc: $(OPENSSL_DEP)
+test/cpp/qps/timer.cc: $(OPENSSL_DEP)
+test/cpp/util/benchmark_config.cc: $(OPENSSL_DEP)
+test/cpp/util/cli_call.cc: $(OPENSSL_DEP)
+test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
+test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
+test/cpp/util/test_config.cc: $(OPENSSL_DEP)
 endif
 
 .PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean
