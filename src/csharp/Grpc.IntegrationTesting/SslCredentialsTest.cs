@@ -62,7 +62,7 @@ namespace Grpc.IntegrationTesting
                 File.ReadAllText(TestCredentials.ServerCertChainPath),
                 File.ReadAllText(TestCredentials.ServerPrivateKeyPath));
 
-            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert);
+            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
             var clientCredentials = new SslCredentials(rootCert, keyCertPair);
 
             server = new Server();
