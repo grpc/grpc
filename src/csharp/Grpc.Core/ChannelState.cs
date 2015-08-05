@@ -1,3 +1,4 @@
+#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -28,32 +29,41 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto2";
+#endregion
 
-package grpc.cpp.test.util;
+using System;
 
-message RequestParams {
-  optional bool echo_deadline = 1;
-  optional int32 client_cancel_after_us = 2;
-  optional int32 server_cancel_after_us = 3;
-  optional bool echo_metadata = 4;
-  optional bool check_auth_context = 5;
-  optional int32 response_message_length = 6;
-  optional bool echo_peer = 7;
-}
+namespace Grpc.Core
+{
+    /// <summary>
+    /// Connectivity state of a channel.
+    /// Based on grpc_connectivity_state from grpc/grpc.h
+    /// </summary>
+    public enum ChannelState
+    {
+        /// <summary>
+        /// Channel is idle
+        /// </summary>
+        Idle,
 
-message EchoRequest {
-  optional string message = 1;
-  optional RequestParams param = 2;
-}
+        /// <summary>
+        /// Channel is connecting
+        /// </summary>
+        Connecting,
 
-message ResponseParams {
-  optional int64 request_deadline = 1;
-  optional string host = 2;
-  optional string peer = 3;
-}
+        /// <summary>
+        /// Channel is ready for work
+        /// </summary>
+        Ready,
 
-message EchoResponse {
-  optional string message = 1;
-  optional ResponseParams param = 2;
+        /// <summary>
+        /// Channel has seen a failure but expects to recover
+        /// </summary>
+        TransientFailure,
+
+        /// <summary>
+        /// Channel has seen a failure that it cannot recover from
+        /// </summary>
+        FatalFailure
+    }
 }
