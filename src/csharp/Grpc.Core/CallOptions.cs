@@ -49,7 +49,7 @@ namespace Grpc.Core
         readonly CancellationToken cancellationToken;
 
         /// <summary>
-        /// Creates a new call context.
+        /// Creates a new instance of <c>CallOptions</c>.
         /// </summary>
         /// <param name="headers">Headers to be sent with the call.</param>
         /// <param name="deadline">Deadline for the call to finish. null means no deadline.</param>

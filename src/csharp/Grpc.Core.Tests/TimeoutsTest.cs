@@ -99,11 +99,11 @@ namespace Grpc.Core.Tests
         public void InfiniteDeadline()
         {
             // no deadline specified, check server sees infinite deadline
-            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallOptions());
             Assert.AreEqual("DATETIME_MAXVALUE", Calls.BlockingUnaryCall(callDetails, "RETURN_DEADLINE"));
 
             // DateTime.MaxValue deadline specified, check server sees infinite deadline
-            var callDetails2 = new CallInvocationDetails<string, string>(channel, TestMethod, new CallContext());
+            var callDetails2 = new CallInvocationDetails<string, string>(channel, TestMethod, new CallOptions());
             Assert.AreEqual("DATETIME_MAXVALUE", Calls.BlockingUnaryCall(callDetails2, "RETURN_DEADLINE"));
         }
 
@@ -113,7 +113,7 @@ namespace Grpc.Core.Tests
             var remainingTimeClient = TimeSpan.FromDays(7);
             var deadline = DateTime.UtcNow + remainingTimeClient;
             Thread.Sleep(1000);
-            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallContext(deadline: deadline));
+            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallOptions(deadline: deadline));
 
             var serverDeadlineTicksString = Calls.BlockingUnaryCall(callDetails, "RETURN_DEADLINE");
             var serverDeadline = new DateTime(long.Parse(serverDeadlineTicksString), DateTimeKind.Utc);
@@ -127,7 +127,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void DeadlineInThePast()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallContext(deadline: DateTime.MinValue));
+            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallOptions(deadline: DateTime.MinValue));
 
             try
             {
@@ -145,7 +145,7 @@ namespace Grpc.Core.Tests
         public void DeadlineExceededStatusOnTimeout()
         {
             var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
-            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallContext(deadline: deadline));
+            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallOptions(deadline: deadline));
 
             try
             {
@@ -163,7 +163,7 @@ namespace Grpc.Core.Tests
         public void ServerReceivesCancellationOnTimeout()
         {
             var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
-            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallContext(deadline: deadline));
+            var callDetails = new CallInvocationDetails<string, string>(channel, TestMethod, new CallOptions(deadline: deadline));
 
             try
             {

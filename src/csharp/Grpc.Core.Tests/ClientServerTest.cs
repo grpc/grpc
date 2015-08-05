@@ -105,14 +105,14 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             Assert.AreEqual("ABC", Calls.BlockingUnaryCall(callDetails, "ABC"));
         }
 
         [Test]
         public void UnaryCall_ServerHandlerThrows()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             try
             {
                 Calls.BlockingUnaryCall(callDetails, "THROW");
@@ -127,7 +127,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerThrowsRpcException()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             try
             {
                 Calls.BlockingUnaryCall(callDetails, "THROW_UNAUTHENTICATED");
@@ -142,7 +142,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCall_ServerHandlerSetsStatus()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             try
             {
                 Calls.BlockingUnaryCall(callDetails, "SET_UNAUTHENTICATED");
@@ -157,7 +157,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task AsyncUnaryCall()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             var result = await Calls.AsyncUnaryCall(callDetails, "ABC");
             Assert.AreEqual("ABC", result);
         }
@@ -165,7 +165,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task AsyncUnaryCall_ServerHandlerThrows()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             try
             {
                 await Calls.AsyncUnaryCall(callDetails, "THROW");
@@ -180,7 +180,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task ClientStreamingCall()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, ConcatAndEchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, ConcatAndEchoMethod, new CallOptions());
             var call = Calls.AsyncClientStreamingCall(callDetails);
 
             await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
@@ -191,7 +191,7 @@ namespace Grpc.Core.Tests
         public async Task ClientStreamingCall_CancelAfterBegin()
         {
             var cts = new CancellationTokenSource();
-            var callDetails = new CallInvocationDetails<string, string>(channel, ConcatAndEchoMethod, new CallContext(cancellationToken: cts.Token));
+            var callDetails = new CallInvocationDetails<string, string>(channel, ConcatAndEchoMethod, new CallOptions(cancellationToken: cts.Token));
             var call = Calls.AsyncClientStreamingCall(callDetails);
 
             // TODO(jtattermusch): we need this to ensure call has been initiated once we cancel it.
@@ -216,7 +216,7 @@ namespace Grpc.Core.Tests
                 new Metadata.Entry("ascii-header", "abcdefg"),
                 new Metadata.Entry("binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff }),
             };
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext(headers: headers));
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions(headers: headers));
             var call = Calls.AsyncUnaryCall(callDetails, "ABC");
 
             Assert.AreEqual("ABC", call.ResponseAsync.Result);
@@ -237,14 +237,14 @@ namespace Grpc.Core.Tests
         {
             channel.Dispose();
 
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(callDetails, "ABC"));
         }
 
         [Test]
         public void UnaryCallPerformance()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             BenchmarkUtil.RunBenchmark(100, 100,
                                        () => { Calls.BlockingUnaryCall(callDetails, "ABC"); });
         }
@@ -252,7 +252,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnknownMethodHandler()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, NonexistentMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, NonexistentMethod, new CallOptions());
             try
             {
                 Calls.BlockingUnaryCall(callDetails, "ABC");
@@ -267,7 +267,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void UserAgentStringPresent()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             string userAgent = Calls.BlockingUnaryCall(callDetails, "RETURN-USER-AGENT");
             Assert.IsTrue(userAgent.StartsWith("grpc-csharp/"));
         }
@@ -275,7 +275,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void PeerInfoPresent()
         {
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             string peer = Calls.BlockingUnaryCall(callDetails, "RETURN-PEER");
             Assert.IsTrue(peer.Contains(Host));
         }
@@ -288,7 +288,7 @@ namespace Grpc.Core.Tests
 
             var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
 
-            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallContext());
+            var callDetails = new CallInvocationDetails<string, string>(channel, EchoMethod, new CallOptions());
             await Calls.AsyncUnaryCall(callDetails, "abc");
 
             await stateChangedTask;

@@ -48,7 +48,6 @@
   <ItemGroup>
     <Compile Include="AsyncDuplexStreamingCall.cs" />
     <Compile Include="AsyncServerStreamingCall.cs" />
-    <Compile Include="CallContext.cs" />
     <Compile Include="IClientStreamWriter.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
@@ -115,6 +114,7 @@
     <Compile Include="Internal\NativeLogRedirector.cs" />
     <Compile Include="ChannelState.cs" />
     <Compile Include="CallInvocationDetails.cs" />
+    <Compile Include="CallOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

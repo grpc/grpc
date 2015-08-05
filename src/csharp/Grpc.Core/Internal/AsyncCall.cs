@@ -89,7 +89,7 @@ namespace Grpc.Core.Internal
                     readingDone = true;
                 }
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Context.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     using (var ctx = BatchContextSafeHandle.Create())
                     {
@@ -138,7 +138,7 @@ namespace Grpc.Core.Internal
                 byte[] payload = UnsafeSerialize(msg);
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Context.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartUnary(payload, HandleUnaryResponse, metadataArray);
                 }
@@ -162,7 +162,7 @@ namespace Grpc.Core.Internal
                 readingDone = true;
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Context.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartClientStreaming(HandleUnaryResponse, metadataArray);
                 }
@@ -188,7 +188,7 @@ namespace Grpc.Core.Internal
 
                 byte[] payload = UnsafeSerialize(msg);
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Context.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartServerStreaming(payload, HandleFinished, metadataArray);
                 }
@@ -208,7 +208,7 @@ namespace Grpc.Core.Internal
 
                 Initialize(callDetails.Channel.Environment.CompletionQueue);
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Context.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartDuplexStreaming(HandleFinished, metadataArray);
                 }
@@ -316,7 +316,7 @@ namespace Grpc.Core.Internal
         private void Initialize(CompletionQueueSafeHandle cq)
         {
             var call = callDetails.Channel.Handle.CreateCall(callDetails.Channel.Environment.CompletionRegistry, cq,
-                callDetails.Method, callDetails.Host, Timespec.FromDateTime(callDetails.Context.Deadline));
+                callDetails.Method, callDetails.Host, Timespec.FromDateTime(callDetails.Options.Deadline));
             callDetails.Channel.Environment.DebugStats.ActiveClientCalls.Increment();
             InitializeInternal(call);
             RegisterCancellationCallback();
@@ -325,7 +325,7 @@ namespace Grpc.Core.Internal
         // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
         private void RegisterCancellationCallback()
         {
-            var token = callDetails.Context.CancellationToken;
+            var token = callDetails.Options.CancellationToken;
             if (token.CanBeCanceled)
             {
                 token.Register(() => this.Cancel());

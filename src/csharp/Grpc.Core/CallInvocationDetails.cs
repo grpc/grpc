@@ -47,22 +47,21 @@ namespace Grpc.Core
         readonly string host;
         readonly Marshaller<TRequest> requestMarshaller;
         readonly Marshaller<TResponse> responseMarshaller;
-        readonly CallContext context;
+        readonly CallOptions options;
 
-
-        public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallContext context) :
-            this(channel, method.FullName, null, method.RequestMarshaller, method.ResponseMarshaller, context)
+        public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallOptions options) :
+            this(channel, method.FullName, null, method.RequestMarshaller, method.ResponseMarshaller, options)
         {
         }
 
-        public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallContext context)
+        public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallOptions options)
         {
             this.channel = Preconditions.CheckNotNull(channel);
             this.method = Preconditions.CheckNotNull(method);
             this.host = host;
             this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
             this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
-            this.context = Preconditions.CheckNotNull(context);
+            this.options = Preconditions.CheckNotNull(options);
         }
 
         public Channel Channel
@@ -104,15 +103,12 @@ namespace Grpc.Core
                 return this.responseMarshaller;
             }
         }
-
-        /// <summary>
-        /// Call context.
-        /// </summary>
-        public CallContext Context
+            
+        public CallOptions Options
         {
             get
             {
-                return context;
+                return options;
             }
         }
     }

@@ -76,17 +76,17 @@ namespace Grpc.Core
         /// <summary>
         /// Creates a new call to given method.
         /// </summary>
-        protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallContext context)
+        protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
             where TRequest : class
             where TResponse : class
         {
             var interceptor = HeaderInterceptor;
             if (interceptor != null)
             {
-                interceptor(context.Headers);
-                context.Headers.Freeze();
+                interceptor(options.Headers);
+                options.Headers.Freeze();
             }
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, context);
+            return new CallInvocationDetails<TRequest, TResponse>(channel, method, options);
         }
     }
 }
