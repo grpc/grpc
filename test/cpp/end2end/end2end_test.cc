@@ -876,10 +876,10 @@ TEST_F(End2endTest, ChannelState) {
   // Start IDLE
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
 
+  // Did not ask to connect, no state change.
   CompletionQueue cq;
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::milliseconds(10);
-  // No state change.
   channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, NULL);
   void* tag;
   bool ok = true;
@@ -890,6 +890,8 @@ TEST_F(End2endTest, ChannelState) {
   EXPECT_TRUE(channel_->WaitForStateChange(
       GRPC_CHANNEL_IDLE, gpr_inf_future(GPR_CLOCK_REALTIME)));
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
+  EXPECT_TRUE(channel_->WaitForState(GRPC_CHANNEL_READY,
+                                     gpr_inf_future(GPR_CLOCK_REALTIME)));
 }
 
 }  // namespace testing

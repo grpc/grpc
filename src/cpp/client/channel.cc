@@ -136,6 +136,30 @@ bool WaitForStateChangeShared(grpc_channel* channel,
   return ok;
 }
 
+template <typename T>
+bool WaitForStateShared(grpc_channel* channel,
+                        grpc_connectivity_state target_state,
+                        const T& deadline) {
+  grpc_connectivity_state current_state =
+      grpc_channel_check_connectivity_state(channel, 0);
+  if (current_state == target_state) {
+    return true;
+  }
+  TimePoint<T> deadline_tp(deadline);
+  CompletionQueue cq;
+  bool ok = false;
+  void* tag = NULL;
+  while (current_state != target_state) {
+    NotifyOnStateChangeShared(channel, current_state, deadline_tp.raw_time(),
+                              &cq, NULL);
+    cq.Next(&tag, &ok);
+    if (!ok) {
+      return false;
+    }
+    current_state = grpc_channel_check_connectivity_state(channel, 0);
+  }
+  return true;
+}
 }  // namespace
 
 void Channel::NotifyOnStateChange(grpc_connectivity_state last_observed,
@@ -147,6 +171,11 @@ void Channel::NotifyOnStateChange(grpc_connectivity_state last_observed,
 bool Channel::WaitForStateChange(grpc_connectivity_state last_observed,
                                  gpr_timespec deadline) {
   return WaitForStateChangeShared(c_channel_, last_observed, deadline);
+}
+
+bool Channel::WaitForState(grpc_connectivity_state target_state,
+                           gpr_timespec deadline) {
+  return WaitForStateShared(c_channel_, target_state, deadline);
 }
 
 #ifndef GRPC_CXX0X_NO_CHRONO
@@ -162,5 +191,12 @@ bool Channel::WaitForStateChange(
       const std::chrono::system_clock::time_point& deadline) {
   return WaitForStateChangeShared(c_channel_, last_observed, deadline);
 }
+
+bool Channel::WaitForState(
+    grpc_connectivity_state target_state,
+    const std::chrono::system_clock::time_point& deadline) {
+  return WaitForStateShared(c_channel_, target_state, deadline);
+}
+
 #endif  // !GRPC_CXX0X_NO_CHRONO
 }  // namespace grpc
