@@ -55,7 +55,6 @@ END2END_FIXTURES = {
     'chttp2_simple_ssl_fullstack_with_poll': default_secure_fixture_options._replace(platforms=['posix']),
     'chttp2_simple_ssl_fullstack_with_proxy': default_secure_fixture_options._replace(includes_proxy=True),
     'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
-    #'chttp2_simple_ssl_with_oauth2_fullstack_with_proxy': default_secure_fixture_options._replace(includes_proxy=True),
     'chttp2_socket_pair': socketpair_unsecure_fixture_options,
     'chttp2_socket_pair_one_byte_at_a_time': socketpair_unsecure_fixture_options,
     'chttp2_socket_pair_with_grpc_trace': socketpair_unsecure_fixture_options,
