@@ -266,11 +266,7 @@ static char *zookeeper_parse_address(char *buffer, int buffer_len) {
       }
     }
     if (host != NULL && port != NULL) {
-      address = gpr_malloc(GRPC_MAX_SOCKADDR_SIZE);
-      memset(address, 0, GRPC_MAX_SOCKADDR_SIZE);
-      strcat(address, host);
-      strcat(address, ":");
-      strcat(address, port);
+      gpr_asprintf(&address, "%s:%s", host, port);
     }
     grpc_json_destroy(json);
   }
@@ -314,7 +310,6 @@ static void zookeeper_get_children_node_completion(int rc, const char *value,
 static void zookeeper_get_children_completion(
     int rc, const struct String_vector *children, const void *arg) {
   char *path;
-  int path_length;
   int status;
   int i;
   zookeeper_resolver *r = (zookeeper_resolver *)arg;
@@ -335,12 +330,7 @@ static void zookeeper_get_children_completion(
   r->resolved_total = children->count;
 
   for (i = 0; i < children->count; i++) {
-    path_length = strlen(r->name) + strlen(children->data[i]) + 2;
-    path = (char *)gpr_malloc(path_length);
-    memset(path, 0, path_length);
-    strcat(path, r->name);
-    strcat(path, "/");
-    strcat(path, children->data[i]);
+    gpr_asprintf(&path, "%s/%s", r->name, children->data[i]);
     status = zoo_awget(r->zookeeper_handle, path, zookeeper_watcher, r,
                        zookeeper_get_children_node_completion, r);
     gpr_free(path);

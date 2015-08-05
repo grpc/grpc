@@ -74,7 +74,7 @@ class ZookeeperTest : public ::testing::Test {
     server_address_ = "localhost:" + std::to_string(port);
 
     // Setup zookeeper
-    // Require zookeeper server running in Jenkins master
+    // Require zookeeper server running in grpc-jenkins-master
     const char* zookeeper_address = "grpc-jenkins-master:2181";
     ZookeeperSetUp(zookeeper_address, port);
 
@@ -167,6 +167,7 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EchoRequest request1;
   EchoResponse response1;
   ClientContext context1;
+  context1.set_authority("test");
   request1.set_message("Hello");
   Status s1 = stub_->Echo(&context1, request1, &response1);
   EXPECT_EQ(response1.message(), request1.message());
@@ -180,6 +181,7 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EchoRequest request2;
   EchoResponse response2;
   ClientContext context2;
+  context2.set_authority("test");
   request2.set_message("Hello");
   Status s2 = stub_->Echo(&context2, request2, &response2);
   EXPECT_EQ(response2.message(), request2.message());
