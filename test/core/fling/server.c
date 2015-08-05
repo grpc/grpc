@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
     grpc_server_credentials_release(ssl_creds);
   } else {
     server = grpc_server_create(NULL);
-    GPR_ASSERT(grpc_server_add_http2_port(server, addr));
+    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
   }
   grpc_server_register_completion_queue(server, cq);
   grpc_server_start(server);

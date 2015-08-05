@@ -391,9 +391,16 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    grpc_completion_queue_pluck simultaneously on the same completion queue. 
+    
+    Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+    concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                        gpr_timespec deadline);
+
+/** Maximum number of outstanding grpc_completion_queue_pluck executions per
+    completion queue */
+#define GRPC_MAX_COMPLETION_QUEUE_PLUCKERS 6
 
 /** Begin destruction of a completion queue. Once all possible events are
     drained then grpc_completion_queue_next will start to produce
@@ -562,7 +569,7 @@ void grpc_server_register_completion_queue(grpc_server *server,
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */
-int grpc_server_add_http2_port(grpc_server *server, const char *addr);
+int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr);
 
 /** Start a server - tells all listeners to start listening */
 void grpc_server_start(grpc_server *server);

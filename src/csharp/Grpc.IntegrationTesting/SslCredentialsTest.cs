@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using grpc.testing;
@@ -49,7 +50,7 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class SslCredentialsTest
     {
-        string host = "localhost";
+        const string Host = "localhost";
         Server server;
         Channel channel;
         TestService.ITestServiceClient client;
@@ -62,12 +63,14 @@ namespace Grpc.IntegrationTesting
                 File.ReadAllText(TestCredentials.ServerCertChainPath),
                 File.ReadAllText(TestCredentials.ServerPrivateKeyPath));
 
-            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert);
+            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
             var clientCredentials = new SslCredentials(rootCert, keyCertPair);
 
-            server = new Server();
-            server.AddServiceDefinition(TestService.BindService(new TestServiceImpl()));
-            int port = server.AddPort(host, Server.PickUnusedPort, serverCredentials);
+            server = new Server
+            {
+                Services = { TestService.BindService(new TestServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, serverCredentials } }
+            };
             server.Start();
 
             var options = new List<ChannelOption>
@@ -75,7 +78,7 @@ namespace Grpc.IntegrationTesting
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
 
-            channel = new Channel(host, port, clientCredentials, options);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);
             client = TestService.NewClient(channel);
         }
 
