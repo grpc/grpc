@@ -309,6 +309,9 @@ foreach(gRPC_LIB
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT grpc-${_lib}
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT grpc-${_lib}
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT grpc-${_lib})
+    set_property(TARGET ${_lib}
+      PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
     foreach(_hdr ${${_lib_}_public_headers})
       get_filename_component(_hdr_name "${_hdr}" NAME)
       get_filename_component(_hdr_path "${_hdr}" PATH)
