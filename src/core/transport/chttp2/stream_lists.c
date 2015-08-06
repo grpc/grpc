@@ -164,9 +164,6 @@ void grpc_chttp2_list_add_first_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global) {
   GPR_ASSERT(stream_global->id != 0);
-  gpr_log(GPR_DEBUG, "add:%d:%d:%d:%d", stream_global->id,
-          stream_global->write_state, stream_global->in_stream_map,
-          stream_global->read_closed);
   stream_list_add_head(TRANSPORT_FROM_GLOBAL(transport_global),
                        STREAM_FROM_GLOBAL(stream_global),
                        GRPC_CHTTP2_LIST_WRITABLE);

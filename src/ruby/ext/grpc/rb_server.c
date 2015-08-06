@@ -357,7 +357,8 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
     rb_raise(rb_eRuntimeError, "destroyed!");
     return Qnil;
   } else if (rb_creds == Qnil) {
-    recvd_port = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
+    recvd_port =
+        grpc_server_add_insecure_http2_port(s->wrapped, StringValueCStr(port));
     if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add port %s to server, not sure why",

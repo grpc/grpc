@@ -212,10 +212,10 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
     return Qnil;
   }
 
-  call =
-      grpc_channel_create_call(ch, cq, method_chars, host_chars,
-                               grpc_rb_time_timeval(deadline,
-                                                    /* absolute time */ 0));
+  call = grpc_channel_create_call(ch, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  method_chars, host_chars,
+                                  grpc_rb_time_timeval(deadline,
+                                                       /* absolute time */ 0));
   if (call == NULL) {
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
              method_chars);

@@ -265,7 +265,6 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
@@ -408,8 +407,6 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>
