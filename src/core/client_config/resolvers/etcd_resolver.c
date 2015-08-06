@@ -76,6 +76,7 @@ typedef struct {
   grpc_client_config *resolved_config;
   /** is HTTP request/response done?*/
   int http_done;
+  grpc_httpcli_context context;
   grpc_pollset pollset;
 } etcd_resolver;
 
@@ -217,14 +218,16 @@ static void etcd_on_response(void *arg, const grpc_httpcli_response *response) {
   gpr_log(GPR_INFO, response->body);
   gpr_mu_lock(GRPC_POLLSET_MU(&r->pollset));
   r->http_done = 1;
-  grpc_pollset_kick(&r->pollset);
+  grpc_pollset_kick(&r->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&r->pollset));
+}
+
+static gpr_timespec n_seconds_time(int seconds) {
+  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(seconds, GPR_TIMESPAN));
 }
 
 static void etcd_resolve_address(etcd_resolver *r) {
   grpc_httpcli_request request;
-  grpc_httpcli_context context;
-  gpr_timespec deadline;
   char *path;
   gpr_asprintf(&path, "/v2/keys%s", r->name);
 
@@ -233,27 +236,18 @@ static void etcd_resolve_address(etcd_resolver *r) {
   request.path = path;
   request.use_ssl = 0;
 
-  grpc_httpcli_context_init(&context);
-  grpc_pollset_init(&r->pollset);
-
   gpr_log(GPR_INFO, "authority: %s, name: %s", r->authority, r->name);
   gpr_log(GPR_INFO, path);
-  deadline = gpr_time_from_seconds(5, GPR_TIMESPAN);
 
-  grpc_httpcli_get(&context, &r->pollset, &request, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), deadline), etcd_on_response, r);
-
-  gpr_log(GPR_INFO, "hello");
+  grpc_httpcli_get(&r->context, &r->pollset, &request, n_seconds_time(15), etcd_on_response, r);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&r->pollset));
   while (r->http_done == 0) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&r->pollset, &worker,
-                      gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc_pollset_work(&r->pollset, &worker, n_seconds_time(20));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&r->pollset));
 
-  grpc_httpcli_context_destroy(&context);
-  grpc_pollset_destroy(&r->pollset);
   gpr_free(path);
 }
 
@@ -284,6 +278,8 @@ static void etcd_destroy(grpc_resolver *gr) {
     grpc_client_config_unref(r->resolved_config);
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
+  grpc_httpcli_context_destroy(&r->context);
+  grpc_pollset_destroy(&r->pollset);
   gpr_free(r->name);
   gpr_free(r->authority);
   gpr_free(r);
@@ -315,6 +311,8 @@ static grpc_resolver *etcd_create(
   r->subchannel_factory = subchannel_factory;
   r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
+  grpc_httpcli_context_init(&r->context);
+  grpc_pollset_init(&r->pollset);
   return &r->base;
 }
 

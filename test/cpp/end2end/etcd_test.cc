@@ -113,6 +113,7 @@ TEST_F(EtcdTest, SimpleRpc) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
+  context.set_authority("test");
   request.set_message("Hello");
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
