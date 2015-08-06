@@ -87,6 +87,7 @@ class ZookeeperTest : public ::testing::Test {
 
   void ZookeeperSetUp(const char* zookeeper_address, int port) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
+    gpr_log(GPR_INFO, zookeeper_address);
     zookeeper_handle_ = zookeeper_init(zookeeper_address, NULL, 15000, 0, 0, 0);
     GPR_ASSERT(zookeeper_handle_ != NULL);
 
@@ -146,7 +147,7 @@ class ZookeeperTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    channel_ = CreateChannel("zookeeper://localhost:2181/test",
+    channel_ = CreateChannel("zookeeper://grpc-jenkins-master:2181/test",
                              InsecureCredentials(), ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
