@@ -34,6 +34,7 @@ import os.path
 import sys
 
 import setuptools
+from setuptools.command import build_py
 
 _CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
@@ -74,3 +75,28 @@ class SphinxDocumentation(setuptools.Command):
       conf_file.write(_CONF_PY_ADDENDUM)
     sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
 
+
+class BuildProjectMetadata(setuptools.Command):
+  """Command to generate project metadata in a module."""
+
+  description = ''
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    with open('grpc/_grpcio_metadata.py', 'w') as module_file:
+      module_file.write('__version__ = """{}"""'.format(
+          self.distribution.get_version()))
+
+
+class BuildPy(build_py.build_py):
+  """Custom project build command."""
+
+  def run(self):
+    self.run_command('build_project_metadata')
+    build_py.build_py.run(self)
