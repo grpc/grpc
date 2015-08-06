@@ -32,39 +32,38 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
-    public delegate void MetadataInterceptorDelegate(Metadata metadata);
-
     /// <summary>
-    /// Base class for client-side stubs.
+    /// Details about a client-side call to be invoked.
     /// </summary>
-    public abstract class ClientBase
+    public class CallInvocationDetails<TRequest, TResponse>
     {
         readonly Channel channel;
+        readonly string method;
+        readonly string host;
+        readonly Marshaller<TRequest> requestMarshaller;
+        readonly Marshaller<TResponse> responseMarshaller;
+        readonly CallOptions options;
 
-        public ClientBase(Channel channel)
+        public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallOptions options) :
+            this(channel, method.FullName, null, method.RequestMarshaller, method.ResponseMarshaller, options)
         {
-            this.channel = channel;
         }
 
-        /// <summary>
-        /// Can be used to register a custom header (initial metadata) interceptor.
-        /// The delegate each time before a new call on this client is started.
-        /// </summary>
-        public MetadataInterceptorDelegate HeaderInterceptor
+        public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallOptions options)
         {
-            get;
-            set;
+            this.channel = Preconditions.CheckNotNull(channel);
+            this.method = Preconditions.CheckNotNull(method);
+            this.host = host;
+            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
+            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
+            this.options = Preconditions.CheckNotNull(options);
         }
 
-        /// <summary>
-        /// Channel associated with this client.
-        /// </summary>
         public Channel Channel
         {
             get
@@ -73,20 +72,44 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary>
-        /// Creates a new call to given method.
-        /// </summary>
-        protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
-            where TRequest : class
-            where TResponse : class
+        public string Method
         {
-            var interceptor = HeaderInterceptor;
-            if (interceptor != null)
+            get
             {
-                interceptor(options.Headers);
-                options.Headers.Freeze();
+                return this.method;
             }
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, options);
+        }
+
+        public string Host
+        {
+            get
+            {
+                return this.host;
+            }
+        }
+
+        public Marshaller<TRequest> RequestMarshaller
+        {
+            get
+            {
+                return this.requestMarshaller;
+            }
+        }
+
+        public Marshaller<TResponse> ResponseMarshaller
+        {
+            get
+            {
+                return this.responseMarshaller;
+            }
+        }
+            
+        public CallOptions Options
+        {
+            get
+            {
+                return options;
+            }
         }
     }
 }
