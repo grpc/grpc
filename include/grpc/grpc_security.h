@@ -255,11 +255,8 @@ void grpc_auth_context_release(grpc_auth_context *context);
 
 /* --
    The following auth context methods should only be called by a server metadata
-   processor that will augment the channel auth context (see below).
+   processor to set properties extracted from auth metadata.
    -- */
-
-/* Creates a new auth context based off a chained context. */
-grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
 
 /* Add a property. */
 void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
@@ -277,21 +274,22 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
 
 /* --- Auth Metadata Processing --- */
 
-/* Opaque data structure useful for processors defined in core. */
-typedef struct grpc_auth_ticket grpc_auth_ticket;
-
 /* Callback function that is called when the metadata processing is done.
-   success is 1 if processing succeeded, 0 otherwise. */
+   success is 1 if processing succeeded, 0 otherwise.
+   Consumed metadata will be removed from the set of metadata available on the
+   call. */
 typedef void (*grpc_process_auth_metadata_done_cb)(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
-    int success, grpc_auth_context *result);
+    int success);
 
-/* Pluggable server-side metadata processor object */
+/* Pluggable server-side metadata processor object. */
 typedef struct {
-  void (*process)(void *state, grpc_auth_ticket *ticket,
-                  grpc_auth_context *channel_ctx, const grpc_metadata *md,
-                  size_t md_count, grpc_process_auth_metadata_done_cb cb,
-                  void *user_data);
+  /* The context object is read/write: it contains the properties of the
+     channel peer and it is the job of the process function to augment it with
+     properties derived from the passed-in metadata. */
+  void (*process)(void *state, grpc_auth_context *context,
+                  const grpc_metadata *md, size_t md_count,
+                  grpc_process_auth_metadata_done_cb cb, void *user_data);
   void *state;
 } grpc_auth_metadata_processor;
 

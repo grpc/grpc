@@ -53,8 +53,7 @@ typedef struct call_data {
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
   grpc_stream_op *md_op;
-  grpc_auth_context **call_auth_context;
-  grpc_auth_ticket ticket;
+  grpc_auth_context *auth_context;
 } call_data;
 
 typedef struct channel_data {
@@ -107,8 +106,7 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
 
 static void on_md_processing_done(void *user_data,
                                   const grpc_metadata *consumed_md,
-                                  size_t num_consumed_md, int success,
-                                  grpc_auth_context *result) {
+                                  size_t num_consumed_md, int success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
@@ -117,11 +115,6 @@ static void on_md_processing_done(void *user_data,
     calld->num_consumed_md = num_consumed_md;
     grpc_metadata_batch_filter(&calld->md_op->data.metadata, remove_consumed_md,
                                elem);
-    GPR_ASSERT(calld->call_auth_context != NULL);
-    GRPC_AUTH_CONTEXT_UNREF(*calld->call_auth_context,
-                            "releasing old context.");
-    *calld->call_auth_context =
-        GRPC_AUTH_CONTEXT_REF(result, "refing new context.");
     calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
   } else {
     gpr_slice message = gpr_slice_from_copied_string(
@@ -149,8 +142,7 @@ static void auth_on_recv(void *user_data, int success) {
       if (chand->processor.process == NULL) continue;
       calld->md_op = op;
       md_array = metadata_batch_to_md_array(&op->data.metadata);
-      chand->processor.process(chand->processor.state, &calld->ticket,
-                               chand->security_connector->auth_context,
+      chand->processor.process(chand->processor.state, calld->auth_context,
                                md_array.metadata, md_array.count,
                                on_md_processing_done, elem);
       grpc_metadata_array_destroy(&md_array);
@@ -200,11 +192,6 @@ static void init_call_elem(grpc_call_element *elem,
   GPR_ASSERT(initial_op && initial_op->context != NULL &&
              initial_op->context[GRPC_CONTEXT_SECURITY].value == NULL);
 
-  /* Get the pollset for the ticket. */
-  if (initial_op->bind_pollset) {
-    calld->ticket.pollset = initial_op->bind_pollset;
-  }
-
   /* Create a security context for the call and reference the auth context from
      the channel. */
   if (initial_op->context[GRPC_CONTEXT_SECURITY].value != NULL) {
@@ -212,12 +199,13 @@ static void init_call_elem(grpc_call_element *elem,
         initial_op->context[GRPC_CONTEXT_SECURITY].value);
   }
   server_ctx = grpc_server_security_context_create();
-  server_ctx->auth_context = GRPC_AUTH_CONTEXT_REF(
-      chand->security_connector->auth_context, "server_security_context");
+  server_ctx->auth_context =
+      grpc_auth_context_create(chand->security_connector->auth_context);
+  server_ctx->auth_context->pollset = initial_op->bind_pollset;
   initial_op->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
   initial_op->context[GRPC_CONTEXT_SECURITY].destroy =
       grpc_server_security_context_destroy;
-  calld->call_auth_context = &server_ctx->auth_context;
+  calld->auth_context = server_ctx->auth_context;
 
   /* Set the metadata callbacks. */
   set_recv_ops_md_callbacks(elem, initial_op);

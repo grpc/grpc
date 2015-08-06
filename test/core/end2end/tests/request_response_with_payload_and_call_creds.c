@@ -57,13 +57,23 @@ enum { TIMEOUT = 200000 };
 
 static void *tag(gpr_intptr t) { return (void *)t; }
 
-static grpc_end2end_test_fixture begin_test(
-    grpc_end2end_test_config config, const char *test_name) {
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
+                                            const char *test_name,
+                                            int fail_server_auth_check) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(NULL, NULL);
   config.init_client(&f, NULL);
-  config.init_server(&f, NULL);
+  if (fail_server_auth_check) {
+    grpc_arg fail_auth_arg = {
+        GRPC_ARG_STRING, FAIL_AUTH_CHECK_SERVER_ARG_NAME, {NULL}};
+    grpc_channel_args args;
+    args.num_args= 1;
+    args.args = &fail_auth_arg;
+    config.init_server(&f, &args);
+  } else {
+    config.init_server(&f, NULL);
+  }
   return f;
 }
 
@@ -125,7 +135,8 @@ static void print_auth_context(int is_client, const grpc_auth_context *ctx) {
 static void test_call_creds_failure(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_credentials *creds = NULL;
-  grpc_end2end_test_fixture f = begin_test(config, "test_call_creds_failure");
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_call_creds_failure", 0);
   gpr_timespec deadline = five_seconds_time();
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
                                deadline);
@@ -172,7 +183,7 @@ static void request_response_with_payload_and_call_creds(
   grpc_auth_context *s_auth_context = NULL;
   grpc_auth_context *c_auth_context = NULL;
 
-  f = begin_test(config, test_name);
+  f = begin_test(config, test_name, 0);
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
@@ -365,11 +376,100 @@ static void test_request_response_with_payload_and_deleted_call_creds(
       DESTROY);
 }
 
+static void test_request_with_server_rejecting_client_creds(
+    grpc_end2end_test_config config) {
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_call *c;
+  grpc_end2end_test_fixture f;
+  gpr_timespec deadline = five_seconds_time();
+  cq_verifier *cqv;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  char *details = NULL;
+  size_t details_capacity = 0;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_byte_buffer *request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_credentials *creds;
+
+  f = begin_test(config, "test_request_with_server_rejecting_client_creds", 1);
+  cqv = cq_verifier_create(f.cq);
+
+  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
+                               deadline);
+  GPR_ASSERT(c);
+
+  creds = grpc_iam_credentials_create(iam_token, iam_selector);
+  GPR_ASSERT(creds != NULL);
+  GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
+  grpc_credentials_release(creds);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
+  op->flags = 0;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
+
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload_recv);
+  gpr_free(details);
+
+  grpc_call_destroy(c);
+
+  cq_verifier_destroy(cqv);
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
 void grpc_end2end_tests(grpc_end2end_test_config config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {
     test_call_creds_failure(config);
     test_request_response_with_payload_and_call_creds(config);
     test_request_response_with_payload_and_overridden_call_creds(config);
     test_request_response_with_payload_and_deleted_call_creds(config);
+    test_request_with_server_rejecting_client_creds(config);
   }
 }

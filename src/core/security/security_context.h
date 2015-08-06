@@ -37,11 +37,6 @@
 #include "src/core/iomgr/pollset.h"
 #include "src/core/security/credentials.h"
 
-/* --- grpc_auth_ticket --- */
-struct grpc_auth_ticket {
-  grpc_pollset *pollset;
-};
-
 /* --- grpc_auth_context ---
 
    High level authentication context object. Can optionally be chained. */
@@ -59,7 +54,11 @@ struct grpc_auth_context {
   grpc_auth_property_array properties;
   gpr_refcount refcount;
   const char *peer_identity_property_name;
+  grpc_pollset *pollset;
 };
+
+/* Creation. */
+grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
 
 /* Refcounting. */
 #ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
@@ -78,6 +77,8 @@ void grpc_auth_context_unref(grpc_auth_context *policy, const char *file,
 grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
 void grpc_auth_context_unref(grpc_auth_context *policy);
 #endif
+
+/* Get the pollset. */
 
 void grpc_auth_property_reset(grpc_auth_property *property);
 
