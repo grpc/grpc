@@ -32,55 +32,34 @@
 #endregion
 
 using System;
+using System.Threading;
+
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Abstraction of a call to be invoked on a client.
+    /// Options for calls made by client.
     /// </summary>
-    public class Call<TRequest, TResponse>
+    public class CallOptions
     {
-        readonly string name;
-        readonly Marshaller<TRequest> requestMarshaller;
-        readonly Marshaller<TResponse> responseMarshaller;
-        readonly Channel channel;
         readonly Metadata headers;
         readonly DateTime deadline;
-
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
-            : this(serviceName, method, channel, headers, DateTime.MaxValue)
-        {
-        }
-
-        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers, DateTime deadline)
-        {
-            this.name = method.GetFullName(serviceName);
-            this.requestMarshaller = method.RequestMarshaller;
-            this.responseMarshaller = method.ResponseMarshaller;
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.headers = Preconditions.CheckNotNull(headers);
-            this.deadline = deadline;
-        }
-
-        public Channel Channel
-        {
-            get
-            {
-                return this.channel;
-            }
-        }
+        readonly CancellationToken cancellationToken;
 
         /// <summary>
-        /// Full methods name including the service name.
+        /// Creates a new instance of <c>CallOptions</c>.
         /// </summary>
-        public string Name
+        /// <param name="headers">Headers to be sent with the call.</param>
+        /// <param name="deadline">Deadline for the call to finish. null means no deadline.</param>
+        /// <param name="cancellationToken">Can be used to request cancellation of the call.</param>
+        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            get
-            {
-                return name;
-            }
+            // TODO(jtattermusch): consider only creating metadata object once it's really needed.
+            this.headers = headers != null ? headers : new Metadata();
+            this.deadline = deadline.HasValue ? deadline.Value : DateTime.MaxValue;
+            this.cancellationToken = cancellationToken;
         }
 
         /// <summary>
@@ -88,34 +67,23 @@ namespace Grpc.Core
         /// </summary>
         public Metadata Headers
         {
-            get
-            {
-                return headers;
-            }
+            get { return headers; }
         }
 
+        /// <summary>
+        /// Call deadline.
+        /// </summary>
         public DateTime Deadline
         {
-            get
-            {
-                return this.deadline;
-            }
+            get { return deadline; }
         }
 
-        public Marshaller<TRequest> RequestMarshaller
+        /// <summary>
+        /// Token that can be used for cancelling the call.
+        /// </summary>
+        public CancellationToken CancellationToken
         {
-            get
-            {
-                return requestMarshaller;
-            }
-        }
-
-        public Marshaller<TResponse> ResponseMarshaller
-        {
-            get
-            {
-                return responseMarshaller;
-            }
+            get { return cancellationToken; }
         }
     }
 }
