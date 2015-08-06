@@ -36,6 +36,10 @@
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
 
+extern "C" {
+#include "src/core/security/security_context.h"
+}
+
 namespace grpc {
 namespace {
 
