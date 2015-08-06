@@ -39,11 +39,16 @@
 
 // Establish all SSL connections to the provided host using the passed SSL target name and the root
 // certificates found in the file at |certsPath|.
-// Must be called before any gRPC call to that host is made.
+//
+// Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
+// more than one invocation of the methods of this category.
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
                  forHost:(NSString *)host;
 
 // Establish all connections to the provided host using cleartext instead of SSL.
+//
+// Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
+// more than one invocation of the methods of this category.
 + (void)useInsecureConnectionsForHost:(NSString *)host;
 @end
