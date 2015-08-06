@@ -41,8 +41,8 @@ then
   sudo docker run grpc/node /usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
 elif [ "$language" = "ruby" ]
 then
-  local cmd_prefix="SSL_CERT_FILE=/cacerts/roots.pem ruby /var/local/git/grpc/src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com "
-  local cmd="$cmd_prefix --test_case=$test_case"
+  cmd_prefix="SSL_CERT_FILE=/cacerts/roots.pem ruby /var/local/git/grpc/src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com "
+  cmd="$cmd_prefix --test_case=$test_case"
   sudo docker run grpc/ruby bin/bash -l -c '$cmd'
   #sudo docker run grpc/ruby bin/bash -l -c 'SSL_CERT_FILE=/cacerts/roots.pem ruby /var/local/git/grpc/src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case'
 elif [ "$language" = "php" ]
