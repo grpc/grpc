@@ -33,7 +33,10 @@
 
 #import "GRPCHost.h"
 
+#include <grpc/grpc.h>
+
 #import "GRPCChannel.h"
+#import "GRPCCompletionQueue.h"
 #import "GRPCSecureChannel.h"
 #import "GRPCUnsecuredChannel.h"
 

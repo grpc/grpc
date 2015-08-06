@@ -33,7 +33,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCCompletionQueue.h"
+@class GRPCCompletionQueue;
+struct grpc_call;
 
 @interface GRPCHost : NSObject
 
@@ -51,6 +52,7 @@
 - (instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
 
 // Create a grpc_call object to the provided path on this host.
-- (grpc_call *)unmanagedCallWithPath:(NSString *)path completionQueue:(GRPCCompletionQueue *)queue;
+- (struct grpc_call *)unmanagedCallWithPath:(NSString *)path
+                            completionQueue:(GRPCCompletionQueue *)queue;
 
 @end
