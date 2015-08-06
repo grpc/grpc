@@ -46,6 +46,7 @@ struct grpc_credentials;
           pathToCertificates:(NSString *)path
             hostNameOverride:(NSString *)hostNameOverride;
 
+// The passed arguments aren't required to be valid beyond the invocation of this initializer.
 - (instancetype)initWithHost:(NSString *)host
                  credentials:(struct grpc_credentials *)credentials
                         args:(grpc_channel_args *)args NS_DESIGNATED_INITIALIZER;
