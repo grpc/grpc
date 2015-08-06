@@ -256,31 +256,44 @@ void grpc_call_details_destroy(grpc_call_details *details);
 
 typedef enum {
   /** Send initial metadata: one and only one instance MUST be sent for each
-      call, unless the call was cancelled - in which case this can be skipped */
+      call, unless the call was cancelled - in which case this can be skipped.
+      This op completes after all bytes of metadata have been accepted by
+      outgoing flow control. */
   GRPC_OP_SEND_INITIAL_METADATA = 0,
-  /** Send a message: 0 or more of these operations can occur for each call */
+  /** Send a message: 0 or more of these operations can occur for each call.
+      This op completes after all bytes for the message have been accepted by
+      outgoing flow control. */
   GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
-      skipped */
+      skipped.
+      This op completes after all bytes for the call (including the close)
+      have passed outgoing flow control. */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
   /** Send status from the server: one and only one instance MUST be sent from
       the server unless the call was cancelled - in which case this can be
-      skipped */
+      skipped.
+      This op completes after all bytes for the call (including the status)
+      have passed outgoing flow control. */
   GRPC_OP_SEND_STATUS_FROM_SERVER,
   /** Receive initial metadata: one and only one MUST be made on the client,
-      must not be made on the server */
+      must not be made on the server.
+      This op completes after all initial metadata has been read from the
+      peer. */
   GRPC_OP_RECV_INITIAL_METADATA,
-  /** Receive a message: 0 or more of these operations can occur for each call
-     */
+  /** Receive a message: 0 or more of these operations can occur for each call.
+      This op completes after all bytes of the received message have been
+      read, or after a half-close has been received on this call. */
   GRPC_OP_RECV_MESSAGE,
   /** Receive status on the client: one and only one must be made on the client.
-     This operation always succeeds, meaning ops paired with this operation
-     will also appear to succeed, even though they may not have. In that case
-     the status will indicate some failure. */
+      This operation always succeeds, meaning ops paired with this operation
+      will also appear to succeed, even though they may not have. In that case
+      the status will indicate some failure.
+      This op completes after all activity on the call has completed. */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /** Receive close on the server: one and only one must be made on the
-      server */
+      server.
+      This op completes after the close has been received by the server. */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
