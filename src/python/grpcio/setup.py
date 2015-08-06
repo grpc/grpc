@@ -89,7 +89,7 @@ _PACKAGE_DIRECTORIES = {
 _INSTALL_REQUIRES = (
     'enum34==1.0.4',
     'futures==2.2.0',
-    'protobuf==3.0.0a3'
+    'protobuf==3.0.0a3',
 )
 
 _SETUP_REQUIRES = (
@@ -97,7 +97,9 @@ _SETUP_REQUIRES = (
 ) + _INSTALL_REQUIRES
 
 _COMMAND_CLASS = {
-    'doc': commands.SphinxDocumentation
+    'doc': commands.SphinxDocumentation,
+    'build_project_metadata': commands.BuildProjectMetadata,
+    'build_py': commands.BuildPy,
 }
 
 setuptools.setup(

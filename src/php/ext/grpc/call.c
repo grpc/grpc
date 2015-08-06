@@ -240,8 +240,8 @@ PHP_METHOD(Call, __construct) {
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
   call->wrapped = grpc_channel_create_call(
-      channel->wrapped, completion_queue, method, channel->target,
-      deadline->wrapped);
+      channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
+      channel->target, deadline->wrapped);
 }
 
 /**

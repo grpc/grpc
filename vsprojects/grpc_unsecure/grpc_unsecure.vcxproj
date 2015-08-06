@@ -246,6 +246,8 @@
     <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel.h" />
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h" />
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\src\core\debug\trace.h" />
@@ -260,7 +262,6 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h" />
@@ -366,6 +367,10 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\compression\algorithm.c">
@@ -393,8 +398,6 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>

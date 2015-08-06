@@ -51,23 +51,28 @@
 
 namespace grpc {
 
-Channel::Channel(const grpc::string& target, grpc_channel* channel)
-    : target_(target), c_channel_(channel) {}
+Channel::Channel(grpc_channel* channel) : c_channel_(channel) {}
+
+Channel::Channel(const grpc::string& host, grpc_channel* channel)
+    : host_(host), c_channel_(channel) {}
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
-  auto c_call =
-      method.channel_tag() && context->authority().empty()
-          ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
-                                                method.channel_tag(),
-                                                context->raw_deadline())
-          : grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
-                                     context->authority().empty()
-                                         ? target_.c_str()
-                                         : context->authority().c_str(),
-                                     context->raw_deadline());
+  const char* host_str = host_.empty() ? NULL : host_.c_str();
+  auto c_call = method.channel_tag() && context->authority().empty()
+                    ? grpc_channel_create_registered_call(
+                          c_channel_, context->propagate_from_call_,
+                          context->propagation_options_.c_bitmask(), cq->cq(),
+                          method.channel_tag(), context->raw_deadline())
+                    : grpc_channel_create_call(
+                          c_channel_, context->propagate_from_call_,
+                          context->propagation_options_.c_bitmask(), cq->cq(),
+                          method.name(), context->authority().empty()
+                                             ? host_str
+                                             : context->authority().c_str(),
+                          context->raw_deadline());
   grpc_census_call_set_context(c_call, context->census_context());
   GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
   context->set_call(c_call, shared_from_this());
@@ -86,7 +91,8 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
 }
 
 void* Channel::RegisterMethod(const char* method) {
-  return grpc_channel_register_call(c_channel_, method, target_.c_str());
+  return grpc_channel_register_call(c_channel_, method,
+                                    host_.empty() ? NULL : host_.c_str());
 }
 
 }  // namespace grpc

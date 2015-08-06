@@ -37,6 +37,8 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -45,21 +47,23 @@ namespace Grpc.Core
     /// </summary>
     public class Channel : IDisposable
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
+
         readonly GrpcEnvironment environment;
         readonly ChannelSafeHandle handle;
         readonly List<ChannelOption> options;
-        readonly string target;
         bool disposed;
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
-        /// Port will default to 80 for an unsecure channel and to 443 a secure channel.
+        /// Port will default to 80 for an unsecure channel and to 443 for a secure channel.
         /// </summary>
-        /// <param name="host">The DNS name of IP address of the host.</param>
+        /// <param name="host">The name or IP address of the host.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
         public Channel(string host, Credentials credentials, IEnumerable<ChannelOption> options = null)
         {
+            Preconditions.CheckNotNull(host);
             this.environment = GrpcEnvironment.GetInstance();
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
 
@@ -76,14 +80,13 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(host, nativeChannelArgs);
                 }
             }
-            this.target = GetOverridenTarget(host, this.options);
         }
 
         /// <summary>
         /// Creates a channel that connects to a specific host and port.
         /// </summary>
-        /// <param name="host">DNS name or IP address</param>
-        /// <param name="port">the port</param>
+        /// <param name="host">The name or IP address of the host.</param>
+        /// <param name="port">The port.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
         public Channel(string host, int port, Credentials credentials, IEnumerable<ChannelOption> options = null) :
@@ -91,18 +94,80 @@ namespace Grpc.Core
         {
         }
 
+        /// <summary>
+        /// Gets current connectivity state of this channel.
+        /// </summary>
+        public ChannelState State
+        {
+            get
+            {
+                return handle.CheckConnectivityState(false);        
+            }
+        }
+
+        /// <summary>
+        /// Returned tasks completes once channel state has become different from 
+        /// given lastObservedState. 
+        /// If deadline is reached or and error occurs, returned task is cancelled.
+        /// </summary>
+        public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        {
+            Preconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
+                "FatalFailure is a terminal state. No further state changes can occur.");
+            var tcs = new TaskCompletionSource<object>();
+            var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
+            var handler = new BatchCompletionDelegate((success, ctx) =>
+            {
+                if (success)
+                {
+                    tcs.SetResult(null);
+                }
+                else
+                {
+                    tcs.SetCanceled();
+                }
+            });
+            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, environment.CompletionQueue, environment.CompletionRegistry, handler);
+            return tcs.Task;
+        }
+
+        /// <summary> Address of the remote endpoint in URI format.</summary>
+        public string Target
+        {
+            get
+            {
+                return handle.GetTarget();
+            }
+        }
+
+        /// <summary>
+        /// Allows explicitly requesting channel to connect without starting an RPC.
+        /// Returned task completes once state Ready was seen. If the deadline is reached,
+        /// or channel enters the FatalFailure state, the task is cancelled.
+        /// There is no need to call this explicitly unless your use case requires that.
+        /// Starting an RPC on a new channel will request connection implicitly.
+        /// </summary>
+        public async Task ConnectAsync(DateTime? deadline = null)
+        {
+            var currentState = handle.CheckConnectivityState(true);
+            while (currentState != ChannelState.Ready)
+            {
+                if (currentState == ChannelState.FatalFailure)
+                {
+                    throw new OperationCanceledException("Channel has reached FatalFailure state.");
+                }
+                await WaitForStateChangedAsync(currentState, deadline);
+                currentState = handle.CheckConnectivityState(false);
+            }
+        }
+
+        /// <summary>
+        /// Destroys the underlying channel.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-        }
-
-        internal string Target
-        {
-            get
-            {
-                return target;
-            }
         }
 
         internal ChannelSafeHandle Handle
@@ -110,22 +175,6 @@ namespace Grpc.Core
             get
             {
                 return this.handle;
-            }
-        }
-
-        internal CompletionQueueSafeHandle CompletionQueue
-        {
-            get
-            {
-                return this.environment.CompletionQueue;
-            }
-        }
-
-        internal CompletionRegistry CompletionRegistry
-        {
-            get
-            {
-                return this.environment.CompletionRegistry;
             }
         }
 
@@ -158,27 +207,6 @@ namespace Grpc.Core
         {
             // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
             return string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
-        }
-
-        /// <summary>
-        /// Look for SslTargetNameOverride option and return its value instead of originalTarget
-        /// if found.
-        /// </summary>
-        private static string GetOverridenTarget(string originalTarget, IEnumerable<ChannelOption> options)
-        {
-            if (options == null)
-            {
-                return originalTarget;
-            }
-            foreach (var option in options)
-            {
-                if (option.Type == ChannelOption.OptionType.String
-                    && option.Name == ChannelOptions.SslTargetNameOverride)
-                {
-                    return option.StringValue;
-                }
-            }
-            return originalTarget;
         }
     }
 }

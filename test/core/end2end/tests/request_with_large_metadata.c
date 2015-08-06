@@ -122,8 +122,8 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   const int large_size = 64 * 1024;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   meta.key = "key";

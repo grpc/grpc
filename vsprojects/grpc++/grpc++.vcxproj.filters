@@ -213,6 +213,9 @@
     <ClInclude Include="..\..\include\grpc++\stream.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\stub_options.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>

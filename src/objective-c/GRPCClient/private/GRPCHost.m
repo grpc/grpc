@@ -104,6 +104,7 @@
     return NULL;
   }
   return grpc_channel_create_call(self.channel.unmanagedChannel,
+                                  NULL, GRPC_PROPAGATE_DEFAULTS,
                                   queue.unmanagedQueue,
                                   path.UTF8String,
                                   self.hostName.UTF8String,

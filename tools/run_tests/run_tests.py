@@ -187,40 +187,18 @@ class PhpLanguage(object):
 class PythonLanguage(object):
 
   def __init__(self):
-    with open('tools/run_tests/python_tests.json') as f:
-      self._tests = json.load(f)
-    self._build_python_versions = set([
-        python_version
-        for test in self._tests
-        for python_version in test['pythonVersions']])
+    self._build_python_versions = ['2.7']
     self._has_python_versions = []
 
   def test_specs(self, config, travis):
-    job_specifications = []
-    for test in self._tests:
-      command = None
-      short_name = None
-      if 'module' in test:
-        command = ['tools/run_tests/run_python.sh', '-m', test['module']]
-        short_name = test['module']
-      elif 'file' in test:
-        command = ['tools/run_tests/run_python.sh', test['file']]
-        short_name = test['file']
-      else:
-        raise ValueError('expected input to be a module or file to run '
-                         'unittests from')
-      for python_version in test['pythonVersions']:
-        if python_version in self._has_python_versions:
-          environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-          environment['PYVER'] = python_version
-          job_specifications.append(config.job_spec(
-              command, None, environ=environment, shortname=short_name))
-        else:
-          jobset.message(
-              'WARNING',
-              'Could not find Python {}; skipping test'.format(python_version),
-              '{}\n'.format(command), do_newline=True)
-    return job_specifications
+    environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+    environment['PYVER'] = '2.7'
+    return [config.job_spec(
+        ['tools/run_tests/run_python.sh'],
+        None,
+        environ=environment,
+        shortname='py.test',
+    )]
 
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
@@ -276,6 +254,7 @@ class CSharpLanguage(object):
   def test_specs(self, config, travis):
     assemblies = ['Grpc.Core.Tests',
                   'Grpc.Examples.Tests',
+                  'Grpc.HealthCheck.Tests',
                   'Grpc.IntegrationTesting']
     if self.platform == 'windows':
       cmd = 'tools\\run_tests\\run_csharp.bat'
