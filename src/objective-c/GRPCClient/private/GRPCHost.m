@@ -76,25 +76,27 @@
   address = [@[hostURL.host, port] componentsJoinedByString:@":"];
 
   // Look up the GRPCHost in the cache.
-  // TODO(jcanizales): Make this cache thread-safe.
   static NSMutableDictionary *hostCache;
   static dispatch_once_t cacheInitialization;
   dispatch_once(&cacheInitialization, ^{
     hostCache = [NSMutableDictionary dictionary];
   });
-  if (hostCache[address]) {
-    // We could verify here that the cached host uses the same protocol that we're expecting. But
-    // creating non-SSL channels by adding "http://" to the address is going away (to make the use
-    // of insecure channels less subtle), so it's not worth it now.
-    return hostCache[address];
-  }
+  @synchronized(hostCache) {
+    GRPCHost *cachedHost = hostCache[address];
+    if (cachedHost) {
+      // We could verify here that the cached host uses the same protocol that we're expecting. But
+      // creating non-SSL channels by adding "http://" to the address is going away (to make the use
+      // of insecure channels less subtle), so it's not worth it now.
+      return cachedHost;
+    }
 
-  if ((self = [super init])) {
-    _address = address;
-    _secure = [scheme isEqualToString:@"https"];
-    hostCache[address] = self;
+    if ((self = [super init])) {
+      _address = address;
+      _secure = [scheme isEqualToString:@"https"];
+      hostCache[address] = self;
+    }
+    return self;
   }
-  return self;
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path completionQueue:(GRPCCompletionQueue *)queue {
