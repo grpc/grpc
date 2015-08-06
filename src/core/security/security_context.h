@@ -78,8 +78,6 @@ grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
 void grpc_auth_context_unref(grpc_auth_context *policy);
 #endif
 
-/* Get the pollset. */
-
 void grpc_auth_property_reset(grpc_auth_property *property);
 
 /* --- grpc_client_security_context ---
