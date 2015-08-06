@@ -46,6 +46,6 @@ struct grpc_channel_args;
             hostNameOverride:(NSString *)hostNameOverride;
 
 - (instancetype)initWithHost:(NSString *)host
-                 credentials:(grpc_credentials *)credentials
-                        args:(grpc_channel_args *)args NS_DESIGNATED_INITIALIZER;
+                 credentials:(struct grpc_credentials *)credentials
+                        args:(struct grpc_channel_args *)args NS_DESIGNATED_INITIALIZER;
 @end
