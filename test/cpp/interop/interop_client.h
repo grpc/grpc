@@ -60,6 +60,7 @@ class InteropClient {
   void DoCancelAfterBegin();
   void DoCancelAfterFirstResponse();
   void DoTimeoutOnSleepingServer();
+  void DoStatusWithMessage();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);

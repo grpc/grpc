@@ -252,6 +252,7 @@
     <ClInclude Include="..\..\include\grpc++\status.h" />
     <ClInclude Include="..\..\include\grpc++\status_code_enum.h" />
     <ClInclude Include="..\..\include\grpc++\stream.h" />
+    <ClInclude Include="..\..\include\grpc++\stub_options.h" />
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h" />
     <ClInclude Include="..\..\include\grpc++\time.h" />
   </ItemGroup>

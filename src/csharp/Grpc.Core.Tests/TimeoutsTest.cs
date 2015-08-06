@@ -70,11 +70,13 @@ namespace Grpc.Core.Tests
         [SetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddPort(Host, Server.PickUnusedPort, ServerCredentials.Insecure);
+            server = new Server
+            {
+                Services = { ServiceDefinition },
+                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
+            };
             server.Start();
-            channel = new Channel(Host, port, Credentials.Insecure);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
 
             stringFromServerHandlerTcs = new TaskCompletionSource<string>();
         }
@@ -134,7 +136,8 @@ namespace Grpc.Core.Tests
             }
             catch (RpcException e)
             {
-                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
+                // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+                Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
             }
         }
 
@@ -151,7 +154,8 @@ namespace Grpc.Core.Tests
             }
             catch (RpcException e)
             {
-                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
+                // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+                Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
             }
         }
 
@@ -168,7 +172,8 @@ namespace Grpc.Core.Tests
             }
             catch (RpcException e)
             {
-                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
+                // We can't guarantee the status code is always DeadlineExceeded. See issue #2685.
+                Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
             }
             Assert.AreEqual("CANCELLED", stringFromServerHandlerTcs.Task.Result);
         }

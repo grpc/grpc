@@ -322,8 +322,8 @@ static void continue_connect(grpc_subchannel *c) {
 static void start_connect(grpc_subchannel *c) {
   c->backoff_delta = gpr_time_from_seconds(
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS, GPR_TIMESPAN);
-  c->next_attempt = gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
+  c->next_attempt =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), c->backoff_delta);
   continue_connect(c);
 }
 
@@ -510,8 +510,6 @@ static void publish_transport(grpc_subchannel *c) {
   state_watcher *sw;
   connection *destroy_connection = NULL;
   grpc_channel_element *elem;
-
-  gpr_log(GPR_DEBUG, "publish_transport: %p", c->master);
 
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;

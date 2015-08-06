@@ -77,11 +77,13 @@ namespace Grpc.Core.Tests
         [SetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddPort(Host, Server.PickUnusedPort, ServerCredentials.Insecure);
+            server = new Server
+            {
+                Services = { ServiceDefinition },
+                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
+            };
             server.Start();
-            channel = new Channel(Host, port, Credentials.Insecure);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
         }
 
         [TearDown]
@@ -274,6 +276,30 @@ namespace Grpc.Core.Tests
             var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
             string peer = Calls.BlockingUnaryCall(internalCall, "RETURN-PEER", CancellationToken.None);
             Assert.IsTrue(peer.Contains(Host));
+        }
+
+        [Test]
+        public async Task Channel_WaitForStateChangedAsync()
+        {
+            Assert.Throws(typeof(TaskCanceledException), 
+                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
+
+            var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
+
+            var internalCall = new Call<string, string>(ServiceName, EchoMethod, channel, Metadata.Empty);
+            await Calls.AsyncUnaryCall(internalCall, "abc", CancellationToken.None);
+
+            await stateChangedTask;
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+        }
+
+        [Test]
+        public async Task Channel_ConnectAsync()
+        {
+            await channel.ConnectAsync();
+            Assert.AreEqual(ChannelState.Ready, channel.State);
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(1000));
+            Assert.AreEqual(ChannelState.Ready, channel.State);
         }
 
         private static async Task<string> EchoHandler(string request, ServerCallContext context)

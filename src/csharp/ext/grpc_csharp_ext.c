@@ -382,6 +382,22 @@ grpcsharp_channel_create_call(grpc_channel *channel, grpc_completion_queue *cq,
   return grpc_channel_create_call(channel, cq, method, host, deadline);
 }
 
+GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE
+grpcsharp_channel_check_connectivity_state(grpc_channel *channel, gpr_int32 try_to_connect) {
+  return grpc_channel_check_connectivity_state(channel, try_to_connect);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_watch_connectivity_state(
+    grpc_channel *channel, grpc_connectivity_state last_observed_state,
+    gpr_timespec deadline, grpc_completion_queue *cq, grpcsharp_batch_context *ctx) {
+  grpc_channel_watch_connectivity_state(channel, last_observed_state,
+                                        deadline, cq, ctx);
+}
+
+GPR_EXPORT char *GPR_CALLTYPE grpcsharp_channel_get_target(grpc_channel *channel) {
+  return grpc_channel_get_target(channel);
+}
+
 /* Channel args */
 
 GPR_EXPORT grpc_channel_args *GPR_CALLTYPE
@@ -715,7 +731,7 @@ grpcsharp_server_create(grpc_completion_queue *cq,
 
 GPR_EXPORT gpr_int32 GPR_CALLTYPE
 grpcsharp_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
-  return grpc_server_add_http2_port(server, addr);
+  return grpc_server_add_insecure_http2_port(server, addr);
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {
@@ -776,7 +792,8 @@ grpcsharp_secure_channel_create(grpc_credentials *creds, const char *target,
 GPR_EXPORT grpc_server_credentials *GPR_CALLTYPE
 grpcsharp_ssl_server_credentials_create(
     const char *pem_root_certs, const char **key_cert_pair_cert_chain_array,
-    const char **key_cert_pair_private_key_array, size_t num_key_cert_pairs) {
+    const char **key_cert_pair_private_key_array, size_t num_key_cert_pairs,
+    int force_client_auth) {
   size_t i;
   grpc_server_credentials *creds;
   grpc_ssl_pem_key_cert_pair *key_cert_pairs =
@@ -791,9 +808,9 @@ grpcsharp_ssl_server_credentials_create(
       key_cert_pairs[i].private_key = key_cert_pair_private_key_array[i];
     }
   }
-  /* TODO: Add a force_client_auth parameter and pass it here. */
   creds = grpc_ssl_server_credentials_create(pem_root_certs, key_cert_pairs,
-                                             num_key_cert_pairs, 0);
+                                             num_key_cert_pairs,
+                                             force_client_auth);
   gpr_free(key_cert_pairs);
   return creds;
 }
