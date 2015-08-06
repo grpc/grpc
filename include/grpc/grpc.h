@@ -368,10 +368,10 @@ typedef struct grpc_op {
    GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
    propagation. Doing so gives flexibility in the future to define new 
    propagation types that are default inherited or not. */
-#define GRPC_PROPAGATE_DEFAULTS                        \
-  ((gpr_uint32)((0xffff | GRPC_PROPAGATE_DEADLINE |    \
-                 GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
-                 GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT)))
+#define GRPC_PROPAGATE_DEFAULTS                                                \
+  ((gpr_uint32)((                                                              \
+      0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
+      GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
 
 /** Initialize the grpc library.
 
