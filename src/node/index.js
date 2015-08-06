@@ -48,7 +48,7 @@ var grpc = require('bindings')('grpc');
  * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
  * @return {Object<string, *>} The resulting gRPC object
  */
-exports.loadObject = function loadObject(value) {
+exports.loadObject = function(value) {
   var result = {};
   if (value.className === 'Namespace') {
     _.each(value.children, function(child) {
@@ -57,7 +57,18 @@ exports.loadObject = function loadObject(value) {
     return result;
   } else if (value.className === 'Service') {
     return client.makeProtobufClientConstructor(value);
-  } else if (value.className === 'Message' || value.className === 'Enum') {
+  } else if (value.className === 'Message') {
+    if (value.children.length > 0) {
+      var result = {};
+      _.each(value.children, function(child) {
+        result[child.name] = loadObject(child);
+      });
+
+      return result;
+    }
+
+    return value.build();
+  } else if (value.className === 'Enum') {
     return value.build();
   } else {
     return value;
