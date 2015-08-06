@@ -33,6 +33,8 @@
 
 #import "GRPCSecureChannel.h"
 
+#import <grpc/grpc_security.h>
+
 static grpc_credentials *CertificatesAtPath(NSString *path) {
   NSData *certsData = [NSData dataWithContentsOfFile:path];
   NSCAssert(certsData.length, @"No data read from %@", path);
