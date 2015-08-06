@@ -115,7 +115,8 @@ static void simple_request_body(grpc_end2end_test_fixture f, void *rc) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_registered_call(f.client, f.cq, rc, deadline);
+  c = grpc_channel_create_registered_call(
+      f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq, rc, deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
