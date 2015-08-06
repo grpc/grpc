@@ -35,11 +35,18 @@
 
 #include <grpc/grpc_security.h>
 
-static grpc_credentials *CertificatesAtPath(NSString *path) {
-  NSData *certsData = [NSData dataWithContentsOfFile:path];
-  NSCAssert(certsData.length, @"No data read from %@", path);
-  NSString *certsString = [[NSString alloc] initWithData:certsData encoding:NSUTF8StringEncoding];
-  return grpc_ssl_credentials_create(certsString.UTF8String, NULL);
+// Returns NULL if the file at path couldn't be read. In that case, if errorPtr isn't NULL,
+// *errorPtr will be an object describing what went wrong.
+static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) {
+  NSString *certsContent = [NSString stringWithContentsOfFile:path
+                                                     encoding:NSASCIIStringEncoding
+                                                        error:errorPtr];
+  if (!certsContent) {
+    // Passing NULL to grpc_ssl_credentials_create produces behavior we don't want, so return.
+    return NULL;
+  }
+  const char * asCString = [certsContent cStringUsingEncoding:NSASCIIStringEncoding];
+  return grpc_ssl_credentials_create(asCString, NULL);
 }
 
 @implementation GRPCSecureChannel
@@ -55,15 +62,24 @@ static grpc_credentials *CertificatesAtPath(NSString *path) {
   static grpc_credentials *kDefaultCertificates;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
+    NSString *defaultPath = @"gRPCCertificates.bundle/roots"; // .pem
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
     NSBundle *bundle = [NSBundle bundleForClass:self.class];
-    NSString *certsPath = [bundle pathForResource:@"gRPCCertificates.bundle/roots" ofType:@"pem"];
-    NSAssert(certsPath.length,
-             @"gRPCCertificates.bundle/roots.pem not found under %@. This file, with the root "
-             "certificates, is needed to establish TLS (HTTPS) connections.", bundle.bundlePath);
-    kDefaultCertificates = CertificatesAtPath(certsPath);
+    NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
+    NSError *error;
+    kDefaultCertificates = CertificatesAtPath(path, &error);
+    NSAssert(kDefaultCertificates, @"Could not read %@/%@.pem. This file, with the root "
+             "certificates, is needed to establish secure (TLS) connections. Because the file is "
+             "distributed with the gRPC library, this error is usually a sign that the library "
+             "wasn't configured correctly for your project. Error: %@",
+             bundle.bundlePath, defaultPath, error);
   });
-  grpc_credentials *certificates = path ? CertificatesAtPath(path) : kDefaultCertificates;
+
+  //TODO(jcanizales): Add NSError** parameter to the initializer.
+  grpc_credentials *certificates = path ? CertificatesAtPath(path, NULL) : kDefaultCertificates;
+  if (!certificates) {
+    return nil;
+  }
 
   // Ritual to pass the SSL host name override to the C library.
   grpc_channel_args channelArgs;

@@ -100,7 +100,7 @@
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path completionQueue:(GRPCCompletionQueue *)queue {
-  if (!queue || !path) {
+  if (!queue || !path || !self.channel) {
     return NULL;
   }
   return grpc_channel_create_call(self.channel.unmanagedChannel,

@@ -103,6 +103,9 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   }
   if ((self = [super init])) {
     _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:host path:path];
+    if (!_wrappedCall) {
+      return nil;
+    }
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("org.grpc.call", NULL);
