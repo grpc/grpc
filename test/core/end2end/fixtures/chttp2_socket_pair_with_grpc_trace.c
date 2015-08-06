@@ -148,6 +148,7 @@ int main(int argc, char **argv) {
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
   gpr_setenv("GRPC_TRACE", "doesnt-exist,http,all");
+  g_fixture_slowdown_factor = 10.0;
 
   grpc_test_init(argc, argv);
   grpc_init();

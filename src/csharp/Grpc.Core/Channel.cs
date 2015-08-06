@@ -178,22 +178,6 @@ namespace Grpc.Core
             }
         }
 
-        internal CompletionQueueSafeHandle CompletionQueue
-        {
-            get
-            {
-                return this.environment.CompletionQueue;
-            }
-        }
-
-        internal CompletionRegistry CompletionRegistry
-        {
-            get
-            {
-                return this.environment.CompletionRegistry;
-            }
-        }
-
         internal GrpcEnvironment Environment
         {
             get
