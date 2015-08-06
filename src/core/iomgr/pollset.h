@@ -74,8 +74,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
    grpc_pollset_work, and it is guaranteed that GRPC_POLLSET_MU(pollset) will
    not be released by grpc_pollset_work AFTER worker has been destroyed.
 
-   Returns true if some work has been done, and false if the deadline
-   expired. */
+   Tries not to block past deadline. */
 void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
                        gpr_timespec now, gpr_timespec deadline);
 

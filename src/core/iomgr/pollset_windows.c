@@ -100,13 +100,9 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-int grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker, gpr_timespec deadline) {
-  gpr_timespec now;
+void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker, 
+                       gpr_timespec now, gpr_timespec deadline) {
   int added_worker = 0;
-  now = gpr_now(GPR_CLOCK_MONOTONIC);
-  if (gpr_time_cmp(now, deadline) > 0) {
-    return 0 /* GPR_FALSE */;
-  }
   worker->next = worker->prev = NULL;
   gpr_cv_init(&worker->cv);
   if (grpc_maybe_call_delayed_callbacks(&pollset->mu, 1 /* GPR_TRUE */)) {
@@ -127,7 +123,6 @@ done:
   if (added_worker) {
     remove_worker(pollset, worker);
   }
-  return 1 /* GPR_TRUE */;
 }
 
 void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
