@@ -61,7 +61,14 @@ then
   sudo docker tag -f 0.0.0.0:5000/grpc/ruby_base grpc/ruby_base
   gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_ruby
   gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_ruby
-  sudo docker build --no-cache -t grpc/node tools/dockerfile/grpc_ruby
+  sudo docker build --no-cache -t grpc/ruby tools/dockerfile/grpc_ruby
+elif [ "$language" = "php" ]
+then
+  sudo docker pull 0.0.0.0:5000/grpc/php_base
+  sudo docker tag -f 0.0.0.0:5000/grpc/php_base grpc/php_base
+  gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_php
+  gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_php
+  sudo docker build --no-cache -t grpc/php tools/dockerfile/grpc_php
 else
   echo "interop testss not added for $language"
   exit 1

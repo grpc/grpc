@@ -58,7 +58,7 @@ then
   then
     exit 0
   fi
-  if [ "$language" != "ruby" ]
+  if [ "$language" != "ruby" ] || [ "$language" != "php" ] || [ "$language" != "node" ]
   then
     exit 0
   fi
