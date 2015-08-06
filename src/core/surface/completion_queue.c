@@ -294,6 +294,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
     }
     first_loop = 0;
     grpc_pollset_work(&cc->pollset, &worker, now, deadline);
+    del_plucker(cc, tag, &worker);
   }
 done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
