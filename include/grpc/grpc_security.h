@@ -51,6 +51,11 @@ typedef struct grpc_credentials grpc_credentials;
    The creator of the credentials object is responsible for its release. */
 void grpc_credentials_release(grpc_credentials *creds);
 
+/* Environment variable that points to the google default application
+   credentials json key or refresh token. Used in the
+   grpc_google_default_credentials_create function. */
+#define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
+
 /* Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
@@ -82,7 +87,7 @@ typedef struct {
      directory).
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
-     not have such a key/cert pair.  */
+     not have such a key/cert pair. */
 grpc_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair);
 
@@ -114,8 +119,8 @@ grpc_credentials *grpc_service_account_credentials_create(
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
-                                              gpr_timespec token_lifetime);
+grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+    const char *json_key, gpr_timespec token_lifetime);
 
 /* Creates an Oauth2 Refresh Token credentials object. May return NULL if the
    input is invalid.
@@ -134,9 +139,6 @@ grpc_credentials *grpc_access_token_credentials_create(
 /* Creates an IAM credentials object. */
 grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
                                               const char *authority_selector);
-
-/* Creates a fake transport security credentials object for testing. */
-grpc_credentials *grpc_fake_transport_security_credentials_create(void);
 
 /* --- Secure channel creation. --- */
 
@@ -172,14 +174,13 @@ void grpc_server_credentials_release(grpc_server_credentials *creds);
    - pem_key_cert_pairs is an array private key / certificate chains of the
      server. This parameter cannot be NULL.
    - num_key_cert_pairs indicates the number of items in the private_key_files
-     and cert_chain_files parameters. It should be at least 1. */
+     and cert_chain_files parameters. It should be at least 1.
+   - force_client_auth, if set to non-zero will force the client to authenticate
+     with an SSL cert. Note that this option is ignored if pem_root_certs is
+     NULL. */
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs);
-
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
+    size_t num_key_cert_pairs, int force_client_auth);
 
 /* --- Server-side secure ports. --- */
 
@@ -201,7 +202,6 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
 /* TODO(jboeuf): Define some well-known property names. */
 
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
-#define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
@@ -248,8 +248,12 @@ const char *grpc_auth_context_peer_identity_property_name(
 /* Returns 1 if the peer is authenticated, 0 otherwise. */
 int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx);
 
-/* Gets the auth context from the call. */
-const grpc_auth_context *grpc_call_auth_context(grpc_call *call);
+/* Gets the auth context from the call. Caller needs to call
+   grpc_auth_context_release on the returned context. */
+grpc_auth_context *grpc_call_auth_context(grpc_call *call);
+
+/* Releases the auth context returned from grpc_call_auth_context. */
+void grpc_auth_context_release(grpc_auth_context *context);
 
 #ifdef __cplusplus
 }

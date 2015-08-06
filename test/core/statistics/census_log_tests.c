@@ -237,7 +237,8 @@ static void reader_thread(void* arg) {
   gpr_timespec interval;
   int counter = 0;
   printf("   Reader starting\n");
-  interval = gpr_time_from_micros(args->read_iteration_interval_in_msec * 1000);
+  interval = gpr_time_from_micros(args->read_iteration_interval_in_msec * 1000,
+                                  GPR_TIMESPAN);
   gpr_mu_lock(args->mu);
   while (!args->stop_flag && records_read < args->total_records) {
     gpr_cv_wait(&args->stop, args->mu, interval);
@@ -310,7 +311,7 @@ static void multiple_writers_single_reader(int circular_log) {
   /* Wait for writers to finish. */
   gpr_mu_lock(&writers_mu);
   while (writers_count != 0) {
-    gpr_cv_wait(&writers_done, &writers_mu, gpr_inf_future);
+    gpr_cv_wait(&writers_done, &writers_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&writers_mu);
   gpr_mu_destroy(&writers_mu);
@@ -323,7 +324,7 @@ static void multiple_writers_single_reader(int circular_log) {
   }
   /* wait for reader to finish */
   while (reader.running) {
-    gpr_cv_wait(&reader_done, &reader_mu, gpr_inf_future);
+    gpr_cv_wait(&reader_done, &reader_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   if (circular_log) {
     /* Assert that there were no out-of-space errors. */
@@ -568,7 +569,7 @@ void test_performance(void) {
     double write_time_micro = 0.0;
     int nrecords = 0;
     setup_test(0);
-    start_time = gpr_now();
+    start_time = gpr_now(GPR_CLOCK_REALTIME);
     while (1) {
       void* record = census_log_start_write(write_size);
       if (record == NULL) {
@@ -577,7 +578,7 @@ void test_performance(void) {
       census_log_end_write(record, write_size);
       nrecords++;
     }
-    write_time = gpr_time_sub(gpr_now(), start_time);
+    write_time = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time);
     write_time_micro = write_time.tv_sec * 1000000 + write_time.tv_nsec / 1000;
     census_log_shutdown();
     printf(

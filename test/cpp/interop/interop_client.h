@@ -59,6 +59,8 @@ class InteropClient {
   void DoResponseStreamingWithSlowConsumer();
   void DoCancelAfterBegin();
   void DoCancelAfterFirstResponse();
+  void DoTimeoutOnSleepingServer();
+  void DoStatusWithMessage();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);
@@ -67,6 +69,12 @@ class InteropClient {
   // username is a string containing the user email
   void DoServiceAccountCreds(const grpc::string& username,
                              const grpc::string& oauth_scope);
+  // username is a string containing the user email
+  void DoOauth2AuthToken(const grpc::string& username,
+                         const grpc::string& oauth_scope);
+  // username is a string containing the user email
+  void DoPerRpcCreds(const grpc::string& username,
+                     const grpc::string& oauth_scope);
 
  private:
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);

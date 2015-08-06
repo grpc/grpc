@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\src\cpp\common\insecure_create_auth_context.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -43,6 +46,12 @@
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\dynamic_thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\insecure_server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
@@ -56,9 +65,6 @@
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\server_credentials.cc">
-      <Filter>src\cpp\server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\server\thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\byte_buffer.cc">
@@ -79,6 +85,12 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\async_unary_call.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\auth_context.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\auth_property_iterator.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
@@ -106,6 +118,12 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\credentials.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\dynamic_thread_pool.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\generic_stub.h">
@@ -180,6 +198,9 @@
     <ClInclude Include="..\..\include\grpc++\stream.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\stub_options.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -191,8 +212,8 @@
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cpp\server\thread_pool.h">
-      <Filter>src\cpp\server</Filter>
+    <ClInclude Include="..\..\src\cpp\common\create_auth_context.h">
+      <Filter>src\cpp\common</Filter>
     </ClInclude>
   </ItemGroup>
 

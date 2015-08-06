@@ -16,6 +16,9 @@
     <ClCompile Include="..\..\src\core\channel\client_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\compress_filter.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\connected_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -52,7 +55,7 @@
     <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.c">
+    <ClCompile Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.c">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel.c">
@@ -60,6 +63,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
@@ -101,9 +110,6 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
@@ -220,6 +226,9 @@
     <ClCompile Include="..\..\src\core\surface\channel.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -248,6 +257,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\surface_trace.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\version.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
@@ -334,6 +346,9 @@
     <ClCompile Include="..\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\byte_buffer.h">
@@ -356,9 +371,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h">
-      <Filter>src\core\census</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\census_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -369,6 +381,9 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\client_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\compress_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\connected_channel.h">
@@ -410,7 +425,7 @@
     <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\client_config\resolvers\unix_resolver_posix.h">
+    <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h">
       <Filter>src\core\client_config\resolvers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel.h">
@@ -418,6 +433,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
@@ -459,9 +480,6 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
@@ -647,6 +665,9 @@
     <ClInclude Include="..\..\src\core\census\context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
@@ -676,6 +697,9 @@
     </Filter>
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{dd617c24-6f07-fdff-80d5-c8610d6f815e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\subchannel_factory_decorators">
+      <UniqueIdentifier>{64285d1a-ebd0-7637-ae20-15df5ca6cc83}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>

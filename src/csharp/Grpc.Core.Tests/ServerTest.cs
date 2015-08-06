@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -44,13 +45,44 @@ namespace Grpc.Core.Tests
         [Test]
         public void StartAndShutdownServer()
         {
-            GrpcEnvironment.Initialize();
-
-            Server server = new Server();
-            server.AddListeningPort("localhost", Server.PickUnusedPort);
+            Server server = new Server
+            {
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+            };
             server.Start();
             server.ShutdownAsync().Wait();
+            GrpcEnvironment.Shutdown();
+        }
 
+        [Test]
+        public void PickUnusedPort()
+        {
+            Server server = new Server
+            {
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+            };
+
+            var boundPort = server.Ports.Single();
+            Assert.AreEqual(0, boundPort.Port);
+            Assert.Greater(boundPort.BoundPort, 0);
+
+            server.Start();
+            server.ShutdownAsync();
+            GrpcEnvironment.Shutdown();
+        }
+
+        [Test]
+        public void CannotModifyAfterStarted()
+        {
+            Server server = new Server
+            {
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+            };
+            server.Start();
+            Assert.Throws(typeof(InvalidOperationException), () => server.Ports.Add("localhost", 9999, ServerCredentials.Insecure));
+            Assert.Throws(typeof(InvalidOperationException), () => server.Services.Add(ServerServiceDefinition.CreateBuilder("serviceName").Build()));
+
+            server.ShutdownAsync().Wait();
             GrpcEnvironment.Shutdown();
         }
     }

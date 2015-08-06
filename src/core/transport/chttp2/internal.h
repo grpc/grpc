@@ -60,7 +60,6 @@ typedef enum {
   GRPC_CHTTP2_LIST_WRITABLE,
   GRPC_CHTTP2_LIST_WRITING,
   GRPC_CHTTP2_LIST_WRITTEN,
-  GRPC_CHTTP2_LIST_WRITABLE_WINDOW_UPDATE,
   GRPC_CHTTP2_LIST_PARSING_SEEN,
   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING,
   GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING,
@@ -119,6 +118,10 @@ typedef enum {
   GRPC_WRITE_STATE_QUEUED_CLOSE,
   GRPC_WRITE_STATE_SENT_CLOSE
 } grpc_chttp2_write_state;
+
+/* flags that can be or'd into stream_global::writing_now */
+#define GRPC_CHTTP2_WRITING_DATA 1
+#define GRPC_CHTTP2_WRITING_WINDOW 2
 
 typedef enum {
   GRPC_DONT_SEND_CLOSED = 0,
@@ -286,6 +289,7 @@ struct grpc_chttp2_transport {
   grpc_endpoint *ep;
   grpc_mdctx *metadata_context;
   gpr_refcount refs;
+  char *peer_string;
 
   gpr_mu mu;
 
@@ -353,7 +357,19 @@ typedef struct {
 
   /** window available for us to send to peer */
   gpr_int64 outgoing_window;
-  /** window available for peer to send to us - updated after parse */
+  /** The number of bytes the upper layers have offered to receive.
+      As the upper layer offers more bytes, this value increases.
+      As bytes are read, this value decreases. */
+  gpr_uint32 max_recv_bytes;
+  /** The number of bytes the upper layer has offered to read but we have
+      not yet announced to HTTP2 flow control.
+      As the upper layers offer to read more bytes, this value increases.
+      As we advertise incoming flow control window, this value decreases. */
+  gpr_uint32 unannounced_incoming_window;
+  /** The number of bytes of HTTP2 flow control we have advertised.
+      As we advertise incoming flow control window, this value increases.
+      As bytes are read, this value decreases.
+      Updated after parse. */
   gpr_uint32 incoming_window;
   /** stream ops the transport user would like to send */
   grpc_stream_op_buffer *outgoing_sopb;
@@ -370,6 +386,8 @@ typedef struct {
   gpr_uint8 published_cancelled;
   /** is this stream in the stream map? (boolean) */
   gpr_uint8 in_stream_map;
+  /** bitmask of GRPC_CHTTP2_WRITING_xxx above */
+  gpr_uint8 writing_now;
 
   /** stream state already published to the upper layer */
   grpc_stream_state published_state;
@@ -391,6 +409,8 @@ typedef struct {
   grpc_stream_op_buffer sopb;
   /** how strongly should we indicate closure with the next write */
   grpc_chttp2_send_closed send_closed;
+  /** how much window should we announce? */
+  gpr_uint32 announce_window;
 } grpc_chttp2_stream_writing;
 
 struct grpc_chttp2_stream_parsing {
@@ -460,11 +480,17 @@ void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global,
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
+void grpc_chttp2_list_add_first_writable_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_writing **stream_writing);
+void grpc_chttp2_list_remove_writable_stream(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_incoming_window_updated(
     grpc_chttp2_transport_global *transport_global,
@@ -495,16 +521,6 @@ int grpc_chttp2_list_pop_written_stream(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_global **stream_global,
     grpc_chttp2_stream_writing **stream_writing);
-
-void grpc_chttp2_list_add_writable_window_update_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
-int grpc_chttp2_list_pop_writable_window_update_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global);
-void grpc_chttp2_list_remove_writable_window_update_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
 
 void grpc_chttp2_list_add_parsing_seen_stream(
     grpc_chttp2_transport_parsing *transport_parsing,

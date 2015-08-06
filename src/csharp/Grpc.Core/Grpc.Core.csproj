@@ -21,21 +21,26 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\ReleaseSigned</OutputPath>
+    <DefineConstants>SIGNED</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>C:\keys\Grpc.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>..\packages\Microsoft.Bcl.Immutable.1.0.34\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-    </Reference>
     <Reference Include="System.Interactive.Async">
       <HintPath>..\packages\Ix-Async.1.2.3\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
@@ -47,11 +52,11 @@
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
-    <Compile Include="Internal\GrpcLog.cs" />
+    <Compile Include="ServerPort.cs" />
+    <Compile Include="Version.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
-    <Compile Include="Call.cs" />
     <Compile Include="AsyncClientStreamingCall.cs" />
     <Compile Include="GrpcEnvironment.cs" />
     <Compile Include="Status.cs" />
@@ -86,8 +91,7 @@
     <Compile Include="ServerCredentials.cs" />
     <Compile Include="Metadata.cs" />
     <Compile Include="Internal\MetadataArraySafeHandle.cs" />
-    <Compile Include="Stub\AbstractStub.cs" />
-    <Compile Include="Stub\StubConfiguration.cs" />
+    <Compile Include="ClientBase.cs" />
     <Compile Include="Internal\ServerCalls.cs" />
     <Compile Include="ServerMethods.cs" />
     <Compile Include="Internal\ClientRequestStream.cs" />
@@ -101,8 +105,19 @@
     <Compile Include="Internal\CompletionRegistry.cs" />
     <Compile Include="Internal\BatchContextSafeHandle.cs" />
     <Compile Include="ChannelOptions.cs" />
+    <Compile Include="AsyncUnaryCall.cs" />
+    <Compile Include="VersionInfo.cs" />
+    <Compile Include="Internal\CStringSafeHandle.cs" />
+    <Compile Include="KeyCertificatePair.cs" />
+    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="Logging\ConsoleLogger.cs" />
+    <Compile Include="Internal\NativeLogRedirector.cs" />
+    <Compile Include="ChannelState.cs" />
+    <Compile Include="CallInvocationDetails.cs" />
+    <Compile Include="CallOptions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.Core.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Choose>
@@ -130,4 +145,5 @@
   </Target>
   <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
+  <ItemGroup />
 </Project>

@@ -105,6 +105,13 @@ class TestServiceImpl : public TestService::Service {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
     }
+
+    if (request->has_response_status()) {
+      return Status(static_cast<grpc::StatusCode>
+		    (request->response_status().code()),
+		    request->response_status().message()); 
+    }
+
     return Status::OK;
   }
 
@@ -149,14 +156,12 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
-      response.mutable_payload()->set_type(request.payload().type());
-      if (request.response_parameters_size() == 0) {
-        return Status(grpc::StatusCode::INTERNAL,
-                      "Request does not have response parameters.");
+      if (request.response_parameters_size() != 0) {
+        response.mutable_payload()->set_type(request.payload().type());
+        response.mutable_payload()->set_body(
+            grpc::string(request.response_parameters(0).size(), '\0'));
+        write_success = stream->Write(response);
       }
-      response.mutable_payload()->set_body(
-          grpc::string(request.response_parameters(0).size(), '\0'));
-      write_success = stream->Write(response);
     }
     if (write_success) {
       return Status::OK;

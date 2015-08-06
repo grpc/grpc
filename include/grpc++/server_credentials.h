@@ -58,12 +58,15 @@ class ServerCredentials {
 
 // Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
+  SslServerCredentialsOptions() : force_client_auth(false) {}
+
   struct PemKeyCertPair {
     grpc::string private_key;
     grpc::string cert_chain;
   };
   grpc::string pem_root_certs;
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
+  bool force_client_auth;
 };
 
 // Builds SSL ServerCredentials given SSL specific options

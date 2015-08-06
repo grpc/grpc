@@ -79,7 +79,7 @@ static void on_jwt_verification_done(void *user_data,
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
   sync->is_done = 1;
-  grpc_pollset_kick(&sync->pollset);
+  grpc_pollset_kick(&sync->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
 }
 
@@ -109,7 +109,11 @@ int main(int argc, char **argv) {
                            on_jwt_verification_done, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  while (!sync.is_done) grpc_pollset_work(&sync.pollset, gpr_inf_future);
+  while (!sync.is_done) {
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&sync.pollset, &worker,
+                      gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
   grpc_jwt_verifier_destroy(verifier);

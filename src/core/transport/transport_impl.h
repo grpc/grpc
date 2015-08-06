@@ -58,6 +58,9 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_destroy */
   void (*destroy)(grpc_transport *self);
+
+  /* implementation of grpc_transport_get_peer */
+  char *(*get_peer)(grpc_transport *self);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */

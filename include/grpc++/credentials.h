@@ -106,13 +106,13 @@ std::shared_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     long token_lifetime_seconds);
 
-// Builds JWT credentials.
+// Builds Service Account JWT Access credentials.
 // json_key is the JSON key string containing the client's private key.
 // token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 // (JWT) created with this credentials. It should not exceed
 // grpc_max_auth_token_lifetime or will be cropped to this value.
-std::shared_ptr<Credentials> JWTCredentials(const grpc::string& json_key,
-                                            long token_lifetime_seconds);
+std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
+    const grpc::string& json_key, long token_lifetime_seconds);
 
 // Builds refresh token credentials.
 // json_refresh_token is the JSON string containing the refresh token along

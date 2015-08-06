@@ -5,25 +5,24 @@
     <title>gRPC C# Core</title>
     <summary>Core C# implementation of gRPC - an RPC library and framework</summary>
     <description>Core C# implementation of gRPC - an RPC library and framework. See project site for more info.</description>
-    <version>0.5.1</version>
+    <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <releaseNotes>Release 0.5.1 of gRPC C#</releaseNotes>
+    <releaseNotes>Release $version$ of gRPC C#</releaseNotes>
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
 	<dependencies>
-	  <dependency id="Microsoft.Bcl.Immutable" version="1.0.34" />
 	  <dependency id="Ix-Async" version="1.2.3" />
-	  <dependency id="grpc.native.csharp_ext" version="0.9.1" />
+	  <dependency id="grpc.native.csharp_ext" version="$GrpcNativeCsharpExtVersion$" />
     </dependencies>
   </metadata>
   <files>
-    <file src="bin/Release/Grpc.Core.dll" target="lib/net45" />
-	<file src="bin/Release/Grpc.Core.pdb" target="lib/net45" />
-	<file src="bin/Release/Grpc.Core.xml" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Core.dll" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Core.pdb" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Core.xml" target="lib/net45" />
 	<file src="**\*.cs" target="src" />
   </files>
 </package>

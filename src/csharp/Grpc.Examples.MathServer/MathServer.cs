@@ -38,18 +38,19 @@ namespace math
 {
     class MainClass
     {
+        const string Host = "0.0.0.0";
+        const int Port = 23456;
+
         public static void Main(string[] args)
         {
-            string host = "0.0.0.0";
-
-            GrpcEnvironment.Initialize();
-
-            Server server = new Server();
-            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
-            int port = server.AddListeningPort(host, 23456);
+            Server server = new Server
+            {
+                Services = { Math.BindService(new MathServiceImpl()) },
+                Ports = { { Host, Port, ServerCredentials.Insecure } }
+            };
             server.Start();
 
-            Console.WriteLine("MathServer listening on port " + port);
+            Console.WriteLine("MathServer listening on port " + Port);
 
             Console.WriteLine("Press any key to stop the server...");
             Console.ReadKey();

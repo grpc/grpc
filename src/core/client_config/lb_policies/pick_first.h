@@ -36,6 +36,8 @@
 
 #include "src/core/client_config/lb_policy.h"
 
+/** Returns a load balancing policy instance that picks up the first subchannel
+ *  from \a subchannels to succesfully connect */
 grpc_lb_policy *grpc_create_pick_first_lb_policy(grpc_subchannel **subchannels,
                                                  size_t num_subchannels);
 

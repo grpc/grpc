@@ -87,6 +87,7 @@ typedef struct internal_metadata {
   gpr_atm refcnt;
 
   /* private only data */
+  gpr_mu mu_user_data;
   void *user_data;
   void (*destroy_user_data)(void *user_data);
 
@@ -183,7 +184,7 @@ grpc_mdctx *grpc_mdctx_create(void) {
   /* This seed is used to prevent remote connections from controlling hash table
    * collisions. It needs to be somewhat unpredictable to a remote connection.
    */
-  return grpc_mdctx_create_with_seed(gpr_now().tv_nsec);
+  return grpc_mdctx_create_with_seed(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 }
 
 static void discard_metadata(grpc_mdctx *ctx) {
@@ -200,6 +201,7 @@ static void discard_metadata(grpc_mdctx *ctx) {
       if (cur->user_data) {
         cur->destroy_user_data(cur->user_data);
       }
+      gpr_mu_destroy(&cur->mu_user_data);
       gpr_free(cur);
       cur = next;
       ctx->mdtab_free--;
@@ -307,7 +309,37 @@ static void slice_unref(void *p) {
   unlock(ctx);
 }
 
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str) {
+grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int canonicalize_key) {
+  if (canonicalize_key) {
+    size_t len;
+    size_t i;
+    int canonical = 1;
+
+    for (i = 0; str[i]; i++) {
+      if (str[i] >= 'A' && str[i] <= 'Z') {
+        canonical = 0;
+        /* Keep going in loop just to get string length */
+      }
+    }
+    len = i;
+
+    if (canonical) {
+      return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, len);
+    } else {
+      char *copy = gpr_malloc(len);
+      grpc_mdstr *ret;
+      for (i = 0; i < len; i++) {
+        if (str[i] >= 'A' && str[i] <= 'Z') {
+          copy[i] = str[i] - 'A' + 'a';
+        } else {
+          copy[i] = str[i];
+        }
+      }
+      ret = grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)copy, len);
+      gpr_free(copy);
+      return ret;
+    }
+  }
   return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, strlen(str));
 }
 
@@ -467,6 +499,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   md->user_data = NULL;
   md->destroy_user_data = NULL;
   md->bucket_next = ctx->mdtab[hash % ctx->mdtab_capacity];
+  gpr_mu_init(&md->mu_user_data);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(GPR_DEBUG, "ELM   NEW:%p:%d: '%s' = '%s'", md,
           gpr_atm_no_barrier_load(&md->refcnt),
@@ -488,8 +521,8 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
 grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
                                       const char *value) {
   return grpc_mdelem_from_metadata_strings(ctx,
-                                           grpc_mdstr_from_string(ctx, key),
-                                           grpc_mdstr_from_string(ctx, value));
+                                           grpc_mdstr_from_string(ctx, key, 0),
+                                           grpc_mdstr_from_string(ctx, value, 0));
 }
 
 grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
@@ -501,9 +534,10 @@ grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
 grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
                                                 const char *key,
                                                 const gpr_uint8 *value,
-                                                size_t value_length) {
+                                                size_t value_length,
+                                                int canonicalize_key) {
   return grpc_mdelem_from_metadata_strings(
-      ctx, grpc_mdstr_from_string(ctx, key),
+      ctx, grpc_mdstr_from_string(ctx, key, canonicalize_key),
       grpc_mdstr_from_buffer(ctx, value, value_length));
 }
 
@@ -581,18 +615,29 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *ctx) {
 void *grpc_mdelem_get_user_data(grpc_mdelem *md,
                                 void (*if_destroy_func)(void *)) {
   internal_metadata *im = (internal_metadata *)md;
-  return im->destroy_user_data == if_destroy_func ? im->user_data : NULL;
+  void *result;
+  gpr_mu_lock(&im->mu_user_data);
+  result = im->destroy_user_data == if_destroy_func ? im->user_data : NULL;
+  gpr_mu_unlock(&im->mu_user_data);
+  return result;
 }
 
 void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data) {
   internal_metadata *im = (internal_metadata *)md;
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
+  gpr_mu_lock(&im->mu_user_data);
   if (im->destroy_user_data) {
-    im->destroy_user_data(im->user_data);
+    /* user data can only be set once */
+    gpr_mu_unlock(&im->mu_user_data);
+    if (destroy_func != NULL) {
+      destroy_func(user_data);
+    }
+    return;
   }
   im->destroy_user_data = destroy_func;
   im->user_data = user_data;
+  gpr_mu_unlock(&im->mu_user_data);
 }
 
 gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {

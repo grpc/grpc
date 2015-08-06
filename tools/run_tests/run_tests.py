@@ -187,29 +187,35 @@ class PhpLanguage(object):
 class PythonLanguage(object):
 
   def __init__(self):
-    with open('tools/run_tests/python_tests.json') as f:
-      self._tests = json.load(f)
+    self._build_python_versions = ['2.7']
+    self._has_python_versions = []
 
   def test_specs(self, config, travis):
-    modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']],
-                               None,
-                               environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                               shortname=test['module'])
-               for test in self._tests if 'module' in test]
-    files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']],
-                             None,
-                             environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                             shortname=test['file'])
-            for test in self._tests if 'file' in test]
-    return files + modules
+    environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+    environment['PYVER'] = '2.7'
+    return [config.job_spec(
+        ['tools/run_tests/run_python.sh'],
+        None,
+        environ=environment,
+        shortname='py.test',
+    )]
 
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh']]
+    commands = []
+    for python_version in self._build_python_versions:
+      try:
+        with open(os.devnull, 'w') as output:
+          subprocess.check_call(['which', 'python' + python_version],
+                                stdout=output, stderr=output)
+        commands.append(['tools/run_tests/build_python.sh', python_version])
+        self._has_python_versions.append(python_version)
+      except:
+        jobset.message('WARNING', 'Missing Python ' + python_version,
+                       do_newline=True)
+    return commands
 
   def supports_multi_config(self):
     return False
@@ -225,7 +231,7 @@ class RubyLanguage(object):
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def make_targets(self):
-    return ['run_dep_checks']
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
@@ -248,6 +254,7 @@ class CSharpLanguage(object):
   def test_specs(self, config, travis):
     assemblies = ['Grpc.Core.Tests',
                   'Grpc.Examples.Tests',
+                  'Grpc.HealthCheck.Tests',
                   'Grpc.IntegrationTesting']
     if self.platform == 'windows':
       cmd = 'tools\\run_tests\\run_csharp.bat'
@@ -274,6 +281,25 @@ class CSharpLanguage(object):
 
   def __str__(self):
     return 'csharp'
+
+
+class ObjCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def make_targets(self):
+    return ['grpc_objective_c_plugin', 'interop_server']
+
+  def build_steps(self):
+    return [['src/objective-c/tests/build_tests.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'objc'
 
 
 class Sanity(object):
@@ -318,7 +344,7 @@ _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', environ={
-        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1'}),
+        'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
     'msan': SimpleConfig('msan'),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
@@ -341,6 +367,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'objc' : ObjCLanguage(),
     'sanity': Sanity(),
     'build': Build(),
     }
@@ -430,7 +457,7 @@ if platform.system() == 'Windows':
                           cwd='vsprojects', shell=True)
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make',
+    return jobset.JobSpec([os.getenv('MAKE', 'make'),
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,

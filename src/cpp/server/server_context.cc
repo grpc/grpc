@@ -34,10 +34,14 @@
 #include <grpc++/server_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/time.h>
+
+#include "src/core/channel/compress_filter.h"
+#include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
 
@@ -46,16 +50,23 @@ namespace grpc {
 class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp() : refs_(2), finalized_(false), cancelled_(0) {}
+  CompletionOp() : has_tag_(false), tag_(nullptr), refs_(2), finalized_(false), cancelled_(0) {}
 
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
   bool CheckCancelled(CompletionQueue* cq);
 
+  void set_tag(void* tag) {
+    has_tag_ = true;
+    tag_ = tag;
+  }
+
   void Unref();
 
  private:
+  bool has_tag_;
+  void* tag_;
   grpc::mutex mu_;
   int refs_;
   bool finalized_;
@@ -86,18 +97,25 @@ void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   finalized_ = true;
+  bool ret = false;
+  if (has_tag_) {
+    *tag = tag_;
+    ret = true;
+  }
   if (!*status) cancelled_ = 1;
   if (--refs_ == 0) {
     lock.unlock();
     delete this;
   }
-  return false;
+  return ret;
 }
 
 // ServerContext body
 
 ServerContext::ServerContext()
     : completion_op_(nullptr),
+      has_notify_when_done_tag_(false),
+      async_notify_when_done_tag_(nullptr),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false) {}
@@ -105,6 +123,8 @@ ServerContext::ServerContext()
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                              size_t metadata_count)
     : completion_op_(nullptr),
+      has_notify_when_done_tag_(false),
+      async_notify_when_done_tag_(nullptr),
       deadline_(deadline),
       call_(nullptr),
       cq_(nullptr),
@@ -129,6 +149,9 @@ ServerContext::~ServerContext() {
 void ServerContext::BeginCompletionOp(Call* call) {
   GPR_ASSERT(!completion_op_);
   completion_op_ = new CompletionOp();
+  if (has_notify_when_done_tag_) {
+    completion_op_->set_tag(async_notify_when_done_tag_);
+  }
   call->PerformOps(completion_op_);
 }
 
@@ -142,8 +165,52 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
-bool ServerContext::IsCancelled() {
+bool ServerContext::IsCancelled() const {
   return completion_op_ && completion_op_->CheckCancelled(cq_);
+}
+
+void ServerContext::set_compression_level(grpc_compression_level level) {
+  const grpc_compression_algorithm algorithm_for_level =
+      grpc_compression_algorithm_for_level(level);
+  set_compression_algorithm(algorithm_for_level);
+}
+
+void ServerContext::set_compression_algorithm(
+    grpc_compression_algorithm algorithm) {
+  char* algorithm_name = NULL;
+  if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
+            algorithm);
+    abort();
+  }
+  GPR_ASSERT(algorithm_name != NULL);
+  AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
+}
+
+void ServerContext::set_call(grpc_call* call) {
+  call_ = call;
+  auth_context_ = CreateAuthContext(call);
+}
+
+std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
+  if (auth_context_.get() == nullptr) {
+    auth_context_ = CreateAuthContext(call_);
+  }
+  return auth_context_;
+}
+
+grpc::string ServerContext::peer() const {
+  grpc::string peer;
+  if (call_) {
+    char* c_peer = grpc_call_get_peer(call_);
+    peer = c_peer;
+    gpr_free(c_peer);
+  }
+  return peer;
+}
+
+const struct census_context* ServerContext::census_context() const {
+  return grpc_census_call_get_context(call_);
 }
 
 }  // namespace grpc

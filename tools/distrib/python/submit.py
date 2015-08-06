@@ -59,12 +59,18 @@ args = parser.parse_args()
 
 # Move to the root directory of Python GRPC.
 pkgdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                      '../../../src/python/src')
+                      '../../../src/python/grpcio')
 # Remove previous distributions; they somehow confuse twine.
 try:
   shutil.rmtree(os.path.join(pkgdir, 'dist/'))
 except:
   pass
+
+# Build the Cython C files
+build_env = os.environ.copy()
+build_env['GRPC_PYTHON_BUILD_WITH_CYTHON'] = "1"
+cmd = ['python', 'setup.py', 'build_ext', '--inplace']
+subprocess.call(cmd, cwd=pkgdir, env=build_env)
 
 # Make the push.
 cmd = ['python', 'setup.py', 'sdist']

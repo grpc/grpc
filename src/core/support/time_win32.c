@@ -40,12 +40,35 @@
 #include <grpc/support/time.h>
 #include <sys/timeb.h>
 
-gpr_timespec gpr_now(void) {
+static LARGE_INTEGER g_start_time;
+static double g_time_scale;
+
+void gpr_time_init(void) {
+  LARGE_INTEGER frequency;
+  QueryPerformanceFrequency(&frequency);
+  QueryPerformanceCounter(&g_start_time);
+  g_time_scale = 1.0 / frequency.QuadPart;
+}
+
+gpr_timespec gpr_now(gpr_clock_type clock) {
   gpr_timespec now_tv;
   struct _timeb now_tb;
-  _ftime_s(&now_tb);
-  now_tv.tv_sec = now_tb.time;
-  now_tv.tv_nsec = now_tb.millitm * 1000000;
+  LARGE_INTEGER timestamp;
+  double now_dbl;
+  now_tv.clock_type = clock;
+  switch (clock) {
+    case GPR_CLOCK_REALTIME:
+      _ftime_s(&now_tb);
+      now_tv.tv_sec = now_tb.time;
+      now_tv.tv_nsec = now_tb.millitm * 1000000;
+      break;
+    case GPR_CLOCK_MONOTONIC:
+      QueryPerformanceCounter(&timestamp);
+      now_dbl = (timestamp.QuadPart - g_start_time.QuadPart) * g_time_scale;
+      now_tv.tv_sec = (time_t)now_dbl;
+      now_tv.tv_nsec = (int)((now_dbl - (double)now_tv.tv_sec) * 1e9);
+      break;
+  }
   return now_tv;
 }
 
@@ -57,13 +80,14 @@ void gpr_sleep_until(gpr_timespec until) {
   for (;;) {
     /* We could simplify by using clock_nanosleep instead, but it might be
      * slightly less portable. */
-    now = gpr_now();
+    now = gpr_now(until.clock_type);
     if (gpr_time_cmp(until, now) <= 0) {
       return;
     }
 
     delta = gpr_time_sub(until, now);
-    sleep_millis = (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+    sleep_millis =
+        (DWORD)delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
     Sleep(sleep_millis);
   }
 }

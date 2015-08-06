@@ -41,7 +41,7 @@
 Timer::Timer() : start_(Sample()) {}
 
 double Timer::Now() {
-  auto ts = gpr_now();
+  auto ts = gpr_now(GPR_CLOCK_REALTIME);
   return ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
 
@@ -52,7 +52,7 @@ static double time_double(struct timeval* tv) {
 Timer::Result Timer::Sample() {
   struct rusage usage;
   struct timeval tv;
-  gettimeofday(&tv, nullptr);
+  gettimeofday(&tv, NULL);
   getrusage(RUSAGE_SELF, &usage);
 
   Result r;

@@ -185,8 +185,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Let everything warmup
   gpr_log(GPR_INFO, "Warming up");
-  gpr_timespec start = gpr_now();
-  gpr_sleep_until(gpr_time_add(start, gpr_time_from_seconds(warmup_seconds)));
+  gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_sleep_until(
+      gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
 
   // Start a run
   gpr_log(GPR_INFO, "Starting");
@@ -211,8 +212,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Wait some time
   gpr_log(GPR_INFO, "Running");
-  gpr_sleep_until(
-      gpr_time_add(start, gpr_time_from_seconds(benchmark_seconds)));
+  gpr_sleep_until(gpr_time_add(
+      start, gpr_time_from_seconds(benchmark_seconds, GPR_TIMESPAN)));
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
