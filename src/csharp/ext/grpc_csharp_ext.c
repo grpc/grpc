@@ -379,7 +379,8 @@ GPR_EXPORT grpc_call *GPR_CALLTYPE
 grpcsharp_channel_create_call(grpc_channel *channel, grpc_completion_queue *cq,
                               const char *method, const char *host,
                               gpr_timespec deadline) {
-  return grpc_channel_create_call(channel, cq, method, host, deadline);
+  return grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  method, host, deadline);
 }
 
 GPR_EXPORT grpc_connectivity_state GPR_CALLTYPE
