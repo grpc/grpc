@@ -644,8 +644,8 @@ static void accept_stream(void *cd, grpc_transport *transport,
                           const void *transport_server_data) {
   channel_data *chand = cd;
   /* create a call */
-  grpc_call_create(chand->channel, NULL, transport_server_data, NULL, 0,
-                   gpr_inf_future(GPR_CLOCK_REALTIME));
+  grpc_call_create(chand->channel, NULL, 0, NULL, transport_server_data, NULL,
+                   0, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 }
 
 static void channel_connectivity_changed(void *cd, int iomgr_status_ignored) {

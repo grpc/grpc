@@ -81,11 +81,12 @@
 
 @end
 
+#pragma mark GRPCWrappedCall
+
 @interface GRPCWrappedCall : NSObject
 
-- (instancetype)initWithChannel:(GRPCChannel *)channel
-                           path:(NSString *)path
-                           host:(NSString *)host NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path NS_DESIGNATED_INITIALIZER;
 
 - (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
 

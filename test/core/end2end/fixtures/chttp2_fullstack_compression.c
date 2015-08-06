@@ -53,8 +53,8 @@
 
 typedef struct fullstack_compression_fixture_data {
   char *localaddr;
-  grpc_channel_args* client_args_compression;
-  grpc_channel_args* server_args_compression;
+  grpc_channel_args *client_args_compression;
+  grpc_channel_args *server_args_compression;
 } fullstack_compression_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
@@ -75,7 +75,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
 }
 
 void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *client_args) {
+                                              grpc_channel_args *client_args) {
   fullstack_compression_fixture_data *ffd = f->fixture_data;
   if (ffd->client_args_compression != NULL) {
     grpc_channel_args_destroy(ffd->client_args_compression);
@@ -87,7 +87,7 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture *f,
 }
 
 void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture *f,
-                                  grpc_channel_args *server_args) {
+                                              grpc_channel_args *server_args) {
   fullstack_compression_fixture_data *ffd = f->fixture_data;
   if (ffd->server_args_compression != NULL) {
     grpc_channel_args_destroy(ffd->server_args_compression);

@@ -65,7 +65,7 @@ namespace Grpc.Core
             this.cancellationToken = cancellationToken;
         }
             
-        /// <summary> Name of method called in this RPC. </summary>
+        /// <summary>Name of method called in this RPC.</summary>
         public string Method
         {
             get
@@ -74,7 +74,7 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary> Name of host called in this RPC. </summary>
+        /// <summary>Name of host called in this RPC.</summary>
         public string Host
         {
             get
@@ -83,7 +83,7 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary> Address of the remote endpoint in URI format. </summary>
+        /// <summary>Address of the remote endpoint in URI format.</summary>
         public string Peer
         {
             get
@@ -92,7 +92,7 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary> Deadline for this RPC. </summary>
+        /// <summary>Deadline for this RPC.</summary>
         public DateTime Deadline
         {
             get
@@ -101,7 +101,7 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary> Initial metadata sent by client. </summary>
+        /// <summary>Initial metadata sent by client.</summary>
         public Metadata RequestHeaders
         {
             get
@@ -110,8 +110,7 @@ namespace Grpc.Core
             }
         }
 
-        // TODO(jtattermusch): support signalling cancellation.
-        /// <summary> Cancellation token signals when call is cancelled. </summary>
+        ///<summary>Cancellation token signals when call is cancelled.</summary>
         public CancellationToken CancellationToken
         {
             get
@@ -120,7 +119,7 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary> Trailers to send back to client after RPC finishes.</summary>
+        /// <summary>Trailers to send back to client after RPC finishes.</summary>
         public Metadata ResponseTrailers
         {
             get

@@ -177,6 +177,8 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_FLAGS,
   /** invalid metadata was passed to this call */
   GRPC_CALL_ERROR_INVALID_METADATA,
+  /** invalid message was passed to this call */
+  GRPC_CALL_ERROR_INVALID_MESSAGE,
   /** completion queue for notification has not been registered with the
       server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
@@ -308,8 +310,8 @@ typedef struct grpc_op {
         value, or reuse it in a future op. */
     grpc_metadata_array *recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
-       call
-        grpc_byte_buffer_destroy on this value, or reuse it in a future op. */
+        call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
+       */
     grpc_byte_buffer **recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
@@ -351,11 +353,32 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+
 /** Registers a plugin to be initialized and deinitialized with the library.
 
     It is safe to pass NULL to either argument. The initialization and
     deinitialization order isn't guaranteed. */
 void grpc_register_plugin(void (*init)(void), void (*deinit)(void));
+
+/* Propagation bits: this can be bitwise or-ed to form propagation_mask for
+ * grpc_call */
+/** Propagate deadline */
+#define GRPC_PROPAGATE_DEADLINE ((gpr_uint32)1)
+/** Propagate census context */
+#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT ((gpr_uint32)2)
+#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT ((gpr_uint32)4)
+/** Propagate cancellation */
+#define GRPC_PROPAGATE_CANCELLATION ((gpr_uint32)8)
+
+/* Default propagation mask: clients of the core API are encouraged to encode
+   deltas from this in their implementations... ie write:
+   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
+   propagation. Doing so gives flexibility in the future to define new 
+   propagation types that are default inherited or not. */
+#define GRPC_PROPAGATE_DEFAULTS                                                \
+  ((gpr_uint32)((                                                              \
+      0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
+      GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
 
 /** Initialize the grpc library.
 
@@ -436,8 +459,13 @@ void grpc_channel_watch_connectivity_state(
 
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
-    live through the invocation of this function. */
+    live through the invocation of this function.
+    If parent_call is non-NULL, it must be a server-side call. It will be used
+    to propagate properties from the server call to this new client call. 
+    */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_call *parent_call,
+                                    gpr_uint32 propagation_mask,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline);
@@ -448,8 +476,9 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 
 /** Create a call given a handle returned from grpc_channel_register_call */
 grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline);
+    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_completion_queue *completion_queue, void *registered_call_handle,
+    gpr_timespec deadline);
 
 /** Start a batch of operations defined in the array ops; when complete, post a
     completion of type 'tag' to the completion queue bound to the call.
