@@ -33,7 +33,7 @@
 
 #import "GRPCSecureChannel.h"
 
-#import <grpc/grpc_security.h>
+#include <grpc/grpc_security.h>
 
 static grpc_credentials *CertificatesAtPath(NSString *path) {
   NSData *certsData = [NSData dataWithContentsOfFile:path];
