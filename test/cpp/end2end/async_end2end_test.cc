@@ -69,11 +69,11 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr) i; }
+void* tag(int i) { return (void*)(gpr_intptr)i; }
 
 #ifdef GPR_POSIX_SOCKET
-static int assert_non_blocking_poll(
-    struct pollfd *pfds, nfds_t nfds, int timeout) {
+static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
+                                    int timeout) {
   GPR_ASSERT(timeout == 0);
   return poll(pfds, nfds, timeout);
 }
@@ -85,9 +85,7 @@ class PollOverride {
     grpc_poll_function = f;
   }
 
-  ~PollOverride() {
-    grpc_poll_function = prev_;
-  }
+  ~PollOverride() { grpc_poll_function = prev_; }
 
  private:
   grpc_poll_function_type prev_;
@@ -95,7 +93,7 @@ class PollOverride {
 
 class PollingCheckRegion : public PollOverride {
  public:
-  explicit PollingCheckRegion(bool allow_blocking) 
+  explicit PollingCheckRegion(bool allow_blocking)
       : PollOverride(allow_blocking ? poll : assert_non_blocking_poll) {}
 };
 #else
@@ -112,8 +110,7 @@ class Verifier : public PollingCheckRegion {
     expectations_[tag(i)] = expect_ok;
     return *this;
   }
-  void Verify(CompletionQueue *cq) {
-    if (spin_) gpr_log(GPR_DEBUG, "spin");
+  void Verify(CompletionQueue* cq) {
     GPR_ASSERT(!expectations_.empty());
     while (!expectations_.empty()) {
       bool ok;
@@ -135,33 +132,38 @@ class Verifier : public PollingCheckRegion {
       expectations_.erase(it);
     }
   }
-  void Verify(CompletionQueue *cq, std::chrono::system_clock::time_point deadline) {
-    if (spin_) gpr_log(GPR_DEBUG, "spin");
+  void Verify(CompletionQueue* cq,
+              std::chrono::system_clock::time_point deadline) {
     if (expectations_.empty()) {
       bool ok;
-      void *got_tag;
+      void* got_tag;
       if (spin_) {
         while (std::chrono::system_clock::now() < deadline) {
-          EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME)), CompletionQueue::TIMEOUT);
+          EXPECT_EQ(
+              cq->AsyncNext(&got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME)),
+              CompletionQueue::TIMEOUT);
         }
       } else {
-        EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline), CompletionQueue::TIMEOUT);
+        EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
+                  CompletionQueue::TIMEOUT);
       }
     } else {
       while (!expectations_.empty()) {
         bool ok;
-        void *got_tag;
+        void* got_tag;
         if (spin_) {
           for (;;) {
             GPR_ASSERT(std::chrono::system_clock::now() < deadline);
-            auto r = cq->AsyncNext(&got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
+            auto r =
+                cq->AsyncNext(&got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
             if (r == CompletionQueue::TIMEOUT) continue;
             if (r == CompletionQueue::GOT_EVENT) break;
             gpr_log(GPR_ERROR, "unexpected result from AsyncNext");
             abort();
-          }          
+          }
         } else {
-          EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
+          EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
+                    CompletionQueue::GOT_EVENT);
         }
         auto it = expectations_.find(got_tag);
         EXPECT_TRUE(it != expectations_.end());
@@ -185,7 +187,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(), grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             grpc::InsecureServerCredentials());
     builder.RegisterAsyncService(&service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -222,8 +225,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
           stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
-      service_.RequestEcho(&srv_ctx, &recv_request, &response_writer,
-                           cq_.get(), cq_.get(), tag(2));
+      service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                           cq_.get(), tag(2));
 
       Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
       EXPECT_EQ(send_request.message(), recv_request.message());
@@ -290,10 +293,14 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
-  Verifier(GetParam()).Expect(3, true).Verify(cq_.get(), std::chrono::system_clock::time_point::max());
+  Verifier(GetParam())
+      .Expect(3, true)
+      .Verify(cq_.get(), std::chrono::system_clock::time_point::max());
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam()).Expect(4, true).Verify(cq_.get(), std::chrono::system_clock::time_point::max());
+  Verifier(GetParam())
+      .Expect(4, true)
+      .Verify(cq_.get(), std::chrono::system_clock::time_point::max());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
@@ -316,8 +323,8 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
   std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
 
-  service_.RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(),
-                                cq_.get(), tag(2));
+  service_.RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
+                                tag(2));
 
   Verifier(GetParam()).Expect(2, true).Expect(1, true).Verify(cq_.get());
 
@@ -419,8 +426,8 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
       cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
-  service_.RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(),
-                             cq_.get(), tag(2));
+  service_.RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
+                             tag(2));
 
   Verifier(GetParam()).Expect(1, true).Expect(2, true).Verify(cq_.get());
 
@@ -606,18 +613,17 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2(
       "key2-bin",
-      grpc::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
-		   13));
+      grpc::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13));
   std::pair<grpc::string, grpc::string> meta3("key3", "val3");
   std::pair<grpc::string, grpc::string> meta6(
       "key4-bin",
       grpc::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-		   14));
+                   14));
   std::pair<grpc::string, grpc::string> meta5("key5", "val5");
   std::pair<grpc::string, grpc::string> meta4(
       "key6-bin",
-      grpc::string("\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
-		   15));
+      grpc::string(
+          "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15));
 
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
@@ -735,7 +741,8 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest, ::testing::Values(false, true));
+INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
+                        ::testing::Values(false, true));
 
 }  // namespace
 }  // namespace testing

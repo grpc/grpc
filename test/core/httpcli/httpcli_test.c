@@ -88,7 +88,8 @@ static void test_get(int use_ssl, int port) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, n_seconds_time(20));
+    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                      n_seconds_time(20));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   gpr_free(host);
@@ -114,7 +115,8 @@ static void test_post(int use_ssl, int port) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, n_seconds_time(20));
+    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                      n_seconds_time(20));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   gpr_free(host);

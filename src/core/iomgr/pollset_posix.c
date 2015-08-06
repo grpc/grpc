@@ -90,6 +90,7 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
 }
 
 void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+  /* pollset->mu already held */
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
       for (specific_worker = p->root_worker.next;
@@ -141,10 +142,10 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(pollset, fd, 1);
-  /* the following (enabled only in debug) will reacquire and then release
-     our lock - meaning that if the unlocking flag passed to del_fd above is
-     not respected, the code will deadlock (in a way that we have a chance of
-     debugging) */
+/* the following (enabled only in debug) will reacquire and then release
+   our lock - meaning that if the unlocking flag passed to del_fd above is
+   not respected, the code will deadlock (in a way that we have a chance of
+   debugging) */
 #ifndef NDEBUG
   gpr_mu_lock(&pollset->mu);
   gpr_mu_unlock(&pollset->mu);
@@ -154,10 +155,10 @@ void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
 void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->del_fd(pollset, fd, 1);
-  /* the following (enabled only in debug) will reacquire and then release
-     our lock - meaning that if the unlocking flag passed to del_fd above is
-     not respected, the code will deadlock (in a way that we have a chance of
-     debugging) */
+/* the following (enabled only in debug) will reacquire and then release
+   our lock - meaning that if the unlocking flag passed to del_fd above is
+   not respected, the code will deadlock (in a way that we have a chance of
+   debugging) */
 #ifndef NDEBUG
   gpr_mu_lock(&pollset->mu);
   gpr_mu_unlock(&pollset->mu);
@@ -170,9 +171,8 @@ static void finish_shutdown(grpc_pollset *pollset) {
 }
 
 void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                       gpr_timespec deadline) {
+                       gpr_timespec now, gpr_timespec deadline) {
   /* pollset->mu already held */
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   int added_worker = 0;
   /* this must happen before we (potentially) drop pollset->mu */
   worker->next = worker->prev = NULL;

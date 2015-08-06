@@ -237,6 +237,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   grpc_cq_completion *c;
   grpc_cq_completion *prev;
   grpc_pollset_worker worker;
+  gpr_timespec now;
   int first_loop = 1;
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
