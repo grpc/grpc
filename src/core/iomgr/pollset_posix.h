@@ -34,6 +34,8 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H
 #define GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H
 
+#include <poll.h>
+
 #include <grpc/support/sync.h>
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
@@ -116,5 +118,9 @@ void grpc_poll_become_multipoller(grpc_pollset *pollset, struct grpc_fd **fds,
 /* Return 1 if the pollset has active threads in grpc_pollset_work (pollset must
  * be locked) */
 int grpc_pollset_has_workers(grpc_pollset *pollset);
+
+/* override to allow tests to hook poll() usage */
+typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int); 
+extern grpc_poll_function_type grpc_poll_function;
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */

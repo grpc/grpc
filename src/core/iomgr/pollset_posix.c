@@ -38,7 +38,6 @@
 #include "src/core/iomgr/pollset_posix.h"
 
 #include <errno.h>
-#include <poll.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -56,6 +55,8 @@
 
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
+
+grpc_poll_function_type grpc_poll_function = poll;
 
 static void remove_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->prev->next = worker->next;
@@ -168,14 +169,11 @@ static void finish_shutdown(grpc_pollset *pollset) {
   pollset->shutdown_done_cb(pollset->shutdown_done_arg);
 }
 
-int grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                      gpr_timespec deadline) {
+void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
+                       gpr_timespec deadline) {
   /* pollset->mu already held */
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   int added_worker = 0;
-  if (gpr_time_cmp(now, deadline) > 0) {
-    return 0;
-  }
   /* this must happen before we (potentially) drop pollset->mu */
   worker->next = worker->prev = NULL;
   /* TODO(ctiller): pool these */
@@ -217,7 +215,6 @@ done:
       gpr_mu_lock(&pollset->mu);
     }
   }
-  return 1;
 }
 
 void grpc_pollset_shutdown(grpc_pollset *pollset,
@@ -456,7 +453,7 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
 
   /* poll fd count (argument 2) is shortened by one if we have no events
      to poll on - such that it only includes the kicker */
-  r = poll(pfd, nfds, timeout);
+  r = grpc_poll_function(pfd, nfds, timeout);
   GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
 
   if (fd) {

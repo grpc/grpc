@@ -76,8 +76,8 @@ void grpc_pollset_destroy(grpc_pollset *pollset);
 
    Returns true if some work has been done, and false if the deadline
    expired. */
-int grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                      gpr_timespec deadline);
+void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
+                       gpr_timespec now, gpr_timespec deadline);
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is GRPC_POLLSET_KICK_BROADCAST, kick ALL the workers.
