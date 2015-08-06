@@ -10,7 +10,8 @@ function(_parse_build_json)
   file(STRINGS "build.json" _strings)
   # Regex
   set(_version_line_regex "^[ \t]*\"([a-z]+)\"[ \t]*:[ \t]*([0-9]+)[ \t]*[,]?[ \t]*$")
-  set(_filegroups_regex "^[ \t]*\"filegroups\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,[ \t]*$")
+
+  set(_filegroups_regex "^[ \t]*\"filegroups\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
   set(_filegroup_name_regex "\"name\"[ \t]*:[ \t]*\"([ a-z_A-Z]+)\"")
   set(_filegroup_group_regex "\"([ a-z_A-Z]+)\"[ \t]*:[ \t]*\\[[ \t]*([^]]+)\\]")
 
@@ -19,7 +20,10 @@ function(_parse_build_json)
 
   set(_file_group_regex "\"([ a-z_A-Z]+)\"[ \t]*:[ \t]*\\[[ \t]*([^]]+)\\]")
 
-  set(_libs_regex "^[ \t]*\"libs\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,[ \t]*$")
+  set(_libs_regex "^[ \t]*\"libs\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
+
+  set(_targets_regex "^[ \t]*\"targets\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
+
   # parsing
   foreach(_string ${_strings})
     #message("_string:\n${_string}")
@@ -135,6 +139,62 @@ function(_parse_build_json)
       set(gRPC_LIBS ${_gRPC_LIBS} PARENT_SCOPE)
     endif()
 
+    # Targets
+    string(REGEX MATCH "${_targets_regex}"
+      _targets_line "${_string}")
+    if(_targets_line)
+      set(_gRPC_TARGETS)
+      #message("_targets: ${_targets_line}")
+      string(REGEX REPLACE "${_targets_regex}"
+        "\\1" _targets "${_targets_line}")
+      string(REPLACE " " "" _targets "${_targets}")
+      string(REPLACE "\t" "" _targets "${_targets}")
+      string(REPLACE ";" "" _targets "${_targets}")
+      string(REGEX MATCHALL "{([^}]+)}" _targets "${_targets}")
+      #message("_targets: ${_targets}")
+      foreach(_target ${_targets})
+        #message("_target: ${_target}")
+        string(REGEX MATCH "${_name_regex}"
+          _target_name "${_target}")
+        if(_target_name)
+          string(REGEX REPLACE "${_name_regex}"
+            "\\1" _target_name "${_target_name}")
+          #message("_target_name: ${_target_name}")
+          list(APPEND _gRPC_TARGETS ${_target_name})
+
+          # Values
+          string(REGEX MATCHALL "${_value_regex}"
+            _target_values "${_target}")
+          #message("_target_values: ${_target_values}")
+          foreach(_target_value ${_target_values})
+            string(REGEX REPLACE "${_value_regex}"
+              "\\1" _target_value_name "${_target_value}")
+            string(REGEX REPLACE "${_value_regex}"
+              "\\2" _target_value_value "${_target_value}")
+            #message("_target_${_target_name}_${_target_value_name} : ${_target_value_value}")
+            set(gRPC_TARGET_${_target_name}_${_target_value_name} "${_target_value_value}" PARENT_SCOPE)
+          endforeach()
+
+          # Groups
+          string(REGEX MATCHALL "${_file_group_regex}"
+            _target_groups "${_target}")
+          #message("_target_groups: ${_target_groups}")
+          foreach(_target_group ${_target_groups})
+            #message("_target_group: ${_target_group}")
+            string(REGEX REPLACE "${_file_group_regex}"
+              "\\1" _target_group_name "${_target_group}")
+            string(REGEX REPLACE "${_file_group_regex}"
+              "\\2" _target_group_files "${_target_group}")
+            string(REPLACE "," ";" _target_group_files "${_target_group_files}")
+            string(REPLACE "\"" "" _target_group_files "${_target_group_files}")
+            #message("_target_${_target_name}_${_target_group_name}: ${_target_group_files}")
+            set(gRPC_TARGET_${_target_name}_${_target_group_name} ${_target_group_files} PARENT_SCOPE)
+          endforeach()
+        endif()
+      endforeach()
+      set(gRPC_TARGETS ${_gRPC_TARGETS} PARENT_SCOPE)
+    endif()
+
   endforeach()
 endfunction()
 
@@ -153,16 +213,23 @@ endforeach()
 message(STATUS "  }")
 message(STATUS "  gRPC_LIBS {")
 foreach(gRPC_LIB ${gRPC_LIBS})
-message(STATUS "    ${gRPC_LIB} (${gRPC_LIB_${gRPC_LIB}_language})")
+message(STATUS "    ${gRPC_LIB} (${gRPC_LIB_${gRPC_LIB}_language}) - ${gRPC_LIB_${gRPC_LIB}_build}")
+endforeach()
+message(STATUS "  }")
+message(STATUS "  gRPC_TARGETS {")
+foreach(gRPC_TARGET ${gRPC_TARGETS})
+message(STATUS "    ${gRPC_TARGET} (${gRPC_TARGET_${gRPC_TARGET}_language}) - ${gRPC_TARGET_${gRPC_TARGET}_build}")
 endforeach()
 message(STATUS "  }")
 message(STATUS "}")
 
 # Find dependensies
 find_package(ZLIB)
+find_package(Protobuf)
 
 # Include
 include_directories("." "include"
+  ${PROTOBUF_INCLUDE_DIRS}
   ${ZLIB_INCLUDE_DIRS})
 
 # Standard paths
@@ -173,9 +240,7 @@ include(GNUInstallDirs)
 
 # Libraries (now only ALL and non secure libraries)
 foreach(gRPC_LIB
-  ${gRPC_LIBS}
-  #gpr grpc_unsecure
-  )
+  ${gRPC_LIBS})
   set(_lib ${gRPC_LIB})
   set(_lib_ gRPC_LIB_${_lib})
   if("${${_lib_}_language}" STREQUAL "c")
@@ -188,14 +253,25 @@ foreach(gRPC_LIB
   else()
     set(_lib_cxx FALSE)
   endif()
+  if("${${_lib_}_build}" STREQUAL "all")
+    set(_lib_build_all TRUE)
+  else()
+    set(_lib_build_all FALSE)
+  endif()
+  if("${${_lib_}_build}" STREQUAL "protoc")
+    set(_lib_build_protoc TRUE)
+  else()
+    set(_lib_build_protoc FALSE)
+  endif()
   if(DEFINED ${_lib_}_baselib AND "${${_lib_}_baselib}" STREQUAL "true")
     set(_lib_baselib TRUE)
   else()
     set(_lib_baselib FALSE)
   endif()
-  if("${gRPC_LIB_${_lib}_build}" STREQUAL "all"
+  if("${gRPC_LIB_${_lib}_secure}" STREQUAL "no"
     AND (_lib_c OR _lib_cxx)
-    AND "${gRPC_LIB_${_lib}_secure}" STREQUAL "no")
+    AND (_lib_build_all OR _lib_build_protoc))
+    message("build lib: ${_lib}")
     set(_lib_type "STATIC")
     if(DEFINED ${_lib_}_dll AND "${${_lib_}_dll}" STREQUAL "yes")
       # Now is not work
@@ -216,6 +292,9 @@ foreach(gRPC_LIB
     if(DEFINED ${_lib_}_deps)
       #message(STATUS "${_lib} deps: ${${_lib_}_deps}")
       target_link_libraries(${_lib} ${${_lib_}_deps})
+    endif()
+    if(_lib_build_protoc)
+      target_link_libraries(${_lib} ${PROTOBUF_LIBRARIES})
     endif()
     if(_lib_baselib)
       if(WIN32)
@@ -239,6 +318,46 @@ foreach(gRPC_LIB
         DESTINATION "${_hdr_path}"
         COMPONENT grpc-${_lib}-headers)
     endforeach()
+  endif()
+endforeach()
+
+# Targets (now only protoc targets)
+foreach(gRPC_TARGET
+  ${gRPC_TARGETS}
+  )
+  set(_target ${gRPC_TARGET})
+  set(_target_ gRPC_TARGET_${_target})
+  if("${${_target_}_language}" STREQUAL "c")
+    set(_target_c TRUE)
+  else()
+    set(_target_c FALSE)
+  endif()
+  if("${${_target_}_language}" STREQUAL "c++")
+    set(_target_cxx TRUE)
+  else()
+    set(_target_cxx FALSE)
+  endif()
+  if("${${_target_}_build}" STREQUAL "protoc")
+    set(_target_build_protoc TRUE)
+  else()
+    set(_target_build_protoc FALSE)
+  endif()
+  if(_target_build_protoc
+    AND (_target_c OR _target_cxx)
+    AND "${${_target_}_secure}" STREQUAL "no")
+    set(_target_src ${${_target_}_src})
+    #message(STATUS "src: ${_target_src}")
+    add_executable(${_target} ${_target_src})
+    if(DEFINED ${_target_}_deps)
+      #message(STATUS "${_target} deps: ${${_target_}_deps}")
+      target_link_libraries(${_target} ${${_target_}_deps})
+    endif()
+    if(_target_build_protoc)
+      target_link_libraries(${_target} ${PROTOBUF_LIBRARIES} ${PROTOBUF_PROTOC_LIBRARIES})
+    endif()
+    # Install
+    install(TARGETS ${_target} EXPORT grpc-targets
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT grpc-${_target})
   endif()
 endforeach()
 
