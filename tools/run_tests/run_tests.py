@@ -528,45 +528,49 @@ class TestCache(object):
 
 def _build_and_run(check_cancelled, newline_on_success, travis, cache, xml_report=None):
   """Do one pass of building & running tests."""
-  # build latest sequentially
-  if not jobset.run(build_steps, maxjobs=1,
-                    newline_on_success=newline_on_success, travis=travis):
-    return 1
 
-  # start antagonists
-  antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
-                 for _ in range(0, args.antagonists)]
+  root = ET.Element('testsuites') if xml_report else None
+  testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
+
   try:
-    infinite_runs = runs_per_test == 0
-    # When running on travis, we want out test runs to be as similar as possible
-    # for reproducibility purposes.
-    if travis:
-      massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
-    else:
-      # whereas otherwise, we want to shuffle things up to give all tests a
-      # chance to run.
-      massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
-      random.shuffle(massaged_one_run)  # which it modifies in-place.
-    if infinite_runs:
-      assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
-    runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
-                     else itertools.repeat(massaged_one_run, runs_per_test))
-    all_runs = itertools.chain.from_iterable(runs_sequence)
+    # build latest sequentially
+    if not jobset.run(build_steps, maxjobs=1,
+                      newline_on_success=newline_on_success, travis=travis, xml_report=testsuite):
+      return 1
 
-    root = ET.Element('testsuites') if xml_report else None
-    testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
+    # start antagonists
+    antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
+                   for _ in range(0, args.antagonists)]
 
-    if not jobset.run(all_runs, check_cancelled,
-                      newline_on_success=newline_on_success, travis=travis,
-                      infinite_runs=infinite_runs,
-                      maxjobs=args.jobs,
-                      stop_on_failure=args.stop_on_failure,
-                      cache=cache if not xml_report else None,
-                      xml_report=testsuite):
-      return 2
+    try:
+      infinite_runs = runs_per_test == 0
+      # When running on travis, we want out test runs to be as similar as possible
+      # for reproducibility purposes.
+      if travis:
+        massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
+      else:
+        # whereas otherwise, we want to shuffle things up to give all tests a
+        # chance to run.
+        massaged_one_run = list(one_run)  # random.shuffle needs an indexable seq.
+        random.shuffle(massaged_one_run)  # which it modifies in-place.
+      if infinite_runs:
+        assert len(massaged_one_run) > 0, 'Must have at least one test for a -n inf run'
+      runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
+                       else itertools.repeat(massaged_one_run, runs_per_test))
+      all_runs = itertools.chain.from_iterable(runs_sequence)
+
+      if not jobset.run(all_runs, check_cancelled,
+                        newline_on_success=newline_on_success, travis=travis,
+                        infinite_runs=infinite_runs,
+                        maxjobs=args.jobs,
+                        stop_on_failure=args.stop_on_failure,
+                        cache=cache if not xml_report else None,
+                        xml_report=testsuite):
+        return 2
+    finally:
+      for antagonist in antagonists:
+        antagonist.kill()
   finally:
-    for antagonist in antagonists:
-      antagonist.kill()
     if xml_report:
       tree = ET.ElementTree(root)
       tree.write(xml_report, encoding='UTF-8')
