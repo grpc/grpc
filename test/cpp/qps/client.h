@@ -69,10 +69,12 @@ typedef std::chrono::time_point<grpc_time_source> grpc_time;
 class Client {
  public:
   explicit Client(const ClientConfig& config)
-    : channels_(config.client_channels()), timer_(new Timer), interarrival_timer_() {
+      : channels_(config.client_channels()),
+        timer_(new Timer),
+        interarrival_timer_() {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
-			config);
+                        config);
     }
     request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
     request_.set_response_size(config.payload_size());
@@ -81,7 +83,7 @@ class Client {
 
   ClientStats Mark() {
     Histogram latencies;
-    Histogram to_merge[threads_.size()]; // avoid std::vector for old compilers
+    Histogram to_merge[threads_.size()];  // avoid std::vector for old compilers
     for (size_t i = 0; i < threads_.size(); i++) {
       threads_[i]->BeginSwap(&to_merge[i]);
     }
@@ -109,15 +111,22 @@ class Client {
   class ClientChannelInfo {
    public:
     ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i): channel_(), stub_() {
+    ClientChannelInfo(const ClientChannelInfo& i) : channel_(), stub_() {
+      // The copy constructor is to satisfy old compilers
+      // that need it for using std::vector . It is only ever
+      // used for empty entries
       GPR_ASSERT(!i.channel_ && !i.stub_);
     }
     void init(const grpc::string& target, const ClientConfig& config) {
+      // We have to use a 2-phase init like this with a default
+      // constructor followed by an initializer function to make
+      // old compilers happy with using this in std::vector
       channel_ = CreateTestChannel(target, config.enable_ssl());
       stub_ = TestService::NewStub(channel_);
     }
     ChannelInterface* get_channel() { return channel_.get(); }
     TestService::Stub* get_stub() { return stub_.get(); }
+
    private:
     std::shared_ptr<ChannelInterface> channel_;
     std::unique_ptr<TestService::Stub> stub_;

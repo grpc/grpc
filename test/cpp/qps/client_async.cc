@@ -156,7 +156,7 @@ class AsyncClient : public Client {
       std::function<ClientRpcContext*(int, TestService::Stub*,
                                       const SimpleRequest&)> setup_ctx)
       : Client(config),
-	channel_lock_(new std::mutex[config.client_channels()]),
+        channel_lock_(new std::mutex[config.client_channels()]),
         contexts_(config.client_channels()),
         max_outstanding_per_channel_(config.outstanding_rpcs_per_channel()),
         channel_count_(config.client_channels()),
@@ -337,7 +337,8 @@ class AsyncClient : public Client {
   std::vector<boolean> issue_allowed_;  // may this thread attempt to issue
   std::vector<grpc_time> next_issue_;   // when should it issue?
 
-  std::mutex *channel_lock_; // a vector, but avoid std::vector for old compilers
+  std::mutex*
+      channel_lock_;  // a vector, but avoid std::vector for old compilers
   std::vector<context_list> contexts_;  // per-channel list of idle contexts
   int max_outstanding_per_channel_;
   int channel_count_;

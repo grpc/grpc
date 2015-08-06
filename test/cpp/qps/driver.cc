@@ -79,6 +79,7 @@ static deque<string> get_hosts(const string& name) {
 
 // Namespace for classes and functions used only in RunScenario
 // Using this rather than local definitions to workaround gcc-4.4 limitations
+// regarding using templates without linkage
 namespace runsc {
 
 // ClientContext allocator
@@ -149,6 +150,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Start servers
   using runsc::ServerData;
+  // servers is array rather than std::vector to avoid gcc-4.4 issues
+  // where class contained in std::vector must have a copy constructor
   ServerData servers[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
     servers[i].stub = std::move(Worker::NewStub(
@@ -157,7 +160,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result_server_config = server_config;
     result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
-    servers[i].stream = std::move(servers[i].stub->RunServer(runsc::AllocContext(&contexts)));
+    servers[i].stream =
+        std::move(servers[i].stub->RunServer(runsc::AllocContext(&contexts)));
     GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(servers[i].stream->Read(&init_status));
@@ -174,6 +178,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Start clients
   using runsc::ClientData;
+  // clients is array rather than std::vector to avoid gcc-4.4 issues
+  // where class contained in std::vector must have a copy constructor
   ClientData clients[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
     clients[i].stub = std::move(Worker::NewStub(CreateChannel(
@@ -182,7 +188,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result_client_config = client_config;
     result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
-    clients[i].stream = std::move(clients[i].stub->RunTest(runsc::AllocContext(&contexts)));
+    clients[i].stream =
+        std::move(clients[i].stub->RunTest(runsc::AllocContext(&contexts)));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));
@@ -217,6 +224,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Wait some time
   gpr_log(GPR_INFO, "Running");
+  // Use gpr_sleep_until rather than this_thread::sleep_until to support
+  // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
       start, gpr_time_from_seconds(benchmark_seconds, GPR_TIMESPAN)));
 
