@@ -71,6 +71,7 @@
   if (![scheme isEqualToString:@"https"] && ![scheme isEqualToString:@"http"]) {
     [NSException raise:NSInvalidArgumentException format:@"URL scheme %@ isn't supported.", scheme];
   }
+  // If the user didn't specify a port (hostURL.port is nil), provide a default one.
   NSNumber *port = hostURL.port ?: [scheme isEqualToString:@"https"] ? @443 : @80;
   address = [@[hostURL.host, port] componentsJoinedByString:@":"];
 
