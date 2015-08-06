@@ -41,6 +41,8 @@
   return (self = [super initWithChannel:grpc_insecure_channel_create(host.UTF8String, NULL)]);
 }
 
+// TODO(jcanizales): GRPCSecureChannel and GRPCUnsecuredChannel are just convenience initializers
+// for GRPCChannel. Move them into GRPCChannel, which will make the following unnecessary.
 - (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
   [NSException raise:NSInternalInconsistencyException format:@"use the other initializer"];
   return [self initWithHost:nil]; // silence warnings

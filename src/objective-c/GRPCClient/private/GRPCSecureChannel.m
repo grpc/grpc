@@ -102,6 +102,8 @@ static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) 
           [super initWithChannel:grpc_secure_channel_create(credentials, host.UTF8String, args)]);
 }
 
+// TODO(jcanizales): GRPCSecureChannel and GRPCUnsecuredChannel are just convenience initializers
+// for GRPCChannel. Move them into GRPCChannel, which will make the following unnecessary.
 - (instancetype)initWithChannel:(grpc_channel *)unmanagedChannel {
   [NSException raise:NSInternalInconsistencyException format:@"use another initializer"];
   return [self initWithHost:nil]; // silence warnings
