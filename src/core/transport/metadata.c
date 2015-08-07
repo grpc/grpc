@@ -135,7 +135,9 @@ static void unlock(grpc_mdctx *ctx) {
   if (ctx->refs == 0) {
     /* uncomment if you're having trouble diagnosing an mdelem leak to make
        things clearer (slows down destruction a lot, however) */
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
     gc_mdtab(ctx);
+#endif
     if (ctx->mdtab_count && ctx->mdtab_count == ctx->mdtab_free) {
       discard_metadata(ctx);
     }
