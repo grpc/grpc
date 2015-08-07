@@ -15,15 +15,14 @@
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2 Auth OAuth2</tags>
 	<dependencies>
-	  <dependency id="BouncyCastle" version="1.7.0" />
-	  <dependency id="Google.Apis.Auth" version="1.9.1" />
+	  <dependency id="Google.Apis.Auth" version="1.9.2" />
 	  <dependency id="Grpc.Core" version="$version$" />
     </dependencies>
   </metadata>
   <files>
-    <file src="bin/Release/Grpc.Auth.dll" target="lib/net45" />
-	<file src="bin/Release/Grpc.Auth.pdb" target="lib/net45" />
-	<file src="bin/Release/Grpc.Auth.xml" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Auth.dll" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Auth.pdb" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Auth.xml" target="lib/net45" />
 	<file src="**\*.cs" target="src" />
   </files>
 </package>

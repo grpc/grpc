@@ -89,13 +89,11 @@ static void init_ping_pong_request(void) {
 }
 
 static void step_ping_pong_request(void) {
-  grpc_call_error error;
-  call = grpc_channel_create_call(channel, cq, "/Reflector/reflectUnary",
-                                  "localhost",
-                                  gpr_inf_future(GPR_CLOCK_REALTIME),
-                                  NULL);
-  error = grpc_call_start_batch(call, ops, op - ops, (void *)1, NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  "/Reflector/reflectUnary", "localhost",
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, op - ops, (void *)1, NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   grpc_call_destroy(call);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -104,10 +102,9 @@ static void step_ping_pong_request(void) {
 
 static void init_ping_pong_stream(void) {
   grpc_call_error error;
-  call = grpc_channel_create_call(channel, cq, "/Reflector/reflectStream",
-                                  "localhost",
-                                  gpr_inf_future(GPR_CLOCK_REALTIME),
-                                  NULL);
+  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  "/Reflector/reflectStream", "localhost",
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_op.data.send_initial_metadata.count = 0;
   error = grpc_call_start_batch(call, &stream_init_op, 1, (void *)1, NULL);
@@ -189,7 +186,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  channel = grpc_channel_create(target, NULL, NULL);
+  channel = grpc_insecure_channel_create(target, NULL, NULL);
   cq = grpc_completion_queue_create(NULL);
   the_buffer = grpc_raw_byte_buffer_create(&slice, payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);

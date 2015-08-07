@@ -39,6 +39,12 @@
             </BuildableReference>
             <SkippedTests>
                <Test
+                  Identifier = "GRPCClientTests/testConnectionToRemoteServer">
+               </Test>
+               <Test
+                  Identifier = "GRPCClientTests/testMetadata">
+               </Test>
+               <Test
                   Identifier = "LocalClearTextTests">
                </Test>
                <Test

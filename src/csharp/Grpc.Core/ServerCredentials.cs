@@ -33,8 +33,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -43,40 +43,31 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ServerCredentials
     {
+        static readonly ServerCredentials InsecureInstance = new InsecureServerCredentialsImpl();
+
+        /// <summary>
+        /// Returns instance of credential that provides no security and 
+        /// will result in creating an unsecure server port with no encryption whatsoever.
+        /// </summary>
+        public static ServerCredentials Insecure
+        {
+            get
+            {
+                return InsecureInstance;
+            }
+        }
+
         /// <summary>
         /// Creates native object for the credentials.
         /// </summary>
         /// <returns>The native credentials.</returns>
         internal abstract ServerCredentialsSafeHandle ToNativeCredentials();
-    }
 
-    /// <summary>
-    /// Key certificate pair (in PEM encoding).
-    /// </summary>
-    public class KeyCertificatePair
-    {
-        readonly string certChain;
-        readonly string privateKey;
-
-        public KeyCertificatePair(string certChain, string privateKey)
+        private sealed class InsecureServerCredentialsImpl : ServerCredentials
         {
-            this.certChain = certChain;
-            this.privateKey = privateKey;
-        }
-
-        public string CertChain
-        {
-            get
+            internal override ServerCredentialsSafeHandle ToNativeCredentials()
             {
-                return certChain;
-            }
-        }
-
-        public string PrivateKey
-        {
-            get
-            {
-                return privateKey;
+                return null;
             }
         }
     }
@@ -86,24 +77,84 @@ namespace Grpc.Core
     /// </summary>
     public class SslServerCredentials : ServerCredentials
     {
-        ImmutableList<KeyCertificatePair> keyCertPairs;
+        readonly IList<KeyCertificatePair> keyCertificatePairs;
+        readonly string rootCertificates;
+        readonly bool forceClientAuth;
 
-        public SslServerCredentials(ImmutableList<KeyCertificatePair> keyCertPairs)
+        /// <summary>
+        /// Creates server-side SSL credentials.
+        /// </summary>
+        /// <param name="keyCertificatePairs">Key-certificates to use.</param>
+        /// <param name="rootCertificates">PEM encoded client root certificates used to authenticate client.</param>
+        /// <param name="forceClientAuth">If true, client will be rejected unless it proves its unthenticity using against rootCertificates.</param>
+        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, bool forceClientAuth)
         {
-            this.keyCertPairs = keyCertPairs;
+            this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
+            Preconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
+                "At least one KeyCertificatePair needs to be provided");
+            if (forceClientAuth)
+            {
+                Preconditions.CheckNotNull(rootCertificates,
+                    "Cannot force client authentication unless you provide rootCertificates.");
+            }
+            this.rootCertificates = rootCertificates;
+            this.forceClientAuth = forceClientAuth;
+        }
+
+        /// <summary>
+        /// Creates server-side SSL credentials.
+        /// This constructor should be use if you do not wish to autheticate client
+        /// using client root certificates.
+        /// </summary>
+        /// <param name="keyCertificatePairs">Key-certificates to use.</param>
+        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, false)
+        {
+        }
+
+        /// <summary>
+        /// Key-certificate pairs.
+        /// </summary>
+        public IList<KeyCertificatePair> KeyCertificatePairs
+        {
+            get
+            {
+                return this.keyCertificatePairs;
+            }
+        }
+
+        /// <summary>
+        /// PEM encoded client root certificates.
+        /// </summary>
+        public string RootCertificates
+        {
+            get
+            {
+                return this.rootCertificates;
+            }
+        }
+
+        /// <summary>
+        /// If true, the authenticity of client check will be enforced.
+        /// </summary>
+        public bool ForceClientAuthentication
+        {
+            get
+            {
+                return this.forceClientAuth;
+            }
         }
 
         internal override ServerCredentialsSafeHandle ToNativeCredentials()
         {
-            int count = keyCertPairs.Count;
+            int count = keyCertificatePairs.Count;
             string[] certChains = new string[count];
             string[] keys = new string[count];
             for (int i = 0; i < count; i++)
             {
-                certChains[i] = keyCertPairs[i].CertChain;
-                keys[i] = keyCertPairs[i].PrivateKey;
+                certChains[i] = keyCertificatePairs[i].CertificateChain;
+                keys[i] = keyCertificatePairs[i].PrivateKey;
             }
-            return ServerCredentialsSafeHandle.CreateSslCredentials(certChains, keys);
+            return ServerCredentialsSafeHandle.CreateSslCredentials(rootCertificates, certChains, keys, forceClientAuth);
         }
     }
 }

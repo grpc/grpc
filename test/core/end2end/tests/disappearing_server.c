@@ -98,8 +98,9 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f->client, f->cq, "/foo",
-                               "foo.test.google.fr:1234", deadline, NULL);
+  c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
+                               "/foo", "foo.test.google.fr:1234", deadline,
+                               NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -209,7 +210,6 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) {
-    disappearing_server_test(config);
-  }
+  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+  disappearing_server_test(config);
 }

@@ -49,7 +49,7 @@ class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     return std::shared_ptr<ChannelInterface>(new Channel(
-        target, grpc_channel_create(target.c_str(), &channel_args, nullptr)));
+        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr)));
   }
 
   // InsecureCredentials should not be applied to a call.

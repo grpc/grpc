@@ -88,6 +88,7 @@ void grpc_kick_poller(void) {
 
 void grpc_iomgr_init(void) {
   gpr_thd_id id;
+  g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_alarm_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
@@ -146,7 +147,6 @@ void grpc_iomgr_shutdown(void) {
       continue;
     }
     if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
-      gpr_log(GPR_DEBUG, "got late alarm");
       continue;
     }
     if (g_root_object.next != &g_root_object) {

@@ -81,7 +81,7 @@ static void client_setup_transport(void *ts, grpc_transport *transport,
                                           &grpc_connected_channel_filter};
   size_t nfilters = sizeof(filters) / sizeof(*filters);
   grpc_channel *channel = grpc_channel_create_from_filters(
-      filters, nfilters, cs->client_args, mdctx, 1);
+      "socketpair-target", filters, nfilters, cs->client_args, mdctx, 1);
 
   cs->f->client = channel;
 
@@ -148,6 +148,11 @@ int main(int argc, char **argv) {
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
   gpr_setenv("GRPC_TRACE", "doesnt-exist,http,all");
+#ifdef GPR_POSIX_SOCKET
+  g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10.0 : 1.0;
+#else
+  g_fixture_slowdown_factor = 10.0;
+#endif
 
   grpc_test_init(argc, argv);
   grpc_init();

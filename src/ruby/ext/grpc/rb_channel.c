@@ -146,7 +146,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   if (credentials == Qnil) {
-    ch = grpc_channel_create(target_chars, &args, NULL);
+    ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
     creds = grpc_rb_get_wrapped_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args);
@@ -212,11 +212,11 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
     return Qnil;
   }
 
-  call =
-      grpc_channel_create_call(ch, cq, method_chars, host_chars,
-                               grpc_rb_time_timeval(deadline,
-                                                    /* absolute time */ 0),
-                               NULL);
+  call = grpc_channel_create_call(ch, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  method_chars, host_chars,
+                                  grpc_rb_time_timeval(deadline,
+                                                       /* absolute time */ 0),
+                                  NULL);
   if (call == NULL) {
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
              method_chars);
