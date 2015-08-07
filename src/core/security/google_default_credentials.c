@@ -121,7 +121,7 @@ static int is_stack_running_on_compute_engine(void) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_pollset_shutdown(&detector.pollset, destroy_pollset, &destroy_pollset);
+  grpc_pollset_shutdown(&detector.pollset, destroy_pollset, &detector.pollset);
 
   return detector.success;
 }
