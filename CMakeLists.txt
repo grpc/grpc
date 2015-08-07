@@ -1,6 +1,9 @@
 # Minimum CMake required
 cmake_minimum_required(VERSION 2.8)
 
+# CMake policies
+cmake_policy(SET CMP0022 NEW)
+
 # Project
 project(gRPC C CXX)
 
@@ -224,9 +227,28 @@ endforeach()
 message(STATUS "  }")
 message(STATUS "}")
 
-# Find dependensies
+# Find ZLIB
 find_package(ZLIB)
-find_package(Protobuf)
+
+if(TARGET ZLIB::ZLIB)
+  set(ZLIB_LIBRARIES ZLIB::ZLIB)
+endif()
+
+# Find Protobuf
+find_package(Protobuf CONFIG)
+
+if(Protobuf_FOUND)
+  if(TARGET libprotobuf)
+    set(PROTOBUF_LIBRARIES libprotobuf)
+  endif()
+  if(TARGET libprotoc)
+    set(PROTOBUF_PROTOC_LIBRARIES libprotoc)
+  endif()
+else()
+  find_package(Protobuf MODULE)
+endif()
+
+# Find OpenSSL
 find_package(OpenSSL)
 
 # Include
@@ -308,20 +330,20 @@ foreach(gRPC_LIB
     add_library(${_lib} ${_lib_type} ${_lib_src})
     if(DEFINED ${_lib_}_deps)
       #message(STATUS "${_lib} deps: ${${_lib_}_deps}")
-      target_link_libraries(${_lib} ${${_lib_}_deps})
+      target_link_libraries(${_lib} PUBLIC ${${_lib_}_deps})
     endif()
     if(_lib_build_protoc)
-      target_link_libraries(${_lib} ${PROTOBUF_LIBRARIES})
+      target_link_libraries(${_lib} PUBLIC ${PROTOBUF_LIBRARIES})
     endif()
     if(_lib_secure_yes OR (_lib_secure_check AND OPENSSL_FOUND))
-      target_link_libraries(${_lib} ${OPENSSL_LIBRARIES})
+      #target_link_libraries(${_lib} PRIVATE ${OPENSSL_LIBRARIES})
     endif()
     if(_lib_baselib)
       if(WIN32)
-        target_link_libraries(${_lib} wsock32 ws2_32)
+        target_link_libraries(${_lib} PRIVATE wsock32 ws2_32)
       endif()
       if(_lib_c)
-        target_link_libraries(${_lib} ${ZLIB_LIBRARIES})
+        target_link_libraries(${_lib} PRIVATE ${ZLIB_LIBRARIES})
       endif()
     endif()
     # Install
@@ -373,10 +395,10 @@ foreach(gRPC_TARGET
     add_executable(${_target} ${_target_src})
     if(DEFINED ${_target_}_deps)
       #message(STATUS "${_target} deps: ${${_target_}_deps}")
-      target_link_libraries(${_target} ${${_target_}_deps})
+      target_link_libraries(${_target} PRIVATE ${${_target_}_deps})
     endif()
     if(_target_build_protoc)
-      target_link_libraries(${_target} ${PROTOBUF_LIBRARIES} ${PROTOBUF_PROTOC_LIBRARIES})
+      target_link_libraries(${_target} PRIVATE ${PROTOBUF_LIBRARIES} ${PROTOBUF_PROTOC_LIBRARIES})
     endif()
     # Install
     install(TARGETS ${_target} EXPORT grpc-targets
