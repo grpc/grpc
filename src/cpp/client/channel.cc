@@ -48,6 +48,7 @@
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
+#include <grpc++/time.h>
 
 namespace grpc {
 
@@ -93,6 +94,45 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(c_channel_, method,
                                     host_.empty() ? NULL : host_.c_str());
+}
+
+grpc_connectivity_state Channel::GetState(bool try_to_connect) {
+  return grpc_channel_check_connectivity_state(c_channel_, try_to_connect);
+}
+
+namespace {
+class TagSaver GRPC_FINAL : public CompletionQueueTag {
+ public:
+  explicit TagSaver(void* tag) : tag_(tag) {}
+  ~TagSaver() GRPC_OVERRIDE {}
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    *tag = tag_;
+    delete this;
+    return true;
+  }
+ private:
+  void* tag_;
+};
+
+}  // namespace
+
+void Channel::NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+                                      gpr_timespec deadline,
+                                      CompletionQueue* cq, void* tag) {
+  TagSaver* tag_saver = new TagSaver(tag);
+  grpc_channel_watch_connectivity_state(c_channel_, last_observed, deadline,
+                                        cq->cq(), tag_saver);
+}
+
+bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+                                     gpr_timespec deadline) {
+  CompletionQueue cq;
+  bool ok = false;
+  void* tag = NULL;
+  NotifyOnStateChangeImpl(last_observed, deadline, &cq, NULL);
+  cq.Next(&tag, &ok);
+  GPR_ASSERT(tag == NULL);
+  return ok;
 }
 
 }  // namespace grpc
