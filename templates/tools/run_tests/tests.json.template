@@ -5,8 +5,8 @@ import json
 ${json.dumps([{"name": tgt.name,
                "language": tgt.language,
                "platforms": tgt.platforms,
+               "ci_platforms": tgt.ci_platforms,
                "flaky": tgt.flaky}
               for tgt in targets
               if tgt.get('run', True) and tgt.build == 'test'],
              sort_keys=True, indent=2)}
-
