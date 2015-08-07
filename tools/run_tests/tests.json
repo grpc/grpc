@@ -6,6 +6,8 @@
     "language": "c", 
     "name": "alarm_heap_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -15,6 +17,8 @@
     "language": "c", 
     "name": "alarm_list_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -24,6 +28,8 @@
     "language": "c", 
     "name": "alarm_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -33,6 +39,8 @@
     "language": "c", 
     "name": "alpn_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -42,6 +50,8 @@
     "language": "c", 
     "name": "bin_encoder_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -51,6 +61,8 @@
     "language": "c", 
     "name": "chttp2_status_conversion_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -60,6 +72,8 @@
     "language": "c", 
     "name": "chttp2_stream_encoder_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -69,6 +83,8 @@
     "language": "c", 
     "name": "chttp2_stream_map_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -128,6 +144,8 @@
     "language": "c", 
     "name": "gpr_cancellable_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -137,6 +155,8 @@
     "language": "c", 
     "name": "gpr_cmdline_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -146,6 +166,8 @@
     "language": "c", 
     "name": "gpr_env_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -155,6 +177,8 @@
     "language": "c", 
     "name": "gpr_file_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -164,6 +188,8 @@
     "language": "c", 
     "name": "gpr_histogram_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -173,6 +199,8 @@
     "language": "c", 
     "name": "gpr_host_port_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -182,6 +210,8 @@
     "language": "c", 
     "name": "gpr_log_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -191,6 +221,8 @@
     "language": "c", 
     "name": "gpr_slice_buffer_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -200,6 +232,8 @@
     "language": "c", 
     "name": "gpr_slice_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -209,6 +243,8 @@
     "language": "c", 
     "name": "gpr_stack_lockfree_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -218,6 +254,8 @@
     "language": "c", 
     "name": "gpr_string_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -227,6 +265,8 @@
     "language": "c", 
     "name": "gpr_sync_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -236,6 +276,8 @@
     "language": "c", 
     "name": "gpr_thd_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -245,6 +287,8 @@
     "language": "c", 
     "name": "gpr_time_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -254,6 +298,8 @@
     "language": "c", 
     "name": "gpr_tls_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -263,6 +309,8 @@
     "language": "c", 
     "name": "gpr_useful_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -272,6 +320,8 @@
     "language": "c", 
     "name": "grpc_auth_context_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -281,6 +331,8 @@
     "language": "c", 
     "name": "grpc_base64_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -290,6 +342,8 @@
     "language": "c", 
     "name": "grpc_byte_buffer_reader_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -299,6 +353,8 @@
     "language": "c", 
     "name": "grpc_channel_stack_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -308,6 +364,8 @@
     "language": "c", 
     "name": "grpc_completion_queue_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -317,6 +375,8 @@
     "language": "c", 
     "name": "grpc_credentials_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -326,6 +386,8 @@
     "language": "c", 
     "name": "grpc_json_token_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -335,6 +397,8 @@
     "language": "c", 
     "name": "grpc_jwt_verifier_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -344,6 +408,8 @@
     "language": "c", 
     "name": "grpc_security_connector_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -353,6 +419,8 @@
     "language": "c", 
     "name": "grpc_stream_op_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -362,6 +430,8 @@
     "language": "c", 
     "name": "hpack_parser_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -371,6 +441,8 @@
     "language": "c", 
     "name": "hpack_table_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -380,6 +452,8 @@
     "language": "c", 
     "name": "httpcli_format_request_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -389,6 +463,8 @@
     "language": "c", 
     "name": "httpcli_parser_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -408,6 +484,8 @@
     "language": "c", 
     "name": "json_rewrite_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -417,6 +495,8 @@
     "language": "c", 
     "name": "json_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -426,6 +506,8 @@
     "language": "c", 
     "name": "lame_client_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -435,6 +517,8 @@
     "language": "c", 
     "name": "message_compress_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -444,6 +528,8 @@
     "language": "c", 
     "name": "multi_init_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -453,6 +539,8 @@
     "language": "c", 
     "name": "multiple_server_queues_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -462,6 +550,8 @@
     "language": "c", 
     "name": "murmur_hash_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -471,6 +561,8 @@
     "language": "c", 
     "name": "no_server_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -480,6 +572,8 @@
     "language": "c", 
     "name": "resolve_address_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -489,6 +583,8 @@
     "language": "c", 
     "name": "secure_endpoint_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -498,6 +594,8 @@
     "language": "c", 
     "name": "sockaddr_utils_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -537,6 +635,8 @@
     "language": "c", 
     "name": "time_averaged_stats_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -546,6 +646,8 @@
     "language": "c", 
     "name": "timeout_encoding_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -555,6 +657,8 @@
     "language": "c", 
     "name": "timers_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -564,6 +668,8 @@
     "language": "c", 
     "name": "transport_metadata_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -573,6 +679,8 @@
     "language": "c", 
     "name": "transport_security_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -582,6 +690,8 @@
     "language": "c", 
     "name": "uri_parser_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -591,6 +701,8 @@
     "language": "c++", 
     "name": "async_end2end_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -620,6 +732,8 @@
     "language": "c++", 
     "name": "auth_property_iterator_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -629,6 +743,8 @@
     "language": "c++", 
     "name": "channel_arguments_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -638,6 +754,8 @@
     "language": "c++", 
     "name": "cli_call_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -657,6 +775,8 @@
     "language": "c++", 
     "name": "credentials_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -666,6 +786,8 @@
     "language": "c++", 
     "name": "cxx_byte_buffer_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -675,6 +797,8 @@
     "language": "c++", 
     "name": "cxx_slice_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -684,6 +808,8 @@
     "language": "c++", 
     "name": "cxx_time_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -693,6 +819,8 @@
     "language": "c++", 
     "name": "dynamic_thread_pool_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -702,6 +830,8 @@
     "language": "c++", 
     "name": "end2end_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -711,6 +841,8 @@
     "language": "c++", 
     "name": "fixed_size_thread_pool_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -720,6 +852,8 @@
     "language": "c++", 
     "name": "generic_end2end_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -739,6 +873,8 @@
     "language": "c++", 
     "name": "mock_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -768,6 +904,8 @@
     "language": "c++", 
     "name": "secure_auth_context_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -787,6 +925,8 @@
     "language": "c++", 
     "name": "status_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -816,6 +956,8 @@
     "language": "c++", 
     "name": "thread_stress_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -8089,6 +8231,8 @@
     "language": "c", 
     "name": "connection_prefix_bad_client_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
@@ -8098,6 +8242,8 @@
     "language": "c", 
     "name": "initial_settings_frame_bad_client_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix", 
       "windows"
     ]
