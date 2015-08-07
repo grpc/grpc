@@ -75,7 +75,7 @@ then
   rm -f docker.cid
 
   # Zookeeper test server address
-  export GRPC_ZOOKEEPER_SERVER_TEST="grpc-jenkins-master"
+  export GRPC_ZOOKEEPER_SERVER_TEST="grpc-jenkins-master:2181"
 
   # Run tests inside docker
   docker run \
