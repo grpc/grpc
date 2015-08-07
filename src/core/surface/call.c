@@ -1539,7 +1539,6 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   /* rewrite batch ops into ioreq ops */
   for (in = 0, out = 0; in < nops; in++) {
     op = &ops[in];
-    GPR_ASSERT(!op->reserved);
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         /* Flag validation: currently allow no flags */
