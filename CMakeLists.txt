@@ -251,6 +251,10 @@ endif()
 # Find OpenSSL
 find_package(OpenSSL)
 
+if(TARGET OpenSSL::SSL AND TARGET OpenSSL::Crypto)
+  set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+endif()
+
 # Include
 include_directories("." "include"
   ${PROTOBUF_INCLUDE_DIRS}
@@ -336,7 +340,7 @@ foreach(gRPC_LIB
       target_link_libraries(${_lib} PUBLIC ${PROTOBUF_LIBRARIES})
     endif()
     if(_lib_secure_yes OR (_lib_secure_check AND OPENSSL_FOUND))
-      #target_link_libraries(${_lib} PRIVATE ${OPENSSL_LIBRARIES})
+      target_link_libraries(${_lib} PRIVATE ${OPENSSL_LIBRARIES})
     endif()
     if(_lib_baselib)
       if(WIN32)

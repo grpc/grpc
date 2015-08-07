@@ -2,6 +2,9 @@
 if(NOT ZLIB_FOUND)
   find_package(ZLIB)
 endif()
+if(NOT OPENSSL_FOUND)
+  find_package(OpenSSL)
+endif()
 
 # Current dir
 get_filename_component(_GRPC_PACKAGE_PREFIX
