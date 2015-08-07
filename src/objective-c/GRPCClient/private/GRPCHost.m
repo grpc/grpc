@@ -78,12 +78,12 @@
     if (cachedHost) {
       return cachedHost;
     }
-  }
 
-  if ((self = [super init])) {
-    _address = address;
-    _secure = YES;
-    hostCache[address] = self;
+    if ((self = [super init])) {
+      _address = address;
+      _secure = YES;
+      hostCache[address] = self;
+    }
   }
   return self;
 }
