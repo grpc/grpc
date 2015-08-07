@@ -50,6 +50,7 @@ struct census_context;
 
 namespace grpc {
 
+class ClientContext;
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -158,6 +159,7 @@ class ServerContext {
   friend class ServerStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class BidiStreamingHandler;
+  friend class ::grpc::ClientContext;
 
   // Prevent copying.
   ServerContext(const ServerContext&);

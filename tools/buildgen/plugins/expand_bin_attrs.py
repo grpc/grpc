@@ -44,8 +44,9 @@ def mako_plugin(dictionary):
   """
 
   targets = dictionary.get('targets')
+  default_platforms = ['windows', 'posix', 'linux', 'mac']
 
   for tgt in targets:
     tgt['flaky'] = tgt.get('flaky', False)
-    tgt['platforms'] = tgt.get('platforms', ['windows', 'posix'])
+    tgt['platforms'] = sorted(tgt.get('platforms', default_platforms))
 
