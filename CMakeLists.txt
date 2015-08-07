@@ -6,23 +6,24 @@ project(gRPC C CXX)
 
 # Parse build.json file
 function(_parse_build_json)
+
   # Read file strings
   file(STRINGS "build.json" _strings)
+
   # Regex
   set(_version_line_regex "^[ \t]*\"([a-z]+)\"[ \t]*:[ \t]*([0-9]+)[ \t]*[,]?[ \t]*$")
 
   set(_filegroups_regex "^[ \t]*\"filegroups\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
-  set(_filegroup_name_regex "\"name\"[ \t]*:[ \t]*\"([ a-z_A-Z]+)\"")
-  set(_filegroup_group_regex "\"([ a-z_A-Z]+)\"[ \t]*:[ \t]*\\[[ \t]*([^]]+)\\]")
-
-  set(_name_regex "\"name\"[ \t]*:[ \t]*\"([ +a-z_A-Z]+)\"")
-  set(_value_regex "\"([ +a-z_A-Z]+)\"[ \t]*:[ \t]*\"?([ +a-z_A-Z]+)\"?")
-
-  set(_file_group_regex "\"([ a-z_A-Z]+)\"[ \t]*:[ \t]*\\[[ \t]*([^]]+)\\]")
 
   set(_libs_regex "^[ \t]*\"libs\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
 
   set(_targets_regex "^[ \t]*\"targets\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
+
+  set(_name_regex "\"name\"[ \t]*:[ \t]*\"([ +a-z_A-Z]+)\"")
+
+  set(_value_regex "\"([ +a-z_A-Z]+)\"[ \t]*:[ \t]*\"?([ +a-z_A-Z]+)\"?")
+
+  set(_file_group_regex "\"([ a-z_A-Z]+)\"[ \t]*:[ \t]*\\[[ \t]*([^]]+)\\]")
 
   # parsing
   foreach(_string ${_strings})
@@ -56,22 +57,22 @@ function(_parse_build_json)
       #message("_filegroups: ${_filegroups}")
       foreach(_filegroup ${_filegroups})
         #message("_filegroup: ${_filegroup}")
-        string(REGEX MATCH "${_filegroup_name_regex}"
+        string(REGEX MATCH "${_name_regex}"
           _filegroup_name "${_filegroup}")
         if(_filegroup_name)
-          string(REGEX REPLACE "${_filegroup_name_regex}"
+          string(REGEX REPLACE "${_name_regex}"
             "\\1" _filegroup_name "${_filegroup_name}")
           #message("_filegroup_name: ${_filegroup_name}")
           list(APPEND _gRPC_FILEGROUPS ${_filegroup_name})
           # Group
-          string(REGEX MATCHALL "${_filegroup_group_regex}"
+          string(REGEX MATCHALL "${_file_group_regex}"
             _filegroup_groups "${_filegroup}")
           #message("_filegroup_groups: ${_filegroup_groups}")
           foreach(_filegroup_group ${_filegroup_groups})
             #message("_filegroup_group: ${_filegroup_group}")
-            string(REGEX REPLACE "${_filegroup_group_regex}"
+            string(REGEX REPLACE "${_file_group_regex}"
               "\\1" _filegroup_group_name "${_filegroup_group}")
-            string(REGEX REPLACE "${_filegroup_group_regex}"
+            string(REGEX REPLACE "${_file_group_regex}"
               "\\2" _filegroup_group_files "${_filegroup_group}")
             string(REPLACE "," ";" _filegroup_group_files "${_filegroup_group_files}")
             string(REPLACE "\"" "" _filegroup_group_files "${_filegroup_group_files}")
@@ -226,11 +227,13 @@ message(STATUS "}")
 # Find dependensies
 find_package(ZLIB)
 find_package(Protobuf)
+find_package(OpenSSL)
 
 # Include
 include_directories("." "include"
   ${PROTOBUF_INCLUDE_DIRS}
-  ${ZLIB_INCLUDE_DIRS})
+  ${ZLIB_INCLUDE_DIRS}
+  ${OPENSSL_INCLUDE_DIR})
 
 # Standard paths
 include(GNUInstallDirs)
@@ -263,15 +266,28 @@ foreach(gRPC_LIB
   else()
     set(_lib_build_protoc FALSE)
   endif()
+  if("${${_lib_}_secure}" STREQUAL "yes")
+    set(_lib_secure_yes TRUE)
+  else()
+    set(_lib_secure_yes FALSE)
+  endif()
+  if("${${_lib_}_secure}" STREQUAL "no")
+    set(_lib_secure_no TRUE)
+  else()
+    set(_lib_secure_no FALSE)
+  endif()
+  if("${${_lib_}_secure}" STREQUAL "check")
+    set(_lib_secure_check TRUE)
+  else()
+    set(_lib_secure_check FALSE)
+  endif()
   if(DEFINED ${_lib_}_baselib AND "${${_lib_}_baselib}" STREQUAL "true")
     set(_lib_baselib TRUE)
   else()
     set(_lib_baselib FALSE)
   endif()
-  if("${gRPC_LIB_${_lib}_secure}" STREQUAL "no"
-    AND (_lib_c OR _lib_cxx)
-    AND (_lib_build_all OR _lib_build_protoc))
-    message("build lib: ${_lib}")
+  if((_lib_c OR _lib_cxx) AND (_lib_build_all OR _lib_build_protoc))
+    message(STATUS "build lib: ${_lib}")
     set(_lib_type "STATIC")
     if(DEFINED ${_lib_}_dll AND "${${_lib_}_dll}" STREQUAL "yes")
       # Now is not work
@@ -287,7 +303,8 @@ foreach(gRPC_LIB
         list(APPEND _lib_public_headers ${gRPC_FILEGROUP_${_filegroup}_public_headers})
       endforeach()
     endif()
-    #message(STATUS "src: ${_lib_src}")
+    #message(STATUS "srcs: ${_lib_src}")
+    #message(STATUS "hdrs: ${_lib_public_headers}")
     add_library(${_lib} ${_lib_type} ${_lib_src})
     if(DEFINED ${_lib_}_deps)
       #message(STATUS "${_lib} deps: ${${_lib_}_deps}")
@@ -295,6 +312,9 @@ foreach(gRPC_LIB
     endif()
     if(_lib_build_protoc)
       target_link_libraries(${_lib} ${PROTOBUF_LIBRARIES})
+    endif()
+    if(_lib_secure_yes OR (_lib_secure_check AND OPENSSL_FOUND))
+      target_link_libraries(${_lib} ${OPENSSL_LIBRARIES})
     endif()
     if(_lib_baselib)
       if(WIN32)
@@ -312,7 +332,7 @@ foreach(gRPC_LIB
     set_property(TARGET ${_lib}
       PROPERTY INTERFACE_INCLUDE_DIRECTORIES
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-    foreach(_hdr ${${_lib_}_public_headers})
+    foreach(_hdr ${_lib_public_headers})
       get_filename_component(_hdr_name "${_hdr}" NAME)
       get_filename_component(_hdr_path "${_hdr}" PATH)
       string(REPLACE "include/" "${CMAKE_INSTALL_INCLUDEDIR}/"
