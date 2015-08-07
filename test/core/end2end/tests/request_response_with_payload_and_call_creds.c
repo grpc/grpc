@@ -400,8 +400,8 @@ static void test_request_with_server_rejecting_client_creds(
   f = begin_test(config, "test_request_with_server_rejecting_client_creds", 1);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   creds = grpc_iam_credentials_create(iam_token, iam_selector);

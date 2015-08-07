@@ -35,6 +35,7 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXWriteable.h>
@@ -43,8 +44,7 @@
 // These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
 // rather than a generated proto library on top of it.
 
-// grpc-test.sandbox.google.com
-static NSString * const kHostAddress = @"http://localhost:5050";
+static NSString * const kHostAddress = @"localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 
@@ -58,6 +58,9 @@ static ProtoMethod *kUnaryCallMethod;
 @implementation GRPCClientTests
 
 - (void)setUp {
+  // Register test server as non-SSL.
+  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+
   // This method isn't implemented by the remote server.
   kInexistentMethod = [[ProtoMethod alloc] initWithPackage:kPackage
                                                    service:kService

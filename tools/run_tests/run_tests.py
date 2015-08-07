@@ -127,10 +127,14 @@ class CLanguage(object):
                        for tgt in js
                        if tgt['language'] == test_lang and
                           platform_string() in tgt['platforms']]
+      self.ci_binaries = [tgt
+                         for tgt in js
+                         if tgt['language'] == test_lang and
+                            platform_string() in tgt['ci_platforms']]
 
   def test_specs(self, config, travis):
     out = []
-    for target in self.binaries:
+    for target in (self.ci_binaries if travis else self.binaries):
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
