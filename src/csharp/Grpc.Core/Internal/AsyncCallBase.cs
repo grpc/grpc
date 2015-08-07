@@ -123,7 +123,7 @@ namespace Grpc.Core.Internal
         /// Initiates sending a message. Only one send operation can be active at a time.
         /// completionDelegate is invoked upon completion.
         /// </summary>
-        protected void StartSendMessageInternal(TWrite msg, AsyncCompletionDelegate<object> completionDelegate)
+        protected void StartSendMessageInternal(TWrite msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
         {
             byte[] payload = UnsafeSerialize(msg);
 
@@ -132,7 +132,7 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendMessage(payload, HandleSendFinished);
+                call.StartSendMessage(HandleSendFinished, payload, writeFlags);
                 sendCompletionDelegate = completionDelegate;
             }
         }

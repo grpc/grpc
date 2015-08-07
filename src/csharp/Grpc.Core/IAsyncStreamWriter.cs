@@ -50,5 +50,17 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="message">the message to be written. Cannot be null.</param>
         Task WriteAsync(T message);
+
+        /// <summary>
+        /// Write options that will be used for the next write.
+        /// If null, default options will be used.
+        /// Once set, this property maintains its value across subsequent
+        /// writes.
+        /// Internally, closing the stream is on client and sending
+        /// status from server is treated as a write, so write options
+        /// are also applied to these operations.
+        /// </summary>
+        /// <value>The write options.</value>
+        WriteOptions WriteOptions { get; set; }
     }
 }

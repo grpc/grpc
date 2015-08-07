@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,59 +28,36 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
 
 using System;
-using System.Threading.Tasks;
-using Grpc.Core.Internal;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core
 {
     /// <summary>
-    /// Writes responses asynchronously to an underlying AsyncCallServer object.
+    /// Compression level based on grpc_compression_level from grpc/compression.h
     /// </summary>
-    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>, IHasWriteOptions
-        where TRequest : class
-        where TResponse : class
+    public enum CompressionLevel
     {
-        readonly AsyncCallServer<TRequest, TResponse> call;
-        WriteOptions writeOptions;
+        /// <summary>
+        /// No compression.
+        /// </summary>
+        None = 0,
 
-        public ServerResponseStream(AsyncCallServer<TRequest, TResponse> call)
-        {
-            this.call = call;
-        }
+        /// <summary>
+        /// Low compression.
+        /// </summary>
+        Low,
 
-        public Task WriteAsync(TResponse message)
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
+        /// <summary>
+        /// Medium compression.
+        /// </summary>
+        Medium,
 
-        public Task WriteStatusAsync(Status status, Metadata trailers)
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendStatusFromServer(status, trailers, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
-
-        public WriteOptions WriteOptions
-        {
-            get
-            {
-                return writeOptions;
-            }
-            set
-            {
-                writeOptions = value;
-            }
-        }
-
-        private WriteFlags GetWriteFlags()
-        {
-            var options = writeOptions;
-            return options != null ? options.Flags : default(WriteFlags);
-        }
+        /// <summary>
+        /// High compression.
+        /// </summary>
+        High,
     }
 }

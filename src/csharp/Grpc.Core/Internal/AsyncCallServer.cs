@@ -83,9 +83,9 @@ namespace Grpc.Core.Internal
         /// Sends a streaming response. Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TResponse msg, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendMessage(TResponse msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
         {
-            StartSendMessageInternal(msg, completionDelegate);
+            StartSendMessageInternal(msg, writeFlags, completionDelegate);
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace Grpc.Core.Internal
         /// Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, Metadata trailers, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendStatusFromServer(Status status, Metadata trailers, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
         {
             lock (myLock)
             {
@@ -111,7 +111,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(status, HandleHalfclosed, metadataArray);
+                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, writeFlags);
                 }
                 halfcloseRequested = true;
                 readingDone = true;

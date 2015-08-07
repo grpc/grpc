@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,59 +28,56 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
 
 using System;
-using System.Threading.Tasks;
-using Grpc.Core.Internal;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core
 {
     /// <summary>
-    /// Writes responses asynchronously to an underlying AsyncCallServer object.
+    /// Flags for write operations.
     /// </summary>
-    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>, IHasWriteOptions
-        where TRequest : class
-        where TResponse : class
+    [Flags]
+    public enum WriteFlags
     {
-        readonly AsyncCallServer<TRequest, TResponse> call;
-        WriteOptions writeOptions;
+        /// <summary>
+        /// Hint that the write may be buffered and need not go out on the wire immediately.
+        /// gRPC is free to buffer the message until the next non-buffered
+        /// write, or until write stream completion, but it need not buffer completely or at all.
+        /// </summary>
+        BufferHint = 0x1,
 
-        public ServerResponseStream(AsyncCallServer<TRequest, TResponse> call)
+        /// <summary>
+        /// Force compression to be disabled for a particular write.
+        /// </summary>
+        NoCompress = 0x2
+    }
+
+
+    /// <summary>
+    /// Options for write operations.
+    /// </summary>
+    public class WriteOptions
+    {
+        /// <summary>
+        /// Default write options.
+        /// </summary>
+        public static readonly WriteOptions Default = new WriteOptions();
+            
+        private WriteFlags flags;
+
+        public WriteOptions(WriteFlags flags = default(WriteFlags))
         {
-            this.call = call;
+            this.flags = flags;
         }
 
-        public Task WriteAsync(TResponse message)
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
-
-        public Task WriteStatusAsync(Status status, Metadata trailers)
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendStatusFromServer(status, trailers, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
-
-        public WriteOptions WriteOptions
+        public WriteFlags Flags
         {
             get
             {
-                return writeOptions;
+                return this.flags;
             }
-            set
-            {
-                writeOptions = value;
-            }
-        }
-
-        private WriteFlags GetWriteFlags()
-        {
-            var options = writeOptions;
-            return options != null ? options.Flags : default(WriteFlags);
         }
     }
 }

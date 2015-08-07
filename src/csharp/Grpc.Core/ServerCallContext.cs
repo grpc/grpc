@@ -36,6 +36,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Grpc.Core.Internal;
+
 namespace Grpc.Core
 {
     /// <summary>
@@ -54,8 +56,9 @@ namespace Grpc.Core
         private readonly Metadata responseTrailers = new Metadata();
 
         private Status status = Status.DefaultSuccess;
+        private IHasWriteOptions writeOptionsHolder;
 
-        public ServerCallContext(string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken)
+        public ServerCallContext(string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken, IHasWriteOptions writeOptionsHolder)
         {
             this.method = method;
             this.host = host;
@@ -63,6 +66,7 @@ namespace Grpc.Core
             this.deadline = deadline;
             this.requestHeaders = requestHeaders;
             this.cancellationToken = cancellationToken;
+            this.writeOptionsHolder = writeOptionsHolder;
         }
             
         /// <summary>Name of method called in this RPC.</summary>
@@ -141,5 +145,30 @@ namespace Grpc.Core
                 status = value;
             }
         }
+
+        /// <summary>
+        /// Allows setting write options for the following write.
+        /// For streaming response calls, this property is also exposed as on IServerStreamWriter for convenience.
+        /// Both properties are backed by the same underlying value.
+        /// </summary>
+        public WriteOptions WriteOptions
+        {
+            get
+            {
+                return writeOptionsHolder.WriteOptions;
+            }
+            set
+            {
+                writeOptionsHolder.WriteOptions = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Allows sharing write options between ServerCallContext and other objects.
+    /// </summary>
+    public interface IHasWriteOptions
+    {
+        WriteOptions WriteOptions { get; set; }
     }
 }
