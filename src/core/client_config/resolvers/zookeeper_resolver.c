@@ -428,7 +428,7 @@ static grpc_resolver *zookeeper_create(
     grpc_subchannel_factory *subchannel_factory) {
   zookeeper_resolver *r;
   const char *path = uri->path;
-  
+
   if (0 == strcmp(uri->authority, "")) {
     gpr_log(GPR_ERROR, "No authority specified in zookeeper uri");
     return NULL;

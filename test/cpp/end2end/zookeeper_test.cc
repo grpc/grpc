@@ -82,7 +82,7 @@ class ZookeeperTest : public ::testing::Test {
       string addr_str(addr);
       zookeeper_address = addr_str;
       gpr_free(addr);
-    } 
+    }
     ZookeeperSetUp(zookeeper_address.c_str(), port);
 
     // Setup server
