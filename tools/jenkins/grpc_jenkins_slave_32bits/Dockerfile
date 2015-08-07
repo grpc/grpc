@@ -151,9 +151,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install dependencies
 
-RUN wget http://mirror.olnevhost.net/pub/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
-RUN tar xvf zookeeper-3.4.6.tar.gz
-RUN cd zookeeper-3.4.6/src/c && ./configure && make install && ldconfig
+RUN apt-get install -y libzookeeper-mt-dev
 
 
 RUN mkdir /var/local/jenkins

@@ -76,14 +76,14 @@ class ZookeeperTest : public ::testing::Test {
 
     // Setup zookeeper
     // Require zookeeper server running in grpc-jenkins-master
-    zookeeper_address = "localhost:2181";
+    zookeeper_address_ = "localhost:2181";
     char* addr = gpr_getenv("GRPC_ZOOKEEPER_SERVER_TEST");
     if (addr != NULL) {
       string addr_str(addr);
-      zookeeper_address = addr_str;
+      zookeeper_address_ = addr_str;
       gpr_free(addr);
     }
-    ZookeeperSetUp(zookeeper_address.c_str(), port);
+    ZookeeperSetUp(port);
 
     // Setup server
     ServerBuilder builder;
@@ -92,10 +92,10 @@ class ZookeeperTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void ZookeeperSetUp(const char* zookeeper_address, int port) {
+  void ZookeeperSetUp(int port) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-    gpr_log(GPR_DEBUG, zookeeper_address);
-    zookeeper_handle_ = zookeeper_init(zookeeper_address, NULL, 15000, 0, 0, 0);
+    gpr_log(GPR_DEBUG, zookeeper_address_.c_str());
+    zookeeper_handle_ = zookeeper_init(zookeeper_address_.c_str(), NULL, 15000, 0, 0, 0);
     GPR_ASSERT(zookeeper_handle_ != NULL);
 
     // Register service /test in zookeeper
@@ -154,7 +154,7 @@ class ZookeeperTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    string target = "zookeeper://" + zookeeper_address + "/test";
+    string target = "zookeeper://" + zookeeper_address_ + "/test";
     channel_ = CreateChannel(target, InsecureCredentials(), ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
@@ -165,7 +165,7 @@ class ZookeeperTest : public ::testing::Test {
   string server_address_;
   ZookeeperTestServiceImpl service_;
   zhandle_t* zookeeper_handle_;
-  string zookeeper_address;
+  string zookeeper_address_;
 };
 
 // Test zookeeper state change between two RPCs

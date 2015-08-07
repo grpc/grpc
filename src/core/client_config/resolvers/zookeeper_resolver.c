@@ -320,7 +320,7 @@ static void zookeeper_get_children_completion(
   }
 
   if (children->count == 0) {
-    gpr_log(GPR_ERROR, "Fail to resolve zookeeper address %s", r->name);
+    gpr_log(GPR_ERROR, "Error in resolving zookeeper address %s", r->name);
     return;
   }
 
