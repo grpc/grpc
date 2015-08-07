@@ -37,7 +37,7 @@
 // https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
 
 @interface InteropTests : XCTestCase
-// Returns @"http://localhost:5050".
+// Returns @"localhost:5050".
 // Override in a subclass to perform the same tests against a different address.
 // For interop tests, use @"grpc-test.sandbox.google.com".
 + (NSString *)host;

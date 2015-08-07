@@ -35,6 +35,7 @@
 
 #include <grpc/status.h>
 
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -75,15 +76,22 @@
 }
 @end
 
+#pragma mark Tests
+
+static NSString * const kLocalCleartextHost = @"localhost:5050";
+
 @implementation InteropTests {
   RMTTestService *_service;
 }
 
 + (NSString *)host {
-  return @"http://localhost:5050";
+  return kLocalCleartextHost;
 }
 
 - (void)setUp {
+  // Register test server as non-SSL.
+  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
+
   _service = [[RMTTestService alloc] initWithHost:self.class.host];
 }
 
