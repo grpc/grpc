@@ -910,7 +910,7 @@ TEST_P(End2endTest, Peer) {
 }
 
 TEST_F(End2endTest, ChannelState) {
-  ResetStub();
+  ResetStub(false);
   // Start IDLE
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
 
