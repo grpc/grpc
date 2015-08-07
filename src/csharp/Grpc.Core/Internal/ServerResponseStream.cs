@@ -64,12 +64,20 @@ namespace Grpc.Core.Internal
             return taskSource.Task;
         }
 
+        public Task WriteResponseHeadersAsync(Metadata responseHeaders)
+        {
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendInitialMetadata(responseHeaders, GetWriteFlags(), taskSource.CompletionDelegate);
+            return taskSource.Task;
+        }
+
         public WriteOptions WriteOptions
         {
             get
             {
                 return writeOptions;
             }
+
             set
             {
                 writeOptions = value;

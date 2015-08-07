@@ -98,6 +98,34 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Initiates sending a initial metadata. 
+        /// Even though C-core allows sending metadata in parallel to sending messages, we will treat sending metadata as a send message operation
+        /// to make things simpler.
+        /// completionDelegate is invoked upon completion.
+        /// </summary>
+        public void StartSendInitialMetadata(Metadata headers, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+
+                Preconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
+                Preconditions.CheckState(streamingWritesCounter > 0, "Response headers can only be sent before the first write starts.");
+                CheckSendingAllowed();
+
+                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+
+                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                {
+                    call.StartSendInitialMetadata(HandleSendFinished, metadataArray, writeFlags);
+                }
+
+                this.initialMetadataSent = true;
+                sendCompletionDelegate = completionDelegate;
+            }
+        }
+
+        /// <summary>
         /// Sends call result status, also indicating server is done with streaming responses.
         /// Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
@@ -111,7 +139,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, writeFlags);
+                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, writeFlags, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
                 readingDone = true;

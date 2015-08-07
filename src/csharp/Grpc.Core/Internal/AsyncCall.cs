@@ -64,6 +64,7 @@ namespace Grpc.Core.Internal
             : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
         {
             this.details = callDetails;
+            this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
         }
 
         // TODO: this method is not Async, so it shouldn't be in AsyncCall class, but 

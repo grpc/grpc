@@ -71,6 +71,9 @@ namespace Grpc.Core.Internal
         protected bool halfclosed;
         protected bool finished;  // True if close has been received from the peer.
 
+        protected bool initialMetadataSent;
+        protected long streamingWritesCounter;
+
         public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer)
         {
             this.serializer = Preconditions.CheckNotNull(serializer);
@@ -132,8 +135,11 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendMessage(HandleSendFinished, payload, writeFlags);
+                call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
+
                 sendCompletionDelegate = completionDelegate;
+                initialMetadataSent = true;
+                streamingWritesCounter++;
             }
         }
 

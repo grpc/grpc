@@ -68,6 +68,7 @@ namespace Grpc.Core.Internal
             {
                 return this.writeOptions;
             }
+
             set
             {
                 writeOptions = value;
