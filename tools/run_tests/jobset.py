@@ -164,12 +164,14 @@ class JobSpec(object):
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, bin_hash, newline_on_success, travis, xml_report):
+  def __init__(self, spec, bin_hash, newline_on_success, travis, add_env, xml_report):
     self._spec = spec
     self._bin_hash = bin_hash
     self._tempfile = tempfile.TemporaryFile()
     env = os.environ.copy()
     for k, v in spec.environ.iteritems():
+      env[k] = v
+    for k, v in add_env.iteritems():
       env[k] = v
     self._start = time.time()
     self._process = subprocess.Popen(args=spec.cmdline,
@@ -229,7 +231,7 @@ class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, cache, xml_report):
+               stop_on_failure, add_env, cache, xml_report):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -242,6 +244,7 @@ class Jobset(object):
     self._stop_on_failure = stop_on_failure
     self._hashes = {}
     self._xml_report = xml_report
+    self._add_env = add_env
 
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
@@ -264,16 +267,12 @@ class Jobset(object):
       bin_hash = None
       should_run = True
     if should_run:
-      try:
-        self._running.add(Job(spec,
-                              bin_hash,
-                              self._newline_on_success,
-                              self._travis,
-                              self._xml_report))
-      except:
-        message('FAILED', spec.shortname)
-        self._cancelled = True
-        return False
+      self._running.add(Job(spec,
+                            bin_hash,
+                            self._newline_on_success,
+                            self._travis,
+                            self._add_env,
+                            self._xml_report))
     return True
 
   def reap(self):
@@ -344,10 +343,11 @@ def run(cmdlines,
         infinite_runs=False,
         stop_on_failure=False,
         cache=None,
-        xml_report=None):
+        xml_report=None,
+        add_env={}):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success, travis, stop_on_failure,
+              newline_on_success, travis, stop_on_failure, add_env,
               cache if cache is not None else NoCache(),
               xml_report)
   for cmdline in cmdlines:
