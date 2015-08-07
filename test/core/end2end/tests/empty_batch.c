@@ -105,8 +105,8 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op *op = NULL;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, op, 0, tag(1)));

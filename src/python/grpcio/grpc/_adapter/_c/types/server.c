@@ -155,7 +155,7 @@ PyObject *pygrpc_Server_add_http2_port(
     port = grpc_server_add_secure_http2_port(
         self->c_serv, addr, creds->c_creds);
   } else {
-    port = grpc_server_add_http2_port(self->c_serv, addr);
+    port = grpc_server_add_insecure_http2_port(self->c_serv, addr);
   }
   return PyInt_FromLong(port);
 

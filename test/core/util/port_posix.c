@@ -149,8 +149,13 @@ static void got_port_from_server(void *arg,
   GPR_ASSERT(port > 1024);
   gpr_mu_lock(GRPC_POLLSET_MU(&pr->pollset));
   pr->port = port;
-  grpc_pollset_kick(&pr->pollset);
+  grpc_pollset_kick(&pr->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr->pollset));
+}
+
+static void destroy_pollset_and_shutdown(void *p) {
+  grpc_pollset_destroy(p);
+  grpc_shutdown();
 }
 
 static int pick_port_using_server(char *server) {
@@ -174,11 +179,14 @@ static int pick_port_using_server(char *server) {
                    &pr);
   gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
   while (pr.port == -1) {
-    grpc_pollset_work(&pr.pollset, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&pr.pollset, &worker,
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
 
-  grpc_shutdown();
+  grpc_httpcli_context_destroy(&context);
+  grpc_pollset_shutdown(&pr.pollset, destroy_pollset_and_shutdown, &pr.pollset);
 
   return pr.port;
 }

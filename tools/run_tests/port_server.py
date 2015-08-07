@@ -47,7 +47,7 @@ print 'port server running on port %d' % args.port
 pool = []
 in_use = {}
 
-with open(sys.argv[0]) as f:
+with open(__file__) as f:
   _MY_VERSION = hashlib.sha1(f.read()).hexdigest()
 
 
