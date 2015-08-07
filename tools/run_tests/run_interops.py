@@ -4,13 +4,13 @@ import jobset
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-l', '--language',
-                  default='build_only')
+                  default='c++')
 args = argp.parse_args()
 
 # build job
 build_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_build.sh', '%s' % args.language], shortname='build')
 
-# test jobs
+# test jobs, each test is a separate job to run in parallel
 _TESTS = ['large_unary', 'empty_unary', 'ping_pong', 'client_streaming', 'server_streaming']
 jobs = []
 jobNumber = 0
