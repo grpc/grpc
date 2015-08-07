@@ -48,7 +48,6 @@ class CallOpBuffer;
 class ClientContext;
 class CompletionQueue;
 class RpcMethod;
-class CallInterface;
 
 class ChannelInterface : public CallHook,
                          public std::enable_shared_from_this<ChannelInterface> {
@@ -65,32 +64,27 @@ class ChannelInterface : public CallHook,
 
   // Return the tag on cq when the channel state is changed or deadline expires.
   // GetState needs to called to get the current state.
-  virtual void NotifyOnStateChange(grpc_connectivity_state last_observed,
-                                   gpr_timespec deadline,
-                                   CompletionQueue* cq, void* tag) = 0;
+  template <typename T>
+  void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
+                           CompletionQueue* cq, void* tag) {
+    TimePoint<T> deadline_tp(deadline);
+    NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
+  }
 
   // Blocking wait for channel state change or deadline expiration.
   // GetState needs to called to get the current state.
-  virtual bool WaitForStateChange(grpc_connectivity_state last_observed,
-                                  gpr_timespec deadline) = 0;
+  template <typename T>
+  bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline) {
+    TimePoint<T> deadline_tp(deadline);
+    return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
+  }
 
-  // Blocking wait for target state or deadline expriration.
-  virtual bool WaitForState(grpc_connectivity_state target_state,
-                            gpr_timespec deadline) = 0;
-
-#ifndef GRPC_CXX0X_NO_CHRONO
-  virtual void NotifyOnStateChange(
-      grpc_connectivity_state last_observed,
-      const std::chrono::system_clock::time_point& deadline,
-      CompletionQueue* cq, void* tag) = 0;
-  virtual bool WaitForStateChange(
-      grpc_connectivity_state last_observed,
-      const std::chrono::system_clock::time_point& deadline) = 0;
-  virtual bool WaitForState(
-      grpc_connectivity_state target_state,
-      const std::chrono::system_clock::time_point& deadline) = 0;
-#endif  // !GRPC_CXX0X_NO_CHRONO
-
+ private:
+  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+                                       gpr_timespec deadline,
+                                       CompletionQueue* cq, void* tag) = 0;
+  virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+                                      gpr_timespec deadline) = 0;
 };
 
 }  // namespace grpc

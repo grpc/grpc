@@ -64,32 +64,14 @@ class Channel GRPC_FINAL : public GrpcLibrary, public ChannelInterface {
 
   grpc_connectivity_state GetState(bool try_to_connect) GRPC_OVERRIDE;
 
-  void NotifyOnStateChange(grpc_connectivity_state last_observed,
-                           gpr_timespec deadline,
-                           CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
-
-  bool WaitForStateChange(grpc_connectivity_state last_observed,
-                          gpr_timespec deadline) GRPC_OVERRIDE;
-
-  bool WaitForState(grpc_connectivity_state target_state,
-                    gpr_timespec deadline) GRPC_OVERRIDE;
-
-#ifndef GRPC_CXX0X_NO_CHRONO
-  void NotifyOnStateChange(
-      grpc_connectivity_state last_observed,
-      const std::chrono::system_clock::time_point& deadline,
-      CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
-
-  bool WaitForStateChange(
-      grpc_connectivity_state last_observed,
-      const std::chrono::system_clock::time_point& deadline) GRPC_OVERRIDE;
-
-  bool WaitForState(grpc_connectivity_state target_state,
-                    const std::chrono::system_clock::time_point& deadline)
-      GRPC_OVERRIDE;
-#endif  // !GRPC_CXX0X_NO_CHRONO
-
  private:
+  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+                               gpr_timespec deadline, CompletionQueue* cq,
+                               void* tag) GRPC_OVERRIDE;
+
+  bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+                              gpr_timespec deadline) GRPC_OVERRIDE;
+
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
 };
