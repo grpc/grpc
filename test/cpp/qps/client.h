@@ -83,7 +83,8 @@ class Client {
 
   ClientStats Mark() {
     Histogram latencies;
-    Histogram to_merge[threads_.size()];  // avoid std::vector for old compilers
+    // avoid std::vector for old compilers
+    Histogram *to_merge = new Histogram[threads_.size()];
     for (size_t i = 0; i < threads_.size(); i++) {
       threads_[i]->BeginSwap(&to_merge[i]);
     }
@@ -93,6 +94,7 @@ class Client {
       threads_[i]->EndSwap();
       latencies.Merge(&to_merge[i]);
     }
+    delete[] to_merge;
 
     auto timer_result = timer->Mark();
 
