@@ -41,9 +41,9 @@
 // authorization header from the request.
 // The value obtained by getting the property is the OAuth2 bearer token if the authorization header
 // of the request has the form "Bearer <token>", or nil otherwise.
-@property(atomic, copy) NSString *oauth2_accessToken;
+@property(atomic, copy) NSString *oauth2AccessToken;
 
 // Returns the value (if any) of the "www-authenticate" response header (the challenge header).
-@property(atomic, readonly) NSString *oauth2_challengeHeader;
+@property(atomic, readonly) NSString *oauth2ChallengeHeader;
 
 @end

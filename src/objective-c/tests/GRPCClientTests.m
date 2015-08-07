@@ -161,7 +161,7 @@ static ProtoMethod *kUnaryCallMethod;
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
-  call.oauth2_accessToken = @"bogusToken";
+  call.oauth2AccessToken = @"bogusToken";
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTFail(@"Received unexpected response: %@", value);
@@ -170,7 +170,7 @@ static ProtoMethod *kUnaryCallMethod;
     XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
     XCTAssertEqualObjects(call.responseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
                           @"Metadata in the NSError object and call object differ.");
-    NSString *challengeHeader = call.oauth2_challengeHeader;
+    NSString *challengeHeader = call.oauth2ChallengeHeader;
     XCTAssertGreaterThan(challengeHeader.length, 0,
                          @"No challenge in response headers %@", call.responseMetadata);
     [expectation fulfill];
