@@ -34,6 +34,7 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/echo.grpc.pb.h"
+#include "src/core/support/env.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -75,8 +76,14 @@ class ZookeeperTest : public ::testing::Test {
 
     // Setup zookeeper
     // Require zookeeper server running in grpc-jenkins-master
-    const char* zookeeper_address = "grpc-jenkins-master:2181";
-    ZookeeperSetUp(zookeeper_address, port);
+    zookeeper_address = "localhost:2181";
+    char* addr = gpr_getenv("GRPC_ZOOKEEPER_SERVER_TEST");
+    if (addr != NULL) {
+      string addr_str(addr);
+      zookeeper_address = addr_str;
+      gpr_free(addr);
+    } 
+    ZookeeperSetUp(zookeeper_address.c_str(), port);
 
     // Setup server
     ServerBuilder builder;
@@ -87,7 +94,7 @@ class ZookeeperTest : public ::testing::Test {
 
   void ZookeeperSetUp(const char* zookeeper_address, int port) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-    gpr_log(GPR_INFO, zookeeper_address);
+    gpr_log(GPR_DEBUG, zookeeper_address);
     zookeeper_handle_ = zookeeper_init(zookeeper_address, NULL, 15000, 0, 0, 0);
     GPR_ASSERT(zookeeper_handle_ != NULL);
 
@@ -147,17 +154,18 @@ class ZookeeperTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    channel_ = CreateChannel("zookeeper://grpc-jenkins-master:2181/test",
-                             InsecureCredentials(), ChannelArguments());
+    string target = "zookeeper://" + zookeeper_address + "/test";
+    channel_ = CreateChannel(target, InsecureCredentials(), ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
   std::shared_ptr<ChannelInterface> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  std::string server_address_;
+  string server_address_;
   ZookeeperTestServiceImpl service_;
   zhandle_t* zookeeper_handle_;
+  string zookeeper_address;
 };
 
 // Test zookeeper state change between two RPCs
