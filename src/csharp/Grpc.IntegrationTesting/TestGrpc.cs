@@ -71,33 +71,22 @@ namespace Grpc.Testing {
     // client interface
     public interface ITestServiceClient
     {
-<<<<<<< HEAD
-      global::grpc.testing.Empty EmptyCall(global::grpc.testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::grpc.testing.Empty EmptyCall(global::grpc.testing.Empty request, CallOptions options);
-      AsyncUnaryCall<global::grpc.testing.Empty> EmptyCallAsync(global::grpc.testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::grpc.testing.Empty> EmptyCallAsync(global::grpc.testing.Empty request, CallOptions options);
-      global::grpc.testing.SimpleResponse UnaryCall(global::grpc.testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::grpc.testing.SimpleResponse UnaryCall(global::grpc.testing.SimpleRequest request, CallOptions options);
-      AsyncUnaryCall<global::grpc.testing.SimpleResponse> UnaryCallAsync(global::grpc.testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::grpc.testing.SimpleResponse> UnaryCallAsync(global::grpc.testing.SimpleRequest request, CallOptions options);
-      AsyncServerStreamingCall<global::grpc.testing.StreamingOutputCallResponse> StreamingOutputCall(global::grpc.testing.StreamingOutputCallRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncServerStreamingCall<global::grpc.testing.StreamingOutputCallResponse> StreamingOutputCall(global::grpc.testing.StreamingOutputCallRequest request, CallOptions options);
-      AsyncClientStreamingCall<global::grpc.testing.StreamingInputCallRequest, global::grpc.testing.StreamingInputCallResponse> StreamingInputCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncClientStreamingCall<global::grpc.testing.StreamingInputCallRequest, global::grpc.testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options);
-      AsyncDuplexStreamingCall<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallResponse> FullDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncDuplexStreamingCall<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options);
-      AsyncDuplexStreamingCall<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallResponse> HalfDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncDuplexStreamingCall<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options);
-=======
       global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, CallOptions options);
       AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, CallOptions options);
       global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options);
       AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options);
       AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, CallOptions options);
       AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options);
       AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options);
       AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
->>>>>>> 708e8de... regenerate protos
+      AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options);
     }
 
     // server-side interface
@@ -122,7 +111,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_EmptyCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.BlockingUnaryCall(call, request);
       }
-      public global::grpc.testing.Empty EmptyCall(global::grpc.testing.Empty request, CallOptions options)
+      public global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, CallOptions options)
       {
         var call = CreateCall(__Method_EmptyCall, options);
         return Calls.BlockingUnaryCall(call, request);
@@ -132,7 +121,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_EmptyCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::grpc.testing.Empty> EmptyCallAsync(global::grpc.testing.Empty request, CallOptions options)
+      public AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
       {
         var call = CreateCall(__Method_EmptyCall, options);
         return Calls.AsyncUnaryCall(call, request);
@@ -142,7 +131,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_UnaryCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.BlockingUnaryCall(call, request);
       }
-      public global::grpc.testing.SimpleResponse UnaryCall(global::grpc.testing.SimpleRequest request, CallOptions options)
+      public global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
         var call = CreateCall(__Method_UnaryCall, options);
         return Calls.BlockingUnaryCall(call, request);
@@ -152,7 +141,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_UnaryCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::grpc.testing.SimpleResponse> UnaryCallAsync(global::grpc.testing.SimpleRequest request, CallOptions options)
+      public AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
         var call = CreateCall(__Method_UnaryCall, options);
         return Calls.AsyncUnaryCall(call, request);
@@ -162,7 +151,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_StreamingOutputCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncServerStreamingCall(call, request);
       }
-      public AsyncServerStreamingCall<global::grpc.testing.StreamingOutputCallResponse> StreamingOutputCall(global::grpc.testing.StreamingOutputCallRequest request, CallOptions options)
+      public AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, CallOptions options)
       {
         var call = CreateCall(__Method_StreamingOutputCall, options);
         return Calls.AsyncServerStreamingCall(call, request);
@@ -172,7 +161,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_StreamingInputCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncClientStreamingCall(call);
       }
-      public AsyncClientStreamingCall<global::grpc.testing.StreamingInputCallRequest, global::grpc.testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options)
+      public AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options)
       {
         var call = CreateCall(__Method_StreamingInputCall, options);
         return Calls.AsyncClientStreamingCall(call);
@@ -182,7 +171,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_FullDuplexCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncDuplexStreamingCall(call);
       }
-      public AsyncDuplexStreamingCall<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options)
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options)
       {
         var call = CreateCall(__Method_FullDuplexCall, options);
         return Calls.AsyncDuplexStreamingCall(call);
@@ -192,7 +181,7 @@ namespace Grpc.Testing {
         var call = CreateCall(__Method_HalfDuplexCall, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncDuplexStreamingCall(call);
       }
-      public AsyncDuplexStreamingCall<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options)
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options)
       {
         var call = CreateCall(__Method_HalfDuplexCall, options);
         return Calls.AsyncDuplexStreamingCall(call);

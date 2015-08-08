@@ -54,24 +54,16 @@ namespace Math {
     // client interface
     public interface IMathClient
     {
-<<<<<<< HEAD
-      global::math.DivReply Div(global::math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::math.DivReply Div(global::math.DivArgs request, CallOptions options);
-      AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, CallOptions options);
-      AsyncDuplexStreamingCall<global::math.DivArgs, global::math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncDuplexStreamingCall<global::math.DivArgs, global::math.DivReply> DivMany(CallOptions options);
-      AsyncServerStreamingCall<global::math.Num> Fib(global::math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncServerStreamingCall<global::math.Num> Fib(global::math.FibArgs request, CallOptions options);
-      AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(CallOptions options);
-=======
       global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options);
       AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options);
       AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options);
       AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options);
       AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
->>>>>>> 708e8de... regenerate protos
+      AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options);
     }
 
     // server-side interface
@@ -94,7 +86,7 @@ namespace Math {
         var call = CreateCall(__Method_Div, new CallOptions(headers, deadline, cancellationToken));
         return Calls.BlockingUnaryCall(call, request);
       }
-      public global::math.DivReply Div(global::math.DivArgs request, CallOptions options)
+      public global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
       {
         var call = CreateCall(__Method_Div, options);
         return Calls.BlockingUnaryCall(call, request);
@@ -104,7 +96,7 @@ namespace Math {
         var call = CreateCall(__Method_Div, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::math.DivReply> DivAsync(global::math.DivArgs request, CallOptions options)
+      public AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
       {
         var call = CreateCall(__Method_Div, options);
         return Calls.AsyncUnaryCall(call, request);
@@ -114,7 +106,7 @@ namespace Math {
         var call = CreateCall(__Method_DivMany, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncDuplexStreamingCall(call);
       }
-      public AsyncDuplexStreamingCall<global::math.DivArgs, global::math.DivReply> DivMany(CallOptions options)
+      public AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options)
       {
         var call = CreateCall(__Method_DivMany, options);
         return Calls.AsyncDuplexStreamingCall(call);
@@ -124,7 +116,7 @@ namespace Math {
         var call = CreateCall(__Method_Fib, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncServerStreamingCall(call, request);
       }
-      public AsyncServerStreamingCall<global::math.Num> Fib(global::math.FibArgs request, CallOptions options)
+      public AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options)
       {
         var call = CreateCall(__Method_Fib, options);
         return Calls.AsyncServerStreamingCall(call, request);
@@ -134,7 +126,7 @@ namespace Math {
         var call = CreateCall(__Method_Sum, new CallOptions(headers, deadline, cancellationToken));
         return Calls.AsyncClientStreamingCall(call);
       }
-      public AsyncClientStreamingCall<global::math.Num, global::math.Num> Sum(CallOptions options)
+      public AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options)
       {
         var call = CreateCall(__Method_Sum, options);
         return Calls.AsyncClientStreamingCall(call);

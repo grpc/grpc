@@ -176,14 +176,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             type_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
@@ -377,14 +373,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
@@ -549,14 +541,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 10: {
             if (payload_ == null) {
@@ -669,14 +657,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 10: {
             if (payload_ == null) {
@@ -778,14 +762,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             AggregatedPayloadSize = input.ReadInt32();
@@ -906,14 +886,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             Size = input.ReadInt32();
@@ -1055,14 +1031,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
@@ -1175,14 +1147,10 @@ namespace Grpc.Testing {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 10: {
             if (payload_ == null) {

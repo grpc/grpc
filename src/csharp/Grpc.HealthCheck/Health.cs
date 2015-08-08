@@ -153,14 +153,10 @@ namespace Grpc.Health.V1Alpha {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 10: {
             Host = input.ReadString();
@@ -263,14 +259,10 @@ namespace Grpc.Health.V1Alpha {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             status_ = (global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) input.ReadEnum();

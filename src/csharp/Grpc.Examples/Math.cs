@@ -156,14 +156,10 @@ namespace Math {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             Dividend = input.ReadInt64();
@@ -288,14 +284,10 @@ namespace Math {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             Quotient = input.ReadInt64();
@@ -398,14 +390,10 @@ namespace Math {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             Limit = input.ReadInt64();
@@ -504,14 +492,10 @@ namespace Math {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             Num_ = input.ReadInt64();
@@ -610,14 +594,10 @@ namespace Math {
 
     public void MergeFrom(pb::CodedInputStream input) {
       uint tag;
-      while (input.ReadTag(out tag)) {
+      while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
-          case 0:
-            throw pb::InvalidProtocolBufferException.InvalidTag();
           default:
-            if (pb::WireFormat.IsEndGroupTag(tag)) {
-              return;
-            }
+            input.SkipLastField();
             break;
           case 8: {
             Count = input.ReadInt64();
