@@ -83,7 +83,6 @@ class ZookeeperTest : public ::testing::Test {
       zookeeper_address_ = addr_str;
       gpr_free(addr);
     }
-    zookeeper_address_ = "grpc-jenkins-master:2181";
     gpr_log(GPR_DEBUG, zookeeper_address_.c_str());
     ZookeeperSetUp(port);
 
@@ -96,7 +95,6 @@ class ZookeeperTest : public ::testing::Test {
 
   void ZookeeperSetUp(int port) {
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-    gpr_log(GPR_DEBUG, zookeeper_address_.c_str());
     zookeeper_handle_ = zookeeper_init(zookeeper_address_.c_str(), NULL, 15000, 0, 0, 0);
     GPR_ASSERT(zookeeper_handle_ != NULL);
 
