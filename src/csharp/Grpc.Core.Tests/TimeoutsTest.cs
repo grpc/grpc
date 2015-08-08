@@ -132,20 +132,16 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void ServerReceivesCancellationOnTimeout()
+        public async Task ServerReceivesCancellationOnTimeout()
         {
-            object myLock = new object();
-            string receivedCancellation = "NO";
+            var serverReceivedCancellationTcs = new TaskCompletionSource<bool>();
 
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
                 // wait until cancellation token is fired.
                 var tcs = new TaskCompletionSource<object>();
                 context.CancellationToken.Register(() => { tcs.SetResult(null); });
                 await tcs.Task;
-                lock (myLock)
-                {
-                    receivedCancellation = "YES";
-                }
+                serverReceivedCancellationTcs.SetResult(true);
                 return "";
             });
 
@@ -153,10 +149,7 @@ namespace Grpc.Core.Tests
             // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
             Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
 
-            lock (myLock)
-            {
-                Assert.AreEqual("YES", receivedCancellation);
-            }
+            Assert.IsTrue(await serverReceivedCancellationTcs.Task);
         }
     }
 }

@@ -174,7 +174,7 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void AsyncUnaryCall_EchoMetadata()
+        public async Task AsyncUnaryCall_EchoMetadata()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
@@ -194,8 +194,7 @@ namespace Grpc.Core.Tests
                 new Metadata.Entry("binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff }),
             };
             var call = Calls.AsyncUnaryCall(helper.CreateUnaryCall(new CallOptions(headers: headers)), "ABC");
-
-            Assert.AreEqual("ABC", call.ResponseAsync.Result);
+            await call;
 
             Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
 
@@ -218,6 +217,10 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCallPerformance()
         {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+                return request;
+            });
+
             var callDetails = helper.CreateUnaryCall();
             BenchmarkUtil.RunBenchmark(100, 100,
                                        () => { Calls.BlockingUnaryCall(callDetails, "ABC"); });
