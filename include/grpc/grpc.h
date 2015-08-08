@@ -181,7 +181,9 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_MESSAGE,
   /** completion queue for notification has not been registered with the
       server */
-  GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
+  GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
+  /** this batch of operations leads to more operations than allowed */
+  GRPC_CALL_ERROR_BATCH_TOO_BIG
 } grpc_call_error;
 
 /* Write Flags: */
