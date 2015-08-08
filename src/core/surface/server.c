@@ -818,10 +818,9 @@ grpc_server *grpc_server_create_from_filters(
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
-  /* TODO(census): restore this once we rework census filter
   if (census_enabled) {
     server->channel_filters[1] = &grpc_server_census_filter;
-    } */
+  }
   for (i = 0; i < filter_count; i++) {
     server->channel_filters[i + 1 + census_enabled] = filters[i];
   }
