@@ -1481,6 +1481,7 @@
   {
     "ci_platforms": [
       "linux", 
+      "mac", 
       "posix", 
       "windows"
     ], 
@@ -1495,6 +1496,11 @@
     ]
   }, 
   {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fake_security_bad_hostname_test", 
