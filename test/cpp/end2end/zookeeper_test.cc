@@ -83,6 +83,8 @@ class ZookeeperTest : public ::testing::Test {
       zookeeper_address_ = addr_str;
       gpr_free(addr);
     }
+    zookeeper_address_ = "grpc-jenkins-master:2181";
+    gpr_log(GPR_DEBUG, zookeeper_address_.c_str());
     ZookeeperSetUp(port);
 
     // Setup server
