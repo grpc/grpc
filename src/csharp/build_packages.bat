@@ -1,8 +1,9 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.6.0
-set CORE_VERSION=0.10.0
+set VERSION=0.7.0-preview20150808
+set CORE_VERSION=0.11.0-preview20150808
+set PROTOBUF_VERSION=3.0.0-a20150808-e58cdbd214
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
@@ -17,7 +18,7 @@ endlocal
 %NUGET% pack ..\..\vsprojects\nuget_package\grpc.native.csharp_ext.nuspec -Version %CORE_VERSION% || goto :error
 %NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% -Properties GrpcNativeCsharpExtVersion=%CORE_VERSION% || goto :error
-%NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION% || goto :error
+%NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% || goto :error
 %NUGET% pack Grpc.nuspec -Version %VERSION% || goto :error
 
