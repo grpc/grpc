@@ -74,14 +74,12 @@ then
   # Make sure the CID file is gone.
   rm -f docker.cid
 
-  # Zookeeper test server address
-  export GRPC_ZOOKEEPER_SERVER_TEST="grpc-jenkins-master:2181"
-
   # Run tests inside docker
   docker run \
     -e "config=$config" \
     -e "language=$language" \
     -e "arch=$arch" \
+    -e "GRPC_ZOOKEEPER_SERVER_TEST=grpc-jenkins-master:2181" \
     -e CCACHE_DIR=/tmp/ccache \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
