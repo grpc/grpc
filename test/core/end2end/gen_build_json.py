@@ -36,27 +36,27 @@ import simplejson
 import collections
 
 
-FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack includes_proxy dns_resolver secure platforms')
-default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'linux', 'mac', 'posix'])
+FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack includes_proxy dns_resolver secure platforms ci_mac')
+default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
-    'chttp2_fake_security': default_secure_fixture_options,
+    'chttp2_fake_security': default_secure_fixture_options._replace(ci_mac=False),
     'chttp2_fullstack': default_unsecure_fixture_options,
     'chttp2_fullstack_compression': default_unsecure_fixture_options,
     'chttp2_fullstack_uds_posix': uds_fixture_options,
     'chttp2_fullstack_uds_posix_with_poll': uds_fixture_options._replace(platforms=['linux']),
     'chttp2_fullstack_with_poll': default_unsecure_fixture_options._replace(platforms=['linux']),
-    'chttp2_fullstack_with_proxy': default_unsecure_fixture_options._replace(includes_proxy=True),
+    'chttp2_fullstack_with_proxy': default_unsecure_fixture_options._replace(includes_proxy=True, ci_mac=False),
     'chttp2_simple_ssl_fullstack': default_secure_fixture_options,
     'chttp2_simple_ssl_fullstack_with_poll': default_secure_fixture_options._replace(platforms=['linux']),
-    'chttp2_simple_ssl_fullstack_with_proxy': default_secure_fixture_options._replace(includes_proxy=True),
-    'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options,
-    'chttp2_socket_pair': socketpair_unsecure_fixture_options,
-    'chttp2_socket_pair_one_byte_at_a_time': socketpair_unsecure_fixture_options,
+    'chttp2_simple_ssl_fullstack_with_proxy': default_secure_fixture_options._replace(includes_proxy=True, ci_mac=False),
+    'chttp2_simple_ssl_with_oauth2_fullstack': default_secure_fixture_options._replace(ci_mac=False),
+    'chttp2_socket_pair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
+    'chttp2_socket_pair_one_byte_at_a_time': socketpair_unsecure_fixture_options._replace(ci_mac=False),
     'chttp2_socket_pair_with_grpc_trace': socketpair_unsecure_fixture_options,
 }
 
@@ -113,6 +113,12 @@ def compatible(f, t):
     if END2END_FIXTURES[f].includes_proxy:
       return False
   return True
+
+
+def without(l, e):
+  l = l[:]
+  l.remove(e)
+  return l
 
 
 def main():
@@ -173,6 +179,9 @@ def main():
               'src': [],
               'flaky': END2END_TESTS[t].flaky,
               'platforms': END2END_FIXTURES[f].platforms,
+              'ci_platforms': (END2END_FIXTURES[f].platforms 
+                               if END2END_FIXTURES[f].ci_mac 
+                               else without(END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t] + sec_deps
@@ -188,6 +197,9 @@ def main():
               'src': [],
               'flaky': END2END_TESTS[t].flaky,
               'platforms': END2END_FIXTURES[f].platforms,
+              'ci_platforms': (END2END_FIXTURES[f].platforms 
+                               if END2END_FIXTURES[f].ci_mac 
+                               else without(END2END_FIXTURES[f].platforms, 'mac')),
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t] + unsec_deps

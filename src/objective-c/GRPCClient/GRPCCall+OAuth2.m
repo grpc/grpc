@@ -31,39 +31,33 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
-#define GRPC_TEST_CORE_END2END_END2END_TESTS_H
+#import "GRPCCall+OAuth2.h"
 
-#include <grpc/grpc.h>
+static NSString * const kAuthorizationHeader = @"authorization";
+static NSString * const kBearerPrefix = @"Bearer ";
+static NSString * const kChallengeHeader = @"www-authenticate";
 
-typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
-typedef struct grpc_end2end_test_config grpc_end2end_test_config;
+@implementation GRPCCall (OAuth2)
 
-#define FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION 1
-#define FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION 2
-#define FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS 4
+- (NSString *)oauth2AccessToken {
+  NSString *headerValue = self.requestMetadata[kAuthorizationHeader];
+  if ([headerValue hasPrefix:kBearerPrefix]) {
+    return [headerValue substringFromIndex:kBearerPrefix.length];
+  } else {
+    return nil;
+  }
+}
 
-#define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
+- (void)setOauth2AccessToken:(NSString *)token {
+  if (token) {
+    self.requestMetadata[kAuthorizationHeader] = [kBearerPrefix stringByAppendingString:token];
+  } else {
+    [self.requestMetadata removeObjectForKey:kAuthorizationHeader];
+  }
+}
 
-struct grpc_end2end_test_fixture {
-  grpc_completion_queue *cq;
-  grpc_server *server;
-  grpc_channel *client;
-  void *fixture_data;
-};
+- (NSString *)oauth2ChallengeHeader {
+  return self.responseMetadata[kChallengeHeader];
+}
 
-struct grpc_end2end_test_config {
-  const char *name;
-  gpr_uint32 feature_mask;
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
-                                              grpc_channel_args *server_args);
-  void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
-  void (*init_server)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture *f);
-};
-
-void grpc_end2end_tests(grpc_end2end_test_config config);
-
-#endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */
+@end

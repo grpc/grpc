@@ -401,6 +401,7 @@ static void perform_transport_stream_op(grpc_call_element *elem,
             calld->state = CALL_WAITING_FOR_CONFIG;
             add_to_lb_policy_wait_queue_locked_state_config(elem);
             if (!chand->started_resolving && chand->resolver != NULL) {
+              GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
               chand->started_resolving = 1;
               grpc_resolver_next(chand->resolver,
                                  &chand->incoming_configuration,
@@ -701,11 +702,11 @@ void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
   gpr_mu_lock(&chand->mu_config);
   GPR_ASSERT(!chand->resolver);
   chand->resolver = resolver;
-  GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
   GRPC_RESOLVER_REF(resolver, "channel");
   if (chand->waiting_for_config_closures != NULL ||
       chand->exit_idle_when_lb_policy_arrives) {
     chand->started_resolving = 1;
+    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
     grpc_resolver_next(resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
   }
@@ -724,6 +725,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     } else {
       chand->exit_idle_when_lb_policy_arrives = 1;
       if (!chand->started_resolving && chand->resolver != NULL) {
+        GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
         chand->started_resolving = 1;
         grpc_resolver_next(chand->resolver, &chand->incoming_configuration,
                            &chand->on_config_changed);

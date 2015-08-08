@@ -31,13 +31,19 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H
+#import "GRPCCall.h"
 
-#include "src/core/security/security_connector.h"
+// Helpers for setting and reading headers compatible with OAuth2.
+@interface GRPCCall (OAuth2)
 
-grpc_security_status grpc_httpcli_ssl_channel_security_connector_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const char *secure_peer_name, grpc_channel_security_connector **sc);
+// Setting this property is equivalent to setting "Bearer <passed token>" as the value of the
+// request header with key "authorization" (the authorization header). Setting it to nil removes the
+// authorization header from the request.
+// The value obtained by getting the property is the OAuth2 bearer token if the authorization header
+// of the request has the form "Bearer <token>", or nil otherwise.
+@property(atomic, copy) NSString *oauth2AccessToken;
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H */
+// Returns the value (if any) of the "www-authenticate" response header (the challenge header).
+@property(atomic, readonly) NSString *oauth2ChallengeHeader;
+
+@end

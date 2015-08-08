@@ -869,7 +869,8 @@ TEST_P(End2endTest, HugeResponse) {
 }
 
 namespace {
-void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream, gpr_event *ev) {
+void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
+                      gpr_event *ev) {
   EchoResponse resp;
   gpr_event_set(ev, (void*)1);
   while (stream->Read(&resp)) {
@@ -906,6 +907,27 @@ TEST_P(End2endTest, Peer) {
   EXPECT_TRUE(s.ok());
   EXPECT_TRUE(CheckIsLocalhost(response.param().peer()));
   EXPECT_TRUE(CheckIsLocalhost(context.peer()));
+}
+
+TEST_F(End2endTest, ChannelState) {
+  ResetStub(false);
+  // Start IDLE
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+
+  // Did not ask to connect, no state change.
+  CompletionQueue cq;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::milliseconds(10);
+  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, NULL);
+  void* tag;
+  bool ok = true;
+  cq.Next(&tag, &ok);
+  EXPECT_FALSE(ok);
+
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
+  EXPECT_TRUE(channel_->WaitForStateChange(
+      GRPC_CHANNEL_IDLE, gpr_inf_future(GPR_CLOCK_REALTIME)));
+  EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
 }
 
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest, ::testing::Values(false, true));

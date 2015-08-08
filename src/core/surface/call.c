@@ -456,20 +456,6 @@ void grpc_call_internal_ref(grpc_call *c) {
 static void destroy_call(void *call, int ignored_success) {
   size_t i;
   grpc_call *c = call;
-  grpc_call *parent = c->parent;
-  if (parent) {
-    gpr_mu_lock(&parent->mu);
-    if (call == parent->first_child) {
-      parent->first_child = c->sibling_next;
-      if (c == parent->first_child) {
-        parent->first_child = NULL;
-      }
-      c->sibling_prev->sibling_next = c->sibling_next;
-      c->sibling_next->sibling_prev = c->sibling_prev;
-    }
-    gpr_mu_unlock(&parent->mu);
-    GRPC_CALL_INTERNAL_UNREF(parent, "child", 1);
-  }
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
   GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
   gpr_mu_destroy(&c->mu);
@@ -1257,6 +1243,22 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
 
 void grpc_call_destroy(grpc_call *c) {
   int cancel;
+  grpc_call *parent = c->parent;
+
+  if (parent) {
+    gpr_mu_lock(&parent->mu);
+    if (c == parent->first_child) {
+      parent->first_child = c->sibling_next;
+      if (c == parent->first_child) {
+        parent->first_child = NULL;
+      }
+      c->sibling_prev->sibling_next = c->sibling_next;
+      c->sibling_next->sibling_prev = c->sibling_prev;
+    }
+    gpr_mu_unlock(&parent->mu);
+    GRPC_CALL_INTERNAL_UNREF(parent, "child", 1);
+  }
+
   lock(c);
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;

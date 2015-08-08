@@ -40,9 +40,7 @@
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/httpcli/format_request.h"
-#include "src/core/httpcli/httpcli_security_connector.h"
 #include "src/core/httpcli/parser.h"
-#include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -57,7 +55,7 @@ typedef struct {
   char *host;
   gpr_timespec deadline;
   int have_read_byte;
-  int use_ssl;
+  const grpc_httpcli_handshaker *handshaker;
   grpc_httpcli_response_cb on_response;
   void *user_data;
   grpc_httpcli_context *context;
@@ -67,6 +65,16 @@ typedef struct {
 
 static grpc_httpcli_get_override g_get_override = NULL;
 static grpc_httpcli_post_override g_post_override = NULL;
+
+static void plaintext_handshake(void *arg, grpc_endpoint *endpoint,
+                                const char *host,
+                                void (*on_done)(void *arg,
+                                                grpc_endpoint *endpoint)) {
+  on_done(arg, endpoint);
+}
+
+const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
+                                                        plaintext_handshake};
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context) {
   grpc_pollset_set_init(&context->pollset_set);
@@ -163,18 +171,16 @@ static void start_write(internal_request *req) {
   }
 }
 
-static void on_secure_transport_setup_done(void *rp,
-                                           grpc_security_status status,
-                                           grpc_endpoint *wrapped_endpoint,
-                                           grpc_endpoint *secure_endpoint) {
-  internal_request *req = rp;
-  if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
-    finish(req, 0);
-  } else {
-    req->ep = secure_endpoint;
-    start_write(req);
+static void on_handshake_done(void *arg, grpc_endpoint *ep) {
+  internal_request *req = arg;
+
+  if (!ep) {
+    next_address(req);
+    return;
   }
+
+  req->ep = ep;
+  start_write(req);
 }
 
 static void on_connected(void *arg, grpc_endpoint *tcp) {
@@ -184,25 +190,7 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
     next_address(req);
     return;
   }
-  req->ep = tcp;
-  if (req->use_ssl) {
-    grpc_channel_security_connector *sc = NULL;
-    const unsigned char *pem_root_certs = NULL;
-    size_t pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
-    if (pem_root_certs == NULL || pem_root_certs_size == 0) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-      finish(req, 0);
-      return;
-    }
-    GPR_ASSERT(grpc_httpcli_ssl_channel_security_connector_create(
-                   pem_root_certs, pem_root_certs_size, req->host, &sc) ==
-               GRPC_SECURITY_OK);
-    grpc_setup_secure_transport(&sc->base, tcp, on_secure_transport_setup_done,
-                                req);
-    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
-  } else {
-    start_write(req);
-  }
+  req->handshaker->handshake(req, tcp, req->host, on_handshake_done);
 }
 
 static void next_address(internal_request *req) {
@@ -245,18 +233,17 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
   req->on_response = on_response;
   req->user_data = user_data;
   req->deadline = deadline;
-  req->use_ssl = request->use_ssl;
+  req->handshaker =
+      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
   req->context = context;
   req->pollset = pollset;
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
   grpc_iomgr_register_object(&req->iomgr_obj, name);
   gpr_free(name);
-  if (req->use_ssl) {
-    req->host = gpr_strdup(request->host);
-  }
+  req->host = gpr_strdup(request->host);
 
   grpc_pollset_set_add_pollset(&req->context->pollset_set, req->pollset);
-  grpc_resolve_address(request->host, req->use_ssl ? "https" : "http",
+  grpc_resolve_address(request->host, req->handshaker->default_port,
                        on_resolved, req);
 }
 
@@ -279,18 +266,17 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
   req->on_response = on_response;
   req->user_data = user_data;
   req->deadline = deadline;
-  req->use_ssl = request->use_ssl;
+  req->handshaker =
+      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
   req->context = context;
   req->pollset = pollset;
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
   grpc_iomgr_register_object(&req->iomgr_obj, name);
   gpr_free(name);
-  if (req->use_ssl) {
-    req->host = gpr_strdup(request->host);
-  }
+  req->host = gpr_strdup(request->host);
 
   grpc_pollset_set_add_pollset(&req->context->pollset_set, req->pollset);
-  grpc_resolve_address(request->host, req->use_ssl ? "https" : "http",
+  grpc_resolve_address(request->host, req->handshaker->default_port,
                        on_resolved, req);
 }
 
