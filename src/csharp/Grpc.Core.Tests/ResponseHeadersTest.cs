@@ -63,10 +63,7 @@ namespace Grpc.Core.Tests
             server.Start();
             channel = helper.GetChannel();
 
-            headers = new Metadata
-            {
-                new Metadata.Entry("ascii-header", "abcdefg"),
-            };
+            headers = new Metadata { { "ascii-header", "abcdefg" } };
         }
 
         [TearDown]

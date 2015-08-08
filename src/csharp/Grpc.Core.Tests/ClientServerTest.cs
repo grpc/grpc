@@ -190,8 +190,8 @@ namespace Grpc.Core.Tests
 
             var headers = new Metadata
             {
-                new Metadata.Entry("ascii-header", "abcdefg"),
-                new Metadata.Entry("binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff }),
+                { "ascii-header", "abcdefg" },
+                { "binary-header-bin", new byte[] { 1, 2, 3, 0, 0xff } }
             };
             var call = Calls.AsyncUnaryCall(helper.CreateUnaryCall(new CallOptions(headers: headers)), "ABC");
             await call;

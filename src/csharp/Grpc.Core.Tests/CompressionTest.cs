@@ -94,7 +94,7 @@ namespace Grpc.Core.Tests
 
                 context.WriteOptions = new WriteOptions(WriteFlags.NoCompress);
 
-                await context.WriteResponseHeadersAsync(new Metadata { new Metadata.Entry("ascii-header", "abcdefg") });
+                await context.WriteResponseHeadersAsync(new Metadata { { "ascii-header", "abcdefg" } });
 
                 await responseStream.WriteAsync("X");
 
