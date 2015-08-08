@@ -113,16 +113,9 @@ namespace Grpc.Core.Tests
                 return "FAIL";
             });
 
-            try
-            {
-                Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MinValue)), "abc");
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-                Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
-            }
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MinValue)), "abc"));
+            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
         }
 
         [Test]
@@ -133,16 +126,9 @@ namespace Grpc.Core.Tests
                 return "FAIL";
             });
 
-            try
-            {
-                Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc");
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-                Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
-            }
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
+            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
         }
 
         [Test]
@@ -163,16 +149,9 @@ namespace Grpc.Core.Tests
                 return "";
             });
 
-            try
-            {
-                Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc");
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                // We can't guarantee the status code is always DeadlineExceeded. See issue #2685.
-                Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
-            }
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
+            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
 
             lock (myLock)
             {
