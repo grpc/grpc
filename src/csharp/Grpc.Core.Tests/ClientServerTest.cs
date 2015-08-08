@@ -217,7 +217,8 @@ namespace Grpc.Core.Tests
         [Test]
         public void UnaryCallPerformance()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
                 return request;
             });
 

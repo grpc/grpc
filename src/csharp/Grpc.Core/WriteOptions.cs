@@ -54,7 +54,6 @@ namespace Grpc.Core
         NoCompress = 0x2
     }
 
-
     /// <summary>
     /// Options for write operations.
     /// </summary>

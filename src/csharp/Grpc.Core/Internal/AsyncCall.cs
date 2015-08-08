@@ -279,7 +279,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public CallInvocationDetails<TRequest, TResponse>  Details
+        public CallInvocationDetails<TRequest, TResponse> Details
         {
             get
             {

@@ -78,7 +78,8 @@ namespace Grpc.Core.Tests
         [Test]
         public void InfiniteDeadline()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
                 Assert.AreEqual(DateTime.MaxValue, context.Deadline);
                 return "PASS";
             });
@@ -95,7 +96,8 @@ namespace Grpc.Core.Tests
         {
             var clientDeadline = DateTime.UtcNow + TimeSpan.FromDays(7);
 
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
                 // A fairly relaxed check that the deadline set by client and deadline seen by server
                 // are in agreement. C core takes care of the work with transferring deadline over the wire,
                 // so we don't need an exact check here.
@@ -108,7 +110,8 @@ namespace Grpc.Core.Tests
         [Test]
         public void DeadlineInThePast()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
                 await Task.Delay(60000);
                 return "FAIL";
             });
@@ -121,7 +124,8 @@ namespace Grpc.Core.Tests
         [Test]
         public void DeadlineExceededStatusOnTimeout()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
                 await Task.Delay(60000);
                 return "FAIL";
             });
@@ -136,7 +140,8 @@ namespace Grpc.Core.Tests
         {
             var serverReceivedCancellationTcs = new TaskCompletionSource<bool>();
 
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => 
+            {
                 // wait until cancellation token is fired.
                 var tcs = new TaskCompletionSource<object>();
                 context.CancellationToken.Register(() => { tcs.SetResult(null); });

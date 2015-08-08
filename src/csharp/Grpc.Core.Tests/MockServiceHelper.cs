@@ -199,6 +199,7 @@ namespace Grpc.Core.Tests
             {
                 return this.unaryHandler;
             }
+
             set
             {
                 unaryHandler = value;
@@ -211,6 +212,7 @@ namespace Grpc.Core.Tests
             {
                 return this.clientStreamingHandler;
             }
+
             set
             {
                 clientStreamingHandler = value;
@@ -223,6 +225,7 @@ namespace Grpc.Core.Tests
             {
                 return this.serverStreamingHandler;
             }
+
             set
             {
                 serverStreamingHandler = value;
@@ -235,6 +238,7 @@ namespace Grpc.Core.Tests
             {
                 return this.duplexStreamingHandler;
             }
+
             set
             {
                 duplexStreamingHandler = value;

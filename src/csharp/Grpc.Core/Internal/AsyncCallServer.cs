@@ -107,10 +107,11 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
+                Preconditions.CheckNotNull(headers, "metadata");
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
                 Preconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
-                Preconditions.CheckState(streamingWritesCounter > 0, "Response headers can only be sent before the first write starts.");
+                Preconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
                 CheckSendingAllowed();
 
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
