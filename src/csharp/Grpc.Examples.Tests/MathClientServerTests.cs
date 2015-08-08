@@ -92,15 +92,8 @@ namespace math.Tests
         [Test]
         public void DivByZero()
         {
-            try
-            {
-                DivReply response = client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 0 }.Build());
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
-            }   
+            var ex = Assert.Throws<RpcException>(() => client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 0 }.Build()));
+            Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
         }
 
         [Test]
@@ -158,15 +151,10 @@ namespace math.Tests
             using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
                 deadline: DateTime.UtcNow.AddMilliseconds(500)))
             {
-                try
-                {
-                    await call.ResponseStream.ToList();
-                    Assert.Fail();
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
-                }
+                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.ToList());
+
+                // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+                Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
             }
         }
 
