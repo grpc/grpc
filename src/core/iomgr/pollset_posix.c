@@ -392,7 +392,7 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
     /* Already kicked */
     return;
   }
-  GRPC_TIMER_BEGIN(GRPC_PTAG_POLLSET, r);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_POLLSET, kfd);
   pfd[0].fd = GRPC_POLLSET_KICK_GET_FD(kfd);
   pfd[0].events = POLLIN;
   pfd[0].revents = 0;
@@ -445,7 +445,7 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter--;
-  GRPC_TIMER_END(GRPC_PTAG_POLLSET, r);
+  GRPC_TIMER_END(GRPC_PTAG_POLLSET, kfd);
 }
 
 static void basic_pollset_destroy(grpc_pollset *pollset) {
