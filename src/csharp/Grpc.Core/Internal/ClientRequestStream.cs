@@ -58,7 +58,7 @@ namespace Grpc.Core.Internal
         public Task CompleteAsync()
         {
             var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendCloseFromClient(GetWriteFlags(), taskSource.CompletionDelegate);
+            call.StartSendCloseFromClient(taskSource.CompletionDelegate);
             return taskSource.Task;
         }
 

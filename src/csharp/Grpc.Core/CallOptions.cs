@@ -63,6 +63,7 @@ namespace Grpc.Core
             // TODO(jtattermusch): allow null value of deadline?
             this.deadline = deadline.HasValue ? deadline.Value : DateTime.MaxValue;
             this.cancellationToken = cancellationToken;
+            this.writeOptions = writeOptions;
         }
 
         /// <summary>

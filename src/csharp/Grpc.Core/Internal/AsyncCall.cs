@@ -165,7 +165,7 @@ namespace Grpc.Core.Internal
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartClientStreaming(HandleUnaryResponse, metadataArray, GetWriteFlagsForCall());
+                    call.StartClientStreaming(HandleUnaryResponse, metadataArray);
                 }
 
                 return unaryResponseTcs.Task;
@@ -211,7 +211,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartDuplexStreaming(HandleFinished, metadataArray, GetWriteFlagsForCall());
+                    call.StartDuplexStreaming(HandleFinished, metadataArray);
                 }
             }
         }
@@ -239,14 +239,14 @@ namespace Grpc.Core.Internal
         /// Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendCloseFromClient(WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendCloseFromClient(AsyncCompletionDelegate<object> completionDelegate)
         {
             lock (myLock)
             {
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendCloseFromClient(HandleHalfclosed, writeFlags);
+                call.StartSendCloseFromClient(HandleHalfclosed);
 
                 halfcloseRequested = true;
                 sendCompletionDelegate = completionDelegate;

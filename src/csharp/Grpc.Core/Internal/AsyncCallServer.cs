@@ -103,7 +103,7 @@ namespace Grpc.Core.Internal
         /// to make things simpler.
         /// completionDelegate is invoked upon completion.
         /// </summary>
-        public void StartSendInitialMetadata(Metadata headers, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendInitialMetadata(Metadata headers, AsyncCompletionDelegate<object> completionDelegate)
         {
             lock (myLock)
             {
@@ -118,7 +118,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
-                    call.StartSendInitialMetadata(HandleSendFinished, metadataArray, writeFlags);
+                    call.StartSendInitialMetadata(HandleSendFinished, metadataArray);
                 }
 
                 this.initialMetadataSent = true;
@@ -131,7 +131,7 @@ namespace Grpc.Core.Internal
         /// Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, Metadata trailers, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendStatusFromServer(Status status, Metadata trailers, AsyncCompletionDelegate<object> completionDelegate)
         {
             lock (myLock)
             {
@@ -140,7 +140,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, writeFlags, !initialMetadataSent);
+                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
                 readingDone = true;
