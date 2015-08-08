@@ -48,14 +48,17 @@ namespace Grpc.Core.Tests
     /// </summary>
     public class TimeoutsTest
     {
-        MockServiceHelper helper = new MockServiceHelper();
+        MockServiceHelper helper;
         Server server;
         Channel channel;
 
         [SetUp]
         public void Init()
         {
+            helper = new MockServiceHelper();
+
             server = helper.GetServer();
+            server.Start();
             channel = helper.GetChannel();
         }
 
@@ -145,6 +148,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void ServerReceivesCancellationOnTimeout()
         {
+            object myLock = new object();
             string receivedCancellation = "NO";
 
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => {
@@ -152,7 +156,10 @@ namespace Grpc.Core.Tests
                 var tcs = new TaskCompletionSource<object>();
                 context.CancellationToken.Register(() => { tcs.SetResult(null); });
                 await tcs.Task;
-                receivedCancellation = "YES";
+                lock (myLock)
+                {
+                    receivedCancellation = "YES";
+                }
                 return "";
             });
 
@@ -166,7 +173,11 @@ namespace Grpc.Core.Tests
                 // We can't guarantee the status code is always DeadlineExceeded. See issue #2685.
                 Assert.Contains(e.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
             }
-            Assert.AreEqual("YES", receivedCancellation);
+
+            lock (myLock)
+            {
+                Assert.AreEqual("YES", receivedCancellation);
+            }
         }
     }
 }
