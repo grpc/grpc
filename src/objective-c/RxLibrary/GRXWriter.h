@@ -65,26 +65,27 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
   GRXWriterStateFinished
 };
 
-// An object that conforms to this protocol can produce, on demand, a sequence
-// of values. The sequence may be produced asynchronously, and it may consist of
-// any number of elements, including none or an infinite number.
+// An GRXWriter object can produce, on demand, a sequence of values. The sequence may be produced
+// asynchronously, and it may consist of any number of elements, including none or an infinite
+// number.
 //
-// GRXWriter is the active dual of NSEnumerator. The difference between them
-// is thus whether the object plays an active or passive role during usage: A
-// user of NSEnumerator pulls values off it, and passes the values to a writeable.
-// A user of GRXWriter, though, just gives it a writeable, and the
-// GRXWriter instance pushes values to the writeable. This makes this protocol
-// suitable to represent a sequence of future values, as well as collections
-// with internal iteration.
+// GRXWriter is the active dual of NSEnumerator. The difference between them is thus whether the
+// object plays an active or passive role during usage: A user of NSEnumerator pulls values off it,
+// and passes the values to a writeable. A user of GRXWriter, though, just gives it a writeable, and
+// the GRXWriter instance pushes values to the writeable. This makes this protocol suitable to
+// represent a sequence of future values, as well as collections with internal iteration.
 //
-// An instance of GRXWriter can start producing values after a writeable is
-// passed to it. It can also be commanded to finish the sequence immediately
-// (with an optional error). Finally, it can be asked to pause, but the
-// conforming instance is not required to oblige.
+// An instance of GRXWriter can start producing values after a writeable is passed to it. It can
+// also be commanded to finish the sequence immediately (with an optional error). Finally, it can be
+// asked to pause, and resumed later. All GRXWriter objects support pausing and early termination.
 //
-// Unless otherwise indicated by a conforming class, no messages should be sent
-// concurrently to a GRXWriter. I.e., conforming classes aren't required to
-// be thread-safe.
+// Thread-safety:
+//
+// State transitions take immediate effect if the object is used from a single thread. Subclasses
+// might offer stronger guarantees.
+//
+// Unless otherwise indicated by a conforming subclass, no messages should be sent concurrently to a
+// GRXWriter. I.e., conforming classes aren't required to be thread-safe.
 @interface GRXWriter : NSObject
 
 // This property can be used to query the current state of the writer, which
@@ -110,9 +111,5 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
 //
 // This method might only be called on writers in the Started or Paused
 // state.
-//
-// TODO(jcanizales): Consider adding some guarantee about the immediacy of that
-// stopping. I know I've relied on it in part of the code that uses this, but
-// can't remember the details in the presence of concurrency.
 - (void)finishWithError:(NSError *)errorOrNil;
 @end
