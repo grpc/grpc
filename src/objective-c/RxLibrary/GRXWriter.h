@@ -35,33 +35,28 @@
 
 #import "GRXWriteable.h"
 
+// States of a writer.
 typedef NS_ENUM(NSInteger, GRXWriterState) {
 
-  // The writer has not yet been given a writeable to which it can push its
-  // values. To have an writer transition to the Started state, send it a
-  // startWithWriteable: message.
+  // The writer has not yet been given a writeable to which it can push its values. To have a writer
+  // transition to the Started state, send it a startWithWriteable: message.
   //
-  // An writer's state cannot be manually set to this value.
+  // A writer's state cannot be manually set to this value.
   GRXWriterStateNotStarted,
 
   // The writer might push values to the writeable at any moment.
   GRXWriterStateStarted,
 
-  // The writer is temporarily paused, and won't send any more values to the
-  // writeable unless its state is set back to Started. The writer might still
-  // transition to the Finished state at any moment, and is allowed to send
-  // writesFinishedWithError: to its writeable.
-  //
-  // Not all implementations of writer have to support pausing, and thus
-  // trying to set an writer's state to this value might have no effect.
+  // The writer is temporarily paused, and won't send any more values to the writeable unless its
+  // state is set back to Started. The writer might still transition to the Finished state at any
+  // moment, and is allowed to send writesFinishedWithError: to its writeable.
   GRXWriterStatePaused,
 
   // The writer has released its writeable and won't interact with it anymore.
   //
-  // One seldomly wants to set an writer's state to this value, as its
-  // writeable isn't notified with a writesFinishedWithError: message. Instead, sending
-  // finishWithError: to the writer will make it notify the writeable and then
-  // transition to this state.
+  // One seldomly wants to set a writer's state to this value, as its writeable isn't notified with
+  // a writesFinishedWithError: message. Instead, sending finishWithError: to the writer will make
+  // it notify the writeable and then transition to this state.
   GRXWriterStateFinished
 };
 
@@ -88,28 +83,25 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
 // GRXWriter. I.e., conforming classes aren't required to be thread-safe.
 @interface GRXWriter : NSObject
 
-// This property can be used to query the current state of the writer, which
-// determines how it might currently use its writeable. Some state transitions can
-// be triggered by setting this property to the corresponding value, and that's
-// useful for advanced use cases like pausing an writer. For more details,
-// see the documentation of the enum.
+// This property can be used to query the current state of the writer, which determines how it might
+// currently use its writeable. Some state transitions can be triggered by setting this property to
+// the corresponding value, and that's useful for advanced use cases like pausing an writer. For
+// more details, see the documentation of the enum further down.
 @property(nonatomic) GRXWriterState state;
 
-// Start sending messages to the writeable. Messages may be sent before the method
-// returns, or they may be sent later in the future. See GRXWriteable.h for the
-// different messages a writeable can receive.
+// Transition to the Started state, and start sending messages to the writeable (a reference to it
+// is retained). Messages to the writeable may be sent before the method returns, or they may be
+// sent later in the future. See GRXWriteable.h for the different messages a writeable can receive.
 //
-// If this writer draws its values from an external source (e.g. from the
-// filesystem or from a server), calling this method will commonly trigger side
-// effects (like network connections).
+// If this writer draws its values from an external source (e.g. from the filesystem or from a
+// server), calling this method will commonly trigger side effects (like network connections).
 //
 // This method might only be called on writers in the NotStarted state.
 - (void)startWithWriteable:(id<GRXWriteable>)writeable;
 
-// Send writesFinishedWithError:errorOrNil immediately to the writeable, and don't send
-// any more messages to it.
+// Send writesFinishedWithError:errorOrNil to the writeable. Then release the reference to it and
+// transition to the Finished state.
 //
-// This method might only be called on writers in the Started or Paused
-// state.
+// This method might only be called on writers in the Started or Paused state.
 - (void)finishWithError:(NSError *)errorOrNil;
 @end

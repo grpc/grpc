@@ -150,7 +150,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // If there were still request messages coming, stop them.
   @synchronized(_requestWriter) {
     _requestWriter.state = GRXWriterStateFinished;
-    _requestWriter = nil;
   }
 
   if (errorOrNil) {
@@ -288,9 +287,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  @synchronized(_requestWriter) {
-    _requestWriter = nil;
-  }
   if (errorOrNil) {
     [self cancel];
   } else {
