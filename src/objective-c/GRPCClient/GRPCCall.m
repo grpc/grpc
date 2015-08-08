@@ -84,8 +84,10 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   GRXWriter *_requestWriter;
 
   // To create a retain cycle when a call is started, up until it finishes. See
-  // |startWithWriteable:| and |finishWithError:|.
-  GRPCCall *_self;
+  // |startWithWriteable:| and |finishWithError:|. This saves users from having to retain a
+  // reference to the call object if all they're interested in is the handler being executed when
+  // the response arrives.
+  GRPCCall *_retainSelf;
 
   NSMutableDictionary *_requestMetadata;
   NSMutableDictionary *_responseMetadata;
@@ -143,7 +145,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 - (void)finishWithError:(NSError *)errorOrNil {
   // If the call isn't retained anywhere else, it can be deallocated now.
-  _self = nil;
+  _retainSelf = nil;
 
   // If there were still request messages coming, stop them.
   @synchronized(_requestWriter) {
@@ -355,7 +357,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // before being autoreleased).
   // Care is taken not to retain self strongly in any of the blocks used in this implementation, so
   // that the life of the instance is determined by this retain cycle.
-  _self = self;
+  _retainSelf = self;
 
   _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable];
   [self sendHeaders:_requestMetadata];
