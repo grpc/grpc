@@ -207,12 +207,7 @@ static GRPC_ENDO_INDEX grpc_endo_create_marker(grpc_endo_base *base, GRPC_ENDO_I
   }
 }
 
-static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
-    grpc_endo_base *base, gpr_int32 line, const char *name) {
-  /* thread safe applied */
-  GRPC_ENDO_INDEX *q;
-  gpr_int16 fallback;
-  /* begin hash function */
+static gpr_uint32 grpc_endo_hash_string(gpr_int32 line, const char *name) {
   gpr_uint32 hash = line;
   const char *c;
   for (c = name; *c != '\0'; c++) {
@@ -223,9 +218,16 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
   hash += (hash << 3);
   hash ^= (hash >> 11);
   hash += (hash << 15);
-  /* end hash function */
-  q = &(base->marker_map[hash % GRPC_ENDO_HASHSIZE]);
-  for (fallback = 100; fallback > 1; fallback--) {
+  return hash;
+}
+
+static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
+    grpc_endo_base *base, gpr_int32 line, const char *name) {
+  /* thread safe applied */
+  gpr_int16 fallback = 100;  /* times to try for thread safety before abort */
+  gpr_uint32 hash = grpc_endo_hash_string(line, name);
+  GRPC_ENDO_INDEX *q = &(base->marker_map[hash % GRPC_ENDO_HASHSIZE]);
+  while (--fallback) {
     if (*q == GRPC_ENDO_EMPTY) {  /* case 1: slot empty */
       gpr_mu_lock(&(base->mutex));
       if (*q == GRPC_ENDO_EMPTY) {  /* verify in lock - slot still empty */
@@ -238,7 +240,7 @@ static GRPC_ENDO_INDEX grpc_endo_get_or_create_marker(
       }
     } else {
       GRPC_ENDO_INDEX p = *q;
-      for (; fallback > 1; fallback--) {
+      while (--fallback) {
         while (p != GRPC_ENDO_EMPTY) {  /* case 2: between elements q and p */
           if (line == base->marker_pool[p].line) {  /* same line number */
             if (strcmp(name, base->marker_pool[p].name) == 0) {  /* also same string, found */
