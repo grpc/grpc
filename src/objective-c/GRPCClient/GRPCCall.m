@@ -250,7 +250,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     // Resume the request writer.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      @synchronized(_requestWriter) {
+      @synchronized(strongSelf->_requestWriter) {
         strongSelf->_requestWriter.state = GRXWriterStateStarted;
       }
     }
