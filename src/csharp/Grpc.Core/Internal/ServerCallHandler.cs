@@ -310,8 +310,7 @@ namespace Grpc.Core.Internal
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(GPRClockType.Realtime).ToDateTime();
 
-            return new ServerCallContext(
-                newRpc.Method, newRpc.Host, peer, realtimeDeadline,
+            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
         }
     }

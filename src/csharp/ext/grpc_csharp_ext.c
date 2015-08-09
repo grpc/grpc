@@ -376,10 +376,12 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel *channel) {
 }
 
 GPR_EXPORT grpc_call *GPR_CALLTYPE
-grpcsharp_channel_create_call(grpc_channel *channel, grpc_completion_queue *cq,
+grpcsharp_channel_create_call(grpc_channel *channel, grpc_call *parent_call,
+                              gpr_uint32 propagation_mask,
+                              grpc_completion_queue *cq,
                               const char *method, const char *host,
                               gpr_timespec deadline) {
-  return grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+  return grpc_channel_create_call(channel, parent_call, propagation_mask, cq,
                                   method, host, deadline);
 }
 

@@ -117,6 +117,7 @@
     <Compile Include="CallOptions.cs" />
     <Compile Include="CompressionLevel.cs" />
     <Compile Include="WriteOptions.cs" />
+    <Compile Include="ContextPropagationToken.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

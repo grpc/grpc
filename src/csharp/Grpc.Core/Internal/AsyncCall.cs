@@ -324,7 +324,11 @@ namespace Grpc.Core.Internal
 
         private void Initialize(CompletionQueueSafeHandle cq)
         {
-            var call = details.Channel.Handle.CreateCall(details.Channel.Environment.CompletionRegistry, cq,
+            var propagationToken = details.Options.PropagationToken;
+            var parentCall = propagationToken != null ? propagationToken.ParentCall : CallSafeHandle.NullInstance;
+
+            var call = details.Channel.Handle.CreateCall(details.Channel.Environment.CompletionRegistry,
+                parentCall, ContextPropagationToken.DefaultMask, cq,
                 details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline));
             details.Channel.Environment.DebugStats.ActiveClientCalls.Increment();
             InitializeInternal(call);
