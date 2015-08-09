@@ -52,7 +52,7 @@ namespace Grpc.Core
         /// <summary>
         /// Default propagation mask used by C core.
         /// </summary>
-        const ContextPropagationFlags DefaultCoreMask = (ContextPropagationFlags) 0xffff;
+        const ContextPropagationFlags DefaultCoreMask = (ContextPropagationFlags)0xffff;
 
         /// <summary>
         /// Default propagation mask used by C# - we want to propagate deadline 
