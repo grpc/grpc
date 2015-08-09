@@ -48,6 +48,9 @@ service TestService {
   // TODO(Issue 527): Describe required server behavior.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
+  // One request followed by one compressed response.
+  rpc CompressedUnaryCall(SimpleRequest) returns (SimpleResponse);
+
   // One request followed by a sequence of responses (streamed download).
   // The server returns the payload with client desired type and sizes.
   rpc StreamingOutputCall(StreamingOutputCallRequest)

@@ -101,12 +101,28 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
 
   ClientContext context;
-  InteropClientContextInspector inspector(context);
+  request->set_response_type(PayloadType::COMPRESSABLE);
   request->set_response_size(kLargeResponseSize);
   grpc::string payload(kLargeRequestSize, '\0');
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   Status s = stub->UnaryCall(&context, *request, response);
+
+  AssertOkOrPrintErrorStatus(s);
+}
+
+// Shared code to set large payload, make rpc and check response payload.
+void InteropClient::PerformLargeCompressedUnary(SimpleRequest* request,
+                                                SimpleResponse* response) {
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  InteropClientContextInspector inspector(context);
+  request->set_response_size(kLargeResponseSize);
+  grpc::string payload(kLargeRequestSize, '\0');
+  request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+
+  Status s = stub->CompressedUnaryCall(&context, *request, response);
 
   // Compression related checks.
   GPR_ASSERT(request->response_compression() ==
@@ -245,6 +261,14 @@ void InteropClient::DoJwtTokenCreds(const grpc::string& username) {
 }
 
 void InteropClient::DoLargeUnary() {
+  gpr_log(GPR_INFO, "Sending a large unary rpc...");
+  SimpleRequest request;
+  SimpleResponse response;
+  PerformLargeUnary(&request, &response);
+  gpr_log(GPR_INFO, "Large unary done.");
+}
+
+void InteropClient::DoLargeCompressedUnary() {
   const CompressionType compression_types[] = {NONE, GZIP, DEFLATE};
   const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE, RANDOM};
   for (const auto payload_type : payload_types) {
@@ -293,6 +317,32 @@ void InteropClient::DoRequestStreaming() {
 }
 
 void InteropClient::DoResponseStreaming() {
+  gpr_log(GPR_INFO, "Receiving response steaming rpc ...");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  StreamingOutputCallRequest request;
+  for (unsigned int i = 0; i < response_stream_sizes.size(); ++i) {
+    ResponseParameters* response_parameter = request.add_response_parameters();
+    response_parameter->set_size(response_stream_sizes[i]);
+  }
+  StreamingOutputCallResponse response;
+  std::unique_ptr<ClientReader<StreamingOutputCallResponse>> stream(
+      stub->StreamingOutputCall(&context, request));
+
+  unsigned int i = 0;
+  while (stream->Read(&response)) {
+    GPR_ASSERT(response.payload().body() ==
+               grpc::string(response_stream_sizes[i], '\0'));
+    ++i;
+  }
+  GPR_ASSERT(response_stream_sizes.size() == i);
+  Status s = stream->Finish();
+  AssertOkOrPrintErrorStatus(s);
+  gpr_log(GPR_INFO, "Response streaming done.");
+}
+
+void InteropClient::DoResponseCompressedStreaming() {
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
 
   const CompressionType compression_types[] = {NONE, GZIP, DEFLATE};
