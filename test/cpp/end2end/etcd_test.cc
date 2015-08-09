@@ -34,6 +34,7 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/echo.grpc.pb.h"
+#include "src/core/support/env.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -70,12 +71,18 @@ class EtcdTest : public ::testing::Test {
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
-    server_address_ = "localhost:" + std::to_string(port);
+    server_address_ = "localhost:1111";
 
     // Setup etcd
     // Require etcd server running in Jenkins master
-    const char* etcd_address = "localhost:4001";
-    EtcdSetUp(etcd_address, port);
+    etcd_address_ = "localhost:4001";
+    char* addr = gpr_getenv("GRPC_ETCD_SERVER_TEST");
+    if (addr != NULL) {
+      string addr_str(addr);
+      etcd_address_ = addr_str;
+      gpr_free(addr);
+    }
+    EtcdSetUp(port);
 
     // Setup server
     ServerBuilder builder;
@@ -84,7 +91,7 @@ class EtcdTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void EtcdSetUp(const char* etcd_address, int port) {
+  void EtcdSetUp(int port) {
     // Register etcd name resolver in grpc
     grpc_etcd_register();
   }
@@ -94,16 +101,17 @@ class EtcdTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    channel_ = CreateChannel("etcd://localhost:4001/test",
-                             InsecureCredentials(), ChannelArguments());
+    string target = "etcd://" + etcd_address_ + "/test";
+    channel_ = CreateChannel(target, InsecureCredentials(), ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
   std::shared_ptr<ChannelInterface> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  std::string server_address_;
+  string server_address_;
   EtcdTestServiceImpl service_;
+  string etcd_address_;
 };
 
 // Simple echo RPC
@@ -116,6 +124,7 @@ TEST_F(EtcdTest, SimpleRpc) {
   context.set_authority("test");
   request.set_message("Hello");
   Status s = stub_->Echo(&context, request, &response);
+  gpr_log(GPR_DEBUG, "response: %s", response.message().c_str());
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 }
