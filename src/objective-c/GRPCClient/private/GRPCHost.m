@@ -57,13 +57,16 @@
 
 // Default initializer.
 - (instancetype)initWithAddress:(NSString *)address {
+  if (!address) {
+    return nil;
+  }
 
   // To provide a default port, we try to interpret the address. If it's just a host name without
   // scheme and without port, we'll use port 443. If it has a scheme, we pass it untouched to the C
   // gRPC library.
   // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
   NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
-  if (hostURL && !hostURL.port) {
+  if (hostURL.host && !hostURL.port) {
     address = [hostURL.host stringByAppendingString:@":443"];
   }
 
