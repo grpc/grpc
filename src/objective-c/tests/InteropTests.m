@@ -128,7 +128,7 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:16 handler:nil];
 }
 
 - (void)testClientStreamingRPC {
