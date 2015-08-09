@@ -67,4 +67,18 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
 grpc_channel_args *grpc_channel_args_set_compression_algorithm(
     grpc_channel_args *a, grpc_compression_algorithm algorithm);
 
+/** Sets the support for the given compression algorithm. By default, all
+ * compression algorithms are enabled. Disabling an algorithm set by 
+ * grpc_channel_args_set_compression_algorithm disables compression altogether
+ * */
+grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
+    grpc_channel_args *a,
+    grpc_compression_algorithm algorithm,
+    int enabled);
+
+/** Returns the state (true for enabled, false for disabled) for \a algorithm */
+int grpc_channel_args_compression_algorithm_get_state(
+    grpc_channel_args *a,
+    grpc_compression_algorithm algorithm);
+
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */

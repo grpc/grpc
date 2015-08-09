@@ -148,8 +148,6 @@ class TestServiceImpl : public TestService::Service {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
     }
-    const gpr_uint32 client_accept_encodings_bitset =
-        inspector.GetEncodingsAcceptedByClient();
 
     if (request->has_response_status()) {
       return Status(static_cast<grpc::StatusCode>

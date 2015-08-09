@@ -42,6 +42,7 @@ extern "C" {
 
 /** To be used in channel arguments */
 #define GRPC_COMPRESSION_ALGORITHM_ARG "grpc.compression_algorithm"
+#define GRPC_COMPRESSION_ALGORITHM_STATE_ARG "grpc.compression_algorithm_state"
 
 /* The various compression algorithms supported by GRPC */
 typedef enum {
