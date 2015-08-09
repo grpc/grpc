@@ -31,13 +31,29 @@
  *
  */
 
-#import <XCTest/XCTest.h>
+// Repeat of the tests in InteropTests.m, but using SSL to communicate with the local server instead
+// of cleartext.
 
-// Implements tests as described here:
-// https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+#import <GRPCClient/GRPCCall+Tests.h>
 
-@interface InteropTests : XCTestCase
-// Returns @"grpc-test.sandbox.google.com".
-// Override in a subclass to perform the same tests against a different address.
-+ (NSString *)host;
+#import "InteropTests.h"
+
+static NSString * const kLocalCleartextHost = @"localhost:5050";
+
+@interface InteropTestsLocalCleartext : InteropTests
+@end
+
+@implementation InteropTestsLocalCleartext
+
++ (NSString *)host {
+  return kLocalCleartextHost;
+}
+
+- (void)setUp {
+  // Register test server as non-SSL.
+  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
+
+  [super setUp];
+}
+
 @end
