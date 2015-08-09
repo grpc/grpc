@@ -46,8 +46,8 @@ namespace Grpc.Core
 
         public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
-            this.serializer = Preconditions.CheckNotNull(serializer);
-            this.deserializer = Preconditions.CheckNotNull(deserializer);
+            this.serializer = Preconditions.CheckNotNull(serializer, "serializer");
+            this.deserializer = Preconditions.CheckNotNull(deserializer, "deserializer");
         }
 
         public Func<T, byte[]> Serializer

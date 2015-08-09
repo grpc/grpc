@@ -192,7 +192,7 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(serverPort.Credentials);
+                Preconditions.CheckNotNull(serverPort.Credentials, "serverPort");
                 Preconditions.CheckState(!startRequested);
                 var address = string.Format("{0}:{1}", serverPort.Host, serverPort.Port);
                 int boundPort;

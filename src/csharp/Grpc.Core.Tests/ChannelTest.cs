@@ -50,7 +50,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void Constructor_RejectsInvalidParams()
         {
-            Assert.Throws(typeof(NullReferenceException), () => new Channel(null, Credentials.Insecure));
+            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, Credentials.Insecure));
         }
 
         [Test]

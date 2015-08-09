@@ -56,12 +56,12 @@ namespace Grpc.Core
 
         public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallOptions options)
         {
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.method = Preconditions.CheckNotNull(method);
+            this.channel = Preconditions.CheckNotNull(channel, "channel");
+            this.method = Preconditions.CheckNotNull(method, "method");
             this.host = host;
-            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
-            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
-            this.options = Preconditions.CheckNotNull(options);
+            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
+            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
+            this.options = Preconditions.CheckNotNull(options, "options");
         }
 
         public Channel Channel

@@ -62,10 +62,10 @@ namespace Grpc.Core
         public Method(MethodType type, string serviceName, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
         {
             this.type = type;
-            this.serviceName = Preconditions.CheckNotNull(serviceName);
-            this.name = Preconditions.CheckNotNull(name);
-            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
-            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
+            this.serviceName = Preconditions.CheckNotNull(serviceName, "serviceName");
+            this.name = Preconditions.CheckNotNull(name, "name");
+            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
+            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
             this.fullName = GetFullName(serviceName);
         }
 
@@ -122,7 +122,7 @@ namespace Grpc.Core
         /// </summary>
         internal string GetFullName(string serviceName)
         {
-            return "/" + Preconditions.CheckNotNull(serviceName) + "/" + this.Name;
+            return "/" + Preconditions.CheckNotNull(serviceName, "serviceName") + "/" + this.Name;
         }
     }
 }

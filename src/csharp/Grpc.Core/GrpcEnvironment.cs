@@ -115,7 +115,7 @@ namespace Grpc.Core
         /// </summary>
         public static void SetLogger(ILogger customLogger)
         {
-            Preconditions.CheckNotNull(customLogger);
+            Preconditions.CheckNotNull(customLogger, "customLogger");
             logger = customLogger;
         }
 
