@@ -31,8 +31,8 @@
  *
  */
 
-// Repeat of the tests in InteropTests.m, but using SSL to communicate with the local server instead
-// of cleartext.
+// Repeat of the tests in InteropTests.m, but sending the RPCs to a local cleartext server instead
+// of the remote SSL one.
 
 #import <GRPCClient/GRPCCall+Tests.h>
 
