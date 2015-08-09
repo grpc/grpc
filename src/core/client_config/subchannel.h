@@ -100,6 +100,9 @@ void grpc_subchannel_del_interested_party(grpc_subchannel *channel,
 void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op *op);
 
+/** continue querying for peer */
+char *grpc_subchannel_call_get_peer(grpc_subchannel_call *subchannel_call);
+
 struct grpc_subchannel_args {
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */

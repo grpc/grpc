@@ -38,6 +38,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -47,7 +48,9 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>
     {
-        Channel channel;
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
+
+        readonly CallInvocationDetails<TRequest, TResponse> callDetails;
 
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
@@ -57,26 +60,18 @@ namespace Grpc.Core.Internal
 
         bool readObserverCompleted;  // True if readObserver has already been completed.
 
-        public AsyncCall(Func<TRequest, byte[]> serializer, Func<byte[], TResponse> deserializer) : base(serializer, deserializer)
+        public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
+            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
         {
-        }
-
-        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName)
-        {
-            this.channel = channel;
-            var call = CallSafeHandle.Create(channel.Handle, channel.CompletionRegistry, cq, methodName, channel.Target, Timespec.InfFuture);
-            channel.Environment.DebugStats.ActiveClientCalls.Increment();
-            InitializeInternal(call);
+            this.callDetails = callDetails;
         }
 
         // TODO: this method is not Async, so it shouldn't be in AsyncCall class, but 
         // it is reusing fair amount of code in this class, so we are leaving it here.
-        // TODO: for other calls, you need to call Initialize, this methods calls initialize 
-        // on its own, so there's a usage inconsistency.
         /// <summary>
         /// Blocking unary request - unary response call.
         /// </summary>
-        public TResponse UnaryCall(Channel channel, string methodName, TRequest msg, Metadata headers)
+        public TResponse UnaryCall(TRequest msg)
         {
             using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
             {
@@ -86,13 +81,15 @@ namespace Grpc.Core.Internal
 
                 lock (myLock)
                 {
-                    Initialize(channel, cq, methodName);
+                    Preconditions.CheckState(!started);
                     started = true;
+                    Initialize(cq);
+
                     halfcloseRequested = true;
                     readingDone = true;
                 }
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     using (var ctx = BatchContextSafeHandle.Create())
                     {
@@ -106,7 +103,7 @@ namespace Grpc.Core.Internal
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+                            Logger.Error(e, "Exception occured while invoking completion delegate.");
                         }
                     }
                 }
@@ -126,20 +123,22 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - unary response call.
         /// </summary>
-        public Task<TResponse> UnaryCallAsync(TRequest msg, Metadata headers)
+        public Task<TResponse> UnaryCallAsync(TRequest msg)
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(call);
-
+                Preconditions.CheckState(!started);
                 started = true;
+
+                Initialize(callDetails.Channel.Environment.CompletionQueue);
+
                 halfcloseRequested = true;
                 readingDone = true;
 
                 byte[] payload = UnsafeSerialize(msg);
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartUnary(payload, HandleUnaryResponse, metadataArray);
                 }
@@ -151,17 +150,19 @@ namespace Grpc.Core.Internal
         /// Starts a streamed request - unary response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public Task<TResponse> ClientStreamingCallAsync(Metadata headers)
+        public Task<TResponse> ClientStreamingCallAsync()
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(call);
-
+                Preconditions.CheckState(!started);
                 started = true;
+
+                Initialize(callDetails.Channel.Environment.CompletionQueue);
+
                 readingDone = true;
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartClientStreaming(HandleUnaryResponse, metadataArray);
                 }
@@ -173,19 +174,21 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - streamed response call.
         /// </summary>
-        public void StartServerStreamingCall(TRequest msg, Metadata headers)
+        public void StartServerStreamingCall(TRequest msg)
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(call);
-
+                Preconditions.CheckState(!started);
                 started = true;
+
+                Initialize(callDetails.Channel.Environment.CompletionQueue);
+
                 halfcloseRequested = true;
                 halfclosed = true;  // halfclose not confirmed yet, but it will be once finishedHandler is called.
 
                 byte[] payload = UnsafeSerialize(msg);
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartServerStreaming(payload, HandleFinished, metadataArray);
                 }
@@ -196,15 +199,16 @@ namespace Grpc.Core.Internal
         /// Starts a streaming request - streaming response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public void StartDuplexStreamingCall(Metadata headers)
+        public void StartDuplexStreamingCall()
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(call);
-
+                Preconditions.CheckState(!started);
                 started = true;
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                Initialize(callDetails.Channel.Environment.CompletionQueue);
+
+                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
                 {
                     call.StartDuplexStreaming(HandleFinished, metadataArray);
                 }
@@ -306,7 +310,26 @@ namespace Grpc.Core.Internal
 
         protected override void OnReleaseResources()
         {
-            channel.Environment.DebugStats.ActiveClientCalls.Decrement();
+            callDetails.Channel.Environment.DebugStats.ActiveClientCalls.Decrement();
+        }
+
+        private void Initialize(CompletionQueueSafeHandle cq)
+        {
+            var call = callDetails.Channel.Handle.CreateCall(callDetails.Channel.Environment.CompletionRegistry, cq,
+                callDetails.Method, callDetails.Host, Timespec.FromDateTime(callDetails.Options.Deadline));
+            callDetails.Channel.Environment.DebugStats.ActiveClientCalls.Increment();
+            InitializeInternal(call);
+            RegisterCancellationCallback();
+        }
+
+        // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
+        private void RegisterCancellationCallback()
+        {
+            var token = callDetails.Options.CancellationToken;
+            if (token.CanBeCanceled)
+            {
+                token.Register(() => this.Cancel());
+            }
         }
 
         /// <summary>

@@ -61,8 +61,9 @@ int main(int argc, char **argv) {
   cqv = cq_verifier_create(cq);
 
   /* create a call, channel to a non existant server */
-  chan = grpc_channel_create("nonexistant:54321", NULL);
-  call = grpc_channel_create_call(chan, cq, "/Foo", "nonexistant", deadline);
+  chan = grpc_insecure_channel_create("nonexistant:54321", NULL);
+  call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  "/Foo", "nonexistant", deadline);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

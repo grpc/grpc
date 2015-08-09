@@ -139,7 +139,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT_VALUE(time));
         }
-        t.tv_nsec = (time_t)(d * 1e9 + 0.5);
+        t.tv_nsec = (int)(d * 1e9 + 0.5);
       }
       break;
 
@@ -209,10 +209,12 @@ static ID id_to_s;
 /* Converts a wrapped time constant to a standard time. */
 static VALUE grpc_rb_time_val_to_time(VALUE self) {
   gpr_timespec *time_const = NULL;
+  gpr_timespec real_time;
   TypedData_Get_Struct(self, gpr_timespec, &grpc_rb_timespec_data_type,
                        time_const);
-  return rb_funcall(rb_cTime, id_at, 2, INT2NUM(time_const->tv_sec),
-                    INT2NUM(time_const->tv_nsec));
+  real_time = gpr_convert_clock_type(*time_const, GPR_CLOCK_REALTIME);
+  return rb_funcall(rb_cTime, id_at, 2, INT2NUM(real_time.tv_sec),
+                    INT2NUM(real_time.tv_nsec));
 }
 
 /* Invokes inspect on the ctime version of the time val. */

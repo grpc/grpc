@@ -33,7 +33,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using Grpc.Core.Internal;
 
 namespace Grpc.Core
@@ -43,14 +43,14 @@ namespace Grpc.Core
     /// </summary>
     public class ServerServiceDefinition
     {
-        readonly ImmutableDictionary<string, IServerCallHandler> callHandlers;
+        readonly ReadOnlyDictionary<string, IServerCallHandler> callHandlers;
 
-        private ServerServiceDefinition(ImmutableDictionary<string, IServerCallHandler> callHandlers)
+        private ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
         {
-            this.callHandlers = callHandlers;
+            this.callHandlers = new ReadOnlyDictionary<string, IServerCallHandler>(callHandlers);
         }
 
-        internal ImmutableDictionary<string, IServerCallHandler> CallHandlers
+        internal IDictionary<string, IServerCallHandler> CallHandlers
         {
             get
             {
@@ -115,7 +115,7 @@ namespace Grpc.Core
 
             public ServerServiceDefinition Build()
             {
-                return new ServerServiceDefinition(callHandlers.ToImmutableDictionary());
+                return new ServerServiceDefinition(callHandlers);
             }
         }
     }

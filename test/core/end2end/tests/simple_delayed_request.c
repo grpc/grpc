@@ -107,8 +107,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
   config.init_client(f, client_args);
 
-  c = grpc_channel_create_call(f->client, f->cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -207,8 +207,7 @@ static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) {
-    test_simple_delayed_request_short(config);
-    test_simple_delayed_request_long(config);
-  }
+  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+  test_simple_delayed_request_short(config);
+  test_simple_delayed_request_long(config);
 }

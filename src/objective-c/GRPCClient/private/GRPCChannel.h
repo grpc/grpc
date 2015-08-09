@@ -35,17 +35,12 @@
 
 struct grpc_channel;
 
-// Each separate instance of this class represents at least one TCP
-// connection to the provided host. To create a grpc_call, pass the
-// value of the unmanagedChannel property to grpc_channel_create_call.
-// Release this object when the call is finished.
+// Each separate instance of this class represents at least one TCP connection to the provided host.
+// Create them using one of the subclasses |GRPCSecureChannel| and |GRPCUnsecuredChannel|.
 @interface GRPCChannel : NSObject
 @property(nonatomic, readonly) struct grpc_channel *unmanagedChannel;
 
-// Convenience constructor to allow for reuse of connections.
-+ (instancetype)channelToHost:(NSString *)host;
-
-- (instancetype)initWithHost:(NSString *)host NS_DESIGNATED_INITIALIZER;
-
+// This initializer takes ownership of the passed channel, and will destroy it when this object is
+// deallocated. It's illegal to pass the same grpc_channel to two different GRPCChannel objects.
 - (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel NS_DESIGNATED_INITIALIZER;
 @end

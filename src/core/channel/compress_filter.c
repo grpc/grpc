@@ -181,6 +181,8 @@ static void process_send_ops(grpc_call_element *elem,
   size_t i;
   int did_compress = 0;
 
+  /* In streaming calls, we need to reset the previously accumulated slices */
+  gpr_slice_buffer_reset_and_unref(&calld->slices);
   for (i = 0; i < send_ops->nops; ++i) {
     grpc_stream_op *sop = &send_ops->ops[i];
     switch (sop->type) {
@@ -299,24 +301,24 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
       grpc_channel_args_get_compression_algorithm(args);
 
   channeld->mdstr_request_compression_algorithm_key =
-      grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY);
+      grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, 0);
 
   channeld->mdstr_outgoing_compression_algorithm_key =
-      grpc_mdstr_from_string(mdctx, "grpc-encoding");
+      grpc_mdstr_from_string(mdctx, "grpc-encoding", 0);
 
   channeld->mdstr_compression_capabilities_key =
-      grpc_mdstr_from_string(mdctx, "grpc-accept-encoding");
+      grpc_mdstr_from_string(mdctx, "grpc-accept-encoding", 0);
 
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
-    char *algorith_name;
-    GPR_ASSERT(grpc_compression_algorithm_name(algo_idx, &algorith_name) != 0);
+    char *algorithm_name;
+    GPR_ASSERT(grpc_compression_algorithm_name(algo_idx, &algorithm_name) != 0);
     channeld->mdelem_compression_algorithms[algo_idx] =
         grpc_mdelem_from_metadata_strings(
             mdctx,
             GRPC_MDSTR_REF(channeld->mdstr_outgoing_compression_algorithm_key),
-            grpc_mdstr_from_string(mdctx, algorith_name));
+            grpc_mdstr_from_string(mdctx, algorithm_name, 0));
     if (algo_idx > 0) {
-      supported_algorithms_names[algo_idx-1] = algorith_name;
+      supported_algorithms_names[algo_idx-1] = algorithm_name;
     }
   }
 
@@ -332,7 +334,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
       grpc_mdelem_from_metadata_strings(
           mdctx,
           GRPC_MDSTR_REF(channeld->mdstr_compression_capabilities_key),
-          grpc_mdstr_from_string(mdctx, accept_encoding_str));
+          grpc_mdstr_from_string(mdctx, accept_encoding_str, 0));
   gpr_free(accept_encoding_str);
 
   GPR_ASSERT(!is_last);
@@ -362,4 +364,5 @@ const grpc_channel_filter grpc_compress_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     "compress"};

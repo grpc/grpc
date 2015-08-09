@@ -34,8 +34,10 @@
 #include <grpc++/client_context.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc++/credentials.h>
+#include <grpc++/server_context.h>
 #include <grpc++/time.h>
 
 #include "src/core/channel/compress_filter.h"
@@ -47,7 +49,8 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
       cq_(nullptr),
-      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
+      propagate_from_call_(nullptr) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -61,6 +64,14 @@ ClientContext::~ClientContext() {
       ;
     grpc_completion_queue_destroy(cq_);
   }
+}
+
+std::unique_ptr<ClientContext> ClientContext::FromServerContext(
+    const ServerContext& context, PropagationOptions options) {
+  std::unique_ptr<ClientContext> ctx(new ClientContext);
+  ctx->propagate_from_call_ = context.call_;
+  ctx->propagation_options_ = options;
+  return ctx;
 }
 
 void ClientContext::AddMetadata(const grpc::string& meta_key,
@@ -102,6 +113,16 @@ void ClientContext::TryCancel() {
   if (call_) {
     grpc_call_cancel(call_);
   }
+}
+
+grpc::string ClientContext::peer() const {
+  grpc::string peer;
+  if (call_) {
+    char* c_peer = grpc_call_get_peer(call_);
+    peer = c_peer;
+    gpr_free(c_peer);
+  }
+  return peer;
 }
 
 }  // namespace grpc
