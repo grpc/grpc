@@ -129,7 +129,7 @@ namespace Grpc.Core.Tests
             });
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
-            var responses = await call.ResponseStream.ToList();
+            var responses = await call.ResponseStream.ToListAsync();
             CollectionAssert.AreEqual(new[] { "A", "B" }, responses);
         }
     }
