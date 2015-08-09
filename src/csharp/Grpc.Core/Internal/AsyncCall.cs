@@ -109,15 +109,9 @@ namespace Grpc.Core.Internal
                     }
                 }
 
-                try
-                {
-                    // Once the blocking call returns, the result should be available synchronously.
-                    return unaryResponseTcs.Task.Result;
-                }
-                catch (AggregateException ae)
-                {
-                    throw ExceptionHelper.UnwrapRpcException(ae);
-                }
+                // Once the blocking call returns, the result should be available synchronously.
+                // Note that GetAwaiter().GetResult() doesn't wrap exceptions in AggregateException.
+                return unaryResponseTcs.Task.GetAwaiter().GetResult();
             }
         }
 
