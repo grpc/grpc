@@ -157,3 +157,11 @@ message StreamingOutputCallResponse {
   // Payload to increase response size.
   optional Payload payload = 1;
 }
+
+// For reconnect interop test only.
+// Server tells client whether its reconnects are following the spec and the
+// reconnect backoffs it saw.
+message ReconnectInfo {
+  optional bool passed = 1;
+  repeated int32 backoff_ms = 2;
+}

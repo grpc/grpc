@@ -111,8 +111,8 @@ static void test_request_response_with_metadata_and_payload(
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta_c[2] = {{"key1", "val1", 4, {{NULL, NULL, NULL}}},
                              {"key2", "val2", 4, {{NULL, NULL, NULL}}}};
-  grpc_metadata meta_s[2] = {{"key3", "val3", 4, {{NULL, NULL, NULL}}},
-                             {"key4", "val4", 4, {{NULL, NULL, NULL}}}};
+  grpc_metadata meta_s[2] = {{"KeY3", "val3", 4, {{NULL, NULL, NULL}}},
+                             {"KeY4", "val4", 4, {{NULL, NULL, NULL}}}};
   grpc_end2end_test_fixture f = begin_test(
       config, "test_request_response_with_metadata_and_payload", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
@@ -129,8 +129,8 @@ static void test_request_response_with_metadata_and_payload(
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

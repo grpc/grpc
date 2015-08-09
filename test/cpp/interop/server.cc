@@ -150,7 +150,12 @@ class TestServiceImpl : public TestService::Service {
     }
     const gpr_uint32 client_accept_encodings_bitset =
         inspector.GetEncodingsAcceptedByClient();
-    gpr_log(GPR_INFO, "%d", GPR_BITCOUNT(client_accept_encodings_bitset));
+
+    if (request->has_response_status()) {
+      return Status(static_cast<grpc::StatusCode>
+		    (request->response_status().code()),
+		    request->response_status().message()); 
+    }
 
     return Status::OK;
   }

@@ -592,6 +592,80 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_EQ(meta6.second, server_trailing_metadata.find(meta6.first)->second);
   EXPECT_GE(server_trailing_metadata.size(), static_cast<size_t>(2));
 }
+
+// Server uses AsyncNotifyWhenDone API to check for cancellation
+TEST_F(AsyncEnd2endTest, ServerCheckCancellation) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+
+  srv_ctx.AsyncNotifyWhenDone(tag(5));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                       cq_.get(), tag(2));
+
+  Verifier().Expect(2, true).Verify(cq_.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  cli_ctx.TryCancel();
+  Verifier().Expect(5, true).Verify(cq_.get());
+  EXPECT_TRUE(srv_ctx.IsCancelled());
+
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+  Verifier().Expect(4, false).Verify(cq_.get());
+
+  EXPECT_EQ(StatusCode::CANCELLED, recv_status.error_code());
+}
+
+// Server uses AsyncNotifyWhenDone API to check for normal finish
+TEST_F(AsyncEnd2endTest, ServerCheckDone) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+
+  srv_ctx.AsyncNotifyWhenDone(tag(5));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
+                       cq_.get(), tag(2));
+
+  Verifier().Expect(2, true).Verify(cq_.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(send_response, Status::OK, tag(3));
+  Verifier().Expect(3, true).Verify(cq_.get());
+  Verifier().Expect(5, true).Verify(cq_.get());
+  EXPECT_FALSE(srv_ctx.IsCancelled());
+
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+  Verifier().Expect(4, true).Verify(cq_.get());
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.ok());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

@@ -36,6 +36,7 @@
 
 #include <memory>
 
+#include <grpc/grpc.h>
 #include <grpc++/status.h>
 #include <grpc++/impl/call.h>
 
@@ -47,7 +48,6 @@ class CallOpBuffer;
 class ClientContext;
 class CompletionQueue;
 class RpcMethod;
-class CallInterface;
 
 class ChannelInterface : public CallHook,
                          public std::enable_shared_from_this<ChannelInterface> {
@@ -57,6 +57,34 @@ class ChannelInterface : public CallHook,
   virtual void* RegisterMethod(const char* method_name) = 0;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
                           CompletionQueue* cq) = 0;
+
+  // Get the current channel state. If the channel is in IDLE and try_to_connect
+  // is set to true, try to connect.
+  virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
+
+  // Return the tag on cq when the channel state is changed or deadline expires.
+  // GetState needs to called to get the current state.
+  template <typename T>
+  void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
+                           CompletionQueue* cq, void* tag) {
+    TimePoint<T> deadline_tp(deadline);
+    NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
+  }
+
+  // Blocking wait for channel state change or deadline expiration.
+  // GetState needs to called to get the current state.
+  template <typename T>
+  bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline) {
+    TimePoint<T> deadline_tp(deadline);
+    return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
+  }
+
+ private:
+  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+                                       gpr_timespec deadline,
+                                       CompletionQueue* cq, void* tag) = 0;
+  virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+                                      gpr_timespec deadline) = 0;
 };
 
 }  // namespace grpc

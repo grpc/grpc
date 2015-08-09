@@ -53,16 +53,20 @@ namespace Grpc.Core
     public class Method<TRequest, TResponse>
     {
         readonly MethodType type;
+        readonly string serviceName;
         readonly string name;
         readonly Marshaller<TRequest> requestMarshaller;
         readonly Marshaller<TResponse> responseMarshaller;
+        readonly string fullName;
 
-        public Method(MethodType type, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
+        public Method(MethodType type, string serviceName, string name, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller)
         {
             this.type = type;
-            this.name = name;
-            this.requestMarshaller = requestMarshaller;
-            this.responseMarshaller = responseMarshaller;
+            this.serviceName = Preconditions.CheckNotNull(serviceName);
+            this.name = Preconditions.CheckNotNull(name);
+            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
+            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
+            this.fullName = GetFullName(serviceName);
         }
 
         public MethodType Type
@@ -70,6 +74,14 @@ namespace Grpc.Core
             get
             {
                 return this.type;
+            }
+        }
+            
+        public string ServiceName
+        {
+            get
+            {
+                return this.serviceName;
             }
         }
 
@@ -94,6 +106,14 @@ namespace Grpc.Core
             get
             {
                 return this.responseMarshaller;
+            }
+        }
+
+        public string FullName
+        {
+            get
+            {
+                return this.fullName;
             }
         }
 

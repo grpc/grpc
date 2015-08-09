@@ -187,6 +187,15 @@ static void expect_sockaddr_str(const char *expected, void *addr,
   gpr_free(str);
 }
 
+static void expect_sockaddr_uri(const char *expected, void *addr) {
+  char *str;
+  gpr_log(GPR_INFO, "  expect_sockaddr_uri(%s)", expected);
+  str = grpc_sockaddr_to_uri((struct sockaddr *)addr);
+  GPR_ASSERT(str != NULL);
+  GPR_ASSERT(strcmp(expected, str) == 0);
+  gpr_free(str);
+}
+
 static void test_sockaddr_to_string(void) {
   struct sockaddr_in input4;
   struct sockaddr_in6 input6;
@@ -199,23 +208,28 @@ static void test_sockaddr_to_string(void) {
   input4 = make_addr4(kIPv4, sizeof(kIPv4));
   expect_sockaddr_str("192.0.2.1:12345", &input4, 0);
   expect_sockaddr_str("192.0.2.1:12345", &input4, 1);
+  expect_sockaddr_uri("ipv4:192.0.2.1:12345", &input4);
 
   input6 = make_addr6(kIPv6, sizeof(kIPv6));
   expect_sockaddr_str("[2001:db8::1]:12345", &input6, 0);
   expect_sockaddr_str("[2001:db8::1]:12345", &input6, 1);
+  expect_sockaddr_uri("ipv6:[2001:db8::1]:12345", &input6);
 
   input6 = make_addr6(kMapped, sizeof(kMapped));
   expect_sockaddr_str("[::ffff:192.0.2.1]:12345", &input6, 0);
   expect_sockaddr_str("192.0.2.1:12345", &input6, 1);
+  expect_sockaddr_uri("ipv4:192.0.2.1:12345", &input6);
 
   input6 = make_addr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
   expect_sockaddr_str("[::fffe:c000:263]:12345", &input6, 0);
   expect_sockaddr_str("[::fffe:c000:263]:12345", &input6, 1);
+  expect_sockaddr_uri("ipv6:[::fffe:c000:263]:12345", &input6);
 
   memset(&dummy, 0, sizeof(dummy));
   dummy.sa_family = 123;
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
+  GPR_ASSERT(grpc_sockaddr_to_uri(&dummy) == NULL);
 
   GPR_ASSERT(errno == 0x7EADBEEF);
 }

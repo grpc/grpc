@@ -70,6 +70,7 @@ DEFINE_string(test_case, "large_unary",
               "jwt_token_creds: large_unary with JWT token auth; "
               "oauth2_auth_token: raw oauth2 access token auth; "
               "per_rpc_creds: raw oauth2 access token on a single rpc; "
+	      "status_code_and_message: verify status code & message; "
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -82,7 +83,7 @@ using grpc::testing::GetServiceAccountJsonKey;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-
+  gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
   grpc::testing::InteropClient client(
       CreateChannelForTestCase(FLAGS_test_case));
@@ -121,6 +122,8 @@ int main(int argc, char** argv) {
   } else if (FLAGS_test_case == "per_rpc_creds") {
     grpc::string json_key = GetServiceAccountJsonKey();
     client.DoPerRpcCreds(json_key, FLAGS_oauth_scope);
+  } else if (FLAGS_test_case == "status_code_and_message") {
+    client.DoStatusWithMessage();
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
@@ -131,6 +134,7 @@ int main(int argc, char** argv) {
     client.DoCancelAfterBegin();
     client.DoCancelAfterFirstResponse();
     client.DoTimeoutOnSleepingServer();
+    client.DoStatusWithMessage();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_enable_ssl) {
       grpc::string json_key = GetServiceAccountJsonKey();

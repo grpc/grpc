@@ -60,8 +60,18 @@ class BaseStub {
       }
       unset($opts['update_metadata']);
     }
-         
+    $package_config = json_decode(
+        file_get_contents(dirname(__FILE__) . '/../../composer.json'), true);
+    $opts['grpc.primary_user_agent'] =
+        'grpc-php/' . $package_config['version'];
     $this->channel = new Channel($hostname, $opts);
+  }
+
+  /**
+   * @return string The URI of the endpoint.
+   */
+  public function getTarget() {
+    return $this->channel->getTarget();
   }
 
   /**

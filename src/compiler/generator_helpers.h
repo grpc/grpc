@@ -126,7 +126,13 @@ inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
 }
 
 inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file) {
-  return LowerUnderscoreToUpperCamel(StripProto(file->name()));
+  std::vector<grpc::string> tokens = tokenize(StripProto(file->name()), "/");
+  grpc::string result = "";
+  for (unsigned int i = 0; i < tokens.size() - 1; i++) {
+    result += tokens[i] + "/";
+  }
+  result += LowerUnderscoreToUpperCamel(tokens.back());
+  return result;
 }
 
 enum MethodType {

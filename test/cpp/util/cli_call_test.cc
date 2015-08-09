@@ -39,7 +39,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/fixed_size_thread_pool.h>
+#include <grpc++/dynamic_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -102,7 +102,7 @@ class CliCallTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
-  FixedSizeThreadPool thread_pool_;
+  DynamicThreadPool thread_pool_;
 };
 
 // Send a rpc with a normal stub and then a CliCall. Verify they match.

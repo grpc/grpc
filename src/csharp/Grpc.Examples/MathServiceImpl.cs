@@ -54,8 +54,13 @@ namespace math
         {
             if (request.Limit <= 0)
             {
-                // TODO(jtattermusch): support cancellation
-                throw new NotImplementedException("Not implemented yet");
+                // keep streaming the sequence until cancelled.
+                IEnumerator<Num> fibEnumerator = FibInternal(long.MaxValue).GetEnumerator();
+                while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
+                {
+                    await responseStream.WriteAsync(fibEnumerator.Current);
+                    await Task.Delay(100);
+                }
             }
 
             if (request.Limit > 0)

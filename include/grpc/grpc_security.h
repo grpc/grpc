@@ -87,7 +87,7 @@ typedef struct {
      directory).
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
-     not have such a key/cert pair.  */
+     not have such a key/cert pair. */
 grpc_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair);
 
@@ -119,8 +119,8 @@ grpc_credentials *grpc_service_account_credentials_create(
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
-                                              gpr_timespec token_lifetime);
+grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+    const char *json_key, gpr_timespec token_lifetime);
 
 /* Creates an Oauth2 Refresh Token credentials object. May return NULL if the
    input is invalid.
@@ -139,9 +139,6 @@ grpc_credentials *grpc_access_token_credentials_create(
 /* Creates an IAM credentials object. */
 grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
                                               const char *authority_selector);
-
-/* Creates a fake transport security credentials object for testing. */
-grpc_credentials *grpc_fake_transport_security_credentials_create(void);
 
 /* --- Secure channel creation. --- */
 
@@ -177,14 +174,13 @@ void grpc_server_credentials_release(grpc_server_credentials *creds);
    - pem_key_cert_pairs is an array private key / certificate chains of the
      server. This parameter cannot be NULL.
    - num_key_cert_pairs indicates the number of items in the private_key_files
-     and cert_chain_files parameters. It should be at least 1. */
+     and cert_chain_files parameters. It should be at least 1.
+   - force_client_auth, if set to non-zero will force the client to authenticate
+     with an SSL cert. Note that this option is ignored if pem_root_certs is
+     NULL. */
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs);
-
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
+    size_t num_key_cert_pairs, int force_client_auth);
 
 /* --- Server-side secure ports. --- */
 
@@ -203,10 +199,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
 
 /* --- Authentication Context. --- */
 
-/* TODO(jboeuf): Define some well-known property names. */
-
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
-#define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
@@ -259,6 +252,49 @@ grpc_auth_context *grpc_call_auth_context(grpc_call *call);
 
 /* Releases the auth context returned from grpc_call_auth_context. */
 void grpc_auth_context_release(grpc_auth_context *context);
+
+/* --
+   The following auth context methods should only be called by a server metadata
+   processor to set properties extracted from auth metadata.
+   -- */
+
+/* Add a property. */
+void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
+                                    const char *value, size_t value_length);
+
+/* Add a C string property. */
+void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
+                                            const char *name,
+                                            const char *value);
+
+/* Sets the property name. Returns 1 if successful or 0 in case of failure
+   (which means that no property with this name exists). */
+int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
+                                                      const char *name);
+
+/* --- Auth Metadata Processing --- */
+
+/* Callback function that is called when the metadata processing is done.
+   success is 1 if processing succeeded, 0 otherwise.
+   Consumed metadata will be removed from the set of metadata available on the
+   call. */
+typedef void (*grpc_process_auth_metadata_done_cb)(
+    void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
+    int success);
+
+/* Pluggable server-side metadata processor object. */
+typedef struct {
+  /* The context object is read/write: it contains the properties of the
+     channel peer and it is the job of the process function to augment it with
+     properties derived from the passed-in metadata. */
+  void (*process)(void *state, grpc_auth_context *context,
+                  const grpc_metadata *md, size_t md_count,
+                  grpc_process_auth_metadata_done_cb cb, void *user_data);
+  void *state;
+} grpc_auth_metadata_processor;
+
+void grpc_server_credentials_set_auth_metadata_processor(
+    grpc_server_credentials *creds, grpc_auth_metadata_processor processor);
 
 #ifdef __cplusplus
 }
