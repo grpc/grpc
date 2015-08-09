@@ -74,11 +74,20 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // all. This wrapper over our actual writeable ensures thread-safety and
   // correct ordering.
   GRXConcurrentWriteable *_responseWriteable;
+
+  // The network thread wants the requestWriter to resume (when the server is ready for more input),
+  // or to stop (on errors), concurrently with user threads that want to start it, pause it or stop
+  // it. Because a writer isn't thread-safe, we'll synchronize those operations on it.
+  // We don't use a dispatch queue for that purpose, because the writer can call writeValue: or
+  // writesFinishedWithError: on this GRPCCall as part of those operations. We want to be able to
+  // pause the writer immediately on writeValue:, so we need our locking to be recursive.
   GRXWriter *_requestWriter;
 
   // To create a retain cycle when a call is started, up until it finishes. See
-  // |startWithWriteable:| and |finishWithError:|.
-  GRPCCall *_self;
+  // |startWithWriteable:| and |finishWithError:|. This saves users from having to retain a
+  // reference to the call object if all they're interested in is the handler being executed when
+  // the response arrives.
+  GRPCCall *_retainSelf;
 
   NSMutableDictionary *_requestMetadata;
   NSMutableDictionary *_responseMetadata;
@@ -136,11 +145,12 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 - (void)finishWithError:(NSError *)errorOrNil {
   // If the call isn't retained anywhere else, it can be deallocated now.
-  _self = nil;
+  _retainSelf = nil;
 
   // If there were still request messages coming, stop them.
-  _requestWriter.state = GRXWriterStateFinished;
-  _requestWriter = nil;
+  @synchronized(_requestWriter) {
+    _requestWriter.state = GRXWriterStateFinished;
+  }
 
   if (errorOrNil) {
     [_responseWriteable cancelWithError:errorOrNil];
@@ -240,12 +250,14 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     // Resume the request writer.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      strongSelf->_requestWriter.state = GRXWriterStateStarted;
+      @synchronized(strongSelf->_requestWriter) {
+        strongSelf->_requestWriter.state = GRXWriterStateStarted;
+      }
     }
   };
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMessage alloc]
-                                            initWithMessage:message
-                                            handler:resumingHandler]] errorHandler:errorHandler];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMessage alloc] initWithMessage:message
+                                                                              handler:resumingHandler]]
+                            errorHandler:errorHandler];
 }
 
 - (void)writeValue:(id)value {
@@ -253,7 +265,9 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
   // Pause the input and only resume it when the C layer notifies us that writes
   // can proceed.
-  _requestWriter.state = GRXWriterStatePaused;
+  @synchronized(_requestWriter) {
+    _requestWriter.state = GRXWriterStatePaused;
+  }
 
   __weak GRPCCall *weakSelf = self;
   dispatch_async(_callQueue, ^{
@@ -273,7 +287,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  _requestWriter = nil;
   if (errorOrNil) {
     [self cancel];
   } else {
@@ -327,7 +340,9 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     }
   }];
   // Now that the RPC has been initiated, request writes can start.
-  [_requestWriter startWithWriteable:self];
+  @synchronized(_requestWriter) {
+    [_requestWriter startWithWriteable:self];
+  }
 }
 
 #pragma mark GRXWriter implementation
@@ -338,7 +353,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // before being autoreleased).
   // Care is taken not to retain self strongly in any of the blocks used in this implementation, so
   // that the life of the instance is determined by this retain cycle.
-  _self = self;
+  _retainSelf = self;
 
   _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable];
   [self sendHeaders:_requestMetadata];
