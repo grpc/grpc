@@ -23,7 +23,7 @@
     props.extend(['cpptest'])
   if configuration_type == 'Application':
     if target.build == 'protoc':
-      props.extend(['protoc'])
+      props.extend(['protoc', 'protobuf'])
     else:
       props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
   else:
