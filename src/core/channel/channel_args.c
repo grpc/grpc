@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include <string.h>
 
@@ -145,4 +146,45 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
   tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
+}
+
+static gpr_uint32 find_compression_algorithm_states_bitset(
+    const grpc_channel_args *a) {
+  size_t i;
+  gpr_uint32 states_bitset = 0;
+  if (a == NULL) return 0;
+  for (i = 0; i < a->num_args; ++i) {
+    if (a->args[i].type == GRPC_ARG_INTEGER &&
+        !strcmp(GRPC_COMPRESSION_ALGORITHM_STATE_ARG, a->args[i].key)) {
+      states_bitset = a->args[i].value.integer;
+      break;
+    }
+  }
+  return states_bitset;
+}
+
+grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
+    grpc_channel_args *a,
+    grpc_compression_algorithm algorithm,
+    int state) {
+  gpr_uint32 states_bitset = find_compression_algorithm_states_bitset(a);
+  grpc_arg tmp;
+
+  if (state != 0) {
+    GPR_BITSET(&states_bitset, algorithm);
+  } else {
+    GPR_BITCLEAR(&states_bitset, algorithm);
+  }
+
+  tmp.type = GRPC_ARG_INTEGER;
+  tmp.key = GRPC_COMPRESSION_ALGORITHM_STATE_ARG;
+  tmp.value.integer = states_bitset;
+  return grpc_channel_args_copy_and_add(a, &tmp, 1);
+}
+
+int grpc_channel_args_compression_algorithm_get_state(
+    grpc_channel_args *a,
+    grpc_compression_algorithm algorithm) {
+  const gpr_uint32 states_bitset = find_compression_algorithm_states_bitset(a);
+  return GPR_BITGET(states_bitset, algorithm);
 }
