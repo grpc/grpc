@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include <grpc++/channel_arguments.h>
+#include <grpc++/impl/grpc_library.h>
 #include "src/cpp/client/channel.h"
 #include "src/cpp/client/secure_credentials.h"
 
@@ -61,6 +62,7 @@ std::shared_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
 }  // namespace
 
 std::shared_ptr<Credentials> GoogleDefaultCredentials() {
+  GrpcLibrary init;  // To call grpc_init().
   return WrapCredentials(grpc_google_default_credentials_create());
 }
 
