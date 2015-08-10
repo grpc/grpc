@@ -69,5 +69,13 @@ namespace Grpc.Core.Tests
 
             Assert.IsFalse(object.ReferenceEquals(env1, env2));
         }
+
+        [Test]
+        public void GetCoreVersionString()
+        {
+            var coreVersion = GrpcEnvironment.GetCoreVersionString();
+            var parts = coreVersion.Split('.');
+            Assert.AreEqual(4, parts.Length);
+        }
     }
 }

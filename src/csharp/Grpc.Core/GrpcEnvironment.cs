@@ -169,7 +169,7 @@ namespace Grpc.Core
         /// <summary>
         /// Gets version of gRPC C core.
         /// </summary>
-        internal string GetCoreVersionString()
+        internal static string GetCoreVersionString()
         {
             var ptr = grpcsharp_version_string();  // the pointer is not owned
             return Marshal.PtrToStringAnsi(ptr);
