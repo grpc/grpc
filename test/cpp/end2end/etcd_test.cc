@@ -74,7 +74,7 @@ class EtcdTest : public ::testing::Test {
     server_address_ = "localhost:1111";
 
     // Setup etcd
-    // Require etcd server running in Jenkins master
+    // Require etcd server running
     etcd_address_ = "localhost:4001";
     char* addr = gpr_getenv("GRPC_ETCD_SERVER_TEST");
     if (addr != NULL) {
@@ -92,8 +92,17 @@ class EtcdTest : public ::testing::Test {
   }
 
   void EtcdSetUp(int port) {
+    // Register service /test in etcd
+    
+
+    // Register service instance /test/1 in etcd
+
     // Register etcd name resolver in grpc
     grpc_etcd_register();
+  }
+
+  void EtcdStateChange() {
+    
   }
 
   void TearDown() GRPC_OVERRIDE {
@@ -118,6 +127,7 @@ class EtcdTest : public ::testing::Test {
 TEST_F(EtcdTest, SimpleRpc) {
   ResetStub();
 
+  getchar();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
