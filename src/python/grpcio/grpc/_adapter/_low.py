@@ -72,6 +72,9 @@ class Call(_types.Call):
     else:
       return self.call.cancel(code, details)
 
+  def peer(self):
+    return self.call.peer()
+
 
 class Channel(_types.Channel):
 
@@ -83,6 +86,17 @@ class Channel(_types.Channel):
 
   def create_call(self, completion_queue, method, host, deadline=None):
     return Call(self.channel.create_call(completion_queue.completion_queue, method, host, deadline))
+
+  def check_connectivity_state(self, try_to_connect):
+    return self.channel.check_connectivity_state(try_to_connect)
+
+  def watch_connectivity_state(self, last_observed_state, deadline,
+                               completion_queue, tag):
+    self.channel.watch_connectivity_state(
+        last_observed_state, deadline, completion_queue.completion_queue, tag)
+
+  def target(self):
+    return self.channel.target()
 
 
 _NO_TAG = object()
