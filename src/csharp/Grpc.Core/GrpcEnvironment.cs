@@ -53,6 +53,9 @@ namespace Grpc.Core
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_shutdown();
 
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern IntPtr grpcsharp_version_string();  // returns not-owned const char*
+
         static object staticLock = new object();
         static GrpcEnvironment instance;
 
@@ -161,6 +164,15 @@ namespace Grpc.Core
             {
                 return this.debugStats;
             }
+        }
+
+        /// <summary>
+        /// Gets version of gRPC C core.
+        /// </summary>
+        internal string GetCoreVersionString()
+        {
+            var ptr = grpcsharp_version_string();  // the pointer is not owned
+            return Marshal.PtrToStringAnsi(ptr);
         }
 
         /// <summary>
