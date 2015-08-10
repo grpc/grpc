@@ -42,7 +42,9 @@
 namespace grpc {
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {}
+    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {
+      grpc_compression_options_init(&compression_options_);
+}
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   ServerCompletionQueue* cq = new ServerCompletionQueue();
@@ -50,44 +52,65 @@ std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
 
-void ServerBuilder::RegisterService(SynchronousService* service) {
+ServerBuilder& ServerBuilder::RegisterService(SynchronousService* service) {
   services_.emplace_back(new NamedService<RpcService>(service->service()));
+  return *this;
 }
 
-void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
+ServerBuilder& ServerBuilder::RegisterAsyncService(
+    AsynchronousService* service) {
   async_services_.emplace_back(new NamedService<AsynchronousService>(service));
+  return *this;
 }
 
-void ServerBuilder::RegisterService(
+ServerBuilder& ServerBuilder::RegisterService(
     const grpc::string& addr, SynchronousService* service) {
   services_.emplace_back(new NamedService<RpcService>(addr, service->service()));
+  return *this;
 }
 
-void ServerBuilder::RegisterAsyncService(
+ServerBuilder& ServerBuilder::RegisterAsyncService(
     const grpc::string& addr, AsynchronousService* service) {
-  async_services_.emplace_back(new NamedService<AsynchronousService>(addr, service));
+  async_services_.emplace_back(
+      new NamedService<AsynchronousService>(addr, service));
+  return *this;
 }
 
-void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
+ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
+    AsyncGenericService* service) {
   if (generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple AsyncGenericService is unsupported for now. "
             "Dropping the service %p",
             service);
-    return;
+  } else {
+    generic_service_ = service;
   }
-  generic_service_ = service;
+  return *this;
 }
 
-void ServerBuilder::AddListeningPort(const grpc::string& addr,
+ServerBuilder& ServerBuilder::SetMaxMessageSize(int max_message_size) {
+  max_message_size_ = max_message_size;
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::AddListeningPort(const grpc::string& addr,
                                      std::shared_ptr<ServerCredentials> creds,
                                      int* selected_port) {
   Port port = {addr, creds, selected_port};
   ports_.push_back(port);
+  return *this;
 }
 
-void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
+ServerBuilder& ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
   thread_pool_ = thread_pool;
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::SetCompressionOptions(
+    const grpc_compression_options& options) {
+  compression_options_ = options;
+  return *this;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
@@ -100,8 +123,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
-  std::unique_ptr<Server> server(
-      new Server(thread_pool_, thread_pool_owned, max_message_size_));
+  std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned,
+                                            max_message_size_,
+                                            compression_options_));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq());
   }
@@ -113,7 +137,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   for (auto service = async_services_.begin();
        service != async_services_.end(); service++) {
-    if (!server->RegisterAsyncService((*service)->host.get(), (*service)->service)) {
+    if (!server->RegisterAsyncService((*service)->host.get(),
+                                      (*service)->service)) {
       return nullptr;
     }
   }

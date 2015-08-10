@@ -163,27 +163,34 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-static grpc_server* CreateServer(int max_message_size) {
+static grpc_server* CreateServer(
+    int max_message_size, const grpc_compression_options& compression_options) {
   if (max_message_size > 0) {
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
-    arg.value.integer = max_message_size;
-    grpc_channel_args args = {1, &arg};
-    return grpc_server_create(&args);
+    grpc_arg args[2];
+    args[0].type = GRPC_ARG_INTEGER;
+    args[0].key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
+    args[0].value.integer = max_message_size;
+
+    args[1].type = GRPC_ARG_INTEGER;
+    args[1].key = const_cast<char*>(GRPC_COMPRESSION_ALGORITHM_STATE_ARG);
+    args[1].value.integer = compression_options.enabled_algorithms_bitset;
+
+    grpc_channel_args channel_args = {2, args};
+    return grpc_server_create(&channel_args);
   } else {
     return grpc_server_create(nullptr);
   }
 }
 
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size)
+               int max_message_size,
+               grpc_compression_options compression_options)
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
-      server_(CreateServer(max_message_size)),
+      server_(CreateServer(max_message_size, compression_options)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
   grpc_server_register_completion_queue(server_, cq_.cq());

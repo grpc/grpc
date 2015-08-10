@@ -36,6 +36,8 @@
 
 #include <stdlib.h>
 
+#include <grpc/support/port_platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,6 +63,11 @@ typedef enum {
   GRPC_COMPRESS_LEVEL_COUNT
 } grpc_compression_level;
 
+typedef struct grpc_compression_options {
+  gpr_uint32 enabled_algorithms_bitset; /**< All algs are enabled by default */
+  grpc_compression_algorithm default_compression_algorithm; /**< for channel */
+} grpc_compression_options;
+
 /** Parses the first \a name_length bytes of \a name as a
  * grpc_compression_algorithm instance, updating \a algorithm. Returns 1 upon
  * success, 0 otherwise. */
@@ -83,6 +90,20 @@ grpc_compression_level grpc_compression_level_for_algorithm(
  * It abort()s for unknown levels . */
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
     grpc_compression_level level);
+
+void grpc_compression_options_init(grpc_compression_options *opts);
+
+/** Mark \a algorithm as enabled in \a opts. */
+void grpc_compression_options_enable_algorithm(
+     grpc_compression_options *opts, grpc_compression_algorithm algorithm);
+
+/** Mark \a algorithm as disabled in \a opts. */
+void grpc_compression_options_disable_algorithm(
+    grpc_compression_options *opts, grpc_compression_algorithm algorithm);
+
+/** Returns true if \a algorithm is marked as enabled in \a opts. */
+int grpc_compression_options_is_algorithm_enabled(
+    const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
 
 #ifdef __cplusplus
 }

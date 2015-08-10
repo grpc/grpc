@@ -43,6 +43,7 @@
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/status.h>
+#include <grpc/compression.h>
 
 struct grpc_server;
 
@@ -81,7 +82,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
 
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         int max_message_size);
+         int max_message_size, grpc_compression_options compression_options);
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(const grpc::string *host, RpcService* service);

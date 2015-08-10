@@ -70,6 +70,8 @@ typedef struct channel_data {
   grpc_mdelem *mdelem_accept_encoding;
   /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
+  /** Compression options for the channel */
+  grpc_compression_options compression_options;
 } channel_data;
 
 /** Compress \a slices in place using \a algorithm. Returns 1 if compression did
@@ -102,7 +104,17 @@ static grpc_mdelem* compression_md_filter(void *user_data, grpc_mdelem *md) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
     if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
                                           &calld->compression_algorithm)) {
-      gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'. Ignoring.",
+      gpr_log(GPR_ERROR,
+              "Invalid compression algorithm: '%s' (unknown). Ignoring.",
+              md_c_str);
+      calld->compression_algorithm = GRPC_COMPRESS_NONE;
+    }
+    if (grpc_compression_options_is_algorithm_enabled(
+            &channeld->compression_options, calld->compression_algorithm) == 0)
+    {
+      gpr_log(GPR_ERROR,
+              "Invalid compression algorithm: '%s' (previously disabled). "
+              "Ignoring.",
               md_c_str);
       calld->compression_algorithm = GRPC_COMPRESS_NONE;
     }
@@ -297,8 +309,17 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   char *accept_encoding_str;
   size_t accept_encoding_str_len;
 
+  grpc_compression_options_init(&channeld->compression_options);
+  channeld->compression_options.enabled_algorithms_bitset =
+      grpc_channel_args_compression_algorithm_get_states(args);
+
   channeld->default_compression_algorithm =
       grpc_channel_args_get_compression_algorithm(args);
+  /* Make sure the default isn't disabled. */
+  GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(
+      &channeld->compression_options, channeld->default_compression_algorithm));
+  channeld->compression_options.default_compression_algorithm =
+      channeld->default_compression_algorithm;
 
   channeld->mdstr_request_compression_algorithm_key =
       grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, 0);
@@ -311,6 +332,11 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
     char *algorithm_name;
+    /* skip disabled algorithms */
+    if (grpc_compression_options_is_algorithm_enabled(
+            &channeld->compression_options, algo_idx) == 0) {
+      continue;
+    }
     GPR_ASSERT(grpc_compression_algorithm_name(algo_idx, &algorithm_name) != 0);
     channeld->mdelem_compression_algorithms[algo_idx] =
         grpc_mdelem_from_metadata_strings(
