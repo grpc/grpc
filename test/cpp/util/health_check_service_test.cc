@@ -49,12 +49,10 @@ class HealthCheckServiceTest : public ::testing::Test {
  protected:
   ::grpc::health::HealthCheckService service_;
 
-  void ExpectStatus(const grpc::string& host, const grpc::string& service,
-                    const Status& status,
+  void ExpectStatus(const grpc::string& service, const Status& status,
                     const HealthCheckResponse::ServingStatus serving_status) {
     HealthCheckRequest request;
     HealthCheckResponse response;
-    request.set_host(host);
     request.set_service(service);
     Status s = service_.Check(nullptr, &request, &response);
     EXPECT_EQ(status.error_code(), s.error_code());
@@ -64,27 +62,22 @@ class HealthCheckServiceTest : public ::testing::Test {
 };
 
 TEST_F(HealthCheckServiceTest, SimpleServiceTest) {
-  const grpc::string kDefaultHost;
   const grpc::string kGeneralService;
   const grpc::string kServingService("grpc.package.TestService");
   const grpc::string kNonServingService("grpc.package.TestService2");
   const grpc::string kNonExistService("grpc.package.NoSuchService");
 
-  service_.SetServingStatus(kDefaultHost, kGeneralService,
-                            HealthCheckResponse::SERVING);
-  service_.SetServingStatus(kDefaultHost, kServingService,
-                            HealthCheckResponse::SERVING);
-  service_.SetServingStatus(kDefaultHost, kNonServingService,
+  service_.SetServingStatus(kGeneralService, HealthCheckResponse::SERVING);
+  service_.SetServingStatus(kServingService, HealthCheckResponse::SERVING);
+  service_.SetServingStatus(kNonServingService,
                             HealthCheckResponse::NOT_SERVING);
 
-  ExpectStatus(kDefaultHost, kGeneralService, Status::OK,
-               HealthCheckResponse::SERVING);
-  ExpectStatus(kDefaultHost, kServingService, Status::OK,
-               HealthCheckResponse::SERVING);
-  ExpectStatus(kDefaultHost, kNonServingService, Status::OK,
+  ExpectStatus(kGeneralService, Status::OK, HealthCheckResponse::SERVING);
+  ExpectStatus(kServingService, Status::OK, HealthCheckResponse::SERVING);
+  ExpectStatus(kNonServingService, Status::OK,
                HealthCheckResponse::NOT_SERVING);
-  ExpectStatus(kDefaultHost, kNonExistService,
-               Status(StatusCode::NOT_FOUND, ""), HealthCheckResponse::UNKNOWN);
+  ExpectStatus(kNonExistService, Status(StatusCode::NOT_FOUND, ""),
+               HealthCheckResponse::UNKNOWN);
 }
 
 }  // namespace testing

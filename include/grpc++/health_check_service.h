@@ -48,13 +48,12 @@ class HealthCheckService : public v1alpha::Health::Service {
   Status Check(ServerContext* context,
                const v1alpha::HealthCheckRequest* request,
                v1alpha::HealthCheckResponse* response) GRPC_OVERRIDE;
-  void SetServingStatus(const ::grpc::string& host,
-                        const ::grpc::string& service,
+  void SetServingStatus(const ::grpc::string& service,
                         v1alpha::HealthCheckResponse::ServingStatus status);
 
  private:
-  std::map<std::pair<grpc::string, ::grpc::string>,
-           v1alpha::HealthCheckResponse::ServingStatus> status_map_;
+  std::map< ::grpc::string, v1alpha::HealthCheckResponse::ServingStatus>
+      status_map_;
 };
 
 }  // namespace health

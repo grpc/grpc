@@ -39,8 +39,7 @@ namespace health {
 Status HealthCheckService::Check(ServerContext* context,
                                  const v1alpha::HealthCheckRequest* request,
                                  v1alpha::HealthCheckResponse* response) {
-  auto iter =
-      status_map_.find(std::make_pair(request->host(), request->service()));
+  auto iter = status_map_.find(request->service());
   if (iter == status_map_.end()) {
     return Status(StatusCode::NOT_FOUND, "");
   }
@@ -49,9 +48,9 @@ Status HealthCheckService::Check(ServerContext* context,
 }
 
 void HealthCheckService::SetServingStatus(
-    const ::grpc::string& host, const ::grpc::string& service,
+    const ::grpc::string& service,
     v1alpha::HealthCheckResponse::ServingStatus status) {
-  status_map_[std::make_pair(host, service)] = status;
+  status_map_[service] = status;
 }
 
 }  // namespace health
