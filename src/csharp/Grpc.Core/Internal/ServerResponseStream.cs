@@ -38,11 +38,12 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Writes responses asynchronously to an underlying AsyncCallServer object.
     /// </summary>
-    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>
+    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>, IHasWriteOptions
         where TRequest : class
         where TResponse : class
     {
         readonly AsyncCallServer<TRequest, TResponse> call;
+        WriteOptions writeOptions;
 
         public ServerResponseStream(AsyncCallServer<TRequest, TResponse> call)
         {
@@ -52,7 +53,7 @@ namespace Grpc.Core.Internal
         public Task WriteAsync(TResponse message)
         {
             var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, taskSource.CompletionDelegate);
+            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
             return taskSource.Task;
         }
 
@@ -61,6 +62,32 @@ namespace Grpc.Core.Internal
             var taskSource = new AsyncCompletionTaskSource<object>();
             call.StartSendStatusFromServer(status, trailers, taskSource.CompletionDelegate);
             return taskSource.Task;
+        }
+
+        public Task WriteResponseHeadersAsync(Metadata responseHeaders)
+        {
+            var taskSource = new AsyncCompletionTaskSource<object>();
+            call.StartSendInitialMetadata(responseHeaders, taskSource.CompletionDelegate);
+            return taskSource.Task;
+        }
+
+        public WriteOptions WriteOptions
+        {
+            get
+            {
+                return writeOptions;
+            }
+
+            set
+            {
+                writeOptions = value;
+            }
+        }
+
+        private WriteFlags GetWriteFlags()
+        {
+            var options = writeOptions;
+            return options != null ? options.Flags : default(WriteFlags);
         }
     }
 }

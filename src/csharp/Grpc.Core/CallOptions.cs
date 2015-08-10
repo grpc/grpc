@@ -47,6 +47,7 @@ namespace Grpc.Core
         readonly Metadata headers;
         readonly DateTime deadline;
         readonly CancellationToken cancellationToken;
+        readonly WriteOptions writeOptions;
 
         /// <summary>
         /// Creates a new instance of <c>CallOptions</c>.
@@ -54,12 +55,15 @@ namespace Grpc.Core
         /// <param name="headers">Headers to be sent with the call.</param>
         /// <param name="deadline">Deadline for the call to finish. null means no deadline.</param>
         /// <param name="cancellationToken">Can be used to request cancellation of the call.</param>
-        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+        /// <param name="writeOptions">Write options that will be used for this call.</param>
+        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken), WriteOptions writeOptions = null)
         {
             // TODO(jtattermusch): consider only creating metadata object once it's really needed.
             this.headers = headers != null ? headers : new Metadata();
+            // TODO(jtattermusch): allow null value of deadline?
             this.deadline = deadline.HasValue ? deadline.Value : DateTime.MaxValue;
             this.cancellationToken = cancellationToken;
+            this.writeOptions = writeOptions;
         }
 
         /// <summary>
@@ -84,6 +88,17 @@ namespace Grpc.Core
         public CancellationToken CancellationToken
         {
             get { return cancellationToken; }
+        }
+
+        /// <summary>
+        /// Write options that will be used for this call.
+        /// </summary>
+        public WriteOptions WriteOptions
+        {
+            get
+            {
+                return this.writeOptions;
+            }
         }
     }
 }
