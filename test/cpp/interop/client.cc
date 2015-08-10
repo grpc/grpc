@@ -74,7 +74,7 @@ DEFINE_string(test_case, "large_unary",
               "jwt_token_creds: large_unary with JWT token auth; "
               "oauth2_auth_token: raw oauth2 access token auth; "
               "per_rpc_creds: raw oauth2 access token on a single rpc; "
-	      "status_code_and_message: verify status code & message; "
+              "status_code_and_message: verify status code & message; "
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");

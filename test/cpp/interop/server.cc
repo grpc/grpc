@@ -43,6 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -140,6 +141,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
+    SetResponseCompression(context, *request);
     if (request->has_response_size() && request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
@@ -148,19 +150,12 @@ class TestServiceImpl : public TestService::Service {
     }
 
     if (request->has_response_status()) {
-      return Status(static_cast<grpc::StatusCode>
-		    (request->response_status().code()),
-		    request->response_status().message()); 
+      return Status(
+          static_cast<grpc::StatusCode>(request->response_status().code()),
+          request->response_status().message());
     }
 
     return Status::OK;
-  }
-
-  Status CompressedUnaryCall(ServerContext* context,
-                             const SimpleRequest* request,
-                             SimpleResponse* response) {
-    SetResponseCompression(context, *request);
-    return UnaryCall(context, request, response);
   }
 
   Status StreamingOutputCall(
@@ -181,13 +176,6 @@ class TestServiceImpl : public TestService::Service {
     } else {
       return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
     }
-  }
-
-  Status CompressedStreamingOutputCall(
-      ServerContext* context, const StreamingOutputCallRequest* request,
-      ServerWriter<StreamingOutputCallResponse>* writer) {
-    SetResponseCompression(context, *request);
-    return StreamingOutputCall(context, request, writer);
   }
 
   Status StreamingInputCall(ServerContext* context,

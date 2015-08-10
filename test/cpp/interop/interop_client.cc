@@ -122,7 +122,7 @@ void InteropClient::PerformLargeCompressedUnary(SimpleRequest* request,
   grpc::string payload(kLargeRequestSize, '\0');
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
-  Status s = stub->CompressedUnaryCall(&context, *request, response);
+  Status s = stub->UnaryCall(&context, *request, response);
 
   // Compression related checks.
   GPR_ASSERT(request->response_compression() ==
