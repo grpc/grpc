@@ -75,6 +75,14 @@ class BaseStub {
   }
 
   /**
+   * @param $try_to_connect bool
+   * @return int The grpc connectivity state
+   */
+  public function getConnectivityState($try_to_connect = false) {
+    return $this->channel->getConnectivityState($try_to_connect);
+  }
+
+  /**
    * Close the communication channel associated with this stub
    */
   public function close() {

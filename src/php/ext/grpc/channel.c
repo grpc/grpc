@@ -205,6 +205,26 @@ PHP_METHOD(Channel, getTarget) {
 }
 
 /**
+ * Get the connectivity state of the channel
+ * @param bool (optional) try to connect on the channel
+ * @return long The grpc connectivity state
+ */
+PHP_METHOD(Channel, getConnectivityState) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  bool try_to_connect;
+  /* "|b" == 1 optional bool */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &try_to_connect) ==
+      FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "getConnectivityState expects a bool", 1 TSRMLS_CC);
+    return;
+  }
+  RETURN_LONG(grpc_channel_check_connectivity_state(channel->wrapped,
+                                                    (int)try_to_connect));
+}
+
+/**
  * Close the channel
  */
 PHP_METHOD(Channel, close) {
@@ -219,6 +239,7 @@ PHP_METHOD(Channel, close) {
 static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Channel, getTarget, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, getConnectivityState, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
     PHP_FE_END};
 
