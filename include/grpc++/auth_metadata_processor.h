@@ -31,42 +31,30 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
-#define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#ifndef GRPCXX_AUTH_METADATA_PROCESSOR_H_
+#define GRPCXX_AUTH_METADATA_PROCESSOR_H_
+
+#include <map>
+#include <string>
 
 #include <grpc++/auth_context.h>
 
-struct grpc_auth_context;
-
 namespace grpc {
 
-class SecureAuthContext GRPC_FINAL : public AuthContext {
+class AuthMetadataProcessor {
  public:
-  SecureAuthContext(grpc_auth_context* ctx);
+  virtual ~AuthMetadataProcessor() {}
 
-  ~SecureAuthContext() GRPC_OVERRIDE;
-
-  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
-
-  grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
-
-  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
-      GRPC_OVERRIDE;
-
-  AuthPropertyIterator begin() const GRPC_OVERRIDE;
-
-  AuthPropertyIterator end() const GRPC_OVERRIDE;
-
-  void AddProperty(const grpc::string& key,
-                   const grpc::string& value) GRPC_OVERRIDE;
-
-  virtual bool SetPeerIdentityPropertyName(const grpc::string& name)
-      GRPC_OVERRIDE;
-
- private:
-  grpc_auth_context* ctx_;
+  // context is read/write: it contains the properties of the channel peer and
+  // it is the job of the Process method to augment it with properties derived
+  // from the passed-in auth_metadata.
+  virtual bool Process(
+      std::multimap<grpc::string, grpc::string>& auth_metadata,
+      AuthContext* context,
+      std::multimap<grpc::string, grpc::string>* consumed_auth_metadata) = 0;
 };
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
+#endif  // GRPCXX_AUTH_METADATA_PROCESSOR_H_
+

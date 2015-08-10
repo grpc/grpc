@@ -31,13 +31,63 @@
  *
  */
 
+#include <functional>
+#include <map>
+#include <memory>
+
+
+#include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include <grpc++/auth_metadata_processor.h>
+
 namespace grpc {
+
+void AuthMetadataProcessorAyncWrapper::Process(
+    void* self, grpc_auth_context* context, const grpc_metadata* md,
+    size_t md_count, grpc_process_auth_metadata_done_cb cb, void* user_data) {
+  AuthMetadataProcessorAyncWrapper* instance =
+      reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(self);
+  instance->thread_pool_->Add(
+      std::bind(&AuthMetadataProcessorAyncWrapper::ProcessAsync, instance,
+                context, md, md_count, cb, user_data));
+}
+
+void AuthMetadataProcessorAyncWrapper::ProcessAsync(
+    grpc_auth_context* ctx, const grpc_metadata* md, size_t md_count,
+    grpc_process_auth_metadata_done_cb cb, void* user_data) {
+  SecureAuthContext context(ctx);
+  std::multimap<grpc::string, grpc::string> metadata;
+  for (size_t i = 0; i < md_count; i++) {
+    metadata.insert(std::make_pair(
+        md[i].key, grpc::string(md[i].value, md[i].value_length)));
+  }
+  std::multimap<grpc::string, grpc::string> consumed_metadata;
+  bool ok = processor_->Process(metadata, &context, &consumed_metadata);
+  if (ok) {
+    std::vector<grpc_metadata> consumed_md(consumed_metadata.size());
+    for (const auto& entry : consumed_metadata) {
+      consumed_md.push_back({entry.first.c_str(),
+                             entry.second.data(),
+                             entry.second.size(),
+                             {{nullptr, nullptr, nullptr}}});
+    }
+    cb(user_data, &consumed_md[0], consumed_md.size(), 1);
+  } else {
+    cb(user_data, nullptr, 0, 0);
+  }
+}
 
 int SecureServerCredentials::AddPortToServer(
     const grpc::string& addr, grpc_server* server) {
   return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
+}
+
+void SecureServerCredentials::SetAuthMetadataProcessor(
+    const std::shared_ptr<AuthMetadataProcessor>& processor) {
+  processor_.reset(new AuthMetadataProcessorAyncWrapper(processor));
+  grpc_server_credentials_set_auth_metadata_processor(
+      creds_, {AuthMetadataProcessorAyncWrapper::Process, processor_.get()});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(

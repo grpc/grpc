@@ -93,4 +93,16 @@ AuthPropertyIterator SecureAuthContext::end() const {
   return AuthPropertyIterator();
 }
 
+void SecureAuthContext::AddProperty(const grpc::string& key,
+                                    const grpc::string& value) {
+  if (!ctx_) return;
+  grpc_auth_context_add_property(ctx_, key.c_str(), value.data(), value.size());
+}
+
+bool SecureAuthContext::SetPeerIdentityPropertyName(const grpc::string& name) {
+  if (!ctx_) return false;
+  return grpc_auth_context_set_peer_identity_property_name(ctx_,
+                                                           name.c_str()) != 0;
+}
+
 }  // namespace grpc

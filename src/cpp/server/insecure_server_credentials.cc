@@ -43,6 +43,8 @@ class InsecureServerCredentialsImpl GRPC_FINAL : public ServerCredentials {
                       grpc_server* server) GRPC_OVERRIDE {
     return grpc_server_add_insecure_http2_port(server, addr.c_str());
   }
+  void SetAuthMetadataProcessor(
+      const std::shared_ptr<AuthMetadataProcessor>& processor) GRPC_OVERRIDE {}
 };
 }  // namespace
 
