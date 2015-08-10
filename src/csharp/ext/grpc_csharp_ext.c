@@ -850,7 +850,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
 typedef void(GPR_CALLTYPE *test_callback_funcptr)(gpr_int32 success);
 
 /* Version info */
-GPR_EXPORT char *GPR_CALLTYPE grpcsharp_version_string() {
+GPR_EXPORT const char *GPR_CALLTYPE grpcsharp_version_string() {
   return grpc_version_string();
 }
 
