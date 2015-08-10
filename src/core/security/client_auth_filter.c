@@ -77,10 +77,9 @@ typedef struct {
 
 static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
   call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
-  grpc_transport_stream_op_add_cancellation(
-      &calld->op, GRPC_STATUS_UNAUTHENTICATED,
-      grpc_mdstr_from_string(chand->md_ctx, error_msg, 0));
+  gpr_log(GPR_ERROR, "Client side authentication failure: %s", error_msg);
+  grpc_transport_stream_op_add_cancellation(&calld->op,
+                                            GRPC_STATUS_UNAUTHENTICATED);
   grpc_call_next_op(elem, &calld->op);
 }
 

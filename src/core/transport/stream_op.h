@@ -108,7 +108,7 @@ void grpc_metadata_batch_move(grpc_metadata_batch *dst,
                               grpc_metadata_batch *src);
 
 /** Add \a storage to the beginning of \a batch. storage->md is
-    assumed to be valid. 
+    assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */

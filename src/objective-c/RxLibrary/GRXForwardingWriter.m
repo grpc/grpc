@@ -48,7 +48,11 @@
 // Designated initializer
 - (instancetype)initWithWriter:(GRXWriter *)writer {
   if (!writer) {
-    [NSException raise:NSInvalidArgumentException format:@"writer can't be nil."];
+    return nil;
+  }
+  if (writer.state != GRXWriterStateNotStarted) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"The writer argument must not have already started."];
   }
   if ((self = [super init])) {
     _writer = writer;

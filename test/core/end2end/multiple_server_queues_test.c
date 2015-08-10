@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   cq2 = grpc_completion_queue_create();
   server = grpc_server_create(NULL);
   grpc_server_register_completion_queue(server, cq1);
-  grpc_server_add_http2_port(server, "[::]:0");
+  grpc_server_add_insecure_http2_port(server, "[::]:0");
   grpc_server_register_completion_queue(server, cq2);
   grpc_server_start(server);
   grpc_server_shutdown_and_notify(server, cq2, NULL);

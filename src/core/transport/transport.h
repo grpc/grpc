@@ -80,7 +80,13 @@ typedef struct grpc_transport_stream_op {
 
   grpc_pollset *bind_pollset;
 
+  /** If != GRPC_STATUS_OK, cancel this stream */
   grpc_status_code cancel_with_status;
+
+  /** If != GRPC_STATUS_OK, send grpc-status, grpc-message, and close this
+      stream for both reading and writing */
+  grpc_status_code close_with_status;
+  gpr_slice *optional_close_message;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;
@@ -148,8 +154,11 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
 void grpc_transport_stream_op_finish_with_failure(grpc_transport_stream_op *op);
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
-                                               grpc_status_code status,
-                                               grpc_mdstr *message);
+                                               grpc_status_code status);
+
+void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
+                                        grpc_status_code status,
+                                        gpr_slice *optional_message);
 
 char *grpc_transport_stream_op_string(grpc_transport_stream_op *op);
 
