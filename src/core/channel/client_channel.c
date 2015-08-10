@@ -527,6 +527,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   }
 
   if (old_lb_policy != NULL) {
+    grpc_lb_policy_shutdown(old_lb_policy);
     GRPC_LB_POLICY_UNREF(old_lb_policy, "channel");
   }
 
