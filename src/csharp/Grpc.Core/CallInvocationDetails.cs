@@ -40,17 +40,22 @@ namespace Grpc.Core
     /// <summary>
     /// Details about a client-side call to be invoked.
     /// </summary>
-    public class CallInvocationDetails<TRequest, TResponse>
+    public struct CallInvocationDetails<TRequest, TResponse>
     {
         readonly Channel channel;
         readonly string method;
         readonly string host;
         readonly Marshaller<TRequest> requestMarshaller;
         readonly Marshaller<TResponse> responseMarshaller;
-        readonly CallOptions options;
+        CallOptions options;
 
         public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallOptions options) :
-            this(channel, method.FullName, null, method.RequestMarshaller, method.ResponseMarshaller, options)
+            this(channel, method, null, options)
+        {
+        }
+
+        public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, string host, CallOptions options) :
+            this(channel, method.FullName, host, method.RequestMarshaller, method.ResponseMarshaller, options)
         {
         }
 
@@ -61,7 +66,7 @@ namespace Grpc.Core
             this.host = host;
             this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
             this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
-            this.options = Preconditions.CheckNotNull(options, "options");
+            this.options = options;
         }
 
         public Channel Channel
@@ -110,6 +115,17 @@ namespace Grpc.Core
             {
                 return options;
             }
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallInvocationDetails"/> with
+        /// <c>Options</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        public CallInvocationDetails<TRequest, TResponse> WithOptions(CallOptions options)
+        {
+            var newDetails = this;
+            newDetails.options = options;
+            return newDetails;
         }
     }
 }
