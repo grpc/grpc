@@ -192,23 +192,5 @@ namespace Grpc.Core
 
             Logger.Info("gRPC shutdown.");
         }
-
-        /// <summary>
-        /// Shuts down this environment asynchronously.
-        /// </summary>
-        private Task CloseAsync()
-        {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Close();
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, "Error occured while shutting down GrpcEnvironment.");
-                }
-            });
-        }
     }
 }

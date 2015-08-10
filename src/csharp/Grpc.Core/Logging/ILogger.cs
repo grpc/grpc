@@ -42,16 +42,22 @@ namespace Grpc.Core.Logging
         /// <summary>Returns a logger associated with the specified type.</summary>
         ILogger ForType<T>();
 
+        /// <summary>Logs a message with severity Debug.</summary>
         void Debug(string message, params object[] formatArgs);
 
+        /// <summary>Logs a message with severity Info.</summary>
         void Info(string message, params object[] formatArgs);
 
+        /// <summary>Logs a message with severity Warning.</summary>
         void Warning(string message, params object[] formatArgs);
 
+        /// <summary>Logs a message and an associated exception with severity Warning.</summary>
         void Warning(Exception exception, string message, params object[] formatArgs);
 
+        /// <summary>Logs a message with severity Error.</summary>
         void Error(string message, params object[] formatArgs);
 
+        /// <summary>Logs a message and an associated exception with severity Error.</summary>
         void Error(Exception exception, string message, params object[] formatArgs);
     }
 }
