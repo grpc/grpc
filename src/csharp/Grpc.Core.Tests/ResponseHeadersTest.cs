@@ -84,7 +84,7 @@ namespace Grpc.Core.Tests
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                Assert.Throws(typeof(NullReferenceException), async () => await context.WriteResponseHeadersAsync(null));
+                Assert.Throws(typeof(ArgumentNullException), async () => await context.WriteResponseHeadersAsync(null));
                 return "PASS";
             });
 
