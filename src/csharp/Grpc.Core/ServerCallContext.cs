@@ -45,6 +45,7 @@ namespace Grpc.Core
     /// </summary>
     public class ServerCallContext
     {
+        private readonly CallSafeHandle callHandle;
         private readonly string method;
         private readonly string host;
         private readonly string peer;
@@ -57,9 +58,10 @@ namespace Grpc.Core
         private Func<Metadata, Task> writeHeadersFunc;
         private IHasWriteOptions writeOptionsHolder;
 
-        public ServerCallContext(string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, string peer, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
             Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
         {
+            this.callHandle = callHandle;
             this.method = method;
             this.host = host;
             this.peer = peer;
@@ -73,6 +75,14 @@ namespace Grpc.Core
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
             return writeHeadersFunc(responseHeaders);
+        }
+
+        /// <summary>
+        /// Creates a propagation token to be used to propagate call context to a child call.
+        /// </summary>
+        public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
+        {
+            return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
         }
             
         /// <summary>Name of method called in this RPC.</summary>

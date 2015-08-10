@@ -80,6 +80,7 @@
     <Compile Include="MockServiceHelper.cs" />
     <Compile Include="ResponseHeadersTest.cs" />
     <Compile Include="CompressionTest.cs" />
+    <Compile Include="ContextPropagationTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

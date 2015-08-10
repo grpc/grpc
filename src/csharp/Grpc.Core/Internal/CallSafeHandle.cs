@@ -42,6 +42,8 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class CallSafeHandle : SafeHandleZeroIsInvalid
     {
+        public static readonly CallSafeHandle NullInstance = new CallSafeHandle();
+
         const uint GRPC_WRITE_BUFFER_HINT = 1;
         CompletionRegistry completionRegistry;
 

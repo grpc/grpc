@@ -43,16 +43,11 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    /// <summary>
-    /// Tests for response headers support.
-    /// </summary>
-    public class ResponseHeadersTest
+    public class ContextPropagationTest
     {
         MockServiceHelper helper;
         Server server;
         Channel channel;
-
-        Metadata headers;
 
         [SetUp]
         public void Init()
@@ -62,8 +57,6 @@ namespace Grpc.Core.Tests
             server = helper.GetServer();
             server.Start();
             channel = helper.GetChannel();
-
-            headers = new Metadata { { "ascii-header", "abcdefg" } };
         }
 
         [TearDown]
@@ -80,57 +73,50 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void WriteResponseHeaders_NullNotAllowed()
+        public async Task PropagateCancellation()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                Assert.Throws(typeof(NullReferenceException), async () => await context.WriteResponseHeadersAsync(null));
+                // check that we didn't obtain the default cancellation token.
+                Assert.IsTrue(context.CancellationToken.CanBeCanceled);
                 return "PASS";
             });
 
-            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
-        }
-
-        [Test]
-        public void WriteResponseHeaders_AllowedOnlyOnce()
-        {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
-                await context.WriteResponseHeadersAsync(headers);
-                try
-                {
-                    await context.WriteResponseHeadersAsync(headers);
-                    Assert.Fail();
-                }
-                catch (InvalidOperationException expected)
-                {
-                }
-                return "PASS";
+                var propagationToken = context.CreatePropagationToken();
+                Assert.IsNotNull(propagationToken.ParentCall);
+
+                var callOptions = new CallOptions(propagationToken: propagationToken);
+                return await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
             });
                 
-            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
+            await call.RequestStream.CompleteAsync();
+            Assert.AreEqual("PASS", await call);
         }
 
         [Test]
-        public async Task WriteResponseHeaders_NotAllowedAfterWrite()
+        public async Task PropagateDeadline()
         {
-            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            var deadline = DateTime.UtcNow.AddDays(7);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                await responseStream.WriteAsync("A");
-                try
-                {
-                    await context.WriteResponseHeadersAsync(headers);
-                    Assert.Fail();
-                }
-                catch (InvalidOperationException expected)
-                {
-                }
-                await responseStream.WriteAsync("B");
+                Assert.IsTrue(context.Deadline < deadline.AddMinutes(1));
+                Assert.IsTrue(context.Deadline > deadline.AddMinutes(-1));
+                return "PASS";
             });
 
-            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
-            var responses = await call.ResponseStream.ToList();
-            CollectionAssert.AreEqual(new[] { "A", "B" }, responses);
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                var callOptions = new CallOptions(propagationToken: context.CreatePropagationToken());
+                return await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
+            });
+                
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(deadline: deadline)));
+            await call.RequestStream.CompleteAsync();
+            Assert.AreEqual("PASS", await call);
         }
     }
 }
