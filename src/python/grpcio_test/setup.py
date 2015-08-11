@@ -48,8 +48,13 @@ _PACKAGE_DIRECTORIES = {
 
 _PACKAGE_DATA = {
     'grpc_interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
+        'credentials/ca.pem',
+        'credentials/server1.key',
+        'credentials/server1.pem',
+    ],
+    'grpc_protoc_plugin': [
+        'test.proto',
+    ],
 }
 
 _SETUP_REQUIRES = (
@@ -75,5 +80,5 @@ setuptools.setup(
     package_data=_PACKAGE_DATA,
     install_requires=_INSTALL_REQUIRES + _SETUP_REQUIRES,
     setup_requires=_SETUP_REQUIRES,
-    cmdclass=_COMMAND_CLASS
+    cmdclass=_COMMAND_CLASS,
 )
