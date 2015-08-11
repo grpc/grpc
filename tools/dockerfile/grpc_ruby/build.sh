@@ -33,4 +33,5 @@ make clean -C /var/local/git/grpc
 
 make install_c -j12 -C /var/local/git/grpc
 
-/bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && gem update bundler && bundle && rake'
+# invoke bash to ensure the rvm environment is set up
+/bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && gem update bundler && bundle && rake clean all'
