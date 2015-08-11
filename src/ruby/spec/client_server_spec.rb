@@ -69,6 +69,23 @@ shared_examples 'basic GRPC message delivery is OK' do
   include GRPC::Core
   include_context 'setup: tags'
 
+  context 'the test channel' do
+    it 'should have a target' do
+      expect(@ch.target).to be_a(String)
+    end
+  end
+
+  context 'a client call' do
+    it 'should have a peer' do
+      expect(new_client_call.peer).to be_a(String)
+    end
+  end
+
+  it 'calls have peer info' do
+    call = new_client_call
+    expect(call.peer).to be_a(String)
+  end
+
   it 'servers receive requests from clients and can respond' do
     call = new_client_call
     server_call = nil
