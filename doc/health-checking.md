@@ -58,11 +58,12 @@ a response must be sent back with an `OK` status and the status field should be
 set to `SERVING` or `NOT_SERVING` accordingly. If the service name is not
 registered, the server returns a `NOT_FOUND` GRPC status.
 
-It is recommended that the server use an empty string as the key for server’s
-health status as a whole. The server can just do exact matching of the
-service name support any kind of wildcard matching. However, the service owner
-has the freedom to implement more complicated matching semantics that both the
-client and server agree upon.
+The server should use an empty string as the key for server’s
+overall health status, so that a client not interested in a specific service can
+query the server's status with an empty request. The server can just do exact
+matching of the service name without support of any kind of wildcard matching.
+However, the service owner has the freedom to implement more complicated
+matching semantics that both the client and server agree upon.
 
 A client can declare the server as unhealthy if the rpc is not finished after
 some amount of time. The client should be able to handle the case where server
