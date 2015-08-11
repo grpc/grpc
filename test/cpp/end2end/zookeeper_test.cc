@@ -78,16 +78,18 @@ class ZookeeperTest : public ::testing::Test {
     int port2 = grpc_pick_unused_port_or_die();
     server1_ = SetUpServer(port1);
     server2_ = SetUpServer(port2);
-    
+
     // Register service /test in zookeeper
     RegisterService("/test", "test");
 
     // Register service instance /test/1 in zookeeper
-    string value = "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port1) + "\"}";
+    string value =
+        "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port1) + "\"}";
     RegisterService("/test/1", value);
 
     // Register service instance /test/2 in zookeeper
-    value = "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port2) + "\"}";
+    value =
+        "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port2) + "\"}";
     RegisterService("/test/2", value);
   }
 
@@ -116,7 +118,8 @@ class ZookeeperTest : public ::testing::Test {
 
     // Connect to zookeeper server
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-    zookeeper_handle_ = zookeeper_init(zookeeper_address_.c_str(), NULL, 15000, 0, 0, 0);
+    zookeeper_handle_ =
+        zookeeper_init(zookeeper_address_.c_str(), NULL, 15000, 0, 0, 0);
     GPR_ASSERT(zookeeper_handle_ != NULL);
 
     // Register zookeeper name resolver in grpc
@@ -124,13 +127,16 @@ class ZookeeperTest : public ::testing::Test {
   }
 
   void RegisterService(string name, string value) {
-    char *path = (char *)gpr_malloc(name.size());
+    char* path = (char*)gpr_malloc(name.size());
 
     int status = zoo_exists(zookeeper_handle_, name.c_str(), 0, NULL);
     if (status == ZNONODE) {
-      status = zoo_create(zookeeper_handle_, name.c_str(), value.c_str(), value.size(), &ZOO_OPEN_ACL_UNSAFE, 0, path, name.size());
+      status =
+          zoo_create(zookeeper_handle_, name.c_str(), value.c_str(),
+                     value.size(), &ZOO_OPEN_ACL_UNSAFE, 0, path, name.size());
     } else {
-      status = zoo_set(zookeeper_handle_, name.c_str(), value.c_str(), value.size(), -1);
+      status = zoo_set(zookeeper_handle_, name.c_str(), value.c_str(),
+                       value.size(), -1);
     }
     gpr_free(path);
     GPR_ASSERT(status == 0);
@@ -179,7 +185,7 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
 
   // Zookeeper state change
   DeleteService("/test/2");
-  sleep(1); 
+  sleep(1);
 
   // Second RPC
   EchoRequest request2;
