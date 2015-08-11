@@ -80,8 +80,6 @@ class InteropClient {
 
  private:
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
-  void PerformLargeCompressedUnary(SimpleRequest* request,
-                                   SimpleResponse* response);
   void AssertOkOrPrintErrorStatus(const Status& s);
 
   std::shared_ptr<ChannelInterface> channel_;

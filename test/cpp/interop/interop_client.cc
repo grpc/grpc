@@ -101,23 +101,8 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
 
   ClientContext context;
-  request->set_response_type(PayloadType::COMPRESSABLE);
-  request->set_response_size(kLargeResponseSize);
-  grpc::string payload(kLargeRequestSize, '\0');
-  request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
-
-  Status s = stub->UnaryCall(&context, *request, response);
-
-  AssertOkOrPrintErrorStatus(s);
-}
-
-// Shared code to set large payload, make rpc and check response payload.
-void InteropClient::PerformLargeCompressedUnary(SimpleRequest* request,
-                                                SimpleResponse* response) {
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
-
-  ClientContext context;
   InteropClientContextInspector inspector(context);
+  request->set_response_type(PayloadType::COMPRESSABLE);
   request->set_response_size(kLargeResponseSize);
   grpc::string payload(kLargeRequestSize, '\0');
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
@@ -278,13 +263,13 @@ void InteropClient::DoLargeCompressedUnary() {
           CompressionType_Name(compression_type).c_str(),
           PayloadType_Name(payload_type).c_str());
 
-      gpr_log(GPR_INFO, "Sending a large unary rpc %s.", log_suffix);
+      gpr_log(GPR_INFO, "Sending a large compressed unary rpc %s.", log_suffix);
       SimpleRequest request;
       SimpleResponse response;
       request.set_response_type(payload_type);
       request.set_response_compression(compression_type);
       PerformLargeUnary(&request, &response);
-      gpr_log(GPR_INFO, "Large unary done %s.", log_suffix);
+      gpr_log(GPR_INFO, "Large compressed unary done %s.", log_suffix);
       gpr_free(log_suffix);
     }
   }

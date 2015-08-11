@@ -560,7 +560,8 @@ static void set_encodings_accepted_by_peer(grpc_call *call,
       /* TODO(dgq): it'd be nice to have a slice-to-cstr function to easily
        * print the offending entry */
       gpr_log(GPR_ERROR,
-              "Invalid entry in accept encoding metadata. Ignoring.");
+              "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
+              gpr_dump_slice(*slice, GPR_DUMP_ASCII));
     }
   }
 }
