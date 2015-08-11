@@ -29,6 +29,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+language=$1
+
 set -e
 
 #clean up any old docker files and start mirroring repository if not started already
@@ -40,8 +42,34 @@ sudo docker run -d -e GCS_BUCKET=docker-interop-images  -e STORAGE_PATH=/admin/d
 #prepare building by pulling down base images and necessary files
 sudo docker pull 0.0.0.0:5000/grpc/base
 sudo docker tag -f 0.0.0.0:5000/grpc/base grpc/base
-gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
-gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
 
-#build docker file, add more languages later
-sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
+if [ "$language" = "c++" ]
+then
+  gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_cxx
+  gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_cxx
+  sudo docker build --no-cache -t grpc/cxx tools/dockerfile/grpc_cxx
+elif [ "$language" = "node" ]
+then
+  sudo docker pull 0.0.0.0:5000/grpc/node_base
+  sudo docker tag -f 0.0.0.0:5000/grpc/node_base grpc/node_base
+  gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_node
+  gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_node
+  sudo docker build --no-cache -t grpc/node tools/dockerfile/grpc_node
+elif [ "$language" = "ruby" ]
+then
+  sudo docker pull 0.0.0.0:5000/grpc/ruby_base
+  sudo docker tag -f 0.0.0.0:5000/grpc/ruby_base grpc/ruby_base
+  gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_ruby
+  gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_ruby
+  sudo docker build --no-cache -t grpc/ruby tools/dockerfile/grpc_ruby
+elif [ "$language" = "php" ]
+then
+  sudo docker pull 0.0.0.0:5000/grpc/php_base
+  sudo docker tag -f 0.0.0.0:5000/grpc/php_base grpc/php_base
+  gsutil cp -R gs://docker-interop-images/admin/service_account tools/dockerfile/grpc_php
+  gsutil cp -R gs://docker-interop-images/admin/cacerts tools/dockerfile/grpc_php
+  sudo docker build --no-cache -t grpc/php tools/dockerfile/grpc_php
+else
+  echo "interop testss not added for $language"
+  exit 1
+fi

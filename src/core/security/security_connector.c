@@ -263,9 +263,9 @@ static grpc_security_status fake_check_peer(grpc_security_connector *sc,
     goto end;
   }
   GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
-  sc->auth_context = grpc_auth_context_create(NULL, 1);
-  sc->auth_context->properties[0] = grpc_auth_property_init_from_cstring(
-      GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+  sc->auth_context = grpc_auth_context_create(NULL);
+  grpc_auth_context_add_cstring_property(
+      sc->auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
 
 end:
@@ -409,30 +409,34 @@ static int ssl_host_matches_name(const tsi_peer *peer, const char *peer_name) {
 grpc_auth_context *tsi_ssl_peer_to_auth_context(const tsi_peer *peer) {
   size_t i;
   grpc_auth_context *ctx = NULL;
+  const char *peer_identity_property_name = NULL;
 
   /* The caller has checked the certificate type property. */
   GPR_ASSERT(peer->property_count >= 1);
-  ctx = grpc_auth_context_create(NULL, peer->property_count);
-  ctx->properties[0] = grpc_auth_property_init_from_cstring(
-      GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+  ctx = grpc_auth_context_create(NULL);
+  grpc_auth_context_add_cstring_property(
+      ctx, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  ctx->property_count = 1;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property *prop = &peer->properties[i];
     if (prop->name == NULL) continue;
     if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
       /* If there is no subject alt name, have the CN as the identity. */
-      if (ctx->peer_identity_property_name == NULL) {
-        ctx->peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
+      if (peer_identity_property_name == NULL) {
+        peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
       }
-      ctx->properties[ctx->property_count++] = grpc_auth_property_init(
-          GRPC_X509_CN_PROPERTY_NAME, prop->value.data, prop->value.length);
+      grpc_auth_context_add_property(ctx, GRPC_X509_CN_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     } else if (strcmp(prop->name,
                       TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
-      ctx->peer_identity_property_name = GRPC_X509_SAN_PROPERTY_NAME;
-      ctx->properties[ctx->property_count++] = grpc_auth_property_init(
-          GRPC_X509_SAN_PROPERTY_NAME, prop->value.data, prop->value.length);
+      peer_identity_property_name = GRPC_X509_SAN_PROPERTY_NAME;
+      grpc_auth_context_add_property(ctx, GRPC_X509_SAN_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     }
+  }
+  if (peer_identity_property_name != NULL) {
+    GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                   ctx, peer_identity_property_name) == 1);
   }
   return ctx;
 }

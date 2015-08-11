@@ -628,7 +628,7 @@ static void on_openid_config_retrieved(void *user_data,
     goto error;
   }
   jwks_uri += 8;
-  req.use_ssl = 1;
+  req.handshaker = &grpc_httpcli_ssl;
   req.host = gpr_strdup(jwks_uri);
   req.path = strchr(jwks_uri, '/');
   if (req.path == NULL) {
@@ -685,7 +685,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx *ctx) {
   const char *iss;
   grpc_httpcli_request req;
   memset(&req, 0, sizeof(grpc_httpcli_request));
-  req.use_ssl = 1;
+  req.handshaker = &grpc_httpcli_ssl;
 
   GPR_ASSERT(ctx != NULL && ctx->header != NULL && ctx->claims != NULL);
   iss = ctx->claims->iss;

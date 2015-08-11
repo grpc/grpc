@@ -126,8 +126,8 @@ static void test_cancel_after_accept_and_writes_closed(
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.cq, "/foo", "foo.test.google.fr",
-                               deadline);
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -195,8 +195,7 @@ static void test_cancel_after_accept_and_writes_closed(
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == mode.expect_status);
-  GPR_ASSERT(0 == strcmp(details, mode.expect_details));
+  GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);

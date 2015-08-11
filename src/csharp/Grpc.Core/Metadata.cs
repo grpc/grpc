@@ -32,7 +32,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -113,6 +112,16 @@ namespace Grpc.Core
         {
             CheckWriteable();
             entries.Add(item);
+        }
+
+        public void Add(string key, string value)
+        {
+            Add(new Entry(key, value));
+        }
+
+        public void Add(string key, byte[] valueBytes)
+        {
+            Add(new Entry(key, valueBytes));
         }
 
         public void Clear()

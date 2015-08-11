@@ -48,8 +48,11 @@ extern "C" {
 #define GRPC_TEST_SLOWDOWN_MACHINE_FACTOR 1.0
 #endif
 
-#define GRPC_TEST_SLOWDOWN_FACTOR \
-  (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR)
+extern double g_fixture_slowdown_factor;
+
+#define GRPC_TEST_SLOWDOWN_FACTOR                                        \
+  (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR * \
+   g_fixture_slowdown_factor)
 
 #define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                                \
   gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),                               \
