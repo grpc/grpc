@@ -213,7 +213,7 @@ static void zookeeper_dns_resolved(void *arg,
                                    grpc_resolved_addresses *addresses) {
   size_t i;
   zookeeper_resolver *r = arg;
-  int resolve_all = 0;
+  int resolve_done = 0;
 
   gpr_mu_lock(&r->mu);
   r->resolved_num++;
@@ -232,9 +232,9 @@ static void zookeeper_dns_resolved(void *arg,
   grpc_resolved_addresses_destroy(addresses);
 
   /** Wait for all addresses to be resolved */
-  resolve_all = (r->resolved_num == r->resolved_total);
+  resolve_done = (r->resolved_num == r->resolved_total);
   gpr_mu_unlock(&r->mu);
-  if (resolve_all) {
+  if (resolve_done) {
     zookeeper_on_resolved(r, r->resolved_addrs);
   }
 }
@@ -281,7 +281,7 @@ static void zookeeper_get_children_node_completion(int rc, const char *value,
   char *address = NULL;
   char *buffer = NULL;
   zookeeper_resolver *r = (zookeeper_resolver *)arg;
-  int resolve_all = 0;
+  int resolve_done = 0;
 
   if (rc != 0) {
     gpr_log(GPR_ERROR, "Error in getting a child node of %s", r->name);
@@ -297,11 +297,12 @@ static void zookeeper_get_children_node_completion(int rc, const char *value,
     grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
     gpr_free(address);
   } else {
+    gpr_log(GPR_ERROR, "Error in resolving a child node of %s", r->name);
     gpr_mu_lock(&r->mu);
     r->resolved_total--;
-    resolve_all = (r->resolved_num == r->resolved_total);
+    resolve_done = (r->resolved_num == r->resolved_total);
     gpr_mu_unlock(&r->mu);
-    if (resolve_all) {
+    if (resolve_done) {
       zookeeper_on_resolved(r, r->resolved_addrs);
     }
   }
