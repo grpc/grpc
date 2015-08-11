@@ -28,6 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc/generic/active_call'
+require 'grpc/version'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -46,6 +47,7 @@ module GRPC
         fail(TypeError, '!Channel') unless alt_chan.is_a?(Core::Channel)
         return alt_chan
       end
+      kw['grpc.primary_user_agent'] = "grpc-ruby/#{VERSION}"
       return Core::Channel.new(host, kw) if creds.nil?
       fail(TypeError, '!Credentials') unless creds.is_a?(Core::Credentials)
       Core::Channel.new(host, kw, creds)
