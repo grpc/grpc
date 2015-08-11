@@ -37,8 +37,8 @@ module GRPC
     include Core::StatusCodes
     include Core::TimeConsts
 
-    # Default timeout is 5 seconds.
-    DEFAULT_TIMEOUT = 5
+    # Default timeout is infinity.
+    DEFAULT_TIMEOUT = INFINITE_FUTURE
 
     # setup_channel is used by #initialize to constuct a channel from its
     # arguments.
