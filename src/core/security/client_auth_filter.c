@@ -183,7 +183,7 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
     char *error_msg;
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
-    bubble_up_error(elem, GRPC_STATUS_FAILED_PRECONDITION, error_msg);
+    bubble_up_error(elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg);
     gpr_free(error_msg);
   }
 }
@@ -253,7 +253,7 @@ static void auth_start_transport_op(grpc_call_element *elem,
             gpr_asprintf(&error_msg,
                          "Invalid host %s set in :authority metadata.",
                          call_host);
-            bubble_up_error(elem, GRPC_STATUS_FAILED_PRECONDITION, error_msg);
+            bubble_up_error(elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg);
             gpr_free(error_msg);
           }
           return; /* early exit */
