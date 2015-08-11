@@ -49,16 +49,38 @@ namespace Grpc.Core
         readonly Marshaller<TResponse> responseMarshaller;
         CallOptions options;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.CallInvocationDetails`2"/> struct.
+        /// </summary>
+        /// <param name="channel">Channel to use for this call.</param>
+        /// <param name="method">Method to call.</param>
+        /// <param name="options">Call options.</param>
         public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallOptions options) :
             this(channel, method, null, options)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.CallInvocationDetails`2"/> struct.
+        /// </summary>
+        /// <param name="channel">Channel to use for this call.</param>
+        /// <param name="method">Method to call.</param>
+        /// <param name="host">Host that contains the method. if <c>null</c>, default host will be used.</param>
+        /// <param name="options">Call options.</param>
         public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, string host, CallOptions options) :
             this(channel, method.FullName, host, method.RequestMarshaller, method.ResponseMarshaller, options)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.CallInvocationDetails`2"/> struct.
+        /// </summary>
+        /// <param name="channel">Channel to use for this call.</param>
+        /// <param name="method">Qualified method name.</param>
+        /// <param name="host">Host that contains the method.</param>
+        /// <param name="requestMarshaller">Request marshaller.</param>
+        /// <param name="responseMarshaller">Response marshaller.</param>
+        /// <param name="options">Call options.</param>
         public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallOptions options)
         {
             this.channel = Preconditions.CheckNotNull(channel, "channel");
@@ -69,6 +91,9 @@ namespace Grpc.Core
             this.options = options;
         }
 
+        /// <summary>
+        /// Get channel associated with this call.
+        /// </summary>
         public Channel Channel
         {
             get
@@ -77,6 +102,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets name of method to be called.
+        /// </summary>
         public string Method
         {
             get
@@ -85,6 +113,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Get name of host.
+        /// </summary>
         public string Host
         {
             get
@@ -93,6 +124,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets marshaller used to serialize requests.
+        /// </summary>
         public Marshaller<TRequest> RequestMarshaller
         {
             get
@@ -101,6 +135,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets marshaller used to deserialized responses.
+        /// </summary>
         public Marshaller<TResponse> ResponseMarshaller
         {
             get
@@ -109,6 +146,9 @@ namespace Grpc.Core
             }
         }
             
+        /// <summary>
+        /// Gets the call options.
+        /// </summary>
         public CallOptions Options
         {
             get
