@@ -1639,23 +1639,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "grpc_zookeeper"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "zookeeper_test", 
-    "src": [
-      "test/cpp/end2end/zookeeper_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
       "end2end_certs", 
       "end2end_fixture_chttp2_fake_security", 
       "end2end_test_bad_hostname", 
@@ -11750,23 +11733,6 @@
       "src/core/transport/transport.h", 
       "src/core/transport/transport_impl.h", 
       "src/core/transport/transport_op_string.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [
-      "include/grpc/grpc_zookeeper.h", 
-      "src/core/client_config/resolvers/zookeeper_resolver.h"
-    ], 
-    "language": "c", 
-    "name": "grpc_zookeeper", 
-    "src": [
-      "include/grpc/grpc_zookeeper.h", 
-      "src/core/client_config/resolvers/zookeeper_resolver.c", 
-      "src/core/client_config/resolvers/zookeeper_resolver.h"
     ]
   }, 
   {

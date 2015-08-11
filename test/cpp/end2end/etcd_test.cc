@@ -70,11 +70,42 @@ class EtcdTest : public ::testing::Test {
   EtcdTest() {}
 
   void SetUp() GRPC_OVERRIDE {
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ = "localhost:1111";
+    SetUpEtcd();
 
-    // Setup etcd
-    // Require etcd server running
+    // Setup two servers
+    int port1 = grpc_pick_unused_port_or_die();
+    int port2 = grpc_pick_unused_port_or_die();
+    server1_ = SetUpServer(port1);
+    server2_ = SetUpServer(port2);
+
+    // Register service /test in zookeeper
+    RegisterService("/test", "test");
+
+    // Register service instance /test/1 in etcd
+    string value =
+        "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port1) + "\"}";
+    RegisterService("/test/1", value);
+
+    // Register service instance /test/2 in etcd
+    value =
+        "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port2) + "\"}";
+    RegisterService("/test/2", value);
+  }
+
+  std::unique_ptr<Server> SetUpServer(int port) {
+    string server_address = "localhost:" + std::to_string(port);
+
+    ServerBuilder builder;
+    builder.AddListeningPort(server_address, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    std::unique_ptr<Server> server = builder.BuildAndStart();
+    return server;
+  }
+
+  // Require etcd server running beforehand
+  void SetUpEtcd() {
+    // Find etcd server address in environment
+    // Default is localhost:4001
     etcd_address_ = "localhost:4001";
     char* addr = gpr_getenv("GRPC_ETCD_SERVER_TEST");
     if (addr != NULL) {
@@ -82,31 +113,17 @@ class EtcdTest : public ::testing::Test {
       etcd_address_ = addr_str;
       gpr_free(addr);
     }
-    EtcdSetUp(port);
-
-    // Setup server
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  void EtcdSetUp(int port) {
-    // Register service /test in etcd
-    
-
-    // Register service instance /test/1 in etcd
+    gpr_log(GPR_DEBUG, etcd_address_.c_str());
 
     // Register etcd name resolver in grpc
     grpc_etcd_register();
   }
 
-  void EtcdStateChange() {
-    
-  }
+  void RegisterService(string name, string value) {}
 
   void TearDown() GRPC_OVERRIDE {
-    server_->Shutdown();
+    server1_->Shutdown();
+    server2_->Shutdown();
   }
 
   void ResetStub() {
@@ -117,8 +134,8 @@ class EtcdTest : public ::testing::Test {
 
   std::shared_ptr<ChannelInterface> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
-  std::unique_ptr<Server> server_;
-  string server_address_;
+  std::unique_ptr<Server> server1_;
+  std::unique_ptr<Server> server2_;
   EtcdTestServiceImpl service_;
   string etcd_address_;
 };
@@ -127,7 +144,6 @@ class EtcdTest : public ::testing::Test {
 TEST_F(EtcdTest, SimpleRpc) {
   ResetStub();
 
-  getchar();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;

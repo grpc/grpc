@@ -84,8 +84,8 @@ typedef struct {
   int resolved_total;
   /** number of addresses resolved */
   int resolved_num;
-  /* TODO(ctiller): the resolver should be able to either register a,
-                    pollset, or be passed one, to queue up work. */
+  /* TODO(ctiller): the resolver should be able to either register
+     a pollset, or be passed one, to queue up work. */
   /** context in HTTP request */
   grpc_httpcli_context context;
   /** pollset in HTTP request */
@@ -254,7 +254,7 @@ static char *etcd_parse_address(const char *node) {
   return address;
 }
 
-/** Parse json format of etcd HTTP response  */
+/** Parse json format of etcd HTTP response */
 static void etcd_parse_response(etcd_resolver *r, char *response) {
   grpc_json *json;
   grpc_json *cur;
@@ -299,7 +299,8 @@ static void etcd_parse_response(etcd_resolver *r, char *response) {
                   /** Further resolve address by DNS */
                   grpc_resolve_address(address, NULL, etcd_dns_resolved, r);
                 } else {
-                  gpr_log(GPR_ERROR, "Error in resolving a child node of %s", r->name);
+                  gpr_log(GPR_ERROR, "Error in resolving a child node of %s",
+                          r->name);
                 }
                 break;
               }
@@ -325,19 +326,19 @@ static void etcd_on_response(void *arg, const grpc_httpcli_response *response) {
   etcd_parse_response(r, response->body);
 }
 
-/** Etcd watcher for handling updates to watched nodes */ 
+/** Etcd watcher for handling updates to watched nodes */
 static void etcd_watcher(void *arg, const grpc_httpcli_response *response) {
   etcd_resolver *r = (etcd_resolver *)arg;
   gpr_log(GPR_DEBUG, "watch triggered");
   gpr_mu_lock(&r->mu);
   if (r->resolving == 0) {
-  	etcd_start_resolving_locked(r);
+    etcd_start_resolving_locked(r);
   }
   gpr_mu_unlock(&r->mu);
 }
 
 /** Watch for a change and receive notification by using HTTP long polling
-    TODO(ctiller): Objects will leak since currently we cannot cancel it.  */
+    TODO: Objects will leak since currently we cannot cancel it */
 static void etcd_set_watch(etcd_resolver *r) {
   char *path;
   gpr_timespec deadline;
@@ -351,7 +352,8 @@ static void etcd_set_watch(etcd_resolver *r) {
   request.path = path;
 
   deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  grpc_httpcli_get(&r->context, &r->pollset, &request, deadline, etcd_watcher, r);
+  grpc_httpcli_get(&r->context, &r->pollset, &request, deadline, etcd_watcher,
+                   r);
 
   gpr_free(path);
 }
@@ -369,9 +371,10 @@ static void etcd_resolve_address(etcd_resolver *r) {
   gpr_log(GPR_DEBUG, "authority: %s, name: %s", r->authority, r->name);
   gpr_log(GPR_DEBUG, path);
 
-  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(5, GPR_TIMESPAN));
-  grpc_httpcli_get(&r->context, &r->pollset, &request, deadline, etcd_on_response, r);
-  gpr_log(GPR_DEBUG, "hi");
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(5, GPR_TIMESPAN));
+  grpc_httpcli_get(&r->context, &r->pollset, &request, deadline,
+                   etcd_on_response, r);
 
   gpr_free(path);
 }
@@ -398,19 +401,22 @@ static void etcd_maybe_finish_next_locked(etcd_resolver *r) {
   }
 }
 
-/* TODO(ctiller): remove that thread once we get a proper pollset story in place. */
+/* TODO(ctiller): remove that thread once we get a proper pollset 
+   story in place. */
 static void pollset_func(void *arg) {
   etcd_resolver *r = (etcd_resolver *)arg;
   grpc_pollset_worker worker;
   for (;;) {
     gpr_timespec deadline;
     void *quit;
-    deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                            gpr_time_from_millis(100, GPR_TIMESPAN));
 
     quit = gpr_event_wait(&r->poller_quit, deadline);
     if (quit) break;
 
-    deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                            gpr_time_from_millis(100, GPR_TIMESPAN));
     gpr_mu_lock(GRPC_POLLSET_MU(&r->pollset));
     grpc_pollset_work(&r->pollset, &worker, deadline);
     gpr_mu_unlock(GRPC_POLLSET_MU(&r->pollset));
@@ -418,7 +424,7 @@ static void pollset_func(void *arg) {
 }
 
 static void etcd_destroy_pollset(void *pollset) {
-  grpc_pollset_destroy((grpc_pollset *)pollset); 
+  grpc_pollset_destroy((grpc_pollset *)pollset);
 }
 
 static void etcd_destroy(grpc_resolver *gr) {
@@ -429,7 +435,7 @@ static void etcd_destroy(grpc_resolver *gr) {
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
   grpc_httpcli_context_destroy(&r->context);
-  gpr_event_set(&r->poller_quit, (void *) 1);
+  gpr_event_set(&r->poller_quit, (void *)1);
   gpr_thd_join(r->poller_worker);
   grpc_pollset_shutdown(&r->pollset, etcd_destroy_pollset, &r->pollset);
   gpr_free(r->name);
@@ -468,7 +474,7 @@ static grpc_resolver *etcd_create(
   grpc_httpcli_context_init(&r->context);
   grpc_pollset_init(&r->pollset);
   gpr_event_init(&r->poller_quit);
-  gpr_thd_new(&r->poller_worker, pollset_func, (void *) r, &options);
+  gpr_thd_new(&r->poller_worker, pollset_func, (void *)r, &options);
   return &r->base;
 }
 
@@ -476,9 +482,7 @@ static void etcd_plugin_init() {
   grpc_register_resolver_type("etcd", grpc_etcd_resolver_factory_create());
 }
 
-void grpc_etcd_register() { 
-	grpc_register_plugin(etcd_plugin_init, NULL); 
-}
+void grpc_etcd_register() { grpc_register_plugin(etcd_plugin_init, NULL); }
 
 /*
  * FACTORY
