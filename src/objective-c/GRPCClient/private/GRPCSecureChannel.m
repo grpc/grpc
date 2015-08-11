@@ -38,15 +38,18 @@
 // Returns NULL if the file at path couldn't be read. In that case, if errorPtr isn't NULL,
 // *errorPtr will be an object describing what went wrong.
 static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) {
-  NSString *certsContent = [NSString stringWithContentsOfFile:path
-                                                     encoding:NSASCIIStringEncoding
+  // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
+  // issuer). Load them as UTF8 and produce an ASCII equivalent.
+  NSString *contentInUTF8 = [NSString stringWithContentsOfFile:path
+                                                     encoding:NSUTF8StringEncoding
                                                         error:errorPtr];
-  if (!certsContent) {
+  NSData *contentInASCII = [contentInUTF8 dataUsingEncoding:NSASCIIStringEncoding
+                                       allowLossyConversion:YES];
+  if (!contentInASCII.bytes) {
     // Passing NULL to grpc_ssl_credentials_create produces behavior we don't want, so return.
     return NULL;
   }
-  const char * asCString = [certsContent cStringUsingEncoding:NSASCIIStringEncoding];
-  return grpc_ssl_credentials_create(asCString, NULL);
+  return grpc_ssl_credentials_create(contentInASCII.bytes, NULL);
 }
 
 @implementation GRPCSecureChannel
