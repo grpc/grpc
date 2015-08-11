@@ -1539,6 +1539,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_SEND_INITIAL_METADATA;
         req->data.send_metadata.count = op->data.send_initial_metadata.count;
         req->data.send_metadata.metadata =
@@ -1553,6 +1554,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
           return GRPC_CALL_ERROR_INVALID_MESSAGE;
         }
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_SEND_MESSAGE;
         req->data.send_message = op->data.send_message;
         req->flags = op->flags;
@@ -1564,6 +1566,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
           return GRPC_CALL_ERROR_NOT_ON_SERVER;
         }
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_SEND_CLOSE;
         req->flags = op->flags;
         break;
@@ -1574,6 +1577,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
           return GRPC_CALL_ERROR_NOT_ON_CLIENT;
         }
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_SEND_TRAILING_METADATA;
         req->flags = op->flags;
         req->data.send_metadata.count =
@@ -1581,6 +1585,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req->data.send_metadata.metadata =
             op->data.send_status_from_server.trailing_metadata;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_SEND_STATUS;
         req->data.send_status.code = op->data.send_status_from_server.status;
         req->data.send_status.details =
@@ -1590,6 +1595,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                       op->data.send_status_from_server.status_details, 0)
                 : NULL;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_SEND_CLOSE;
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
@@ -1599,6 +1605,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
           return GRPC_CALL_ERROR_NOT_ON_SERVER;
         }
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
         req->data.recv_metadata = op->data.recv_initial_metadata;
         req->data.recv_metadata->count = 0;
@@ -1608,6 +1615,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_MESSAGE;
         req->data.recv_message = op->data.recv_message;
         req->flags = op->flags;
@@ -1619,22 +1627,26 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
           return GRPC_CALL_ERROR_NOT_ON_SERVER;
         }
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_STATUS;
         req->flags = op->flags;
         req->data.recv_status.set_value = set_status_value_directly;
         req->data.recv_status.user_data = op->data.recv_status_on_client.status;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_STATUS_DETAILS;
         req->data.recv_status_details.details =
             op->data.recv_status_on_client.status_details;
         req->data.recv_status_details.details_capacity =
             op->data.recv_status_on_client.status_details_capacity;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_TRAILING_METADATA;
         req->data.recv_metadata =
             op->data.recv_status_on_client.trailing_metadata;
         req->data.recv_metadata->count = 0;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_CLOSE;
         finish_func = finish_batch_with_close;
         break;
@@ -1642,12 +1654,14 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         /* Flag validation: currently allow no flags */
         if (op->flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_STATUS;
         req->flags = op->flags;
         req->data.recv_status.set_value = set_cancelled_value;
         req->data.recv_status.user_data =
             op->data.recv_close_on_server.cancelled;
         req = &reqs[out++];
+	if (out > GRPC_IOREQ_OP_COUNT) return GRPC_CALL_ERROR_BATCH_TOO_BIG;
         req->op = GRPC_IOREQ_RECV_CLOSE;
         finish_func = finish_batch_with_close;
         break;
