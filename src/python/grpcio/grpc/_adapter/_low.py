@@ -27,8 +27,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from grpc import _grpcio_metadata
 from grpc._adapter import _c
 from grpc._adapter import _types
+
+_USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
 ClientCredentials = _c.ClientCredentials
 ServerCredentials = _c.ServerCredentials
@@ -76,6 +79,7 @@ class Call(_types.Call):
 class Channel(_types.Channel):
 
   def __init__(self, target, args, creds=None):
+    args = list(args) + [(_c.PRIMARY_USER_AGENT_KEY, _USER_AGENT)]
     if creds is None:
       self.channel = _c.Channel(target, args)
     else:

@@ -37,6 +37,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 #include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
@@ -250,6 +251,21 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   return Qnil;
 }
 
+
+/* Called to obtain the target that this channel accesses. */
+static VALUE grpc_rb_channel_get_target(VALUE self) {
+  grpc_rb_channel *wrapper = NULL;
+  VALUE res = Qnil;
+  char* target = NULL;
+
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
+  target = grpc_channel_get_target(wrapper->wrapped);
+  res = rb_str_new2(target);
+  gpr_free(target);
+
+  return res;
+}
+
 void Init_grpc_channel() {
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
   grpc_rb_cChannel =
@@ -266,6 +282,7 @@ void Init_grpc_channel() {
   /* Add ruby analogues of the Channel methods. */
   rb_define_method(grpc_rb_cChannel, "create_call",
                    grpc_rb_channel_create_call, 4);
+  rb_define_method(grpc_rb_cChannel, "target", grpc_rb_channel_get_target, 0);
   rb_define_method(grpc_rb_cChannel, "destroy", grpc_rb_channel_destroy, 0);
   rb_define_alias(grpc_rb_cChannel, "close", "destroy");
 

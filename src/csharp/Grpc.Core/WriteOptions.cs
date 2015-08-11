@@ -1,11 +1,12 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -15,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -27,58 +28,55 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#endregion
-using System;
-using System.Threading.Tasks;
-using Grpc.Core.Internal;
 
-namespace Grpc.Core.Internal
+#endregion
+
+using System;
+
+namespace Grpc.Core
 {
     /// <summary>
-    /// Writes requests asynchronously to an underlying AsyncCall object.
+    /// Flags for write operations.
     /// </summary>
-    internal class ClientRequestStream<TRequest, TResponse> : IClientStreamWriter<TRequest>
+    [Flags]
+    public enum WriteFlags
     {
-        readonly AsyncCall<TRequest, TResponse> call;
-        WriteOptions writeOptions;
+        /// <summary>
+        /// Hint that the write may be buffered and need not go out on the wire immediately.
+        /// gRPC is free to buffer the message until the next non-buffered
+        /// write, or until write stream completion, but it need not buffer completely or at all.
+        /// </summary>
+        BufferHint = 0x1,
 
-        public ClientRequestStream(AsyncCall<TRequest, TResponse> call)
+        /// <summary>
+        /// Force compression to be disabled for a particular write.
+        /// </summary>
+        NoCompress = 0x2
+    }
+
+    /// <summary>
+    /// Options for write operations.
+    /// </summary>
+    public class WriteOptions
+    {
+        /// <summary>
+        /// Default write options.
+        /// </summary>
+        public static readonly WriteOptions Default = new WriteOptions();
+            
+        private WriteFlags flags;
+
+        public WriteOptions(WriteFlags flags = default(WriteFlags))
         {
-            this.call = call;
-            this.writeOptions = call.Details.Options.WriteOptions;
+            this.flags = flags;
         }
 
-        public Task WriteAsync(TRequest message)
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
-
-        public Task CompleteAsync()
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendCloseFromClient(taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
-
-        public WriteOptions WriteOptions
+        public WriteFlags Flags
         {
             get
             {
-                return this.writeOptions;
+                return this.flags;
             }
-
-            set
-            {
-                writeOptions = value;
-            }
-        }
-
-        private WriteFlags GetWriteFlags()
-        {
-            var options = writeOptions;
-            return options != null ? options.Flags : default(WriteFlags);
         }
     }
 }

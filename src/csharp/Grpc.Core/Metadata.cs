@@ -114,6 +114,16 @@ namespace Grpc.Core
             entries.Add(item);
         }
 
+        public void Add(string key, string value)
+        {
+            Add(new Entry(key, value));
+        }
+
+        public void Add(string key, byte[] valueBytes)
+        {
+            Add(new Entry(key, valueBytes));
+        }
+
         public void Clear()
         {
             CheckWriteable();

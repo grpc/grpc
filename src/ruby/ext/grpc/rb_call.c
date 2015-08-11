@@ -179,6 +179,19 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   return Qnil;
 }
 
+/* Called to obtain the peer that this call is connected to. */
+static VALUE grpc_rb_call_get_peer(VALUE self) {
+  VALUE res = Qnil;
+  grpc_call *call = NULL;
+  char *peer = NULL;
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
+  peer = grpc_call_get_peer(call);
+  res = rb_str_new2(peer);
+  gpr_free(peer);
+
+  return res;
+}
+
 /*
   call-seq:
   status = call.status
@@ -720,6 +733,7 @@ void Init_grpc_call() {
   /* Add ruby analogues of the Call methods. */
   rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 4);
   rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
+  rb_define_method(grpc_rb_cCall, "peer", grpc_rb_call_get_peer, 0);
   rb_define_method(grpc_rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);

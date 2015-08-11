@@ -31,11 +31,12 @@ import threading
 import time
 import unittest
 
+from grpc import _grpcio_metadata
 from grpc._adapter import _types
 from grpc._adapter import _low
 
 
-def WaitForEvents(completion_queues, deadline):
+def wait_for_events(completion_queues, deadline):
   """
   Args:
     completion_queues: list of completion queues to wait for events on
@@ -61,6 +62,7 @@ def WaitForEvents(completion_queues, deadline):
   for thread in threads:
     thread.join()
   return results
+
 
 class InsecureServerInsecureClient(unittest.TestCase):
 
@@ -123,16 +125,21 @@ class InsecureServerInsecureClient(unittest.TestCase):
     ], client_call_tag)
     self.assertEquals(_types.CallError.OK, client_start_batch_result)
 
-    client_no_event, request_event, = WaitForEvents([self.client_completion_queue, self.server_completion_queue], time.time() + 2)
+    client_no_event, request_event, = wait_for_events([self.client_completion_queue, self.server_completion_queue], time.time() + 2)
     self.assertEquals(client_no_event, None)
     self.assertEquals(_types.EventType.OP_COMPLETE, request_event.type)
     self.assertIsInstance(request_event.call, _low.Call)
     self.assertIs(server_request_tag, request_event.tag)
     self.assertEquals(1, len(request_event.results))
-    got_initial_metadata = dict(request_event.results[0].initial_metadata)
+    received_initial_metadata = dict(request_event.results[0].initial_metadata)
+    # Check that our metadata were transmitted
     self.assertEquals(
         dict(client_initial_metadata),
-        dict((x, got_initial_metadata[x]) for x in zip(*client_initial_metadata)[0]))
+        dict((x, received_initial_metadata[x]) for x in zip(*client_initial_metadata)[0]))
+    # Check that Python's user agent string is a part of the full user agent
+    # string
+    self.assertIn('Python-gRPC-{}'.format(_grpcio_metadata.__version__),
+                  received_initial_metadata['user-agent'])
     self.assertEquals(METHOD, request_event.call_details.method)
     self.assertEquals(HOST, request_event.call_details.host)
     self.assertLess(abs(DEADLINE - request_event.call_details.deadline), DEADLINE_TOLERANCE)
@@ -150,7 +157,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
     ], server_call_tag)
     self.assertEquals(_types.CallError.OK, server_start_batch_result)
 
-    client_event, server_event, = WaitForEvents([self.client_completion_queue, self.server_completion_queue], time.time() + 1)
+    client_event, server_event, = wait_for_events([self.client_completion_queue, self.server_completion_queue], time.time() + 1)
 
     self.assertEquals(6, len(client_event.results))
     found_client_op_types = set()
