@@ -1295,6 +1295,23 @@
     ], 
     "flaky": false, 
     "language": "c++", 
+    "name": "etcd_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "fixed_size_thread_pool_test", 
     "platforms": [
       "linux", 

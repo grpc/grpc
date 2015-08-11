@@ -1204,6 +1204,23 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_etcd", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "etcd_test", 
+    "src": [
+      "test/cpp/end2end/etcd_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -12599,6 +12616,23 @@
       "src/core/tsi/transport_security.c", 
       "src/core/tsi/transport_security.h", 
       "src/core/tsi/transport_security_interface.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [
+      "include/grpc/grpc_etcd.h", 
+      "src/core/client_config/resolvers/etcd_resolver.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_etcd", 
+    "src": [
+      "include/grpc/grpc_etcd.h", 
+      "src/core/client_config/resolvers/etcd_resolver.c", 
+      "src/core/client_config/resolvers/etcd_resolver.h"
     ]
   }, 
   {

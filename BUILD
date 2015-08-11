@@ -406,6 +406,26 @@ cc_library(
 
 
 cc_library(
+  name = "grpc_etcd",
+  srcs = [
+    "src/core/client_config/resolvers/etcd_resolver.h",
+    "src/core/client_config/resolvers/etcd_resolver.c",
+  ],
+  hdrs = [
+    "include/grpc/grpc_etcd.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":gpr",
+    ":grpc",
+  ],
+)
+
+
+cc_library(
   name = "grpc_unsecure",
   srcs = [
     "src/core/channel/census_filter.h",
