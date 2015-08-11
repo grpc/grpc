@@ -7,7 +7,7 @@
     "version": {
       "major": 0,
       "minor": 10,
-      "micro": 0,
+      "micro": 1,
       "build": 0
     }
   },
@@ -33,7 +33,6 @@
         "include/grpc++/async_generic_service.h",
         "include/grpc++/async_unary_call.h",
         "include/grpc++/auth_context.h",
-        "include/grpc++/auth_property_iterator.h",
         "include/grpc++/byte_buffer.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
