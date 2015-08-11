@@ -154,14 +154,17 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertTrue(is_string($this->channel->getTarget()));
   }
 
-  /**
-   * @medium
-   */
   public function testGetConnectivityState() {
-    $old_state = Grpc\CHANNEL_IDLE;
-    $this->assertTrue($this->channel->getConnectivityState() == $old_state);
-    $this->assertTrue($this->channel->getConnectivityState(true) == $old_state);
-    usleep(500000);
-    $this->assertTrue($this->channel->getConnectivityState() != $old_state);
+    $this->assertTrue($this->channel->getConnectivityState() == Grpc\CHANNEL_IDLE);
+  }
+
+  public function testWatchConnectivityState() {
+    $old_state = $this->channel->getConnectivityState(true);
+    $deadline = microtime(true) * 1000000 + 500000;
+    $this->channel->watchConnectivityState(
+        $old_state,
+        new Grpc\Timeval($deadline));
+    $new_state = $this->channel->getConnectivityState();
+    $this->assertTrue($old_state != $new_state);
   }
 }
