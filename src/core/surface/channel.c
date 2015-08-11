@@ -104,7 +104,8 @@ grpc_channel *grpc_channel_create_from_filters(
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status", 0);
   channel->grpc_compression_algorithm_string =
       grpc_mdstr_from_string(mdctx, "grpc-encoding", 0);
-  channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message", 0);
+  channel->grpc_message_string =
+      grpc_mdstr_from_string(mdctx, "grpc-message", 0);
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
     char buf[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(i, buf);

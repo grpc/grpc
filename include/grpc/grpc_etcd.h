@@ -31,36 +31,18 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
-#define GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
+#ifndef GRPC_GRPC_ETCD_H
+#define GRPC_GRPC_ETCD_H
 
-#include "src/core/iomgr/iomgr.h"
-#include <grpc/support/sync.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef struct grpc_iomgr_object {
-  char *name;
-  struct grpc_iomgr_object *next;
-  struct grpc_iomgr_object *prev;
-} grpc_iomgr_object;
+/** Register etcd name resolver in grpc */
+void grpc_etcd_register();
 
-int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success);
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
+#ifdef __cplusplus
+}
+#endif
 
-void grpc_iomgr_register_object_internal(grpc_iomgr_object *obj,
-                                         const char *name,
-                                         const char *file,
-                                         int line);
-void grpc_iomgr_unregister_object_internal(grpc_iomgr_object *obj,
-                                           const char *file,
-                                           int line);
-
-#define grpc_iomgr_register_object(obj, name) \
-  grpc_iomgr_register_object_internal(obj, name, __FILE__, __LINE__)
-
-#define grpc_iomgr_unregister_object(obj) \
-  grpc_iomgr_unregister_object_internal(obj, __FILE__, __LINE__)
-
-void grpc_iomgr_platform_init(void);
-void grpc_iomgr_platform_shutdown(void);
-
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */
+#endif /* GRPC_GRPC_ETCD_H */
