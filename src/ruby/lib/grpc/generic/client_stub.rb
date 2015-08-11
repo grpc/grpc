@@ -410,7 +410,7 @@ module GRPC
     # @param timeout [TimeConst]
     def new_active_call(method, marshal, unmarshal, timeout = nil)
       deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
-      call = @ch.create_call(@queue, method, @host, deadline)
+      call = @ch.create_call(@queue, method, nil, deadline)
       ActiveCall.new(call, @queue, marshal, unmarshal, deadline, started: false)
     end
   end
