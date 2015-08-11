@@ -217,6 +217,7 @@
       ],
       "src": [
         "src/core/census/grpc_context.c",
+        "src/core/channel/census_filter.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/client_channel.c",

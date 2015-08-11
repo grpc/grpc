@@ -332,6 +332,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\grpc_context.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\census_filter.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_stack.c">
