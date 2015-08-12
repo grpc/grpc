@@ -551,17 +551,19 @@ static void set_encodings_accepted_by_peer(grpc_call *call,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   for (i = 0; i < accept_encoding_parts.count; i++) {
-    const gpr_slice* slice = &accept_encoding_parts.slices[i];
+    const gpr_slice *accept_encoding_entry_slice =
+        &accept_encoding_parts.slices[i];
     if (grpc_compression_algorithm_parse(
-            (const char *)GPR_SLICE_START_PTR(*slice), GPR_SLICE_LENGTH(*slice),
-            &algorithm)) {
+            (const char *)GPR_SLICE_START_PTR(*accept_encoding_entry_slice),
+            GPR_SLICE_LENGTH(*accept_encoding_entry_slice), &algorithm)) {
       GPR_BITSET(&call->encodings_accepted_by_peer, algorithm);
     } else {
-      /* TODO(dgq): it'd be nice to have a slice-to-cstr function to easily
-       * print the offending entry */
+      char *accept_encoding_entry_str =
+          gpr_dump_slice(*accept_encoding_entry_slice, GPR_DUMP_ASCII);
       gpr_log(GPR_ERROR,
               "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
-              gpr_dump_slice(*slice, GPR_DUMP_ASCII));
+              accept_encoding_entry_str);
+      gpr_free(accept_encoding_entry_str);
     }
   }
 }
