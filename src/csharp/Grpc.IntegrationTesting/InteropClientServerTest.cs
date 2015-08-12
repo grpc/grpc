@@ -126,5 +126,11 @@ namespace Grpc.IntegrationTesting
         {
             await InteropClient.RunCancelAfterFirstResponseAsync(client);
         }
+
+        [Test]
+        public async Task TimeoutOnSleepingServerAsync()
+        {
+            await InteropClient.RunTimeoutOnSleepingServerAsync(client);
+        }
     }
 }
