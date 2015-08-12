@@ -61,9 +61,9 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
-  bool registered = method.channel_tag() && context->authority().empty();
+  const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = NULL;
-  if (registered) {
+  if (kRegistered) {
     c_call = grpc_channel_create_registered_call(
         c_channel_, context->propagate_from_call_,
         context->propagation_options_.c_bitmask(), cq->cq(),
