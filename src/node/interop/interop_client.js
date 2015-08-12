@@ -67,7 +67,7 @@ function zeroBuffer(size) {
  *     primarily for use with mocha
  */
 function emptyUnary(client, done) {
-  var call = client.emptyCall({}, function(err, resp) {
+  client.emptyCall({}, function(err, resp) {
     assert.ifError(err);
     if (done) {
       done();
@@ -89,7 +89,7 @@ function largeUnary(client, done) {
       body: zeroBuffer(271828)
     }
   };
-  var call = client.unaryCall(arg, function(err, resp) {
+  client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
     assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
     assert.strictEqual(resp.payload.body.length, 314159);
@@ -293,7 +293,7 @@ function authTest(expected_user, scope, client, done) {
       fill_username: true,
       fill_oauth_scope: true
     };
-    var call = client.unaryCall(arg, function(err, resp) {
+    client.unaryCall(arg, function(err, resp) {
       assert.ifError(err);
       assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
       assert.strictEqual(resp.payload.body.length, 314159);
@@ -328,7 +328,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
       };
       var makeTestCall = function(error, client_metadata) {
         assert.ifError(error);
-        var call = client.unaryCall(arg, function(err, resp) {
+        client.unaryCall(arg, function(err, resp) {
           assert.ifError(err);
           assert.strictEqual(resp.username, expected_user);
           assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
