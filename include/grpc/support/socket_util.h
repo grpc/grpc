@@ -31,19 +31,18 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
-#define GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
+#ifndef GRPC_SUPPORT_SOCKET_UTIL_H
+#define GRPC_SUPPORT_SOCKET_UTIL_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif /*  __cplusplus */
+#endif
 
-extern const char test_root_cert[];
-extern const char test_server1_cert[];
-extern const char test_server1_key[];
+/* see /src/core/iomgr/socket_utils_posix.h for description*/
+int grpc_ipv6_loopback_available(void);
 
 #ifdef __cplusplus
 }
-#endif /*  __cplusplus */
+#endif
 
-#endif  /* GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H */
+#endif  /* GRPC_SUPPORT_SOCKET_UTIL_H */

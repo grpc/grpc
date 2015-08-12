@@ -31,19 +31,12 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
-#define GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /*  __cplusplus */
+#ifdef GPR_WINSOCK_SOCKET
 
-extern const char test_root_cert[];
-extern const char test_server1_cert[];
-extern const char test_server1_key[];
-
-#ifdef __cplusplus
+int grpc_ipv6_loopback_available(void) {
+  return 0;             /* disabled until a windows version is written */
 }
-#endif /*  __cplusplus */
 
-#endif  /* GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H */
+#endif /* GPR_WINSOCK_SOCKET */

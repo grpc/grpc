@@ -33,8 +33,6 @@
 
 #include <memory>
 
-#include <unistd.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>

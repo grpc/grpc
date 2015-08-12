@@ -35,8 +35,6 @@
 
 #include <memory>
 
-#include <unistd.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc++/channel_interface.h>
@@ -286,7 +284,8 @@ void InteropClient::DoResponseStreamingWithSlowConsumer() {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_INFO, "received message %d", i);
-    usleep(kReceiveDelayMilliSeconds * 1000);
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                     gpr_time_from_millis(kReceiveDelayMilliSeconds, GPR_TIMESPAN)));
     ++i;
   }
   GPR_ASSERT(kNumResponseMessages == i);

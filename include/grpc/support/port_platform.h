@@ -90,6 +90,7 @@
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#define GPR_WINDOWS_SUBPROCESS 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
