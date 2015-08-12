@@ -338,7 +338,7 @@ describe GRPC::ActiveCall do
   end
 
   def make_test_call
-    @ch.create_call(@client_queue, '/method', nil, deadline)
+    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
   end
 
   def deadline
