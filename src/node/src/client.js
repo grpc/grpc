@@ -549,7 +549,7 @@ exports.makeClientConstructor = function(methods, serviceName) {
     options['grpc.primary_user_agent'] = 'grpc-node/' + version;
     this.channel = new grpc.Channel(address, credentials, options);
     // Extract the DNS name from the address string
-    address = address.replace(/(\w+:\/\/)?([^:]+)(:\d+)?\/?$/, '$2');
+    address = address.replace(/(\w+:\/\/+)?([^:]+)(:\d+)?\/?$/, '$2');
     this.server_address = address;
     this.auth_uri = 'https://' + this.server_address + '/' + serviceName;
     this.updateMetadata = updateMetadata;
