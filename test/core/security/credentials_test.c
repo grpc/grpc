@@ -373,8 +373,8 @@ static void test_ssl_oauth2_composite_creds(void) {
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
-  grpc_credentials *oauth2_creds =
-      grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
+  grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
+      "Authorization", test_oauth2_bearer_token, 0);
   grpc_credentials *composite_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_credentials_unref(ssl_creds);
@@ -424,8 +424,8 @@ static void test_ssl_oauth2_iam_composite_creds(void) {
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
-  grpc_credentials *oauth2_creds =
-      grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
+  grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
+      "Authorization", test_oauth2_bearer_token, 0);
   grpc_credentials *aux_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_credentials *iam_creds = grpc_iam_credentials_create(

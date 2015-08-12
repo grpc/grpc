@@ -29,9 +29,11 @@
 
 import argparse
 import contextlib
+import distutils.spawn
 import errno
 import itertools
 import os
+import pkg_resources
 import shutil
 import subprocess
 import sys
@@ -57,9 +59,6 @@ SHORT_TIMEOUT = 2
 # module will ever wait the duration.
 LONG_TIMEOUT = 600
 NO_DELAY = 0
-
-# Build mode environment variable set by tools/run_tests/run_tests.py.
-_build_mode = os.environ['CONFIG']
 
 
 class _ServicerMethods(object):
@@ -228,9 +227,13 @@ class PythonPluginTest(unittest.TestCase):
   """
 
   def setUp(self):
-    protoc_command = '../../bins/%s/protobuf/protoc' % _build_mode
-    protoc_plugin_filename = '../../bins/%s/grpc_python_plugin' % _build_mode
-    test_proto_filename = './test.proto'
+    # Assume that the appropriate protoc and grpc_python_plugins are on the
+    # path.
+    protoc_command = 'protoc'
+    protoc_plugin_filename = distutils.spawn.find_executable(
+        'grpc_python_plugin')
+    test_proto_filename = pkg_resources.resource_filename(
+        'grpc_protoc_plugin', 'test.proto')
     if not os.path.isfile(protoc_command):
       # Assume that if we haven't built protoc that it's on the system.
       protoc_command = 'protoc'
@@ -242,12 +245,13 @@ class PythonPluginTest(unittest.TestCase):
     cmd = [
         protoc_command,
         '--plugin=protoc-gen-python-grpc=%s' % protoc_plugin_filename,
-        '-I %s' % os.path.dirname(test_proto_filename),
+        '-I .',
         '--python_out=%s' % self.outdir,
         '--python-grpc_out=%s' % self.outdir,
         os.path.basename(test_proto_filename),
     ]
-    subprocess.call(' '.join(cmd), shell=True)
+    subprocess.check_call(' '.join(cmd), shell=True, env=os.environ,
+                          cwd=os.path.dirname(test_proto_filename))
     sys.path.append(self.outdir)
 
   def tearDown(self):

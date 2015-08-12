@@ -35,6 +35,7 @@
 
 #include <grpc/status.h>
 
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -75,12 +76,16 @@
 }
 @end
 
+#pragma mark Tests
+
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
+
 @implementation InteropTests {
   RMTTestService *_service;
 }
 
 + (NSString *)host {
-  return @"http://localhost:5050";
+  return kRemoteSSLHost;
 }
 
 - (void)setUp {
@@ -123,7 +128,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:16 handler:nil];
 }
 
 - (void)testClientStreamingRPC {

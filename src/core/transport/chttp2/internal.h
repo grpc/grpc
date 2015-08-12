@@ -388,6 +388,8 @@ typedef struct {
   gpr_uint8 in_stream_map;
   /** bitmask of GRPC_CHTTP2_WRITING_xxx above */
   gpr_uint8 writing_now;
+  /** has anything been written to this stream? */
+  gpr_uint8 written_anything;
 
   /** stream state already published to the upper layer */
   grpc_stream_state published_state;

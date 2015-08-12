@@ -63,7 +63,7 @@ function runTest(iterations, callback) {
           var timeDiff = process.hrtime(startTime);
           intervals[i] = timeDiff[0] * 1000000 + timeDiff[1] / 1000;
           next(i+1);
-        }, {}, deadline);
+        }, {}, {deadline: deadline});
       }
     }
     next(0);

@@ -39,6 +39,9 @@ using System.Threading.Tasks;
 
 namespace Grpc.Core.Utils
 {
+    /// <summary>
+    /// Utility methods to run microbenchmarks.
+    /// </summary>
     public static class BenchmarkUtil
     {
         /// <summary>

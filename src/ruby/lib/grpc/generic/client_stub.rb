@@ -28,6 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc/generic/active_call'
+require 'grpc/version'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -36,8 +37,8 @@ module GRPC
     include Core::StatusCodes
     include Core::TimeConsts
 
-    # Default timeout is 5 seconds.
-    DEFAULT_TIMEOUT = 5
+    # Default timeout is infinity.
+    DEFAULT_TIMEOUT = INFINITE_FUTURE
 
     # setup_channel is used by #initialize to constuct a channel from its
     # arguments.
@@ -46,6 +47,7 @@ module GRPC
         fail(TypeError, '!Channel') unless alt_chan.is_a?(Core::Channel)
         return alt_chan
       end
+      kw['grpc.primary_user_agent'] = "grpc-ruby/#{VERSION}"
       return Core::Channel.new(host, kw) if creds.nil?
       fail(TypeError, '!Credentials') unless creds.is_a?(Core::Credentials)
       Core::Channel.new(host, kw, creds)
@@ -408,7 +410,7 @@ module GRPC
     # @param timeout [TimeConst]
     def new_active_call(method, marshal, unmarshal, timeout = nil)
       deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
-      call = @ch.create_call(@queue, method, @host, deadline)
+      call = @ch.create_call(@queue, method, nil, deadline)
       ActiveCall.new(call, @queue, marshal, unmarshal, deadline, started: false)
     end
   end

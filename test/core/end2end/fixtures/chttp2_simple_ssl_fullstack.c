@@ -68,6 +68,14 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
+static void process_auth_failure(void *state, grpc_auth_context *ctx,
+                                 const grpc_metadata *md, size_t md_count,
+                                 grpc_process_auth_metadata_done_cb cb,
+                                 void *user_data) {
+  GPR_ASSERT(state == NULL);
+  cb(user_data, NULL, 0, 0);
+}
+
 static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 grpc_channel_args *client_args,
                                                 grpc_credentials *creds) {
@@ -110,12 +118,28 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
   grpc_channel_args_destroy(new_client_args);
 }
 
+static int fail_server_auth_check(grpc_channel_args *server_args) {
+  size_t i;
+  if (server_args == NULL) return 0;
+  for (i = 0; i < server_args->num_args; i++) {
+    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
+        0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0);
+  if (fail_server_auth_check(server_args)) {
+    grpc_auth_metadata_processor processor = {process_auth_failure, NULL};
+    grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
+  }
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 
