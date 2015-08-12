@@ -526,7 +526,7 @@ var requester_makers = {
  * requestSerialize: function to serialize request objects
  * responseDeserialize: function to deserialize response objects
  * @param {Object} methods An object mapping method names to method attributes
- * @param {string} serviceName The name of the service
+ * @param {string} serviceName The fully qualified name of the service
  * @return {function(string, Object)} New client constructor
  */
 exports.makeClientConstructor = function(methods, serviceName) {
@@ -551,8 +551,10 @@ exports.makeClientConstructor = function(methods, serviceName) {
     }
     options['grpc.primary_user_agent'] = 'grpc-node/' + version;
     this.channel = new grpc.Channel(address, credentials, options);
-    this.server_address = address.replace(/\/$/, '');
-    this.auth_uri = this.server_address + '/' + serviceName;
+    // Remove the optional DNS scheme, trailing port, and trailing backslash
+    address = address.replace(/^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$/, '$2');
+    this.server_address = address;
+    this.auth_uri = 'https://' + this.server_address + '/' + serviceName;
     this.updateMetadata = updateMetadata;
   }
 
@@ -590,7 +592,8 @@ exports.makeClientConstructor = function(methods, serviceName) {
  */
 exports.makeProtobufClientConstructor =  function(service) {
   var method_attrs = common.getProtobufServiceAttrs(service, service.name);
-  var Client = exports.makeClientConstructor(method_attrs);
+  var Client = exports.makeClientConstructor(
+      method_attrs, common.fullyQualifiedName(service));
   Client.service = service;
   return Client;
 };
