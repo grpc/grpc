@@ -83,7 +83,7 @@ class Client {
   ClientStats Mark() {
     Histogram latencies;
     // avoid std::vector for old compilers that expect a copy constructor
-    Histogram *to_merge = new Histogram[threads_.size()];
+    Histogram* to_merge = new Histogram[threads_.size()];
     for (size_t i = 0; i < threads_.size(); i++) {
       threads_[i]->BeginSwap(&to_merge[i]);
     }

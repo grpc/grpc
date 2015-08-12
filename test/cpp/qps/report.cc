@@ -140,14 +140,18 @@ void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
 }
 
 void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
-  const double server_system_time = 100.0 * sum(result.server_resources, SystemTime) /
-                              sum(result.server_resources, WallTime);
-  const double server_user_time = 100.0 * sum(result.server_resources, UserTime) /
-                            sum(result.server_resources, WallTime);
-  const double client_system_time = 100.0 * sum(result.client_resources, SystemTime) /
-                              sum(result.client_resources, WallTime);
-  const double client_user_time = 100.0 * sum(result.client_resources, UserTime) /
-                            sum(result.client_resources, WallTime);
+  const double server_system_time = 100.0 *
+                                    sum(result.server_resources, SystemTime) /
+                                    sum(result.server_resources, WallTime);
+  const double server_user_time = 100.0 *
+                                  sum(result.server_resources, UserTime) /
+                                  sum(result.server_resources, WallTime);
+  const double client_system_time = 100.0 *
+                                    sum(result.client_resources, SystemTime) /
+                                    sum(result.client_resources, WallTime);
+  const double client_user_time = 100.0 *
+                                  sum(result.client_resources, UserTime) /
+                                  sum(result.client_resources, WallTime);
 
   perf_db_client_.setTimes(server_system_time, server_user_time,
                            client_system_time, client_user_time);

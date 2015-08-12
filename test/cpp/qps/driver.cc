@@ -97,7 +97,7 @@ struct ClientData {
   unique_ptr<Worker::Stub> stub;
   unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
 };
-} // namespace runsc
+}  // namespace runsc
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
