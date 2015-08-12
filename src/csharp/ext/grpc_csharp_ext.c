@@ -734,7 +734,8 @@ grpcsharp_call_start_serverside(grpc_call *call, grpcsharp_batch_context *ctx) {
       (&ctx->recv_close_on_server_cancelled);
   ops[0].flags = 0;
 
-  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
+  return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+                               NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE

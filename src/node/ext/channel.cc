@@ -145,7 +145,8 @@ NAN_METHOD(Channel::New) {
       return NanThrowTypeError("Channel expects a string and an object");
     }
     if (creds == NULL) {
-      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr);
+      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr,
+                                                     NULL);
     } else {
       wrapped_channel =
           grpc_secure_channel_create(creds, *host, channel_args_ptr);
