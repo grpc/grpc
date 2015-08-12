@@ -83,7 +83,6 @@
     <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
-    <Compile Include="OperationFailedException.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Utils\Preconditions.cs" />
     <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
