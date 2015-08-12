@@ -57,22 +57,23 @@ function multiDone(done, count) {
   };
 }
 
+var insecureCreds = grpc.Credentials.createInsecure();
+
 describe('end-to-end', function() {
   var server;
   var channel;
   before(function() {
     server = new grpc.Server();
-    var port_num = server.addHttp2Port('0.0.0.0:0');
+    var port_num = server.addHttp2Port('0.0.0.0:0',
+                                       grpc.ServerCredentials.createInsecure());
     server.start();
-    channel = new grpc.Channel('localhost:' + port_num);
+    channel = new grpc.Channel('localhost:' + port_num, insecureCreds);
   });
   after(function() {
     server.shutdown();
   });
   it('should start and end a request without error', function(complete) {
     var done = multiDone(complete, 2);
-    var deadline = new Date();
-    deadline.setSeconds(deadline.getSeconds() + 3);
     var status_text = 'xyz';
     var call = new grpc.Call(channel,
                              'dummy_method',
@@ -123,8 +124,6 @@ describe('end-to-end', function() {
   });
   it('should successfully send and receive metadata', function(complete) {
     var done = multiDone(complete, 2);
-    var deadline = new Date();
-    deadline.setSeconds(deadline.getSeconds() + 3);
     var status_text = 'xyz';
     var call = new grpc.Call(channel,
                              'dummy_method',
@@ -181,8 +180,6 @@ describe('end-to-end', function() {
     var req_text = 'client_request';
     var reply_text = 'server_response';
     var done = multiDone(complete, 2);
-    var deadline = new Date();
-    deadline.setSeconds(deadline.getSeconds() + 3);
     var status_text = 'success';
     var call = new grpc.Call(channel,
                              'dummy_method',
@@ -238,8 +235,6 @@ describe('end-to-end', function() {
   it('should send multiple messages', function(complete) {
     var done = multiDone(complete, 2);
     var requests = ['req1', 'req2'];
-    var deadline = new Date();
-    deadline.setSeconds(deadline.getSeconds() + 3);
     var status_text = 'xyz';
     var call = new grpc.Call(channel,
                              'dummy_method',

@@ -64,6 +64,12 @@
     <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -75,6 +81,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\debug\trace.c">
       <Filter>src\core\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\parser.c">
+      <Filter>src\core\httpcli</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
       <Filter>src\core\iomgr</Filter>
@@ -104,9 +119,6 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
@@ -365,9 +377,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\census\grpc_context.h">
-      <Filter>src\core\census</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\channel\census_filter.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
@@ -431,6 +440,12 @@
     <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
@@ -439,6 +454,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\debug\trace.h">
       <Filter>src\core\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\format_request.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\httpcli.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\parser.h">
+      <Filter>src\core\httpcli</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\alarm.h">
       <Filter>src\core\iomgr</Filter>
@@ -471,9 +495,6 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
@@ -689,11 +710,17 @@
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{dd617c24-6f07-fdff-80d5-c8610d6f815e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\client_config\subchannel_factory_decorators">
+      <UniqueIdentifier>{64285d1a-ebd0-7637-ae20-15df5ca6cc83}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\debug">
       <UniqueIdentifier>{6d8d5774-7291-554d-fafa-583463cd3fd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\httpcli">
+      <UniqueIdentifier>{1ba3a245-47e7-89b5-b0c9-aca758bd0277}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\iomgr">
       <UniqueIdentifier>{a9df8b24-ecea-ff6d-8999-d8fa54cd70bf}</UniqueIdentifier>

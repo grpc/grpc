@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -46,7 +47,7 @@ namespace math.Tests
     /// </summary>
     public class MathClientServerTest
     {
-        string host = "localhost";
+        const string Host = "localhost";
         Server server;
         Channel channel;
         Math.MathClient client;
@@ -54,19 +55,14 @@ namespace math.Tests
         [TestFixtureSetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(Math.BindService(new MathServiceImpl()));
-            int port = server.AddPort(host, Server.PickUnusedPort, ServerCredentials.Insecure);
-            server.Start();
-            channel = new Channel(host, port, Credentials.Insecure);
-            client = Math.NewClient(channel);
-
-            // TODO(jtattermusch): get rid of the custom header here once we have dedicated tests
-            // for header support.
-            client.HeaderInterceptor = (metadata) =>
+            server = new Server
             {
-                metadata.Add(new Metadata.Entry("custom-header", "abcdef"));
+                Services = { Math.BindService(new MathServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
+            server.Start();
+            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
+            client = Math.NewClient(channel);
         }
 
         [TestFixtureTearDown]
@@ -96,15 +92,8 @@ namespace math.Tests
         [Test]
         public void DivByZero()
         {
-            try
-            {
-                DivReply response = client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 0 }.Build());
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
-            }   
+            var ex = Assert.Throws<RpcException>(() => client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 0 }.Build()));
+            Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
         }
 
         [Test]
@@ -120,7 +109,7 @@ namespace math.Tests
         {
             using (var call = client.Fib(new FibArgs.Builder { Limit = 6 }.Build()))
             {
-                var responses = await call.ResponseStream.ToList();
+                var responses = await call.ResponseStream.ToListAsync();
                 CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
                     responses.ConvertAll((n) => n.Num_));
             }
@@ -162,15 +151,10 @@ namespace math.Tests
             using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
                 deadline: DateTime.UtcNow.AddMilliseconds(500)))
             {
-                try
-                {
-                    await call.ResponseStream.ToList();
-                    Assert.Fail();
-                }
-                catch (RpcException e)
-                {
-                    Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
-                }
+                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.ToListAsync());
+
+                // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+                Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
             }
         }
 
@@ -183,7 +167,7 @@ namespace math.Tests
                 var numbers = new List<long> { 10, 20, 30 }.ConvertAll(
                             n => Num.CreateBuilder().SetNum_(n).Build());
 
-                await call.RequestStream.WriteAll(numbers);
+                await call.RequestStream.WriteAllAsync(numbers);
                 var result = await call.ResponseAsync;
                 Assert.AreEqual(60, result.Num_);
             }
@@ -201,8 +185,8 @@ namespace math.Tests
 
             using (var call = client.DivMany())
             {
-                await call.RequestStream.WriteAll(divArgsList);
-                var result = await call.ResponseStream.ToList();
+                await call.RequestStream.WriteAllAsync(divArgsList);
+                var result = await call.ResponseStream.ToListAsync();
 
                 CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.ConvertAll((divReply) => divReply.Quotient));
                 CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.ConvertAll((divReply) => divReply.Remainder));

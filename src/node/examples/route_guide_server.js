@@ -239,7 +239,7 @@ function getServer() {
 if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
-  routeServer.bind('0.0.0.0:50051');
+  routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
   var argv = parseArgs(process.argv, {
     string: 'db_path'
   });

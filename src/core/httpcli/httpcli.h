@@ -38,6 +38,7 @@
 
 #include <grpc/support/time.h>
 
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/pollset_set.h"
 
 /* User agent this library reports */
@@ -58,6 +59,15 @@ typedef struct grpc_httpcli_context {
   grpc_pollset_set pollset_set;
 } grpc_httpcli_context;
 
+typedef struct {
+  const char *default_port;
+  void (*handshake)(void *arg, grpc_endpoint *endpoint, const char *host,
+                    void (*on_done)(void *arg, grpc_endpoint *endpoint));
+} grpc_httpcli_handshaker;
+
+extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
+extern const grpc_httpcli_handshaker grpc_httpcli_ssl;
+
 /* A request */
 typedef struct grpc_httpcli_request {
   /* The host name to connect to */
@@ -69,8 +79,8 @@ typedef struct grpc_httpcli_request {
        Host, Connection, User-Agent */
   size_t hdr_count;
   grpc_httpcli_header *hdrs;
-  /* whether to use ssl for the request */
-  int use_ssl;
+  /* handshaker to use ssl for the request */
+  const grpc_httpcli_handshaker *handshaker;
 } grpc_httpcli_request;
 
 /* A response */

@@ -54,7 +54,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   /* start watching for a change */
   grpc_channel_watch_connectivity_state(
-  	f.client, GRPC_CHANNEL_IDLE, &state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(1));
+  	f.client, GRPC_CHANNEL_IDLE, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(1));
   /* nothing should happen */
   cq_verify_empty(cqv);
 
@@ -64,14 +64,18 @@ static void test_connectivity(grpc_end2end_test_config config) {
   /* and now the watch should trigger */
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
-  GPR_ASSERT(state == GRPC_CHANNEL_CONNECTING);
+  state = grpc_channel_check_connectivity_state(f.client, 0);
+  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE || 
+             state == GRPC_CHANNEL_CONNECTING);
 
   /* quickly followed by a transition to TRANSIENT_FAILURE */
   grpc_channel_watch_connectivity_state(
-  	f.client, GRPC_CHANNEL_CONNECTING, &state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(2));
+  	f.client, GRPC_CHANNEL_CONNECTING, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(2));
   cq_expect_completion(cqv, tag(2), 1);
   cq_verify(cqv);
-  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE);
+  state = grpc_channel_check_connectivity_state(f.client, 0);
+  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE || 
+             state == GRPC_CHANNEL_CONNECTING);
 
   gpr_log(GPR_DEBUG, "*** STARTING SERVER ***");
 
@@ -84,10 +88,13 @@ static void test_connectivity(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
   	grpc_channel_watch_connectivity_state(
-  		f.client, state, &state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(3));
+  		f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(3));
   	cq_expect_completion(cqv, tag(3), 1);
     cq_verify(cqv);
-  	GPR_ASSERT(state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_TRANSIENT_FAILURE);
+    state = grpc_channel_check_connectivity_state(f.client, 0);
+  	GPR_ASSERT(state == GRPC_CHANNEL_READY || 
+               state == GRPC_CHANNEL_CONNECTING || 
+               state == GRPC_CHANNEL_TRANSIENT_FAILURE);
   }
 
   /* bring down the server again */
@@ -95,14 +102,16 @@ static void test_connectivity(grpc_end2end_test_config config) {
   gpr_log(GPR_DEBUG, "*** SHUTTING DOWN SERVER ***");
 
   grpc_channel_watch_connectivity_state(
-  	f.client, GRPC_CHANNEL_READY, &state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(4));
+  	f.client, GRPC_CHANNEL_READY, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(4));
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
 
   cq_expect_completion(cqv, tag(4), 1);
   cq_expect_completion(cqv, tag(0xdead), 1);
   cq_verify(cqv);
-  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE);
+  state = grpc_channel_check_connectivity_state(f.client, 0);
+  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE || 
+             state == GRPC_CHANNEL_CONNECTING);
 
   /* cleanup server */
   grpc_server_destroy(f.server);

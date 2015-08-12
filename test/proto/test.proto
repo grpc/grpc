@@ -79,3 +79,9 @@ service UnimplementedService {
   // A call that no server should implement
   rpc UnimplementedCall(grpc.testing.Empty) returns(grpc.testing.Empty);  
 }
+
+// A service used to control reconnect server.
+service ReconnectService {
+  rpc Start(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc Stop(grpc.testing.Empty) returns (grpc.testing.ReconnectInfo);
+}

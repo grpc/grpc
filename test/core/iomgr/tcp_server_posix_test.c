@@ -54,7 +54,7 @@ static void on_connect(void *arg, grpc_endpoint *tcp) {
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   g_nconnects++;
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
@@ -136,7 +136,8 @@ static void test_connect(int n) {
     gpr_log(GPR_DEBUG, "wait");
     while (g_nconnects == nconnects_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
-      grpc_pollset_work(&g_pollset, deadline);
+      grpc_pollset_worker worker;
+      grpc_pollset_work(&g_pollset, &worker, deadline);
     }
     gpr_log(GPR_DEBUG, "wait done");
 

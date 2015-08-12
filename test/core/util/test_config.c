@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <signal.h>
 
+double g_fixture_slowdown_factor = 1.0;
+
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
 static int seed(void) { return getpid(); }

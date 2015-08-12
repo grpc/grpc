@@ -146,31 +146,38 @@ char *grpc_channel_get_target(grpc_channel *channel) {
 }
 
 static grpc_call *grpc_channel_create_call_internal(
-    grpc_channel *channel, grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
+    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
     grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
   grpc_mdelem *send_metadata[2];
+  int num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
 
-  send_metadata[0] = path_mdelem;
-  send_metadata[1] = authority_mdelem;
+  send_metadata[num_metadata++] = path_mdelem;
+  if (authority_mdelem != NULL) {
+    send_metadata[num_metadata++] = authority_mdelem;
+  }
 
-  return grpc_call_create(channel, cq, NULL, send_metadata,
-                          GPR_ARRAY_SIZE(send_metadata), deadline);
+  return grpc_call_create(channel, parent_call, propagation_mask, cq, NULL, 
+                          send_metadata, num_metadata, deadline);
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_call *parent_call,
+                                    gpr_uint32 propagation_mask,
                                     grpc_completion_queue *cq,
                                     const char *method, const char *host,
                                     gpr_timespec deadline) {
   return grpc_channel_create_call_internal(
-      channel, cq,
+      channel, parent_call, propagation_mask, cq,
       grpc_mdelem_from_metadata_strings(
           channel->metadata_context, GRPC_MDSTR_REF(channel->path_string),
           grpc_mdstr_from_string(channel->metadata_context, method, 0)),
+      host ?
       grpc_mdelem_from_metadata_strings(
           channel->metadata_context, GRPC_MDSTR_REF(channel->authority_string),
-          grpc_mdstr_from_string(channel->metadata_context, host, 0)),
+          grpc_mdstr_from_string(channel->metadata_context, host, 0)) : NULL,
       deadline);
 }
 
@@ -180,9 +187,9 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
   rc->path = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, GRPC_MDSTR_REF(channel->path_string),
       grpc_mdstr_from_string(channel->metadata_context, method, 0));
-  rc->authority = grpc_mdelem_from_metadata_strings(
+  rc->authority = host ? grpc_mdelem_from_metadata_strings(
       channel->metadata_context, GRPC_MDSTR_REF(channel->authority_string),
-      grpc_mdstr_from_string(channel->metadata_context, host, 0));
+      grpc_mdstr_from_string(channel->metadata_context, host, 0)) : NULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
@@ -191,12 +198,14 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 }
 
 grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline) {
+    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_completion_queue *completion_queue, void *registered_call_handle,
+    gpr_timespec deadline) {
   registered_call *rc = registered_call_handle;
   return grpc_channel_create_call_internal(
-      channel, completion_queue, GRPC_MDELEM_REF(rc->path),
-      GRPC_MDELEM_REF(rc->authority), deadline);
+      channel, parent_call, propagation_mask, completion_queue, 
+      GRPC_MDELEM_REF(rc->path), 
+      rc->authority ? GRPC_MDELEM_REF(rc->authority) : NULL, deadline);
 }
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
@@ -225,7 +234,9 @@ static void destroy_channel(void *p, int ok) {
     registered_call *rc = channel->registered_calls;
     channel->registered_calls = rc->next;
     GRPC_MDELEM_UNREF(rc->path);
-    GRPC_MDELEM_UNREF(rc->authority);
+    if (rc->authority) {
+      GRPC_MDELEM_UNREF(rc->authority);
+    }
     gpr_free(rc);
   }
   grpc_mdctx_unref(channel->metadata_context);

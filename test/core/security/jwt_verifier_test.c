@@ -286,7 +286,7 @@ static int httpcli_get_google_keys_for_email(
     const grpc_httpcli_request *request, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data) {
   grpc_httpcli_response response = http_response(200, good_google_email_keys());
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->path,
                     "/robot/v1/metadata/x509/"
@@ -331,7 +331,7 @@ static int httpcli_get_custom_keys_for_email(
     const grpc_httpcli_request *request, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data) {
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->path, "/jwk/foo@bar.com") == 0);
   on_response(user_data, &response);
@@ -363,7 +363,7 @@ static int httpcli_get_jwk_set(
     const grpc_httpcli_request *request, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data) {
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->path, "/oauth2/v3/certs") == 0);
   on_response(user_data, &response);
@@ -377,7 +377,7 @@ static int httpcli_get_openid_config(const grpc_httpcli_request *request,
                                      void *user_data) {
   grpc_httpcli_response response =
       http_response(200, gpr_strdup(good_openid_config));
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "accounts.google.com") == 0);
   GPR_ASSERT(strcmp(request->path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
@@ -421,7 +421,7 @@ static int httpcli_get_bad_json(const grpc_httpcli_request *request,
                                 void *user_data) {
   grpc_httpcli_response response =
       http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   on_response(user_data, &response);
   gpr_free(response.body);
   return 1;
