@@ -35,21 +35,26 @@ using System;
 using System.Collections.Generic;
 
 using Grpc.Core.Internal;
+using System.Text.RegularExpressions;
 
 namespace Grpc.Core
 {
-    public delegate void MetadataInterceptorDelegate(Metadata metadata);
+    public delegate void MetadataInterceptorDelegate(string authUri, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase
     {
+        static readonly Regex TrailingPortPattern = new Regex(":[0-9]+/?$");
         readonly Channel channel;
+        readonly string authUriBase;
 
         public ClientBase(Channel channel)
         {
             this.channel = channel;
+            // TODO(jtattermush): we shouldn't need to hand-curate the channel.Target contents.
+            this.authUriBase = "https://" + TrailingPortPattern.Replace(channel.Target, "") + "/";
         }
 
         /// <summary>
@@ -99,8 +104,8 @@ namespace Grpc.Core
                 {
                     options = options.WithHeaders(new Metadata());
                 }
-                interceptor(options.Headers);
-                options.Headers.Freeze();
+                var authUri = authUriBase + method.ServiceName;
+                interceptor(authUri, options.Headers);
             }
             return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }
