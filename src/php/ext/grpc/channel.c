@@ -230,6 +230,8 @@ PHP_METHOD(Channel, getConnectivityState) {
  * Watch the connectivity state of the channel until it changed
  * @param long The previous connectivity state of the channel
  * @param Timeval The deadline this function should wait until
+ * @return bool If the connectivity state changes from last_state
+ *              before deadline
  */
 PHP_METHOD(Channel, watchConnectivityState) {
   wrapped_grpc_channel *channel =
@@ -255,11 +257,9 @@ PHP_METHOD(Channel, watchConnectivityState) {
       completion_queue, NULL,
       gpr_inf_future(GPR_CLOCK_REALTIME));
   if (!event.success) {
-    zend_throw_exception(spl_ce_LogicException,
-        "watchConnectivityState failed",
-        1 TSRMLS_CC);
+    RETURN_BOOL(0);
   }
-  return;
+  RETURN_BOOL(1);
 }
 
 /**

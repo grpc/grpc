@@ -158,13 +158,30 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertTrue($this->channel->getConnectivityState() == Grpc\CHANNEL_IDLE);
   }
 
-  public function testWatchConnectivityState() {
-    $old_state = $this->channel->getConnectivityState(true);
-    $deadline = microtime(true) * 1000000 + 500000;
-    $this->channel->watchConnectivityState(
-        $old_state,
-        new Grpc\Timeval($deadline));
+  public function testWatchConnectivityStateFailed() {
+    $idle_state = $this->channel->getConnectivityState(true);
+    $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(1);
+    $deadline = $now->add($delta);
+
+    $this->assertFalse($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+  }
+
+  public function testWatchConnectivityStateSuccess() {
+    $idle_state = $this->channel->getConnectivityState(true);
+    $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(100000);
+    $deadline = $now->add($delta);
+
+    $this->assertTrue($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+
     $new_state = $this->channel->getConnectivityState();
-    $this->assertTrue($old_state != $new_state);
+    $this->assertTrue($idle_state != $new_state);
   }
 }
