@@ -211,7 +211,7 @@ namespace Grpc.Core.Internal
                 return Timespec.InfPast;
             }
 
-            Preconditions.CheckArgument(dateTime.Kind == DateTimeKind.Utc, "dateTime");
+            Preconditions.CheckArgument(dateTime.Kind == DateTimeKind.Utc, "dateTime needs of kind DateTimeKind.Utc or be equal to DateTime.MaxValue or DateTime.MinValue.");
 
             try
             {

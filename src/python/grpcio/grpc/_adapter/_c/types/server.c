@@ -96,7 +96,7 @@ Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) 
   PyObject *py_args;
   grpc_channel_args c_args;
   char *keywords[] = {"cq", "args", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O:Channel", keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O:Server", keywords,
         &pygrpc_CompletionQueue_type, &cq, &py_args)) {
     return NULL;
   }

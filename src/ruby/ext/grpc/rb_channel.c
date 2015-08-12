@@ -203,7 +203,10 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
   grpc_channel *ch = NULL;
   grpc_completion_queue *cq = NULL;
   char *method_chars = StringValueCStr(method);
-  char *host_chars = StringValueCStr(host);
+  char *host_chars = NULL;
+  if (host != Qnil) {
+    host_chars = StringValueCStr(host);
+  }
 
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);

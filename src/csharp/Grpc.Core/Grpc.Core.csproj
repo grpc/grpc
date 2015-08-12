@@ -77,7 +77,6 @@
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
-    <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Internal\CredentialsSafeHandle.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />

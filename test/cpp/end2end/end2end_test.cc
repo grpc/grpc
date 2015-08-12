@@ -117,7 +117,7 @@ class Proxy : public ::grpc::cpp::test::util::TestService::Service {
   }
 
  private:
-  std::unique_ptr<::grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr< ::grpc::cpp::test::util::TestService::Stub> stub_;
 };
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
