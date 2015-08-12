@@ -32,4 +32,3 @@ cp -R /var/local/git-clone/grpc-go/. /go/
 go get golang.org/x/oauth2
 go get google.golang.org/cloud
 cd src/google.golang.org/grpc/interop/client && go install
-cd src/google.golang.org/grpc/interop/server && go install
