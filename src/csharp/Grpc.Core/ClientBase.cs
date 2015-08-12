@@ -35,21 +35,26 @@ using System;
 using System.Collections.Generic;
 
 using Grpc.Core.Internal;
+using System.Text.RegularExpressions;
 
 namespace Grpc.Core
 {
-    public delegate void MetadataInterceptorDelegate(Metadata metadata);
+    public delegate void MetadataInterceptorDelegate(string authUri, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase
     {
+        static readonly Regex TrailingPortPattern = new Regex(":[0-9]+/?$");
         readonly Channel channel;
+        readonly string authUriBase;
 
         public ClientBase(Channel channel)
         {
             this.channel = channel;
+            // TODO(jtattermush): we shouldn't need to hand-curate the channel.Target contents.
+            this.authUriBase = "https://" + TrailingPortPattern.Replace(channel.Target, "") + "/";
         }
 
         /// <summary>
@@ -57,6 +62,18 @@ namespace Grpc.Core
         /// The delegate each time before a new call on this client is started.
         /// </summary>
         public MetadataInterceptorDelegate HeaderInterceptor
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// gRPC supports multiple "hosts" being served by a single server. 
+        /// This property can be used to set the target host explicitly.
+        /// By default, this will be set to <c>null</c> with the meaning
+        /// "use default host".
+        /// </summary>
+        public string Host
         {
             get;
             set;
@@ -83,10 +100,14 @@ namespace Grpc.Core
             var interceptor = HeaderInterceptor;
             if (interceptor != null)
             {
-                interceptor(options.Headers);
-                options.Headers.Freeze();
+                if (options.Headers == null)
+                {
+                    options = options.WithHeaders(new Metadata());
+                }
+                var authUri = authUriBase + method.ServiceName;
+                interceptor(authUri, options.Headers);
             }
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, options);
+            return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }
     }
 }

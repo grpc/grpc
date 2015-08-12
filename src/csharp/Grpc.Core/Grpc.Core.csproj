@@ -77,14 +77,12 @@
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
-    <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Internal\CredentialsSafeHandle.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
     <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
-    <Compile Include="OperationFailedException.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Utils\Preconditions.cs" />
     <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />

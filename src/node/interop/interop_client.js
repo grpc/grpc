@@ -67,7 +67,7 @@ function zeroBuffer(size) {
  *     primarily for use with mocha
  */
 function emptyUnary(client, done) {
-  var call = client.emptyCall({}, function(err, resp) {
+  client.emptyCall({}, function(err, resp) {
     assert.ifError(err);
     if (done) {
       done();
@@ -89,7 +89,7 @@ function largeUnary(client, done) {
       body: zeroBuffer(271828)
     }
   };
-  var call = client.unaryCall(arg, function(err, resp) {
+  client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
     assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
     assert.strictEqual(resp.payload.body.length, 314159);
@@ -259,7 +259,7 @@ function cancelAfterFirstResponse(client, done) {
 function timeoutOnSleepingServer(client, done) {
   var deadline = new Date();
   deadline.setMilliseconds(deadline.getMilliseconds() + 1);
-  var call = client.fullDuplexCall(null, deadline);
+  var call = client.fullDuplexCall(null, {deadline: deadline});
   call.write({
     payload: {body: zeroBuffer(27182)}
   });
@@ -293,12 +293,14 @@ function authTest(expected_user, scope, client, done) {
       fill_username: true,
       fill_oauth_scope: true
     };
-    var call = client.unaryCall(arg, function(err, resp) {
+    client.unaryCall(arg, function(err, resp) {
       assert.ifError(err);
       assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
       assert.strictEqual(resp.payload.body.length, 314159);
       assert.strictEqual(resp.username, expected_user);
-      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      if (scope) {
+        assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      }
       if (done) {
         done();
       }
@@ -328,14 +330,14 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
       };
       var makeTestCall = function(error, client_metadata) {
         assert.ifError(error);
-        var call = client.unaryCall(arg, function(err, resp) {
+        client.unaryCall(arg, function(err, resp) {
           assert.ifError(err);
           assert.strictEqual(resp.username, expected_user);
           assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
           if (done) {
             done();
           }
-        });
+        }, client_metadata);
       };
       if (per_rpc) {
         updateMetadata('', {}, makeTestCall);
@@ -393,6 +395,7 @@ function runTest(address, host_override, test_case, tls, test_ca, done) {
     creds = grpc.Credentials.createSsl(ca_data);
     if (host_override) {
       options['grpc.ssl_target_name_override'] = host_override;
+      options['grpc.default_authority'] = host_override;
     }
   } else {
     creds = grpc.Credentials.createInsecure();

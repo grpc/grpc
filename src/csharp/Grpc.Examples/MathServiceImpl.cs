@@ -75,7 +75,7 @@ namespace math
         public async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
         {
             long sum = 0;
-            await requestStream.ForEach(async num =>
+            await requestStream.ForEachAsync(async num =>
             {
                 sum += num.Num_;
             });
@@ -84,10 +84,7 @@ namespace math
 
         public async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
         {
-            await requestStream.ForEach(async divArgs =>
-            {
-                await responseStream.WriteAsync(DivInternal(divArgs));
-            });
+            await requestStream.ForEachAsync(async divArgs => await responseStream.WriteAsync(DivInternal(divArgs)));
         }
 
         static DivReply DivInternal(DivArgs args)

@@ -84,7 +84,7 @@ namespace Grpc.Core.Tests
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                Assert.Throws(typeof(NullReferenceException), async () => await context.WriteResponseHeadersAsync(null));
+                Assert.Throws(typeof(ArgumentNullException), async () => await context.WriteResponseHeadersAsync(null));
                 return "PASS";
             });
 
@@ -129,7 +129,7 @@ namespace Grpc.Core.Tests
             });
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
-            var responses = await call.ResponseStream.ToList();
+            var responses = await call.ResponseStream.ToListAsync();
             CollectionAssert.AreEqual(new[] { "A", "B" }, responses);
         }
     }

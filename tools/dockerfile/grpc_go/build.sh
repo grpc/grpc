@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,20 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Dockerfile for gRPC Go
-FROM golang:1.4
-
-# Get the source from GitHub
-RUN go get google.golang.org/grpc
-RUN go get golang.org/x/oauth2
-RUN go get google.golang.org/cloud
-
-# Add a service_account directory containing the auth creds file
-ADD service_account service_account
-
-# Build the interop client and server
-RUN cd src/google.golang.org/grpc/interop/client && go install
-RUN cd src/google.golang.org/grpc/interop/server && go install
-
-# Specify the default command such that the interop server runs on its known testing port
-CMD ["/bin/bash", "-c", "cd src/google.golang.org/grpc/interop/server && go run server.go --use_tls=true --port=8020"]
+cp -R /var/local/git-clone/grpc-go/. /go/
+go get golang.org/x/oauth2
+go get google.golang.org/cloud
+cd src/google.golang.org/grpc/interop/client && go install

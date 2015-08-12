@@ -138,7 +138,7 @@ namespace Grpc.Core.Tests
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
                 string result = "";
-                await requestStream.ForEach(async (request) =>
+                await requestStream.ForEachAsync(async (request) =>
                 {
                     result += request;
                 });
@@ -147,7 +147,7 @@ namespace Grpc.Core.Tests
             });
 
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
-            await call.RequestStream.WriteAll(new string[] { "A", "B", "C" });
+            await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
             Assert.AreEqual("ABC", await call.ResponseAsync);
         }
 
@@ -159,7 +159,7 @@ namespace Grpc.Core.Tests
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
                 barrier.SetResult(null);
-                await requestStream.ToList();
+                await requestStream.ToListAsync();
                 return "";
             });
 
