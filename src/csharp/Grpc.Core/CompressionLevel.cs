@@ -36,12 +36,28 @@ using System;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Thrown when gRPC operation fails.
+    /// Compression level based on grpc_compression_level from grpc/compression.h
     /// </summary>
-    public class OperationFailedException : Exception
+    public enum CompressionLevel
     {
-        public OperationFailedException(string message) : base(message)
-        {
-        }
+        /// <summary>
+        /// No compression.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// Low compression.
+        /// </summary>
+        Low,
+
+        /// <summary>
+        /// Medium compression.
+        /// </summary>
+        Medium,
+
+        /// <summary>
+        /// High compression.
+        /// </summary>
+        High,
     }
 }

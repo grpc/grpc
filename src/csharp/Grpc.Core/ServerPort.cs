@@ -62,9 +62,9 @@ namespace Grpc.Core
         /// <param name="credentials">credentials to use to secure this port.</param>
         public ServerPort(string host, int port, ServerCredentials credentials)
         {
-            this.host = Preconditions.CheckNotNull(host);
+            this.host = Preconditions.CheckNotNull(host, "host");
             this.port = port;
-            this.credentials = Preconditions.CheckNotNull(credentials);
+            this.credentials = Preconditions.CheckNotNull(credentials, "credentials");
         }
 
         /// <summary>

@@ -71,6 +71,9 @@ namespace Grpc.Core.Internal
         protected bool halfclosed;
         protected bool finished;  // True if close has been received from the peer.
 
+        protected bool initialMetadataSent;
+        protected long streamingWritesCounter;
+
         public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer)
         {
             this.serializer = Preconditions.CheckNotNull(serializer);
@@ -123,7 +126,7 @@ namespace Grpc.Core.Internal
         /// Initiates sending a message. Only one send operation can be active at a time.
         /// completionDelegate is invoked upon completion.
         /// </summary>
-        protected void StartSendMessageInternal(TWrite msg, AsyncCompletionDelegate<object> completionDelegate)
+        protected void StartSendMessageInternal(TWrite msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
         {
             byte[] payload = UnsafeSerialize(msg);
 
@@ -132,8 +135,11 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendMessage(payload, HandleSendFinished);
+                call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
+
                 sendCompletionDelegate = completionDelegate;
+                initialMetadataSent = true;
+                streamingWritesCounter++;
             }
         }
 
@@ -287,7 +293,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new OperationFailedException("Send failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Send failed"));
             }
             else
             {
@@ -312,7 +318,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new OperationFailedException("Halfclose failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Halfclose failed"));
             }
             else
             {

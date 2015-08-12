@@ -251,6 +251,9 @@
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\src\core\debug\trace.h" />
+    <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
+    <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
+    <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h" />
@@ -378,6 +381,12 @@
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\debug\trace.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
     </ClCompile>

@@ -50,7 +50,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void Constructor_RejectsInvalidParams()
         {
-            Assert.Throws(typeof(NullReferenceException), () => new Channel(null, Credentials.Insecure));
+            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, Credentials.Insecure));
         }
 
         [Test]
@@ -72,11 +72,11 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void Target()
+        public void ResolvedTarget()
         {
             using (var channel = new Channel("127.0.0.1", Credentials.Insecure))
             {
-                Assert.IsTrue(channel.Target.Contains("127.0.0.1"));
+                Assert.IsTrue(channel.ResolvedTarget.Contains("127.0.0.1"));
             }
         }
 

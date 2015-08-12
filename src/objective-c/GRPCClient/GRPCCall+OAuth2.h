@@ -31,47 +31,19 @@
  *
  */
 
-#ifndef GRPCXX_AUTH_PROPERTY_ITERATOR_H
-#define GRPCXX_AUTH_PROPERTY_ITERATOR_H
+#import "GRPCCall.h"
 
-#include <iterator>
-#include <vector>
+// Helpers for setting and reading headers compatible with OAuth2.
+@interface GRPCCall (OAuth2)
 
-#include <grpc++/config.h>
+// Setting this property is equivalent to setting "Bearer <passed token>" as the value of the
+// request header with key "authorization" (the authorization header). Setting it to nil removes the
+// authorization header from the request.
+// The value obtained by getting the property is the OAuth2 bearer token if the authorization header
+// of the request has the form "Bearer <token>", or nil otherwise.
+@property(atomic, copy) NSString *oauth2AccessToken;
 
-struct grpc_auth_context;
-struct grpc_auth_property;
-struct grpc_auth_property_iterator;
+// Returns the value (if any) of the "www-authenticate" response header (the challenge header).
+@property(atomic, readonly) NSString *oauth2ChallengeHeader;
 
-namespace grpc {
-class SecureAuthContext;
-
-typedef std::pair<grpc::string, grpc::string> AuthProperty;
-
-class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
- public:
-  ~AuthPropertyIterator();
-  AuthPropertyIterator& operator++();
-  AuthPropertyIterator operator++(int);
-  bool operator==(const AuthPropertyIterator& rhs) const;
-  bool operator!=(const AuthPropertyIterator& rhs) const;
-  const AuthProperty operator*();
-
- protected:
-  AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
- private:
-  friend class SecureAuthContext;
-  const grpc_auth_property* property_;
-  // The following items form a grpc_auth_property_iterator.
-  const grpc_auth_context* ctx_;
-  size_t index_;
-  const char* name_;
-};
-
-}  // namespace grpc
-
- #endif  // GRPCXX_AUTH_PROPERTY_ITERATOR_H
-
+@end

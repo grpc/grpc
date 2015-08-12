@@ -31,13 +31,29 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H
+// Repeat of the tests in InteropTests.m, but sending the RPCs to a local cleartext server instead
+// of the remote SSL one.
 
-#include "src/core/security/security_connector.h"
+#import <GRPCClient/GRPCCall+Tests.h>
 
-grpc_security_status grpc_httpcli_ssl_channel_security_connector_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const char *secure_peer_name, grpc_channel_security_connector **sc);
+#import "InteropTests.h"
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H */
+static NSString * const kLocalCleartextHost = @"localhost:5050";
+
+@interface InteropTestsLocalCleartext : InteropTests
+@end
+
+@implementation InteropTestsLocalCleartext
+
++ (NSString *)host {
+  return kLocalCleartextHost;
+}
+
+- (void)setUp {
+  // Register test server as non-SSL.
+  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
+
+  [super setUp];
+}
+
+@end

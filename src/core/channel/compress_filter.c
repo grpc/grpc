@@ -204,7 +204,7 @@ static void process_send_ops(grpc_call_element *elem,
           }
           grpc_metadata_batch_add_tail(
               &(sop->data.metadata), &calld->compression_algorithm_storage,
-              grpc_mdelem_ref(channeld->mdelem_compression_algorithms
+              GRPC_MDELEM_REF(channeld->mdelem_compression_algorithms
                                   [calld->compression_algorithm]));
           calld->written_initial_metadata = 1; /* GPR_TRUE */
         }
@@ -295,7 +295,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
     channeld->mdelem_compression_algorithms[algo_idx] =
         grpc_mdelem_from_metadata_strings(
             mdctx,
-            grpc_mdstr_ref(channeld->mdstr_outgoing_compression_algorithm_key),
+            GRPC_MDSTR_REF(channeld->mdstr_outgoing_compression_algorithm_key),
             grpc_mdstr_from_string(mdctx, algorithm_name, 0));
   }
 
@@ -307,11 +307,11 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
 
-  grpc_mdstr_unref(channeld->mdstr_request_compression_algorithm_key);
-  grpc_mdstr_unref(channeld->mdstr_outgoing_compression_algorithm_key);
+  GRPC_MDSTR_UNREF(channeld->mdstr_request_compression_algorithm_key);
+  GRPC_MDSTR_UNREF(channeld->mdstr_outgoing_compression_algorithm_key);
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT;
        ++algo_idx) {
-    grpc_mdelem_unref(channeld->mdelem_compression_algorithms[algo_idx]);
+    GRPC_MDELEM_UNREF(channeld->mdelem_compression_algorithms[algo_idx]);
   }
 }
 

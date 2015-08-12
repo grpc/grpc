@@ -59,14 +59,12 @@ using v8::Value;
 NanCallback *Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
-Channel::Channel(grpc_channel *channel, NanUtf8String *host)
-    : wrapped_channel(channel), host(host) {}
+Channel::Channel(grpc_channel *channel) : wrapped_channel(channel) {}
 
 Channel::~Channel() {
   if (wrapped_channel != NULL) {
     grpc_channel_destroy(wrapped_channel);
   }
-  delete host;
 }
 
 void Channel::Init(Handle<Object> exports) {
@@ -91,8 +89,6 @@ bool Channel::HasInstance(Handle<Value> val) {
 
 grpc_channel *Channel::GetWrappedChannel() { return this->wrapped_channel; }
 
-char *Channel::GetHost() { return **this->host; }
-
 NAN_METHOD(Channel::New) {
   NanScope();
 
@@ -103,8 +99,7 @@ NAN_METHOD(Channel::New) {
     }
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
-    NanUtf8String *host = new NanUtf8String(args[0]);
-    NanUtf8String *host_override = NULL;
+    NanUtf8String host(args[0]);
     grpc_credentials *creds;
     if (!Credentials::HasInstance(args[1])) {
       return NanThrowTypeError(
@@ -116,12 +111,9 @@ NAN_METHOD(Channel::New) {
     grpc_channel_args *channel_args_ptr;
     if (args[2]->IsUndefined()) {
       channel_args_ptr = NULL;
-      wrapped_channel = grpc_insecure_channel_create(**host, NULL);
+      wrapped_channel = grpc_insecure_channel_create(*host, NULL);
     } else if (args[2]->IsObject()) {
       Handle<Object> args_hash(args[2]->ToObject()->Clone());
-      if (args_hash->HasOwnProperty(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG))) {
-        host_override = new NanUtf8String(args_hash->Get(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
-      }
       Handle<Array> keys(args_hash->GetOwnPropertyNames());
       grpc_channel_args channel_args;
       channel_args.num_args = keys->Length();
@@ -153,20 +145,15 @@ NAN_METHOD(Channel::New) {
       return NanThrowTypeError("Channel expects a string and an object");
     }
     if (creds == NULL) {
-      wrapped_channel = grpc_insecure_channel_create(**host, channel_args_ptr);
+      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr);
     } else {
       wrapped_channel =
-          grpc_secure_channel_create(creds, **host, channel_args_ptr);
+          grpc_secure_channel_create(creds, *host, channel_args_ptr);
     }
     if (channel_args_ptr != NULL) {
       free(channel_args_ptr->args);
     }
-    Channel *channel;
-    if (host_override == NULL) {
-      channel = new Channel(wrapped_channel, host);
-    } else {
-      channel = new Channel(wrapped_channel, host_override);
-    }
+    Channel *channel = new Channel(wrapped_channel);
     channel->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
