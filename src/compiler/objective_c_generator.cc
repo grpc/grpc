@@ -154,9 +154,9 @@ void PrintAdvancedImplementation(Printer *printer,
 
   printer->Print("        responsesWriteable:[GRXWriteable ");
   if (method->server_streaming()) {
-    printer->Print("writeableWithStreamHandler:eventHandler]];\n");
+    printer->Print("writeableWithEventHandler:eventHandler]];\n");
   } else {
-    printer->Print("writeableWithSingleValueHandler:handler]];\n");
+    printer->Print("writeableWithSingleHandler:handler]];\n");
   }
 
   printer->Print("}\n");
