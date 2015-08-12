@@ -293,7 +293,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new OperationFailedException("Send failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Send failed"));
             }
             else
             {
@@ -318,7 +318,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new OperationFailedException("Halfclose failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Halfclose failed"));
             }
             else
             {
