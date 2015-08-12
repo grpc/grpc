@@ -279,6 +279,22 @@ static VALUE grpc_rb_channel_get_target(VALUE self) {
   return res;
 }
 
+static void Init_grpc_propagate_masks() {
+  /* Constants representing call propagation masks in grpc.h */
+  VALUE grpc_rb_mPropagateMasks = rb_define_module_under(
+      grpc_rb_mGrpcCore, "PropagateMasks");
+  rb_define_const(grpc_rb_mPropagateMasks, "DEADLINE",
+                  UINT2NUM(GRPC_PROPAGATE_DEADLINE));
+  rb_define_const(grpc_rb_mPropagateMasks, "CENSUS_STATS_CONTEXT",
+                  UINT2NUM(GRPC_PROPAGATE_CENSUS_STATS_CONTEXT));
+  rb_define_const(grpc_rb_mPropagateMasks, "CENSUS_TRACING_CONTEXT",
+                  UINT2NUM(GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT));
+  rb_define_const(grpc_rb_mPropagateMasks, "CANCELLATION",
+                  UINT2NUM(GRPC_PROPAGATE_CANCELLATION));
+  rb_define_const(grpc_rb_mPropagateMasks, "DEFAULTS",
+                  UINT2NUM(GRPC_PROPAGATE_DEFAULTS));
+}
+
 void Init_grpc_channel() {
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
   grpc_rb_cChannel =
@@ -310,6 +326,7 @@ void Init_grpc_channel() {
                   ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
   rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
+  Init_grpc_propagate_masks();
 }
 
 /* Gets the wrapped channel from the ruby wrapper */
