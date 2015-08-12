@@ -38,8 +38,6 @@
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
-  // TODO(jcanizales): Reuse completion queues to consume only one thread,
-  // instead of one per call.
   return [[self alloc] init];
 }
 

@@ -119,6 +119,10 @@ typedef enum {
   GRPC_WRITE_STATE_SENT_CLOSE
 } grpc_chttp2_write_state;
 
+/* flags that can be or'd into stream_global::writing_now */
+#define GRPC_CHTTP2_WRITING_DATA 1
+#define GRPC_CHTTP2_WRITING_WINDOW 2
+
 typedef enum {
   GRPC_DONT_SEND_CLOSED = 0,
   GRPC_SEND_CLOSED,
@@ -382,8 +386,10 @@ typedef struct {
   gpr_uint8 published_cancelled;
   /** is this stream in the stream map? (boolean) */
   gpr_uint8 in_stream_map;
-  /** is this stream actively being written? */
+  /** bitmask of GRPC_CHTTP2_WRITING_xxx above */
   gpr_uint8 writing_now;
+  /** has anything been written to this stream? */
+  gpr_uint8 written_anything;
 
   /** stream state already published to the upper layer */
   grpc_stream_state published_state;

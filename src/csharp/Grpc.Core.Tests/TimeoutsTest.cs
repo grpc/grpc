@@ -48,35 +48,18 @@ namespace Grpc.Core.Tests
     /// </summary>
     public class TimeoutsTest
     {
-        const string Host = "localhost";
-        const string ServiceName = "/tests.Test";
-
-        static readonly Method<string, string> TestMethod = new Method<string, string>(
-            MethodType.Unary,
-            "/tests.Test/Test",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        static readonly ServerServiceDefinition ServiceDefinition = ServerServiceDefinition.CreateBuilder(ServiceName)
-            .AddMethod(TestMethod, TestMethodHandler)
-            .Build();
-
-        // provides a way how to retrieve an out-of-band result value from server handler
-        static TaskCompletionSource<string> stringFromServerHandlerTcs;
-
+        MockServiceHelper helper;
         Server server;
         Channel channel;
 
         [SetUp]
         public void Init()
         {
-            server = new Server();
-            server.AddServiceDefinition(ServiceDefinition);
-            int port = server.AddPort(Host, Server.PickUnusedPort, ServerCredentials.Insecure);
-            server.Start();
-            channel = new Channel(Host, port, Credentials.Insecure);
+            helper = new MockServiceHelper();
 
-            stringFromServerHandlerTcs = new TaskCompletionSource<string>();
+            server = helper.GetServer();
+            server.Start();
+            channel = helper.GetChannel();
         }
 
         [TearDown]
@@ -95,113 +78,83 @@ namespace Grpc.Core.Tests
         [Test]
         public void InfiniteDeadline()
         {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.AreEqual(DateTime.MaxValue, context.Deadline);
+                return "PASS";
+            });
+
             // no deadline specified, check server sees infinite deadline
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty);
-            Assert.AreEqual("DATETIME_MAXVALUE", Calls.BlockingUnaryCall(internalCall, "RETURN_DEADLINE", CancellationToken.None));
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
 
             // DateTime.MaxValue deadline specified, check server sees infinite deadline
-            var internalCall2 = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, DateTime.MaxValue);
-            Assert.AreEqual("DATETIME_MAXVALUE", Calls.BlockingUnaryCall(internalCall2, "RETURN_DEADLINE", CancellationToken.None));
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MaxValue)), "abc"));
         }
 
         [Test]
         public void DeadlineTransferredToServer()
         {
-            var remainingTimeClient = TimeSpan.FromDays(7);
-            var deadline = DateTime.UtcNow + remainingTimeClient;
-            Thread.Sleep(1000);
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
+            var clientDeadline = DateTime.UtcNow + TimeSpan.FromDays(7);
 
-            var serverDeadlineTicksString = Calls.BlockingUnaryCall(internalCall, "RETURN_DEADLINE", CancellationToken.None);
-            var serverDeadline = new DateTime(long.Parse(serverDeadlineTicksString), DateTimeKind.Utc);
-
-            // A fairly relaxed check that the deadline set by client and deadline seen by server
-            // are in agreement. C core takes care of the work with transferring deadline over the wire,
-            // so we don't need an exact check here.
-            Assert.IsTrue(Math.Abs((deadline - serverDeadline).TotalMilliseconds) < 5000);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                // A fairly relaxed check that the deadline set by client and deadline seen by server
+                // are in agreement. C core takes care of the work with transferring deadline over the wire,
+                // so we don't need an exact check here.
+                Assert.IsTrue(Math.Abs((clientDeadline - context.Deadline).TotalMilliseconds) < 5000);
+                return "PASS";
+            });
+            Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: clientDeadline)), "abc");
         }
 
         [Test]
         public void DeadlineInThePast()
         {
-            var deadline = DateTime.MinValue;
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                await Task.Delay(60000);
+                return "FAIL";
+            });
 
-            try
-            {
-                Calls.BlockingUnaryCall(internalCall, "TIMEOUT", CancellationToken.None);
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
-            }
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MinValue)), "abc"));
+            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
         }
 
         [Test]
         public void DeadlineExceededStatusOnTimeout()
         {
-            var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                await Task.Delay(60000);
+                return "FAIL";
+            });
 
-            try
-            {
-                Calls.BlockingUnaryCall(internalCall, "TIMEOUT", CancellationToken.None);
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
-            }
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
+            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
         }
 
         [Test]
-        public void ServerReceivesCancellationOnTimeout()
+        public async Task ServerReceivesCancellationOnTimeout()
         {
-            var deadline = DateTime.UtcNow.Add(TimeSpan.FromSeconds(5));
-            var internalCall = new Call<string, string>(ServiceName, TestMethod, channel, Metadata.Empty, deadline);
+            var serverReceivedCancellationTcs = new TaskCompletionSource<bool>();
 
-            try
-            {
-                Calls.BlockingUnaryCall(internalCall, "CHECK_CANCELLATION_RECEIVED", CancellationToken.None);
-                Assert.Fail();
-            }
-            catch (RpcException e)
-            {
-                Assert.AreEqual(StatusCode.DeadlineExceeded, e.Status.StatusCode);
-            }
-            Assert.AreEqual("CANCELLED", stringFromServerHandlerTcs.Task.Result);
-        }
-            
-        private static async Task<string> TestMethodHandler(string request, ServerCallContext context)
-        {
-            if (request == "TIMEOUT")
-            {
-                await Task.Delay(60000);
-                return "";
-            }
-
-            if (request == "RETURN_DEADLINE")
-            {
-                if (context.Deadline == DateTime.MaxValue)
-                {
-                    return "DATETIME_MAXVALUE";
-                }
-
-                return context.Deadline.Ticks.ToString();
-            }
-
-            if (request == "CHECK_CANCELLATION_RECEIVED")
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => 
             {
                 // wait until cancellation token is fired.
                 var tcs = new TaskCompletionSource<object>();
                 context.CancellationToken.Register(() => { tcs.SetResult(null); });
                 await tcs.Task;
-                stringFromServerHandlerTcs.SetResult("CANCELLED");
+                serverReceivedCancellationTcs.SetResult(true);
                 return "";
-            }
+            });
 
-            return "";
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
+            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
+            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
+
+            Assert.IsTrue(await serverReceivedCancellationTcs.Task);
         }
     }
 }

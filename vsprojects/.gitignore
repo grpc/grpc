@@ -1,5 +1,7 @@
 Debug
+Debug-DLL
 Release
+Release-DLL
 *.suo
 *.user
 test_bin

@@ -46,9 +46,53 @@
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
+static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
+static const char *client_identity_property_name = "smurf_name";
+static const char *client_identity = "Brainy Smurf";
+
 typedef struct fullstack_secure_fixture_data {
   char *localaddr;
 } fullstack_secure_fixture_data;
+
+static const grpc_metadata *find_metadata(const grpc_metadata *md,
+                                          size_t md_count,
+                                          const char *key,
+                                          const char *value) {
+  size_t i;
+  for (i = 0; i < md_count; i++) {
+    if (strcmp(key, md[i].key) == 0 && strlen(value) == md[i].value_length &&
+        memcmp(md[i].value, value, md[i].value_length) == 0) {
+      return &md[i];
+    }
+  }
+  return NULL;
+}
+
+static void process_oauth2_success(void *state, grpc_auth_context *ctx,
+                                   const grpc_metadata *md, size_t md_count,
+                                   grpc_process_auth_metadata_done_cb cb,
+                                   void *user_data) {
+  const grpc_metadata *oauth2 =
+      find_metadata(md, md_count, "Authorization", oauth2_md);
+  GPR_ASSERT(state == NULL);
+  GPR_ASSERT(oauth2 != NULL);
+  grpc_auth_context_add_cstring_property(ctx, client_identity_property_name,
+                                         client_identity);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                 ctx, client_identity_property_name) == 1);
+  cb(user_data, oauth2, 1, 1);
+}
+
+static void process_oauth2_failure(void *state, grpc_auth_context *ctx,
+                                   const grpc_metadata *md, size_t md_count,
+                                   grpc_process_auth_metadata_done_cb cb,
+                                   void *user_data) {
+  const grpc_metadata *oauth2 =
+      find_metadata(md, md_count, "Authorization", oauth2_md);
+  GPR_ASSERT(state == NULL);
+  GPR_ASSERT(oauth2 != NULL);
+  cb(user_data, oauth2, 1, 0);
+}
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
@@ -101,7 +145,7 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
   grpc_credentials *oauth2_creds =
-      grpc_fake_oauth2_credentials_create("Bearer aaslkfjs424535asdf", 1);
+      grpc_md_only_test_credentials_create("Authorization", oauth2_md, 1);
   grpc_credentials *ssl_oauth2_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
@@ -115,12 +159,32 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_credentials_release(oauth2_creds);
 }
 
+static int fail_server_auth_check(grpc_channel_args *server_args) {
+  size_t i;
+  if (server_args == NULL) return 0;
+  for (i = 0; i < server_args->num_args; i++) {
+    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
+        0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0);
+  grpc_auth_metadata_processor processor;
+  processor.state = NULL;
+  if (fail_server_auth_check(server_args)) {
+    processor.process = process_oauth2_failure;
+  } else {
+    processor.process = process_oauth2_success;
+  }
+  grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 

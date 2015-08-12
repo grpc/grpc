@@ -28,13 +28,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Don't run this script standalone. Instead, run from the repository root:
+# ./tools/run_tests/run_tests.py -l objc
+
 set -e
 
 cd $(dirname $0)
 
 # Run the tests server.
 ../../../bins/$CONFIG/interop_server --port=5050 &
-# Kill it when this script exits.
+../../../bins/$CONFIG/interop_server --port=5051 --enable_ssl &
+# Kill them when this script exits.
 trap 'kill -9 `jobs -p`' EXIT
 
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any

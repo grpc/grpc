@@ -514,12 +514,14 @@ NAN_METHOD(Call::New) {
       if (args[3]->IsString()) {
         NanUtf8String host_override(args[3]);
         wrapped_call = grpc_channel_create_call(
-          wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
-          *host_override, MillisecondsToTimespec(deadline));
+            wrapped_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
+            CompletionQueueAsyncWorker::GetQueue(), *method,
+            *host_override, MillisecondsToTimespec(deadline));
       } else if (args[3]->IsUndefined() || args[3]->IsNull()) {
         wrapped_call = grpc_channel_create_call(
-          wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
-          NULL, MillisecondsToTimespec(deadline));
+            wrapped_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
+            CompletionQueueAsyncWorker::GetQueue(), *method,
+            NULL, MillisecondsToTimespec(deadline));
       } else {
         return NanThrowTypeError("Call's fourth argument must be a string");
       }

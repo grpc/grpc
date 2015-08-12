@@ -17,6 +17,7 @@ namespace Grpc.Health.V1Alpha {
 
     static readonly Method<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckResponse> __Method_Check = new Method<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckResponse>(
         MethodType.Unary,
+        __ServiceName,
         "Check",
         __Marshaller_HealthCheckRequest,
         __Marshaller_HealthCheckResponse);
@@ -25,7 +26,9 @@ namespace Grpc.Health.V1Alpha {
     public interface IHealthClient
     {
       global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options);
       AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options);
     }
 
     // server-side interface
@@ -42,13 +45,23 @@ namespace Grpc.Health.V1Alpha {
       }
       public global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__ServiceName, __Method_Check, headers, deadline);
-        return Calls.BlockingUnaryCall(call, request, cancellationToken);
+        var call = CreateCall(__Method_Check, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
+      }
+      public global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options)
+      {
+        var call = CreateCall(__Method_Check, options);
+        return Calls.BlockingUnaryCall(call, request);
       }
       public AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__ServiceName, __Method_Check, headers, deadline);
-        return Calls.AsyncUnaryCall(call, request, cancellationToken);
+        var call = CreateCall(__Method_Check, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
+      }
+      public AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options)
+      {
+        var call = CreateCall(__Method_Check, options);
+        return Calls.AsyncUnaryCall(call, request);
       }
     }
 
