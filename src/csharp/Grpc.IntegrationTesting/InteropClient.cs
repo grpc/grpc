@@ -215,7 +215,7 @@ namespace Grpc.IntegrationTesting
 
             using (var call = client.StreamingInputCall())
             {
-                await call.RequestStream.WriteAll(bodySizes);
+                await call.RequestStream.WriteAllAsync(bodySizes);
 
                 var response = await call.ResponseAsync;
                 Assert.AreEqual(74922, response.AggregatedPayloadSize);
@@ -237,7 +237,7 @@ namespace Grpc.IntegrationTesting
 
             using (var call = client.StreamingOutputCall(request))
             {
-                var responseList = await call.ResponseStream.ToList();
+                var responseList = await call.ResponseStream.ToListAsync();
                 foreach (var res in responseList)
                 {
                     Assert.AreEqual(PayloadType.COMPRESSABLE, res.Payload.Type);
@@ -303,7 +303,7 @@ namespace Grpc.IntegrationTesting
             {
                 await call.RequestStream.CompleteAsync();
 
-                var responseList = await call.ResponseStream.ToList();
+                var responseList = await call.ResponseStream.ToListAsync();
                 Assert.AreEqual(0, responseList.Count);
             }
             Console.WriteLine("Passed!");

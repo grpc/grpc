@@ -63,6 +63,18 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// gRPC supports multiple "hosts" being served by a single server. 
+        /// This property can be used to set the target host explicitly.
+        /// By default, this will be set to <c>null</c> with the meaning
+        /// "use default host".
+        /// </summary>
+        public string Host
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Channel associated with this client.
         /// </summary>
         public Channel Channel
@@ -83,10 +95,14 @@ namespace Grpc.Core
             var interceptor = HeaderInterceptor;
             if (interceptor != null)
             {
+                if (options.Headers == null)
+                {
+                    options = options.WithHeaders(new Metadata());
+                }
                 interceptor(options.Headers);
                 options.Headers.Freeze();
             }
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, options);
+            return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }
     }
 }

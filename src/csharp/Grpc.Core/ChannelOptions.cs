@@ -63,8 +63,8 @@ namespace Grpc.Core
         public ChannelOption(string name, string stringValue)
         {
             this.type = OptionType.String;
-            this.name = Preconditions.CheckNotNull(name);
-            this.stringValue = Preconditions.CheckNotNull(stringValue);
+            this.name = Preconditions.CheckNotNull(name, "name");
+            this.stringValue = Preconditions.CheckNotNull(stringValue, "stringValue");
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Grpc.Core
         public ChannelOption(string name, int intValue)
         {
             this.type = OptionType.Integer;
-            this.name = Preconditions.CheckNotNull(name);
+            this.name = Preconditions.CheckNotNull(name, "name");
             this.intValue = intValue;
         }
 
