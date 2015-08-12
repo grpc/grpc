@@ -169,7 +169,7 @@ class ZookeeperTest : public ::testing::Test {
 };
 
 // Test zookeeper state change between two RPCs
-// TODO: Handle leaked objects
+// TODO(ctiller): Handle leaked objects
 TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   ResetStub();
 
@@ -184,7 +184,7 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EXPECT_TRUE(s1.ok());
 
   // Zookeeper state change
-  gpr_log(GPR_DEBUG, "delete /test/1");
+  gpr_log(GPR_DEBUG, "Zookeeper state change");
   DeleteService("/test/1");
   sleep(1);
 
