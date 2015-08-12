@@ -184,7 +184,8 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EXPECT_TRUE(s1.ok());
 
   // Zookeeper state change
-  DeleteService("/test/2");
+  gpr_log(GPR_DEBUG, "delete /test/1");
+  DeleteService("/test/1");
   sleep(1);
 
   // Second RPC
