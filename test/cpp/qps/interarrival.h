@@ -149,7 +149,7 @@ class InterarrivalTimer {
     for (int i = 0; i < entries; i++) {
       // rand is the only choice that is portable across POSIX and Windows
       // and that supports new and old compilers
-      double uniform_0_1 = rand() / RAND_MAX;
+      const double uniform_0_1 = rand() / RAND_MAX;
       random_table_.push_back(
           std::chrono::nanoseconds(static_cast<int64_t>(1e9 * r(uniform_0_1))));
     }

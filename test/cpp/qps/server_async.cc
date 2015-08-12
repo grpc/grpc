@@ -131,7 +131,7 @@ class AsyncQpsServerTest : public Server {
     while (srv_cqs_[rank]->Next(&got_tag, &ok)) {
       ServerRpcContext *ctx = detag(got_tag);
       // The tag is a pointer to an RPC context to invoke
-      bool still_going = ctx->RunNextState(ok);
+      const bool still_going = ctx->RunNextState(ok);
       if (!shutdown_state_[rank]->shutdown()) {
         // this RPC context is done, so refresh it
         if (!still_going) {

@@ -97,7 +97,7 @@ struct ClientData {
   unique_ptr<Worker::Stub> stub;
   unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
 };
-}
+} // namespace runsc
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
@@ -152,7 +152,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   using runsc::ServerData;
   // servers is array rather than std::vector to avoid gcc-4.4 issues
   // where class contained in std::vector must have a copy constructor
-  ServerData servers[num_servers];
+  auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
     servers[i].stub = std::move(Worker::NewStub(
         CreateChannel(workers[i], InsecureCredentials(), ChannelArguments())));
@@ -180,7 +180,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   using runsc::ClientData;
   // clients is array rather than std::vector to avoid gcc-4.4 issues
   // where class contained in std::vector must have a copy constructor
-  ClientData clients[num_clients];
+  auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
     clients[i].stub = std::move(Worker::NewStub(CreateChannel(
         workers[i + num_servers], InsecureCredentials(), ChannelArguments())));
@@ -262,6 +262,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     GPR_ASSERT(server->stream->WritesDone());
     GPR_ASSERT(server->stream->Finish().ok());
   }
+  delete[] clients;
+  delete[] servers;
   return result;
 }
 }  // namespace testing

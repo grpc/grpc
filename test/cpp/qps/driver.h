@@ -45,9 +45,9 @@ class ResourceUsage {
  public:
   ResourceUsage(double w, double u, double s)
       : wall_time_(w), user_time_(u), system_time_(s) {}
-  double wall_time() { return wall_time_; }
-  double user_time() { return user_time_; }
-  double system_time() { return system_time_; }
+  double wall_time() const { return wall_time_; }
+  double user_time() const { return user_time_; }
+  double system_time() const { return system_time_; }
 
  private:
   double wall_time_;

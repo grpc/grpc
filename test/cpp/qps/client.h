@@ -42,7 +42,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <grpc++/config.h>
-#include <grpc++/config.h>
 
 namespace grpc {
 
@@ -83,7 +82,7 @@ class Client {
 
   ClientStats Mark() {
     Histogram latencies;
-    // avoid std::vector for old compilers
+    // avoid std::vector for old compilers that expect a copy constructor
     Histogram *to_merge = new Histogram[threads_.size()];
     for (size_t i = 0; i < threads_.size(); i++) {
       threads_[i]->BeginSwap(&to_merge[i]);
@@ -113,7 +112,7 @@ class Client {
   class ClientChannelInfo {
    public:
     ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i) : channel_(), stub_() {
+    ClientChannelInfo(const ClientChannelInfo& i) {
       // The copy constructor is to satisfy old compilers
       // that need it for using std::vector . It is only ever
       // used for empty entries
@@ -237,7 +236,7 @@ class Client {
     void ThreadFunc() {
       for (;;) {
         // run the loop body
-        bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
+        const bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
         // lock, see if we're done
         std::lock_guard<std::mutex> g(mu_);
         if (!thread_still_ok) {
