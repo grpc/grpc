@@ -113,6 +113,7 @@ Call *pygrpc_Call_new_empty(CompletionQueue *cq);
 void pygrpc_Call_dealloc(Call *self);
 PyObject *pygrpc_Call_start_batch(Call *self, PyObject *args, PyObject *kwargs);
 PyObject *pygrpc_Call_cancel(Call *self, PyObject *args, PyObject *kwargs);
+PyObject *pygrpc_Call_peer(Call *self);
 extern PyTypeObject pygrpc_Call_type;
 
 
@@ -129,6 +130,11 @@ Channel *pygrpc_Channel_new(
 void pygrpc_Channel_dealloc(Channel *self);
 Call *pygrpc_Channel_create_call(
     Channel *self, PyObject *args, PyObject *kwargs);
+PyObject *pygrpc_Channel_check_connectivity_state(Channel *self, PyObject *args,
+                                                  PyObject *kwargs);
+PyObject *pygrpc_Channel_watch_connectivity_state(Channel *self, PyObject *args,
+                                                  PyObject *kwargs);
+PyObject *pygrpc_Channel_target(Channel *self);
 extern PyTypeObject pygrpc_Channel_type;
 
 
@@ -180,6 +186,9 @@ pygrpc_tag *pygrpc_produce_request_tag(PyObject *user_tag, Call *empty_call);
 
 /* Construct a tag associated with a server shutdown. */
 pygrpc_tag *pygrpc_produce_server_shutdown_tag(PyObject *user_tag);
+
+/* Construct a tag associated with a channel state change. */
+pygrpc_tag *pygrpc_produce_channel_state_change_tag(PyObject *user_tag);
 
 /* Frees all resources owned by the tag and the tag itself. */
 void pygrpc_discard_tag(pygrpc_tag *tag);
