@@ -298,7 +298,9 @@ function authTest(expected_user, scope, client, done) {
       assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
       assert.strictEqual(resp.payload.body.length, 314159);
       assert.strictEqual(resp.username, expected_user);
-      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      if (scope) {
+        assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      }
       if (done) {
         done();
       }
@@ -335,7 +337,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
           if (done) {
             done();
           }
-        });
+        }, client_metadata);
       };
       if (per_rpc) {
         updateMetadata('', {}, makeTestCall);
