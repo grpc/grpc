@@ -53,11 +53,8 @@ class Channel : public ::node::ObjectWrap {
   /* Returns the grpc_channel struct that this object wraps */
   grpc_channel *GetWrappedChannel();
 
-  /* Return the hostname that this channel connects to */
-  char *GetHost();
-
  private:
-  explicit Channel(grpc_channel *channel, NanUtf8String *host);
+  explicit Channel(grpc_channel *channel);
   ~Channel();
 
   // Prevent copying
@@ -71,7 +68,6 @@ class Channel : public ::node::ObjectWrap {
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_channel *wrapped_channel;
-  NanUtf8String *host;
 };
 
 }  // namespace node
