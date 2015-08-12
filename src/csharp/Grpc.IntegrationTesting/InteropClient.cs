@@ -169,6 +169,9 @@ namespace Grpc.IntegrationTesting
                 case "cancel_after_first_response":
                     await RunCancelAfterFirstResponseAsync(client);
                     break;
+                case "timeout_on_sleeping_server":
+                    await RunTimeoutOnSleepingServerAsync(client);
+                    break;
                 case "benchmark_empty_unary":
                     RunBenchmarkEmptyUnary(client);
                     break;
@@ -454,6 +457,29 @@ namespace Grpc.IntegrationTesting
 
                 var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunTimeoutOnSleepingServerAsync(TestService.ITestServiceClient client)
+        {
+            Console.WriteLine("running timeout_on_sleeping_server");
+
+            var deadline = DateTime.UtcNow.AddMilliseconds(1);
+            using (var call = client.FullDuplexCall(deadline: deadline))
+            {
+                try
+                {
+                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
+                        .SetPayload(CreateZerosPayload(27182)).Build());
+                }
+                catch (InvalidOperationException)
+                {
+                    // Deadline was reached before write has started. Eat the exception and continue.
+                }
+
+                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+                Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
         }
