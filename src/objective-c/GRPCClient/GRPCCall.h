@@ -48,8 +48,10 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
-// Key used in |NSError|'s |userInfo| dictionary to store the response metadata sent by the server.
-extern id const kGRPCStatusMetadataKey;
+// Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
+// the server.
+extern id const kGRPCHeadersKey;
+extern id const kGRPCTrailersKey;
 
 // Represents a single gRPC remote call.
 @interface GRPCCall : GRXWriter
@@ -57,43 +59,49 @@ extern id const kGRPCStatusMetadataKey;
 // These HTTP headers will be passed to the server as part of this call. Each HTTP header is a
 // name-value pair with string names and either string or binary values.
 //
-// The passed dictionary has to use NSString keys, corresponding to the header names. The
-// value associated to each can be a NSString object or a NSData object. E.g.:
+// The passed dictionary has to use NSString keys, corresponding to the header names. The value
+// associated to each can be a NSString object or a NSData object. E.g.:
 //
-// call.requestMetadata = @{@"Authorization": @"Bearer ..."};
+// call.requestHeaders = @{@"authorization": @"Bearer ..."};
 //
-// call.requestMetadata[@"SomeBinaryHeader"] = someData;
+// call.requestHeaders[@"my-header-bin"] = someData;
 //
-// After the call is started, modifying this won't have any effect.
+// After the call is started, trying to modify this property is an error.
 //
 // For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
 // accepts (and copies) both mutable and immutable dictionaries.
-- (NSMutableDictionary *)requestMetadata; // nonatomic
-- (void)setRequestMetadata:(NSDictionary *)requestMetadata; // nonatomic, copy
+- (NSMutableDictionary *)requestHeaders; // nonatomic
+- (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
 
-// This dictionary is populated with the HTTP headers received from the server. When the RPC ends,
-// the HTTP trailers received are added to the dictionary too. It has the same structure as the
-// request metadata dictionary.
+// This dictionary is populated with the HTTP headers received from the server. This happens before
+// any response message is received from the server. It has the same structure as the request
+// headers dictionary: Keys are NSString header names; names ending with the suffix "-bin" have a
+// NSData value; the others have a NSString value.
 //
-// The first time this object calls |writeValue| on the writeable passed to |startWithWriteable|,
-// the |responseMetadata| dictionary already contains the response headers. When it calls
-// |writesFinishedWithError|, the dictionary contains both the response headers and trailers.
-@property(atomic, readonly) NSDictionary *responseMetadata;
+// The value of this property is nil until all response headers are received, and will change before
+// any of -writeValue: or -writesFinishedWithError: are sent to the writeable.
+@property(atomic, readonly) NSDictionary *responseHeaders;
+
+// Same as responseHeaders, but populated with the HTTP trailers received from the server before the
+// call finishes.
+//
+// The value of this property is nil until all response trailers are received, and will change
+// before -writesFinishedWithError: is sent to the writeable.
+@property(atomic, readonly) NSDictionary *responseTrailers;
 
 // The request writer has to write NSData objects into the provided Writeable. The server will
-// receive each of those separately and in order.
-// A gRPC call might not complete until the request writer finishes. On the other hand, the
-// request finishing doesn't necessarily make the call to finish, as the server might continue
-// sending messages to the response side of the call indefinitely (depending on the semantics of
-// the specific remote method called).
+// receive each of those separately and in order as distinct messages.
+// A gRPC call might not complete until the request writer finishes. On the other hand, the request
+// finishing doesn't necessarily make the call to finish, as the server might continue sending
+// messages to the response side of the call indefinitely (depending on the semantics of the
+// specific remote method called).
 // To finish a call right away, invoke cancel.
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
 
-// Finishes the request side of this call, notifies the server that the RPC
-// should be cancelled, and finishes the response side of the call with an error
-// of code CANCELED.
+// Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
+// finishes the response side of the call with an error of code CANCELED.
 - (void)cancel;
 
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
