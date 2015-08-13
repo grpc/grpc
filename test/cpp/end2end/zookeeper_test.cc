@@ -85,12 +85,12 @@ class ZookeeperTest : public ::testing::Test {
 
     // Register service instance /test/1 in zookeeper
     string value =
-        "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port1) + "\"}";
+        "{\"host\":\"localhost\",\"port\":\"" + to_string(port1) + "\"}";
     RegisterService("/test/1", value);
 
     // Register service instance /test/2 in zookeeper
     value =
-        "{\"host\":\"localhost\",\"port\":\"" + std::to_string(port2) + "\"}";
+        "{\"host\":\"localhost\",\"port\":\"" + to_string(port2) + "\"}";
     RegisterService("/test/2", value);
   }
 
@@ -115,13 +115,10 @@ class ZookeeperTest : public ::testing::Test {
 
     // Register zookeeper name resolver in grpc
     grpc_zookeeper_register();
-
-    // Unregister all plugins when exit
-    atexit(grpc_unregister_all_plugins);
   }
 
-  std::unique_ptr<Server> SetUpServer(int port) {
-    string server_address = "localhost:" + std::to_string(port);
+  std::unique_ptr<Server> SetUpServer(const int port) {
+    string server_address = "localhost:" + to_string(port);
 
     ServerBuilder builder;
     builder.AddListeningPort(server_address, InsecureServerCredentials());
@@ -130,7 +127,7 @@ class ZookeeperTest : public ::testing::Test {
     return server;
   }
 
-  void RegisterService(string name, string value) {
+  void RegisterService(const string& name, const string& value) {
     char* path = (char*)gpr_malloc(name.size());
 
     int status = zoo_exists(zookeeper_handle_, name.c_str(), 0, NULL);
@@ -146,9 +143,14 @@ class ZookeeperTest : public ::testing::Test {
     GPR_ASSERT(status == 0);
   }
 
-  void DeleteService(string name) {
+  void DeleteService(const string& name) {
     int status = zoo_delete(zookeeper_handle_, name.c_str(), -1);
     GPR_ASSERT(status == 0);
+  }
+
+  void ChangeZookeeperState() {
+    server1_->Shutdown();
+    DeleteService("/test/1");
   }
 
   void TearDown() GRPC_OVERRIDE {
@@ -163,6 +165,12 @@ class ZookeeperTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
+  string to_string(const int number) {
+    std::stringstream strs;
+    strs << number;
+    return strs.str();
+  }
+
   std::shared_ptr<ChannelInterface> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server1_;
@@ -173,7 +181,7 @@ class ZookeeperTest : public ::testing::Test {
 };
 
 // Test zookeeper state change between two RPCs
-// TODO(ctiller): leaked objects
+// TODO(ctiller): leaked objects in this test
 TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   ResetStub();
 
@@ -188,8 +196,10 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EXPECT_TRUE(s1.ok());
 
   // Zookeeper state change
-  DeleteService("/test/1");
-  gpr_log(GPR_DEBUG, "Zookeeper state change");
+  gpr_log(GPR_DEBUG, "Zookeeper state change"); 
+  ChangeZookeeperState();
+  // Wait for re-resolving addresses
+  // TODO(ctiller): RPC will probably fail if not waiting
   sleep(1);
 
   // Second RPC

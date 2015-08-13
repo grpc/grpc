@@ -52,6 +52,8 @@
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/transport/connectivity_state.h"
 
+#define MAX_PLUGINS 128
+
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 static int g_initializations;
@@ -63,40 +65,21 @@ static void do_basic_init(void) {
 
 typedef struct grpc_plugin {
   void (*init)();
-  void (*deinit)();
-  struct grpc_plugin *next;
+  void (*destroy)();
 } grpc_plugin;
 
-static grpc_plugin *g_plugins_head = NULL;
+static grpc_plugin g_all_of_the_plugins[MAX_PLUGINS];
+static int g_number_of_plugins = 0;
 
-static grpc_plugin *new_plugin(void (*init)(void), void (*deinit)(void)) {
-  grpc_plugin *plugin = gpr_malloc(sizeof(*plugin));
-  memset(plugin, 0, sizeof(*plugin));
-  plugin->init = init;
-  plugin->deinit = deinit;
-
-  return plugin;
-}
-
-void grpc_register_plugin(void (*init)(void), void (*deinit)(void)) {
-  grpc_plugin *old_head = g_plugins_head;
-  g_plugins_head = new_plugin(init, deinit);
-  g_plugins_head->next = old_head;
-}
-
-void grpc_unregister_all_plugins() {
-  grpc_plugin *plugin;
-  grpc_plugin *next;
-
-  for (plugin = g_plugins_head; plugin != NULL; plugin = next) {
-    next = plugin->next;
-    gpr_free(plugin);
-  }
-  g_plugins_head = NULL;
+void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
+  GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
+  g_all_of_the_plugins[g_number_of_plugins].init = init;
+  g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;
+  g_number_of_plugins++;
 }
 
 void grpc_init(void) {
-  grpc_plugin *plugin;
+  int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
   gpr_mu_lock(&g_init_mu);
@@ -125,9 +108,9 @@ void grpc_init(void) {
       }
     }
     grpc_timers_global_init();
-    for (plugin = g_plugins_head; plugin != NULL; plugin = plugin->next) {
-      if (plugin->init) {
-        plugin->init();
+    for (i = 0; i < g_number_of_plugins; i++) {
+      if (g_all_of_the_plugins[i].init != NULL) {
+        g_all_of_the_plugins[i].init();
       }
     }
   }
@@ -135,9 +118,7 @@ void grpc_init(void) {
 }
 
 void grpc_shutdown(void) {
-  grpc_plugin *plugin;
-  grpc_plugin *next;
-
+  int i;
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
@@ -145,11 +126,10 @@ void grpc_shutdown(void) {
     grpc_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
-    for (plugin = g_plugins_head; plugin != NULL; plugin = next) {
-      if (plugin->deinit) {
-        plugin->deinit();
+    for (i = 0; i < g_number_of_plugins; i++) {
+      if (g_all_of_the_plugins[i].destroy != NULL) {
+        g_all_of_the_plugins[i].destroy();
       }
-      next = plugin->next;
     }
   }
   gpr_mu_unlock(&g_init_mu);

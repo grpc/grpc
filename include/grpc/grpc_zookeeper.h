@@ -31,6 +31,17 @@
  *
  */
 
+/** Support zookeeper as alternative name system in addition to DNS
+ *  Zookeeper name in gRPC is represented as a URI:
+ *  zookeeper://host:port/path/service/instance
+ *
+ *  Where zookeeper is the name system scheme
+ *  host:port is the address of a zookeeper server
+ *  /path/service/instance is the zookeeper name to be resolved
+ *
+ *  Refer doc/naming.md for more details
+ */
+
 #ifndef GRPC_GRPC_ZOOKEEPER_H
 #define GRPC_GRPC_ZOOKEEPER_H
 
