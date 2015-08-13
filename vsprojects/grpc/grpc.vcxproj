@@ -623,6 +623,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\operation.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\census\record_stat.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\tracing.c">

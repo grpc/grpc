@@ -39,29 +39,7 @@ int census_trace_mask(const census_context *context) {
   return CENSUS_TRACE_MASK_NONE;
 }
 
-census_context *census_start_client_rpc_op(census_context *context,
-                                           const char *service,
-                                           const char *method, const char *peer,
-                                           int trace_mask,
-                                           gpr_timespec *start_time) {
-  return NULL;
-}
-
-void census_start_server_rpc_op(census_context *context, const char *service,
-                                const char *method, const char *peer,
-                                int trace_mask, gpr_timespec *start_time) {}
-
-census_context *census_start_op(census_context *context, const char *family,
-                                const char *name, int trace_mask,
-                                gpr_timespec *start_time) {
-  return NULL;
-}
-
-void census_trace_end_op(census_context *context, int status) {}
+void census_set_trace_mask(int trace_mask) {}
 
 void census_trace_print(census_context *context, const char *buffer, size_t n) {
 }
-
-void census_get_active_ops_as_proto(/* pointer to proto */) {}
-
-void census_get_trace_as_proto(/* pointer to proto */) {}
