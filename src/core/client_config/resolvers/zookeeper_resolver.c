@@ -267,7 +267,6 @@ static char *zookeeper_parse_address(char *buffer, int buffer_len) {
     }
     if (host != NULL && port != NULL) {
       gpr_asprintf(&address, "%s:%s", host, port);
-      gpr_log(GPR_DEBUG, address);
     }
     grpc_json_destroy(json);
   }

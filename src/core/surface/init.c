@@ -84,6 +84,17 @@ void grpc_register_plugin(void (*init)(void), void (*deinit)(void)) {
   g_plugins_head->next = old_head;
 }
 
+void grpc_unregister_all_plugins() {
+  grpc_plugin *plugin;
+  grpc_plugin *next;
+
+  for (plugin = g_plugins_head; plugin != NULL; plugin = next) {
+    next = plugin->next;
+    gpr_free(plugin);
+  }
+  g_plugins_head = NULL;
+}
+
 void grpc_init(void) {
   grpc_plugin *plugin;
   gpr_once_init(&g_basic_init, do_basic_init);
@@ -139,7 +150,6 @@ void grpc_shutdown(void) {
         plugin->deinit();
       }
       next = plugin->next;
-      gpr_free(plugin);
     }
   }
   gpr_mu_unlock(&g_init_mu);

@@ -75,8 +75,9 @@ class ZookeeperTest : public ::testing::Test {
 
     // Setup two servers
     int port1 = grpc_pick_unused_port_or_die();
-    int port2 = grpc_pick_unused_port_or_die();
     server1_ = SetUpServer(port1);
+
+    int port2 = grpc_pick_unused_port_or_die();
     server2_ = SetUpServer(port2);
 
     // Register service /test in zookeeper
@@ -93,17 +94,7 @@ class ZookeeperTest : public ::testing::Test {
     RegisterService("/test/2", value);
   }
 
-  std::unique_ptr<Server> SetUpServer(int port) {
-    string server_address = "localhost:" + std::to_string(port);
-
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    std::unique_ptr<Server> server = builder.BuildAndStart();
-    return server;
-  }
-
-  // Require zookeeper server running beforehand
+  // Require zookeeper server running
   void SetUpZookeeper() {
     // Find zookeeper server address in environment
     // Default is localhost:2181
@@ -124,6 +115,19 @@ class ZookeeperTest : public ::testing::Test {
 
     // Register zookeeper name resolver in grpc
     grpc_zookeeper_register();
+
+    // Unregister all plugins when exit
+    atexit(grpc_unregister_all_plugins);
+  }
+
+  std::unique_ptr<Server> SetUpServer(int port) {
+    string server_address = "localhost:" + std::to_string(port);
+
+    ServerBuilder builder;
+    builder.AddListeningPort(server_address, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    std::unique_ptr<Server> server = builder.BuildAndStart();
+    return server;
   }
 
   void RegisterService(string name, string value) {
@@ -169,7 +173,7 @@ class ZookeeperTest : public ::testing::Test {
 };
 
 // Test zookeeper state change between two RPCs
-// TODO(ctiller): Handle leaked objects
+// TODO(ctiller): leaked objects
 TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   ResetStub();
 
@@ -184,8 +188,8 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EXPECT_TRUE(s1.ok());
 
   // Zookeeper state change
-  gpr_log(GPR_DEBUG, "Zookeeper state change");
   DeleteService("/test/1");
+  gpr_log(GPR_DEBUG, "Zookeeper state change");
   sleep(1);
 
   // Second RPC
