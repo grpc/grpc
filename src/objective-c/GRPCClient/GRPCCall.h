@@ -81,19 +81,18 @@ extern id const kGRPCStatusMetadataKey;
 @property(atomic, readonly) NSDictionary *allResponseMetadata;
 
 // The request writer has to write NSData objects into the provided Writeable. The server will
-// receive each of those separately and in order.
-// A gRPC call might not complete until the request writer finishes. On the other hand, the
-// request finishing doesn't necessarily make the call to finish, as the server might continue
-// sending messages to the response side of the call indefinitely (depending on the semantics of
-// the specific remote method called).
+// receive each of those separately and in order as distinct messages.
+// A gRPC call might not complete until the request writer finishes. On the other hand, the request
+// finishing doesn't necessarily make the call to finish, as the server might continue sending
+// messages to the response side of the call indefinitely (depending on the semantics of the
+// specific remote method called).
 // To finish a call right away, invoke cancel.
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
 
-// Finishes the request side of this call, notifies the server that the RPC
-// should be cancelled, and finishes the response side of the call with an error
-// of code CANCELED.
+// Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
+// finishes the response side of the call with an error of code CANCELED.
 - (void)cancel;
 
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
