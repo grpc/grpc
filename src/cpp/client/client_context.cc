@@ -48,23 +48,12 @@ namespace grpc {
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
-      cq_(nullptr),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       propagate_from_call_(nullptr) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
     grpc_call_destroy(call_);
-  }
-  if (cq_) {
-    // Drain cq_.
-    grpc_completion_queue_shutdown(cq_);
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    grpc_event event;
-    do {
-      event = grpc_completion_queue_next(cq_, deadline, nullptr);
-    } while (event.type != GRPC_QUEUE_SHUTDOWN);
-    grpc_completion_queue_destroy(cq_);
   }
 }
 
