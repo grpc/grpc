@@ -62,7 +62,7 @@ static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
   g_number_of_reads++;
   g_number_of_bytes_read += byte_count;
 
-  grpc_pollset_kick(&g_pollset);
+  grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
@@ -144,8 +144,9 @@ static void test_receive(int number_of_clients) {
     GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, addr_len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
-           gpr_time_cmp(deadline, gpr_now()) > 0) {
-      grpc_pollset_work(&g_pollset, deadline);
+           gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
+      grpc_pollset_worker worker;
+      grpc_pollset_work(&g_pollset, &worker, deadline);
     }
     GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
     close(clifd);
