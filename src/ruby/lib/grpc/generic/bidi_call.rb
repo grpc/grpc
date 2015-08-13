@@ -56,15 +56,13 @@ module GRPC
     #          the call
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Fixnum] the deadline for the call to complete
-    def initialize(call, q, marshal, unmarshal, deadline)
+    def initialize(call, q, marshal, unmarshal)
       fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
         fail(ArgumentError, 'not a CompletionQueue')
       end
       @call = call
       @cq = q
-      @deadline = deadline
       @marshal = marshal
       @op_notifier = nil  # signals completion on clients
       @readq = Queue.new
