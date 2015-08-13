@@ -54,7 +54,11 @@ class ClientStreamingInterface {
   // client side declares it has no more message to send, either implicitly or
   // by calling WritesDone, it needs to make sure there is no more message to
   // be received from the server, either implicitly or by getting a false from
-  // a Read(). Otherwise, this implicitly cancels the stream.
+  // a Read().
+  // This function will return either:
+  // - when all incoming messages have been read and the server has returned
+  //   status
+  // - OR when the server has returned a non-OK status
   virtual Status Finish() = 0;
 };
 

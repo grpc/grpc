@@ -85,7 +85,9 @@ typedef struct {
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
                                            void *user_data);
 
-grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
+grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
+                            gpr_uint32 propagation_mask,
+                            grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,

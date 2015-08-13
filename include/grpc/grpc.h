@@ -177,9 +177,13 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_INVALID_FLAGS,
   /** invalid metadata was passed to this call */
   GRPC_CALL_ERROR_INVALID_METADATA,
+  /** invalid message was passed to this call */
+  GRPC_CALL_ERROR_INVALID_MESSAGE,
   /** completion queue for notification has not been registered with the
       server */
-  GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE
+  GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
+  /** this batch of operations leads to more operations than allowed */
+  GRPC_CALL_ERROR_BATCH_TOO_BIG
 } grpc_call_error;
 
 /* Write Flags: */
@@ -254,31 +258,44 @@ void grpc_call_details_destroy(grpc_call_details *details);
 
 typedef enum {
   /** Send initial metadata: one and only one instance MUST be sent for each
-      call, unless the call was cancelled - in which case this can be skipped */
+      call, unless the call was cancelled - in which case this can be skipped.
+      This op completes after all bytes of metadata have been accepted by
+      outgoing flow control. */
   GRPC_OP_SEND_INITIAL_METADATA = 0,
-  /** Send a message: 0 or more of these operations can occur for each call */
+  /** Send a message: 0 or more of these operations can occur for each call.
+      This op completes after all bytes for the message have been accepted by
+      outgoing flow control. */
   GRPC_OP_SEND_MESSAGE,
   /** Send a close from the client: one and only one instance MUST be sent from
       the client, unless the call was cancelled - in which case this can be
-      skipped */
+      skipped.
+      This op completes after all bytes for the call (including the close)
+      have passed outgoing flow control. */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
   /** Send status from the server: one and only one instance MUST be sent from
       the server unless the call was cancelled - in which case this can be
-      skipped */
+      skipped.
+      This op completes after all bytes for the call (including the status)
+      have passed outgoing flow control. */
   GRPC_OP_SEND_STATUS_FROM_SERVER,
   /** Receive initial metadata: one and only one MUST be made on the client,
-      must not be made on the server */
+      must not be made on the server.
+      This op completes after all initial metadata has been read from the
+      peer. */
   GRPC_OP_RECV_INITIAL_METADATA,
-  /** Receive a message: 0 or more of these operations can occur for each call
-     */
+  /** Receive a message: 0 or more of these operations can occur for each call.
+      This op completes after all bytes of the received message have been
+      read, or after a half-close has been received on this call. */
   GRPC_OP_RECV_MESSAGE,
   /** Receive status on the client: one and only one must be made on the client.
-     This operation always succeeds, meaning ops paired with this operation
-     will also appear to succeed, even though they may not have. In that case
-     the status will indicate some failure. */
+      This operation always succeeds, meaning ops paired with this operation
+      will also appear to succeed, even though they may not have. In that case
+      the status will indicate some failure.
+      This op completes after all activity on the call has completed. */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /** Receive close on the server: one and only one must be made on the
-      server */
+      server.
+      This op completes after the close has been received by the server. */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
@@ -308,8 +325,8 @@ typedef struct grpc_op {
         value, or reuse it in a future op. */
     grpc_metadata_array *recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
-       call
-        grpc_byte_buffer_destroy on this value, or reuse it in a future op. */
+        call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
+       */
     grpc_byte_buffer **recv_message;
     struct {
       /** ownership of the array is with the caller, but ownership of the
@@ -351,6 +368,26 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+/* Propagation bits: this can be bitwise or-ed to form propagation_mask for
+ * grpc_call */
+/** Propagate deadline */
+#define GRPC_PROPAGATE_DEADLINE ((gpr_uint32)1)
+/** Propagate census context */
+#define GRPC_PROPAGATE_CENSUS_STATS_CONTEXT ((gpr_uint32)2)
+#define GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT ((gpr_uint32)4)
+/** Propagate cancellation */
+#define GRPC_PROPAGATE_CANCELLATION ((gpr_uint32)8)
+
+/* Default propagation mask: clients of the core API are encouraged to encode
+   deltas from this in their implementations... ie write:
+   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
+   propagation. Doing so gives flexibility in the future to define new 
+   propagation types that are default inherited or not. */
+#define GRPC_PROPAGATE_DEFAULTS                                                \
+  ((gpr_uint32)((                                                              \
+      0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
+      GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
+
 /** Initialize the grpc library.
 
     It is not safe to call any other grpc functions before calling this.
@@ -391,9 +428,16 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. */
+    grpc_completion_queue_pluck simultaneously on the same completion queue. 
+    
+    Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+    concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                        gpr_timespec deadline);
+
+/** Maximum number of outstanding grpc_completion_queue_pluck executions per
+    completion queue */
+#define GRPC_MAX_COMPLETION_QUEUE_PLUCKERS 6
 
 /** Begin destruction of a completion queue. Once all possible events are
     drained then grpc_completion_queue_next will start to produce
@@ -423,8 +467,13 @@ void grpc_channel_watch_connectivity_state(
 
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
-    live through the invocation of this function. */
+    live through the invocation of this function.
+    If parent_call is non-NULL, it must be a server-side call. It will be used
+    to propagate properties from the server call to this new client call. 
+    */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_call *parent_call,
+                                    gpr_uint32 propagation_mask,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline);
@@ -435,8 +484,9 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
 
 /** Create a call given a handle returned from grpc_channel_register_call */
 grpc_call *grpc_channel_create_registered_call(
-    grpc_channel *channel, grpc_completion_queue *completion_queue,
-    void *registered_call_handle, gpr_timespec deadline);
+    grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
+    grpc_completion_queue *completion_queue, void *registered_call_handle,
+    gpr_timespec deadline);
 
 /** Start a batch of operations defined in the array ops; when complete, post a
     completion of type 'tag' to the completion queue bound to the call.
@@ -562,7 +612,7 @@ void grpc_server_register_completion_queue(grpc_server *server,
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */
-int grpc_server_add_http2_port(grpc_server *server, const char *addr);
+int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr);
 
 /** Start a server - tells all listeners to start listening */
 void grpc_server_start(grpc_server *server);

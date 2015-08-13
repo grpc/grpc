@@ -34,14 +34,12 @@ import abc
 import unittest  # pylint: disable=unused-import
 
 from grpc.framework.face import exceptions
+from grpc_test.framework.common import test_constants
 from grpc_test.framework.face.testing import control
 from grpc_test.framework.face.testing import coverage
 from grpc_test.framework.face.testing import digest
 from grpc_test.framework.face.testing import stock_service
 from grpc_test.framework.face.testing import test_case
-
-_TIMEOUT = 3
-_LONG_TIMEOUT = 45
 
 
 class BlockingInvocationInlineServiceTestCase(
@@ -79,7 +77,7 @@ class BlockingInvocationInlineServiceTestCase(
         request = test_messages.request()
 
         response = self.stub.blocking_value_in_value_out(
-            name, request, _LONG_TIMEOUT)
+            name, request, test_constants.LONG_TIMEOUT)
 
         test_messages.verify(request, response, self)
 
@@ -90,7 +88,7 @@ class BlockingInvocationInlineServiceTestCase(
         request = test_messages.request()
 
         response_iterator = self.stub.inline_value_in_stream_out(
-            name, request, _LONG_TIMEOUT)
+            name, request, test_constants.LONG_TIMEOUT)
         responses = list(response_iterator)
 
         test_messages.verify(request, responses, self)
@@ -102,7 +100,7 @@ class BlockingInvocationInlineServiceTestCase(
         requests = test_messages.requests()
 
         response = self.stub.blocking_stream_in_value_out(
-            name, iter(requests), _LONG_TIMEOUT)
+            name, iter(requests), test_constants.LONG_TIMEOUT)
 
         test_messages.verify(requests, response, self)
 
@@ -113,7 +111,7 @@ class BlockingInvocationInlineServiceTestCase(
         requests = test_messages.requests()
 
         response_iterator = self.stub.inline_stream_in_stream_out(
-            name, iter(requests), _LONG_TIMEOUT)
+            name, iter(requests), test_constants.LONG_TIMEOUT)
         responses = list(response_iterator)
 
         test_messages.verify(requests, responses, self)
@@ -126,12 +124,12 @@ class BlockingInvocationInlineServiceTestCase(
         second_request = test_messages.request()
 
         first_response = self.stub.blocking_value_in_value_out(
-            name, first_request, _TIMEOUT)
+            name, first_request, test_constants.SHORT_TIMEOUT)
 
         test_messages.verify(first_request, first_response, self)
 
         second_response = self.stub.blocking_value_in_value_out(
-            name, second_request, _TIMEOUT)
+            name, second_request, test_constants.SHORT_TIMEOUT)
 
         test_messages.verify(second_request, second_response, self)
 
@@ -144,7 +142,7 @@ class BlockingInvocationInlineServiceTestCase(
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
           multi_callable = self.stub.unary_unary_multi_callable(name)
-          multi_callable(request, _TIMEOUT)
+          multi_callable(request, test_constants.SHORT_TIMEOUT)
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -155,7 +153,7 @@ class BlockingInvocationInlineServiceTestCase(
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
           response_iterator = self.stub.inline_value_in_stream_out(
-              name, request, _TIMEOUT)
+              name, request, test_constants.SHORT_TIMEOUT)
           list(response_iterator)
 
   def testExpiredStreamRequestUnaryResponse(self):
@@ -167,7 +165,7 @@ class BlockingInvocationInlineServiceTestCase(
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
           multi_callable = self.stub.stream_unary_multi_callable(name)
-          multi_callable(iter(requests), _TIMEOUT)
+          multi_callable(iter(requests), test_constants.SHORT_TIMEOUT)
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -178,7 +176,7 @@ class BlockingInvocationInlineServiceTestCase(
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
           response_iterator = self.stub.inline_stream_in_stream_out(
-              name, iter(requests), _TIMEOUT)
+              name, iter(requests), test_constants.SHORT_TIMEOUT)
           list(response_iterator)
 
   def testFailedUnaryRequestUnaryResponse(self):
@@ -188,7 +186,8 @@ class BlockingInvocationInlineServiceTestCase(
         request = test_messages.request()
 
         with self.control.fail(), self.assertRaises(exceptions.ServicerError):
-          self.stub.blocking_value_in_value_out(name, request, _TIMEOUT)
+          self.stub.blocking_value_in_value_out(name, request,
+                                                test_constants.SHORT_TIMEOUT)
 
   def testFailedUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -198,7 +197,7 @@ class BlockingInvocationInlineServiceTestCase(
 
         with self.control.fail(), self.assertRaises(exceptions.ServicerError):
           response_iterator = self.stub.inline_value_in_stream_out(
-              name, request, _TIMEOUT)
+              name, request, test_constants.SHORT_TIMEOUT)
           list(response_iterator)
 
   def testFailedStreamRequestUnaryResponse(self):
@@ -208,7 +207,8 @@ class BlockingInvocationInlineServiceTestCase(
         requests = test_messages.requests()
 
         with self.control.fail(), self.assertRaises(exceptions.ServicerError):
-          self.stub.blocking_stream_in_value_out(name, iter(requests), _TIMEOUT)
+          self.stub.blocking_stream_in_value_out(name, iter(requests),
+                                                 test_constants.SHORT_TIMEOUT)
 
   def testFailedStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -218,5 +218,5 @@ class BlockingInvocationInlineServiceTestCase(
 
         with self.control.fail(), self.assertRaises(exceptions.ServicerError):
           response_iterator = self.stub.inline_stream_in_stream_out(
-              name, iter(requests), _TIMEOUT)
+              name, iter(requests), test_constants.SHORT_TIMEOUT)
           list(response_iterator)

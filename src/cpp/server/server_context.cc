@@ -50,16 +50,23 @@ namespace grpc {
 class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp() : refs_(2), finalized_(false), cancelled_(0) {}
+  CompletionOp() : has_tag_(false), tag_(nullptr), refs_(2), finalized_(false), cancelled_(0) {}
 
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
   bool CheckCancelled(CompletionQueue* cq);
 
+  void set_tag(void* tag) {
+    has_tag_ = true;
+    tag_ = tag;
+  }
+
   void Unref();
 
  private:
+  bool has_tag_;
+  void* tag_;
   grpc::mutex mu_;
   int refs_;
   bool finalized_;
@@ -90,18 +97,25 @@ void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   finalized_ = true;
+  bool ret = false;
+  if (has_tag_) {
+    *tag = tag_;
+    ret = true;
+  }
   if (!*status) cancelled_ = 1;
   if (--refs_ == 0) {
     lock.unlock();
     delete this;
   }
-  return false;
+  return ret;
 }
 
 // ServerContext body
 
 ServerContext::ServerContext()
     : completion_op_(nullptr),
+      has_notify_when_done_tag_(false),
+      async_notify_when_done_tag_(nullptr),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false) {}
@@ -109,6 +123,8 @@ ServerContext::ServerContext()
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                              size_t metadata_count)
     : completion_op_(nullptr),
+      has_notify_when_done_tag_(false),
+      async_notify_when_done_tag_(nullptr),
       deadline_(deadline),
       call_(nullptr),
       cq_(nullptr),
@@ -133,6 +149,9 @@ ServerContext::~ServerContext() {
 void ServerContext::BeginCompletionOp(Call* call) {
   GPR_ASSERT(!completion_op_);
   completion_op_ = new CompletionOp();
+  if (has_notify_when_done_tag_) {
+    completion_op_->set_tag(async_notify_when_done_tag_);
+  }
   call->PerformOps(completion_op_);
 }
 
