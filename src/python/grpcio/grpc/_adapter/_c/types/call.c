@@ -42,6 +42,7 @@
 PyMethodDef pygrpc_Call_methods[] = {
     {"start_batch", (PyCFunction)pygrpc_Call_start_batch, METH_KEYWORDS, ""},
     {"cancel", (PyCFunction)pygrpc_Call_cancel, METH_KEYWORDS, ""},
+    {"peer", (PyCFunction)pygrpc_Call_peer, METH_NOARGS, ""},
     {NULL}
 };
 const char pygrpc_Call_doc[] = "See grpc._adapter._types.Call.";
@@ -160,4 +161,11 @@ PyObject *pygrpc_Call_cancel(Call *self, PyObject *args, PyObject *kwargs) {
     errcode = grpc_call_cancel(self->c_call, NULL);
   }
   return PyInt_FromLong(errcode);
+}
+
+PyObject *pygrpc_Call_peer(Call *self) {
+  char *peer = grpc_call_get_peer(self->c_call);
+  PyObject *py_peer = PyString_FromString(peer);
+  gpr_free(peer);
+  return py_peer;
 }
