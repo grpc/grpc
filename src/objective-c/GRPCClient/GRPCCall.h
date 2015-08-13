@@ -68,8 +68,8 @@ extern id const kGRPCStatusMetadataKey;
 //
 // For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
 // accepts (and copies) both mutable and immutable dictionaries.
-- (NSMutableDictionary *)requestMetadata; // nonatomic
-- (void)setRequestMetadata:(NSDictionary *)requestMetadata; // nonatomic, copy
+- (NSMutableDictionary *)requestHeaders; // nonatomic
+- (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
 
 // This dictionary is populated with the HTTP headers received from the server. When the RPC ends,
 // the HTTP trailers received are added to the dictionary too. It has the same structure as the

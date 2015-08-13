@@ -89,7 +89,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // the response arrives.
   GRPCCall *_retainSelf;
 
-  NSMutableDictionary *_requestMetadata;
+  NSMutableDictionary *_requestHeaders;
   NSMutableDictionary *_responseMetadata;
 }
 
@@ -121,7 +121,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
     _requestWriter = requestWriter;
 
-    _requestMetadata = [NSMutableDictionary dictionary];
+    _requestHeaders = [NSMutableDictionary dictionary];
     _responseMetadata = [NSMutableDictionary dictionary];
   }
   return self;
@@ -129,12 +129,12 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 #pragma mark Metadata
 
-- (NSMutableDictionary *)requestMetadata {
-  return _requestMetadata;
+- (NSMutableDictionary *)requestHeaders {
+  return _requestHeaders;
 }
 
-- (void)setRequestMetadata:(NSDictionary *)requestMetadata {
-  _requestMetadata = [NSMutableDictionary dictionaryWithDictionary:requestMetadata];
+- (void)setRequestHeaders:(NSDictionary *)requestHeaders {
+  _requestHeaders = [NSMutableDictionary dictionaryWithDictionary:requestHeaders];
 }
 
 - (NSDictionary *)responseMetadata {
@@ -356,7 +356,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   _retainSelf = self;
 
   _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable];
-  [self sendHeaders:_requestMetadata];
+  [self sendHeaders:_requestHeaders];
   [self invokeCall];
 }
 
