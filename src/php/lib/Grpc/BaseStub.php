@@ -85,8 +85,9 @@ class BaseStub {
   /**
    * @param $timeout in microseconds
    * @return bool true if channel is ready
+   * @throw Exception if channel is in FATAL_ERROR state
    */
-  public function watchForReady($timeout) {
+  public function waitForReady($timeout) {
     $new_state = $this->getConnectivityState(true);
     if ($this->_checkConnectivityState($new_state)) {
       return true;
@@ -96,14 +97,16 @@ class BaseStub {
     $delta = new Timeval($timeout);
     $deadline = $now->add($delta);
 
-    if (!$this->channel->watchConnectivityState($new_state, $deadline)) {
-      return false;
+    while ($this->channel->watchConnectivityState($new_state, $deadline)) {
+      // state has changed before deadline
+      $new_state = $this->getConnectivityState();
+      if ($this->_checkConnectivityState($new_state)) {
+        return true;
+      }
     }
+    // deadline has passed
     $new_state = $this->getConnectivityState();
-    if ($this->_checkConnectivityState($new_state)) {
-      return true;
-    }
-    return false;
+    return $this->_checkConnectivityState($new_state);
   }
 
   private function _checkConnectivityState($new_state) {

@@ -256,10 +256,7 @@ PHP_METHOD(Channel, watchConnectivityState) {
   grpc_event event = grpc_completion_queue_pluck(
       completion_queue, NULL,
       gpr_inf_future(GPR_CLOCK_REALTIME));
-  if (!event.success) {
-    RETURN_BOOL(0);
-  }
-  RETURN_BOOL(1);
+  RETURN_BOOL(event.success);
 }
 
 /**
