@@ -83,6 +83,40 @@ class BaseStub {
   }
 
   /**
+   * @param $timeout in microseconds
+   * @return bool true if channel is ready
+   */
+  public function watchForReady($timeout) {
+    $new_state = $this->getConnectivityState(true);
+    if ($this->_checkConnectivityState($new_state)) {
+      return true;
+    }
+
+    $now = Timeval::now();
+    $delta = new Timeval($timeout);
+    $deadline = $now->add($delta);
+
+    if (!$this->channel->watchConnectivityState($new_state, $deadline)) {
+      return false;
+    }
+    $new_state = $this->getConnectivityState();
+    if ($this->_checkConnectivityState($new_state)) {
+      return true;
+    }
+    return false;
+  }
+
+  private function _checkConnectivityState($new_state) {
+    if ($new_state == Grpc\CHANNEL_READY) {
+      return true;
+    }
+    if ($new_state == Grpc\CHANNEL_FATAL_ERROR) {
+      throw new Exception('Failed to connect to server');
+    }
+    return false;
+  }
+
+  /**
    * Close the communication channel associated with this stub
    */
   public function close() {
