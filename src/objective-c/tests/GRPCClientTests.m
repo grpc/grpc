@@ -168,11 +168,11 @@ static ProtoMethod *kUnaryCallMethod;
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNotNil(errorOrNil, @"Finished without error!");
     XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
-    XCTAssertEqualObjects(call.responseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
+    XCTAssertEqualObjects(call.allResponseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
                           @"Metadata in the NSError object and call object differ.");
     NSString *challengeHeader = call.oauth2ChallengeHeader;
     XCTAssertGreaterThan(challengeHeader.length, 0,
-                         @"No challenge in response headers %@", call.responseMetadata);
+                         @"No challenge in response headers %@", call.allResponseMetadata);
     [expectation fulfill];
   }];
 

@@ -57,7 +57,7 @@ static NSString * const kChallengeHeader = @"www-authenticate";
 }
 
 - (NSString *)oauth2ChallengeHeader {
-  return self.responseMetadata[kChallengeHeader];
+  return self.allResponseMetadata[kChallengeHeader];
 }
 
 @end

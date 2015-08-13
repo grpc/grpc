@@ -90,7 +90,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   GRPCCall *_retainSelf;
 
   NSMutableDictionary *_requestHeaders;
-  NSMutableDictionary *_responseMetadata;
+  NSMutableDictionary *_allResponseMetadata;
 }
 
 @synthesize state = _state;
@@ -122,7 +122,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     _requestWriter = requestWriter;
 
     _requestHeaders = [NSMutableDictionary dictionary];
-    _responseMetadata = [NSMutableDictionary dictionary];
+    _allResponseMetadata = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -137,8 +137,8 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   _requestHeaders = [NSMutableDictionary dictionaryWithDictionary:requestHeaders];
 }
 
-- (NSDictionary *)responseMetadata {
-  return _responseMetadata;
+- (NSDictionary *)allResponseMetadata {
+  return _allResponseMetadata;
 }
 
 #pragma mark Finish
@@ -322,18 +322,18 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     // Response headers received.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      [strongSelf->_responseMetadata addEntriesFromDictionary:headers];
+      [strongSelf->_allResponseMetadata addEntriesFromDictionary:headers];
       [strongSelf startNextRead];
     }
   } completionHandler:^(NSError *error, NSDictionary *trailers) {
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      [strongSelf->_responseMetadata addEntriesFromDictionary:trailers];
+      [strongSelf->_allResponseMetadata addEntriesFromDictionary:trailers];
 
       if (error) {
         NSMutableDictionary *userInfo =
             [NSMutableDictionary dictionaryWithDictionary:error.userInfo];
-        userInfo[kGRPCStatusMetadataKey] = strongSelf->_responseMetadata;
+        userInfo[kGRPCStatusMetadataKey] = strongSelf->_allResponseMetadata;
         error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
       }
       [strongSelf finishWithError:error];

@@ -78,7 +78,7 @@ extern id const kGRPCStatusMetadataKey;
 // The first time this object calls |writeValue| on the writeable passed to |startWithWriteable|,
 // the |responseMetadata| dictionary already contains the response headers. When it calls
 // |writesFinishedWithError|, the dictionary contains both the response headers and trailers.
-@property(atomic, readonly) NSDictionary *responseMetadata;
+@property(atomic, readonly) NSDictionary *allResponseMetadata;
 
 // The request writer has to write NSData objects into the provided Writeable. The server will
 // receive each of those separately and in order.
