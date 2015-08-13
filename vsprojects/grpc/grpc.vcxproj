@@ -229,10 +229,6 @@
     <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_connector.h" />
-    <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\security\auth_filters.h" />
     <ClInclude Include="..\..\src\core\security\base64.h" />
     <ClInclude Include="..\..\src\core\security\credentials.h" />
@@ -272,6 +268,9 @@
     <ClInclude Include="..\..\src\core\client_config\uri_parser.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\src\core\debug\trace.h" />
+    <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
+    <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
+    <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h" />
@@ -347,13 +346,7 @@
     <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\httpcli_security_connector.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\base64.c">
     </ClCompile>
@@ -446,6 +439,12 @@
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\debug\trace.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
     </ClCompile>

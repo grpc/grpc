@@ -16,12 +16,15 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.0.0'
   s.requirements << 'libgrpc ~> 0.10.0 needs to be installed'
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- spec/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*.rb`.split("\n").map do |f|
-    File.basename(f)
+  s.files = %w( Rakefile )
+  s.files += Dir.glob('lib/**/*')
+  s.files += Dir.glob('ext/**/*')
+  s.files += Dir.glob('bin/**/*')
+  s.test_files = Dir.glob('spec/**/*')
+  %w(math noproto).each do |b|
+    s.executables += ["#{b}_client.rb", "#{b}_server.rb"]
   end
-  s.require_paths = ['lib']
+  s.require_paths = %w( bin lib )
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'

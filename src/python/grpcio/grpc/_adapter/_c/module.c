@@ -53,6 +53,12 @@ PyMODINIT_FUNC init_c(void) {
     return;
   }
 
+  if (PyModule_AddStringConstant(
+          module, "PRIMARY_USER_AGENT_KEY",
+          GRPC_ARG_PRIMARY_USER_AGENT_STRING) < 0) {
+    return;
+  }
+
   /* GRPC maintains an internal counter of how many times it has been
      initialized and handles multiple pairs of grpc_init()/grpc_shutdown()
      invocations accordingly. */
