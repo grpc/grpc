@@ -400,6 +400,7 @@ cc_library(
   ],
   deps = [
     "//external:libssl",
+    "//external:zlib",
     ":gpr",
   ],
 )
