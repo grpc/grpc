@@ -261,7 +261,15 @@ census_context *census_start_server_rpc_op(
 census_context *census_start_op(census_context *context, const char *family,
                                 const char *name, int trace_mask);
 
-/** End an operation started by any of the census_start_*_op*() calls. */
+/**
+  End an operation started by any of the census_start_*_op*() calls. The
+  context used in this call will no longer be valid once this function
+  completes.
+
+  @param context Context associated with operation which is ending.
+  @param status status associated with the operation. Not interpreted by
+                census.
+*/
 void census_end_op(census_context *context, int status);
 
 /** Insert a trace record into the trace stream. The record consists of an
