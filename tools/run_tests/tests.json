@@ -238,23 +238,6 @@
     ], 
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_cancellable_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "flaky": false, 
-    "language": "c", 
     "name": "gpr_cmdline_test", 
     "platforms": [
       "linux", 
