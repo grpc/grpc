@@ -67,9 +67,9 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void ConstructorPreconditions()
         {
-            Assert.Throws(typeof(NullReferenceException), () => { new ChannelOption(null, "abc"); });
-            Assert.Throws(typeof(NullReferenceException), () => { new ChannelOption(null, 1); });
-            Assert.Throws(typeof(NullReferenceException), () => { new ChannelOption("abc", null); });
+            Assert.Throws(typeof(ArgumentNullException), () => { new ChannelOption(null, "abc"); });
+            Assert.Throws(typeof(ArgumentNullException), () => { new ChannelOption(null, 1); });
+            Assert.Throws(typeof(ArgumentNullException), () => { new ChannelOption("abc", null); });
         }
 
         [Test]

@@ -44,7 +44,7 @@
 #include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/log.h>
 
-static void pipe_create(grpc_wakeup_fd_info *fd_info) {
+static void pipe_init(grpc_wakeup_fd *fd_info) {
   int pipefd[2];
   /* TODO(klempner): Make this nonfatal */
   GPR_ASSERT(0 == pipe(pipefd));
@@ -54,7 +54,7 @@ static void pipe_create(grpc_wakeup_fd_info *fd_info) {
   fd_info->write_fd = pipefd[1];
 }
 
-static void pipe_consume(grpc_wakeup_fd_info *fd_info) {
+static void pipe_consume(grpc_wakeup_fd *fd_info) {
   char buf[128];
   int r;
 
@@ -74,13 +74,13 @@ static void pipe_consume(grpc_wakeup_fd_info *fd_info) {
   }
 }
 
-static void pipe_wakeup(grpc_wakeup_fd_info *fd_info) {
+static void pipe_wakeup(grpc_wakeup_fd *fd_info) {
   char c = 0;
   while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
     ;
 }
 
-static void pipe_destroy(grpc_wakeup_fd_info *fd_info) {
+static void pipe_destroy(grpc_wakeup_fd *fd_info) {
   close(fd_info->read_fd);
   close(fd_info->write_fd);
 }
@@ -91,7 +91,7 @@ static int pipe_check_availability(void) {
 }
 
 const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
-  pipe_create, pipe_consume, pipe_wakeup, pipe_destroy, pipe_check_availability
-};
+    pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
+    pipe_check_availability};
 
 #endif  /* GPR_POSIX_WAKUP_FD */

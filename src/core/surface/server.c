@@ -327,6 +327,14 @@ static void request_matcher_zombify_all_pending_calls(
   }
 }
 
+static void request_matcher_kill_requests(grpc_server *server,
+                                          request_matcher *rm) {
+  int request_id;
+  while ((request_id = gpr_stack_lockfree_pop(rm->requests)) != -1) {
+    fail_call(server, &server->requested_calls[request_id]);
+  }
+}
+
 /*
  * server proper
  */
@@ -492,11 +500,24 @@ static int num_channels(grpc_server *server) {
   return n;
 }
 
+static void kill_pending_work_locked(grpc_server *server) {
+  registered_method *rm;
+  request_matcher_kill_requests(server, &server->unregistered_request_matcher);
+  request_matcher_zombify_all_pending_calls(
+      &server->unregistered_request_matcher);
+  for (rm = server->registered_methods; rm; rm = rm->next) {
+    request_matcher_kill_requests(server, &rm->request_matcher);
+    request_matcher_zombify_all_pending_calls(&rm->request_matcher);
+  }
+}
+
 static void maybe_finish_shutdown(grpc_server *server) {
   size_t i;
   if (!gpr_atm_acq_load(&server->shutdown_flag) || server->shutdown_published) {
     return;
   }
+
+  kill_pending_work_locked(server);
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
@@ -554,8 +575,10 @@ static void server_on_recv(void *ptr, int success) {
           gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
         calld->deadline = op->data.metadata.deadline;
       }
-      calld->got_initial_metadata = 1;
-      start_new_rpc(elem);
+      if (calld->host && calld->path) {
+        calld->got_initial_metadata = 1;
+        start_new_rpc(elem);
+      }
       break;
     }
   }
@@ -621,8 +644,8 @@ static void accept_stream(void *cd, grpc_transport *transport,
                           const void *transport_server_data) {
   channel_data *chand = cd;
   /* create a call */
-  grpc_call_create(chand->channel, NULL, transport_server_data, NULL, 0,
-                   gpr_inf_future(GPR_CLOCK_REALTIME));
+  grpc_call_create(chand->channel, NULL, 0, NULL, transport_server_data, NULL,
+                   0, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 }
 
 static void channel_connectivity_changed(void *cd, int iomgr_status_ignored) {
@@ -945,52 +968,15 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   op.set_accept_stream_user_data = chand;
   op.on_connectivity_state_change = &chand->channel_connectivity_changed;
   op.connectivity_state = &chand->connectivity_state;
+  op.disconnect = gpr_atm_acq_load(&s->shutdown_flag);
   grpc_transport_perform_op(transport, &op);
-}
-
-typedef struct {
-  requested_call **requests;
-  size_t count;
-  size_t capacity;
-} request_killer;
-
-static void request_killer_init(request_killer *rk) {
-  memset(rk, 0, sizeof(*rk));
-}
-
-static void request_killer_add(request_killer *rk, requested_call *rc) {
-  if (rk->capacity == rk->count) {
-    rk->capacity = GPR_MAX(8, rk->capacity * 2);
-    rk->requests =
-        gpr_realloc(rk->requests, rk->capacity * sizeof(*rk->requests));
-  }
-  rk->requests[rk->count++] = rc;
-}
-
-static void request_killer_add_request_matcher(request_killer *rk,
-                                               grpc_server *server,
-                                               request_matcher *rm) {
-  int request_id;
-  while ((request_id = gpr_stack_lockfree_pop(rm->requests)) != -1) {
-    request_killer_add(rk, &server->requested_calls[request_id]);
-  }
-}
-
-static void request_killer_run(request_killer *rk, grpc_server *server) {
-  size_t i;
-  for (i = 0; i < rk->count; i++) {
-    fail_call(server, rk->requests[i]);
-  }
-  gpr_free(rk->requests);
 }
 
 void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag) {
   listener *l;
-  registered_method *rm;
   shutdown_tag *sdt;
   channel_broadcaster broadcaster;
-  request_killer reqkill;
 
   GRPC_SERVER_LOG_SHUTDOWN(GPR_INFO, server, cq, tag);
 
@@ -1011,26 +997,15 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   server->last_shutdown_message_time = gpr_now(GPR_CLOCK_REALTIME);
 
   channel_broadcaster_init(server, &broadcaster);
-  request_killer_init(&reqkill);
 
   /* collect all unregistered then registered calls */
   gpr_mu_lock(&server->mu_call);
-  request_killer_add_request_matcher(&reqkill, server,
-                                     &server->unregistered_request_matcher);
-  request_matcher_zombify_all_pending_calls(
-      &server->unregistered_request_matcher);
-  for (rm = server->registered_methods; rm; rm = rm->next) {
-    request_killer_add_request_matcher(&reqkill, server, &rm->request_matcher);
-    request_matcher_zombify_all_pending_calls(&rm->request_matcher);
-  }
+  kill_pending_work_locked(server);
   gpr_mu_unlock(&server->mu_call);
 
   gpr_atm_rel_store(&server->shutdown_flag, 1);
   maybe_finish_shutdown(server);
   gpr_mu_unlock(&server->mu_global);
-
-  /* terminate all the requested calls */
-  request_killer_run(&reqkill, server);
 
   /* Shutdown listeners */
   for (l = server->listeners; l; l = l->next) {
@@ -1271,6 +1246,8 @@ static void done_request_event(void *req, grpc_cq_completion *c) {
   } else {
     gpr_free(req);
   }
+
+  server_unref(server);
 }
 
 static void fail_call(grpc_server *server, requested_call *rc) {
@@ -1283,6 +1260,7 @@ static void fail_call(grpc_server *server, requested_call *rc) {
       rc->data.registered.initial_metadata->count = 0;
       break;
   }
+  server_ref(server);
   grpc_cq_end_op(rc->cq_for_notification, rc->tag, 0, done_request_event, rc,
                  &rc->completion);
 }
@@ -1293,6 +1271,8 @@ static void publish_registered_or_batch(grpc_call *call, int success,
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   requested_call *rc = prc;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  server_ref(chand->server);
   grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc,
                  &rc->completion);
   GRPC_CALL_INTERNAL_UNREF(call, "server", 0);

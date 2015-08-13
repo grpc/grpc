@@ -33,7 +33,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Grpc.Core.Utils
@@ -46,7 +45,7 @@ namespace Grpc.Core.Utils
         /// <summary>
         /// Reads the entire stream and executes an async action for each element.
         /// </summary>
-        public static async Task ForEach<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
+        public static async Task ForEachAsync<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
             where T : class
         {
             while (await streamReader.MoveNext())
@@ -58,7 +57,7 @@ namespace Grpc.Core.Utils
         /// <summary>
         /// Reads the entire stream and creates a list containing all the elements read.
         /// </summary>
-        public static async Task<List<T>> ToList<T>(this IAsyncStreamReader<T> streamReader)
+        public static async Task<List<T>> ToListAsync<T>(this IAsyncStreamReader<T> streamReader)
             where T : class
         {
             var result = new List<T>();
@@ -73,7 +72,7 @@ namespace Grpc.Core.Utils
         /// Writes all elements from given enumerable to the stream.
         /// Completes the stream afterwards unless close = false.
         /// </summary>
-        public static async Task WriteAll<T>(this IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool complete = true)
+        public static async Task WriteAllAsync<T>(this IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool complete = true)
             where T : class
         {
             foreach (var element in elements)
@@ -89,7 +88,7 @@ namespace Grpc.Core.Utils
         /// <summary>
         /// Writes all elements from given enumerable to the stream.
         /// </summary>
-        public static async Task WriteAll<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
+        public static async Task WriteAllAsync<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
             where T : class
         {
             foreach (var element in elements)

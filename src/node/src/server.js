@@ -714,11 +714,7 @@ Server.prototype.bind = function(port, creds) {
   if (this.started) {
     throw new Error('Can\'t bind an already running server to an address');
   }
-  if (creds) {
-    return this._server.addSecureHttp2Port(port, creds);
-  } else {
-    return this._server.addHttp2Port(port);
-  }
+  return this._server.addHttp2Port(port, creds);
 };
 
 /**

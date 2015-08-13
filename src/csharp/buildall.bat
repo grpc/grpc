@@ -9,7 +9,7 @@ cd /d %~dp0
 @call "%VS120COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
 
 @rem Build the C# native extension
-msbuild ..\..\vsprojects\grpc.sln /t:grpc_csharp_ext /p:PlatformToolset=v120 || goto :error
+msbuild ..\..\vsprojects\grpc_csharp_ext.sln /p:PlatformToolset=v120 || goto :error
 
 msbuild Grpc.sln /p:Configuration=Debug || goto :error
 msbuild Grpc.sln /p:Configuration=Release || goto :error

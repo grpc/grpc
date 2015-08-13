@@ -32,6 +32,8 @@ FROM golang:1.4
 
 # Get the source from GitHub
 RUN go get google.golang.org/grpc
+RUN go get golang.org/x/oauth2
+RUN go get google.golang.org/cloud
 
 # Add a service_account directory containing the auth creds file
 ADD service_account service_account

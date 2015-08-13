@@ -32,7 +32,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -115,6 +114,16 @@ namespace Grpc.Core
             entries.Add(item);
         }
 
+        public void Add(string key, string value)
+        {
+            Add(new Entry(key, value));
+        }
+
+        public void Add(string key, byte[] valueBytes)
+        {
+            Add(new Entry(key, valueBytes));
+        }
+
         public void Clear()
         {
             CheckWriteable();
@@ -177,15 +186,15 @@ namespace Grpc.Core
 
             public Entry(string key, byte[] valueBytes)
             {
-                this.key = Preconditions.CheckNotNull(key);
+                this.key = Preconditions.CheckNotNull(key, "key");
                 this.value = null;
-                this.valueBytes = Preconditions.CheckNotNull(valueBytes);
+                this.valueBytes = Preconditions.CheckNotNull(valueBytes, "valueBytes");
             }
 
             public Entry(string key, string value)
             {
-                this.key = Preconditions.CheckNotNull(key);
-                this.value = Preconditions.CheckNotNull(value);
+                this.key = Preconditions.CheckNotNull(key, "key");
+                this.value = Preconditions.CheckNotNull(value, "value");
                 this.valueBytes = null;
             }
 

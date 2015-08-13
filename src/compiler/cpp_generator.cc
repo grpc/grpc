@@ -119,6 +119,7 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
       "#include <grpc++/async_unary_call.h>\n"
       "#include <grpc++/status.h>\n"
       "#include <grpc++/stream.h>\n"
+      "#include <grpc++/stub_options.h>\n"
       "\n"
       "namespace grpc {\n"
       "class CompletionQueue;\n"
@@ -574,8 +575,8 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
   printer->Print("};\n");
   printer->Print(
       "static std::unique_ptr<Stub> NewStub(const std::shared_ptr< "
-      "::grpc::ChannelInterface>& "
-      "channel);\n");
+      "::grpc::ChannelInterface>& channel, "
+      "const ::grpc::StubOptions& options = ::grpc::StubOptions());\n");
 
   printer->Print("\n");
 
@@ -966,7 +967,8 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
   printer->Print(
       *vars,
       "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
-      "const std::shared_ptr< ::grpc::ChannelInterface>& channel) {\n"
+      "const std::shared_ptr< ::grpc::ChannelInterface>& channel, "
+      "const ::grpc::StubOptions& options) {\n"
       "  std::unique_ptr< $ns$$Service$::Stub> stub(new "
       "$ns$$Service$::Stub(channel));\n"
       "  return stub;\n"
