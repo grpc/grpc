@@ -282,7 +282,7 @@
     for (GRPCOperation *operation in operations) {
       [operation finish];
     }
-  }));
+  }), NULL);
   gpr_free(ops_array);
 
   if (error != GRPC_CALL_OK) {
@@ -293,7 +293,7 @@
 }
 
 - (void)cancel {
-  grpc_call_cancel(_call);
+  grpc_call_cancel(_call, NULL);
 }
 
 - (void)dealloc {

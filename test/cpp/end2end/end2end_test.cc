@@ -290,13 +290,17 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     if (proxy_server_) proxy_server_->Shutdown();
   }
 
-  void ResetStub(bool use_proxy) {
+  void ResetChannel() {
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
     channel_ =
         CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
+  }
+
+  void ResetStub(bool use_proxy) {
+    ResetChannel();
     if (use_proxy) {
       proxy_service_.reset(new Proxy(channel_));
       int port = grpc_pick_unused_port_or_die();
@@ -928,6 +932,23 @@ TEST_F(End2endTest, ChannelState) {
   EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
                                            gpr_inf_future(GPR_CLOCK_REALTIME)));
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
+}
+
+// Talking to a non-existing service.
+TEST_F(End2endTest, NonExistingService) {
+  ResetChannel();
+  std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
+  stub =
+      std::move(grpc::cpp::test::util::UnimplementedService::NewStub(channel_));
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub->Unimplemented(&context, request, &response);
+  EXPECT_EQ(StatusCode::UNIMPLEMENTED, s.error_code());
+  EXPECT_EQ("", s.error_message());
 }
 
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest, ::testing::Values(false, true));

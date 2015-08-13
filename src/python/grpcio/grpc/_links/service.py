@@ -44,7 +44,10 @@ from grpc.framework.interfaces.links import links
 @enum.unique
 class _Read(enum.Enum):
   READING = 'reading'
-  AWAITING_ALLOWANCE = 'awaiting allowance'
+  # TODO(issue 2916): This state will again be necessary after eliminating the
+  # "early_read" field of _RPCState and going back to only reading when granted
+  # allowance to read.
+  # AWAITING_ALLOWANCE = 'awaiting allowance'
   CLOSED = 'closed'
 
 
@@ -67,12 +70,15 @@ class _RPCState(object):
 
   def __init__(
       self, request_deserializer, response_serializer, sequence_number, read,
-      allowance, high_write, low_write, premetadataed, terminal_metadata, code,
-      message):
+      early_read, allowance, high_write, low_write, premetadataed,
+      terminal_metadata, code, message):
     self.request_deserializer = request_deserializer
     self.response_serializer = response_serializer
     self.sequence_number = sequence_number
     self.read = read
+    # TODO(issue 2916): Eliminate this by eliminating the necessity of calling
+    # call.read just to advance the RPC.
+    self.early_read = early_read  # A raw (not deserialized) read.
     self.allowance = allowance
     self.high_write = high_write
     self.low_write = low_write
@@ -120,7 +126,7 @@ class _Kernel(object):
 
     call.read(call)
     self._rpc_states[call] = _RPCState(
-        request_deserializer, response_serializer, 1, _Read.READING, 0,
+        request_deserializer, response_serializer, 1, _Read.READING, None, 1,
         _HighWrite.OPEN, _LowWrite.OPEN, False, None, None, None)
     ticket = links.Ticket(
         call, 0, group, method, links.Ticket.Subscription.FULL,
@@ -140,12 +146,15 @@ class _Kernel(object):
       termination = links.Ticket.Termination.COMPLETION
     else:
       if 0 < rpc_state.allowance:
+        payload = rpc_state.request_deserializer(event.bytes)
+        termination = None
         rpc_state.allowance -= 1
         call.read(call)
       else:
-        rpc_state.read = _Read.AWAITING_ALLOWANCE
-      payload = rpc_state.request_deserializer(event.bytes)
-      termination = None
+        rpc_state.early_read = event.bytes
+        return
+        # TODO(issue 2916): Instead of returning:
+        # rpc_state.read = _Read.AWAITING_ALLOWANCE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
         payload, None, None, None, termination)
@@ -237,12 +246,22 @@ class _Kernel(object):
           rpc_state.premetadataed = True
 
       if ticket.allowance is not None:
-        if rpc_state.read is _Read.AWAITING_ALLOWANCE:
-          rpc_state.allowance += ticket.allowance - 1
-          call.read(call)
-          rpc_state.read = _Read.READING
-        else:
+        if rpc_state.early_read is None:
           rpc_state.allowance += ticket.allowance
+        else:
+          payload = rpc_state.request_deserializer(rpc_state.early_read)
+          rpc_state.allowance += ticket.allowance - 1
+          rpc_state.early_read = None
+          if rpc_state.read is _Read.READING:
+            call.read(call)
+            termination = None
+          else:
+            termination = links.Ticket.Termination.COMPLETION
+          ticket = links.Ticket(
+              call, rpc_state.sequence_number, None, None, None, None, None,
+              None, payload, None, None, None, termination)
+          rpc_state.sequence_number += 1
+          self._relay.add_value(ticket)
 
       if ticket.payload is not None:
         call.write(rpc_state.response_serializer(ticket.payload), call)

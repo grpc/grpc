@@ -111,7 +111,7 @@ NAN_METHOD(Channel::New) {
     grpc_channel_args *channel_args_ptr;
     if (args[2]->IsUndefined()) {
       channel_args_ptr = NULL;
-      wrapped_channel = grpc_insecure_channel_create(*host, NULL);
+      wrapped_channel = grpc_insecure_channel_create(*host, NULL, NULL);
     } else if (args[2]->IsObject()) {
       Handle<Object> args_hash(args[2]->ToObject()->Clone());
       Handle<Array> keys(args_hash->GetOwnPropertyNames());
@@ -145,7 +145,8 @@ NAN_METHOD(Channel::New) {
       return NanThrowTypeError("Channel expects a string and an object");
     }
     if (creds == NULL) {
-      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr);
+      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr,
+                                                     NULL);
     } else {
       wrapped_channel =
           grpc_secure_channel_create(creds, *host, channel_args_ptr);

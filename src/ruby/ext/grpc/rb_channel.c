@@ -147,7 +147,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   if (credentials == Qnil) {
-    ch = grpc_insecure_channel_create(target_chars, &args);
+    ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
     creds = grpc_rb_get_wrapped_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args);
@@ -163,6 +163,65 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   rb_ivar_set(self, id_target, target);
   wrapper->wrapped = ch;
   return self;
+}
+
+/*
+  call-seq:
+    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
+    creds = ...
+    secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
+
+  Creates channel instances. */
+static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE *argv,
+                                                    VALUE self) {
+  VALUE try_to_connect = Qfalse;
+  grpc_rb_channel *wrapper = NULL;
+  grpc_channel *ch = NULL;
+
+  /* "01" == 0 mandatory args, 1 (try_to_connect) is optional */
+  rb_scan_args(argc, argv, "01", try_to_connect);
+
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
+  ch = wrapper->wrapped;
+  if (ch == NULL) {
+    rb_raise(rb_eRuntimeError, "closed!");
+    return Qnil;
+  }
+  return NUM2LONG(
+      grpc_channel_check_connectivity_state(ch, (int)try_to_connect));
+}
+
+/* Watch for a change in connectivity state.
+
+   Once the channel connectivity state is different from the last observed
+   state, tag will be enqueued on cq with success=1
+
+   If deadline expires BEFORE the state is changed, tag will be enqueued on
+   the completion queue with success=0 */
+static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
+                                                      VALUE last_state,
+                                                      VALUE cqueue,
+                                                      VALUE deadline,
+                                                      VALUE tag) {
+  grpc_rb_channel *wrapper = NULL;
+  grpc_channel *ch = NULL;
+  grpc_completion_queue *cq = NULL;
+
+  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+  TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
+  ch = wrapper->wrapped;
+  if (ch == NULL) {
+    rb_raise(rb_eRuntimeError, "closed!");
+    return Qnil;
+  }
+  grpc_channel_watch_connectivity_state(
+      ch,
+      NUM2LONG(last_state),
+      grpc_rb_time_timeval(deadline, /* absolute time */ 0),
+      cq,
+      ROBJECT(tag));
+
+  return Qnil;
 }
 
 /* Clones Channel instances.
@@ -229,7 +288,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue,
   call = grpc_channel_create_call(ch, parent_call, flags, cq, method_chars,
                                   host_chars, grpc_rb_time_timeval(
                                       deadline,
-                                      /* absolute time */ 0));
+                                      /* absolute time */ 0), NULL);
   if (call == NULL) {
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
              method_chars);
@@ -295,6 +354,22 @@ static void Init_grpc_propagate_masks() {
                   UINT2NUM(GRPC_PROPAGATE_DEFAULTS));
 }
 
+static void Init_grpc_connectivity_states() {
+  /* Constants representing call propagation masks in grpc.h */
+  VALUE grpc_rb_mConnectivityStates = rb_define_module_under(
+      grpc_rb_mGrpcCore, "ConnectivityStates");
+  rb_define_const(grpc_rb_mConnectivityStates, "IDLE",
+                  LONG2NUM(GRPC_CHANNEL_IDLE));
+  rb_define_const(grpc_rb_mConnectivityStates, "CONNECTING",
+                  LONG2NUM(GRPC_CHANNEL_CONNECTING));
+  rb_define_const(grpc_rb_mConnectivityStates, "READY",
+                  LONG2NUM(GRPC_CHANNEL_READY));
+  rb_define_const(grpc_rb_mConnectivityStates, "TRANSIENT_FAILURE",
+                  LONG2NUM(GRPC_CHANNEL_TRANSIENT_FAILURE));
+  rb_define_const(grpc_rb_mConnectivityStates, "FATAL_FAILURE",
+                  LONG2NUM(GRPC_CHANNEL_FATAL_FAILURE));
+}
+
 void Init_grpc_channel() {
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
   grpc_rb_cChannel =
@@ -309,6 +384,11 @@ void Init_grpc_channel() {
                    grpc_rb_channel_init_copy, 1);
 
   /* Add ruby analogues of the Channel methods. */
+  rb_define_method(grpc_rb_cChannel, "connectivity_state",
+                   grpc_rb_channel_get_connectivity_state,
+                   -1);
+  rb_define_method(grpc_rb_cChannel, "watch_connectivity_state",
+                   grpc_rb_channel_watch_connectivity_state, 4);
   rb_define_method(grpc_rb_cChannel, "create_call",
                    grpc_rb_channel_create_call, 6);
   rb_define_method(grpc_rb_cChannel, "target", grpc_rb_channel_get_target, 0);
@@ -327,6 +407,7 @@ void Init_grpc_channel() {
   rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
   Init_grpc_propagate_masks();
+  Init_grpc_connectivity_states();
 }
 
 /* Gets the wrapped channel from the ruby wrapper */
