@@ -66,7 +66,7 @@ extern id const kGRPCTrailersKey;
 //
 // call.requestHeaders[@"my-header-bin"] = someData;
 //
-// After the call is started, modifying this won't have any effect.
+// After the call is started, trying to modify this property is an error.
 //
 // For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
 // accepts (and copies) both mutable and immutable dictionaries.
