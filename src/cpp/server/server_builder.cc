@@ -38,6 +38,7 @@
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
 #include <grpc++/thread_pool_interface.h>
+#include <grpc++/fixed_size_thread_pool.h>
 
 namespace grpc {
 
@@ -98,6 +99,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   if (!thread_pool_ && !services_.empty()) {
     thread_pool_ = CreateDefaultThreadPool();
+    thread_pool_owned = true;
+  }
+  // Async services only, create a thread pool to handle requests to unknown
+  // services.
+  if (!thread_pool_ && !generic_service_ && !async_services_.empty()) {
+    thread_pool_ = new FixedSizeThreadPool(1);
     thread_pool_owned = true;
   }
   std::unique_ptr<Server> server(
