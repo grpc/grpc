@@ -270,7 +270,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     // Setup server
     ServerBuilder builder;
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-      test_server1_cert};
+                                                        test_server1_cert};
     SslServerCredentialsOptions ssl_opts;
     ssl_opts.pem_root_certs = "";
     ssl_opts.pem_key_cert_pairs.push_back(pkcp);
@@ -295,8 +295,8 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ = CreateChannel(server_address_.str(), SslCredentials(ssl_opts),
-                             args);
+    channel_ =
+        CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
     if (use_proxy) {
       proxy_service_.reset(new Proxy(channel_));
       int port = grpc_pick_unused_port_or_die();
@@ -870,7 +870,7 @@ TEST_P(End2endTest, HugeResponse) {
 
 namespace {
 void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
-                      gpr_event *ev) {
+                      gpr_event* ev) {
   EchoResponse resp;
   gpr_event_set(ev, (void*)1);
   while (stream->Read(&resp)) {
@@ -925,8 +925,8 @@ TEST_F(End2endTest, ChannelState) {
   EXPECT_FALSE(ok);
 
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
-  EXPECT_TRUE(channel_->WaitForStateChange(
-      GRPC_CHANNEL_IDLE, gpr_inf_future(GPR_CLOCK_REALTIME)));
+  EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
+                                           gpr_inf_future(GPR_CLOCK_REALTIME)));
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
 }
 
