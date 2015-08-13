@@ -1056,10 +1056,7 @@
   }, 
   {
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "flaky": false, 
     "language": "c", 
@@ -1069,6 +1066,12 @@
     ]
   }, 
   {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "flaky": false, 
     "language": "c", 
     "name": "uri_parser_test", 
