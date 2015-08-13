@@ -1,4 +1,3 @@
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -30,30 +29,21 @@
 
 syntax = "proto3";
 
-package grpc.cpp.test.util;
+package grpc.health.v1alpha;
 
-message RequestParams {
-  bool echo_deadline = 1;
-  int32 client_cancel_after_us = 2;
-  int32 server_cancel_after_us = 3;
-  bool echo_metadata = 4;
-  bool check_auth_context = 5;
-  int32 response_message_length = 6;
-  bool echo_peer = 7;
+message HealthCheckRequest {
+  string service = 1;
 }
 
-message EchoRequest {
-  string message = 1;
-  RequestParams param = 2;
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
 }
 
-message ResponseParams {
-  int64 request_deadline = 1;
-  string host = 2;
-  string peer = 3;
-}
-
-message EchoResponse {
-  string message = 1;
-  ResponseParams param = 2;
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
 }

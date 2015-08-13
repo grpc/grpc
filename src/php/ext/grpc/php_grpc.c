@@ -183,6 +183,18 @@ PHP_MINIT_FUNCTION(grpc) {
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_CLOSE_ON_SERVER",
                          GRPC_OP_RECV_CLOSE_ON_SERVER, CONST_CS);
 
+  /* Register connectivity state constants */
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_IDLE",
+                         GRPC_CHANNEL_IDLE, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_CONNECTING",
+                         GRPC_CHANNEL_CONNECTING, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_READY",
+                         GRPC_CHANNEL_READY, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_TRANSIENT_FAILURE",
+                         GRPC_CHANNEL_TRANSIENT_FAILURE, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE",
+                         GRPC_CHANNEL_FATAL_FAILURE, CONST_CS);
+
   grpc_init_call(TSRMLS_C);
   grpc_init_channel(TSRMLS_C);
   grpc_init_server(TSRMLS_C);
