@@ -81,7 +81,6 @@ int gpr_cancellable_is_cancelled(gpr_cancellable *c) {
 void gpr_cancellable_cancel(gpr_cancellable *c) {
   if (!gpr_cancellable_is_cancelled(c)) {
     int failures;
-    int backoff = 1;
     do {
       struct gpr_cancellable_list_ *l;
       struct gpr_cancellable_list_ *nl;
@@ -113,18 +112,11 @@ void gpr_cancellable_cancel(gpr_cancellable *c) {
       }
       gpr_mu_unlock(&c->mu);
       if (failures != 0) {
-        if (backoff < 10) {
-          volatile int i;
-          for (i = 0; i != (1 << backoff); i++) {
-          }
-          backoff++;
-        } else {
-          gpr_event ev;
-          gpr_event_init(&ev);
-          gpr_event_wait(
-              &ev, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                gpr_time_from_micros(1000, GPR_TIMESPAN)));
-        }
+        gpr_event ev;
+        gpr_event_init(&ev);
+        gpr_event_wait(&ev,
+                       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                    gpr_time_from_micros(1000, GPR_TIMESPAN)));
       }
     } while (failures != 0);
   }
