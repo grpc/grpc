@@ -31,47 +31,29 @@
  *
  */
 
-#ifndef GRPCXX_AUTH_PROPERTY_ITERATOR_H
-#define GRPCXX_AUTH_PROPERTY_ITERATOR_H
+// Repeat of the tests in InteropTests.m, but sending the RPCs to a local cleartext server instead
+// of the remote SSL one.
 
-#include <iterator>
-#include <vector>
+#import <GRPCClient/GRPCCall+Tests.h>
 
-#include <grpc++/config.h>
+#import "InteropTests.h"
 
-struct grpc_auth_context;
-struct grpc_auth_property;
-struct grpc_auth_property_iterator;
+static NSString * const kLocalCleartextHost = @"localhost:5050";
 
-namespace grpc {
-class SecureAuthContext;
+@interface InteropTestsLocalCleartext : InteropTests
+@end
 
-typedef std::pair<grpc::string, grpc::string> AuthProperty;
+@implementation InteropTestsLocalCleartext
 
-class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
- public:
-  ~AuthPropertyIterator();
-  AuthPropertyIterator& operator++();
-  AuthPropertyIterator operator++(int);
-  bool operator==(const AuthPropertyIterator& rhs) const;
-  bool operator!=(const AuthPropertyIterator& rhs) const;
-  const AuthProperty operator*();
++ (NSString *)host {
+  return kLocalCleartextHost;
+}
 
- protected:
-  AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
- private:
-  friend class SecureAuthContext;
-  const grpc_auth_property* property_;
-  // The following items form a grpc_auth_property_iterator.
-  const grpc_auth_context* ctx_;
-  size_t index_;
-  const char* name_;
-};
+- (void)setUp {
+  // Register test server as non-SSL.
+  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
 
-}  // namespace grpc
+  [super setUp];
+}
 
- #endif  // GRPCXX_AUTH_PROPERTY_ITERATOR_H
-
+@end

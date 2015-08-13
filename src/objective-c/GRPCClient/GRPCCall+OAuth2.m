@@ -40,7 +40,7 @@ static NSString * const kChallengeHeader = @"www-authenticate";
 @implementation GRPCCall (OAuth2)
 
 - (NSString *)oauth2AccessToken {
-  NSString *headerValue = self.requestMetadata[kAuthorizationHeader];
+  NSString *headerValue = self.requestHeaders[kAuthorizationHeader];
   if ([headerValue hasPrefix:kBearerPrefix]) {
     return [headerValue substringFromIndex:kBearerPrefix.length];
   } else {
@@ -50,14 +50,14 @@ static NSString * const kChallengeHeader = @"www-authenticate";
 
 - (void)setOauth2AccessToken:(NSString *)token {
   if (token) {
-    self.requestMetadata[kAuthorizationHeader] = [kBearerPrefix stringByAppendingString:token];
+    self.requestHeaders[kAuthorizationHeader] = [kBearerPrefix stringByAppendingString:token];
   } else {
-    [self.requestMetadata removeObjectForKey:kAuthorizationHeader];
+    [self.requestHeaders removeObjectForKey:kAuthorizationHeader];
   }
 }
 
 - (NSString *)oauth2ChallengeHeader {
-  return self.responseMetadata[kChallengeHeader];
+  return self.responseHeaders[kChallengeHeader];
 }
 
 @end

@@ -33,25 +33,31 @@
 
 using System;
 
-namespace Grpc.Core.Utils
+namespace Grpc.Core
 {
-    public static class ExceptionHelper
+    /// <summary>
+    /// Compression level based on grpc_compression_level from grpc/compression.h
+    /// </summary>
+    public enum CompressionLevel
     {
         /// <summary>
-        /// If inner exceptions contain RpcException, rethrows it.
-        /// Otherwise, rethrows the original aggregate exception.
-        /// Always throws, the exception return type is here only to make the.
+        /// No compression.
         /// </summary>
-        public static Exception UnwrapRpcException(AggregateException ae)
-        {
-            foreach (var e in ae.InnerExceptions)
-            {
-                if (e is RpcException)
-                {
-                    throw e;
-                }
-            }
-            throw ae;
-        }
+        None = 0,
+
+        /// <summary>
+        /// Low compression.
+        /// </summary>
+        Low,
+
+        /// <summary>
+        /// Medium compression.
+        /// </summary>
+        Medium,
+
+        /// <summary>
+        /// High compression.
+        /// </summary>
+        High,
     }
 }
