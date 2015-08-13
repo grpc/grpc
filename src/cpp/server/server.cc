@@ -286,7 +286,7 @@ bool Server::Start() {
   if (!has_generic_service_) {
     unknown_method_.reset(new RpcServiceMethod(
         "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-    sync_methods_->emplace_back(SyncRequest(unknown_method_.get(), nullptr));
+    sync_methods_->emplace_back(unknown_method_.get(), nullptr);
   }
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
