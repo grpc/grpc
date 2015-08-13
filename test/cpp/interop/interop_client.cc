@@ -445,7 +445,6 @@ void InteropClient::DoHalfDuplex() {
   unsigned int i = 0;
   StreamingOutputCallResponse response;
   while (stream->Read(&response)) {
-    GPR_ASSERT(response.payload().has_body());
     GPR_ASSERT(response.payload().body() ==
                grpc::string(response_stream_sizes[i], '\0'));
     ++i;
@@ -475,7 +474,6 @@ void InteropClient::DoPingPong() {
     payload->set_body(grpc::string(request_stream_sizes[i], '\0'));
     GPR_ASSERT(stream->Write(request));
     GPR_ASSERT(stream->Read(&response));
-    GPR_ASSERT(response.payload().has_body());
     GPR_ASSERT(response.payload().body() ==
                grpc::string(response_stream_sizes[i], '\0'));
   }
@@ -522,7 +520,6 @@ void InteropClient::DoCancelAfterFirstResponse() {
   StreamingOutputCallResponse response;
   GPR_ASSERT(stream->Write(request));
   GPR_ASSERT(stream->Read(&response));
-  GPR_ASSERT(response.payload().has_body());
   GPR_ASSERT(response.payload().body() == grpc::string(31415, '\0'));
   gpr_log(GPR_INFO, "Trying to cancel...");
   context.TryCancel();

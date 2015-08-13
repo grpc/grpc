@@ -184,7 +184,7 @@ class TestServiceImpl : public TestService::Service {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
-      if (request.has_payload() && request.payload().has_body()) {
+      if (request.has_payload()) {
         aggregated_payload_size += request.payload().body().size();
       }
     }
