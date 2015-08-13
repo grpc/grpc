@@ -300,12 +300,12 @@ static void test_invoke_request_with_compressed_payload_md_override(
          sizeof(gzip_compression_override.internal_data));
 
   none_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
-  none_compression_override.value = "none";
+  none_compression_override.value = "identity";
   none_compression_override.value_length = 4;
   memset(&none_compression_override.internal_data, 0,
          sizeof(none_compression_override.internal_data));
 
-  /* Channel default NONE, call override to GZIP */
+  /* Channel default NONE (aka IDENTITY), call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
@@ -315,7 +315,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
 
-  /* Channel default DEFLATE, call override to NONE */
+  /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
