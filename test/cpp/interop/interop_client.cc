@@ -104,9 +104,6 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
   InteropClientContextInspector inspector(context);
   // If the request doesn't already specify the response type, default to
   // COMPRESSABLE.
-  if (!request->has_response_type()) {
-    request->set_response_type(PayloadType::COMPRESSABLE);
-  }
   request->set_response_size(kLargeResponseSize);
   grpc::string payload(kLargeRequestSize, '\0');
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);

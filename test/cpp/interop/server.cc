@@ -115,20 +115,18 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 template <typename RequestType>
 void SetResponseCompression(ServerContext* context,
                             const RequestType& request) {
-  if (request.has_response_compression()) {
-    switch (request.response_compression()) {
-      case grpc::testing::NONE:
-        context->set_compression_algorithm(GRPC_COMPRESS_NONE);
-        break;
-      case grpc::testing::GZIP:
-        context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-        break;
-      case grpc::testing::DEFLATE:
-        context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
-        break;
-    }
-  } else {
-    context->set_compression_algorithm(GRPC_COMPRESS_NONE);
+  switch (request.response_compression()) {
+    case grpc::testing::NONE:
+      context->set_compression_algorithm(GRPC_COMPRESS_NONE);
+      break;
+    case grpc::testing::GZIP:
+      context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+      break;
+    case grpc::testing::DEFLATE:
+      context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+      break;
+    default:
+      abort();
   }
 }
 
@@ -142,7 +140,7 @@ class TestServiceImpl : public TestService::Service {
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
     SetResponseCompression(context, *request);
-    if (request->has_response_size() && request->response_size() > 0) {
+    if (request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
