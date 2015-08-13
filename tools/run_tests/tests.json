@@ -1324,6 +1324,23 @@
     "ci_platforms": [
       "linux", 
       "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "health_check_service_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ], 
     "flaky": false, 
