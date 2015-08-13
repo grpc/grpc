@@ -84,7 +84,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(); }
+  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -170,9 +170,9 @@ static grpc_server* CreateServer(int max_message_size) {
     arg.key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
     arg.value.integer = max_message_size;
     grpc_channel_args args = {1, &arg};
-    return grpc_server_create(&args);
+    return grpc_server_create(&args, nullptr);
   } else {
-    return grpc_server_create(nullptr);
+    return grpc_server_create(nullptr, nullptr);
   }
 }
 
@@ -186,7 +186,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       server_(CreateServer(max_message_size)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
-  grpc_server_register_completion_queue(server_, cq_.cq());
+  grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
 }
 
 Server::~Server() {
@@ -297,8 +297,8 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(cops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), cops, nops, ops));
+  auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == result);
 }
 
 Server::BaseAsyncRequest::BaseAsyncRequest(

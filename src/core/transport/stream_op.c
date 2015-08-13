@@ -258,6 +258,7 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   GPR_ASSERT(storage->md);
   storage->prev = list->tail;
   storage->next = NULL;
+  storage->reserved = NULL;
   if (list->tail != NULL) {
     list->tail->next = storage;
   } else {
