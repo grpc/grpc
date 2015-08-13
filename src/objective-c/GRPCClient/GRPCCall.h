@@ -57,12 +57,12 @@ extern id const kGRPCStatusMetadataKey;
 // These HTTP headers will be passed to the server as part of this call. Each HTTP header is a
 // name-value pair with string names and either string or binary values.
 //
-// The passed dictionary has to use NSString keys, corresponding to the header names. The
-// value associated to each can be a NSString object or a NSData object. E.g.:
+// The passed dictionary has to use NSString keys, corresponding to the header names. The value
+// associated to each can be a NSString object or a NSData object. E.g.:
 //
-// call.requestMetadata = @{@"Authorization": @"Bearer ..."};
+// call.requestHeaders = @{@"authorization": @"Bearer ..."};
 //
-// call.requestMetadata[@"SomeBinaryHeader"] = someData;
+// call.requestHeaders[@"my-header-bin"] = someData;
 //
 // After the call is started, modifying this won't have any effect.
 //

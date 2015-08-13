@@ -232,11 +232,10 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 #pragma mark Send headers
 
-// TODO(jcanizales): Rename to commitHeaders.
-- (void)sendHeaders:(NSDictionary *)metadata {
+- (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc]
-                                            initWithMetadata:metadata ?: @{} handler:nil]]];
+                                            initWithMetadata:headers ?: @{} handler:nil]]];
 }
 
 #pragma mark GRXWriteable implementation
