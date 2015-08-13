@@ -59,3 +59,6 @@ class InteropTestCase(object):
 
   def testCancelAfterFirstResponse(self):
     methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(self.stub, None)
+
+  def testTimeoutOnSleepingServer(self):
+    methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(self.stub, None)

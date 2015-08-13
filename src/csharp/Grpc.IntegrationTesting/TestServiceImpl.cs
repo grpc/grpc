@@ -69,7 +69,7 @@ namespace Grpc.Testing
         public async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
         {
             int sum = 0;
-            await requestStream.ForEach(async request =>
+            await requestStream.ForEachAsync(async request =>
             {
                 sum += request.Payload.Body.Length;
             });
@@ -78,7 +78,7 @@ namespace Grpc.Testing
 
         public async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
-            await requestStream.ForEach(async request =>
+            await requestStream.ForEachAsync(async request =>
             {
                 foreach (var responseParam in request.ResponseParameters)
                 {

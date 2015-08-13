@@ -91,7 +91,7 @@ namespace Grpc.Core
         {
             this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
             Preconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
-                "At least one KeyCertificatePair needs to be provided");
+                "At least one KeyCertificatePair needs to be provided.");
             if (forceClientAuth)
             {
                 Preconditions.CheckNotNull(rootCertificates,

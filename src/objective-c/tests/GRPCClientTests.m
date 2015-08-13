@@ -114,7 +114,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
@@ -146,7 +146,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testMetadata {
@@ -168,11 +168,13 @@ static ProtoMethod *kUnaryCallMethod;
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNotNil(errorOrNil, @"Finished without error!");
     XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
-    XCTAssertEqualObjects(call.responseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
-                          @"Metadata in the NSError object and call object differ.");
+    XCTAssertEqualObjects(call.responseHeaders, errorOrNil.userInfo[kGRPCHeadersKey],
+                          @"Headers in the NSError object and call object differ.");
+    XCTAssertEqualObjects(call.responseTrailers, errorOrNil.userInfo[kGRPCTrailersKey],
+                          @"Trailers in the NSError object and call object differ.");
     NSString *challengeHeader = call.oauth2ChallengeHeader;
     XCTAssertGreaterThan(challengeHeader.length, 0,
-                         @"No challenge in response headers %@", call.responseMetadata);
+                         @"No challenge in response headers %@", call.responseHeaders);
     [expectation fulfill];
   }];
 

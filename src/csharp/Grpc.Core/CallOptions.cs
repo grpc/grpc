@@ -42,24 +42,30 @@ namespace Grpc.Core
     /// <summary>
     /// Options for calls made by client.
     /// </summary>
-    public class CallOptions
+    public struct CallOptions
     {
-        readonly Metadata headers;
-        readonly DateTime deadline;
-        readonly CancellationToken cancellationToken;
+        Metadata headers;
+        DateTime? deadline;
+        CancellationToken cancellationToken;
+        WriteOptions writeOptions;
+        ContextPropagationToken propagationToken;
 
         /// <summary>
-        /// Creates a new instance of <c>CallOptions</c>.
+        /// Creates a new instance of <c>CallOptions</c> struct.
         /// </summary>
         /// <param name="headers">Headers to be sent with the call.</param>
         /// <param name="deadline">Deadline for the call to finish. null means no deadline.</param>
         /// <param name="cancellationToken">Can be used to request cancellation of the call.</param>
-        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+        /// <param name="writeOptions">Write options that will be used for this call.</param>
+        /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
+        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
+                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null)
         {
-            // TODO(jtattermusch): consider only creating metadata object once it's really needed.
-            this.headers = headers != null ? headers : new Metadata();
-            this.deadline = deadline.HasValue ? deadline.Value : DateTime.MaxValue;
+            this.headers = headers;
+            this.deadline = deadline;
             this.cancellationToken = cancellationToken;
+            this.writeOptions = writeOptions;
+            this.propagationToken = propagationToken;
         }
 
         /// <summary>
@@ -73,7 +79,7 @@ namespace Grpc.Core
         /// <summary>
         /// Call deadline.
         /// </summary>
-        public DateTime Deadline
+        public DateTime? Deadline
         {
             get { return deadline; }
         }
@@ -84,6 +90,89 @@ namespace Grpc.Core
         public CancellationToken CancellationToken
         {
             get { return cancellationToken; }
+        }
+
+        /// <summary>
+        /// Write options that will be used for this call.
+        /// </summary>
+        public WriteOptions WriteOptions
+        {
+            get
+            {
+                return this.writeOptions;
+            }
+        }
+
+        /// <summary>
+        /// Token for propagating parent call context.
+        /// </summary>
+        public ContextPropagationToken PropagationToken
+        {
+            get
+            {
+                return this.propagationToken;
+            }
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>Headers</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        public CallOptions WithHeaders(Metadata headers)
+        {
+            var newOptions = this;
+            newOptions.headers = headers;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>Deadline</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        public CallOptions WithDeadline(DateTime deadline)
+        {
+            var newOptions = this;
+            newOptions.deadline = deadline;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>CancellationToken</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        public CallOptions WithCancellationToken(CancellationToken cancellationToken)
+        {
+            var newOptions = this;
+            newOptions.cancellationToken = cancellationToken;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns a new instance of <see cref="CallOptions"/> with 
+        /// all previously unset values set to their defaults and deadline and cancellation
+        /// token propagated when appropriate.
+        /// </summary>
+        internal CallOptions Normalize()
+        {
+            var newOptions = this;
+            if (propagationToken != null)
+            {
+                if (propagationToken.Options.IsPropagateDeadline)
+                {
+                    Preconditions.CheckArgument(!newOptions.deadline.HasValue,
+                        "Cannot propagate deadline from parent call. The deadline has already been set explicitly.");
+                    newOptions.deadline = propagationToken.ParentDeadline;
+                }
+                if (propagationToken.Options.IsPropagateCancellation)
+                {
+                    Preconditions.CheckArgument(!newOptions.cancellationToken.CanBeCanceled,
+                        "Cannot propagate cancellation token from parent call. The cancellation token has already been set to a non-default value.");
+                }
+            }
+                
+            newOptions.headers = newOptions.headers ?? Metadata.Empty;
+            newOptions.deadline = newOptions.deadline ?? DateTime.MaxValue;
+            return newOptions;
         }
     }
 }

@@ -146,7 +146,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
+  GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
