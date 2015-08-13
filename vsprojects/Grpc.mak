@@ -4736,8 +4736,8 @@ build_grpc++_unsecure:
 
 Debug\interop_client_helper.lib: $(OUT_DIR)
 	echo Building interop_client_helper
-    $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\interop\client_helper.cc 
-	$(LIBTOOL) /OUT:"Debug\interop_client_helper.lib" $(OUT_DIR)\client_helper.obj 
+    $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\interop\client_helper.cc $(REPO_ROOT)\test\proto\messages.pb.cc $(REPO_ROOT)\test\proto\messages.grpc.pb.cc 
+	$(LIBTOOL) /OUT:"Debug\interop_client_helper.lib" $(OUT_DIR)\client_helper.obj $(OUT_DIR)\messages.pb.obj $(OUT_DIR)\messages.grpc.pb.obj 
 
 Debug\interop_client_main.lib: $(OUT_DIR)
 	echo Building interop_client_main
