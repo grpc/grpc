@@ -75,11 +75,11 @@ typedef struct {
   grpc_mdstr *status_key;
 } channel_data;
 
-static void bubble_up_error(grpc_call_element *elem, const char *error_msg) {
+static void bubble_up_error(grpc_call_element *elem, grpc_status_code status,
+                            const char *error_msg) {
   call_data *calld = elem->call_data;
   gpr_log(GPR_ERROR, "Client side authentication failure: %s", error_msg);
-  grpc_transport_stream_op_add_cancellation(&calld->op,
-                                            GRPC_STATUS_UNAUTHENTICATED);
+  grpc_transport_stream_op_add_cancellation(&calld->op, status);
   grpc_call_next_op(elem, &calld->op);
 }
 
@@ -94,7 +94,8 @@ static void on_credentials_metadata(void *user_data,
   grpc_metadata_batch *mdb;
   size_t i;
   if (status != GRPC_CREDENTIALS_OK) {
-    bubble_up_error(elem, "Credentials failed to get metadata.");
+    bubble_up_error(elem, GRPC_STATUS_UNAUTHENTICATED,
+                    "Credentials failed to get metadata.");
     return;
   }
   GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
@@ -154,7 +155,7 @@ static void send_security_metadata(grpc_call_element *elem,
   if (channel_creds_has_md && call_creds_has_md) {
     calld->creds = grpc_composite_credentials_create(channel_creds, ctx->creds);
     if (calld->creds == NULL) {
-      bubble_up_error(elem,
+      bubble_up_error(elem, GRPC_STATUS_INVALID_ARGUMENT,
                       "Incompatible credentials set on channel and call.");
       return;
     }
@@ -182,7 +183,7 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
     char *error_msg;
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
-    bubble_up_error(elem, error_msg);
+    bubble_up_error(elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg);
     gpr_free(error_msg);
   }
 }
@@ -252,7 +253,7 @@ static void auth_start_transport_op(grpc_call_element *elem,
             gpr_asprintf(&error_msg,
                          "Invalid host %s set in :authority metadata.",
                          call_host);
-            bubble_up_error(elem, error_msg);
+            bubble_up_error(elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg);
             gpr_free(error_msg);
           }
           return; /* early exit */
