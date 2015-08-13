@@ -62,25 +62,6 @@ using v8::Persistent;
 using v8::String;
 using v8::Value;
 
-class ConnectivityStateOp : public Op {
- public:
-  Handle<Value> GetNodeValue() const {
-    return NanNew<Number>(new_state);
-  }
-
-  bool ParseOp(Handle<Value> value, grpc_op *out,
-               shared_ptr<Resources> resources) {
-    return true;
-  }
-
-  grpc_connectivity_state new_state;
-
- protected:
-  std::string GetTypeString() const {
-    return "new_state";
-  }
-};
-
 NanCallback *Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
@@ -252,12 +233,10 @@ NAN_METHOD(Channel::WatchConnectivityState) {
   Handle<Function> callback_func = args[2].As<Function>();
   NanCallback *callback = new NanCallback(callback_func);
   Channel *channel = ObjectWrap::Unwrap<Channel>(args.This());
-  ConnectivityStateOp *op = new ConnectivityStateOp();
   unique_ptr<OpVec> ops(new OpVec());
-  ops->push_back(unique_ptr<Op>(op));
   grpc_channel_watch_connectivity_state(
-      channel->wrapped_channel, last_state, &op->new_state,
-      MillisecondsToTimespec(deadline), CompletionQueueAsyncWorker::GetQueue(),
+      channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
+      CompletionQueueAsyncWorker::GetQueue(),
       new struct tag(callback,
                      ops.release(),
                      shared_ptr<Resources>(nullptr)));

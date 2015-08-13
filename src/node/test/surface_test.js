@@ -149,6 +149,12 @@ describe('Client#$waitForReady', function() {
   after(function() {
     server.shutdown();
   });
+  it('should complete when called alone', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+  });
   it('should complete when a call is initiated', function(done) {
     client.$waitForReady(Infinity, function(error) {
       assert.ifError(error);
@@ -156,13 +162,6 @@ describe('Client#$waitForReady', function() {
     });
     var call = client.div({}, function(err, response) {});
     call.cancel();
-  });
-  it('should complete if $tryConnect is called', function(done) {
-    client.$waitForReady(Infinity, function(error) {
-      assert.ifError(error);
-      done();
-    });
-    client.$tryConnect();
   });
   it('should complete if called more than once', function(done) {
     done = multiDone(done, 2);
