@@ -575,7 +575,7 @@ exports.makeClientConstructor = function(methods, serviceName) {
       if (err) {
         callback(new Error('Failed to connect before the deadline'));
       }
-      var new_state = this.channel.getConnectivityState(true);
+      var new_state = self.channel.getConnectivityState(true);
       if (new_state === grpc.connectivityState.READY) {
         callback();
       } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {

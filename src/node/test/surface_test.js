@@ -139,7 +139,7 @@ describe('Client#$waitForReady', function() {
   var client;
   before(function() {
     server = new grpc.Server();
-    port = server.bind('localhost:0');
+    port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
     server.start();
     Client = surface_client.makeProtobufClientConstructor(mathService);
   });
@@ -173,7 +173,6 @@ describe('Client#$waitForReady', function() {
       assert.ifError(error);
       done();
     });
-    client.$tryConnect();
   });
   it('should complete if called when already ready', function(done) {
     client.$waitForReady(Infinity, function(error) {
@@ -183,7 +182,6 @@ describe('Client#$waitForReady', function() {
         done();
       });
     });
-    client.$tryConnect();
   });
 });
 describe('Echo service', function() {
