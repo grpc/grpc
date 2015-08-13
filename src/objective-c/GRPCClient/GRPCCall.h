@@ -71,14 +71,21 @@ extern id const kGRPCStatusMetadataKey;
 - (NSMutableDictionary *)requestHeaders; // nonatomic
 - (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
 
-// This dictionary is populated with the HTTP headers received from the server. When the RPC ends,
-// the HTTP trailers received are added to the dictionary too. It has the same structure as the
-// request metadata dictionary.
+// This dictionary is populated with the HTTP headers received from the server. This happens before
+// any response message is received from the server. It has the same structure as the request
+// headers dictionary: Keys are NSString header names; names ending with the suffix "-bin" have a
+// NSData value; the others have a NSString value.
 //
-// The first time this object calls |writeValue| on the writeable passed to |startWithWriteable|,
-// the |responseMetadata| dictionary already contains the response headers. When it calls
-// |writesFinishedWithError|, the dictionary contains both the response headers and trailers.
-@property(atomic, readonly) NSDictionary *allResponseMetadata;
+// The value of this property is nil until all response headers are received, and will change before
+// any of -writeValue: or -writesFinishedWithError: are sent to the writeable.
+@property(atomic, readonly) NSDictionary *responseHeaders;
+
+// Same as responseHeaders, but populated with the HTTP trailers received from the server before the
+// call finishes.
+//
+// The value of this property is nil until all response trailers are received, and will change
+// before -writesFinishedWithError: is sent to the writeable.
+@property(atomic, readonly) NSDictionary *responseTrailers;
 
 // The request writer has to write NSData objects into the provided Writeable. The server will
 // receive each of those separately and in order as distinct messages.

@@ -45,6 +45,9 @@
 NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 @interface GRPCCall () <GRXWriteable>
+// Make them read-write.
+@property(atomic, strong) NSDictionary *responseHeaders;
+@property(atomic, strong) NSDictionary *responseTrailers;
 @end
 
 // The following methods of a C gRPC call object aren't reentrant, and thus
@@ -90,7 +93,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   GRPCCall *_retainSelf;
 
   NSMutableDictionary *_requestHeaders;
-  NSMutableDictionary *_allResponseMetadata;
 }
 
 @synthesize state = _state;
@@ -122,7 +124,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
     _requestWriter = requestWriter;
 
     _requestHeaders = [NSMutableDictionary dictionary];
-    _allResponseMetadata = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -135,10 +136,6 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 - (void)setRequestHeaders:(NSDictionary *)requestHeaders {
   _requestHeaders = [NSMutableDictionary dictionaryWithDictionary:requestHeaders];
-}
-
-- (NSDictionary *)allResponseMetadata {
-  return _allResponseMetadata;
 }
 
 #pragma mark Finish
@@ -304,35 +301,41 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 // Both handlers will eventually be called, from the network queue. Writes can start immediately
 // after this.
-// The first one (metadataHandler), when the response headers are received.
+// The first one (headersHandler), when the response headers are received.
 // The second one (completionHandler), whenever the RPC finishes for any reason.
-- (void)invokeCallWithMetadataHandler:(void(^)(NSDictionary *))metadataHandler
+- (void)invokeCallWithHeadersHandler:(void(^)(NSDictionary *))headersHandler
                     completionHandler:(void(^)(NSError *, NSDictionary *))completionHandler {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMetadata alloc]
-                                            initWithHandler:metadataHandler]]];
+                                            initWithHandler:headersHandler]]];
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvStatus alloc]
                                             initWithHandler:completionHandler]]];
 }
 
 - (void)invokeCall {
   __weak GRPCCall *weakSelf = self;
-  [self invokeCallWithMetadataHandler:^(NSDictionary *headers) {
+  [self invokeCallWithHeadersHandler:^(NSDictionary *headers) {
     // Response headers received.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      [strongSelf->_allResponseMetadata addEntriesFromDictionary:headers];
+      strongSelf.responseHeaders = headers;
       [strongSelf startNextRead];
     }
   } completionHandler:^(NSError *error, NSDictionary *trailers) {
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      [strongSelf->_allResponseMetadata addEntriesFromDictionary:trailers];
+      strongSelf.responseTrailers = trailers;
 
       if (error) {
-        NSMutableDictionary *userInfo =
-            [NSMutableDictionary dictionaryWithDictionary:error.userInfo];
-        userInfo[kGRPCStatusMetadataKey] = strongSelf->_allResponseMetadata;
+        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+        if (error.userInfo) {
+          [userInfo addEntriesFromDictionary:error.userInfo];
+        }
+        userInfo[kGRPCStatusMetadataKey] = strongSelf.responseTrailers;
+        // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
+        // called before this one, so an error might end up with trailers but no headers. We
+        // shouldn't call finishWithError until ater both blocks are called. It is when this is done
+        // that we can provide a merged view of response headers and trailers in a thread-safe way.
         error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
       }
       [strongSelf finishWithError:error];
