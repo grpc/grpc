@@ -31,7 +31,6 @@
  *
  */
 
-#include <mutex>
 #include <thread>
 
 #include "src/core/security/credentials.h"
@@ -46,6 +45,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/dynamic_thread_pool.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -135,7 +135,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     }
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {
-        std::unique_lock<std::mutex> lock(mu_);
+        grpc::unique_lock<grpc::mutex> lock(mu_);
         signal_client_ = true;
       }
       while (!context->IsCancelled()) {
@@ -237,13 +237,13 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
   }
 
   bool signal_client() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::unique_lock<grpc::mutex> lock(mu_);
     return signal_client_;
   }
 
  private:
   bool signal_client_;
-  std::mutex mu_;
+  grpc::mutex mu_;
   std::unique_ptr<grpc::string> host_;
 };
 

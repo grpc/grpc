@@ -31,9 +31,7 @@
  *
  */
 
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <sstream>
 
 #include <signal.h>
@@ -43,6 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -90,7 +89,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
   Status Start(ServerContext* context, const Empty* request, Empty* response) {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::unique_lock<grpc::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
       cv_.wait(lock);
     }
@@ -113,7 +112,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     // extract timestamps and set response
     Verify(response);
     reconnect_server_clear_timestamps(&tcp_server_);
-    std::lock_guard<std::mutex> lock(mu_);
+    grpc::lock_guard<grpc::mutex> lock(mu_);
     serving_ = false;
     cv_.notify_one();
     return Status::OK;
@@ -145,7 +144,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   }
 
   void Shutdown() {
-    std::lock_guard<std::mutex> lock(mu_);
+    grpc::lock_guard<grpc::mutex> lock(mu_);
     shutdown_ = true;
     cv_.notify_all();
   }
@@ -155,8 +154,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   reconnect_server tcp_server_;
   bool serving_;
   bool shutdown_;
-  std::mutex mu_;
-  std::condition_variable cv_;
+  grpc::mutex mu_;
+  grpc::condition_variable cv_;
 };
 
 void RunServer() {

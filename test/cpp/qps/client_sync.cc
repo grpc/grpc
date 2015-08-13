@@ -34,7 +34,6 @@
 #include <cassert>
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -50,6 +49,7 @@
 #include <grpc/support/time.h>
 #include <gflags/gflags.h>
 #include <grpc++/client_context.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/status.h>

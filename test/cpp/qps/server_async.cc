@@ -34,7 +34,6 @@
 #include <forward_list>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/signal.h>
@@ -45,6 +44,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -322,17 +322,17 @@ class AsyncQpsServerTest : public Server {
     PerThreadShutdownState() : shutdown_(false) {}
 
     bool shutdown() const {
-      std::lock_guard<std::mutex> lock(mutex_);
+      grpc::lock_guard<grpc::mutex> lock(mutex_);
       return shutdown_;
     }
 
     void set_shutdown() {
-      std::lock_guard<std::mutex> lock(mutex_);
+      grpc::lock_guard<grpc::mutex> lock(mutex_);
       shutdown_ = true;
     }
 
    private:
-    mutable std::mutex mutex_;
+    mutable grpc::mutex mutex_;
     bool shutdown_;
   };
   std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;

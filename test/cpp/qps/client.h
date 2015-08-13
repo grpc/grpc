@@ -39,9 +39,8 @@
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 
-#include <condition_variable>
-#include <mutex>
 #include <grpc++/config.h>
+#include <grpc++/impl/sync.h>
 
 namespace grpc {
 
@@ -211,19 +210,19 @@ class Client {
 
     ~Thread() {
       {
-        std::lock_guard<std::mutex> g(mu_);
+        grpc::lock_guard<grpc::mutex> g(mu_);
         done_ = true;
       }
       impl_.join();
     }
 
     void BeginSwap(Histogram* n) {
-      std::lock_guard<std::mutex> g(mu_);
+      grpc::lock_guard<grpc::mutex> g(mu_);
       new_ = n;
     }
 
     void EndSwap() {
-      std::unique_lock<std::mutex> g(mu_);
+      grpc::unique_lock<grpc::mutex> g(mu_);
       while (new_ != nullptr) {
         cv_.wait(g);
       };
@@ -238,7 +237,7 @@ class Client {
         // run the loop body
         const bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
         // lock, see if we're done
-        std::lock_guard<std::mutex> g(mu_);
+        grpc::lock_guard<grpc::mutex> g(mu_);
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
           done_ = true;
@@ -257,8 +256,8 @@ class Client {
 
     TestService::Stub* stub_;
     ClientConfig config_;
-    std::mutex mu_;
-    std::condition_variable cv_;
+    grpc::mutex mu_;
+    grpc::condition_variable cv_;
     bool done_;
     Histogram* new_;
     Histogram histogram_;
