@@ -48,8 +48,10 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
-// Key used in |NSError|'s |userInfo| dictionary to store the response metadata sent by the server.
-extern id const kGRPCStatusMetadataKey;
+// Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
+// the server.
+extern id const kGRPCHeadersKey;
+extern id const kGRPCTrailersKey;
 
 // Represents a single gRPC remote call.
 @interface GRPCCall : GRXWriter

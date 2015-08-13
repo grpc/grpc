@@ -42,7 +42,8 @@
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
 
-NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
+NSString * const kGRPCHeadersKey = @"io.grpc.HeadersKey";
+NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 @interface GRPCCall () <GRXWriteable>
 // Make them read-write.
@@ -331,11 +332,15 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
         if (error.userInfo) {
           [userInfo addEntriesFromDictionary:error.userInfo];
         }
-        userInfo[kGRPCStatusMetadataKey] = strongSelf.responseTrailers;
+        userInfo[kGRPCTrailersKey] = strongSelf.responseTrailers;
         // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
         // called before this one, so an error might end up with trailers but no headers. We
-        // shouldn't call finishWithError until ater both blocks are called. It is when this is done
-        // that we can provide a merged view of response headers and trailers in a thread-safe way.
+        // shouldn't call finishWithError until ater both blocks are called. It is also when this is
+        // done that we can provide a merged view of response headers and trailers in a thread-safe
+        // way.
+        if (strongSelf.responseHeaders) {
+          userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
+        }
         error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
       }
       [strongSelf finishWithError:error];
