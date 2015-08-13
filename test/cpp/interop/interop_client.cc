@@ -102,7 +102,6 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
 
   ClientContext context;
   InteropClientContextInspector inspector(context);
-  request->set_response_type(PayloadType::COMPRESSABLE);
   request->set_response_size(kLargeResponseSize);
   grpc::string payload(kLargeRequestSize, '\0');
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
