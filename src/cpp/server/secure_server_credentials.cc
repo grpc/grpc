@@ -71,7 +71,8 @@ void AuthMetadataProcessorAyncWrapper::ProcessAsync(
       consumed_md.push_back({entry.first.c_str(),
                              entry.second.data(),
                              entry.second.size(),
-                             {{nullptr, nullptr, nullptr}}});
+                             0,
+                             {{nullptr, nullptr, nullptr, nullptr}}});
     }
     cb(user_data, &consumed_md[0], consumed_md.size(), 1);
   } else {
