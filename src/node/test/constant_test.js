@@ -87,7 +87,8 @@ var propagateFlagNames = [
   'DEADLINE',
   'CENSUS_STATS_CONTEXT',
   'CENSUS_TRACING_CONTEXT',
-  'CANCELLATION'
+  'CANCELLATION',
+  'DEFAULTS'
 ];
 
 describe('constants', function() {

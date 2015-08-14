@@ -723,7 +723,10 @@ describe('Other conditions', function() {
       });
     });
     describe('Deadline', function() {
-      it.skip('With a client stream call', function(done) {
+      /* jshint bitwise:false */
+      var deadline_flags = (grpc.propagate.DEFAULTS &
+          ~grpc.propagate.CANCELLATION);
+      it('With a client stream call', function(done) {
         done = multiDone(done, 2);
         proxy_impl.clientStream = function(parent, callback) {
           client.clientStream(function(err, value) {
@@ -734,7 +737,7 @@ describe('Other conditions', function() {
               callback(err, value);
               done();
             }
-          }, null, {parent: parent});
+          }, null, {parent: parent, propagate_flags: deadline_flags});
         };
         proxy.addProtoService(test_service, proxy_impl);
         var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
@@ -743,14 +746,15 @@ describe('Other conditions', function() {
                                       grpc.Credentials.createInsecure());
         var deadline = new Date();
         deadline.setSeconds(deadline.getSeconds() + 1);
-        var call = proxy_client.clientStream(function(err, value) {
+        proxy_client.clientStream(function(err, value) {
           done();
         }, null, {deadline: deadline});
       });
-      it.skip('With a bidi stream call', function(done) {
+      it('With a bidi stream call', function(done) {
         done = multiDone(done, 2);
         proxy_impl.bidiStream = function(parent) {
-          var child = client.bidiStream(null, {parent: parent});
+          var child = client.bidiStream(
+              null, {parent: parent, propagate_flags: deadline_flags});
           child.on('error', function(err) {
             assert(err);
             assert.strictEqual(err.code, grpc.status.DEADLINE_EXCEEDED);
