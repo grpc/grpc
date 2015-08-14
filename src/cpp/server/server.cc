@@ -240,8 +240,7 @@ bool Server::RegisterService(const grpc::string *host, RpcService* service) {
               method->name());
       return false;
     }
-    SyncRequest request(method, tag);
-    sync_methods_->emplace_back(request);
+    sync_methods_->emplace_back(method, tag);
   }
   return true;
 }
@@ -286,7 +285,9 @@ bool Server::Start() {
   if (!has_generic_service_) {
     unknown_method_.reset(new RpcServiceMethod(
         "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-    sync_methods_->emplace_back(unknown_method_.get(), nullptr);
+    // Use of emplace_back with just constructor arguments is not accepted
+    // by gcc-4.4 because nullptr is an anonymous class, so we're constructing 
+    sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
   }
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
