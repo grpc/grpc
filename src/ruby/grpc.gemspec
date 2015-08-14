@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   %w(math noproto).each do |b|
     s.executables += ["#{b}_client.rb", "#{b}_server.rb"]
   end
-  s.require_paths = %w( bin lib )
+  s.require_paths = %w( bin lib pb )
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'

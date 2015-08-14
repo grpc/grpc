@@ -8,3 +8,4 @@ AllCops:
     - 'bin/interop/test/**/*'
     - 'bin/math.rb'
     - 'bin/math_services.rb'
+    - 'pb/grpc/health/v1alpha/*'
