@@ -56,13 +56,13 @@ typedef struct fullstack_fixture_data {
 } fullstack_fixture_data;
 
 static grpc_server *create_proxy_server(const char *port) {
-  grpc_server *s = grpc_server_create(NULL);
+  grpc_server *s = grpc_server_create(NULL, NULL);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(s, port));
   return s;
 }
 
 static grpc_channel *create_proxy_client(const char *target) {
-  return grpc_insecure_channel_create(target, NULL);
+  return grpc_insecure_channel_create(target, NULL, NULL);
 }
 
 static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,
@@ -77,7 +77,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   ffd->proxy = grpc_end2end_proxy_create(&proxy_def);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create(NULL);
 
   return f;
 }
@@ -86,7 +86,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *client_args) {
   fullstack_fixture_data *ffd = f->fixture_data;
   f->client = grpc_insecure_channel_create(
-      grpc_end2end_proxy_get_client_target(ffd->proxy), client_args);
+      grpc_end2end_proxy_get_client_target(ffd->proxy), client_args, NULL);
   GPR_ASSERT(f->client);
 }
 
@@ -96,8 +96,8 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args);
-  grpc_server_register_completion_queue(f->server, f->cq);
+  f->server = grpc_server_create(server_args, NULL);
+  grpc_server_register_completion_queue(f->server, f->cq, NULL);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(
       f->server, grpc_end2end_proxy_get_server_port(ffd->proxy)));
   grpc_server_start(f->server);
