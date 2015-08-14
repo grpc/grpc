@@ -558,6 +558,35 @@ exports.makeClientConstructor = function(methods, serviceName) {
     this.updateMetadata = updateMetadata;
   }
 
+  /**
+   * Wait for the client to be ready. The callback will be called when the
+   * client has successfully connected to the server, and it will be called
+   * with an error if the attempt to connect to the server has unrecoverablly
+   * failed or if the deadline expires. This function will make the channel
+   * start connecting if it has not already done so.
+   * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
+   *     Infinity to wait forever.
+   * @param {function(Error)} callback The callback to call when done attempting
+   *     to connect.
+   */
+  Client.prototype.$waitForReady = function(deadline, callback) {
+    var self = this;
+    var checkState = function(err) {
+      if (err) {
+        callback(new Error('Failed to connect before the deadline'));
+      }
+      var new_state = self.channel.getConnectivityState(true);
+      if (new_state === grpc.connectivityState.READY) {
+        callback();
+      } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
+        callback(new Error('Failed to connect to server'));
+      } else {
+        self.channel.watchConnectivityState(new_state, deadline, checkState);
+      }
+    };
+    checkState();
+  };
+
   _.each(methods, function(attrs, name) {
     var method_type;
     if (attrs.requestStream) {

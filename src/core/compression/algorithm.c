@@ -37,7 +37,7 @@
 
 int grpc_compression_algorithm_parse(const char* name,
                                      grpc_compression_algorithm *algorithm) {
-  if (strcmp(name, "none") == 0) {
+  if (strcmp(name, "identity") == 0) {
     *algorithm = GRPC_COMPRESS_NONE;
   } else if (strcmp(name, "gzip") == 0) {
     *algorithm = GRPC_COMPRESS_GZIP;
@@ -53,7 +53,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     char **name) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
-      *name = "none";
+      *name = "identity";
       break;
     case GRPC_COMPRESS_DEFLATE:
       *name = "deflate";
