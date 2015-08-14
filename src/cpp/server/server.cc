@@ -285,8 +285,9 @@ bool Server::Start() {
   if (!has_generic_service_) {
     unknown_method_.reset(new RpcServiceMethod(
         "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-    // Use of emplace_back with just constructor arguments is not accepted
-    // by gcc-4.4 because nullptr is an anonymous class, so we're constructing 
+    // Use of emplace_back with just constructor arguments is not accepted here
+    // by gcc-4.4 because it can't match the anonymous nullptr with a proper
+    // constructor implicitly. Construct the object and use push_back.
     sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
   }
   // Start processing rpcs.
