@@ -54,9 +54,9 @@ class AuthMetadataProcessorAyncWrapper GRPC_FINAL {
       : thread_pool_(CreateDefaultThreadPool()), processor_(processor) {}
 
  private:
-  void ProcessAsync(grpc_auth_context* context, const grpc_metadata* md,
-                    size_t md_count, grpc_process_auth_metadata_done_cb cb,
-                    void* user_data);
+  typedef std::multimap<grpc::string, grpc::string> Metadata;
+  void ProcessAsync(grpc_auth_context* context, Metadata* auth_metadata,
+                    grpc_process_auth_metadata_done_cb cb, void* user_data);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };

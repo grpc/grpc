@@ -46,24 +46,25 @@ namespace grpc {
 void AuthMetadataProcessorAyncWrapper::Process(
     void* self, grpc_auth_context* context, const grpc_metadata* md,
     size_t md_count, grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  AuthMetadataProcessorAyncWrapper* instance =
-      reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(self);
+  auto* instance = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(self);
+  auto* metadata(new Metadata);
+  for (size_t i = 0; i < md_count; i++) {
+    metadata->insert(std::make_pair(
+        md[i].key, grpc::string(md[i].value, md[i].value_length)));
+  }
   instance->thread_pool_->Add(
       std::bind(&AuthMetadataProcessorAyncWrapper::ProcessAsync, instance,
-                context, md, md_count, cb, user_data));
+                context, metadata, cb, user_data));
 }
 
 void AuthMetadataProcessorAyncWrapper::ProcessAsync(
-    grpc_auth_context* ctx, const grpc_metadata* md, size_t md_count,
+    grpc_auth_context* ctx,
+    Metadata* metadata,
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
+  std::unique_ptr<Metadata> metadata_deleter(metadata);
   SecureAuthContext context(ctx);
-  std::multimap<grpc::string, grpc::string> metadata;
-  for (size_t i = 0; i < md_count; i++) {
-    metadata.insert(std::make_pair(
-        md[i].key, grpc::string(md[i].value, md[i].value_length)));
-  }
-  std::multimap<grpc::string, grpc::string> consumed_metadata;
-  bool ok = processor_->Process(metadata, &context, &consumed_metadata);
+  Metadata consumed_metadata;
+  bool ok = processor_->Process(*metadata, &context, &consumed_metadata);
   if (ok) {
     std::vector<grpc_metadata> consumed_md(consumed_metadata.size());
     for (const auto& entry : consumed_metadata) {
