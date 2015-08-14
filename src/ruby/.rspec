@@ -1,4 +1,5 @@
 -I.
+-Ipb
 --require spec_helper
 --format documentation
 --color
