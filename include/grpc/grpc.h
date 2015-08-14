@@ -206,8 +206,7 @@ typedef struct grpc_metadata {
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage
-     during
-      calls to grpc. */
+      during calls to grpc. */
   struct {
     void *obfuscated[4];
   } internal_data;
@@ -378,11 +377,11 @@ typedef struct grpc_op {
 
 /** Registers a plugin to be initialized and destroyed with the library.
 
-    The \a init and \a destroy functions will be invoked as part of 
-    \a grpc_init() and \a grpc_shutdown(), respectively. 
+    The \a init and \a destroy functions will be invoked as part of
+    \a grpc_init() and \a grpc_shutdown(), respectively.
     Note that these functions can be invoked an arbitrary number of times
     (and hence so will \a init and \a destroy).
-    It is safe to pass NULL to either argument. Plugins are destroyed in 
+    It is safe to pass NULL to either argument. Plugins are destroyed in
     the reverse order they were initialized. */
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
