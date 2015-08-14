@@ -31,26 +31,29 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_CANCELLABLE_PLATFORM_H
-#define GRPC_SUPPORT_CANCELLABLE_PLATFORM_H
+/** Support zookeeper as alternative name system in addition to DNS
+ *  Zookeeper name in gRPC is represented as a URI:
+ *  zookeeper://host:port/path/service/instance
+ *
+ *  Where zookeeper is the name system scheme
+ *  host:port is the address of a zookeeper server
+ *  /path/service/instance is the zookeeper name to be resolved
+ *
+ *  Refer doc/naming.md for more details
+ */
 
-#include <grpc/support/atm.h>
-#include <grpc/support/sync.h>
+#ifndef GRPC_GRPC_ZOOKEEPER_H
+#define GRPC_GRPC_ZOOKEEPER_H
 
-struct gpr_cancellable_list_ {
-  /* a doubly-linked list on cancellable's waiters queue */
-  struct gpr_cancellable_list_ *next;
-  struct gpr_cancellable_list_ *prev;
-  /* The following two fields are arguments to gpr_cv_cancellable_wait() */
-  gpr_mu *mu;
-  gpr_cv *cv;
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Internal definition of gpr_cancellable. */
-typedef struct {
-  gpr_mu mu; /* protects waiters and modifications to cancelled */
-  gpr_atm cancelled;
-  struct gpr_cancellable_list_ waiters;
-} gpr_cancellable;
+/** Register zookeeper name resolver in grpc */
+void grpc_zookeeper_register();
 
-#endif  /* GRPC_SUPPORT_CANCELLABLE_PLATFORM_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_GRPC_ZOOKEEPER_H */

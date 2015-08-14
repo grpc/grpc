@@ -171,6 +171,7 @@
         "src/core/iomgr/tcp_server.h",
         "src/core/iomgr/tcp_windows.h",
         "src/core/iomgr/time_averaged_stats.h",
+        "src/core/iomgr/udp_server.h",
         "src/core/iomgr/wakeup_fd_pipe.h",
         "src/core/iomgr/wakeup_fd_posix.h",
         "src/core/json/json.h",
@@ -274,6 +275,7 @@
         "src/core/iomgr/tcp_server_windows.c",
         "src/core/iomgr/tcp_windows.c",
         "src/core/iomgr/time_averaged_stats.c",
+        "src/core/iomgr/udp_server.c",
         "src/core/iomgr/wakeup_fd_eventfd.c",
         "src/core/iomgr/wakeup_fd_nospecial.c",
         "src/core/iomgr/wakeup_fd_pipe.c",
@@ -367,7 +369,6 @@
         "include/grpc/support/atm_gcc_atomic.h",
         "include/grpc/support/atm_gcc_sync.h",
         "include/grpc/support/atm_win32.h",
-        "include/grpc/support/cancellable_platform.h",
         "include/grpc/support/cmdline.h",
         "include/grpc/support/cpu.h",
         "include/grpc/support/histogram.h",
@@ -402,7 +403,6 @@
       ],
       "src": [
         "src/core/support/alloc.c",
-        "src/core/support/cancellable.c",
         "src/core/support/cmdline.c",
         "src/core/support/cpu_iphone.c",
         "src/core/support/cpu_linux.c",
@@ -571,6 +571,29 @@
       ],
       "secure": "no",
       "vs_project_guid": "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
+    },
+    {
+      "name": "grpc_zookeeper",
+      "build": "all",
+      "language": "c",
+      "public_headers": [
+        "include/grpc/grpc_zookeeper.h"
+      ],
+      "headers": [
+        "src/core/client_config/resolvers/zookeeper_resolver.h"
+      ],
+      "src": [
+        "src/core/client_config/resolvers/zookeeper_resolver.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
+      "external_deps": [
+        "zookeeper"
+      ],
+      "secure": "no",
+      "vs_project_guid": "{F14EBEC1-DC43-45D3-8A7D-1A47072EFE50}"
     },
     {
       "name": "reconnect_server",
@@ -1104,18 +1127,6 @@
       "deps": [
         "gpr",
         "grpc"
-      ]
-    },
-    {
-      "name": "gpr_cancellable_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/support/cancellable_test.c"
-      ],
-      "deps": [
-        "gpr_test_util",
-        "gpr"
       ]
     },
     {
@@ -1873,6 +1884,23 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ]
+    },
+    {
+      "name": "udp_server_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/iomgr/udp_server_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -2641,6 +2669,26 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ]
+    },
+    {
+      "name": "zookeeper_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/zookeeper_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc_zookeeper",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "external_deps": [
+        "zookeeper"
       ]
     }
   ]
