@@ -1143,18 +1143,6 @@ ifeq ($(CONFIG),opt)
 % for lib in libs:
 % if lib.language == "c":
 % if lib.build == "all":
-	$(E) "[STRIP]   Stripping lib${lib.name}.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-% endif
-% endif
-% endfor
-endif
-
-strip-static_cxx: static_cxx
-ifeq ($(CONFIG),opt)
-% for lib in libs:
-% if lib.language == "c++":
-% if lib.build == "all":
 % if not lib.get('external_deps', None):
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
@@ -1162,19 +1150,30 @@ ifeq ($(CONFIG),opt)
 % endif
 % endif
 % endfor
-
 ifeq ($(HAS_ZOOKEEPER),true)
 % for lib in libs:
-% if lib.language == "c++":
+% if lib.language == "c":
 % if lib.build == "all":
 % if 'zookeeper' in lib.get('external_deps', []):
-  $(E) "[STRIP]   Stripping lib${lib.name}.a"
-  $(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+	$(E) "[STRIP]   Stripping lib${lib.name}.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
 % endif
 % endif
 % endif
 % endfor
 endif
+endif
+
+strip-static_cxx: static_cxx
+ifeq ($(CONFIG),opt)
+% for lib in libs:
+% if lib.language == "c++":
+% if lib.build == "all":
+	$(E) "[STRIP]   Stripping lib${lib.name}.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+% endif
+% endif
+% endfor
 endif
 
 strip-shared_c: shared_c

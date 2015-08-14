@@ -3407,8 +3407,10 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+ifeq ($(HAS_ZOOKEEPER),true)
 	$(E) "[STRIP]   Stripping libgrpc_zookeeper.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
+endif
 endif
 
 strip-static_cxx: static_cxx
@@ -3417,9 +3419,6 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.a
 	$(E) "[STRIP]   Stripping libgrpc++_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
-
-ifeq ($(HAS_ZOOKEEPER),true)
-endif
 endif
 
 strip-shared_c: shared_c
