@@ -516,7 +516,7 @@ NAN_METHOD(Call::New) {
         propagate_flags = args[5]->Uint32Value();
       } else if (!(args[5]->IsUndefined() || args[5]->IsNull())) {
         return NanThrowTypeError(
-            "Call's fifth argument must be propagate flags, if provided");
+            "Call's sixth argument must be propagate flags, if provided");
       }
       Handle<Object> channel_object = args[0]->ToObject();
       Channel *channel = ObjectWrap::Unwrap<Channel>(channel_object);
