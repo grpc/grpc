@@ -532,12 +532,12 @@ NAN_METHOD(Call::New) {
         wrapped_call = grpc_channel_create_call(
             wrapped_channel, parent_call, propagate_flags,
             CompletionQueueAsyncWorker::GetQueue(), *method,
-            *host_override, MillisecondsToTimespec(deadline));
+            *host_override, MillisecondsToTimespec(deadline), NULL);
       } else if (args[3]->IsUndefined() || args[3]->IsNull()) {
         wrapped_call = grpc_channel_create_call(
             wrapped_channel, parent_call, propagate_flags,
             CompletionQueueAsyncWorker::GetQueue(), *method,
-            NULL, MillisecondsToTimespec(deadline));
+            NULL, MillisecondsToTimespec(deadline), NULL);
       } else {
         return NanThrowTypeError("Call's fourth argument must be a string");
       }
@@ -617,7 +617,7 @@ NAN_METHOD(Call::StartBatch) {
   NanCallback *callback = new NanCallback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, &ops[0], nops, new struct tag(
-          callback, op_vector.release(), resources));
+          callback, op_vector.release(), resources), NULL);
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
   }
@@ -631,7 +631,7 @@ NAN_METHOD(Call::Cancel) {
     return NanThrowTypeError("cancel can only be called on Call objects");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_call_error error = grpc_call_cancel(call->wrapped_call);
+  grpc_call_error error = grpc_call_cancel(call->wrapped_call, NULL);
   if (error != GRPC_CALL_OK) {
     return NanThrowError("cancel failed", error);
   }

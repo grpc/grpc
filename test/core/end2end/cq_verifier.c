@@ -226,7 +226,7 @@ void cq_verify(cq_verifier *v) {
   gpr_strvec_init(&have_tags);
 
   while (v->expect.next != &v->expect) {
-    ev = grpc_completion_queue_next(v->cq, deadline);
+    ev = grpc_completion_queue_next(v->cq, deadline, NULL);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
@@ -265,7 +265,7 @@ void cq_verify_empty(cq_verifier *v) {
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
 
-  ev = grpc_completion_queue_next(v->cq, deadline);
+  ev = grpc_completion_queue_next(v->cq, deadline, NULL);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     char *s = grpc_event_string(&ev);
     gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);
