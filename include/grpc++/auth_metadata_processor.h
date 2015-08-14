@@ -45,6 +45,10 @@ class AuthMetadataProcessor {
  public:
   virtual ~AuthMetadataProcessor() {}
 
+  // If this method returns true, the Process function will be scheduled in
+  // a different thread as the one processing the call.
+  virtual bool IsBlocking() const { return true; }
+
   // context is read/write: it contains the properties of the channel peer and
   // it is the job of the Process method to augment it with properties derived
   // from the passed-in auth_metadata.

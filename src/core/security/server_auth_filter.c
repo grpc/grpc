@@ -50,6 +50,7 @@ typedef struct call_data {
      handling it. */
   grpc_iomgr_closure auth_on_recv;
   grpc_transport_stream_op transport_op;
+  grpc_metadata_array md;
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
   grpc_stream_op *md_op;
@@ -124,6 +125,7 @@ static void on_md_processing_done(void *user_data,
                                        GRPC_STATUS_UNAUTHENTICATED, &message);
     grpc_call_next_op(elem, &calld->transport_op);
   }
+  grpc_metadata_array_destroy(&calld->md);
 }
 
 static void auth_on_recv(void *user_data, int success) {
@@ -135,17 +137,15 @@ static void auth_on_recv(void *user_data, int success) {
     size_t nops = calld->recv_ops->nops;
     grpc_stream_op *ops = calld->recv_ops->ops;
     for (i = 0; i < nops; i++) {
-      grpc_metadata_array md_array;
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA || calld->got_client_metadata) continue;
       calld->got_client_metadata = 1;
       if (chand->processor.process == NULL) continue;
       calld->md_op = op;
-      md_array = metadata_batch_to_md_array(&op->data.metadata);
+      calld->md = metadata_batch_to_md_array(&op->data.metadata);
       chand->processor.process(chand->processor.state, calld->auth_context,
-                               md_array.metadata, md_array.count,
+                               calld->md.metadata, calld->md.count,
                                on_md_processing_done, elem);
-      grpc_metadata_array_destroy(&md_array);
       return;
     }
   }

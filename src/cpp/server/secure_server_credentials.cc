@@ -44,27 +44,36 @@
 namespace grpc {
 
 void AuthMetadataProcessorAyncWrapper::Process(
-    void* self, grpc_auth_context* context, const grpc_metadata* md,
-    size_t md_count, grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  auto* instance = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(self);
-  auto* metadata(new Metadata);
-  for (size_t i = 0; i < md_count; i++) {
-    metadata->insert(std::make_pair(
-        md[i].key, grpc::string(md[i].value, md[i].value_length)));
+    void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
+    size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
+  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  if (w->processor_ == nullptr) {
+    // Early exit.
+    cb(user_data, NULL, 0, 1);
+    return;
   }
-  instance->thread_pool_->Add(
-      std::bind(&AuthMetadataProcessorAyncWrapper::ProcessAsync, instance,
-                context, metadata, cb, user_data));
+  if (w->processor_->IsBlocking()) {
+    w->thread_pool_->Add(
+        std::bind(&AuthMetadataProcessorAyncWrapper::InvokeProcessor, w,
+                  context, md, num_md, cb, user_data));
+  } else {
+    // invoke directly.
+    w->InvokeProcessor(context, md, num_md, cb, user_data);
+  }
 }
 
-void AuthMetadataProcessorAyncWrapper::ProcessAsync(
+void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_auth_context* ctx,
-    Metadata* metadata,
+    const grpc_metadata* md, size_t num_md,
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  std::unique_ptr<Metadata> metadata_deleter(metadata);
+  Metadata metadata;
+  for (size_t i = 0; i < num_md; i++) {
+    metadata.insert(std::make_pair(
+        md[i].key, grpc::string(md[i].value, md[i].value_length)));
+  }
   SecureAuthContext context(ctx);
   Metadata consumed_metadata;
-  bool ok = processor_->Process(*metadata, &context, &consumed_metadata);
+  bool ok = processor_->Process(metadata, &context, &consumed_metadata);
   if (ok) {
     std::vector<grpc_metadata> consumed_md(consumed_metadata.size());
     for (const auto& entry : consumed_metadata) {
