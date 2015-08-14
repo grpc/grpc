@@ -650,6 +650,26 @@ cc_library(
 
 
 cc_library(
+  name = "grpc_zookeeper",
+  srcs = [
+    "src/core/client_config/resolvers/zookeeper_resolver.h",
+    "src/core/client_config/resolvers/zookeeper_resolver.c",
+  ],
+  hdrs = [
+    "include/grpc/grpc_zookeeper.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":gpr",
+    ":grpc",
+  ],
+)
+
+
+cc_library(
   name = "grpc++",
   srcs = [
     "src/cpp/client/secure_credentials.h",

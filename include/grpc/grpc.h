@@ -376,6 +376,23 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+/** Registers a plugin to be initialized and destroyed with the library.
+
+    The \a init and \a destroy functions will be invoked as part of 
+    \a grpc_init() and \a grpc_shutdown(), respectively. 
+    Note that these functions can be invoked an arbitrary number of times
+    (and hence so will \a init and \a destroy).
+    It is safe to pass NULL to either argument. Plugins are destroyed in 
+    the reverse order they were initialized. */
+void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
+
+/** Frees the memory used by all the plugin information.
+
+    While grpc_init and grpc_shutdown can be called multiple times, the plugins
+    won't be unregistered and their memory cleaned up unless you call that
+    function. Using atexit(grpc_unregister_all_plugins) is a valid method. */
+void grpc_unregister_all_plugins();
+
 /* Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
 /** Propagate deadline */
@@ -388,8 +405,8 @@ typedef struct grpc_op {
 
 /* Default propagation mask: clients of the core API are encouraged to encode
    deltas from this in their implementations... ie write:
-   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
-   propagation. Doing so gives flexibility in the future to define new 
+   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline
+   propagation. Doing so gives flexibility in the future to define new
    propagation types that are default inherited or not. */
 #define GRPC_PROPAGATE_DEFAULTS                                                \
   ((gpr_uint32)((                                                              \
@@ -436,8 +453,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. 
-    
+    grpc_completion_queue_pluck simultaneously on the same completion queue.
+
     Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
     concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
@@ -477,7 +494,7 @@ void grpc_channel_watch_connectivity_state(
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.
     If parent_call is non-NULL, it must be a server-side call. It will be used
-    to propagate properties from the server call to this new client call. 
+    to propagate properties from the server call to this new client call.
     */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
