@@ -148,6 +148,38 @@ static void etcd_next(grpc_resolver *resolver,
   gpr_mu_unlock(&r->mu);
 }
 
+/** Etcd watcher for handling updates to watched nodes */
+static void etcd_watcher(void *arg, const grpc_httpcli_response *response) {
+  etcd_resolver *r = (etcd_resolver *)arg;
+  gpr_log(GPR_DEBUG, "watch triggered");
+  gpr_mu_lock(&r->mu);
+  if (r->resolving == 0) {
+    etcd_start_resolving_locked(r);
+  }
+  gpr_mu_unlock(&r->mu);
+}
+
+/** Watch for a change and receive notification by using HTTP long polling
+    TODO(ctiller): Objects will leak since currently we cannot cancel it */
+static void etcd_set_watch(etcd_resolver *r, int index) {
+  char *path;
+  gpr_timespec deadline;
+  grpc_httpcli_request request;
+
+  gpr_asprintf(&path, "/v2/keys%s?wait=true&recursive=true&waitIndex=%d", r->name, index);
+  gpr_log(GPR_DEBUG, path);
+
+  memset(&request, 0, sizeof(request));
+  request.host = r->authority;
+  request.path = path;
+
+  deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  grpc_httpcli_get(&r->context, &r->pollset, &request, deadline, etcd_watcher,
+                   r);
+
+  gpr_free(path);
+}
+
 static void etcd_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   etcd_resolver *r = arg;
   grpc_client_config *config = NULL;
@@ -215,7 +247,7 @@ static void etcd_dns_resolved(void *arg, grpc_resolved_addresses *addresses) {
   }
 }
 
-/** Parse json format address of an etcd node */
+/** Parse JSON format address of an etcd node */
 static char *etcd_parse_address(const char *node) {
   grpc_json *json;
   grpc_json *cur;
@@ -254,23 +286,34 @@ static char *etcd_parse_address(const char *node) {
   return address;
 }
 
-/** Parse json format of etcd HTTP response */
-static void etcd_parse_response(etcd_resolver *r, char *response) {
+/** Parse JSON format of etcd HTTP response 
+    Return maximum modifiedIndex for watching */
+static int etcd_parse_response(etcd_resolver *r, char *response, int response_length) {
   grpc_json *json;
-  grpc_json *cur;
-  grpc_json *node;
-  const char *address;
+  grpc_json *level_1;
+  grpc_json *level_2;
+  grpc_json *level_3;
+  grpc_json *level_4;
 
-  json = grpc_json_parse_string(response);
+  const char* child_name;
+  char *address;
+  int index;
+  int modified_index;
+
+  index = 0;
+  modified_index = 0;
+  child_name = NULL;
+
+  json = grpc_json_parse_string_with_len(response, response_length);
   if (json == NULL) {
     gpr_log(GPR_ERROR, "Error in resolving etcd address %s", r->name);
-    return;
+    return index;
   }
-  for (cur = json->child; cur != NULL; cur = cur->next) {
-    if (!strcmp(cur->key, "node")) {
-      for (cur = cur->child; cur != NULL; cur = cur->next) {
-        if (!strcmp(cur->key, "value")) {
-          address = etcd_parse_address(cur->value);
+  for (level_1 = json->child; level_1 != NULL; level_1 = level_1->next) {
+    if (!strcmp(level_1->key, "node")) {
+      for (level_2 = level_1->child; level_2 != NULL; level_2 = level_2->next) {
+        if (!strcmp(level_2->key, "value")) {
+          address = etcd_parse_address(level_2->value);
           if (address != NULL) {
             r->resolved_addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
             r->resolved_addrs->addrs = NULL;
@@ -281,41 +324,55 @@ static void etcd_parse_response(etcd_resolver *r, char *response) {
           } else {
             gpr_log(GPR_ERROR, "Error in resolving etcd address %s", r->name);
           }
-          break;
+        }
+
+        else if (!strcmp(level_2->key, "modifiedIndex")) {
+          modified_index = atoi(level_2->value);
+          if (modified_index > index) {
+            index = modified_index;
+          }
         }
 
         /** If etcd node of path r->name is a directory
             (i.e. service node), get its children */
-        if (!strcmp(cur->key, "nodes")) {
+        else if (!strcmp(level_2->key, "nodes")) {
           r->resolved_addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
           r->resolved_addrs->addrs = NULL;
           r->resolved_addrs->naddrs = 0;
-          for (cur = cur->child; cur != NULL; cur = cur->next) {
-            for (node = cur->child; node != NULL; node = node->next) {
-              if (!strcmp(node->key, "value")) {
-                address = etcd_parse_address(node->value);
+          for (level_3 = level_2->child; level_3 != NULL; level_3 = level_3->next) {
+            for (level_4 = level_3->child; level_4 != NULL; level_4 = level_4->next) {
+              if (!strcmp(level_4->key, "key")) {
+                child_name = level_4->value;
+              }
+              else if (!strcmp(level_4->key, "value")) {
+                address = etcd_parse_address(level_4->value);
                 if (address != NULL) {
                   r->resolved_total++;
                   /** Further resolve address by DNS */
                   grpc_resolve_address(address, NULL, etcd_dns_resolved, r);
                 } else {
-                  gpr_log(GPR_ERROR, "Error in resolving a child node of %s",
-                          r->name);
+                  gpr_log(GPR_ERROR, "Error in resolving etcd address %s", child_name);
                 }
-                break;
+              }
+              else if (!strcmp(level_4->key, "modifiedIndex")) {
+                modified_index = atoi(level_4->value);
+                if (modified_index > index) {
+                  index = modified_index;
+                }
               }
             }
           }
-          break;
         }
       }
-      break;
     }
   }
   grpc_json_destroy(json);
+  return index;
 }
 
+/** Callback function for etcd HTTP request */
 static void etcd_on_response(void *arg, const grpc_httpcli_response *response) {
+  int index;
   etcd_resolver *r = (etcd_resolver *)arg;
   gpr_log(GPR_DEBUG, "etcd resolver");
   if (response == NULL || response->status != 200) {
@@ -323,39 +380,13 @@ static void etcd_on_response(void *arg, const grpc_httpcli_response *response) {
     return;
   }
   gpr_log(GPR_DEBUG, response->body);
-  etcd_parse_response(r, response->body);
-}
-
-/** Etcd watcher for handling updates to watched nodes */
-static void etcd_watcher(void *arg, const grpc_httpcli_response *response) {
-  etcd_resolver *r = (etcd_resolver *)arg;
-  gpr_log(GPR_DEBUG, "watch triggered");
-  gpr_mu_lock(&r->mu);
-  if (r->resolving == 0) {
-    etcd_start_resolving_locked(r);
+  index = etcd_parse_response(r, response->body, response->body_length);
+  gpr_log(GPR_DEBUG, "index = %d", index);
+  if (index > 0) {
+    etcd_set_watch(r, index + 1);
+  } else {
+    gpr_log(GPR_ERROR, "Error in etcd server response: index <= 0");
   }
-  gpr_mu_unlock(&r->mu);
-}
-
-/** Watch for a change and receive notification by using HTTP long polling
-    TODO: Objects will leak since currently we cannot cancel it */
-static void etcd_set_watch(etcd_resolver *r) {
-  char *path;
-  gpr_timespec deadline;
-  grpc_httpcli_request request;
-
-  gpr_asprintf(&path, "/v2/keys%s?wait=true&recursive=true", r->name);
-  gpr_log(GPR_DEBUG, path);
-
-  memset(&request, 0, sizeof(request));
-  request.host = r->authority;
-  request.path = path;
-
-  deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  grpc_httpcli_get(&r->context, &r->pollset, &request, deadline, etcd_watcher,
-                   r);
-
-  gpr_free(path);
 }
 
 static void etcd_resolve_address(etcd_resolver *r) {
@@ -372,7 +403,7 @@ static void etcd_resolve_address(etcd_resolver *r) {
   gpr_log(GPR_DEBUG, path);
 
   deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                          gpr_time_from_seconds(5, GPR_TIMESPAN));
+                          gpr_time_from_seconds(15, GPR_TIMESPAN));
   grpc_httpcli_get(&r->context, &r->pollset, &request, deadline,
                    etcd_on_response, r);
 
@@ -384,7 +415,6 @@ static void etcd_start_resolving_locked(etcd_resolver *r) {
   GPR_ASSERT(!r->resolving);
   r->resolving = 1;
   gpr_log(GPR_DEBUG, "etcd_start_resolving_locked");
-  etcd_set_watch(r);
   etcd_resolve_address(r);
 }
 

@@ -64,6 +64,8 @@ typedef struct {
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
+static grpc_httpcli_put_override g_put_override = NULL;
+static grpc_httpcli_delete_override g_delete_override = NULL;
 static grpc_httpcli_post_override g_post_override = NULL;
 
 static void plaintext_handshake(void *arg, grpc_endpoint *endpoint,
@@ -216,19 +218,23 @@ static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   next_address(req);
 }
 
-void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
-                      const grpc_httpcli_request *request,
-                      gpr_timespec deadline,
-                      grpc_httpcli_response_cb on_response, void *user_data) {
+static void grpc_httpcli_without_body(
+    const char *method, grpc_httpcli_context *context, grpc_pollset *pollset,
+    const grpc_httpcli_request *request, gpr_timespec deadline,
+    grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req;
   char *name;
   if (g_get_override &&
       g_get_override(request, deadline, on_response, user_data)) {
     return;
   }
+  if (g_delete_override &&
+      g_delete_override(request, deadline, on_response, user_data)) {
+    return;
+  }
   req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
-  req->request_text = grpc_httpcli_format_get_request(request);
+  req->request_text = grpc_httpcli_format_request_without_body(method, request);
   grpc_httpcli_parser_init(&req->parser);
   req->on_response = on_response;
   req->user_data = user_data;
@@ -247,7 +253,7 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                        on_resolved, req);
 }
 
-void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
+void grpc_httpcli_with_body(const char *method, grpc_httpcli_context *context, grpc_pollset *pollset,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
@@ -258,10 +264,14 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
                                          deadline, on_response, user_data)) {
     return;
   }
+  if (g_put_override && g_put_override(request, body_bytes, body_size,
+                                         deadline, on_response, user_data)) {
+    return;
+  }
   req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text =
-      grpc_httpcli_format_post_request(request, body_bytes, body_size);
+      grpc_httpcli_format_request_with_body(method, request, body_bytes, body_size);
   grpc_httpcli_parser_init(&req->parser);
   req->on_response = on_response;
   req->user_data = user_data;
@@ -280,8 +290,47 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
                        on_resolved, req);
 }
 
-void grpc_httpcli_set_override(grpc_httpcli_get_override get,
-                               grpc_httpcli_post_override post) {
-  g_get_override = get;
-  g_post_override = post;
+void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
+                      const grpc_httpcli_request *request,
+                      gpr_timespec deadline,
+                      grpc_httpcli_response_cb on_response, void *user_data) {
+  grpc_httpcli_without_body("GET ", context, pollset, request, deadline, on_response,
+                      user_data);
+}
+
+void grpc_httpcli_delete(grpc_httpcli_context *context, grpc_pollset *pollset,
+                         const grpc_httpcli_request *request,
+                         gpr_timespec deadline,
+                         grpc_httpcli_response_cb on_response,
+                         void *user_data) {
+  grpc_httpcli_without_body("DELETE ", context, pollset, request, deadline,
+                      on_response, user_data);
+}
+
+void grpc_httpcli_put(grpc_httpcli_context *context, grpc_pollset *pollset,
+                       const grpc_httpcli_request *request,
+                       const char *body_bytes, size_t body_size,
+                       gpr_timespec deadline,
+                       grpc_httpcli_response_cb on_response, void *user_data) {
+  grpc_httpcli_with_body("PUT ", context, pollset, request, body_bytes, body_size, deadline, on_response,
+                      user_data);
+}
+
+void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
+                       const grpc_httpcli_request *request,
+                       const char *body_bytes, size_t body_size,
+                       gpr_timespec deadline,
+                       grpc_httpcli_response_cb on_response, void *user_data) {
+  grpc_httpcli_with_body("POST ", context, pollset, request, body_bytes, body_size, deadline, on_response,
+                      user_data);
+}
+
+void grpc_httpcli_set_override(grpc_httpcli_get_override http_get,
+                               grpc_httpcli_delete_override http_delete,
+                               grpc_httpcli_put_override http_put,
+                               grpc_httpcli_post_override http_post) {
+  g_get_override = http_get;
+  g_put_override = http_put;
+  g_delete_override = http_delete;
+  g_post_override = http_post;
 }

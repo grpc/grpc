@@ -62,13 +62,13 @@ static void fill_common_header(const grpc_httpcli_request *request, gpr_strvec *
   }
 }
 
-gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request) {
+gpr_slice grpc_httpcli_format_request_without_body(const char* method, const grpc_httpcli_request *request) {
   gpr_strvec out;
   char *flat;
   size_t flat_len;
 
   gpr_strvec_init(&out);
-  gpr_strvec_add(&out, gpr_strdup("GET "));
+  gpr_strvec_add(&out, gpr_strdup(method));
   fill_common_header(request, &out);
   gpr_strvec_add(&out, gpr_strdup("\r\n"));
 
@@ -78,7 +78,7 @@ gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request) {
   return gpr_slice_new(flat, flat_len, gpr_free);
 }
 
-gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
+gpr_slice grpc_httpcli_format_request_with_body(const char* method, const grpc_httpcli_request *request,
                                            const char *body_bytes,
                                            size_t body_size) {
   gpr_strvec out;
@@ -88,7 +88,7 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
 
   gpr_strvec_init(&out);
 
-  gpr_strvec_add(&out, gpr_strdup("POST "));
+  gpr_strvec_add(&out, gpr_strdup(method));
   fill_common_header(request, &out);
   if (body_bytes) {
     gpr_uint8 has_content_type = 0;
@@ -99,7 +99,7 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
       }
     }
     if (!has_content_type) {
-      gpr_strvec_add(&out, gpr_strdup("Content-Type: text/plain\r\n"));
+      gpr_strvec_add(&out, gpr_strdup("Content-Type: application/x-www-form-urlencoded\r\n"));
     }
     gpr_asprintf(&tmp, "Content-Length: %lu\r\n", (unsigned long)body_size);
     gpr_strvec_add(&out, tmp);
