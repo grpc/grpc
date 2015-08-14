@@ -73,30 +73,30 @@ class ZookeeperTest : public ::testing::Test {
   void SetUp() GRPC_OVERRIDE {
     SetUpZookeeper();
 
-    // Setup two servers
+    // Sets up two servers
     int port1 = grpc_pick_unused_port_or_die();
     server1_ = SetUpServer(port1);
 
     int port2 = grpc_pick_unused_port_or_die();
     server2_ = SetUpServer(port2);
 
-    // Register service /test in zookeeper
+    // Registers service /test in zookeeper
     RegisterService("/test", "test");
 
-    // Register service instance /test/1 in zookeeper
+    // Registers service instance /test/1 in zookeeper
     string value =
         "{\"host\":\"localhost\",\"port\":\"" + to_string(port1) + "\"}";
     RegisterService("/test/1", value);
 
-    // Register service instance /test/2 in zookeeper
+    // Registers service instance /test/2 in zookeeper
     value =
         "{\"host\":\"localhost\",\"port\":\"" + to_string(port2) + "\"}";
     RegisterService("/test/2", value);
   }
 
-  // Require zookeeper server running
+  // Requires zookeeper server running
   void SetUpZookeeper() {
-    // Find zookeeper server address in environment
+    // Finds zookeeper server address in environment
     // Default is localhost:2181
     zookeeper_address_ = "localhost:2181";
     char* addr = gpr_getenv("GRPC_ZOOKEEPER_SERVER_TEST");
@@ -107,13 +107,13 @@ class ZookeeperTest : public ::testing::Test {
     }
     gpr_log(GPR_DEBUG, zookeeper_address_.c_str());
 
-    // Connect to zookeeper server
+    // Connects to zookeeper server
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
     zookeeper_handle_ =
         zookeeper_init(zookeeper_address_.c_str(), NULL, 15000, 0, 0, 0);
     GPR_ASSERT(zookeeper_handle_ != NULL);
 
-    // Register zookeeper name resolver in grpc
+    // Registers zookeeper name resolver in grpc
     grpc_zookeeper_register();
   }
 
@@ -180,7 +180,7 @@ class ZookeeperTest : public ::testing::Test {
   string zookeeper_address_;
 };
 
-// Test zookeeper state change between two RPCs
+// Tests zookeeper state change between two RPCs
 // TODO(ctiller): leaked objects in this test
 TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   ResetStub();
@@ -195,10 +195,10 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EXPECT_EQ(response1.message(), request1.message());
   EXPECT_TRUE(s1.ok());
 
-  // Zookeeper state change
+  // Zookeeper state changes
   gpr_log(GPR_DEBUG, "Zookeeper state change"); 
   ChangeZookeeperState();
-  // Wait for re-resolving addresses
+  // Waits for re-resolving addresses
   // TODO(ctiller): RPC will probably fail if not waiting
   sleep(1);
 

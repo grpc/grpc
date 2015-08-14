@@ -157,7 +157,7 @@ static void zookeeper_global_watcher(zhandle_t *zookeeper_handle, int type,
 }
 
 /** Zookeeper watcher triggered by changes to watched nodes
-    Start to resolve again to get updated addresses */
+    Once triggered, it tries to resolve again to get updated addresses */
 static void zookeeper_watcher(zhandle_t *zookeeper_handle, int type, int state,
                               const char *path, void *watcher_ctx) {
   if (watcher_ctx != NULL) {
@@ -173,7 +173,7 @@ static void zookeeper_watcher(zhandle_t *zookeeper_handle, int type, int state,
 }
 
 /** Callback function after getting all resolved addresses  
-    Create a subchannel for each address */
+    Creates a subchannel for each address */
 static void zookeeper_on_resolved(void *arg,
                                   grpc_resolved_addresses *addresses) {
   zookeeper_resolver *r = arg;
@@ -243,7 +243,7 @@ static void zookeeper_dns_resolved(void *arg,
   }
 }
 
-/** Parse JSON format address of a zookeeper node */
+/** Parses JSON format address of a zookeeper node */
 static char *zookeeper_parse_address(const char *value, int value_len) {
   grpc_json *json;
   grpc_json *cur;
@@ -296,7 +296,7 @@ static void zookeeper_get_children_node_completion(int rc, const char *value,
 
   address = zookeeper_parse_address(value, value_len);
   if (address != NULL) {
-    /** Further resolve address by DNS */
+    /** Further resolves address by DNS */
     grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
     gpr_free(address);
   } else {
@@ -333,8 +333,8 @@ static void zookeeper_get_children_completion(
   r->resolved_addrs->naddrs = 0;
   r->resolved_total = children->count;
 
-  /** TODO: Replace expensive heap allocation and free with stack
-      if we can get maximum allowed length of zookeeper path */
+  /** TODO: Replace expensive heap allocation with stack
+      if we can get maximum length of zookeeper path */
   for (i = 0; i < children->count; i++) {
     gpr_asprintf(&path, "%s/%s", r->name, children->data[i]);
     status = zoo_awget(r->zookeeper_handle, path, zookeeper_watcher, r,
@@ -370,7 +370,7 @@ static void zookeeper_get_node_completion(int rc, const char *value,
     r->resolved_addrs->addrs = NULL;
     r->resolved_addrs->naddrs = 0;
     r->resolved_total = 1;
-    /** Further resolve address by DNS */
+    /** Further resolves address by DNS */
     grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
     gpr_free(address);
     return;
@@ -437,7 +437,7 @@ static grpc_resolver *zookeeper_create(
     return NULL;
   }
 
-  /** Remove the trailing slash if exists */
+  /** Removes the trailing slash if exists */
   length = strlen(path);
   if (length > 1 && path[length - 1] == '/') {
     path[length - 1] = 0;
@@ -454,7 +454,7 @@ static grpc_resolver *zookeeper_create(
   r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
 
-  /** Initialize zookeeper client */
+  /** Initializes zookeeper client */
   zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
   r->zookeeper_handle = zookeeper_init(uri->authority, zookeeper_global_watcher,
                                        GRPC_ZOOKEEPER_SESSION_TIMEOUT, 0, 0, 0);
