@@ -629,13 +629,9 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
     return Qnil;
   }
-  if (!ev.success) {
-    grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_rb_eCallError, "start_batch completion failed");
-    return Qnil;
-  }
 
-  /* Build and return the BatchResult struct result */
+  /* Build and return the BatchResult struct result,
+     if there is an error, it's reflected in the status */
   result = grpc_run_batch_stack_build_result(&st);
   grpc_run_batch_stack_cleanup(&st);
   return result;
