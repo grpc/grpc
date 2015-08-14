@@ -265,6 +265,17 @@ class NamedTests
     p 'OK: ping_pong'
   end
 
+  def timeout_on_sleeping_server
+    msg_sizes = [[27_182, 31_415]]
+    ppp = PingPongPlayer.new(msg_sizes)
+    resps = @stub.full_duplex_call(ppp.each_item, timeout: 0.001)
+    resps.each { |r| ppp.queue.push(r) }
+    fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
+  rescue GRPC::BadStatus => e
+    assert_equal(e.code, GRPC::Core::StatusCodes::DEADLINE_EXCEEDED)
+    p "OK: #{__callee__}"
+  end
+
   def cancel_after_begin
     msg_sizes = [27_182, 8, 1828, 45_904]
     reqs = msg_sizes.map do |x|
@@ -283,7 +294,7 @@ class NamedTests
     ppp = PingPongPlayer.new(msg_sizes)
     op = @stub.full_duplex_call(ppp.each_item, return_op: true)
     ppp.canceller_op = op  # causes ppp to cancel after the 1st message
-    op.execute.each { |r| ppp.queue.push(r) }
+    assert_raises(GRPC::Cancelled) { op.execute.each { |r| ppp.queue.push(r) } }
     op.wait
     assert(op.cancelled, 'call operation was not CANCELLED')
     p 'OK: cancel_after_first_response'
