@@ -133,6 +133,58 @@ describe('Server.prototype.addProtoService', function() {
     });
   });
 });
+describe('Client#$waitForReady', function() {
+  var server;
+  var port;
+  var Client;
+  var client;
+  before(function() {
+    server = new grpc.Server();
+    port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
+    server.start();
+    Client = surface_client.makeProtobufClientConstructor(mathService);
+  });
+  beforeEach(function() {
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('should complete when called alone', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+  });
+  it('should complete when a call is initiated', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+    var call = client.div({}, function(err, response) {});
+    call.cancel();
+  });
+  it('should complete if called more than once', function(done) {
+    done = multiDone(done, 2);
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      done();
+    });
+  });
+  it('should complete if called when already ready', function(done) {
+    client.$waitForReady(Infinity, function(error) {
+      assert.ifError(error);
+      client.$waitForReady(Infinity, function(error) {
+        assert.ifError(error);
+        done();
+      });
+    });
+  });
+});
 describe('Echo service', function() {
   var server;
   var client;

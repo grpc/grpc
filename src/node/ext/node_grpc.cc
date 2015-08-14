@@ -178,6 +178,24 @@ void InitPropagateConstants(Handle<Object> exports) {
   propagate->Set(NanNew("DEFAULTS"), DEFAULTS);
 }
 
+void InitConnectivityStateConstants(Handle<Object> exports) {
+  NanScope();
+  Handle<Object> channel_state = NanNew<Object>();
+  exports->Set(NanNew("connectivityState"), channel_state);
+  Handle<Value> IDLE(NanNew<Uint32, uint32_t>(GRPC_CHANNEL_IDLE));
+  channel_state->Set(NanNew("IDLE"), IDLE);
+  Handle<Value> CONNECTING(NanNew<Uint32, uint32_t>(GRPC_CHANNEL_CONNECTING));
+  channel_state->Set(NanNew("CONNECTING"), CONNECTING);
+  Handle<Value> READY(NanNew<Uint32, uint32_t>(GRPC_CHANNEL_READY));
+  channel_state->Set(NanNew("READY"), READY);
+  Handle<Value> TRANSIENT_FAILURE(
+      NanNew<Uint32, uint32_t>(GRPC_CHANNEL_TRANSIENT_FAILURE));
+  channel_state->Set(NanNew("TRANSIENT_FAILURE"), TRANSIENT_FAILURE);
+  Handle<Value> FATAL_FAILURE(
+      NanNew<Uint32, uint32_t>(GRPC_CHANNEL_FATAL_FAILURE));
+  channel_state->Set(NanNew("FATAL_FAILURE"), FATAL_FAILURE);
+}
+
 void init(Handle<Object> exports) {
   NanScope();
   grpc_init();
@@ -185,6 +203,7 @@ void init(Handle<Object> exports) {
   InitCallErrorConstants(exports);
   InitOpTypeConstants(exports);
   InitPropagateConstants(exports);
+  InitConnectivityStateConstants(exports);
 
   grpc::node::Call::Init(exports);
   grpc::node::Channel::Init(exports);

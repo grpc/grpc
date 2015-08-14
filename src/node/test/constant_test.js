@@ -90,6 +90,18 @@ var propagateFlagNames = [
   'CANCELLATION',
   'DEFAULTS'
 ];
+/*
+ * List of all connectivity state names
+ * @const
+ * @type {Array.<string>}
+ */
+var connectivityStateNames = [
+  'IDLE',
+  'CONNECTING',
+  'READY',
+  'TRANSIENT_FAILURE',
+  'FATAL_FAILURE'
+];
 
 describe('constants', function() {
   it('should have all of the status constants', function() {
@@ -108,6 +120,12 @@ describe('constants', function() {
     for (var i = 0; i < propagateFlagNames.length; i++) {
       assert(grpc.propagate.hasOwnProperty(propagateFlagNames[i]),
              'call error missing: ' + propagateFlagNames[i]);
+    }
+  });
+  it('should have all of the connectivity states', function() {
+    for (var i = 0; i < connectivityStateNames.length; i++) {
+      assert(grpc.connectivityState.hasOwnProperty(connectivityStateNames[i]),
+             'connectivity status missing: ' + connectivityStateNames[i]);
     }
   });
 });

@@ -52,7 +52,7 @@ static void *create_test_tag(void) {
 static void shutdown_and_destroy(grpc_completion_queue *cc) {
   grpc_event ev;
   grpc_completion_queue_shutdown(cc);
-  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME));
+  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
@@ -60,17 +60,18 @@ static void shutdown_and_destroy(grpc_completion_queue *cc) {
 /* ensure we can create and destroy a completion channel */
 static void test_no_op(void) {
   LOG_TEST("test_no_op");
-  shutdown_and_destroy(grpc_completion_queue_create());
+  shutdown_and_destroy(grpc_completion_queue_create(NULL));
 }
 
 static void test_wait_empty(void) {
   grpc_completion_queue *cc;
+  grpc_event event;
 
   LOG_TEST("test_wait_empty");
 
-  cc = grpc_completion_queue_create();
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_now(GPR_CLOCK_REALTIME)).type ==
-             GRPC_QUEUE_TIMEOUT);
+  cc = grpc_completion_queue_create(NULL);
+  event = grpc_completion_queue_next(cc, gpr_now(GPR_CLOCK_REALTIME), NULL);
+  GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
   shutdown_and_destroy(cc);
 }
 
@@ -84,12 +85,12 @@ static void test_cq_end_op(void) {
 
   LOG_TEST("test_cq_end_op");
 
-  cc = grpc_completion_queue_create();
+  cc = grpc_completion_queue_create(NULL);
 
   grpc_cq_begin_op(cc);
   grpc_cq_end_op(cc, tag, 1, do_nothing_end_completion, NULL, &completion);
 
-  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME));
+  ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag);
   GPR_ASSERT(ev.success);
@@ -99,23 +100,27 @@ static void test_cq_end_op(void) {
 
 static void test_shutdown_then_next_polling(void) {
   grpc_completion_queue *cc;
+  grpc_event event;
   LOG_TEST("test_shutdown_then_next_polling");
 
-  cc = grpc_completion_queue_create();
+  cc = grpc_completion_queue_create(NULL);
   grpc_completion_queue_shutdown(cc);
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME))
-                 .type == GRPC_QUEUE_SHUTDOWN);
+  event = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                     NULL);
+  GPR_ASSERT(event.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
 
 static void test_shutdown_then_next_with_timeout(void) {
   grpc_completion_queue *cc;
+  grpc_event event;
   LOG_TEST("test_shutdown_then_next_with_timeout");
 
-  cc = grpc_completion_queue_create();
+  cc = grpc_completion_queue_create(NULL);
   grpc_completion_queue_shutdown(cc);
-  GPR_ASSERT(grpc_completion_queue_next(cc, gpr_inf_future(GPR_CLOCK_REALTIME))
-                 .type == GRPC_QUEUE_SHUTDOWN);
+  event = grpc_completion_queue_next(cc, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                     NULL);
+  GPR_ASSERT(event.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
 
@@ -135,7 +140,7 @@ static void test_pluck(void) {
     }
   }
 
-  cc = grpc_completion_queue_create();
+  cc = grpc_completion_queue_create(NULL);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc);
@@ -145,7 +150,7 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     ev = grpc_completion_queue_pluck(cc, tags[i],
-                                     gpr_inf_past(GPR_CLOCK_REALTIME));
+                                     gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(ev.tag == tags[i]);
   }
 
@@ -157,7 +162,7 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     ev = grpc_completion_queue_pluck(cc, tags[GPR_ARRAY_SIZE(tags) - i - 1],
-                                     gpr_inf_past(GPR_CLOCK_REALTIME));
+                                     gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(ev.tag == tags[GPR_ARRAY_SIZE(tags) - i - 1]);
   }
 
@@ -229,7 +234,7 @@ static void consumer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
   for (;;) {
-    ev = grpc_completion_queue_next(opt->cc, ten_seconds_time());
+    ev = grpc_completion_queue_next(opt->cc, ten_seconds_time(), NULL);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         GPR_ASSERT(ev.success);
@@ -251,7 +256,7 @@ static void test_threading(int producers, int consumers) {
       gpr_malloc((producers + consumers) * sizeof(test_thread_options));
   gpr_event phase1 = GPR_EVENT_INIT;
   gpr_event phase2 = GPR_EVENT_INIT;
-  grpc_completion_queue *cc = grpc_completion_queue_create();
+  grpc_completion_queue *cc = grpc_completion_queue_create(NULL);
   int i;
   int total_consumed = 0;
   static int optid = 101;
