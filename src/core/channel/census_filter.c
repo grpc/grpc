@@ -135,18 +135,8 @@ static void client_init_call_elem(grpc_call_element* elem,
 
 static void client_destroy_call_elem(grpc_call_element* elem) {
   call_data* d = elem->call_data;
-  census_stat stats[3];
   GPR_ASSERT(d != NULL);
-  stats[0].id = CENSUS_RPC_CLIENT_REQUESTS;
-  stats[0].value = 1.0;
-  stats[1].id = CENSUS_RPC_CLIENT_ERRORS;
-  stats[1].value = 0.0;  /* TODO(hongyu): add rpc error recording */
-  stats[2].id = CENSUS_RPC_CLIENT_LATENCY;
-  /* Temporarily using census_filter invoke time as the start time of rpc. */
-  stats[2].value = gpr_timespec_to_micros(
-      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), d->start_ts));
-  census_record_stat(d->ctxt, stats, 3);
-  /* TODO(hongyu): call census_rpc_end_op here */
+  /* TODO(hongyu): record rpc client stats and census_rpc_end_op here */
 }
 
 static void server_init_call_elem(grpc_call_element* elem,
@@ -162,17 +152,8 @@ static void server_init_call_elem(grpc_call_element* elem,
 
 static void server_destroy_call_elem(grpc_call_element* elem) {
   call_data* d = elem->call_data;
-  census_stat stats[3];
   GPR_ASSERT(d != NULL);
-  stats[0].id = CENSUS_RPC_SERVER_REQUESTS;
-  stats[0].value = 1.0;
-  stats[1].id = CENSUS_RPC_SERVER_ERRORS;
-  stats[1].value = 0.0;
-  stats[2].id = CENSUS_RPC_SERVER_LATENCY;
-  stats[2].value = gpr_timespec_to_micros(
-      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), d->start_ts));
-  census_record_stat(d->ctxt, stats, 3);
-  /* TODO(hongyu): call census_tracing_end_op here */
+  /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
 }
 
 static void init_channel_elem(grpc_channel_element* elem, grpc_channel* master,
