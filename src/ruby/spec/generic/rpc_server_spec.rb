@@ -396,8 +396,9 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         stub = SlowStub.new(@host, **client_opts)
-        deadline = service.delay + 1.0 # wait for long enough
-        expect(stub.an_rpc(req, deadline, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
+        timeout = service.delay + 1.0 # wait for long enough
+        resp = stub.an_rpc(req, timeout: timeout, k1: 'v1', k2: 'v2')
+        expect(resp).to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
         check_md(wanted_md, service.received_md)
         @srv.stop
@@ -411,8 +412,8 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         stub = SlowStub.new(@host, **client_opts)
-        deadline = 0.1  # too short for SlowService to respond
-        blk = proc { stub.an_rpc(req, deadline, k1: 'v1', k2: 'v2') }
+        timeout = 0.1  # too short for SlowService to respond
+        blk = proc { stub.an_rpc(req, timeout: timeout, k1: 'v1', k2: 'v2') }
         expect(&blk).to raise_error GRPC::BadStatus
         wanted_md = []
         expect(service.received_md).to eq(wanted_md)

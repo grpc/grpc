@@ -137,7 +137,7 @@ describe GRPC::Core::Call do
   end
 
   def make_test_call
-    @ch.create_call(client_queue, 'dummy_method', nil, deadline)
+    @ch.create_call(client_queue, nil, nil, 'dummy_method', nil, deadline)
   end
 
   def deadline

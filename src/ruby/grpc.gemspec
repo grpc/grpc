@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.files += Dir.glob('bin/**/*')
   s.test_files = Dir.glob('spec/**/*')
   %w(math noproto).each do |b|
-    s.executables += [ "#{b}_client.rb", "#{b}_server.rb" ]
+    s.executables += ["#{b}_client.rb", "#{b}_server.rb"]
   end
   s.require_paths = %w( bin lib )
   s.platform      = Gem::Platform::RUBY

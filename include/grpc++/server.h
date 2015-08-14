@@ -228,6 +228,8 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   grpc::condition_variable callback_cv_;
 
   std::list<SyncRequest>* sync_methods_;
+  std::unique_ptr<RpcServiceMethod> unknown_method_;
+  bool has_generic_service_;
 
   // Pointer to the c grpc server.
   grpc_server* const server_;
