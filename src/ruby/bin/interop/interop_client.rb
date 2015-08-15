@@ -40,7 +40,9 @@
 
 this_dir = File.expand_path(File.dirname(__FILE__))
 lib_dir = File.join(File.dirname(File.dirname(this_dir)), 'lib')
+pb_dir = File.join(File.dirname(File.dirname(this_dir)), 'pb')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+$LOAD_PATH.unshift(pb_dir) unless $LOAD_PATH.include?(pb_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'optparse'
@@ -51,9 +53,9 @@ require 'grpc'
 require 'googleauth'
 require 'google/protobuf'
 
-require 'test/cpp/interop/test_services'
-require 'test/cpp/interop/messages'
-require 'test/cpp/interop/empty'
+require 'test/proto/empty'
+require 'test/proto/messages'
+require 'test/proto/test_services'
 
 require 'signet/ssl_config'
 
