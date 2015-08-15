@@ -78,41 +78,27 @@ class EtcdTest : public ::testing::Test {
 
     // Setup two servers
     int port1 = grpc_pick_unused_port_or_die();
-    port1 = 1111;
     server1_ = SetUpServer(port1);
     int port2 = grpc_pick_unused_port_or_die();
-    port2 = 2222;
     server2_ = SetUpServer(port2);
 
-    // DeleteInstance("/test/1");
-
     // Register service /test in etcd
-    // RegisterService("/test2");
+    RegisterService("/test");
 
     // Register service instance /test/1 in etcd
-    string value = "111";
+    string value = "{\"host\":\"localhost\",\"port\":\"" + to_string(port1) + "\"}";
     RegisterInstance("/test/1", value);
 
     // Register service instance /test/2 in etcd
-    value = "2222";
-    // RegisterInstance("/test/2", value);
-  }
-
-  std::unique_ptr<Server> SetUpServer(int port) {
-    string server_address = "localhost:" + std::to_string(port);
-
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    std::unique_ptr<Server> server = builder.BuildAndStart();
-    return server;
+    value = "{\"host\":\"localhost\",\"port\":\"" + to_string(port2) + "\"}";
+    RegisterInstance("/test/2", value);
   }
 
   // Require etcd server running beforehand
   void SetUpEtcd() {
     // Find etcd server address in environment
-    // Default is localhost:4001
-    etcd_address_ = "127.0.0.1:4001";
+    // Default is localhost:2379
+    etcd_address_ = "127.0.0.1:2379";
     char* addr = gpr_getenv("GRPC_ETCD_SERVER_TEST");
     if (addr != NULL) {
       string addr_str(addr);
@@ -131,6 +117,16 @@ class EtcdTest : public ::testing::Test {
     atexit(grpc_unregister_all_plugins);
   }
 
+  std::unique_ptr<Server> SetUpServer(int port) {
+    string server_address = "localhost:" + to_string(port);
+
+    ServerBuilder builder;
+    builder.AddListeningPort(server_address, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    std::unique_ptr<Server> server = builder.BuildAndStart();
+    return server;
+  }
+
   static void on_http_response(void *arg, const grpc_httpcli_response *response) {
     gpr_log(GPR_DEBUG, response->body);
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
@@ -142,12 +138,12 @@ class EtcdTest : public ::testing::Test {
   static void send_http_request(const string& method, const string& path, const string& host, const string& body) {
     GPR_ASSERT(method == "GET" || method == "DELETE" || method == "PUT" || method == "POST");
     grpc_httpcli_request request;
+    grpc_httpcli_header hdr = {(char*)"Content-Type", (char*)"application/x-www-form-urlencoded"};
     memset(&request, 0, sizeof(request));
-    request.host = (char*)host.c_str();
-    request.path = (char*)path.c_str();
-    request.hdrs[request.hdr_count].key = gpr_strdup("Content-Type");
-    request.hdrs[request.hdr_count].value = gpr_strdup("application/x-www-form-urlencoded");
-    request.hdr_count++;
+    request.host = gpr_strdup(host.c_str());
+    request.path = gpr_strdup(path.c_str());
+    request.hdr_count = 1;
+    request.hdrs = &hdr;
 
     http_done = 0;
     gpr_log(GPR_DEBUG, method.c_str());
@@ -164,7 +160,9 @@ class EtcdTest : public ::testing::Test {
       grpc_httpcli_put(&context, &pollset, &request, body.c_str(), body.size(), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
     } else if (method == "POST") {
       grpc_httpcli_post(&context, &pollset, &request, body.c_str(), body.size(), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
-    } 
+    } else {
+      gpr_log(GPR_ERROR, "HTTP method not recognized: %s", method.c_str());
+    }
     
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
     while (http_done == 0) {
@@ -172,6 +170,8 @@ class EtcdTest : public ::testing::Test {
       grpc_pollset_work(&pollset, &worker, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
     }
     gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
+    gpr_free(request.host);
+    gpr_free(request.path);
   }
 
   void RegisterService(const string& name) {
@@ -192,6 +192,7 @@ class EtcdTest : public ::testing::Test {
   }
 
   void ChangeEtcdState() {
+    server1_->Shutdown();
     DeleteInstance("/test/1");
   }
 
@@ -213,6 +214,12 @@ class EtcdTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
+  string to_string(const int number) {
+    std::stringstream strs;
+    strs << number;
+    return strs.str();
+  }
+
   std::shared_ptr<ChannelInterface> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server1_;
@@ -228,21 +235,36 @@ grpc_httpcli_context EtcdTest::context;
 grpc_pollset EtcdTest::pollset;
 int EtcdTest::http_done;
 
-// Simple echo RPC
-TEST_F(EtcdTest, SimpleRpc) {
+// Tests etcd state change between two RPCs
+// TODO(ctiller): leaked objects in this test
+TEST_F(EtcdTest, EtcdStateChangeTwoRpc) {
   ResetStub();
 
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  context.set_authority("test");
-  request.set_message("Hello");
-  Status s = stub_->Echo(&context, request, &response);
-  gpr_log(GPR_DEBUG, "response: %s", response.message().c_str());
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
+  // First RPC
+  EchoRequest request1;
+  EchoResponse response1;
+  ClientContext context1;
+  context1.set_authority("test");
+  request1.set_message("Hello");
+  Status s1 = stub_->Echo(&context1, request1, &response1);
+  EXPECT_EQ(response1.message(), request1.message());
+  EXPECT_TRUE(s1.ok());
 
+  // Etcd state changes
+  gpr_log(GPR_DEBUG, "Etcd state change"); 
   ChangeEtcdState();
+  // Waits for re-resolving addresses
+  sleep(1);
+
+  // Second RPC
+  EchoRequest request2;
+  EchoResponse response2;
+  ClientContext context2;
+  context2.set_authority("test");
+  request2.set_message("World");
+  Status s2 = stub_->Echo(&context2, request2, &response2);
+  EXPECT_EQ(response2.message(), request2.message());
+  EXPECT_TRUE(s2.ok());
 }
 
 }  // namespace testing
