@@ -40,7 +40,7 @@ namespace Grpc.Core
     /// <summary>
     /// Interceptor for call headers.
     /// </summary>
-    public delegate void HeaderInterceptor(string authUri, Metadata metadata);
+    public delegate void HeaderInterceptor(IMethod method, string authUri, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
@@ -107,7 +107,7 @@ namespace Grpc.Core
                     options = options.WithHeaders(new Metadata());
                 }
                 var authUri = authUriBase != null ? authUriBase + method.ServiceName : null;
-                interceptor(authUri, options.Headers);
+                interceptor(method, authUri, options.Headers);
             }
             return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }

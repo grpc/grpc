@@ -54,7 +54,7 @@ namespace Grpc.Auth
         /// </summary>
         public static HeaderInterceptor FromCredential(ITokenAccess credential)
         {
-            return new HeaderInterceptor((authUri, metadata) =>
+            return new HeaderInterceptor((method, authUri, metadata) =>
             {
                 // TODO(jtattermusch): Rethink synchronous wait to obtain the result.
                 var accessToken = credential.GetAccessTokenForRequestAsync(authUri, CancellationToken.None)
@@ -70,7 +70,7 @@ namespace Grpc.Auth
         public static HeaderInterceptor FromAccessToken(string accessToken)
         {
             Preconditions.CheckNotNull(accessToken);
-            return new HeaderInterceptor((authUri, metadata) =>
+            return new HeaderInterceptor((method, authUri, metadata) =>
             {
                 metadata.Add(CreateBearerTokenHeader(accessToken));
             });
