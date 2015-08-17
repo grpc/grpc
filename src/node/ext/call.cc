@@ -464,10 +464,6 @@ void Call::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(GetPeer)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
   Handle<Function> ctr = tpl->GetFunction();
-  ctr->Set(NanNew("WRITE_BUFFER_HINT"),
-           NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
-  ctr->Set(NanNew("WRITE_NO_COMPRESS"),
-           NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
   exports->Set(NanNew("Call"), ctr);
   constructor = new NanCallback(ctr);
 }
