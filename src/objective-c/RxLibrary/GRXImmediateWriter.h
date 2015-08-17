@@ -36,10 +36,17 @@
 #import "GRXWriter.h"
 
 // Utility to construct GRXWriter instances from values that are immediately available when
-// required. The returned writers all support pausing and early termination.
+// required.
 //
-// Unless the writeable callback pauses them or stops them early, these writers will do all their
-// interactions with the writeable before the start method returns.
+// Thread-safety:
+//
+// An object of this class shouldn't be messaged concurrently by more than one thread. It will start
+// messaging the writeable before |startWithWriteable:| returns, in the same thread. That is the
+// only place where the writer can be paused or stopped prematurely.
+//
+// If a paused writer of this class is resumed, it will start messaging the writeable, in the same
+// thread, before |setState:| returns. Because the object can't be legally accessed concurrently,
+// that's the only place where it can be paused again (or stopped).
 @interface GRXImmediateWriter : GRXWriter
 
 // Returns a writer that pulls values from the passed NSEnumerator instance and pushes them to

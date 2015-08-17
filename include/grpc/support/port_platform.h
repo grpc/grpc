@@ -173,6 +173,8 @@
 #endif /* _LP64 */
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
+/* Provides IPV6_RECVPKTINFO */
+#define __APPLE_USE_RFC_3542
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif

@@ -33,8 +33,10 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
+ROOT=`pwd`
+GRPCIO_TEST=$ROOT/src/python/grpcio_test
+export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 source "python"$PYVER"_virtual_environment"/bin/activate
-"python"$PYVER -B $*
+"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml"

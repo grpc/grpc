@@ -108,13 +108,13 @@ class NewCallOp : public Op {
 
  protected:
   std::string GetTypeString() const {
-    return "new call";
+    return "new_call";
   }
 };
 
 Server::Server(grpc_server *server) : wrapped_server(server) {
-  shutdown_queue = grpc_completion_queue_create();
-  grpc_server_register_completion_queue(server, shutdown_queue);
+  shutdown_queue = grpc_completion_queue_create(NULL);
+  grpc_server_register_completion_queue(server, shutdown_queue, NULL);
 }
 
 Server::~Server() {
@@ -135,10 +135,6 @@ void Server::Init(Handle<Object> exports) {
   NanSetPrototypeTemplate(
       tpl, "addHttp2Port",
       NanNew<FunctionTemplate>(AddHttp2Port)->GetFunction());
-
-  NanSetPrototypeTemplate(
-      tpl, "addSecureHttp2Port",
-      NanNew<FunctionTemplate>(AddSecureHttp2Port)->GetFunction());
 
   NanSetPrototypeTemplate(tpl, "start",
                           NanNew<FunctionTemplate>(Start)->GetFunction());
@@ -162,7 +158,7 @@ void Server::ShutdownServer() {
                                     this->shutdown_queue,
                                     NULL);
     grpc_completion_queue_pluck(this->shutdown_queue, NULL,
-                                gpr_inf_future(GPR_CLOCK_REALTIME));
+                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     this->wrapped_server = NULL;
   }
 }
@@ -180,7 +176,7 @@ NAN_METHOD(Server::New) {
   grpc_server *wrapped_server;
   grpc_completion_queue *queue = CompletionQueueAsyncWorker::GetQueue();
   if (args[0]->IsUndefined()) {
-    wrapped_server = grpc_server_create(NULL);
+    wrapped_server = grpc_server_create(NULL, NULL);
   } else if (args[0]->IsObject()) {
     Handle<Object> args_hash(args[0]->ToObject());
     Handle<Array> keys(args_hash->GetOwnPropertyNames());
@@ -209,12 +205,12 @@ NAN_METHOD(Server::New) {
         return NanThrowTypeError("Arg values must be strings");
       }
     }
-    wrapped_server = grpc_server_create(&channel_args);
+    wrapped_server = grpc_server_create(&channel_args, NULL);
     free(channel_args.args);
   } else {
     return NanThrowTypeError("Server expects an object");
   }
-  grpc_server_register_completion_queue(wrapped_server, queue);
+  grpc_server_register_completion_queue(wrapped_server, queue, NULL);
   Server *server = new Server(wrapped_server);
   server->Wrap(args.This());
   NanReturnValue(args.This());
@@ -248,43 +244,35 @@ NAN_METHOD(Server::RequestCall) {
 NAN_METHOD(Server::AddHttp2Port) {
   NanScope();
   if (!HasInstance(args.This())) {
-    return NanThrowTypeError("addHttp2Port can only be called on a Server");
-  }
-  if (!args[0]->IsString()) {
-    return NanThrowTypeError("addHttp2Port's argument must be a String");
-  }
-  Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  if (server->wrapped_server == NULL) {
-    return NanThrowError("addHttp2Port cannot be called on a shut down Server");
-  }
-  NanReturnValue(NanNew<Number>(grpc_server_add_http2_port(
-      server->wrapped_server, *NanUtf8String(args[0]))));
-}
-
-NAN_METHOD(Server::AddSecureHttp2Port) {
-  NanScope();
-  if (!HasInstance(args.This())) {
     return NanThrowTypeError(
-        "addSecureHttp2Port can only be called on a Server");
+        "addHttp2Port can only be called on a Server");
   }
   if (!args[0]->IsString()) {
     return NanThrowTypeError(
-        "addSecureHttp2Port's first argument must be a String");
+        "addHttp2Port's first argument must be a String");
   }
   if (!ServerCredentials::HasInstance(args[1])) {
     return NanThrowTypeError(
-        "addSecureHttp2Port's second argument must be ServerCredentials");
+        "addHttp2Port's second argument must be ServerCredentials");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
   if (server->wrapped_server == NULL) {
     return NanThrowError(
-        "addSecureHttp2Port cannot be called on a shut down Server");
+        "addHttp2Port cannot be called on a shut down Server");
   }
-  ServerCredentials *creds = ObjectWrap::Unwrap<ServerCredentials>(
+  ServerCredentials *creds_object = ObjectWrap::Unwrap<ServerCredentials>(
       args[1]->ToObject());
-  NanReturnValue(NanNew<Number>(grpc_server_add_secure_http2_port(
-      server->wrapped_server, *NanUtf8String(args[0]),
-      creds->GetWrappedServerCredentials())));
+  grpc_server_credentials *creds = creds_object->GetWrappedServerCredentials();
+  int port;
+  if (creds == NULL) {
+    port = grpc_server_add_insecure_http2_port(server->wrapped_server,
+                                               *NanUtf8String(args[0]));
+  } else {
+    port = grpc_server_add_secure_http2_port(server->wrapped_server,
+                                             *NanUtf8String(args[0]),
+                                             creds);
+  }
+  NanReturnValue(NanNew<Number>(port));
 }
 
 NAN_METHOD(Server::Start) {

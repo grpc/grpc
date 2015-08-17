@@ -80,9 +80,11 @@ static void on_compute_engine_detection_http_response(
   }
   gpr_mu_lock(GRPC_POLLSET_MU(&detector->pollset));
   detector->is_done = 1;
-  grpc_pollset_kick(&detector->pollset);
+  grpc_pollset_kick(&detector->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
+
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
@@ -112,12 +114,14 @@ static int is_stack_running_on_compute_engine(void) {
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    grpc_pollset_work(&detector.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&detector.pollset, &worker,
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_pollset_destroy(&detector.pollset);
+  grpc_pollset_shutdown(&detector.pollset, destroy_pollset, &detector.pollset);
 
   return detector.success;
 }
@@ -140,8 +144,9 @@ static grpc_credentials *create_default_creds_from_path(char *creds_path) {
   /* First, try an auth json key. */
   key = grpc_auth_json_key_create_from_json(json);
   if (grpc_auth_json_key_is_valid(&key)) {
-    result = grpc_jwt_credentials_create_from_auth_json_key(
-        key, grpc_max_auth_token_lifetime);
+    result =
+        grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
+            key, grpc_max_auth_token_lifetime);
     goto end;
   }
 

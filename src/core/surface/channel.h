@@ -38,7 +38,7 @@
 #include "src/core/client_config/subchannel_factory.h"
 
 grpc_channel *grpc_channel_create_from_filters(
-    const grpc_channel_filter **filters, size_t count,
+    const char *target, const grpc_channel_filter **filters, size_t count,
     const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */

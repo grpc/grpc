@@ -61,6 +61,9 @@
     <ClCompile Include="..\..\src\cpp\server\create_default_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\server\dynamic_thread_pool.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\server\fixed_size_thread_pool.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
@@ -102,9 +105,6 @@
     <ClInclude Include="..\..\include\grpc++\auth_context.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\auth_property_iterator.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -130,6 +130,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\credentials.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\dynamic_thread_pool.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\fixed_size_thread_pool.h">
@@ -205,6 +208,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\stream.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\stub_options.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h">

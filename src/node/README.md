@@ -85,7 +85,7 @@ An object with factory methods for creating credential objects for clients.
 ServerCredentials
 ```
 
-An object with factory methods fro creating credential objects for servers.
+An object with factory methods for creating credential objects for servers.
 
 [homebrew]:http://brew.sh
 [linuxbrew]:https://github.com/Homebrew/linuxbrew#installation

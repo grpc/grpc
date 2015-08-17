@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/auth_property_iterator.h>
+#include <grpc++/auth_context.h>
 
 #include <grpc/grpc_security.h>
 

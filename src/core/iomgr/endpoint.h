@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_H
 
 #include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/pollset_set.h"
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
@@ -70,13 +71,17 @@ struct grpc_endpoint_vtable {
                                       size_t nslices, grpc_endpoint_write_cb cb,
                                       void *user_data);
   void (*add_to_pollset)(grpc_endpoint *ep, grpc_pollset *pollset);
+  void (*add_to_pollset_set)(grpc_endpoint *ep, grpc_pollset_set *pollset);
   void (*shutdown)(grpc_endpoint *ep);
   void (*destroy)(grpc_endpoint *ep);
+  char *(*get_peer)(grpc_endpoint *ep);
 };
 
 /* When data is available on the connection, calls the callback with slices. */
 void grpc_endpoint_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
                                   void *user_data);
+
+char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
 /* Write slices out to the socket.
 
@@ -98,6 +103,7 @@ void grpc_endpoint_destroy(grpc_endpoint *ep);
 /* Add an endpoint to a pollset, so that when the pollset is polled, events from
    this endpoint are considered */
 void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset);
+void grpc_endpoint_add_to_pollset_set(grpc_endpoint *ep, grpc_pollset_set *pollset_set);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;

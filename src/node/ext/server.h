@@ -66,7 +66,6 @@ class Server : public ::node::ObjectWrap {
   static NAN_METHOD(New);
   static NAN_METHOD(RequestCall);
   static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(AddSecureHttp2Port);
   static NAN_METHOD(Start);
   static NAN_METHOD(Shutdown);
   static NanCallback *constructor;

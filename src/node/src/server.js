@@ -31,6 +31,11 @@
  *
  */
 
+/**
+ * Server module
+ * @module
+ */
+
 'use strict';
 
 var _ = require('lodash');
@@ -50,6 +55,7 @@ var EventEmitter = require('events').EventEmitter;
 
 /**
  * Handle an error on a call by sending it as a status
+ * @access private
  * @param {grpc.Call} call The call to send the error on
  * @param {Object} error The error object
  */
@@ -82,6 +88,7 @@ function handleError(call, error) {
 /**
  * Wait for the client to close, then emit a cancelled event if the client
  * cancelled.
+ * @access private
  * @param {grpc.Call} call The call object to wait on
  * @param {EventEmitter} emitter The event emitter to emit the cancelled event
  *     on
@@ -102,6 +109,7 @@ function waitForCancel(call, emitter) {
 
 /**
  * Send a response to a unary or client streaming call.
+ * @access private
  * @param {grpc.Call} call The call to respond on
  * @param {*} value The value to respond with
  * @param {function(*):Buffer=} serialize Serialization function for the
@@ -134,6 +142,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
 /**
  * Initialize a writable stream. This is used for both the writable and duplex
  * stream constructors.
+ * @access private
  * @param {Writable} stream The stream to set up
  * @param {function(*):Buffer=} Serialization function for responses
  */
@@ -207,6 +216,7 @@ function setUpWritable(stream, serialize) {
 /**
  * Initialize a readable stream. This is used for both the readable and duplex
  * stream constructors.
+ * @access private
  * @param {Readable} stream The stream to initialize
  * @param {function(Buffer):*=} deserialize Deserialization function for
  *     incoming data.
@@ -246,6 +256,7 @@ function ServerWritableStream(call, serialize) {
 /**
  * Start writing a chunk of data. This is an implementation of a method required
  * for implementing stream.Writable.
+ * @access private
  * @param {Buffer} chunk The chunk of data to write
  * @param {string} encoding Used to pass write flags
  * @param {function(Error=)} callback Callback to indicate that the write is
@@ -272,6 +283,11 @@ function _write(chunk, encoding, callback) {
 
 ServerWritableStream.prototype._write = _write;
 
+/**
+ * Send the initial metadata for a writable stream.
+ * @param {Object<String, Array<(String|Buffer)>>} responseMetadata Metadata
+ *   to send
+ */
 function sendMetadata(responseMetadata) {
   /* jshint validthis: true */
   if (!this.call.metadataSent) {
@@ -287,6 +303,10 @@ function sendMetadata(responseMetadata) {
   }
 }
 
+/**
+ * @inheritdoc
+ * @alias module:src/server~ServerWritableStream#sendMetadata
+ */
 ServerWritableStream.prototype.sendMetadata = sendMetadata;
 
 util.inherits(ServerReadableStream, Readable);
@@ -307,6 +327,7 @@ function ServerReadableStream(call, deserialize) {
 /**
  * Start reading from the gRPC data source. This is an implementation of a
  * method required for implementing stream.Readable
+ * @access private
  * @param {number} size Ignored
  */
 function _read(size) {
@@ -380,7 +401,21 @@ ServerDuplexStream.prototype._write = _write;
 ServerDuplexStream.prototype.sendMetadata = sendMetadata;
 
 /**
+ * Get the endpoint this call/stream is connected to.
+ * @return {string} The URI of the endpoint
+ */
+function getPeer() {
+  /* jshint validthis: true */
+  return this.call.getPeer();
+}
+
+ServerReadableStream.prototype.getPeer = getPeer;
+ServerWritableStream.prototype.getPeer = getPeer;
+ServerDuplexStream.prototype.getPeer = getPeer;
+
+/**
  * Fully handle a unary call
+ * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
  * @param {Object} metadata Metadata from the client
@@ -395,11 +430,15 @@ function handleUnary(call, handler, metadata) {
       call.startBatch(batch, function() {});
     }
   };
+  emitter.getPeer = function() {
+    return call.getPeer();
+  };
   emitter.on('error', function(error) {
     handleError(call, error);
   });
   emitter.metadata = metadata;
   waitForCancel(call, emitter);
+  emitter.call = call;
   var batch = {};
   batch[grpc.opType.RECV_MESSAGE] = true;
   call.startBatch(batch, function(err, result) {
@@ -432,6 +471,7 @@ function handleUnary(call, handler, metadata) {
 
 /**
  * Fully handle a server streaming call
+ * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
  * @param {Object} metadata Metadata from the client
@@ -460,6 +500,7 @@ function handleServerStreaming(call, handler, metadata) {
 
 /**
  * Fully handle a client streaming call
+ * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
  * @param {Object} metadata Metadata from the client
@@ -494,6 +535,7 @@ function handleClientStreaming(call, handler, metadata) {
 
 /**
  * Fully handle a bidirectional streaming call
+ * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
  * @param {Object} metadata Metadata from the client
@@ -550,7 +592,7 @@ function Server(options) {
       if (err) {
         return;
       }
-      var details = event['new call'];
+      var details = event.new_call;
       var call = details.call;
       var method = details.method;
       var metadata = details.metadata;
@@ -577,7 +619,8 @@ function Server(options) {
     }
     server.requestCall(handleNewCall);
   };
-  /** Shuts down the server.
+  /**
+   * Shuts down the server.
    */
   this.shutdown = function() {
     server.shutdown();
@@ -611,6 +654,15 @@ Server.prototype.register = function(name, handler, serialize, deserialize,
   return true;
 };
 
+/**
+ * Add a service to the server, with a corresponding implementation. If you are
+ * generating this from a proto file, you should instead use
+ * addProtoService.
+ * @param {Object<String, *>} service The service descriptor, as
+ *     {@link module:src/common.getProtobufServiceAttrs} returns
+ * @param {Object<String, function>} implementation Map of method names to
+ *     method implementation for the provided service.
+ */
 Server.prototype.addService = function(service, implementation) {
   if (this.started) {
     throw new Error('Can\'t add a service to a started server.');
@@ -648,6 +700,12 @@ Server.prototype.addService = function(service, implementation) {
   });
 };
 
+/**
+ * Add a proto service to the server, with a corresponding implementation
+ * @param {Protobuf.Reflect.Service} service The proto service descriptor
+ * @param {Object<String, function>} implementation Map of method names to
+ *     method implementation for the provided service.
+ */
 Server.prototype.addProtoService = function(service, implementation) {
   this.addService(common.getProtobufServiceAttrs(service), implementation);
 };
@@ -663,14 +721,10 @@ Server.prototype.bind = function(port, creds) {
   if (this.started) {
     throw new Error('Can\'t bind an already running server to an address');
   }
-  if (creds) {
-    return this._server.addSecureHttp2Port(port, creds);
-  } else {
-    return this._server.addHttp2Port(port);
-  }
+  return this._server.addHttp2Port(port, creds);
 };
 
 /**
- * See documentation for Server
+ * @see module:src/server~Server
  */
 exports.Server = Server;

@@ -35,6 +35,8 @@
 #import <XCTest/XCTest.h>
 
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCall+OAuth2.h>
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXWriteable.h>
@@ -43,7 +45,7 @@
 // These are a few tests similar to InteropTests, but which use the generic gRPC client (GRPCCall)
 // rather than a generated proto library on top of it.
 
-static NSString * const kHostAddress = @"grpc-test.sandbox.google.com";
+static NSString * const kHostAddress = @"localhost:5050";
 static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 
@@ -57,6 +59,9 @@ static ProtoMethod *kUnaryCallMethod;
 @implementation GRPCClientTests
 
 - (void)setUp {
+  // Register test server as non-SSL.
+  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+
   // This method isn't implemented by the remote server.
   kInexistentMethod = [[ProtoMethod alloc] initWithPackage:kPackage
                                                    service:kService
@@ -109,7 +114,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testSimpleProtoRPC {
@@ -141,7 +146,7 @@ static ProtoMethod *kUnaryCallMethod;
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testMetadata {
@@ -156,18 +161,20 @@ static ProtoMethod *kUnaryCallMethod;
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
-  call.requestMetadata[@"Authorization"] = @"Bearer bogusToken";
+  call.oauth2AccessToken = @"bogusToken";
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTFail(@"Received unexpected response: %@", value);
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNotNil(errorOrNil, @"Finished without error!");
     XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
-    XCTAssertEqualObjects(call.responseMetadata, errorOrNil.userInfo[kGRPCStatusMetadataKey],
-                          @"Metadata in the NSError object and call object differ.");
-    NSString *challengeHeader = call.responseMetadata[@"www-authenticate"];
+    XCTAssertEqualObjects(call.responseHeaders, errorOrNil.userInfo[kGRPCHeadersKey],
+                          @"Headers in the NSError object and call object differ.");
+    XCTAssertEqualObjects(call.responseTrailers, errorOrNil.userInfo[kGRPCTrailersKey],
+                          @"Trailers in the NSError object and call object differ.");
+    NSString *challengeHeader = call.oauth2ChallengeHeader;
     XCTAssertGreaterThan(challengeHeader.length, 0,
-                         @"No challenge in response headers %@", call.responseMetadata);
+                         @"No challenge in response headers %@", call.responseHeaders);
     [expectation fulfill];
   }];
 
