@@ -333,6 +333,15 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       new UnimplementedAsyncRequest(this, cqs[i]);
     }
   }
+  // Start processing rpcs.
+  if (!sync_methods_->empty()) {
+    for (auto m = sync_methods_->begin(); m != sync_methods_->end(); m++) {
+      m->SetupRequest();
+      m->Request(server_, cq_.cq());
+    }
+
+    ScheduleCallback();
+  }
 
   return true;
 }
