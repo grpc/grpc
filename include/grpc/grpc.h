@@ -561,7 +561,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
                                            void *reserved);
 
 /** Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(const char *target);
+grpc_channel *grpc_lame_client_channel_create(const char *target,
+                                              grpc_status_code error_code,
+                                              const char *error_message);
 
 /** Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);

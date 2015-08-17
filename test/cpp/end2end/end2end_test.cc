@@ -583,15 +583,15 @@ TEST_F(End2endTest, BadCredentials) {
   Status s = stub->Echo(&context, request, &response);
   EXPECT_EQ("", response.message());
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::UNKNOWN, s.error_code());
-  EXPECT_EQ("Rpc sent on a lame channel.", s.error_message());
+  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, s.error_code());
+  EXPECT_EQ("Invalid credentials.", s.error_message());
 
   ClientContext context2;
   auto stream = stub->BidiStream(&context2);
   s = stream->Finish();
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::UNKNOWN, s.error_code());
-  EXPECT_EQ("Rpc sent on a lame channel.", s.error_message());
+  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, s.error_code());
+  EXPECT_EQ("Invalid credentials.", s.error_message());
 }
 
 void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
