@@ -36,11 +36,17 @@
 #include <errno.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
+#ifdef GPR_POSIX_SOCKET
+#include <sys/un.h>
+#endif
+
+#include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/support/string.h"
 
 static const gpr_uint8 kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                             0, 0, 0, 0, 0xff, 0xff};
@@ -159,6 +165,36 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
   /* This is probably redundant, but we wouldn't want to log the wrong error. */
   errno = save_errno;
   return ret;
+}
+
+char *grpc_sockaddr_to_uri(const struct sockaddr *addr) {
+  char *temp;
+  char *result;
+  struct sockaddr_in addr_normalized;
+
+  if (grpc_sockaddr_is_v4mapped(addr, &addr_normalized)) {
+    addr = (const struct sockaddr *)&addr_normalized;
+  }
+
+  switch (addr->sa_family) {
+    case AF_INET:
+      grpc_sockaddr_to_string(&temp, addr, 0);
+      gpr_asprintf(&result, "ipv4:%s", temp);
+      gpr_free(temp);
+      return result;
+    case AF_INET6:
+      grpc_sockaddr_to_string(&temp, addr, 0);
+      gpr_asprintf(&result, "ipv6:%s", temp);
+      gpr_free(temp);
+      return result;
+#ifdef GPR_POSIX_SOCKET
+    case AF_UNIX:
+      gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un *)addr)->sun_path);
+      return result;
+#endif
+  }
+
+  return NULL;
 }
 
 int grpc_sockaddr_get_port(const struct sockaddr *addr) {

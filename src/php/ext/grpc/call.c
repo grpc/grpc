@@ -240,8 +240,8 @@ PHP_METHOD(Call, __construct) {
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
   call->wrapped = grpc_channel_create_call(
-      channel->wrapped, completion_queue, method, channel->target,
-      deadline->wrapped);
+      channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
+      channel->target, deadline->wrapped, NULL);
 }
 
 /**
@@ -400,7 +400,8 @@ PHP_METHOD(Call, startBatch) {
     ops[op_num].flags = 0;
     op_num++;
   }
-  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped);
+  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped,
+                                NULL);
   if (error != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException,
                          "start_batch was called incorrectly",
@@ -408,7 +409,7 @@ PHP_METHOD(Call, startBatch) {
     goto cleanup;
   }
   event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
-                                      gpr_inf_future(GPR_CLOCK_REALTIME));
+                                      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "The batch failed for some reason",
@@ -473,19 +474,31 @@ cleanup:
 }
 
 /**
+ * Get the endpoint this call/stream is connected to
+ * @return string The URI of the endpoint
+ */
+PHP_METHOD(Call, getPeer) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
+}
+
+/**
  * Cancel the call. This will cause the call to end with STATUS_CANCELLED if it
  * has not already ended with another status.
  */
 PHP_METHOD(Call, cancel) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  grpc_call_cancel(call->wrapped);
+  grpc_call_cancel(call->wrapped, NULL);
 }
 
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Call, startBatch, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Call, getPeer, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
+    PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;

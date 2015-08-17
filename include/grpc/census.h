@@ -44,26 +44,30 @@
 extern "C" {
 #endif
 
-/* Identify census functionality that can be enabled via census_initialize(). */
-enum census_functions {
-  CENSUS_NONE = 0,    /* Do not enable census. */
-  CENSUS_TRACING = 1, /* Enable census tracing. */
-  CENSUS_STATS = 2,   /* Enable Census stats collection. */
-  CENSUS_CPU = 4,     /* Enable Census CPU usage collection. */
-  CENSUS_ALL = CENSUS_TRACING | CENSUS_STATS | CENSUS_CPU
+/* Identify census features that can be enabled via census_initialize(). */
+enum census_features {
+  CENSUS_FEATURE_NONE = 0,    /* Do not enable census. */
+  CENSUS_FEATURE_TRACING = 1, /* Enable census tracing. */
+  CENSUS_FEATURE_STATS = 2,   /* Enable Census stats collection. */
+  CENSUS_FEATURE_CPU = 4,     /* Enable Census CPU usage collection. */
+  CENSUS_FEATURE_ALL =
+      CENSUS_FEATURE_TRACING | CENSUS_FEATURE_STATS | CENSUS_FEATURE_CPU
 };
 
-/* Shutdown and startup census subsystem. The 'functions' argument should be
- * the OR (|) of census_functions values. If census fails to initialize, then
+/** Shutdown and startup census subsystem. The 'features' argument should be
+ * the OR (|) of census_features values. If census fails to initialize, then
  * census_initialize() will return a non-zero value. It is an error to call
  * census_initialize() more than once (without an intervening
  * census_shutdown()). */
-int census_initialize(int functions);
-void census_shutdown();
+int census_initialize(int features);
+void census_shutdown(void);
 
-/* If any census feature has been initialized, this funtion will return a
- * non-zero value. */
-int census_available();
+/** Return the features supported by the current census implementation (not all
+ * features will be available on all platforms). */
+int census_supported(void);
+
+/** Return the census features currently enabled. */
+int census_enabled(void);
 
 /* Internally, Census relies on a context, which should be propagated across
  * RPC's. From the RPC subsystems viewpoint, this is an opaque data structure.
@@ -99,6 +103,72 @@ int census_context_deserialize(const char *buffer, census_context **context);
 /* The given context is destroyed. Once destroyed, using the context in
  * future census calls will result in undefined behavior. */
 void census_context_destroy(census_context *context);
+
+/* Max number of characters in tag key */
+#define CENSUS_MAX_TAG_KEY_LENGTH 20
+/* Max number of tag value characters */
+#define CENSUS_MAX_TAG_VALUE_LENGTH 50
+
+/* A Census tag set is a collection of key:value string pairs; these form the
+   basis against which Census metrics will be recorded. Keys are unique within
+   a tag set. All contexts have an associated tag set. */
+typedef struct census_tag_set census_tag_set;
+
+/* Returns a pointer to a newly created, empty tag set. If size_hint > 0,
+   indicates that the tag set is intended to hold approximately that number
+   of tags. */
+census_tag_set *census_tag_set_create(size_t size_hint);
+
+/* Add a new tag key/value to an existing tag set; if the tag key already exists
+   in the tag set, then its value is overwritten with the new one. Can also be
+   used to delete a tag, by specifying a NULL value. If key is NULL, returns
+   the number of tags in the tag set.
+   Return values:
+   -1: invalid length key or value
+   non-negative value: the number of tags in the tag set. */
+int census_tag_set_add(census_tag_set *tags, const char *key,
+                       const char *value);
+
+/* Destroys a tag set. This function must be called to prevent memory leaks.
+   Once called, the tag set cannot be used again. */
+void census_tag_set_destroy(census_tag_set *tags);
+
+/* Get a contexts tag set. */
+census_tag_set *census_context_tag_set(census_context *context);
+
+/* A read-only representation of a tag for use by census clients. */
+typedef struct {
+  size_t key_len;    /* Number of bytes in tag key. */
+  const char *key;   /* A pointer to the tag key. May not be null-terminated. */
+  size_t value_len;  /* Number of bytes in tag value. */
+  const char *value; /* Pointer to the tag value. May not be null-terminated. */
+} census_tag_const;
+
+/* Used to iterate through a tag sets contents. */
+typedef struct census_tag_set_iterator census_tag_set_iterator;
+
+/* Open a tag set for iteration. The tag set must not be modified while
+   iteration is ongoing. Returns an iterator for use in following functions. */
+census_tag_set_iterator *census_tag_set_open(census_tag_set *tags);
+
+/* Get the next tag in the tag set, by writing into the 'tag' argument. Returns
+   1 if there is a "next" tag, 0 if there are no more tags. */
+int census_tag_set_next(census_tag_set_iterator *it, census_tag_const *tag);
+
+/* Close an iterator opened by census_tag_set_open(). The iterator will be
+   invalidated, and should not be used once close is called. */
+void census_tag_set_close(census_tag_set_iterator *it);
+
+/* A census statistic to be recorded comprises two parts: an ID for the
+ * particular statistic and the value to be recorded against it. */
+typedef struct {
+  int id;
+  double value;
+} census_stat;
+
+/* Record new stats against the given context. */
+void census_record_stat(census_context *context, census_stat *stats,
+                        size_t nstats);
 
 #ifdef __cplusplus
 }

@@ -116,10 +116,9 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   if (op->send_ops) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_strvec_add(&b, gpr_strdup("SEND"));
-    if (op->is_last_send) {
-      gpr_strvec_add(&b, gpr_strdup("_LAST"));
-    }
+    gpr_asprintf(&tmp, "SEND%s:%p", op->is_last_send ? "_LAST" : "",
+                 op->on_done_send);
+    gpr_strvec_add(&b, tmp);
     gpr_strvec_add(&b, gpr_strdup("["));
     gpr_strvec_add(&b, grpc_sopb_string(op->send_ops));
     gpr_strvec_add(&b, gpr_strdup("]"));
@@ -128,7 +127,8 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
   if (op->recv_ops) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_asprintf(&tmp, "RECV:max_recv_bytes=%d", op->max_recv_bytes);
+    gpr_asprintf(&tmp, "RECV:%p:max_recv_bytes=%d", op->on_done_recv,
+                 op->max_recv_bytes);
     gpr_strvec_add(&b, tmp);
   }
 

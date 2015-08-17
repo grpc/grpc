@@ -31,7 +31,7 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 
-syntax = "proto2";
+syntax = "proto3";
 
 import "test/proto/empty.proto";
 import "test/proto/messages.proto";
@@ -78,4 +78,10 @@ service TestService {
 service UnimplementedService {
   // A call that no server should implement
   rpc UnimplementedCall(grpc.testing.Empty) returns(grpc.testing.Empty);  
+}
+
+// A service used to control reconnect server.
+service ReconnectService {
+  rpc Start(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc Stop(grpc.testing.Empty) returns (grpc.testing.ReconnectInfo);
 }

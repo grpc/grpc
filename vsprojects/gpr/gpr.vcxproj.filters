@@ -4,9 +4,6 @@
     <ClCompile Include="..\..\src\core\support\alloc.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\cancellable.c">
-      <Filter>src\core\support</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\support\cmdline.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -130,9 +127,6 @@
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\atm_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\cancellable_platform.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\cmdline.h">

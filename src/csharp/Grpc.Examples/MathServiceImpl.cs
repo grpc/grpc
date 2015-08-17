@@ -54,8 +54,13 @@ namespace math
         {
             if (request.Limit <= 0)
             {
-                // TODO(jtattermusch): support cancellation
-                throw new NotImplementedException("Not implemented yet");
+                // keep streaming the sequence until cancelled.
+                IEnumerator<Num> fibEnumerator = FibInternal(long.MaxValue).GetEnumerator();
+                while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
+                {
+                    await responseStream.WriteAsync(fibEnumerator.Current);
+                    await Task.Delay(100);
+                }
             }
 
             if (request.Limit > 0)
@@ -70,7 +75,7 @@ namespace math
         public async Task<Num> Sum(IAsyncStreamReader<Num> requestStream, ServerCallContext context)
         {
             long sum = 0;
-            await requestStream.ForEach(async num =>
+            await requestStream.ForEachAsync(async num =>
             {
                 sum += num.Num_;
             });
@@ -79,10 +84,7 @@ namespace math
 
         public async Task DivMany(IAsyncStreamReader<DivArgs> requestStream, IServerStreamWriter<DivReply> responseStream, ServerCallContext context)
         {
-            await requestStream.ForEach(async divArgs =>
-            {
-                await responseStream.WriteAsync(DivInternal(divArgs));
-            });
+            await requestStream.ForEachAsync(async divArgs => await responseStream.WriteAsync(DivInternal(divArgs)));
         }
 
         static DivReply DivInternal(DivArgs args)

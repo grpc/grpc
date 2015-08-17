@@ -35,6 +35,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -52,8 +53,13 @@ namespace Grpc.Core
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_shutdown();
 
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern IntPtr grpcsharp_version_string();  // returns not-owned const char*
+
         static object staticLock = new object();
         static GrpcEnvironment instance;
+
+        static ILogger logger = new ConsoleLogger();
 
         readonly GrpcThreadPool threadPool;
         readonly CompletionRegistry completionRegistry;
@@ -93,17 +99,38 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Gets application-wide logger used by gRPC.
+        /// </summary>
+        /// <value>The logger.</value>
+        public static ILogger Logger
+        {
+            get
+            {
+                return logger;
+            }
+        }
+
+        /// <summary>
+        /// Sets the application-wide logger that should be used by gRPC.
+        /// </summary>
+        public static void SetLogger(ILogger customLogger)
+        {
+            Preconditions.CheckNotNull(customLogger, "customLogger");
+            logger = customLogger;
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
-            GrpcLog.RedirectNativeLogs(Console.Error);
+            NativeLogRedirector.Redirect();
             grpcsharp_init();
             completionRegistry = new CompletionRegistry(this);
             threadPool = new GrpcThreadPool(this, THREAD_POOL_SIZE);
             threadPool.Start();
             // TODO: use proper logging here
-            Console.WriteLine("GRPC initialized.");
+            Logger.Info("gRPC initialized.");
         }
 
         /// <summary>
@@ -140,6 +167,15 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Gets version of gRPC C core.
+        /// </summary>
+        internal static string GetCoreVersionString()
+        {
+            var ptr = grpcsharp_version_string();  // the pointer is not owned
+            return Marshal.PtrToStringAnsi(ptr);
+        }
+
+        /// <summary>
         /// Shuts down this environment.
         /// </summary>
         private void Close()
@@ -154,26 +190,7 @@ namespace Grpc.Core
 
             debugStats.CheckOK();
 
-            // TODO: use proper logging here
-            Console.WriteLine("GRPC shutdown.");
-        }
-
-        /// <summary>
-        /// Shuts down this environment asynchronously.
-        /// </summary>
-        private Task CloseAsync()
-        {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Close();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Error occured while shutting down GrpcEnvironment: " + e);
-                }
-            });
+            Logger.Info("gRPC shutdown.");
         }
     }
 }

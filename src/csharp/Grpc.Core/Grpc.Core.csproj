@@ -21,23 +21,28 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseSigned|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\ReleaseSigned</OutputPath>
+    <DefineConstants>SIGNED</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>C:\keys\Grpc.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Interactive.Async">
       <HintPath>..\packages\Ix-Async.1.2.3\lib\net45\System.Interactive.Async.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>..\packages\System.Collections.Immutable.1.1.36\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -47,12 +52,11 @@
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
-    <Compile Include="Internal\GrpcLog.cs" />
+    <Compile Include="ServerPort.cs" />
     <Compile Include="Version.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
-    <Compile Include="Call.cs" />
     <Compile Include="AsyncClientStreamingCall.cs" />
     <Compile Include="GrpcEnvironment.cs" />
     <Compile Include="Status.cs" />
@@ -73,14 +77,12 @@
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
-    <Compile Include="Utils\ExceptionHelper.cs" />
     <Compile Include="Internal\CredentialsSafeHandle.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
     <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
-    <Compile Include="OperationFailedException.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Utils\Preconditions.cs" />
     <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
@@ -103,6 +105,17 @@
     <Compile Include="ChannelOptions.cs" />
     <Compile Include="AsyncUnaryCall.cs" />
     <Compile Include="VersionInfo.cs" />
+    <Compile Include="Internal\CStringSafeHandle.cs" />
+    <Compile Include="KeyCertificatePair.cs" />
+    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="Logging\ConsoleLogger.cs" />
+    <Compile Include="Internal\NativeLogRedirector.cs" />
+    <Compile Include="ChannelState.cs" />
+    <Compile Include="CallInvocationDetails.cs" />
+    <Compile Include="CallOptions.cs" />
+    <Compile Include="CompressionLevel.cs" />
+    <Compile Include="WriteOptions.cs" />
+    <Compile Include="ContextPropagationToken.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -133,4 +146,5 @@
   </Target>
   <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
+  <ItemGroup />
 </Project>

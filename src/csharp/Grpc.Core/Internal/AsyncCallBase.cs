@@ -38,6 +38,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -48,6 +49,8 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal abstract class AsyncCallBase<TWrite, TRead>
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
+
         readonly Func<TWrite, byte[]> serializer;
         readonly Func<byte[], TRead> deserializer;
 
@@ -67,6 +70,9 @@ namespace Grpc.Core.Internal
         protected bool halfcloseRequested;
         protected bool halfclosed;
         protected bool finished;  // True if close has been received from the peer.
+
+        protected bool initialMetadataSent;
+        protected long streamingWritesCounter;
 
         public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer)
         {
@@ -120,7 +126,7 @@ namespace Grpc.Core.Internal
         /// Initiates sending a message. Only one send operation can be active at a time.
         /// completionDelegate is invoked upon completion.
         /// </summary>
-        protected void StartSendMessageInternal(TWrite msg, AsyncCompletionDelegate<object> completionDelegate)
+        protected void StartSendMessageInternal(TWrite msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
         {
             byte[] payload = UnsafeSerialize(msg);
 
@@ -129,8 +135,11 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed();
 
-                call.StartSendMessage(payload, HandleSendFinished);
+                call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
+
                 sendCompletionDelegate = completionDelegate;
+                initialMetadataSent = true;
+                streamingWritesCounter++;
             }
         }
 
@@ -233,9 +242,9 @@ namespace Grpc.Core.Internal
                 payload = serializer(msg);
                 return true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine("Exception occured while trying to serialize message");
+                Logger.Error(e, "Exception occured while trying to serialize message");
                 payload = null;
                 return false;
             }
@@ -248,9 +257,9 @@ namespace Grpc.Core.Internal
                 msg = deserializer(payload);
                 return true;
             } 
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine("Exception occured while trying to deserialize message");
+                Logger.Error(e, "Exception occured while trying to deserialize message.");
                 msg = default(TRead);
                 return false;
             }
@@ -264,7 +273,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+                Logger.Error(e, "Exception occured while invoking completion delegate.");
             }
         }
 
@@ -284,7 +293,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new OperationFailedException("Send failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Send failed"));
             }
             else
             {
@@ -309,7 +318,7 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new OperationFailedException("Halfclose failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Halfclose failed"));
             }
             else
             {

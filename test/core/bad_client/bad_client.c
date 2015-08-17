@@ -102,11 +102,11 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Create server, completion events */
   a.server = grpc_server_create_from_filters(NULL, 0, NULL);
-  a.cq = grpc_completion_queue_create();
+  a.cq = grpc_completion_queue_create(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
   a.validator = validator;
-  grpc_server_register_completion_queue(a.server, a.cq);
+  grpc_server_register_completion_queue(a.server, a.cq, NULL);
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(NULL, sfd.server, mdctx, 0);
   server_setup_transport(&a, transport, mdctx);
@@ -151,7 +151,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(a.cq, NULL,
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1))
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1),
+                                         NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);

@@ -39,7 +39,7 @@ endlocal
 goto :eof
 
 :build
-msbuild /t:grpc_csharp_ext /P:Platform=%1 /P:Configuration=%2 /P:PlatformToolset=%3 /P:OutDir=..\nuget_package\output\%3\%1\%2\ /P:IntDir=..\nuget_package\tmp\%3\%1\%2\ ..\grpc.sln || goto :eof
+msbuild /P:Platform=%1 /P:Configuration=%2 /P:PlatformToolset=%3 /P:OutDir=..\nuget_package\output\%3\%1\%2\ /P:IntDir=..\nuget_package\tmp\%3\%1\%2\ ..\grpc_csharp_ext.sln || goto :eof
 goto :eof
 
 

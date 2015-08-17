@@ -119,6 +119,11 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   grpc_transport_destroy(cd->transport);
 }
 
+static char *con_get_peer(grpc_call_element *elem) {
+  channel_data *chand = elem->channel_data;
+  return grpc_transport_get_peer(chand->transport);
+}
+
 const grpc_channel_filter grpc_connected_channel_filter = {
     con_start_transport_stream_op,
     con_start_transport_op,
@@ -128,6 +133,7 @@ const grpc_channel_filter grpc_connected_channel_filter = {
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    con_get_peer,
     "connected",
 };
 
