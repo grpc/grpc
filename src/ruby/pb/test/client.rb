@@ -46,8 +46,6 @@ $LOAD_PATH.unshift(pb_dir) unless $LOAD_PATH.include?(pb_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'optparse'
-require 'minitest'
-require 'minitest/assertions'
 
 require 'grpc'
 require 'googleauth'
@@ -60,6 +58,15 @@ require 'test/proto/test_services'
 require 'signet/ssl_config'
 
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
+
+# AssertionError is use to indicate interop test failures.
+class AssertionError < RuntimeError; end
+
+# Fails with AssertionError if the block does evaluate to true
+def assert(msg = 'unknown cause')
+  fail 'No assertion block provided' unless block_given?
+  fail AssertionError, msg unless yield
+end
 
 # loads the certificates used to access the test server securely.
 def load_test_certs
@@ -141,10 +148,8 @@ end
 
 # a PingPongPlayer implements the ping pong bidi test.
 class PingPongPlayer
-  include Minitest::Assertions
   include Grpc::Testing
   include Grpc::Testing::PayloadType
-  attr_accessor :assertions # required by Minitest::Assertions
   attr_accessor :queue
   attr_accessor :canceller_op
 
@@ -152,7 +157,6 @@ class PingPongPlayer
   def initialize(msg_sizes)
     @queue = Queue.new
     @msg_sizes = msg_sizes
-    @assertions = 0  # required by Minitest::Assertions
     @canceller_op = nil  # used to cancel after the first response
   end
 
@@ -167,9 +171,10 @@ class PingPongPlayer
                         response_parameters: [p_cls.new(size: resp_size)])
       yield req
       resp = @queue.pop
-      assert_equal(:COMPRESSABLE, resp.payload.type, 'payload type is wrong')
-      assert_equal(resp_size, resp.payload.body.length,
-                   "payload body #{count} has the wrong length")
+      assert('payload type is wrong') { :COMPRESSABLE == resp.payload.type }
+      assert("payload body #{count} has the wrong length") do
+        resp_size == resp.payload.body.length
+      end
       p "OK: ping_pong #{count}"
       count += 1
       unless @canceller_op.nil?
@@ -182,20 +187,17 @@ end
 
 # defines methods corresponding to each interop test case.
 class NamedTests
-  include Minitest::Assertions
   include Grpc::Testing
   include Grpc::Testing::PayloadType
-  attr_accessor :assertions # required by Minitest::Assertions
 
   def initialize(stub, args)
-    @assertions = 0  # required by Minitest::Assertions
     @stub = stub
     @args = args
   end
 
   def empty_unary
     resp = @stub.empty_call(Empty.new)
-    assert resp.is_a?(Empty), 'empty_unary: invalid response'
+    assert('empty_unary: invalid response') { resp.is_a?(Empty) }
     p 'OK: empty_unary'
   end
 
@@ -214,28 +216,28 @@ class NamedTests
     wanted_email = MultiJson.load(json_key)['client_email']
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true)
-    assert_equal(wanted_email, resp.username,
-                 'service_account_creds: incorrect username')
-    assert(@args.oauth_scope.include?(resp.oauth_scope),
-           'service_account_creds: incorrect oauth_scope')
-    p 'OK: service_account_creds'
+    assert("#{__callee__}: bad username") { wanted_email == resp.username }
+    assert("#{__callee__}: bad oauth scope") do
+      @args.oauth_scope.include?(resp.oauth_scope)
+    end
+    p "OK: #{__callee__}"
   end
 
   def jwt_token_creds
     json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
     resp = perform_large_unary(fill_username: true)
-    assert_equal(wanted_email, resp.username,
-                 'service_account_creds: incorrect username')
-    p 'OK: jwt_token_creds'
+    assert("#{__callee__}: bad username") { wanted_email == resp.username }
+    p "OK: #{__callee__}"
   end
 
   def compute_engine_creds
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true)
-    assert_equal(@args.default_service_account, resp.username,
-                 'compute_engine_creds: incorrect username')
-    p 'OK: compute_engine_creds'
+    assert("#{__callee__}: bad username") do
+      @args.default_service_account == resp.username
+    end
+    p "OK: #{__callee__}"
   end
 
   def oauth2_auth_token
@@ -243,10 +245,10 @@ class NamedTests
                                fill_oauth_scope: true)
     json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
-    assert_equal(wanted_email, resp.username,
-                 "#{__callee__}: incorrect username")
-    assert(@args.oauth_scope.include?(resp.oauth_scope),
-           "#{__callee__}: incorrect oauth_scope")
+    assert("#{__callee__}: bad username") { wanted_email == resp.username }
+    assert("#{__callee__}: bad oauth scope") do
+      @args.oauth_scope.include?(resp.oauth_scope)
+    end
     p "OK: #{__callee__}"
   end
 
@@ -258,10 +260,10 @@ class NamedTests
                                **kw)
     json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
-    assert_equal(wanted_email, resp.username,
-                 "#{__callee__}: incorrect username")
-    assert(@args.oauth_scope.include?(resp.oauth_scope),
-           "#{__callee__}: incorrect oauth_scope")
+    assert("#{__callee__}: bad username") { wanted_email == resp.username }
+    assert("#{__callee__}: bad oauth scope") do
+      @args.oauth_scope.include?(resp.oauth_scope)
+    end
     p "OK: #{__callee__}"
   end
 
@@ -273,9 +275,10 @@ class NamedTests
       StreamingInputCallRequest.new(payload: req)
     end
     resp = @stub.streaming_input_call(reqs)
-    assert_equal(wanted_aggregate_size, resp.aggregated_payload_size,
-                 'client_streaming: aggregate payload size is incorrect')
-    p 'OK: client_streaming'
+    assert("#{__callee__}: aggregate payload size is incorrect") do
+      wanted_aggregate_size == resp.aggregated_payload_size
+    end
+    p "OK: #{__callee__}"
   end
 
   def server_streaming
@@ -285,13 +288,15 @@ class NamedTests
                                          response_parameters: response_spec)
     resps = @stub.streaming_output_call(req)
     resps.each_with_index do |r, i|
-      assert i < msg_sizes.length, 'too many responses'
-      assert_equal(:COMPRESSABLE, r.payload.type,
-                   'payload type is wrong')
-      assert_equal(msg_sizes[i], r.payload.body.length,
-                   'payload body #{i} has the wrong length')
+      assert("#{__callee__}: too many responses") { i < msg_sizes.length }
+      assert("#{__callee__}: payload body #{i} has the wrong length") do
+        msg_sizes[i] == r.payload.body.length
+      end
+      assert("#{__callee__}: payload type is wrong") do
+        :COMPRESSABLE == r.payload.type
+      end
     end
-    p 'OK: server_streaming'
+    p "OK: #{__callee__}"
   end
 
   def ping_pong
@@ -299,7 +304,7 @@ class NamedTests
     ppp = PingPongPlayer.new(msg_sizes)
     resps = @stub.full_duplex_call(ppp.each_item)
     resps.each { |r| ppp.queue.push(r) }
-    p 'OK: ping_pong'
+    p "OK: #{__callee__}"
   end
 
   def timeout_on_sleeping_server
@@ -309,7 +314,9 @@ class NamedTests
     resps.each { |r| ppp.queue.push(r) }
     fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
   rescue GRPC::BadStatus => e
-    assert_equal(e.code, GRPC::Core::StatusCodes::DEADLINE_EXCEEDED)
+    assert("#{__callee__}: status was wrong") do
+      e.code == GRPC::Core::StatusCodes::DEADLINE_EXCEEDED
+    end
     p "OK: #{__callee__}"
   end
 
@@ -321,8 +328,10 @@ class NamedTests
       ppp.queue.push(r)
       count += 1
     end
-    assert_equal(0, count, 'too many responses, expect 0')
-    p 'OK: empty_stream'
+    assert("#{__callee__}: too many responses expected 0") do
+      count == 0
+    end
+    p "OK: #{__callee__}"
   end
 
   def cancel_after_begin
@@ -333,9 +342,11 @@ class NamedTests
     end
     op = @stub.streaming_input_call(reqs, return_op: true)
     op.cancel
-    assert_raises(GRPC::Cancelled) { op.execute }
-    assert(op.cancelled, 'call operation should be CANCELLED')
-    p 'OK: cancel_after_begin'
+    op.execute
+    fail 'Should have raised GRPC:Cancelled'
+  rescue GRPC::Cancelled
+    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled }
+    p "OK: #{__callee__}"
   end
 
   def cancel_after_first_response
@@ -343,10 +354,12 @@ class NamedTests
     ppp = PingPongPlayer.new(msg_sizes)
     op = @stub.full_duplex_call(ppp.each_item, return_op: true)
     ppp.canceller_op = op  # causes ppp to cancel after the 1st message
-    assert_raises(GRPC::Cancelled) { op.execute.each { |r| ppp.queue.push(r) } }
+    op.execute.each { |r| ppp.queue.push(r) }
+    fail 'Should have raised GRPC:Cancelled'
+  rescue GRPC::Cancelled
+    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled }
     op.wait
-    assert(op.cancelled, 'call operation was not CANCELLED')
-    p 'OK: cancel_after_first_response'
+    p "OK: #{__callee__}"
   end
 
   def all
@@ -369,12 +382,15 @@ class NamedTests
     req.fill_username = fill_username
     req.fill_oauth_scope = fill_oauth_scope
     resp = @stub.unary_call(req, **kw)
-    assert_equal(:COMPRESSABLE, resp.payload.type,
-                 'large_unary: payload had the wrong type')
-    assert_equal(wanted_response_size, resp.payload.body.length,
-                 'large_unary: payload had the wrong length')
-    assert_equal(nulls(wanted_response_size), resp.payload.body,
-                 'large_unary: payload content is invalid')
+    assert('payload type is wrong') do
+      :COMPRESSABLE == resp.payload.type
+    end
+    assert('payload body has the wrong length') do
+      wanted_response_size == resp.payload.body.length
+    end
+    assert('payload body is invalid') do
+      nulls(wanted_response_size) == resp.payload.body
+    end
     resp
   end
 end
