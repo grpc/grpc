@@ -270,7 +270,11 @@ function _write(chunk, encoding, callback) {
     this.call.metadataSent = true;
   }
   var message = this.serialize(chunk);
-  message.grpcWriteFlags = encoding;
+  if (_.isFinite(encoding)) {
+    /* Attach the encoding if it is a finite number. This is the closest we
+     * can get to checking that it is valid flags */
+    message.grpcWriteFlags = encoding;
+  }
   batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, value) {
     if (err) {
