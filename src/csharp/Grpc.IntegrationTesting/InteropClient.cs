@@ -409,7 +409,7 @@ namespace Grpc.IntegrationTesting
                 .Build();
 
             var headers = new Metadata();
-            headerInterceptor("", headers);
+            headerInterceptor(null, "", headers);
             var response = client.UnaryCall(request, headers: headers);
 
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
