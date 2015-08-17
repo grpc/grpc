@@ -1056,6 +1056,17 @@
   }, 
   {
     "ci_platforms": [
+      "posix"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "udp_server_test", 
+    "platforms": [
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
       "linux", 
       "mac", 
       "posix", 
@@ -1471,6 +1482,23 @@
     "flaky": false, 
     "language": "c++", 
     "name": "thread_stress_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "zookeeper_test", 
     "platforms": [
       "linux", 
       "mac", 

@@ -200,6 +200,7 @@ cc_library(
     "src/core/iomgr/tcp_server.h",
     "src/core/iomgr/tcp_windows.h",
     "src/core/iomgr/time_averaged_stats.h",
+    "src/core/iomgr/udp_server.h",
     "src/core/iomgr/wakeup_fd_pipe.h",
     "src/core/iomgr/wakeup_fd_posix.h",
     "src/core/json/json.h",
@@ -324,6 +325,7 @@ cc_library(
     "src/core/iomgr/tcp_server_windows.c",
     "src/core/iomgr/tcp_windows.c",
     "src/core/iomgr/time_averaged_stats.c",
+    "src/core/iomgr/udp_server.c",
     "src/core/iomgr/wakeup_fd_eventfd.c",
     "src/core/iomgr/wakeup_fd_nospecial.c",
     "src/core/iomgr/wakeup_fd_pipe.c",
@@ -464,6 +466,7 @@ cc_library(
     "src/core/iomgr/tcp_server.h",
     "src/core/iomgr/tcp_windows.h",
     "src/core/iomgr/time_averaged_stats.h",
+    "src/core/iomgr/udp_server.h",
     "src/core/iomgr/wakeup_fd_pipe.h",
     "src/core/iomgr/wakeup_fd_posix.h",
     "src/core/json/json.h",
@@ -568,6 +571,7 @@ cc_library(
     "src/core/iomgr/tcp_server_windows.c",
     "src/core/iomgr/tcp_windows.c",
     "src/core/iomgr/time_averaged_stats.c",
+    "src/core/iomgr/udp_server.c",
     "src/core/iomgr/wakeup_fd_eventfd.c",
     "src/core/iomgr/wakeup_fd_nospecial.c",
     "src/core/iomgr/wakeup_fd_pipe.c",
@@ -641,6 +645,26 @@ cc_library(
   ],
   deps = [
     ":gpr",
+  ],
+)
+
+
+cc_library(
+  name = "grpc_zookeeper",
+  srcs = [
+    "src/core/client_config/resolvers/zookeeper_resolver.h",
+    "src/core/client_config/resolvers/zookeeper_resolver.c",
+  ],
+  hdrs = [
+    "include/grpc/grpc_zookeeper.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":gpr",
+    ":grpc",
   ],
 )
 
@@ -1051,6 +1075,7 @@ objc_library(
     "src/core/iomgr/tcp_server_windows.c",
     "src/core/iomgr/tcp_windows.c",
     "src/core/iomgr/time_averaged_stats.c",
+    "src/core/iomgr/udp_server.c",
     "src/core/iomgr/wakeup_fd_eventfd.c",
     "src/core/iomgr/wakeup_fd_nospecial.c",
     "src/core/iomgr/wakeup_fd_pipe.c",
@@ -1188,6 +1213,7 @@ objc_library(
     "src/core/iomgr/tcp_server.h",
     "src/core/iomgr/tcp_windows.h",
     "src/core/iomgr/time_averaged_stats.h",
+    "src/core/iomgr/udp_server.h",
     "src/core/iomgr/wakeup_fd_pipe.h",
     "src/core/iomgr/wakeup_fd_posix.h",
     "src/core/json/json.h",
