@@ -127,7 +127,7 @@ class Call(object):
 
   def write(self, message, tag):
     return self._internal.start_batch([
-          _types.OpArgs.send_message(message)
+          _types.OpArgs.send_message(message, 0)
       ], _TagAdapter(tag, Event.Kind.WRITE_ACCEPTED))
 
   def complete(self, tag):

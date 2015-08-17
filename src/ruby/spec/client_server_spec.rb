@@ -61,7 +61,7 @@ shared_context 'setup: tags' do
   end
 
   def new_client_call
-    @ch.create_call(@client_queue, '/method', nil, deadline)
+    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
   end
 end
 

@@ -470,7 +470,8 @@ else:
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,
-                           'CONFIG=%s' % cfg] + targets)
+                           'CONFIG=%s' % cfg] + targets,
+                          timeout_seconds=30*60)
 
 build_steps = [make_jobspec(cfg,
                             list(set(itertools.chain.from_iterable(

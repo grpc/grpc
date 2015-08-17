@@ -117,7 +117,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
     client_initial_metadata = [(CLIENT_METADATA_ASCII_KEY, CLIENT_METADATA_ASCII_VALUE), (CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)]
     client_start_batch_result = client_call.start_batch([
         _types.OpArgs.send_initial_metadata(client_initial_metadata),
-        _types.OpArgs.send_message(REQUEST),
+        _types.OpArgs.send_message(REQUEST, 0),
         _types.OpArgs.send_close_from_client(),
         _types.OpArgs.recv_initial_metadata(),
         _types.OpArgs.recv_message(),
@@ -144,6 +144,15 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.assertEquals(HOST, request_event.call_details.host)
     self.assertLess(abs(DEADLINE - request_event.call_details.deadline), DEADLINE_TOLERANCE)
 
+    # Check that the channel is connected, and that both it and the call have
+    # the proper target and peer; do this after the first flurry of messages to
+    # avoid the possibility that connection was delayed by the core until the
+    # first message was sent.
+    self.assertEqual(_types.ConnectivityState.READY,
+                     self.client_channel.check_connectivity_state(False))
+    self.assertIsNotNone(self.client_channel.target())
+    self.assertIsNotNone(client_call.peer())
+
     server_call_tag = object()
     server_call = request_event.call
     server_initial_metadata = [(SERVER_INITIAL_METADATA_KEY, SERVER_INITIAL_METADATA_VALUE)]
@@ -151,7 +160,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
     server_start_batch_result = server_call.start_batch([
         _types.OpArgs.send_initial_metadata(server_initial_metadata),
         _types.OpArgs.recv_message(),
-        _types.OpArgs.send_message(RESPONSE),
+        _types.OpArgs.send_message(RESPONSE, 0),
         _types.OpArgs.recv_close_on_server(),
         _types.OpArgs.send_status_from_server(server_trailing_metadata, SERVER_STATUS_CODE, SERVER_STATUS_DETAILS)
     ], server_call_tag)

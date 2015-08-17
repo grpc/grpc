@@ -741,6 +741,28 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   EXPECT_TRUE(recv_status.ok());
 }
 
+TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
+  std::shared_ptr<ChannelInterface> channel = CreateChannel(
+      server_address_.str(), InsecureCredentials(), ChannelArguments());
+  std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
+  stub =
+      std::move(grpc::cpp::test::util::UnimplementedService::NewStub(channel));
+  EchoRequest send_request;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  send_request.set_message("Hello");
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+      stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
+
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+  Verifier(GetParam()).Expect(4, false).Verify(cq_.get());
+
+  EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
+  EXPECT_EQ("", recv_status.error_message());
+}
+
 INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
                         ::testing::Values(false, true));
 
