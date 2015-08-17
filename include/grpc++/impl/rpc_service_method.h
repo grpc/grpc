@@ -208,6 +208,27 @@ class BidiStreamingHandler : public MethodHandler {
   ServiceType* service_;
 };
 
+// Handle unknown method by returning UNIMPLEMENTED error.
+class UnknownMethodHandler : public MethodHandler {
+ public:
+  template <class T>
+  static void FillOps(ServerContext* context, T* ops) {
+    Status status(StatusCode::UNIMPLEMENTED, "");
+    if (!context->sent_initial_metadata_) {
+      ops->SendInitialMetadata(context->initial_metadata_);
+      context->sent_initial_metadata_ = true;
+    }
+    ops->ServerSendStatus(context->trailing_metadata_, status);
+  }
+
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+    CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
+    FillOps(param.server_context, &ops);
+    param.call->PerformOps(&ops);
+    param.call->cq()->Pluck(&ops);
+  }
+};
+
 // Server side rpc method class
 class RpcServiceMethod : public RpcMethod {
  public:

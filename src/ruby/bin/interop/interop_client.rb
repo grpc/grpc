@@ -110,6 +110,14 @@ def create_stub(opts)
       end
     end
 
+    if opts.test_case == 'oauth2_auth_token'
+      auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
+      kw = auth_creds.updater_proc.call({})  # gives as an auth token
+
+      # use a metadata update proc that just adds the auth token.
+      stub_opts[:update_metadata] = proc { |md| md.merge(kw) }
+    end
+
     if opts.test_case == 'jwt_token_creds'  # don't use a scope
       auth_creds = Google::Auth.get_application_default
       stub_opts[:update_metadata] = auth_creds.updater_proc
@@ -228,6 +236,33 @@ class NamedTests
     p 'OK: compute_engine_creds'
   end
 
+  def oauth2_auth_token
+    resp = perform_large_unary(fill_username: true,
+                               fill_oauth_scope: true)
+    json_key = File.read(ENV[AUTH_ENV])
+    wanted_email = MultiJson.load(json_key)['client_email']
+    assert_equal(wanted_email, resp.username,
+                 "#{__callee__}: incorrect username")
+    assert(@args.oauth_scope.include?(resp.oauth_scope),
+           "#{__callee__}: incorrect oauth_scope")
+    p "OK: #{__callee__}"
+  end
+
+  def per_rpc_creds
+    auth_creds = Google::Auth.get_application_default(@args.oauth_scope)
+    kw = auth_creds.updater_proc.call({})
+    resp = perform_large_unary(fill_username: true,
+                               fill_oauth_scope: true,
+                               **kw)
+    json_key = File.read(ENV[AUTH_ENV])
+    wanted_email = MultiJson.load(json_key)['client_email']
+    assert_equal(wanted_email, resp.username,
+                 "#{__callee__}: incorrect username")
+    assert(@args.oauth_scope.include?(resp.oauth_scope),
+           "#{__callee__}: incorrect oauth_scope")
+    p "OK: #{__callee__}"
+  end
+
   def client_streaming
     msg_sizes = [27_182, 8, 1828, 45_904]
     wanted_aggregate_size = 74_922
@@ -265,6 +300,29 @@ class NamedTests
     p 'OK: ping_pong'
   end
 
+  def timeout_on_sleeping_server
+    msg_sizes = [[27_182, 31_415]]
+    ppp = PingPongPlayer.new(msg_sizes)
+    resps = @stub.full_duplex_call(ppp.each_item, timeout: 0.001)
+    resps.each { |r| ppp.queue.push(r) }
+    fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
+  rescue GRPC::BadStatus => e
+    assert_equal(e.code, GRPC::Core::StatusCodes::DEADLINE_EXCEEDED)
+    p "OK: #{__callee__}"
+  end
+
+  def empty_stream
+    ppp = PingPongPlayer.new([])
+    resps = @stub.full_duplex_call(ppp.each_item)
+    count = 0
+    resps.each do
+      |r| ppp.queue.push(r)
+      count += 1
+    end
+    assert_equal(0, count, 'too many responses, expect 0')
+    p 'OK: empty_stream'
+  end
+
   def cancel_after_begin
     msg_sizes = [27_182, 8, 1828, 45_904]
     reqs = msg_sizes.map do |x|
@@ -283,7 +341,7 @@ class NamedTests
     ppp = PingPongPlayer.new(msg_sizes)
     op = @stub.full_duplex_call(ppp.each_item, return_op: true)
     ppp.canceller_op = op  # causes ppp to cancel after the 1st message
-    op.execute.each { |r| ppp.queue.push(r) }
+    assert_raises(GRPC::Cancelled) { op.execute.each { |r| ppp.queue.push(r) } }
     op.wait
     assert(op.cancelled, 'call operation was not CANCELLED')
     p 'OK: cancel_after_first_response'
@@ -300,7 +358,7 @@ class NamedTests
 
   private
 
-  def perform_large_unary(fill_username: false, fill_oauth_scope: false)
+  def perform_large_unary(fill_username: false, fill_oauth_scope: false, **kw)
     req_size, wanted_response_size = 271_828, 314_159
     payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
     req = SimpleRequest.new(response_type: :COMPRESSABLE,
@@ -308,7 +366,7 @@ class NamedTests
                             payload: payload)
     req.fill_username = fill_username
     req.fill_oauth_scope = fill_oauth_scope
-    resp = @stub.unary_call(req)
+    resp = @stub.unary_call(req, **kw)
     assert_equal(:COMPRESSABLE, resp.payload.type,
                  'large_unary: payload had the wrong type')
     assert_equal(wanted_response_size, resp.payload.body.length,

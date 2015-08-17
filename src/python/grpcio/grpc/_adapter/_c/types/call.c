@@ -42,6 +42,7 @@
 PyMethodDef pygrpc_Call_methods[] = {
     {"start_batch", (PyCFunction)pygrpc_Call_start_batch, METH_KEYWORDS, ""},
     {"cancel", (PyCFunction)pygrpc_Call_cancel, METH_KEYWORDS, ""},
+    {"peer", (PyCFunction)pygrpc_Call_peer, METH_NOARGS, ""},
     {NULL}
 };
 const char pygrpc_Call_doc[] = "See grpc._adapter._types.Call.";
@@ -131,7 +132,7 @@ PyObject *pygrpc_Call_start_batch(Call *self, PyObject *args, PyObject *kwargs) 
     }
   }
   tag = pygrpc_produce_batch_tag(user_tag, self, ops, nops);
-  errcode = grpc_call_start_batch(self->c_call, tag->ops, tag->nops, tag);
+  errcode = grpc_call_start_batch(self->c_call, tag->ops, tag->nops, tag, NULL);
   gpr_free(ops);
   return PyInt_FromLong(errcode);
 }
@@ -151,13 +152,20 @@ PyObject *pygrpc_Call_cancel(Call *self, PyObject *args, PyObject *kwargs) {
       return NULL;
     }
     code = PyInt_AsLong(py_code);
-    errcode = grpc_call_cancel_with_status(self->c_call, code, details);
+    errcode = grpc_call_cancel_with_status(self->c_call, code, details, NULL);
   } else if (py_code != NULL || details != NULL) {
     PyErr_SetString(PyExc_ValueError,
                     "if `code` is specified, so must `details`");
     return NULL;
   } else {
-    errcode = grpc_call_cancel(self->c_call);
+    errcode = grpc_call_cancel(self->c_call, NULL);
   }
   return PyInt_FromLong(errcode);
+}
+
+PyObject *pygrpc_Call_peer(Call *self) {
+  char *peer = grpc_call_get_peer(self->c_call);
+  PyObject *py_peer = PyString_FromString(peer);
+  gpr_free(peer);
+  return py_peer;
 }

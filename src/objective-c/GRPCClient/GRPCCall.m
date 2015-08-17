@@ -42,9 +42,13 @@
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
 
-NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
+NSString * const kGRPCHeadersKey = @"io.grpc.HeadersKey";
+NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 @interface GRPCCall () <GRXWriteable>
+// Make them read-write.
+@property(atomic, strong) NSDictionary *responseHeaders;
+@property(atomic, strong) NSDictionary *responseTrailers;
 @end
 
 // The following methods of a C gRPC call object aren't reentrant, and thus
@@ -89,8 +93,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   // the response arrives.
   GRPCCall *_retainSelf;
 
-  NSMutableDictionary *_requestMetadata;
-  NSMutableDictionary *_responseMetadata;
+  NSMutableDictionary *_requestHeaders;
 }
 
 @synthesize state = _state;
@@ -121,24 +124,19 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
     _requestWriter = requestWriter;
 
-    _requestMetadata = [NSMutableDictionary dictionary];
-    _responseMetadata = [NSMutableDictionary dictionary];
+    _requestHeaders = [NSMutableDictionary dictionary];
   }
   return self;
 }
 
 #pragma mark Metadata
 
-- (NSMutableDictionary *)requestMetadata {
-  return _requestMetadata;
+- (NSMutableDictionary *)requestHeaders {
+  return _requestHeaders;
 }
 
-- (void)setRequestMetadata:(NSDictionary *)requestMetadata {
-  _requestMetadata = [NSMutableDictionary dictionaryWithDictionary:requestMetadata];
-}
-
-- (NSDictionary *)responseMetadata {
-  return _responseMetadata;
+- (void)setRequestHeaders:(NSDictionary *)requestHeaders {
+  _requestHeaders = [NSMutableDictionary dictionaryWithDictionary:requestHeaders];
 }
 
 #pragma mark Finish
@@ -232,11 +230,10 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 #pragma mark Send headers
 
-// TODO(jcanizales): Rename to commitHeaders.
-- (void)sendHeaders:(NSDictionary *)metadata {
+- (void)sendHeaders:(NSDictionary *)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc]
-                                            initWithMetadata:metadata ?: @{} handler:nil]]];
+                                            initWithMetadata:headers ?: @{} handler:nil]]];
 }
 
 #pragma mark GRXWriteable implementation
@@ -305,35 +302,45 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
 
 // Both handlers will eventually be called, from the network queue. Writes can start immediately
 // after this.
-// The first one (metadataHandler), when the response headers are received.
+// The first one (headersHandler), when the response headers are received.
 // The second one (completionHandler), whenever the RPC finishes for any reason.
-- (void)invokeCallWithMetadataHandler:(void(^)(NSDictionary *))metadataHandler
+- (void)invokeCallWithHeadersHandler:(void(^)(NSDictionary *))headersHandler
                     completionHandler:(void(^)(NSError *, NSDictionary *))completionHandler {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvMetadata alloc]
-                                            initWithHandler:metadataHandler]]];
+                                            initWithHandler:headersHandler]]];
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpRecvStatus alloc]
                                             initWithHandler:completionHandler]]];
 }
 
 - (void)invokeCall {
   __weak GRPCCall *weakSelf = self;
-  [self invokeCallWithMetadataHandler:^(NSDictionary *headers) {
+  [self invokeCallWithHeadersHandler:^(NSDictionary *headers) {
     // Response headers received.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      [strongSelf->_responseMetadata addEntriesFromDictionary:headers];
+      strongSelf.responseHeaders = headers;
       [strongSelf startNextRead];
     }
   } completionHandler:^(NSError *error, NSDictionary *trailers) {
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      [strongSelf->_responseMetadata addEntriesFromDictionary:trailers];
+      strongSelf.responseTrailers = trailers;
 
       if (error) {
-        NSMutableDictionary *userInfo =
-            [NSMutableDictionary dictionaryWithDictionary:error.userInfo];
-        userInfo[kGRPCStatusMetadataKey] = strongSelf->_responseMetadata;
+        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+        if (error.userInfo) {
+          [userInfo addEntriesFromDictionary:error.userInfo];
+        }
+        userInfo[kGRPCTrailersKey] = strongSelf.responseTrailers;
+        // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
+        // called before this one, so an error might end up with trailers but no headers. We
+        // shouldn't call finishWithError until ater both blocks are called. It is also when this is
+        // done that we can provide a merged view of response headers and trailers in a thread-safe
+        // way.
+        if (strongSelf.responseHeaders) {
+          userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
+        }
         error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
       }
       [strongSelf finishWithError:error];
@@ -356,7 +363,7 @@ NSString * const kGRPCStatusMetadataKey = @"io.grpc.StatusMetadataKey";
   _retainSelf = self;
 
   _responseWriteable = [[GRXConcurrentWriteable alloc] initWithWriteable:writeable];
-  [self sendHeaders:_requestMetadata];
+  [self sendHeaders:_requestHeaders];
   [self invokeCall];
 }
 
