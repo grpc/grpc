@@ -30,6 +30,54 @@
 require 'grpc'
 require 'grpc/health/v1alpha/health'
 require 'grpc/health/checker'
+require 'open3'
+
+def can_run_codegen_check
+  system('which grpc_ruby_plugin') && system('which protoc')
+end
+
+describe 'Health protobuf code generation' do
+  context 'the health service file used by grpc/health/checker' do
+    if !can_run_codegen_check
+      skip 'protoc || grpc_ruby_plugin missing, cannot verify health code-gen'
+    else
+      it 'should already be loaded indirectly i.e, used by the other specs' do
+        expect(require('grpc/health/v1alpha/health_services')).to be(false)
+      end
+
+      it 'should have the same content as created by code generation' do
+        root_dir = File.dirname(
+          File.dirname(File.dirname(File.dirname(__FILE__))))
+        pb_dir = File.join(root_dir, 'pb')
+
+        # Get the current content
+        service_path = File.join(pb_dir, 'grpc', 'health', 'v1alpha',
+                                 'health_services.rb')
+        want = nil
+        File.open(service_path) { |f| want = f.read }
+
+        # Regenerate it
+        plugin, = Open3.capture2('which', 'grpc_ruby_plugin')
+        plugin = plugin.strip
+        got = nil
+        Dir.mktmpdir do |tmp_dir|
+          gen_out = File.join(tmp_dir, 'grpc', 'health', 'v1alpha',
+                              'health_services.rb')
+          pid = spawn(
+            'protoc',
+            '-I.',
+            'grpc/health/v1alpha/health.proto',
+            "--grpc_out=#{tmp_dir}",
+            "--plugin=protoc-gen-grpc=#{plugin}",
+            chdir: pb_dir)
+          Process.wait(pid)
+          File.open(gen_out) { |f| got = f.read }
+        end
+        expect(got).to eq(want)
+      end
+    end
+  end
+end
 
 describe Grpc::Health::Checker do
   StatusCodes = GRPC::Core::StatusCodes
