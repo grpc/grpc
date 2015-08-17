@@ -159,6 +159,25 @@ void InitOpTypeConstants(Handle<Object> exports) {
   op_type->Set(NanNew("RECV_CLOSE_ON_SERVER"), RECV_CLOSE_ON_SERVER);
 }
 
+void InitPropagateConstants(Handle<Object> exports) {
+  NanScope();
+  Handle<Object> propagate = NanNew<Object>();
+  exports->Set(NanNew("propagate"), propagate);
+  Handle<Value> DEADLINE(NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_DEADLINE));
+  propagate->Set(NanNew("DEADLINE"), DEADLINE);
+  Handle<Value> CENSUS_STATS_CONTEXT(
+      NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_STATS_CONTEXT));
+  propagate->Set(NanNew("CENSUS_STATS_CONTEXT"), CENSUS_STATS_CONTEXT);
+  Handle<Value> CENSUS_TRACING_CONTEXT(
+      NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT));
+  propagate->Set(NanNew("CENSUS_TRACING_CONTEXT"), CENSUS_TRACING_CONTEXT);
+  Handle<Value> CANCELLATION(
+      NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_CANCELLATION));
+  propagate->Set(NanNew("CANCELLATION"), CANCELLATION);
+  Handle<Value> DEFAULTS(NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_DEFAULTS));
+  propagate->Set(NanNew("DEFAULTS"), DEFAULTS);
+}
+
 void InitConnectivityStateConstants(Handle<Object> exports) {
   NanScope();
   Handle<Object> channel_state = NanNew<Object>();
@@ -183,6 +202,7 @@ void init(Handle<Object> exports) {
   InitStatusConstants(exports);
   InitCallErrorConstants(exports);
   InitOpTypeConstants(exports);
+  InitPropagateConstants(exports);
   InitConnectivityStateConstants(exports);
 
   grpc::node::Call::Init(exports);
