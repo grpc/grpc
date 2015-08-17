@@ -46,14 +46,17 @@ class AuthMetadataProcessor {
   virtual ~AuthMetadataProcessor() {}
 
   // If this method returns true, the Process function will be scheduled in
-  // a different thread as the one processing the call.
+  // a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
   // context is read/write: it contains the properties of the channel peer and
   // it is the job of the Process method to augment it with properties derived
   // from the passed-in auth_metadata.
+  // consumed_auth_metadata needs to be filled with metadata that has been
+  // consumed by the processor and will be removed from the call.
+  // Returns true if successful.
   virtual bool Process(
-      std::multimap<grpc::string, grpc::string>& auth_metadata,
+      const std::multimap<grpc::string, grpc::string>& auth_metadata,
       AuthContext* context,
       std::multimap<grpc::string, grpc::string>* consumed_auth_metadata) = 0;
 };
