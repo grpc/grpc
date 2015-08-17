@@ -619,7 +619,7 @@ NAN_METHOD(Call::StartBatch) {
       call->wrapped_call, &ops[0], nops, new struct tag(
           callback, op_vector.release(), resources), NULL);
   if (error != GRPC_CALL_OK) {
-    return NanThrowError("startBatch failed", error);
+    return NanThrowError(nanErrorWithCode("startBatch failed", error));
   }
   CompletionQueueAsyncWorker::Next();
   NanReturnUndefined();
@@ -633,7 +633,7 @@ NAN_METHOD(Call::Cancel) {
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   grpc_call_error error = grpc_call_cancel(call->wrapped_call, NULL);
   if (error != GRPC_CALL_OK) {
-    return NanThrowError("cancel failed", error);
+    return NanThrowError(nanErrorWithCode("cancel failed", error));
   }
   NanReturnUndefined();
 }
