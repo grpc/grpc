@@ -60,7 +60,7 @@ var interop_server = require('../interop/interop_server.js');
  */
 function runTest(concurrent_calls, seconds, callback) {
   var testServer = interop_server.getServer(0, false);
-  testServer.server.listen();
+  testServer.server.start();
   var client = new testProto.TestService('localhost:' + testServer.port,
                                          grpc.Credentials.createInsecure());
 

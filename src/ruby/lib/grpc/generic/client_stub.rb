@@ -161,15 +161,21 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param parent [Core::Call] a prior call whose reserved metadata
     #   will be propagated by this one.
     # @param return_op [true|false] return an Operation if true
     # @return [Object] the response received from the server
-    def request_response(method, req, marshal, unmarshal, timeout = nil,
+    def request_response(method, req, marshal, unmarshal,
+                         deadline: nil,
+                         timeout: nil,
                          return_op: false,
                          parent: parent,
                          **kw)
-      c = new_active_call(method, marshal, unmarshal, timeout, parent: parent)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.request_response(req, **md) unless return_op
@@ -222,16 +228,22 @@ module GRPC
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param timeout [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param return_op [true|false] return an Operation if true
     # @param parent [Core::Call] a prior call whose reserved metadata
     #   will be propagated by this one.
     # @return [Object|Operation] the response received from the server
-    def client_streamer(method, requests, marshal, unmarshal, timeout = nil,
+    def client_streamer(method, requests, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
                         return_op: false,
                         parent: nil,
                         **kw)
-      c = new_active_call(method, marshal, unmarshal, timeout, parent: parent)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.client_streamer(requests, **md) unless return_op
@@ -292,18 +304,24 @@ module GRPC
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param timeout [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param return_op [true|false]return an Operation if true
     # @param parent [Core::Call] a prior call whose reserved metadata
     #   will be propagated by this one.
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|Operation|nil] as discussed above
-    def server_streamer(method, req, marshal, unmarshal, timeout = nil,
+    def server_streamer(method, req, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
                         return_op: false,
                         parent: nil,
                         **kw,
                         &blk)
-      c = new_active_call(method, marshal, unmarshal, timeout, parent: parent)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.server_streamer(req, **md, &blk) unless return_op
@@ -404,17 +422,23 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param parent [Core::Call] a prior call whose reserved metadata
     #   will be propagated by this one.
     # @param return_op [true|false] return an Operation if true
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|nil|Operation] as discussed above
-    def bidi_streamer(method, requests, marshal, unmarshal, timeout = nil,
+    def bidi_streamer(method, requests, marshal, unmarshal,
+                      deadline: nil,
+                      timeout: nil,
                       return_op: false,
                       parent: nil,
                       **kw,
                       &blk)
-      c = new_active_call(method, marshal, unmarshal, timeout, parent: parent)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.bidi_streamer(requests, **md, &blk) unless return_op
@@ -438,8 +462,13 @@ module GRPC
     # @param parent [Grpc::Call] a parent call, available when calls are
     #   made from server
     # @param timeout [TimeConst]
-    def new_active_call(method, marshal, unmarshal, timeout = nil, parent: nil)
-      deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
+    def new_active_call(method, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        parent: nil)
+      if deadline.nil?
+        deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
+      end
       call = @ch.create_call(@queue,
                              parent, # parent call
                              @propagate_mask, # propagation options

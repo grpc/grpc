@@ -982,6 +982,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "udp_server_test", 
+    "src": [
+      "test/core/iomgr/udp_server_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "uri_parser_test", 
     "src": [
       "test/core/client_config/uri_parser_test.c"
@@ -1669,6 +1683,23 @@
     "name": "thread_stress_test", 
     "src": [
       "test/cpp/end2end/thread_stress_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "grpc_zookeeper"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "zookeeper_test", 
+    "src": [
+      "test/cpp/end2end/zookeeper_test.cc"
     ]
   }, 
   {
@@ -12280,6 +12311,7 @@
       "src/core/iomgr/tcp_server.h", 
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
       "src/core/json/json.h", 
@@ -12468,6 +12500,8 @@
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.c", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/udp_server.c", 
+      "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
       "src/core/iomgr/wakeup_fd_nospecial.c", 
       "src/core/iomgr/wakeup_fd_pipe.c", 
@@ -12751,6 +12785,7 @@
       "src/core/iomgr/tcp_server.h", 
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
       "src/core/json/json.h", 
@@ -12924,6 +12959,8 @@
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.c", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/udp_server.c", 
+      "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
       "src/core/iomgr/wakeup_fd_nospecial.c", 
       "src/core/iomgr/wakeup_fd_pipe.c", 
@@ -13022,6 +13059,23 @@
       "src/core/transport/transport.h", 
       "src/core/transport/transport_impl.h", 
       "src/core/transport/transport_op_string.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [
+      "include/grpc/grpc_zookeeper.h", 
+      "src/core/client_config/resolvers/zookeeper_resolver.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_zookeeper", 
+    "src": [
+      "include/grpc/grpc_zookeeper.h", 
+      "src/core/client_config/resolvers/zookeeper_resolver.c", 
+      "src/core/client_config/resolvers/zookeeper_resolver.h"
     ]
   }, 
   {

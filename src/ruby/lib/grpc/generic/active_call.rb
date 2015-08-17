@@ -74,8 +74,7 @@ module GRPC
     #
     # @param call [Call] a call on which to start and invocation
     # @param q [CompletionQueue] the completion queue
-    # @param deadline [Fixnum,TimeSpec] the deadline
-    def self.client_invoke(call, q, _deadline, **kw)
+    def self.client_invoke(call, q, **kw)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
         fail(TypeError, '!Core::CompletionQueue')
@@ -418,7 +417,7 @@ module GRPC
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, **kw, &blk)
       start_call(**kw) unless @started
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
+      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal)
       bd.run_on_client(requests, @op_notifier, &blk)
     end
 
@@ -434,7 +433,7 @@ module GRPC
     #
     # @param gen_each_reply [Proc] generates the BiDi stream replies
     def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline)
+      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal)
       bd.run_on_server(gen_each_reply)
     end
 
@@ -456,7 +455,7 @@ module GRPC
     # Starts the call if not already started
     def start_call(**kw)
       return if @started
-      @metadata_tag = ActiveCall.client_invoke(@call, @cq, @deadline, **kw)
+      @metadata_tag = ActiveCall.client_invoke(@call, @cq, **kw)
       @started = true
     end
 
