@@ -25,3 +25,18 @@ $ protoc -I . grpc/health/v1alpha/health.proto \
     --ruby_out=. \
     --plugin=protoc-gen-grpc=`which grpc_ruby_plugin`
 ```
+
+test
+----
+
+This package defines the surface of the gRPC interop test service and client
+To re-generate the surface, it's necessary to have checked-out versions of
+the grpc interop test proto, e.g, by having the full gRPC repository. E.g,
+
+```bash
+$ # (from this directory within the grpc repo)
+$ protoc -I../../.. ../../../test/proto/{messages,test,empty}.proto \
+    --grpc_out=. \
+    --ruby_out=. \
+    --plugin=protoc-gen-grpc=`which grpc_ruby_plugin`
+```
