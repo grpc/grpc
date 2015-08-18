@@ -36,10 +36,10 @@
 #include <grpc++/dynamic_thread_pool.h>
 
 namespace grpc {
-DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool *pool):
-  pool_(pool),
-  thd_(new grpc::thread(&DynamicThreadPool::DynamicThread::ThreadFunc, this)) {
-}
+DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
+    : pool_(pool),
+      thd_(new grpc::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
+                            this)) {}
 DynamicThreadPool::DynamicThread::~DynamicThread() {
   thd_->join();
   thd_.reset();
@@ -57,7 +57,7 @@ void DynamicThreadPool::DynamicThread::ThreadFunc() {
     pool_->shutdown_cv_.notify_one();
   }
 }
-  
+
 void DynamicThreadPool::ThreadFunc() {
   for (;;) {
     // Wait until work is available or we are shutting down.
@@ -65,7 +65,7 @@ void DynamicThreadPool::ThreadFunc() {
     if (!shutdown_ && callbacks_.empty()) {
       // If there are too many threads waiting, then quit this thread
       if (threads_waiting_ >= reserve_threads_) {
-	break;
+        break;
       }
       threads_waiting_++;
       cv_.wait(lock);
@@ -84,9 +84,11 @@ void DynamicThreadPool::ThreadFunc() {
   }
 }
 
-DynamicThreadPool::DynamicThreadPool(int reserve_threads) :
-  shutdown_(false), reserve_threads_(reserve_threads), nthreads_(0),
-  threads_waiting_(0) {
+DynamicThreadPool::DynamicThreadPool(int reserve_threads)
+    : shutdown_(false),
+      reserve_threads_(reserve_threads),
+      nthreads_(0),
+      threads_waiting_(0) {
   for (int i = 0; i < reserve_threads_; i++) {
     grpc::lock_guard<grpc::mutex> lock(mu_);
     nthreads_++;
@@ -96,10 +98,10 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads) :
 
 void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
   for (auto t = tlist->begin(); t != tlist->end(); t = tlist->erase(t)) {
-    delete *t;    
+    delete *t;
   }
 }
-  
+
 DynamicThreadPool::~DynamicThreadPool() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   shutdown_ = true;

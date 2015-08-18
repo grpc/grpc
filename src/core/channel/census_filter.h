@@ -41,4 +41,4 @@
 extern const grpc_channel_filter grpc_client_census_filter;
 extern const grpc_channel_filter grpc_server_census_filter;
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CENSUS_FILTER_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_CENSUS_FILTER_H */

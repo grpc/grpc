@@ -160,4 +160,4 @@ typedef enum {
 }
 #endif
 
-#endif  /* GRPC_STATUS_H */
+#endif /* GRPC_STATUS_H */

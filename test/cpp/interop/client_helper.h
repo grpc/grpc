@@ -67,7 +67,6 @@ class InteropClientContextInspector {
   const ::grpc::ClientContext& context_;
 };
 
-
 }  // namespace testing
 }  // namespace grpc
 

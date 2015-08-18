@@ -35,7 +35,7 @@
 #include <string.h>
 #include <grpc/compression.h>
 
-int grpc_compression_algorithm_parse(const char* name, size_t name_length,
+int grpc_compression_algorithm_parse(const char *name, size_t name_length,
                                      grpc_compression_algorithm *algorithm) {
   /* we use strncmp not only because it's safer (even though in this case it
    * doesn't matter, given that we are comparing against string literals, but
