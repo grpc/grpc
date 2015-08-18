@@ -77,17 +77,14 @@ class CrashTest : public ::testing::Test {
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
     server_.reset(new SubProcess({
-      g_root + "/client_crash_test_server",
-      "--address=" + addr,
+        g_root + "/client_crash_test_server", "--address=" + addr,
     }));
     GPR_ASSERT(server_);
     return grpc::cpp::test::util::TestService::NewStub(
         CreateChannel(addr, InsecureCredentials(), ChannelArguments()));
   }
 
-  void KillServer() {
-    server_.reset();
-  }
+  void KillServer() { server_.reset(); }
 
  private:
   std::unique_ptr<SubProcess> server_;

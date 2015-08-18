@@ -27,8 +27,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from grpc import _grpcio_metadata
 from grpc._adapter import _c
 from grpc._adapter import _types
+
+_USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
 ClientCredentials = _c.ClientCredentials
 ServerCredentials = _c.ServerCredentials
@@ -72,10 +75,14 @@ class Call(_types.Call):
     else:
       return self.call.cancel(code, details)
 
+  def peer(self):
+    return self.call.peer()
+
 
 class Channel(_types.Channel):
 
   def __init__(self, target, args, creds=None):
+    args = list(args) + [(_c.PRIMARY_USER_AGENT_KEY, _USER_AGENT)]
     if creds is None:
       self.channel = _c.Channel(target, args)
     else:
@@ -83,6 +90,17 @@ class Channel(_types.Channel):
 
   def create_call(self, completion_queue, method, host, deadline=None):
     return Call(self.channel.create_call(completion_queue.completion_queue, method, host, deadline))
+
+  def check_connectivity_state(self, try_to_connect):
+    return self.channel.check_connectivity_state(try_to_connect)
+
+  def watch_connectivity_state(self, last_observed_state, deadline,
+                               completion_queue, tag):
+    self.channel.watch_connectivity_state(
+        last_observed_state, deadline, completion_queue.completion_queue, tag)
+
+  def target(self):
+    return self.channel.target()
 
 
 _NO_TAG = object()

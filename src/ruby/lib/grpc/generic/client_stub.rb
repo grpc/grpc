@@ -28,16 +28,19 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc/generic/active_call'
+require 'grpc/version'
 
 # GRPC contains the General RPC module.
 module GRPC
+  # rubocop:disable Metrics/ParameterLists
+
   # ClientStub represents an endpoint used to send requests to GRPC servers.
   class ClientStub
     include Core::StatusCodes
     include Core::TimeConsts
 
-    # Default timeout is 5 seconds.
-    DEFAULT_TIMEOUT = 5
+    # Default timeout is infinity.
+    DEFAULT_TIMEOUT = INFINITE_FUTURE
 
     # setup_channel is used by #initialize to constuct a channel from its
     # arguments.
@@ -46,6 +49,7 @@ module GRPC
         fail(TypeError, '!Channel') unless alt_chan.is_a?(Core::Channel)
         return alt_chan
       end
+      kw['grpc.primary_user_agent'] = "grpc-ruby/#{VERSION}"
       return Core::Channel.new(host, kw) if creds.nil?
       fail(TypeError, '!Credentials') unless creds.is_a?(Core::Credentials)
       Core::Channel.new(host, kw, creds)
@@ -65,6 +69,12 @@ module GRPC
       fail(TypeError, '!is_a?Proc') unless update_metadata.is_a?(Proc)
       update_metadata
     end
+
+    # Allows users of the stub to modify the propagate mask.
+    #
+    # This is an advanced feature for use when making calls to another gRPC
+    # server whilst running in the handler of an existing one.
+    attr_writer :propagate_mask
 
     # Creates a new ClientStub.
     #
@@ -89,8 +99,8 @@ module GRPC
     #
     # - :update_metadata
     # when present, this a func that takes a hash and returns a hash
-    # it can be used to update metadata, i.e, remove, change or update
-    # amend metadata values.
+    # it can be used to update metadata, i.e, remove, or amend
+    # metadata values.
     #
     # @param host [String] the host the stub connects to
     # @param q [Core::CompletionQueue] used to wait for events
@@ -103,6 +113,7 @@ module GRPC
                    channel_override: nil,
                    timeout: nil,
                    creds: nil,
+                   propagate_mask: nil,
                    update_metadata: nil,
                    **kw)
       fail(TypeError, '!CompletionQueue') unless q.is_a?(Core::CompletionQueue)
@@ -111,6 +122,7 @@ module GRPC
       @update_metadata = ClientStub.check_update_metadata(update_metadata)
       alt_host = kw[Core::Channel::SSL_TARGET]
       @host = alt_host.nil? ? host : alt_host
+      @propagate_mask = propagate_mask
       @timeout = timeout.nil? ? DEFAULT_TIMEOUT : timeout
     end
 
@@ -149,11 +161,21 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
     # @param return_op [true|false] return an Operation if true
     # @return [Object] the response received from the server
-    def request_response(method, req, marshal, unmarshal, timeout = nil,
-                         return_op: false, **kw)
-      c = new_active_call(method, marshal, unmarshal, timeout)
+    def request_response(method, req, marshal, unmarshal,
+                         deadline: nil,
+                         timeout: nil,
+                         return_op: false,
+                         parent: parent,
+                         **kw)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.request_response(req, **md) unless return_op
@@ -206,12 +228,22 @@ module GRPC
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param timeout [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param return_op [true|false] return an Operation if true
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
     # @return [Object|Operation] the response received from the server
-    def client_streamer(method, requests, marshal, unmarshal, timeout = nil,
-                        return_op: false, **kw)
-      c = new_active_call(method, marshal, unmarshal, timeout)
+    def client_streamer(method, requests, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        return_op: false,
+                        parent: nil,
+                        **kw)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.client_streamer(requests, **md) unless return_op
@@ -272,13 +304,24 @@ module GRPC
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param timeout [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param return_op [true|false]return an Operation if true
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|Operation|nil] as discussed above
-    def server_streamer(method, req, marshal, unmarshal, timeout = nil,
-                        return_op: false, **kw, &blk)
-      c = new_active_call(method, marshal, unmarshal, timeout)
+    def server_streamer(method, req, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        return_op: false,
+                        parent: nil,
+                        **kw,
+                        &blk)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.server_streamer(req, **md, &blk) unless return_op
@@ -379,12 +422,23 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param timeout [Numeric] (optional) the max completion time in seconds
-    # @param blk [Block] when provided, is executed for each response
+    # @param deadline [Time] (optional) the time the request should complete
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
     # @param return_op [true|false] return an Operation if true
+    # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|nil|Operation] as discussed above
-    def bidi_streamer(method, requests, marshal, unmarshal, timeout = nil,
-                      return_op: false, **kw, &blk)
-      c = new_active_call(method, marshal, unmarshal, timeout)
+    def bidi_streamer(method, requests, marshal, unmarshal,
+                      deadline: nil,
+                      timeout: nil,
+                      return_op: false,
+                      parent: nil,
+                      **kw,
+                      &blk)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent)
       kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.bidi_streamer(requests, **md, &blk) unless return_op
@@ -405,10 +459,22 @@ module GRPC
     # @param method [string] the method being called.
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
+    # @param parent [Grpc::Call] a parent call, available when calls are
+    #   made from server
     # @param timeout [TimeConst]
-    def new_active_call(method, marshal, unmarshal, timeout = nil)
-      deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
-      call = @ch.create_call(@queue, method, @host, deadline)
+    def new_active_call(method, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        parent: nil)
+      if deadline.nil?
+        deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
+      end
+      call = @ch.create_call(@queue,
+                             parent, # parent call
+                             @propagate_mask, # propagation options
+                             method,
+                             nil, # host use nil,
+                             deadline)
       ActiveCall.new(call, @queue, marshal, unmarshal, deadline, started: false)
     end
   end

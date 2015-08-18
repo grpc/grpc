@@ -58,4 +58,4 @@ int gpr_asprintf(char **strp, const char *format, ...);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_STRING_UTIL_H */
+#endif /* GRPC_SUPPORT_STRING_UTIL_H */

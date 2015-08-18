@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include <grpc++/channel_arguments.h>
+#include <grpc++/impl/grpc_library.h>
 #include "src/cpp/client/channel.h"
 #include "src/cpp/client/secure_credentials.h"
 
@@ -61,12 +62,14 @@ std::shared_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
 }  // namespace
 
 std::shared_ptr<Credentials> GoogleDefaultCredentials() {
+  GrpcLibrary init;  // To call grpc_init().
   return WrapCredentials(grpc_google_default_credentials_create());
 }
 
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<Credentials> SslCredentials(
     const SslCredentialsOptions& options) {
+  GrpcLibrary init;  // To call grpc_init().
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
       options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
 
@@ -78,6 +81,7 @@ std::shared_ptr<Credentials> SslCredentials(
 
 // Builds credentials for use when running in GCE
 std::shared_ptr<Credentials> ComputeEngineCredentials() {
+  GrpcLibrary init;  // To call grpc_init().
   return WrapCredentials(grpc_compute_engine_credentials_create());
 }
 
@@ -85,6 +89,7 @@ std::shared_ptr<Credentials> ComputeEngineCredentials() {
 std::shared_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     long token_lifetime_seconds) {
+  GrpcLibrary init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create ServiceAccountCredentials "
@@ -100,6 +105,7 @@ std::shared_ptr<Credentials> ServiceAccountCredentials(
 // Builds JWT credentials.
 std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key, long token_lifetime_seconds) {
+  GrpcLibrary init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
@@ -114,6 +120,7 @@ std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
 // Builds refresh token credentials.
 std::shared_ptr<Credentials> RefreshTokenCredentials(
     const grpc::string& json_refresh_token) {
+  GrpcLibrary init;  // To call grpc_init().
   return WrapCredentials(
       grpc_refresh_token_credentials_create(json_refresh_token.c_str()));
 }
@@ -121,6 +128,7 @@ std::shared_ptr<Credentials> RefreshTokenCredentials(
 // Builds access token credentials.
 std::shared_ptr<Credentials> AccessTokenCredentials(
     const grpc::string& access_token) {
+  GrpcLibrary init;  // To call grpc_init().
   return WrapCredentials(
       grpc_access_token_credentials_create(access_token.c_str()));
 }
@@ -129,6 +137,7 @@ std::shared_ptr<Credentials> AccessTokenCredentials(
 std::shared_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector) {
+  GrpcLibrary init;  // To call grpc_init().
   return WrapCredentials(grpc_iam_credentials_create(
       authorization_token.c_str(), authority_selector.c_str()));
 }

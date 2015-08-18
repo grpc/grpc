@@ -94,4 +94,4 @@ char *gpr_cmdline_usage_string(gpr_cmdline *cl, const char *argv0);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_CMDLINE_H */
+#endif /* GRPC_SUPPORT_CMDLINE_H */

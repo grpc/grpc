@@ -282,6 +282,7 @@
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h" />
+    <ClInclude Include="..\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="..\..\src\core\json\json.h" />
@@ -447,6 +448,8 @@
     <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\udp_server.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>

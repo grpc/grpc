@@ -132,6 +132,7 @@ We will also need to make openssl and install it appropriately
 
   $ cd <git directory>
   $ cd third_party/openssl
+  $ ./config
   $ sudo make install
   $ cd ../../
 

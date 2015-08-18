@@ -31,8 +31,6 @@
 
 #endregion
 
-using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 
@@ -40,9 +38,20 @@ namespace Grpc.Core
 {
     /// <summary>
     /// Helper methods for generated clients to make RPC calls.
+    /// Most users will use this class only indirectly and will be 
+    /// making calls using client object generated from protocol
+    /// buffer definition files.
     /// </summary>
     public static class Calls
     {
+        /// <summary>
+        /// Invokes a simple remote call in a blocking fashion.
+        /// </summary>
+        /// <returns>The response.</returns>
+        /// <param name="call">The call defintion.</param>
+        /// <param name="req">Request message.</param>
+        /// <typeparam name="TRequest">Type of request message.</typeparam>
+        /// <typeparam name="TResponse">The of response message.</typeparam>
         public static TResponse BlockingUnaryCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
             where TRequest : class
             where TResponse : class
@@ -51,6 +60,14 @@ namespace Grpc.Core
             return asyncCall.UnaryCall(req);
         }
 
+        /// <summary>
+        /// Invokes a simple remote call asynchronously.
+        /// </summary>
+        /// <returns>An awaitable call object providing access to the response.</returns>
+        /// <param name="call">The call defintion.</param>
+        /// <param name="req">Request message.</param>
+        /// <typeparam name="TRequest">Type of request message.</typeparam>
+        /// <typeparam name="TResponse">The of response message.</typeparam>
         public static AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
             where TRequest : class
             where TResponse : class
@@ -60,6 +77,15 @@ namespace Grpc.Core
             return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
+        /// <summary>
+        /// Invokes a server streaming call asynchronously.
+        /// In server streaming scenario, client sends on request and server responds with a stream of responses.
+        /// </summary>
+        /// <returns>A call object providing access to the asynchronous response stream.</returns>
+        /// <param name="call">The call defintion.</param>
+        /// <param name="req">Request message.</param>
+        /// <typeparam name="TRequest">Type of request message.</typeparam>
+        /// <typeparam name="TResponse">The of response messages.</typeparam>
         public static AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
             where TRequest : class
             where TResponse : class
@@ -70,6 +96,13 @@ namespace Grpc.Core
             return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
+        /// <summary>
+        /// Invokes a client streaming call asynchronously.
+        /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
+        /// </summary>
+        /// <returns>An awaitable call object providing access to the response.</returns>
+        /// <typeparam name="TRequest">Type of request messages.</typeparam>
+        /// <typeparam name="TResponse">The of response message.</typeparam>
         public static AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
             where TRequest : class
             where TResponse : class
@@ -80,6 +113,15 @@ namespace Grpc.Core
             return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
+        /// <summary>
+        /// Invokes a duplex streaming call asynchronously.
+        /// In duplex streaming scenario, client sends a stream of requests and server responds with a stream of responses.
+        /// The response stream is completely independent and both side can be sending messages at the same time.
+        /// </summary>
+        /// <returns>A call object providing access to the asynchronous request and response streams.</returns>
+        /// <param name="call">The call definition.</param>
+        /// <typeparam name="TRequest">Type of request messages.</typeparam>
+        /// <typeparam name="TResponse">Type of reponse messages.</typeparam>
         public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
             where TRequest : class
             where TResponse : class

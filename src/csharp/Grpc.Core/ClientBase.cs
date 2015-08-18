@@ -33,23 +33,30 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
-    public delegate void MetadataInterceptorDelegate(Metadata metadata);
+    public delegate void MetadataInterceptorDelegate(string authUri, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase
     {
+        // Regex for removal of the optional DNS scheme, trailing port, and trailing backslash
+        static readonly Regex ChannelTargetPattern = new Regex(@"^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$");
+
         readonly Channel channel;
+        readonly string authUriBase;
 
         public ClientBase(Channel channel)
         {
             this.channel = channel;
+            this.authUriBase = GetAuthUriBase(channel.Target);
         }
 
         /// <summary>
@@ -57,6 +64,18 @@ namespace Grpc.Core
         /// The delegate each time before a new call on this client is started.
         /// </summary>
         public MetadataInterceptorDelegate HeaderInterceptor
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// gRPC supports multiple "hosts" being served by a single server. 
+        /// This property can be used to set the target host explicitly.
+        /// By default, this will be set to <c>null</c> with the meaning
+        /// "use default host".
+        /// </summary>
+        public string Host
         {
             get;
             set;
@@ -83,10 +102,27 @@ namespace Grpc.Core
             var interceptor = HeaderInterceptor;
             if (interceptor != null)
             {
-                interceptor(options.Headers);
-                options.Headers.Freeze();
+                if (options.Headers == null)
+                {
+                    options = options.WithHeaders(new Metadata());
+                }
+                var authUri = authUriBase != null ? authUriBase + method.ServiceName : null;
+                interceptor(authUri, options.Headers);
             }
-            return new CallInvocationDetails<TRequest, TResponse>(channel, method, options);
+            return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
+        }
+
+        /// <summary>
+        /// Creates Auth URI base from channel's target (the one passed at channel creation).
+        /// Fully-qualified service name is to be appended to this.
+        /// </summary>
+        internal static string GetAuthUriBase(string target)
+        {
+            var match = ChannelTargetPattern.Match(target);
+            if (!match.Success) {
+                return null;
+            }
+            return "https://" + match.Groups[2].Value + "/";
         }
     }
 }
