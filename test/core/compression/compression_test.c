@@ -42,7 +42,7 @@
 
 static void test_compression_algorithm_parse(void) {
   size_t i;
-  const char* valid_names[] = {"none", "gzip", "deflate"};
+  const char* valid_names[] = {"identity", "gzip", "deflate"};
   const grpc_compression_algorithm valid_algorithms[] = {
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE};
   const char* invalid_names[] = {"gzip2", "foo", "", "2gzip"};
@@ -70,7 +70,7 @@ static void test_compression_algorithm_parse(void) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   test_compression_algorithm_parse();
 
   return 0;

@@ -185,7 +185,9 @@ class ClientContext {
 
   // Get and set census context
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
-  struct census_context* census_context() const { return census_context_; }
+  struct census_context* census_context() const {
+    return census_context_;
+  }
 
   void TryCancel();
 
@@ -223,15 +225,11 @@ class ClientContext {
   void set_call(grpc_call* call,
                 const std::shared_ptr<ChannelInterface>& channel);
 
-  grpc_completion_queue* cq() { return cq_; }
-  void set_cq(grpc_completion_queue* cq) { cq_ = cq; }
-
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
   std::shared_ptr<ChannelInterface> channel_;
   grpc_call* call_;
-  grpc_completion_queue* cq_;
   gpr_timespec deadline_;
   grpc::string authority_;
   std::shared_ptr<Credentials> creds_;

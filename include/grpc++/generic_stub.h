@@ -52,8 +52,8 @@ class GenericStub GRPC_FINAL {
 
   // begin a call to a named method
   std::unique_ptr<GenericClientAsyncReaderWriter> Call(
-      ClientContext* context, const grpc::string& method,
-      CompletionQueue* cq, void* tag);
+      ClientContext* context, const grpc::string& method, CompletionQueue* cq,
+      void* tag);
 
  private:
   std::shared_ptr<ChannelInterface> channel_;

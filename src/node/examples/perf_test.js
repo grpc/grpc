@@ -40,7 +40,7 @@ var interop_server = require('../interop/interop_server.js');
 
 function runTest(iterations, callback) {
   var testServer = interop_server.getServer(0, false);
-  testServer.server.listen();
+  testServer.server.start();
   var client = new testProto.TestService('localhost:' + testServer.port,
                                          grpc.Credentials.createInsecure());
 
@@ -63,7 +63,7 @@ function runTest(iterations, callback) {
           var timeDiff = process.hrtime(startTime);
           intervals[i] = timeDiff[0] * 1000000 + timeDiff[1] / 1000;
           next(i+1);
-        }, {}, deadline);
+        }, {}, {deadline: deadline});
       }
     }
     next(0);

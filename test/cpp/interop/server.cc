@@ -43,6 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -114,20 +115,18 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 template <typename RequestType>
 void SetResponseCompression(ServerContext* context,
                             const RequestType& request) {
-  if (request.has_response_compression()) {
-    switch (request.response_compression()) {
-      case grpc::testing::NONE:
-        context->set_compression_algorithm(GRPC_COMPRESS_NONE);
-        break;
-      case grpc::testing::GZIP:
-        context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-        break;
-      case grpc::testing::DEFLATE:
-        context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
-        break;
-    }
-  } else {
-    context->set_compression_algorithm(GRPC_COMPRESS_NONE);
+  switch (request.response_compression()) {
+    case grpc::testing::NONE:
+      context->set_compression_algorithm(GRPC_COMPRESS_NONE);
+      break;
+    case grpc::testing::GZIP:
+      context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+      break;
+    case grpc::testing::DEFLATE:
+      context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+      break;
+    default:
+      abort();
   }
 }
 
@@ -140,9 +139,8 @@ class TestServiceImpl : public TestService::Service {
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
-    InteropServerContextInspector inspector(*context);
     SetResponseCompression(context, *request);
-    if (request->has_response_size() && request->response_size() > 0) {
+    if (request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
@@ -150,9 +148,9 @@ class TestServiceImpl : public TestService::Service {
     }
 
     if (request->has_response_status()) {
-      return Status(static_cast<grpc::StatusCode>
-		    (request->response_status().code()),
-		    request->response_status().message()); 
+      return Status(
+          static_cast<grpc::StatusCode>(request->response_status().code()),
+          request->response_status().message());
     }
 
     return Status::OK;
@@ -184,7 +182,7 @@ class TestServiceImpl : public TestService::Service {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
-      if (request.has_payload() && request.payload().has_body()) {
+      if (request.has_payload()) {
         aggregated_payload_size += request.payload().body().size();
       }
     }

@@ -46,4 +46,4 @@ typedef CONDITION_VARIABLE gpr_cv;
 typedef INIT_ONCE gpr_once;
 #define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
 
-#endif  /* GRPC_SUPPORT_SYNC_WIN32_H */
+#endif /* GRPC_SUPPORT_SYNC_WIN32_H */

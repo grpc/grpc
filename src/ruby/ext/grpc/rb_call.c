@@ -170,13 +170,26 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   grpc_call *call = NULL;
   grpc_call_error err;
   TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
-  err = grpc_call_cancel(call);
+  err = grpc_call_cancel(call, NULL);
   if (err != GRPC_CALL_OK) {
     rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
   return Qnil;
+}
+
+/* Called to obtain the peer that this call is connected to. */
+static VALUE grpc_rb_call_get_peer(VALUE self) {
+  VALUE res = Qnil;
+  grpc_call *call = NULL;
+  char *peer = NULL;
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
+  peer = grpc_call_get_peer(call);
+  res = rb_str_new2(peer);
+  gpr_free(peer);
+
+  return res;
 }
 
 /*
@@ -602,7 +615,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
 
   /* call grpc_call_start_batch, then wait for it to complete using
    * pluck_event */
-  err = grpc_call_start_batch(call, st.ops, st.op_num, ROBJECT(tag));
+  err = grpc_call_start_batch(call, st.ops, st.op_num, ROBJECT(tag), NULL);
   if (err != GRPC_CALL_OK) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError,
@@ -616,13 +629,9 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
     return Qnil;
   }
-  if (!ev.success) {
-    grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_rb_eCallError, "start_batch completion failed");
-    return Qnil;
-  }
 
-  /* Build and return the BatchResult struct result */
+  /* Build and return the BatchResult struct result,
+     if there is an error, it's reflected in the status */
   result = grpc_run_batch_stack_build_result(&st);
   grpc_run_batch_stack_cleanup(&st);
   return result;
@@ -720,6 +729,7 @@ void Init_grpc_call() {
   /* Add ruby analogues of the Call methods. */
   rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 4);
   rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
+  rb_define_method(grpc_rb_cCall, "peer", grpc_rb_call_get_peer, 0);
   rb_define_method(grpc_rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);

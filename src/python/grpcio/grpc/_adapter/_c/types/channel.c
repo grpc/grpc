@@ -36,10 +36,14 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
 
 PyMethodDef pygrpc_Channel_methods[] = {
     {"create_call", (PyCFunction)pygrpc_Channel_create_call, METH_KEYWORDS, ""},
+    {"check_connectivity_state", (PyCFunction)pygrpc_Channel_check_connectivity_state, METH_KEYWORDS, ""},
+    {"watch_connectivity_state", (PyCFunction)pygrpc_Channel_watch_connectivity_state, METH_KEYWORDS, ""},
+    {"target", (PyCFunction)pygrpc_Channel_target, METH_NOARGS, ""},
     {NULL}
 };
 const char pygrpc_Channel_doc[] = "See grpc._adapter._types.Channel.";
@@ -104,7 +108,7 @@ Channel *pygrpc_Channel_new(
   if (creds) {
     self->c_chan = grpc_secure_channel_create(creds->c_creds, target, &c_args);
   } else {
-    self->c_chan = grpc_insecure_channel_create(target, &c_args);
+    self->c_chan = grpc_insecure_channel_create(target, &c_args, NULL);
   }
   pygrpc_discard_channel_args(c_args);
   return self;
@@ -122,13 +126,61 @@ Call *pygrpc_Channel_create_call(
   const char *host;
   double deadline;
   char *keywords[] = {"cq", "method", "host", "deadline", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!ssd:create_call", keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!szd:create_call", keywords,
         &pygrpc_CompletionQueue_type, &cq, &method, &host, &deadline)) {
     return NULL;
   }
   call = pygrpc_Call_new_empty(cq);
   call->c_call = grpc_channel_create_call(
       self->c_chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq->c_cq, method, host,
-      pygrpc_cast_double_to_gpr_timespec(deadline));
+      pygrpc_cast_double_to_gpr_timespec(deadline), NULL);
   return call;
+}
+
+PyObject *pygrpc_Channel_check_connectivity_state(
+    Channel *self, PyObject *args, PyObject *kwargs) {
+  PyObject *py_try_to_connect;
+  int try_to_connect;
+  char *keywords[] = {"try_to_connect", NULL};
+  grpc_connectivity_state state;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:connectivity_state", keywords,
+                                   &py_try_to_connect)) {
+    return NULL;
+  }
+  if (!PyBool_Check(py_try_to_connect)) {
+    Py_XDECREF(py_try_to_connect);
+    return NULL;
+  }
+  try_to_connect = Py_True == py_try_to_connect;
+  Py_DECREF(py_try_to_connect);
+  state = grpc_channel_check_connectivity_state(self->c_chan, try_to_connect);
+  return PyInt_FromLong(state);
+}
+
+PyObject *pygrpc_Channel_watch_connectivity_state(
+    Channel *self, PyObject *args, PyObject *kwargs) {
+  PyObject *tag;
+  double deadline;
+  int last_observed_state;
+  CompletionQueue *completion_queue;
+  char *keywords[] = {"last_observed_state", "deadline",
+                      "completion_queue", "tag"};
+  if (!PyArg_ParseTupleAndKeywords(
+      args, kwargs, "idO!O:watch_connectivity_state", keywords,
+      &last_observed_state, &deadline, &pygrpc_CompletionQueue_type,
+      &completion_queue, &tag)) {
+    return NULL;
+  }
+  grpc_channel_watch_connectivity_state(
+      self->c_chan, (grpc_connectivity_state)last_observed_state,
+      pygrpc_cast_double_to_gpr_timespec(deadline), completion_queue->c_cq,
+      pygrpc_produce_channel_state_change_tag(tag));
+  Py_RETURN_NONE;
+}
+
+PyObject *pygrpc_Channel_target(Channel *self) {
+  char *target = grpc_channel_get_target(self->c_chan);
+  PyObject *py_target = PyString_FromString(target);
+  gpr_free(target);
+  return py_target;
 }

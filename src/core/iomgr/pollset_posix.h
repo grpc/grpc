@@ -102,7 +102,8 @@ void grpc_kick_drain(grpc_pollset *p);
    - longer than a millisecond polls are rounded up to the next nearest
      millisecond to avoid spinning
    - infinite timeouts are converted to -1 */
-int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline, gpr_timespec now);
+int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
+                                         gpr_timespec now);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_pollset *pollset,

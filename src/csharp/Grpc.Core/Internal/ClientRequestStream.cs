@@ -40,16 +40,18 @@ namespace Grpc.Core.Internal
     internal class ClientRequestStream<TRequest, TResponse> : IClientStreamWriter<TRequest>
     {
         readonly AsyncCall<TRequest, TResponse> call;
+        WriteOptions writeOptions;
 
         public ClientRequestStream(AsyncCall<TRequest, TResponse> call)
         {
             this.call = call;
+            this.writeOptions = call.Details.Options.WriteOptions;
         }
 
         public Task WriteAsync(TRequest message)
         {
             var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, taskSource.CompletionDelegate);
+            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
             return taskSource.Task;
         }
 
@@ -58,6 +60,25 @@ namespace Grpc.Core.Internal
             var taskSource = new AsyncCompletionTaskSource<object>();
             call.StartSendCloseFromClient(taskSource.CompletionDelegate);
             return taskSource.Task;
+        }
+
+        public WriteOptions WriteOptions
+        {
+            get
+            {
+                return this.writeOptions;
+            }
+
+            set
+            {
+                writeOptions = value;
+            }
+        }
+
+        private WriteFlags GetWriteFlags()
+        {
+            var options = writeOptions;
+            return options != null ? options.Flags : default(WriteFlags);
         }
     }
 }

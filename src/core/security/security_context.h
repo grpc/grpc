@@ -112,5 +112,4 @@ grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg(
 grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
     const grpc_channel_args *args);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
-
+#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
