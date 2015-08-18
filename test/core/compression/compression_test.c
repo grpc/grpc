@@ -70,7 +70,7 @@ static void test_compression_algorithm_parse(void) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   test_compression_algorithm_parse();
 
   return 0;

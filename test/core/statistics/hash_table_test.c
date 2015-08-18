@@ -65,8 +65,8 @@ static void free_data(void* data) { gpr_free(data); }
 static void test_create_table(void) {
   /* Create table with uint64 key type */
   census_ht* ht = NULL;
-  census_ht_option ht_options = {CENSUS_HT_UINT64, 1999, NULL,
-                                 NULL,             NULL, NULL};
+  census_ht_option ht_options = {
+      CENSUS_HT_UINT64, 1999, NULL, NULL, NULL, NULL};
   ht = census_ht_create(&ht_options);
   GPR_ASSERT(ht != NULL);
   GPR_ASSERT(census_ht_get_size(ht) == 0);
@@ -97,7 +97,7 @@ static void test_table_with_int_key(void) {
   for (i = 0; i < 20; ++i) {
     census_ht_key key;
     key.val = i;
-    census_ht_insert(ht, key, (void*)(gpr_intptr) i);
+    census_ht_insert(ht, key, (void*)(gpr_intptr)i);
     GPR_ASSERT(census_ht_get_size(ht) == i + 1);
   }
   for (i = 0; i < 20; i++) {
@@ -105,7 +105,7 @@ static void test_table_with_int_key(void) {
     census_ht_key key;
     key.val = i;
     val = census_ht_find(ht, key);
-    GPR_ASSERT(val == (void*)(gpr_intptr) i);
+    GPR_ASSERT(val == (void*)(gpr_intptr)i);
   }
   elements = census_ht_get_all_elements(ht, &num_elements);
   GPR_ASSERT(elements != NULL);
@@ -212,9 +212,9 @@ static void test_table_with_string_key(void) {
   census_ht_option opt = {CENSUS_HT_POINTER, 7,    &hash64,
                           &cmp_str_keys,     NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
-  const char* keys[] = {"k1",    "a",                              "000",
-                        "apple", "banana_a_long_long_long_banana", "%$",
-                        "111",   "foo",                            "b"};
+  const char* keys[] = {
+      "k1", "a",   "000", "apple", "banana_a_long_long_long_banana",
+      "%$", "111", "foo", "b"};
   const int vals[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
   int i = 0;
   GPR_ASSERT(ht != NULL);

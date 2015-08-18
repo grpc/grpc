@@ -312,4 +312,4 @@ gpr_intptr gpr_stats_read(const gpr_stats_counter *c);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_SYNC_H */
+#endif /* GRPC_SUPPORT_SYNC_H */

@@ -120,4 +120,3 @@ int main(int argc, char **argv) {
   gpr_cmdline_destroy(cl);
   return !sync.success;
 }
-

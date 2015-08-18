@@ -55,8 +55,7 @@ typedef struct fullstack_secure_fixture_data {
 } fullstack_secure_fixture_data;
 
 static const grpc_metadata *find_metadata(const grpc_metadata *md,
-                                          size_t md_count,
-                                          const char *key,
+                                          size_t md_count, const char *key,
                                           const char *value) {
   size_t i;
   for (i = 0; i < md_count; i++) {
