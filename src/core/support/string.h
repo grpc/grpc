@@ -47,7 +47,7 @@ extern "C" {
 /* String utility functions */
 
 /* Flags for gpr_dump function. */
-#define GPR_DUMP_HEX   0x00000001
+#define GPR_DUMP_HEX 0x00000001
 #define GPR_DUMP_ASCII 0x00000002
 
 /* Converts array buf, of length len, into a C string  according to the flags.
@@ -108,4 +108,4 @@ char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_STRING_H */
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_STRING_H */

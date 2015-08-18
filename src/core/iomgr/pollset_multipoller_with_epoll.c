@@ -234,8 +234,7 @@ static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
-    multipoll_with_epoll_pollset_add_fd,
-    multipoll_with_epoll_pollset_del_fd,
+    multipoll_with_epoll_pollset_add_fd, multipoll_with_epoll_pollset_del_fd,
     multipoll_with_epoll_pollset_maybe_work,
     multipoll_with_epoll_pollset_finish_shutdown,
     multipoll_with_epoll_pollset_destroy};

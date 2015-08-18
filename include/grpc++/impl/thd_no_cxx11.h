@@ -40,7 +40,8 @@ namespace grpc {
 
 class thread {
  public:
-  template<class T> thread(void (T::*fptr)(), T *obj) {
+  template <class T>
+  thread(void (T::*fptr)(), T *obj) {
     func_ = new thread_function<T>(fptr, obj);
     joined_ = false;
     start();
@@ -53,28 +54,28 @@ class thread {
     gpr_thd_join(thd_);
     joined_ = true;
   }
+
  private:
   void start() {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    gpr_thd_new(&thd_, thread_func, (void *) func_, &options);
+    gpr_thd_new(&thd_, thread_func, (void *)func_, &options);
   }
   static void thread_func(void *arg) {
-    thread_function_base *func = (thread_function_base *) arg;
+    thread_function_base *func = (thread_function_base *)arg;
     func->call();
   }
   class thread_function_base {
    public:
-    virtual ~thread_function_base() { }
+    virtual ~thread_function_base() {}
     virtual void call() = 0;
   };
-  template<class T>
+  template <class T>
   class thread_function : public thread_function_base {
    public:
-    thread_function(void (T::*fptr)(), T *obj)
-      : fptr_(fptr)
-      , obj_(obj) { }
+    thread_function(void (T::*fptr)(), T *obj) : fptr_(fptr), obj_(obj) {}
     virtual void call() { (obj_->*fptr_)(); }
+
    private:
     void (T::*fptr_)();
     T *obj_;
@@ -84,8 +85,8 @@ class thread {
   bool joined_;
 
   // Disallow copy and assign.
-  thread(const thread&);
-  void operator=(const thread&);
+  thread(const thread &);
+  void operator=(const thread &);
 };
 
 }  // namespace grpc

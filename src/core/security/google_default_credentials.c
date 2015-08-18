@@ -203,8 +203,8 @@ end:
     /* Blend with default ssl credentials and add a global reference so that it
        can be cached and re-served. */
     grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
-    default_credentials = grpc_credentials_ref(grpc_composite_credentials_create(
-        ssl_creds, result));
+    default_credentials = grpc_credentials_ref(
+        grpc_composite_credentials_create(ssl_creds, result));
     GPR_ASSERT(default_credentials != NULL);
     grpc_credentials_unref(ssl_creds);
     grpc_credentials_unref(result);
