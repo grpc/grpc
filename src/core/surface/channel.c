@@ -163,7 +163,7 @@ static grpc_call *grpc_channel_create_call_internal(
     send_metadata[num_metadata++] = authority_mdelem;
   }
 
-  return grpc_call_create(channel, parent_call, propagation_mask, cq, NULL, 
+  return grpc_call_create(channel, parent_call, propagation_mask, cq, NULL,
                           send_metadata, num_metadata, deadline);
 }
 
@@ -179,10 +179,11 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
       grpc_mdelem_from_metadata_strings(
           channel->metadata_context, GRPC_MDSTR_REF(channel->path_string),
           grpc_mdstr_from_string(channel->metadata_context, method, 0)),
-      host ?
-      grpc_mdelem_from_metadata_strings(
-          channel->metadata_context, GRPC_MDSTR_REF(channel->authority_string),
-          grpc_mdstr_from_string(channel->metadata_context, host, 0)) : NULL,
+      host ? grpc_mdelem_from_metadata_strings(
+                 channel->metadata_context,
+                 GRPC_MDSTR_REF(channel->authority_string),
+                 grpc_mdstr_from_string(channel->metadata_context, host, 0))
+           : NULL,
       deadline);
 }
 
@@ -193,9 +194,12 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
   rc->path = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, GRPC_MDSTR_REF(channel->path_string),
       grpc_mdstr_from_string(channel->metadata_context, method, 0));
-  rc->authority = host ? grpc_mdelem_from_metadata_strings(
-      channel->metadata_context, GRPC_MDSTR_REF(channel->authority_string),
-      grpc_mdstr_from_string(channel->metadata_context, host, 0)) : NULL;
+  rc->authority =
+      host ? grpc_mdelem_from_metadata_strings(
+                 channel->metadata_context,
+                 GRPC_MDSTR_REF(channel->authority_string),
+                 grpc_mdstr_from_string(channel->metadata_context, host, 0))
+           : NULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
@@ -210,8 +214,8 @@ grpc_call *grpc_channel_create_registered_call(
   registered_call *rc = registered_call_handle;
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
-      channel, parent_call, propagation_mask, completion_queue, 
-      GRPC_MDELEM_REF(rc->path), 
+      channel, parent_call, propagation_mask, completion_queue,
+      GRPC_MDELEM_REF(rc->path),
       rc->authority ? GRPC_MDELEM_REF(rc->authority) : NULL, deadline);
 }
 

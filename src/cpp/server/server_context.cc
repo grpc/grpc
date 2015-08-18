@@ -50,7 +50,12 @@ namespace grpc {
 class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp() : has_tag_(false), tag_(nullptr), refs_(2), finalized_(false), cancelled_(0) {}
+  CompletionOp()
+      : has_tag_(false),
+        tag_(nullptr),
+        refs_(2),
+        finalized_(false),
+        cancelled_(0) {}
 
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;

@@ -42,27 +42,26 @@ static void json_reader_string_clear(grpc_json_reader* reader) {
 }
 
 static void json_reader_string_add_char(grpc_json_reader* reader,
-                                             gpr_uint32 c) {
+                                        gpr_uint32 c) {
   reader->vtable->string_add_char(reader->userdata, c);
 }
 
 static void json_reader_string_add_utf32(grpc_json_reader* reader,
-                                              gpr_uint32 utf32) {
+                                         gpr_uint32 utf32) {
   reader->vtable->string_add_utf32(reader->userdata, utf32);
 }
 
-static gpr_uint32
-    grpc_json_reader_read_char(grpc_json_reader* reader) {
+static gpr_uint32 grpc_json_reader_read_char(grpc_json_reader* reader) {
   return reader->vtable->read_char(reader->userdata);
 }
 
 static void json_reader_container_begins(grpc_json_reader* reader,
-                                              grpc_json_type type) {
+                                         grpc_json_type type) {
   reader->vtable->container_begins(reader->userdata, type);
 }
 
-static grpc_json_type
-    grpc_json_reader_container_ends(grpc_json_reader* reader) {
+static grpc_json_type grpc_json_reader_container_ends(
+    grpc_json_reader* reader) {
   return reader->vtable->container_ends(reader->userdata);
 }
 
@@ -101,8 +100,9 @@ void grpc_json_reader_init(grpc_json_reader* reader,
 }
 
 int grpc_json_reader_is_complete(grpc_json_reader* reader) {
-  return ((reader->depth == 0) && ((reader->state == GRPC_JSON_STATE_END) ||
-          (reader->state == GRPC_JSON_STATE_VALUE_END)));
+  return ((reader->depth == 0) &&
+          ((reader->state == GRPC_JSON_STATE_END) ||
+           (reader->state == GRPC_JSON_STATE_VALUE_END)));
 }
 
 grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
@@ -143,7 +143,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
           case GRPC_JSON_STATE_VALUE_STRING:
             if (c != ' ') return GRPC_JSON_PARSE_ERROR;
-            if (reader->unicode_high_surrogate != 0) return GRPC_JSON_PARSE_ERROR;
+            if (reader->unicode_high_surrogate != 0)
+              return GRPC_JSON_PARSE_ERROR;
             json_reader_string_add_char(reader, c);
             break;
 
@@ -169,7 +170,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
         switch (reader->state) {
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
           case GRPC_JSON_STATE_VALUE_STRING:
-            if (reader->unicode_high_surrogate != 0) return GRPC_JSON_PARSE_ERROR;
+            if (reader->unicode_high_surrogate != 0)
+              return GRPC_JSON_PARSE_ERROR;
             json_reader_string_add_char(reader, c);
             break;
 
@@ -253,7 +255,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
 
           /* This is the \\ case. */
           case GRPC_JSON_STATE_STRING_ESCAPE:
-            if (reader->unicode_high_surrogate != 0) return GRPC_JSON_PARSE_ERROR;
+            if (reader->unicode_high_surrogate != 0)
+              return GRPC_JSON_PARSE_ERROR;
             json_reader_string_add_char(reader, '\\');
             if (reader->escaped_string_was_key) {
               reader->state = GRPC_JSON_STATE_OBJECT_KEY_STRING;
@@ -276,7 +279,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
             break;
 
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
-            if (reader->unicode_high_surrogate != 0) return GRPC_JSON_PARSE_ERROR;
+            if (reader->unicode_high_surrogate != 0)
+              return GRPC_JSON_PARSE_ERROR;
             if (c == '"') {
               reader->state = GRPC_JSON_STATE_OBJECT_KEY_END;
               json_reader_set_key(reader);
@@ -288,7 +292,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
             break;
 
           case GRPC_JSON_STATE_VALUE_STRING:
-            if (reader->unicode_high_surrogate != 0) return GRPC_JSON_PARSE_ERROR;
+            if (reader->unicode_high_surrogate != 0)
+              return GRPC_JSON_PARSE_ERROR;
             if (c == '"') {
               reader->state = GRPC_JSON_STATE_VALUE_END;
               json_reader_set_string(reader);
@@ -438,7 +443,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
                   if (reader->unicode_high_surrogate == 0)
                     return GRPC_JSON_PARSE_ERROR;
                   utf32 = 0x10000;
-                  utf32 += (gpr_uint32)((reader->unicode_high_surrogate - 0xd800) * 0x400);
+                  utf32 += (gpr_uint32)(
+                      (reader->unicode_high_surrogate - 0xd800) * 0x400);
                   utf32 += (gpr_uint32)(reader->unicode_char - 0xdc00);
                   json_reader_string_add_utf32(reader, utf32);
                   reader->unicode_high_surrogate = 0;

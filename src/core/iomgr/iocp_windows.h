@@ -44,10 +44,10 @@ void grpc_iocp_shutdown(void);
 void grpc_iocp_add_socket(grpc_winsocket *);
 void grpc_iocp_socket_orphan(grpc_winsocket *);
 
-void grpc_socket_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
+void grpc_socket_notify_on_write(grpc_winsocket *,
+                                 void (*cb)(void *, int success), void *opaque);
 
-void grpc_socket_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
+void grpc_socket_notify_on_read(grpc_winsocket *,
+                                void (*cb)(void *, int success), void *opaque);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */

@@ -185,7 +185,9 @@ class ClientContext {
 
   // Get and set census context
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
-  struct census_context* census_context() const { return census_context_; }
+  struct census_context* census_context() const {
+    return census_context_;
+  }
 
   void TryCancel();
 

@@ -61,11 +61,8 @@ class AuthPropertyIteratorTest : public ::testing::Test {
     EXPECT_EQ(1,
               grpc_auth_context_set_peer_identity_property_name(ctx_, "name"));
   }
-  void TearDown() GRPC_OVERRIDE {
-    grpc_auth_context_release(ctx_);
-  }
+  void TearDown() GRPC_OVERRIDE { grpc_auth_context_release(ctx_); }
   grpc_auth_context* ctx_;
-
 };
 
 TEST_F(AuthPropertyIteratorTest, DefaultCtor) {
@@ -100,7 +97,7 @@ TEST_F(AuthPropertyIteratorTest, GeneralTest) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

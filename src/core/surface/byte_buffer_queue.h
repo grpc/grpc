@@ -59,4 +59,4 @@ int grpc_bbq_empty(grpc_byte_buffer_queue *q);
 void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *bb);
 size_t grpc_bbq_bytes(grpc_byte_buffer_queue *q);
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_BYTE_BUFFER_QUEUE_H */
+#endif /* GRPC_INTERNAL_CORE_SURFACE_BYTE_BUFFER_QUEUE_H */

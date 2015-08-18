@@ -250,11 +250,11 @@ Server::~Server() {
   delete sync_methods_;
 }
 
-bool Server::RegisterService(const grpc::string *host, RpcService* service) {
+bool Server::RegisterService(const grpc::string* host, RpcService* service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
     RpcServiceMethod* method = service->GetMethod(i);
-    void* tag = grpc_server_register_method(
-        server_, method->name(), host ? host->c_str() : nullptr);
+    void* tag = grpc_server_register_method(server_, method->name(),
+                                            host ? host->c_str() : nullptr);
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
