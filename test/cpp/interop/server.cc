@@ -31,6 +31,7 @@
  *
  */
 
+#include <fstream>
 #include <memory>
 #include <sstream>
 #include <thread>
@@ -41,6 +42,8 @@
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
+
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -48,6 +51,7 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
@@ -65,6 +69,7 @@ using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::SslServerCredentialsOptions;
+using grpc::testing::InteropServerContextInspector;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
 using grpc::testing::SimpleRequest;
@@ -77,17 +82,52 @@ using grpc::testing::TestService;
 using grpc::Status;
 
 static bool got_sigint = false;
+static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 
 bool SetPayload(PayloadType type, int size, Payload* payload) {
-  PayloadType response_type = type;
-  // TODO(yangg): Support UNCOMPRESSABLE payload.
-  if (type != PayloadType::COMPRESSABLE) {
-    return false;
+  PayloadType response_type;
+  if (type == PayloadType::RANDOM) {
+    response_type =
+        rand() & 0x1 ? PayloadType::COMPRESSABLE : PayloadType::UNCOMPRESSABLE;
+  } else {
+    response_type = type;
   }
   payload->set_type(response_type);
-  std::unique_ptr<char[]> body(new char[size]());
-  payload->set_body(body.get(), size);
+  switch (response_type) {
+    case PayloadType::COMPRESSABLE: {
+      std::unique_ptr<char[]> body(new char[size]());
+      payload->set_body(body.get(), size);
+    } break;
+    case PayloadType::UNCOMPRESSABLE: {
+      std::unique_ptr<char[]> body(new char[size]());
+      std::ifstream rnd_file(kRandomFile);
+      GPR_ASSERT(rnd_file.good());
+      rnd_file.read(body.get(), size);
+      GPR_ASSERT(!rnd_file.eof());  // Requested more rnd bytes than available
+      payload->set_body(body.get(), size);
+    } break;
+    default:
+      GPR_ASSERT(false);
+  }
   return true;
+}
+
+template <typename RequestType>
+void SetResponseCompression(ServerContext* context,
+                            const RequestType& request) {
+  switch (request.response_compression()) {
+    case grpc::testing::NONE:
+      context->set_compression_algorithm(GRPC_COMPRESS_NONE);
+      break;
+    case grpc::testing::GZIP:
+      context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+      break;
+    case grpc::testing::DEFLATE:
+      context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+      break;
+    default:
+      abort();
+  }
 }
 
 class TestServiceImpl : public TestService::Service {
@@ -99,6 +139,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
+    SetResponseCompression(context, *request);
     if (request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
@@ -107,9 +148,9 @@ class TestServiceImpl : public TestService::Service {
     }
 
     if (request->has_response_status()) {
-      return Status(static_cast<grpc::StatusCode>
-		    (request->response_status().code()),
-		    request->response_status().message()); 
+      return Status(
+          static_cast<grpc::StatusCode>(request->response_status().code()),
+          request->response_status().message());
     }
 
     return Status::OK;
@@ -118,6 +159,7 @@ class TestServiceImpl : public TestService::Service {
   Status StreamingOutputCall(
       ServerContext* context, const StreamingOutputCallRequest* request,
       ServerWriter<StreamingOutputCallResponse>* writer) {
+    SetResponseCompression(context, *request);
     StreamingOutputCallResponse response;
     bool write_success = true;
     response.mutable_payload()->set_type(request->response_type());
@@ -156,6 +198,7 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
+      SetResponseCompression(context, request);
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
