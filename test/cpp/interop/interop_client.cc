@@ -134,13 +134,12 @@ void InteropClient::PerformLargeUnary(SimpleRequest* request,
                  grpc::string(kLargeResponseSize, '\0'));
       break;
     case PayloadType::UNCOMPRESSABLE: {
-        std::ifstream rnd_file(kRandomFile);
-        GPR_ASSERT(rnd_file.good());
-        for (int i = 0; i < kLargeResponseSize; i++) {
-          GPR_ASSERT(response->payload().body()[i] == (char)rnd_file.get());
-        }
+      std::ifstream rnd_file(kRandomFile);
+      GPR_ASSERT(rnd_file.good());
+      for (int i = 0; i < kLargeResponseSize; i++) {
+        GPR_ASSERT(response->payload().body()[i] == (char)rnd_file.get());
       }
-      break;
+    } break;
     default:
       GPR_ASSERT(false);
   }
@@ -262,8 +261,8 @@ void InteropClient::DoLargeCompressedUnary() {
     for (const auto compression_type : compression_types) {
       char* log_suffix;
       gpr_asprintf(&log_suffix, "(compression=%s; payload=%s)",
-          CompressionType_Name(compression_type).c_str(),
-          PayloadType_Name(payload_type).c_str());
+                   CompressionType_Name(compression_type).c_str(),
+                   PayloadType_Name(payload_type).c_str());
 
       gpr_log(GPR_INFO, "Sending a large compressed unary rpc %s.", log_suffix);
       SimpleRequest request;
@@ -342,8 +341,8 @@ void InteropClient::DoResponseCompressedStreaming() {
 
       char* log_suffix;
       gpr_asprintf(&log_suffix, "(compression=%s; payload=%s)",
-          CompressionType_Name(compression_type).c_str(),
-          PayloadType_Name(payload_type).c_str());
+                   CompressionType_Name(compression_type).c_str(),
+                   PayloadType_Name(payload_type).c_str());
 
       gpr_log(GPR_INFO, "Receiving response steaming rpc %s.", log_suffix);
 
@@ -553,7 +552,7 @@ void InteropClient::DoStatusWithMessage() {
   ClientContext context;
   SimpleRequest request;
   SimpleResponse response;
-  EchoStatus *requested_status = request.mutable_response_status();
+  EchoStatus* requested_status = request.mutable_response_status();
   requested_status->set_code(grpc::StatusCode::UNKNOWN);
   grpc::string test_msg = "This is a test message";
   requested_status->set_message(test_msg);

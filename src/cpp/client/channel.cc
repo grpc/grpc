@@ -98,9 +98,8 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
 }
 
 void* Channel::RegisterMethod(const char* method) {
-  return grpc_channel_register_call(c_channel_, method,
-                                    host_.empty() ? NULL : host_.c_str(),
-                                    nullptr);
+  return grpc_channel_register_call(
+      c_channel_, method, host_.empty() ? NULL : host_.c_str(), nullptr);
 }
 
 grpc_connectivity_state Channel::GetState(bool try_to_connect) {
@@ -117,6 +116,7 @@ class TagSaver GRPC_FINAL : public CompletionQueueTag {
     delete this;
     return true;
   }
+
  private:
   void* tag_;
 };

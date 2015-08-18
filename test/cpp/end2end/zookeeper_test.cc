@@ -89,8 +89,7 @@ class ZookeeperTest : public ::testing::Test {
     RegisterService("/test/1", value);
 
     // Registers service instance /test/2 in zookeeper
-    value =
-        "{\"host\":\"localhost\",\"port\":\"" + to_string(port2) + "\"}";
+    value = "{\"host\":\"localhost\",\"port\":\"" + to_string(port2) + "\"}";
     RegisterService("/test/2", value);
   }
 
@@ -196,7 +195,7 @@ TEST_F(ZookeeperTest, ZookeeperStateChangeTwoRpc) {
   EXPECT_TRUE(s1.ok());
 
   // Zookeeper state changes
-  gpr_log(GPR_DEBUG, "Zookeeper state change"); 
+  gpr_log(GPR_DEBUG, "Zookeeper state change");
   ChangeZookeeperState();
   // Waits for re-resolving addresses
   // TODO(ctiller): RPC will probably fail if not waiting

@@ -263,8 +263,8 @@ static void check_jwt_header(grpc_json *header) {
 
   GPR_ASSERT(kid != NULL);
   GPR_ASSERT(kid->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(kid->value,
-                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
+  GPR_ASSERT(strcmp(kid->value, "e6b5137873db8d2ef81e06a47289e6434ec8a165") ==
+             0);
 }
 
 static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
@@ -298,9 +298,11 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
 
   GPR_ASSERT(iss != NULL);
   GPR_ASSERT(iss->type == GRPC_JSON_STRING);
-  GPR_ASSERT(strcmp(iss->value,
-          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com")
-             ==0);
+  GPR_ASSERT(
+      strcmp(
+          iss->value,
+          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com") ==
+      0);
 
   if (expected_scope != NULL) {
     GPR_ASSERT(scope != NULL);

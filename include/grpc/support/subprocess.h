@@ -36,7 +36,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	
+#endif
 
 typedef struct gpr_subprocess gpr_subprocess;
 

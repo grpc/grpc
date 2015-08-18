@@ -232,11 +232,11 @@ static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
   }
 
   get_local_ip = 1;
-  rc = setsockopt(fd, IPPROTO_IP, IP_PKTINFO,
-                      &get_local_ip, sizeof(get_local_ip));
+  rc = setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
+                  sizeof(get_local_ip));
   if (rc == 0 && addr->sa_family == AF_INET6) {
-    rc = setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO,
-                    &get_local_ip, sizeof(get_local_ip));
+    rc = setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
+                    sizeof(get_local_ip));
   }
 
   if (bind(fd, addr, addr_len) < 0) {
@@ -317,8 +317,8 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
-                             int addr_len, grpc_udp_server_read_cb read_cb) {
+int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
+                             grpc_udp_server_read_cb read_cb) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   unsigned i;

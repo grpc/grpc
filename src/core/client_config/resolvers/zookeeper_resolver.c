@@ -142,7 +142,7 @@ static void zookeeper_next(grpc_resolver *resolver,
   gpr_mu_unlock(&r->mu);
 }
 
-/** Zookeeper global watcher for connection management 
+/** Zookeeper global watcher for connection management
     TODO: better connection management besides logs */
 static void zookeeper_global_watcher(zhandle_t *zookeeper_handle, int type,
                                      int state, const char *path,
@@ -172,7 +172,7 @@ static void zookeeper_watcher(zhandle_t *zookeeper_handle, int type, int state,
   }
 }
 
-/** Callback function after getting all resolved addresses  
+/** Callback function after getting all resolved addresses
     Creates a subchannel for each address */
 static void zookeeper_on_resolved(void *arg,
                                   grpc_resolved_addresses *addresses) {
@@ -249,7 +249,7 @@ static char *zookeeper_parse_address(const char *value, int value_len) {
   grpc_json *cur;
   const char *host;
   const char *port;
-  char* buffer;
+  char *buffer;
   char *address = NULL;
 
   buffer = gpr_malloc(value_len);
@@ -449,7 +449,7 @@ static grpc_resolver *zookeeper_create(
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &zookeeper_resolver_vtable);
   r->name = gpr_strdup(path);
-  
+
   r->subchannel_factory = subchannel_factory;
   r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
