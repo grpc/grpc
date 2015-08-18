@@ -55,4 +55,4 @@ void gpr_free_aligned(void *ptr);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_ALLOC_H */
+#endif /* GRPC_SUPPORT_ALLOC_H */

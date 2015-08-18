@@ -712,7 +712,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   chand->server = NULL;
   chand->channel = NULL;
   chand->path_key = grpc_mdstr_from_string(metadata_context, ":path", 0);
-  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority", 0);
+  chand->authority_key =
+      grpc_mdstr_from_string(metadata_context, ":authority", 0);
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;

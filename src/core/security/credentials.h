@@ -192,8 +192,9 @@ void grpc_flush_cached_google_default_credentials(void);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
-grpc_credentials *grpc_md_only_test_credentials_create(
-    const char *md_key, const char *md_value, int is_async);
+grpc_credentials *grpc_md_only_test_credentials_create(const char *md_key,
+                                                       const char *md_value,
+                                                       int is_async);
 
 /* Private constructor for jwt credentials from an already parsed json key.
    Takes ownership of the key. */

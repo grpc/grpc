@@ -69,8 +69,7 @@ static void assert_passthrough(gpr_slice value,
           "algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
           GPR_SLICE_LENGTH(value), gpr_murmur_hash3(GPR_SLICE_START_PTR(value),
                                                     GPR_SLICE_LENGTH(value), 0),
-          algorithm_name,
-          grpc_slice_split_mode_name(uncompressed_split_mode),
+          algorithm_name, grpc_slice_split_mode_name(uncompressed_split_mode),
           grpc_slice_split_mode_name(compressed_split_mode));
 
   gpr_slice_buffer_init(&input);

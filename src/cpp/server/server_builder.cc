@@ -59,14 +59,16 @@ void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
   async_services_.emplace_back(new NamedService<AsynchronousService>(service));
 }
 
-void ServerBuilder::RegisterService(
-    const grpc::string& addr, SynchronousService* service) {
-  services_.emplace_back(new NamedService<RpcService>(addr, service->service()));
+void ServerBuilder::RegisterService(const grpc::string& addr,
+                                    SynchronousService* service) {
+  services_.emplace_back(
+      new NamedService<RpcService>(addr, service->service()));
 }
 
-void ServerBuilder::RegisterAsyncService(
-    const grpc::string& addr, AsynchronousService* service) {
-  async_services_.emplace_back(new NamedService<AsynchronousService>(addr, service));
+void ServerBuilder::RegisterAsyncService(const grpc::string& addr,
+                                         AsynchronousService* service) {
+  async_services_.emplace_back(
+      new NamedService<AsynchronousService>(addr, service));
 }
 
 void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
@@ -119,9 +121,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       return nullptr;
     }
   }
-  for (auto service = async_services_.begin();
-       service != async_services_.end(); service++) {
-    if (!server->RegisterAsyncService((*service)->host.get(), (*service)->service)) {
+  for (auto service = async_services_.begin(); service != async_services_.end();
+       service++) {
+    if (!server->RegisterAsyncService((*service)->host.get(),
+                                      (*service)->service)) {
       return nullptr;
     }
   }

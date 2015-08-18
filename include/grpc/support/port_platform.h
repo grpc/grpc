@@ -64,7 +64,8 @@
 #undef GRPC_NOMINMAX_WAS_NOT_DEFINED
 #undef NOMINMAX
 #endif /* GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED */
-#endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32) */
+#endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || \
+          defined(WIN32) */
 
 /* Override this file with one for your platform if you need to redefine
    things.  */

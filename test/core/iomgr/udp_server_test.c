@@ -49,8 +49,7 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_connect(void *arg, grpc_endpoint *udp) {
-}
+static void on_connect(void *arg, grpc_endpoint *udp) {}
 
 static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
   char read_buffer[512];
@@ -122,7 +121,8 @@ static void test_receive(int number_of_clients) {
 
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len, on_read));
+  GPR_ASSERT(
+      grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len, on_read));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
