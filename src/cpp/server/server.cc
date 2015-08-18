@@ -90,6 +90,26 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
+  static bool AsyncWait(CompletionQueue* cq, SyncRequest** req, bool* ok,
+                        gpr_timespec deadline) {
+    void* tag = nullptr;
+    *ok = false;
+    switch (cq->AsyncNext(&tag, ok, deadline)) {
+      case CompletionQueue::TIMEOUT:
+        *req = nullptr;
+        return true;
+      case CompletionQueue::SHUTDOWN:
+        *req = nullptr;
+        return false;
+      case CompletionQueue::GOT_EVENT:
+        *req = static_cast<SyncRequest*>(tag);
+        GPR_ASSERT((*req)->in_flight_);
+        return true;
+    }
+    gpr_log(GPR_ERROR, "Should never reach here");
+    abort();
+  }
+
   void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
 
   void TeardownRequest() {
@@ -303,12 +323,21 @@ bool Server::Start() {
   return true;
 }
 
-void Server::Shutdown() {
+void Server::ShutdownInternal(gpr_timespec deadline) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
+    SyncRequest* request;
+    bool ok;
+    while (SyncRequest::AsyncWait(&cq_, &request, &ok, deadline)) {
+      if (request == NULL) {  // deadline expired
+        grpc_server_cancel_all_calls(server_);
+      } else if (ok) {
+        SyncRequest::CallData call_data(this, request);
+      }
+    }
 
     // Wait for running callbacks to finish.
     while (num_running_cb_ != 0) {
