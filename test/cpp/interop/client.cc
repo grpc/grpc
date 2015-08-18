@@ -56,8 +56,12 @@ DEFINE_string(test_case, "large_unary",
               "Configure different test cases. Valid options are: "
               "empty_unary : empty (zero bytes) request and response; "
               "large_unary : single request and (large) response; "
+              "large_compressed_unary : single request and compressed (large) "
+              "response; "
               "client_streaming : request streaming with single response; "
               "server_streaming : single request with response streaming; "
+              "server_compressed_streaming : single request with compressed "
+              "response streaming; "
               "slow_consumer : single request with response; "
               " streaming with slow client consumer; "
               "half_duplex : half-duplex streaming; "
@@ -70,7 +74,7 @@ DEFINE_string(test_case, "large_unary",
               "jwt_token_creds: large_unary with JWT token auth; "
               "oauth2_auth_token: raw oauth2 access token auth; "
               "per_rpc_creds: raw oauth2 access token on a single rpc; "
-	      "status_code_and_message: verify status code & message; "
+              "status_code_and_message: verify status code & message; "
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -91,10 +95,14 @@ int main(int argc, char** argv) {
     client.DoEmpty();
   } else if (FLAGS_test_case == "large_unary") {
     client.DoLargeUnary();
+  } else if (FLAGS_test_case == "large_compressed_unary") {
+    client.DoLargeCompressedUnary();
   } else if (FLAGS_test_case == "client_streaming") {
     client.DoRequestStreaming();
   } else if (FLAGS_test_case == "server_streaming") {
     client.DoResponseStreaming();
+  } else if (FLAGS_test_case == "server_compressed_streaming") {
+    client.DoResponseCompressedStreaming();
   } else if (FLAGS_test_case == "slow_consumer") {
     client.DoResponseStreamingWithSlowConsumer();
   } else if (FLAGS_test_case == "half_duplex") {
@@ -129,6 +137,7 @@ int main(int argc, char** argv) {
     client.DoLargeUnary();
     client.DoRequestStreaming();
     client.DoResponseStreaming();
+    client.DoResponseCompressedStreaming();
     client.DoHalfDuplex();
     client.DoPingPong();
     client.DoCancelAfterBegin();
@@ -148,10 +157,11 @@ int main(int argc, char** argv) {
     gpr_log(
         GPR_ERROR,
         "Unsupported test case %s. Valid options are all|empty_unary|"
-        "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
-        "cancel_after_begin|cancel_after_first_response|"
-        "timeout_on_sleeping_server|service_account_creds|compute_engine_creds|"
-        "jwt_token_creds|oauth2_auth_token|per_rpc_creds",
+        "large_unary|large_compressed_unary|client_streaming|server_streaming|"
+        "server_compressed_streaming|half_duplex|ping_pong|cancel_after_begin|"
+        "cancel_after_first_response|timeout_on_sleeping_server|"
+        "service_account_creds|compute_engine_creds|jwt_token_creds|"
+        "oauth2_auth_token|per_rpc_creds",
         FLAGS_test_case.c_str());
     ret = 1;
   }

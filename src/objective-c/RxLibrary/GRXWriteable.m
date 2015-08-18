@@ -38,7 +38,7 @@
   GRXCompletionHandler _completionHandler;
 }
 
-+ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler {
++ (instancetype)writeableWithSingleHandler:(GRXSingleHandler)handler {
   if (!handler) {
     return [[self alloc] init];
   }
@@ -51,7 +51,7 @@
   }];
 }
 
-+ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler {
++ (instancetype)writeableWithEventHandler:(GRXEventHandler)handler {
   if (!handler) {
     return [[self alloc] init];
   }

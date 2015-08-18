@@ -39,4 +39,4 @@
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_HTTP_SERVER_FILTER_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_HTTP_SERVER_FILTER_H */

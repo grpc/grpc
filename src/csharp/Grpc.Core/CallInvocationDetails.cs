@@ -40,30 +40,60 @@ namespace Grpc.Core
     /// <summary>
     /// Details about a client-side call to be invoked.
     /// </summary>
-    public class CallInvocationDetails<TRequest, TResponse>
+    public struct CallInvocationDetails<TRequest, TResponse>
     {
         readonly Channel channel;
         readonly string method;
         readonly string host;
         readonly Marshaller<TRequest> requestMarshaller;
         readonly Marshaller<TResponse> responseMarshaller;
-        readonly CallOptions options;
+        CallOptions options;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.CallInvocationDetails`2"/> struct.
+        /// </summary>
+        /// <param name="channel">Channel to use for this call.</param>
+        /// <param name="method">Method to call.</param>
+        /// <param name="options">Call options.</param>
         public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, CallOptions options) :
-            this(channel, method.FullName, null, method.RequestMarshaller, method.ResponseMarshaller, options)
+            this(channel, method, null, options)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.CallInvocationDetails`2"/> struct.
+        /// </summary>
+        /// <param name="channel">Channel to use for this call.</param>
+        /// <param name="method">Method to call.</param>
+        /// <param name="host">Host that contains the method. if <c>null</c>, default host will be used.</param>
+        /// <param name="options">Call options.</param>
+        public CallInvocationDetails(Channel channel, Method<TRequest, TResponse> method, string host, CallOptions options) :
+            this(channel, method.FullName, host, method.RequestMarshaller, method.ResponseMarshaller, options)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Grpc.Core.CallInvocationDetails`2"/> struct.
+        /// </summary>
+        /// <param name="channel">Channel to use for this call.</param>
+        /// <param name="method">Qualified method name.</param>
+        /// <param name="host">Host that contains the method.</param>
+        /// <param name="requestMarshaller">Request marshaller.</param>
+        /// <param name="responseMarshaller">Response marshaller.</param>
+        /// <param name="options">Call options.</param>
         public CallInvocationDetails(Channel channel, string method, string host, Marshaller<TRequest> requestMarshaller, Marshaller<TResponse> responseMarshaller, CallOptions options)
         {
-            this.channel = Preconditions.CheckNotNull(channel);
-            this.method = Preconditions.CheckNotNull(method);
+            this.channel = Preconditions.CheckNotNull(channel, "channel");
+            this.method = Preconditions.CheckNotNull(method, "method");
             this.host = host;
-            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller);
-            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller);
-            this.options = Preconditions.CheckNotNull(options);
+            this.requestMarshaller = Preconditions.CheckNotNull(requestMarshaller, "requestMarshaller");
+            this.responseMarshaller = Preconditions.CheckNotNull(responseMarshaller, "responseMarshaller");
+            this.options = options;
         }
 
+        /// <summary>
+        /// Get channel associated with this call.
+        /// </summary>
         public Channel Channel
         {
             get
@@ -72,6 +102,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets name of method to be called.
+        /// </summary>
         public string Method
         {
             get
@@ -80,6 +113,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Get name of host.
+        /// </summary>
         public string Host
         {
             get
@@ -88,6 +124,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets marshaller used to serialize requests.
+        /// </summary>
         public Marshaller<TRequest> RequestMarshaller
         {
             get
@@ -96,6 +135,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets marshaller used to deserialized responses.
+        /// </summary>
         public Marshaller<TResponse> ResponseMarshaller
         {
             get
@@ -104,12 +146,26 @@ namespace Grpc.Core
             }
         }
             
+        /// <summary>
+        /// Gets the call options.
+        /// </summary>
         public CallOptions Options
         {
             get
             {
                 return options;
             }
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallInvocationDetails"/> with
+        /// <c>Options</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        public CallInvocationDetails<TRequest, TResponse> WithOptions(CallOptions options)
+        {
+            var newDetails = this;
+            newDetails.options = options;
+            return newDetails;
         }
     }
 }

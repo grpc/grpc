@@ -103,10 +103,11 @@ void grpc_endpoint_destroy(grpc_endpoint *ep);
 /* Add an endpoint to a pollset, so that when the pollset is polled, events from
    this endpoint are considered */
 void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset);
-void grpc_endpoint_add_to_pollset_set(grpc_endpoint *ep, grpc_pollset_set *pollset_set);
+void grpc_endpoint_add_to_pollset_set(grpc_endpoint *ep,
+                                      grpc_pollset_set *pollset_set);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
 };
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_H */

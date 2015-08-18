@@ -100,11 +100,11 @@ grpc_end2end_proxy *grpc_end2end_proxy_create(
 
   gpr_join_host_port(&proxy->proxy_port, "localhost", proxy_port);
   gpr_join_host_port(&proxy->server_port, "localhost", server_port);
-  proxy->cq = grpc_completion_queue_create();
+  proxy->cq = grpc_completion_queue_create(NULL);
   proxy->server = def->create_server(proxy->proxy_port);
   proxy->client = def->create_client(proxy->server_port);
 
-  grpc_server_register_completion_queue(proxy->server, proxy->cq);
+  grpc_server_register_completion_queue(proxy->server, proxy->cq, NULL);
   grpc_server_start(proxy->server);
 
   gpr_thd_options_set_joinable(&opt);
@@ -177,8 +177,8 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
     op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
     refpc(pc, "on_c2p_sent_initial_metadata");
-    err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                new_closure(on_c2p_sent_initial_metadata, pc));
+    err = grpc_call_start_batch(
+        pc->c2p, &op, 1, new_closure(on_c2p_sent_initial_metadata, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
   }
 
@@ -204,7 +204,7 @@ static void on_p2s_sent_message(void *arg, int success) {
     op.data.recv_message = &pc->c2p_msg;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                new_closure(on_c2p_recv_msg, pc));
+                                new_closure(on_c2p_recv_msg, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
   }
 
@@ -228,14 +228,14 @@ static void on_c2p_recv_msg(void *arg, int success) {
       op.data.send_message = pc->c2p_msg;
       refpc(pc, "on_p2s_sent_message");
       err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                  new_closure(on_p2s_sent_message, pc));
+                                  new_closure(on_p2s_sent_message, pc), NULL);
       GPR_ASSERT(err == GRPC_CALL_OK);
     } else {
       op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
       op.flags = 0;
       refpc(pc, "on_p2s_sent_close");
       err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                  new_closure(on_p2s_sent_close, pc));
+                                  new_closure(on_p2s_sent_close, pc), NULL);
       GPR_ASSERT(err == GRPC_CALL_OK);
     }
   }
@@ -257,7 +257,7 @@ static void on_c2p_sent_message(void *arg, int success) {
     op.data.recv_message = &pc->p2s_msg;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                new_closure(on_p2s_recv_msg, pc));
+                                new_closure(on_p2s_recv_msg, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
   }
 
@@ -275,7 +275,7 @@ static void on_p2s_recv_msg(void *arg, int success) {
     op.data.send_message = pc->p2s_msg;
     refpc(pc, "on_c2p_sent_message");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                new_closure(on_c2p_sent_message, pc));
+                                new_closure(on_c2p_sent_message, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
   }
   unrefpc(pc, "on_p2s_recv_msg");
@@ -303,7 +303,7 @@ static void on_p2s_status(void *arg, int success) {
     op.data.send_status_from_server.status_details = pc->p2s_status_details;
     refpc(pc, "on_c2p_sent_status");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                new_closure(on_c2p_sent_status, pc));
+                                new_closure(on_c2p_sent_status, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
   }
 
@@ -330,7 +330,7 @@ static void on_new_call(void *arg, int success) {
     pc->p2s = grpc_channel_create_call(
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,
         proxy->new_call_details.method, proxy->new_call_details.host,
-        proxy->new_call_details.deadline);
+        proxy->new_call_details.deadline, NULL);
     gpr_ref_init(&pc->refs, 1);
 
     op.flags = 0;
@@ -338,30 +338,30 @@ static void on_new_call(void *arg, int success) {
     op.op = GRPC_OP_RECV_INITIAL_METADATA;
     op.data.recv_initial_metadata = &pc->p2s_initial_metadata;
     refpc(pc, "on_p2s_recv_initial_metadata");
-    err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                new_closure(on_p2s_recv_initial_metadata, pc));
+    err = grpc_call_start_batch(
+        pc->p2s, &op, 1, new_closure(on_p2s_recv_initial_metadata, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
     op.data.send_initial_metadata.count = pc->c2p_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->c2p_initial_metadata.metadata;
     refpc(pc, "on_p2s_sent_initial_metadata");
-    err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                new_closure(on_p2s_sent_initial_metadata, pc));
+    err = grpc_call_start_batch(
+        pc->p2s, &op, 1, new_closure(on_p2s_sent_initial_metadata, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_RECV_MESSAGE;
     op.data.recv_message = &pc->c2p_msg;
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                new_closure(on_c2p_recv_msg, pc));
+                                new_closure(on_c2p_recv_msg, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_RECV_MESSAGE;
     op.data.recv_message = &pc->p2s_msg;
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
-                                new_closure(on_p2s_recv_msg, pc));
+                                new_closure(on_p2s_recv_msg, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -372,15 +372,15 @@ static void on_new_call(void *arg, int success) {
     op.data.recv_status_on_client.status_details_capacity =
         &pc->p2s_status_details_capacity;
     refpc(pc, "on_p2s_status");
-    err =
-        grpc_call_start_batch(pc->p2s, &op, 1, new_closure(on_p2s_status, pc));
+    err = grpc_call_start_batch(pc->p2s, &op, 1, new_closure(on_p2s_status, pc),
+                                NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     op.data.recv_close_on_server.cancelled = &pc->c2p_server_cancelled;
     refpc(pc, "on_c2p_closed");
-    err =
-        grpc_call_start_batch(pc->c2p, &op, 1, new_closure(on_c2p_closed, pc));
+    err = grpc_call_start_batch(pc->c2p, &op, 1, new_closure(on_c2p_closed, pc),
+                                NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     request_call(proxy);
@@ -405,7 +405,7 @@ static void thread_main(void *arg) {
   closure *cl;
   for (;;) {
     grpc_event ev = grpc_completion_queue_next(
-        proxy->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+        proxy->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         gpr_log(GPR_ERROR, "Should never reach here");

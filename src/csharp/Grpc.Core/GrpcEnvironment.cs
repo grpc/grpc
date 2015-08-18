@@ -115,7 +115,7 @@ namespace Grpc.Core
         /// </summary>
         public static void SetLogger(ILogger customLogger)
         {
-            Preconditions.CheckNotNull(customLogger);
+            Preconditions.CheckNotNull(customLogger, "customLogger");
             logger = customLogger;
         }
 
@@ -191,24 +191,6 @@ namespace Grpc.Core
             debugStats.CheckOK();
 
             Logger.Info("gRPC shutdown.");
-        }
-
-        /// <summary>
-        /// Shuts down this environment asynchronously.
-        /// </summary>
-        private Task CloseAsync()
-        {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Close();
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, "Error occured while shutting down GrpcEnvironment.");
-                }
-            });
         }
     }
 }

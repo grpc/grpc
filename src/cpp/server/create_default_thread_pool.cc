@@ -39,9 +39,9 @@
 namespace grpc {
 
 ThreadPoolInterface* CreateDefaultThreadPool() {
-   int cores = gpr_cpu_num_cores();
-   if (!cores) cores = 4;
-   return new DynamicThreadPool(cores);
+  int cores = gpr_cpu_num_cores();
+  if (!cores) cores = 4;
+  return new DynamicThreadPool(cores);
 }
 
 }  // namespace grpc

@@ -110,11 +110,42 @@ namespace Grpc.Core.Tests
 
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
+                Assert.Throws(typeof(ArgumentException), () =>
+                {
+                    // Trying to override deadline while propagating deadline from parent call will throw.
+                    Calls.BlockingUnaryCall(helper.CreateUnaryCall(
+                        new CallOptions(deadline: DateTime.UtcNow.AddDays(8),
+                                        propagationToken: context.CreatePropagationToken())), "");
+                });
+
                 var callOptions = new CallOptions(propagationToken: context.CreatePropagationToken());
                 return await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
             });
                 
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(deadline: deadline)));
+            await call.RequestStream.CompleteAsync();
+            Assert.AreEqual("PASS", await call);
+        }
+
+        [Test]
+        public async Task SuppressDeadlinePropagation()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.AreEqual(DateTime.MaxValue, context.Deadline);
+                return "PASS";
+            });
+
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                Assert.IsTrue(context.CancellationToken.CanBeCanceled);
+
+                var callOptions = new CallOptions(propagationToken: context.CreatePropagationToken(new ContextPropagationOptions(propagateDeadline: false)));
+                return await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
+            });
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(deadline: DateTime.UtcNow.AddDays(7))));
             await call.RequestStream.CompleteAsync();
             Assert.AreEqual("PASS", await call);
         }

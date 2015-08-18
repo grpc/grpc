@@ -55,11 +55,12 @@ class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
 
  private:
   class DynamicThread {
-  public:
-    DynamicThread(DynamicThreadPool *pool);
+   public:
+    DynamicThread(DynamicThreadPool* pool);
     ~DynamicThread();
-  private:
-    DynamicThreadPool *pool_;
+
+   private:
+    DynamicThreadPool* pool_;
     std::unique_ptr<grpc::thread> thd_;
     void ThreadFunc();
   };

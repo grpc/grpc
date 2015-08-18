@@ -47,7 +47,7 @@
      GPR_TLS_DECL(foo);
    Thread locals always have static scope.
 
-   Initializing a thread local (must be done at library initialization 
+   Initializing a thread local (must be done at library initialization
    time):
      gpr_tls_init(&foo);
 
@@ -58,7 +58,7 @@
      gpr_tls_set(&foo, new_value);
 
    Accessing a thread local:
-     current_value = gpr_tls_get(&foo, value); 
+     current_value = gpr_tls_get(&foo, value);
 
    ALL functions here may be implemented as macros. */
 

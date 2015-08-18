@@ -52,7 +52,6 @@ cc_library(
     "src/core/support/string_win32.h",
     "src/core/support/thd_internal.h",
     "src/core/support/alloc.c",
-    "src/core/support/cancellable.c",
     "src/core/support/cmdline.c",
     "src/core/support/cpu_iphone.c",
     "src/core/support/cpu_linux.c",
@@ -96,7 +95,6 @@ cc_library(
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_win32.h",
-    "include/grpc/support/cancellable_platform.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
     "include/grpc/support/histogram.h",
@@ -202,6 +200,7 @@ cc_library(
     "src/core/iomgr/tcp_server.h",
     "src/core/iomgr/tcp_windows.h",
     "src/core/iomgr/time_averaged_stats.h",
+    "src/core/iomgr/udp_server.h",
     "src/core/iomgr/wakeup_fd_pipe.h",
     "src/core/iomgr/wakeup_fd_posix.h",
     "src/core/json/json.h",
@@ -326,6 +325,7 @@ cc_library(
     "src/core/iomgr/tcp_server_windows.c",
     "src/core/iomgr/tcp_windows.c",
     "src/core/iomgr/time_averaged_stats.c",
+    "src/core/iomgr/udp_server.c",
     "src/core/iomgr/wakeup_fd_eventfd.c",
     "src/core/iomgr/wakeup_fd_nospecial.c",
     "src/core/iomgr/wakeup_fd_pipe.c",
@@ -400,6 +400,7 @@ cc_library(
   ],
   deps = [
     "//external:libssl",
+    "//external:zlib",
     ":gpr",
   ],
 )
@@ -485,6 +486,7 @@ cc_library(
     "src/core/iomgr/tcp_server.h",
     "src/core/iomgr/tcp_windows.h",
     "src/core/iomgr/time_averaged_stats.h",
+    "src/core/iomgr/udp_server.h",
     "src/core/iomgr/wakeup_fd_pipe.h",
     "src/core/iomgr/wakeup_fd_posix.h",
     "src/core/json/json.h",
@@ -589,6 +591,7 @@ cc_library(
     "src/core/iomgr/tcp_server_windows.c",
     "src/core/iomgr/tcp_windows.c",
     "src/core/iomgr/time_averaged_stats.c",
+    "src/core/iomgr/udp_server.c",
     "src/core/iomgr/wakeup_fd_eventfd.c",
     "src/core/iomgr/wakeup_fd_nospecial.c",
     "src/core/iomgr/wakeup_fd_pipe.c",
@@ -662,6 +665,26 @@ cc_library(
   ],
   deps = [
     ":gpr",
+  ],
+)
+
+
+cc_library(
+  name = "grpc_zookeeper",
+  srcs = [
+    "src/core/client_config/resolvers/zookeeper_resolver.h",
+    "src/core/client_config/resolvers/zookeeper_resolver.c",
+  ],
+  hdrs = [
+    "include/grpc/grpc_zookeeper.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    ":gpr",
+    ":grpc",
   ],
 )
 
@@ -907,7 +930,6 @@ objc_library(
   name = "gpr_objc",
   srcs = [
     "src/core/support/alloc.c",
-    "src/core/support/cancellable.c",
     "src/core/support/cmdline.c",
     "src/core/support/cpu_iphone.c",
     "src/core/support/cpu_linux.c",
@@ -951,7 +973,6 @@ objc_library(
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_win32.h",
-    "include/grpc/support/cancellable_platform.h",
     "include/grpc/support/cmdline.h",
     "include/grpc/support/cpu.h",
     "include/grpc/support/histogram.h",
@@ -1074,6 +1095,7 @@ objc_library(
     "src/core/iomgr/tcp_server_windows.c",
     "src/core/iomgr/tcp_windows.c",
     "src/core/iomgr/time_averaged_stats.c",
+    "src/core/iomgr/udp_server.c",
     "src/core/iomgr/wakeup_fd_eventfd.c",
     "src/core/iomgr/wakeup_fd_nospecial.c",
     "src/core/iomgr/wakeup_fd_pipe.c",
@@ -1211,6 +1233,7 @@ objc_library(
     "src/core/iomgr/tcp_server.h",
     "src/core/iomgr/tcp_windows.h",
     "src/core/iomgr/time_averaged_stats.h",
+    "src/core/iomgr/udp_server.h",
     "src/core/iomgr/wakeup_fd_pipe.h",
     "src/core/iomgr/wakeup_fd_posix.h",
     "src/core/json/json.h",

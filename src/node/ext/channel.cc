@@ -33,12 +33,17 @@
 
 #include <vector>
 
+#include "grpc/support/log.h"
+
 #include <node.h>
 #include <nan.h>
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
+#include "call.h"
 #include "channel.h"
+#include "completion_queue_async_worker.h"
 #include "credentials.h"
+#include "timeval.h"
 
 namespace grpc {
 namespace node {
@@ -51,6 +56,7 @@ using v8::Handle;
 using v8::HandleScope;
 using v8::Integer;
 using v8::Local;
+using v8::Number;
 using v8::Object;
 using v8::Persistent;
 using v8::String;
@@ -59,14 +65,12 @@ using v8::Value;
 NanCallback *Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
-Channel::Channel(grpc_channel *channel, NanUtf8String *host)
-    : wrapped_channel(channel), host(host) {}
+Channel::Channel(grpc_channel *channel) : wrapped_channel(channel) {}
 
 Channel::~Channel() {
   if (wrapped_channel != NULL) {
     grpc_channel_destroy(wrapped_channel);
   }
-  delete host;
 }
 
 void Channel::Init(Handle<Object> exports) {
@@ -78,6 +82,12 @@ void Channel::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(Close)->GetFunction());
   NanSetPrototypeTemplate(tpl, "getTarget",
                           NanNew<FunctionTemplate>(GetTarget)->GetFunction());
+  NanSetPrototypeTemplate(
+      tpl, "getConnectivityState",
+      NanNew<FunctionTemplate>(GetConnectivityState)->GetFunction());
+  NanSetPrototypeTemplate(
+      tpl, "watchConnectivityState",
+      NanNew<FunctionTemplate>(WatchConnectivityState)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
   Handle<Function> ctr = tpl->GetFunction();
   constructor = new NanCallback(ctr);
@@ -91,8 +101,6 @@ bool Channel::HasInstance(Handle<Value> val) {
 
 grpc_channel *Channel::GetWrappedChannel() { return this->wrapped_channel; }
 
-char *Channel::GetHost() { return **this->host; }
-
 NAN_METHOD(Channel::New) {
   NanScope();
 
@@ -103,8 +111,7 @@ NAN_METHOD(Channel::New) {
     }
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
-    NanUtf8String *host = new NanUtf8String(args[0]);
-    NanUtf8String *host_override = NULL;
+    NanUtf8String host(args[0]);
     grpc_credentials *creds;
     if (!Credentials::HasInstance(args[1])) {
       return NanThrowTypeError(
@@ -116,12 +123,9 @@ NAN_METHOD(Channel::New) {
     grpc_channel_args *channel_args_ptr;
     if (args[2]->IsUndefined()) {
       channel_args_ptr = NULL;
-      wrapped_channel = grpc_insecure_channel_create(**host, NULL);
+      wrapped_channel = grpc_insecure_channel_create(*host, NULL, NULL);
     } else if (args[2]->IsObject()) {
       Handle<Object> args_hash(args[2]->ToObject()->Clone());
-      if (args_hash->HasOwnProperty(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG))) {
-        host_override = new NanUtf8String(args_hash->Get(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
-      }
       Handle<Array> keys(args_hash->GetOwnPropertyNames());
       grpc_channel_args channel_args;
       channel_args.num_args = keys->Length();
@@ -153,20 +157,16 @@ NAN_METHOD(Channel::New) {
       return NanThrowTypeError("Channel expects a string and an object");
     }
     if (creds == NULL) {
-      wrapped_channel = grpc_insecure_channel_create(**host, channel_args_ptr);
+      wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr,
+                                                     NULL);
     } else {
       wrapped_channel =
-          grpc_secure_channel_create(creds, **host, channel_args_ptr);
+          grpc_secure_channel_create(creds, *host, channel_args_ptr);
     }
     if (channel_args_ptr != NULL) {
       free(channel_args_ptr->args);
     }
-    Channel *channel;
-    if (host_override == NULL) {
-      channel = new Channel(wrapped_channel, host);
-    } else {
-      channel = new Channel(wrapped_channel, host_override);
-    }
+    Channel *channel = new Channel(wrapped_channel);
     channel->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
@@ -196,6 +196,53 @@ NAN_METHOD(Channel::GetTarget) {
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(args.This());
   NanReturnValue(NanNew(grpc_channel_get_target(channel->wrapped_channel)));
+}
+
+NAN_METHOD(Channel::GetConnectivityState) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError(
+        "getConnectivityState can only be called on Channel objects");
+  }
+  Channel *channel = ObjectWrap::Unwrap<Channel>(args.This());
+  int try_to_connect = (int)args[0]->Equals(NanTrue());
+  NanReturnValue(grpc_channel_check_connectivity_state(channel->wrapped_channel,
+                                                       try_to_connect));
+}
+
+NAN_METHOD(Channel::WatchConnectivityState) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError(
+        "watchConnectivityState can only be called on Channel objects");
+  }
+  if (!args[0]->IsUint32()) {
+    return NanThrowTypeError(
+        "watchConnectivityState's first argument must be a channel state");
+  }
+  if (!(args[1]->IsNumber() || args[1]->IsDate())) {
+    return NanThrowTypeError(
+        "watchConnectivityState's second argument must be a date or a number");
+  }
+  if (!args[2]->IsFunction()) {
+    return NanThrowTypeError(
+        "watchConnectivityState's third argument must be a callback");
+  }
+  grpc_connectivity_state last_state =
+      static_cast<grpc_connectivity_state>(args[0]->Uint32Value());
+  double deadline = args[1]->NumberValue();
+  Handle<Function> callback_func = args[2].As<Function>();
+  NanCallback *callback = new NanCallback(callback_func);
+  Channel *channel = ObjectWrap::Unwrap<Channel>(args.This());
+  unique_ptr<OpVec> ops(new OpVec());
+  grpc_channel_watch_connectivity_state(
+      channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
+      CompletionQueueAsyncWorker::GetQueue(),
+      new struct tag(callback,
+                     ops.release(),
+                     shared_ptr<Resources>(nullptr)));
+  CompletionQueueAsyncWorker::Next();
+  NanReturnUndefined();
 }
 
 }  // namespace node
