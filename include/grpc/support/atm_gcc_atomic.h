@@ -69,4 +69,4 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
                                      __ATOMIC_RELAXED);
 }
 
-#endif  /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */
+#endif /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */

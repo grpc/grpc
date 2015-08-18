@@ -54,4 +54,4 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string);
 
 int grpc_tcp_prepare_socket(SOCKET sock);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_WINDOWS_H */

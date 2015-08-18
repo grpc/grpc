@@ -68,7 +68,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr) i; }
+void* tag(int i) { return (void*)(gpr_intptr)i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -107,7 +107,8 @@ class GenericEnd2endTest : public ::testing::Test {
     server_address_ << server_host_ << ":" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();

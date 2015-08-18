@@ -157,4 +157,4 @@ void grpc_json_reader_init(grpc_json_reader* reader,
  */
 int grpc_json_reader_is_complete(grpc_json_reader* reader);
 
-#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_READER_H */
+#endif /* GRPC_INTERNAL_CORE_JSON_JSON_READER_H */

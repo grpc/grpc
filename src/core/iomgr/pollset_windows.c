@@ -56,8 +56,7 @@ static grpc_pollset_worker *pop_front_worker(grpc_pollset *p) {
     grpc_pollset_worker *w = p->root_worker.next;
     remove_worker(p, w);
     return w;
-  }
-  else {
+  } else {
     return NULL;
   }
 }
@@ -100,7 +99,8 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-int grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker, gpr_timespec deadline) {
+int grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
+                      gpr_timespec deadline) {
   gpr_timespec now;
   int added_worker = 0;
   now = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -134,8 +134,8 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
       for (specific_worker = p->root_worker.next;
-        specific_worker != &p->root_worker;
-        specific_worker = specific_worker->next) {
+           specific_worker != &p->root_worker;
+           specific_worker = specific_worker->next) {
         gpr_cv_signal(&specific_worker->cv);
       }
       p->kicked_without_pollers = 1;
