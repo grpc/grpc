@@ -56,8 +56,7 @@ static grpc_pollset_worker *pop_front_worker(grpc_pollset *p) {
     grpc_pollset_worker *w = p->root_worker.next;
     remove_worker(p, w);
     return w;
-  }
-  else {
+  } else {
     return NULL;
   }
 }
@@ -129,8 +128,8 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
       for (specific_worker = p->root_worker.next;
-        specific_worker != &p->root_worker;
-        specific_worker = specific_worker->next) {
+           specific_worker != &p->root_worker;
+           specific_worker = specific_worker->next) {
         gpr_cv_signal(&specific_worker->cv);
       }
       p->kicked_without_pollers = 1;

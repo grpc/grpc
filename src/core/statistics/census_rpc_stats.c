@@ -85,8 +85,8 @@ static void delete_key(void* key) { gpr_free(key); }
 
 static const census_ht_option ht_opt = {
     CENSUS_HT_POINTER /* key type */, 1999 /* n_of_buckets */,
-    simple_hash /* hash function */, cmp_str_keys /* key comparator */,
-    delete_stats /* data deleter */, delete_key /* key deleter */
+    simple_hash /* hash function */,  cmp_str_keys /* key comparator */,
+    delete_stats /* data deleter */,  delete_key /* key deleter */
 };
 
 static void init_rpc_stats(void* stats) {
