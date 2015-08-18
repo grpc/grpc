@@ -398,6 +398,7 @@ PHP_METHOD(Call, startBatch) {
     }
     ops[op_num].op = (grpc_op_type)index;
     ops[op_num].flags = 0;
+    ops[op_num].reserved = NULL;
     op_num++;
   }
   error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped,
