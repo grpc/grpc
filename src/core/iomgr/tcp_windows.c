@@ -175,6 +175,18 @@ static void on_read(void *tcpp, int from_iocp) {
   cb(opaque, slice, nslices, status);
 }
 
+typedef struct {
+  grpc_iomgr_closure closure;
+  grpc_tcp *tcp;
+} delayed_read_info;
+
+static void delayed_read(void *arg, int success) {
+  delayed_read_info *info = (delayed_read_info *)arg;
+  (void)success;
+  on_read(info->tcp, 1);
+  gpr_free(info);
+}
+
 static void win_notify_on_read(grpc_endpoint *ep,
                                grpc_endpoint_read_cb cb, void *arg) {
   grpc_tcp *tcp = (grpc_tcp *) ep;
@@ -207,9 +219,12 @@ static void win_notify_on_read(grpc_endpoint *ep,
 
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
+    /* To avoid recursing forever, let's delay the callback for now. */
     info->bytes_transfered = bytes_read;
-    /* This might heavily recurse. */
-    on_read(tcp, 1);
+    delayed_read_info *delayed = gpr_malloc(sizeof(delayed_read_info));
+    delayed->tcp = tcp;
+    grpc_iomgr_closure_init(&delayed->closure, delayed_read, delayed);
+    grpc_iomgr_add_delayed_callback(&delayed->closure, 1);
     return;
   }
 
