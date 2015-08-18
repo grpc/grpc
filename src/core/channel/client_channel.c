@@ -505,13 +505,13 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   if (iomgr_success && chand->resolver) {
     grpc_resolver *resolver = chand->resolver;
     GRPC_RESOLVER_REF(resolver, "channel-next");
+    grpc_connectivity_state_set(&chand->state_tracker, state,
+                                "new_lb+resolver");
     gpr_mu_unlock(&chand->mu_config);
     GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
     grpc_resolver_next(resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
     GRPC_RESOLVER_UNREF(resolver, "channel-next");
-    grpc_connectivity_state_set(&chand->state_tracker, state,
-                                "new_lb+resolver");
     if (lb_policy != NULL) {
       watch_lb_policy(chand, lb_policy, state);
     }
