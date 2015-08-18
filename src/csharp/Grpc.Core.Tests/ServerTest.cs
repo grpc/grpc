@@ -47,7 +47,7 @@ namespace Grpc.Core.Tests
         {
             Server server = new Server
             {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerSecurityOptions.Insecure) }
             };
             server.Start();
             server.ShutdownAsync().Wait();
@@ -59,7 +59,7 @@ namespace Grpc.Core.Tests
         {
             Server server = new Server
             {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerSecurityOptions.Insecure) }
             };
 
             var boundPort = server.Ports.Single();
@@ -76,10 +76,10 @@ namespace Grpc.Core.Tests
         {
             Server server = new Server
             {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerSecurityOptions.Insecure) }
             };
             server.Start();
-            Assert.Throws(typeof(InvalidOperationException), () => server.Ports.Add("localhost", 9999, ServerCredentials.Insecure));
+            Assert.Throws(typeof(InvalidOperationException), () => server.Ports.Add("localhost", 9999, ServerSecurityOptions.Insecure));
             Assert.Throws(typeof(InvalidOperationException), () => server.Services.Add(ServerServiceDefinition.CreateBuilder("serviceName").Build()));
 
             server.ShutdownAsync().Wait();

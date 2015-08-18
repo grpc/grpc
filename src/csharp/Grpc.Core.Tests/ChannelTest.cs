@@ -50,13 +50,13 @@ namespace Grpc.Core.Tests
         [Test]
         public void Constructor_RejectsInvalidParams()
         {
-            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, Credentials.Insecure));
+            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, SecurityOptions.Insecure));
         }
 
         [Test]
         public void State_IdleAfterCreation()
         {
-            using (var channel = new Channel("localhost", Credentials.Insecure))
+            using (var channel = new Channel("localhost", SecurityOptions.Insecure))
             {
                 Assert.AreEqual(ChannelState.Idle, channel.State);
             }
@@ -65,7 +65,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void WaitForStateChangedAsync_InvalidArgument()
         {
-            using (var channel = new Channel("localhost", Credentials.Insecure))
+            using (var channel = new Channel("localhost", SecurityOptions.Insecure))
             {
                 Assert.Throws(typeof(ArgumentException), () => channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
             }
@@ -74,7 +74,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void ResolvedTarget()
         {
-            using (var channel = new Channel("127.0.0.1", Credentials.Insecure))
+            using (var channel = new Channel("127.0.0.1", SecurityOptions.Insecure))
             {
                 Assert.IsTrue(channel.ResolvedTarget.Contains("127.0.0.1"));
             }
@@ -83,7 +83,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void Dispose_IsIdempotent()
         {
-            var channel = new Channel("localhost", Credentials.Insecure);
+            var channel = new Channel("localhost", SecurityOptions.Insecure);
             channel.Dispose();
             channel.Dispose();
         }

@@ -50,7 +50,7 @@ namespace Grpc.Core
 
         readonly string host;
         readonly int port;
-        readonly ServerCredentials credentials;
+        readonly ServerSecurityOptions securityOptions;
         readonly int boundPort;
 
         /// <summary>
@@ -59,12 +59,12 @@ namespace Grpc.Core
         /// <returns>The port on which server will be listening.</returns>
         /// <param name="host">the host</param>
         /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
-        /// <param name="credentials">credentials to use to secure this port.</param>
-        public ServerPort(string host, int port, ServerCredentials credentials)
+        /// <param name="securityOptions">Options to use to secure this port.</param>
+        public ServerPort(string host, int port, ServerSecurityOptions securityOptions)
         {
             this.host = Preconditions.CheckNotNull(host, "host");
             this.port = port;
-            this.credentials = Preconditions.CheckNotNull(credentials, "credentials");
+            this.securityOptions = Preconditions.CheckNotNull(securityOptions, "securityOptions");
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Grpc.Core
         {
             this.host = serverPort.host;
             this.port = serverPort.port;
-            this.credentials = serverPort.credentials;
+            this.securityOptions = serverPort.securityOptions;
             this.boundPort = boundPort;
         }
 
@@ -96,12 +96,12 @@ namespace Grpc.Core
             }
         }
 
-        /// <value>The server credentials.</value>
-        public ServerCredentials Credentials
+        /// <value>The server security options.</value>
+        public ServerSecurityOptions SecurityOptions
         {
             get
             {
-                return credentials;
+                return securityOptions;
             }
         }
 

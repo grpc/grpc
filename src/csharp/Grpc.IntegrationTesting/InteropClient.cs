@@ -58,7 +58,7 @@ namespace Grpc.IntegrationTesting
         {
             public bool help;
             public string serverHost = "127.0.0.1";
-            public string serverHostOverride = TestCredentials.DefaultHostOverride;
+            public string serverHostOverride = TestSecurityOptions.DefaultHostOverride;
             public int? serverPort;
             public string testCase = "large_unary";
             public bool useTls;
@@ -103,11 +103,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task Run()
         {
-            Credentials credentials = null;
-            if (options.useTls)
-            {
-                credentials = TestCredentials.CreateTestClientCredentials(options.useTestCa);
-            }
+            var securityOptions = options.useTls ? TestSecurityOptions.CreateTestClientSecurityOptions(options.useTestCa) : SecurityOptions.Insecure;
 
             List<ChannelOption> channelOptions = null;
             if (!string.IsNullOrEmpty(options.serverHostOverride))
@@ -118,7 +114,7 @@ namespace Grpc.IntegrationTesting
                 };
             }
 
-            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions))
+            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, securityOptions, channelOptions))
             {
                 TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
                 await RunTestCaseAsync(options.testCase, client);

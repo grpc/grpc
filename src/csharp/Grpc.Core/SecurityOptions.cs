@@ -37,17 +37,18 @@ using Grpc.Core.Internal;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Client-side credentials. Used for creation of a secure channel.
+    /// Base class for providers of channel security options. Subclasses can be used to
+    /// create secure channels.
     /// </summary>
-    public abstract class Credentials
+    public abstract class SecurityOptions
     {
-        static readonly Credentials InsecureInstance = new InsecureCredentialsImpl();
+        static readonly SecurityOptions InsecureInstance = new InsecureImpl();
 
         /// <summary>
-        /// Returns instance of credential that provides no security and 
+        /// Returns <c>SecurityOptions</c> object that provides no security and 
         /// will result in creating an unsecure channel with no encryption whatsoever.
         /// </summary>
-        public static Credentials Insecure
+        public static SecurityOptions Insecure
         {
             get
             {
@@ -56,13 +57,13 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Creates native object for the credentials. May return null if insecure channel
+        /// Creates native credentials object representing this instance. May return null if insecure channel
         /// should be created.
         /// </summary>
         /// <returns>The native credentials.</returns>
         internal abstract CredentialsSafeHandle ToNativeCredentials();
 
-        private sealed class InsecureCredentialsImpl : Credentials
+        private sealed class InsecureImpl : SecurityOptions
         {
             internal override CredentialsSafeHandle ToNativeCredentials()
             {
@@ -72,36 +73,36 @@ namespace Grpc.Core
     }
 
     /// <summary>
-    /// Client-side SSL credentials.
+    /// Client-side SSL options. <c>Channel</c> created with these options will be secured by SSL.
     /// </summary>
-    public sealed class SslCredentials : Credentials
+    public sealed class SslOptions : SecurityOptions
     {
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
 
         /// <summary>
-        /// Creates client-side SSL credentials loaded from
+        /// Creates client-side SSL options loaded from
         /// disk file pointed to by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable.
         /// If that fails, gets the roots certificates from a well known place on disk.
         /// </summary>
-        public SslCredentials() : this(null, null)
+        public SslOptions() : this(null, null)
         {
         }
 
         /// <summary>
-        /// Creates client-side SSL credentials from
+        /// Creates client-side SSL options from
         /// a string containing PEM encoded root certificates.
         /// </summary>
-        public SslCredentials(string rootCertificates) : this(rootCertificates, null)
+        public SslOptions(string rootCertificates) : this(rootCertificates, null)
         {
         }
             
         /// <summary>
-        /// Creates client-side SSL credentials.
+        /// Creates client-side SSL options.
         /// </summary>
         /// <param name="rootCertificates">string containing PEM encoded server root certificates.</param>
         /// <param name="keyCertificatePair">a key certificate pair.</param>
-        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair)
+        public SslOptions(string rootCertificates, KeyCertificatePair keyCertificatePair)
         {
             this.rootCertificates = rootCertificates;
             this.keyCertificatePair = keyCertificatePair;

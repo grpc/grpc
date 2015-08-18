@@ -33,11 +33,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Google.ProtocolBuffers;
 using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
@@ -46,38 +45,56 @@ using NUnit.Framework;
 namespace Grpc.IntegrationTesting
 {
     /// <summary>
-    /// SSL Credentials for testing.
+    /// Test SSL options in scenario where server verifies authenticity of the client 
+    /// and client verifies authenticity of the server.
     /// </summary>
-    public static class TestCredentials
+    public class SslOptionsTest
     {
-        public const string DefaultHostOverride = "foo.test.google.fr";
+        const string Host = "localhost";
+        Server server;
+        Channel channel;
+        TestService.ITestServiceClient client;
 
-        public const string ClientCertAuthorityPath = "data/ca.pem";
-        public const string ClientCertAuthorityEnvName = "SSL_CERT_FILE";
-
-        public const string ServerCertChainPath = "data/server1.pem";
-        public const string ServerPrivateKeyPath = "data/server1.key";
-
-        public static SslCredentials CreateTestClientCredentials(bool useTestCa)
+        [TestFixtureSetUp]
+        public void Init()
         {
-            string caPath = ClientCertAuthorityPath;
-            if (!useTestCa)
+            var rootCert = File.ReadAllText(TestSecurityOptions.ClientCertAuthorityPath);
+            var keyCertPair = new KeyCertificatePair(
+                File.ReadAllText(TestSecurityOptions.ServerCertChainPath),
+                File.ReadAllText(TestSecurityOptions.ServerPrivateKeyPath));
+
+            var serverSecurityOptions = new SslServerOptions(new[] { keyCertPair }, rootCert, true);
+            var clientSecurityOptions = new SslOptions(rootCert, keyCertPair);
+
+            server = new Server
             {
-                caPath = Environment.GetEnvironmentVariable(ClientCertAuthorityEnvName);
-                if (string.IsNullOrEmpty(caPath))
-                {
-                    throw new ArgumentException("CA path environment variable is not set.");
-                }
-            }
-            return new SslCredentials(File.ReadAllText(caPath));
+                Services = { TestService.BindService(new TestServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, serverSecurityOptions } }
+            };
+            server.Start();
+
+            var options = new List<ChannelOption>
+            {
+                new ChannelOption(ChannelOptions.SslTargetNameOverride, TestSecurityOptions.DefaultHostOverride)
+            };
+
+            channel = new Channel(Host, server.Ports.Single().BoundPort, clientSecurityOptions, options);
+            client = TestService.NewClient(channel);
         }
 
-        public static SslServerCredentials CreateTestServerCredentials()
+        [TestFixtureTearDown]
+        public void Cleanup()
         {
-            var keyCertPair = new KeyCertificatePair(
-                File.ReadAllText(ServerCertChainPath),
-                File.ReadAllText(ServerPrivateKeyPath));
-            return new SslServerCredentials(new[] { keyCertPair });
+            channel.Dispose();
+            server.ShutdownAsync().Wait();
+            GrpcEnvironment.Shutdown();
+        }
+
+        [Test]
+        public void AuthenticatedClientAndServer()
+        {
+            var response = client.UnaryCall(SimpleRequest.CreateBuilder().SetResponseSize(10).Build());
+            Assert.AreEqual(10, response.Payload.Body.Length);
         }
     }
 }

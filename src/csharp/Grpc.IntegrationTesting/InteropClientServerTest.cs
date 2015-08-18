@@ -59,16 +59,16 @@ namespace Grpc.IntegrationTesting
             server = new Server
             {
                 Services = { TestService.BindService(new TestServiceImpl()) },
-                Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateTestServerCredentials() } }
+                Ports = { { Host, ServerPort.PickUnused, TestSecurityOptions.CreateTestServerSecurityOptions() } }
             };
             server.Start();
 
             var options = new List<ChannelOption>
             {
-                new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
+                new ChannelOption(ChannelOptions.SslTargetNameOverride, TestSecurityOptions.DefaultHostOverride)
             };
             int port = server.Ports.Single().BoundPort;
-            channel = new Channel(Host, port, TestCredentials.CreateTestClientCredentials(true), options);
+            channel = new Channel(Host, port, TestSecurityOptions.CreateTestClientSecurityOptions(true), options);
             client = TestService.NewClient(channel);
         }
 

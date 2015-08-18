@@ -39,17 +39,17 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Server side credentials.
+    /// Server side security options.
     /// </summary>
-    public abstract class ServerCredentials
+    public abstract class ServerSecurityOptions
     {
-        static readonly ServerCredentials InsecureInstance = new InsecureServerCredentialsImpl();
+        static readonly ServerSecurityOptions InsecureInstance = new InsecureImpl();
 
         /// <summary>
-        /// Returns instance of credential that provides no security and 
+        /// Returns instance of <c>ServerSecurityOptions</c> that provides no security and 
         /// will result in creating an unsecure server port with no encryption whatsoever.
         /// </summary>
-        public static ServerCredentials Insecure
+        public static ServerSecurityOptions Insecure
         {
             get
             {
@@ -58,12 +58,12 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Creates native object for the credentials.
+        /// Creates native object for the security options.
         /// </summary>
         /// <returns>The native credentials.</returns>
         internal abstract ServerCredentialsSafeHandle ToNativeCredentials();
 
-        private sealed class InsecureServerCredentialsImpl : ServerCredentials
+        private sealed class InsecureImpl : ServerSecurityOptions
         {
             internal override ServerCredentialsSafeHandle ToNativeCredentials()
             {
@@ -73,21 +73,21 @@ namespace Grpc.Core
     }
 
     /// <summary>
-    /// Server-side SSL credentials.
+    /// Server-side SSL security options.
     /// </summary>
-    public class SslServerCredentials : ServerCredentials
+    public class SslServerOptions : ServerSecurityOptions
     {
         readonly IList<KeyCertificatePair> keyCertificatePairs;
         readonly string rootCertificates;
         readonly bool forceClientAuth;
 
         /// <summary>
-        /// Creates server-side SSL credentials.
+        /// Creates server-side SSL options.
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
         /// <param name="rootCertificates">PEM encoded client root certificates used to authenticate client.</param>
         /// <param name="forceClientAuth">If true, client will be rejected unless it proves its unthenticity using against rootCertificates.</param>
-        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, bool forceClientAuth)
+        public SslServerOptions(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, bool forceClientAuth)
         {
             this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
             Preconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
@@ -102,12 +102,12 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Creates server-side SSL credentials.
-        /// This constructor should be use if you do not wish to autheticate client
+        /// Creates server-side SSL options.
+        /// This constructor should be used if you do not wish to autheticate client
         /// using client root certificates.
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
-        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, false)
+        public SslServerOptions(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, false)
         {
         }
 
