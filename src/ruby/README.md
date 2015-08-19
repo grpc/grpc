@@ -19,7 +19,7 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [debian unstable][] (sid) to your `sources.list` file. Example:
+Add [Debian unstable][] to your `sources.list` file. Example:
 
 ```sh
 echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
@@ -93,4 +93,4 @@ Directory structure is the layout for [ruby extensions][]
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
 [grpc.io]: http://www.grpc.io/docs/installation/ruby.html
-[debian unstable]:https://www.debian.org/releases/sid/
+[Debian unstable]:https://www.debian.org/releases/sid/
