@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: index.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: index.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
+ *
+ * Copyright 2015, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+'use strict';
+
+var _ = require('lodash');
+
+var ProtoBuf = require('protobufjs');
+
+var client = require('./src/client.js');
+
+var server = require('./src/server.js');
+
+var grpc = require('bindings')('grpc');
+
+/**
+ * Load a gRPC object from an existing ProtoBuf.Reflect object.
+ * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
+ * @return {Object&lt;string, *>} The resulting gRPC object
+ */
+exports.loadObject = function loadObject(value) {
+  var result = {};
+  if (value.className === 'Namespace') {
+    _.each(value.children, function(child) {
+      result[child.name] = loadObject(child);
+    });
+    return result;
+  } else if (value.className === 'Service') {
+    return client.makeProtobufClientConstructor(value);
+  } else if (value.className === 'Message' || value.className === 'Enum') {
+    return value.build();
+  } else {
+    return value;
+  }
+};
+
+var loadObject = exports.loadObject;
+
+/**
+ * Load a gRPC object from a .proto file.
+ * @param {string} filename The file to load
+ * @param {string=} format The file format to expect. Must be either 'proto' or
+ *     'json'. Defaults to 'proto'
+ * @return {Object&lt;string, *>} The resulting gRPC object
+ */
+exports.load = function load(filename, format) {
+  if (!format) {
+    format = 'proto';
+  }
+  var builder;
+  switch(format) {
+    case 'proto':
+    builder = ProtoBuf.loadProtoFile(filename);
+    break;
+    case 'json':
+    builder = ProtoBuf.loadJsonFile(filename);
+    break;
+    default:
+    throw new Error('Unrecognized format "' + format + '"');
+  }
+
+  return loadObject(builder.ns);
+};
+
+/**
+ * Get a function that a client can use to update metadata with authentication
+ * information from a Google Auth credential object, which comes from the
+ * google-auth-library.
+ * @param {Object} credential The credential object to use
+ * @return {function(Object, callback)} Metadata updater function
+ */
+exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
+  /**
+   * Update a metadata object with authentication information.
+   * @param {string} authURI The uri to authenticate to
+   * @param {Object} metadata Metadata object
+   * @param {function(Error, Object)} callback
+   */
+  return function updateMetadata(authURI, metadata, callback) {
+    metadata = _.clone(metadata);
+    if (metadata.Authorization) {
+      metadata.Authorization = _.clone(metadata.Authorization);
+    } else {
+      metadata.Authorization = [];
+    }
+    credential.getRequestMetadata(authURI, function(err, header) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      metadata.Authorization.push(header.Authorization);
+      callback(null, metadata);
+    });
+  };
+};
+
+/**
+ * @see module:src/server.Server
+ */
+exports.Server = server.Server;
+
+/**
+ * Status name to code number mapping
+ */
+exports.status = grpc.status;
+
+/**
+ * Propagate flag name to number mapping
+ */
+exports.propagate = grpc.propagate;
+
+/**
+ * Call error name to code number mapping
+ */
+exports.callError = grpc.callError;
+
+/**
+ * Credentials factories
+ */
+exports.Credentials = grpc.Credentials;
+
+/**
+ * ServerCredentials factories
+ */
+exports.ServerCredentials = grpc.ServerCredentials;
+
+/**
+ * @see module:src/client.makeClientConstructor
+ */
+exports.makeGenericClientConstructor = client.makeClientConstructor;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Tue Aug 18 2015 18:25:05 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

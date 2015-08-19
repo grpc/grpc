@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3>grpc 0.10.0</h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Node.js gRPC Library</h1><h2>Status</h2><p>Alpha : Ready for early adopters</p>
+<h2>PREREQUISITES</h2><ul>
+<li><code>node</code>: This requires <code>node</code> to be installed. If you instead have the <code>nodejs</code> executable on Debian, you should install the <a href="https://packages.debian.org/sid/nodejs-legacy"><code>nodejs-legacy</code></a> package.</li>
+<li><a href="http://brew.sh">homebrew</a> on Mac OS X, <a href="https://github.com/Homebrew/linuxbrew#installation">linuxbrew</a> on Linux.  These simplify the installation of the gRPC C core.</li>
+</ul>
+<h2>INSTALLATION</h2><p>On Mac OS X, install <a href="http://brew.sh">homebrew</a>. On Linux, install <a href="https://github.com/Homebrew/linuxbrew#installation">linuxbrew</a>.
+Run the following command to install gRPC Node.js.</p>
+<pre class="prettyprint source lang-sh"><code>$ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs</code></pre><p>This will download and run the <a href="https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install">gRPC install script</a>, then install the latest version of gRPC Nodejs npm package.</p>
+<h2>BUILD FROM SOURCE</h2><ol>
+<li>Clone <a href="https://github.com/grpc/grpc">the grpc Git Repository</a>.</li>
+<li>Follow the instructions in the <code>INSTALL</code> file in the root of that repository to install the C core library that this package depends on.</li>
+<li>Run <code>npm install</code>.</li>
+</ol>
+<p>If you install the gRPC C core library in a custom location, then you need to set some environment variables to install this library. The command will look like this:</p>
+<pre class="prettyprint source lang-sh"><code>CXXFLAGS=-I&lt;custom location>/include LDFLAGS=-L&lt;custom location>/lib npm install [grpc]</code></pre><h2>TESTING</h2><p>To run the test suite, simply run <code>npm test</code> in the install location.</p>
+<h2>API</h2><p>This library internally uses <a href="https://github.com/dcodeIO/ProtoBuf.js">ProtoBuf.js</a>, and some structures it exports match those exported by that library</p>
+<p>If you require this module, you will get an object with the following members</p>
+<pre class="prettyprint source lang-javascript"><code>function load(filename)</code></pre><p>Takes a filename of a <a href="https://developers.google.com/protocol-buffers/">Protocol Buffer</a> file, and returns an object representing the structure of the protocol buffer in the following way:</p>
+<ul>
+<li>Namespaces become maps from the names of their direct members to those member objects</li>
+<li>Service definitions become client constructors for clients for that service. They also have a <code>service</code> member that can be used for constructing servers.</li>
+<li>Message definitions become Message constructors like those that ProtoBuf.js would create</li>
+<li>Enum definitions become Enum objects like those that ProtoBuf.js would create</li>
+<li>Anything else becomes the relevant reflection object that ProtoBuf.js would create</li>
+</ul>
+<pre class="prettyprint source lang-javascript"><code>function loadObject(reflectionObject)</code></pre><p>Returns the same structure that <code>load</code> returns, but takes a reflection object from <code>ProtoBuf.js</code> instead of a file name.</p>
+<pre class="prettyprint source lang-javascript"><code>function Server([serverOpions])</code></pre><p>Constructs a server to which service/implementation pairs can be added.</p>
+<pre class="prettyprint source lang-javascript"><code>status</code></pre><p>An object mapping status names to status code numbers.</p>
+<pre class="prettyprint source lang-javascript"><code>callError</code></pre><p>An object mapping call error names to codes. This is primarily useful for tracking down certain kinds of internal errors.</p>
+<pre class="prettyprint source lang-javascript"><code>Credentials</code></pre><p>An object with factory methods for creating credential objects for clients.</p>
+<pre class="prettyprint source lang-javascript"><code>ServerCredentials</code></pre><p>An object with factory methods for creating credential objects for servers.</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Tue Aug 18 2015 18:25:05 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
