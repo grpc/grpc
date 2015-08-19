@@ -196,6 +196,16 @@ void InitConnectivityStateConstants(Handle<Object> exports) {
   channel_state->Set(NanNew("FATAL_FAILURE"), FATAL_FAILURE);
 }
 
+void InitWriteFlags(Handle<Object> exports) {
+  NanScope();
+  Handle<Object> write_flags = NanNew<Object>();
+  exports->Set(NanNew("writeFlags"), write_flags);
+  Handle<Value> BUFFER_HINT(NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
+  write_flags->Set(NanNew("BUFFER_HINT"), BUFFER_HINT);
+  Handle<Value> NO_COMPRESS(NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
+  write_flags->Set(NanNew("NO_COMPRESS"), NO_COMPRESS);
+}
+
 void init(Handle<Object> exports) {
   NanScope();
   grpc_init();
@@ -204,6 +214,7 @@ void init(Handle<Object> exports) {
   InitOpTypeConstants(exports);
   InitPropagateConstants(exports);
   InitConnectivityStateConstants(exports);
+  InitWriteFlags(exports);
 
   grpc::node::Call::Init(exports);
   grpc::node::Channel::Init(exports);
