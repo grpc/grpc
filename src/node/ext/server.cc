@@ -120,7 +120,7 @@ Server::Server(grpc_server *server) : wrapped_server(server) {
 Server::~Server() {
   this->ShutdownServer();
   grpc_completion_queue_shutdown(this->shutdown_queue);
-  grpc_server_destroy(wrapped_server);
+  grpc_server_destroy(this->wrapped_server);
   grpc_completion_queue_destroy(this->shutdown_queue);
 }
 
@@ -162,7 +162,6 @@ void Server::ShutdownServer() {
   grpc_server_cancel_all_calls(this->wrapped_server);
   grpc_completion_queue_pluck(this->shutdown_queue, NULL,
                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  this->wrapped_server = NULL;
 }
 
 NAN_METHOD(Server::New) {
