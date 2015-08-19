@@ -332,6 +332,8 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
+    // Since nothing else needs to touch state guarded by mu_, holding it 
+    // through this loop is fine.
     SyncRequest* request;
     bool ok;
     while (SyncRequest::AsyncWait(&cq_, &request, &ok, deadline)) {
