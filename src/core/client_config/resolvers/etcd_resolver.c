@@ -152,7 +152,7 @@ static void etcd_next(grpc_resolver *resolver,
 }
 
 /** Etcd watcher for handling updates to watched nodes */
-static void etcd_watcher(void *arg, const grpc_httpcli_response *response) {
+/*static void etcd_watcher(void *arg, const grpc_httpcli_response *response) {
   etcd_resolver *r = (etcd_resolver *)arg;
   gpr_log(GPR_DEBUG, "watch triggered");
   r->modified_index++;
@@ -161,17 +161,17 @@ static void etcd_watcher(void *arg, const grpc_httpcli_response *response) {
     etcd_start_resolving_locked(r);
   }
   gpr_mu_unlock(&r->mu);
-}
+}*/
 
 /** Watch for a change and receive notification by using HTTP long polling
     TODO(ctiller): Objects will leak since currently we cannot cancel it */
 static void etcd_set_watch(etcd_resolver *r) {
-  char *path;
+  /*char *path;
   gpr_timespec deadline;
   grpc_httpcli_request request;
 
   gpr_asprintf(&path, "/v2/keys%s?wait=true&recursive=true&waitIndex=%d", r->name, r->modified_index);
-  gpr_log(GPR_DEBUG, path);
+  gpr_log(GPR_DEBUG, "set watch: %s", path);
 
   memset(&request, 0, sizeof(request));
   request.host = r->authority;
@@ -181,7 +181,7 @@ static void etcd_set_watch(etcd_resolver *r) {
   grpc_httpcli_get(&r->context, &r->pollset, &request, deadline, etcd_watcher,
                    r);
 
-  gpr_free(path);
+  gpr_free(path);*/
 }
 
 static void etcd_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
@@ -320,6 +320,7 @@ static void etcd_parse_response(etcd_resolver *r, char *response, int response_l
             r->resolved_total = 1;
             /** Further resolve address by DNS */
             grpc_resolve_address(address, NULL, etcd_dns_resolved, r);
+            gpr_free(address);
           } else {
             gpr_log(GPR_ERROR, "Error in resolving etcd address %s", r->name);
           }
@@ -344,7 +345,9 @@ static void etcd_parse_response(etcd_resolver *r, char *response, int response_l
               else if (!strcmp(level_4->key, "value")) {
                 address = etcd_parse_address(level_4->value);
                 if (address != NULL) {
+                  gpr_mu_lock(&r->mu);
                   r->resolved_total++;
+                  gpr_mu_unlock(&r->mu);
                   /** Further resolve address by DNS */
                   grpc_resolve_address(address, NULL, etcd_dns_resolved, r);
                 } else {
@@ -374,7 +377,7 @@ static void etcd_on_response(void *arg, const grpc_httpcli_response *response) {
     gpr_log(GPR_ERROR, "Error in etcd server response");
     return;
   }
-  gpr_log(GPR_DEBUG, response->body);
+  /*gpr_log(GPR_DEBUG, response->body);*/
   etcd_parse_response(r, response->body, response->body_length);
   gpr_log(GPR_DEBUG, "index = %d", r->modified_index);
   etcd_set_watch(r);
@@ -390,8 +393,7 @@ static void etcd_resolve_address(etcd_resolver *r) {
   request.host = r->authority;
   request.path = path;
 
-  gpr_log(GPR_DEBUG, "authority: %s, name: %s", r->authority, r->name);
-  gpr_log(GPR_DEBUG, path);
+  gpr_log(GPR_DEBUG, "get request: %s", path);
 
   deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                           gpr_time_from_seconds(15, GPR_TIMESPAN));

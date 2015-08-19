@@ -98,7 +98,7 @@ class EtcdTest : public ::testing::Test {
   void SetUpEtcd() {
     // Find etcd server address in environment
     // Default is localhost:2379
-    etcd_address_ = "127.0.0.1:2379";
+    etcd_address_ = "localhost:2379";
     char* addr = gpr_getenv("GRPC_ETCD_SERVER_TEST");
     if (addr != NULL) {
       string addr_str(addr);
@@ -112,9 +112,6 @@ class EtcdTest : public ::testing::Test {
 
     // Registers etcd name resolver in grpc
     grpc_etcd_register();
-
-    // Unregisters all plugins when exit
-    atexit(grpc_unregister_all_plugins);
   }
 
   std::unique_ptr<Server> SetUpServer(int port) {
@@ -128,7 +125,6 @@ class EtcdTest : public ::testing::Test {
   }
 
   static void on_http_response(void *arg, const grpc_httpcli_response *response) {
-    gpr_log(GPR_DEBUG, response->body);
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
     http_done = 1;
     grpc_pollset_kick(&pollset, NULL);
@@ -144,13 +140,7 @@ class EtcdTest : public ::testing::Test {
     request.path = gpr_strdup(path.c_str());
     request.hdr_count = 1;
     request.hdrs = &hdr;
-
     http_done = 0;
-    gpr_log(GPR_DEBUG, method.c_str());
-    gpr_log(GPR_DEBUG, request.host);
-    gpr_log(GPR_DEBUG, request.path);
-    gpr_log(GPR_DEBUG, body.c_str());
-    gpr_log(GPR_DEBUG, "%d", body.size());
 
     if (method == "GET") {
       grpc_httpcli_get(&context, &pollset, &request, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
@@ -192,8 +182,8 @@ class EtcdTest : public ::testing::Test {
   }
 
   void ChangeEtcdState() {
-    server1_->Shutdown();
-    DeleteInstance("/test/1");
+    /*server2_->Shutdown();
+    DeleteInstance("/test/2");*/
   }
 
   static void destroy_pollset(void *ignored) { 
