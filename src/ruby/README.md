@@ -26,11 +26,17 @@ echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
 sudo tee -a /etc/apt/sources.list
 ```
 
-Install the gRPC debian package
+Install the gRPC Debian package
 
 ```sh
 sudo apt-get update
 sudo apt-get install libgrpc-dev
+```
+
+Install the gRPC Ruby package
+
+```sh
+gem install grpc
 ```
 
 **Mac OS X**
