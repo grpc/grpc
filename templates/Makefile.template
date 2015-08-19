@@ -578,7 +578,7 @@ endif
 else
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 USE_SYSTEM_OPENSSL = false
-OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
+OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
 # need to prefix these to ensure overriding system libraries
 CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
