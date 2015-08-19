@@ -2488,6 +2488,9 @@
         "gpr",
         "grpc++_test_config"
       ],
+      "exclude_configs": [
+        "tsan"
+      ],
       "platforms": [
         "mac",
         "linux",
