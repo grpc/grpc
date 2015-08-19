@@ -111,7 +111,7 @@ describe('server', function() {
     it('tryShutdown should shutdown successfully', function(done) {
       server.tryShutdown(done);
     });
-    it.only('forceShutdown should shutdown successfully', function() {
+    it('forceShutdown should shutdown successfully', function() {
       server.forceShutdown();
     });
     it('tryShutdown should be idempotent', function(done) {
@@ -120,6 +120,10 @@ describe('server', function() {
     });
     it('forceShutdown should be idempotent', function() {
       server.forceShutdown();
+      server.forceShutdown();
+    });
+    it('forceShutdown should trigger tryShutdown', function(done) {
+      server.tryShutdown(done);
       server.forceShutdown();
     });
   });
