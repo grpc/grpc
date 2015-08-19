@@ -69,6 +69,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     ShutdownInternal(TimePoint<T>(deadline).raw_time());
   }
 
+  // Shutdown the server, waiting for all rpc processing to finish.
   void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   // Block waiting for all work to complete (the server must either
