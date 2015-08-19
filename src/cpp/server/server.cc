@@ -329,11 +329,15 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     shutdown_ = true;
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
+    // Spin, eating requests until the completion queue is completely shutdown.
+    // If the deadline expires then cancel anything that's pending and keep
+    // spinning forever until the work is actually drained.
     SyncRequest* request;
     bool ok;
     while (SyncRequest::AsyncWait(&cq_, &request, &ok, deadline)) {
       if (request == NULL) {  // deadline expired
         grpc_server_cancel_all_calls(server_);
+        deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
       } else if (ok) {
         SyncRequest::CallData call_data(this, request);
       }
