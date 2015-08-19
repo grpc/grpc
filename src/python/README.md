@@ -13,7 +13,26 @@ PREREQUISITES
 
 INSTALLATION
 -------------
-On Mac OS X, install [homebrew][]. Run the following command to install gRPC Python.
+
+**Linux (Debian):**
+
+Add [debian unstable][] (sid) to your `sources.list` file. Example:
+
+```sh
+echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+sudo tee -a /etc/apt/sources.list
+```
+
+Install the gRPC debian package
+
+```sh
+sudo apt-get update
+sudo apt-get install libgrpc-dev
+```
+
+**Mac OS X**
+
+Install [homebrew][]. Run the following command to install gRPC Python.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s python
 ```
@@ -62,3 +81,4 @@ $ ../../tools/distrib/python/submit.py
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
+[debian unstable]:https://www.debian.org/releases/sid/

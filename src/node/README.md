@@ -8,7 +8,26 @@ Alpha : Ready for early adopters
 - [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 ## INSTALLATION
-On Mac OS X, install [homebrew][]. Run the following command to install gRPC Node.js.
+
+**Linux (Debian):**
+
+Add [debian unstable][] (sid) to your `sources.list` file. Example:
+
+```sh
+echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+sudo tee -a /etc/apt/sources.list
+```
+
+Install the gRPC debian package
+
+```sh
+sudo apt-get update
+sudo apt-get install libgrpc-dev
+```
+
+**Mac OS X**
+
+Install [homebrew][]. Run the following command to install gRPC Node.js.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
 ```
@@ -88,3 +107,4 @@ An object with factory methods for creating credential objects for servers.
 
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+[debian unstable]:https://www.debian.org/releases/sid/
