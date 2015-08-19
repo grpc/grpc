@@ -581,6 +581,7 @@ NAN_METHOD(Call::StartBatch) {
     uint32_t type = keys->Get(i)->Uint32Value();
     ops[i].op = static_cast<grpc_op_type>(type);
     ops[i].flags = 0;
+    ops[i].reserved = NULL;
     switch (type) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         op.reset(new SendMetadataOp());
