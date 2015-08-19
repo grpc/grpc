@@ -207,6 +207,13 @@ class SendMessageOp : public Op {
     if (!::node::Buffer::HasInstance(value)) {
       return false;
     }
+    Handle<Object> object_value = value->ToObject();
+    if (object_value->HasOwnProperty(NanNew("grpcWriteFlags"))) {
+      Handle<Value> flag_value = object_value->Get(NanNew("grpcWriteFlags"));
+      if (flag_value->IsUint32()) {
+        out->flags = flag_value->Uint32Value() & GRPC_WRITE_USED_MASK;
+      }
+    }
     out->data.send_message = BufferToByteBuffer(value);
     Persistent<Value> *handle = new Persistent<Value>();
     NanAssignPersistent(*handle, value);
@@ -457,10 +464,6 @@ void Call::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(GetPeer)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
   Handle<Function> ctr = tpl->GetFunction();
-  ctr->Set(NanNew("WRITE_BUFFER_HINT"),
-           NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
-  ctr->Set(NanNew("WRITE_NO_COMPRESS"),
-           NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
   exports->Set(NanNew("Call"), ctr);
   constructor = new NanCallback(ctr);
 }
