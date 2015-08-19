@@ -149,7 +149,7 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
 }
 
 /** Returns the compression algorithm's enabled states bitset from \a a. If not
- * found, return a biset will all algorithms enabled */
+ * found, return a biset with all algorithms enabled */
 static gpr_uint32 find_compression_algorithm_states_bitset(
     const grpc_channel_args *a) {
   gpr_uint32 states_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
