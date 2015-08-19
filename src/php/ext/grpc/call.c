@@ -244,15 +244,9 @@ PHP_METHOD(Call, __construct) {
   wrapped_grpc_timeval *deadline =
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
-  if (host_override != NULL) {
-    call->wrapped = grpc_channel_create_call(
-        channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
-        host_override, deadline->wrapped, NULL);
-  } else {
-    call->wrapped = grpc_channel_create_call(
-        channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
-        NULL, deadline->wrapped, NULL);
-  }
+  call->wrapped = grpc_channel_create_call(
+      channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
+      host_override, deadline->wrapped, NULL);
 }
 
 /**

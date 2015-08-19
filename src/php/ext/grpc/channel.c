@@ -64,7 +64,6 @@ void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
   if (channel->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapped);
   }
-  efree(channel->target);
   efree(channel);
 }
 
@@ -174,8 +173,6 @@ PHP_METHOD(Channel, __construct) {
     }
     efree(args.args);
   }
-  channel->target = ecalloc(target_length + 1, sizeof(char));
-  memcpy(channel->target, target, target_length);
 }
 
 /**
