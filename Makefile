@@ -4630,8 +4630,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/async_unary_call.h \
     include/grpc++/auth_context.h \
     include/grpc++/byte_buffer.h \
+    include/grpc++/channel.h \
     include/grpc++/channel_arguments.h \
-    include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \
@@ -4873,8 +4873,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/async_unary_call.h \
     include/grpc++/auth_context.h \
     include/grpc++/byte_buffer.h \
+    include/grpc++/channel.h \
     include/grpc++/channel_arguments.h \
-    include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \

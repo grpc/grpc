@@ -55,7 +55,7 @@ namespace grpc {
 //   CreateTestChannel("test.google.com:443", "", true, true, creds);
 //   same as above
 //   CreateTestChannel("", "test.google.com:443", true, true, creds);
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<Credentials>& creds) {
@@ -80,7 +80,7 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
   }
 }
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots) {
   return CreateTestChannel(server, override_hostname, enable_ssl,
@@ -88,8 +88,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 }
 
 // Shortcut for end2end and interop tests.
-std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
-                                                    bool enable_ssl) {
+std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
+                                           bool enable_ssl) {
   return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
 }
 
