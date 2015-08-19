@@ -61,7 +61,7 @@ describe('Health Checking', function() {
                                      grpc.Credentials.createInsecure());
   });
   after(function() {
-    healthServer.shutdown();
+    healthServer.forceShutdown();
   });
   it('should say an enabled service is SERVING', function(done) {
     healthClient.check({service: ''}, function(err, response) {
