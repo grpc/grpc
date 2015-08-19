@@ -37,13 +37,15 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Google.Apis.Auth.OAuth2;
 using Google.ProtocolBuffers;
+
 using grpc.testing;
 using Grpc.Auth;
 using Grpc.Core;
 using Grpc.Core.Utils;
+
 using NUnit.Framework;
-using Google.Apis.Auth.OAuth2;
 
 namespace Grpc.IntegrationTesting
 {
