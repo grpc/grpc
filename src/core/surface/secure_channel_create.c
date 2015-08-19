@@ -38,7 +38,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/channel/census_filter.h"
+#include "src/core/census/census_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/compress_filter.h"
