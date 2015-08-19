@@ -32,7 +32,7 @@ $ sudo php -d detect_unicode=0 go-pear.phar
 
 **Linux (Debian):**
 
-Add [debian unstable][] (sid) to your `sources.list` file. Example:
+Add [Debian unstable][] to your `sources.list` file. Example:
 
 ```sh
 echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
@@ -172,4 +172,4 @@ $ ./bin/run_gen_code_test.sh
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples
-[debian unstable]:https://www.debian.org/releases/sid/
+[Debian unstable]:https://www.debian.org/releases/sid/

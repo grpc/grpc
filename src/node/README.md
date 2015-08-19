@@ -11,7 +11,7 @@ Alpha : Ready for early adopters
 
 **Linux (Debian):**
 
-Add [debian unstable][] (sid) to your `sources.list` file. Example:
+Add [Debian unstable][] to your `sources.list` file. Example:
 
 ```sh
 echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
@@ -107,4 +107,4 @@ An object with factory methods for creating credential objects for servers.
 
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[debian unstable]:https://www.debian.org/releases/sid/
+[Debian unstable]:https://www.debian.org/releases/sid/

@@ -16,7 +16,7 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [debian unstable][] (sid) to your `sources.list` file. Example:
+Add [Debian unstable][] to your `sources.list` file. Example:
 
 ```sh
 echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
@@ -28,6 +28,11 @@ Install the gRPC debian package
 ```sh
 sudo apt-get update
 sudo apt-get install libgrpc-dev
+```
+
+Install the gRPC Python module
+```sh
+sudo pip install grpcio
 ```
 
 **Mac OS X**
@@ -45,11 +50,6 @@ Please read our online documentation for a [Quick Start][] and a [detailed examp
 BUILDING FROM SOURCE
 ---------------------
 - Clone this repository
-- Build the gRPC core from the root of the
-  [gRPC Git repository](https://github.com/grpc/grpc)
-```
-$ make shared_c static_c
-```
 
 - Use build_python.sh to build the Python code and install it into a virtual environment
 ```
@@ -81,4 +81,4 @@ $ ../../tools/distrib/python/submit.py
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
-[debian unstable]:https://www.debian.org/releases/sid/
+[Debian unstable]:https://www.debian.org/releases/sid/
