@@ -16,7 +16,26 @@ PREREQUISITES
 
 INSTALLATION
 ---------------
-On Mac OS X, install [homebrew][]. Run the following command to install gRPC Ruby.
+
+**Linux (Debian):**
+
+Add [debian unstable][] (sid) to your `sources.list` file. Example:
+
+```sh
+echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+sudo tee -a /etc/apt/sources.list
+```
+
+Install the gRPC debian package
+
+```sh
+sudo apt-get update
+sudo apt-get install libgrpc-dev
+```
+
+**Mac OS X**
+
+Install [homebrew][]. Run the following command to install gRPC Ruby.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s ruby
 ```
@@ -25,10 +44,6 @@ This will download and run the [gRPC install script][], then install the latest 
 BUILD FROM SOURCE
 ---------------------
 - Clone this repository
-- Install the gRPC core library. Please refer to the [INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL) file for more instructions.
-```sh
-$ sudo apt-get install libgrpc-dev
-```
 
 - Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
@@ -78,3 +93,4 @@ Directory structure is the layout for [ruby extensions][]
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
 [grpc.io]: http://www.grpc.io/docs/installation/ruby.html
+[debian unstable]:https://www.debian.org/releases/sid/
