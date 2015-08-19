@@ -41,6 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/credentials.h>
@@ -271,18 +272,18 @@ void InteropClient::DoLargeUnary() {
 void InteropClient::DoLargeCompressedUnary() {
   const CompressionType compression_types[] = {NONE, GZIP, DEFLATE};
   const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE, RANDOM};
-  for (const auto payload_type : payload_types) {
-    for (const auto compression_type : compression_types) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(payload_types); i++) {
+    for (size_t j = 0; j < GPR_ARRAY_SIZE(compression_types); j++) {
       char* log_suffix;
       gpr_asprintf(&log_suffix, "(compression=%s; payload=%s)",
-                   CompressionType_Name(compression_type).c_str(),
-                   PayloadType_Name(payload_type).c_str());
+                   CompressionType_Name(compression_types[j]).c_str(),
+                   PayloadType_Name(payload_types[i]).c_str());
 
       gpr_log(GPR_INFO, "Sending a large compressed unary rpc %s.", log_suffix);
       SimpleRequest request;
       SimpleResponse response;
-      request.set_response_type(payload_type);
-      request.set_response_compression(compression_type);
+      request.set_response_type(payload_types[i]);
+      request.set_response_compression(compression_types[j]);
       PerformLargeUnary(&request, &response);
       gpr_log(GPR_INFO, "Large compressed unary done %s.", log_suffix);
       gpr_free(log_suffix);
@@ -347,21 +348,21 @@ void InteropClient::DoResponseCompressedStreaming() {
 
   const CompressionType compression_types[] = {NONE, GZIP, DEFLATE};
   const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE, RANDOM};
-  for (const auto payload_type : payload_types) {
-    for (const auto compression_type : compression_types) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(payload_types); i++) {
+    for (size_t j = 0; j < GPR_ARRAY_SIZE(compression_types); j++) {
       ClientContext context;
       InteropClientContextInspector inspector(context);
       StreamingOutputCallRequest request;
 
       char* log_suffix;
       gpr_asprintf(&log_suffix, "(compression=%s; payload=%s)",
-                   CompressionType_Name(compression_type).c_str(),
-                   PayloadType_Name(payload_type).c_str());
+                   CompressionType_Name(compression_types[j]).c_str(),
+                   PayloadType_Name(payload_types[i]).c_str());
 
       gpr_log(GPR_INFO, "Receiving response steaming rpc %s.", log_suffix);
 
-      request.set_response_type(payload_type);
-      request.set_response_compression(compression_type);
+      request.set_response_type(payload_types[i]);
+      request.set_response_compression(compression_types[j]);
 
       for (unsigned int i = 0; i < response_stream_sizes.size(); ++i) {
         ResponseParameters* response_parameter =
