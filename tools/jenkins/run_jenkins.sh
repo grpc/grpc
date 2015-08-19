@@ -79,8 +79,8 @@ then
     -e "config=$config" \
     -e "language=$language" \
     -e "arch=$arch" \
-    -e "GRPC_ZOOKEEPER_SERVER_TEST=128.174.237.6:2181" \
-    -e "GRPC_ETCD_SERVER_TEST=128.174.237.6:2379" \
+    -e "GRPC_ZOOKEEPER_SERVER_TEST=grpc-jenkins-master:2181" \
+    -e "GRPC_ETCD_SERVER_TEST=grpc-jenkins-master:2379" \
     -e CCACHE_DIR=/tmp/ccache \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \

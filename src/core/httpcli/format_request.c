@@ -90,7 +90,6 @@ static gpr_slice grpc_httpcli_format_request_with_body(
   size_t i;
 
   gpr_strvec_init(&out);
-
   gpr_strvec_add(&out, gpr_strdup(method));
   fill_common_header(request, &out);
   if (body_bytes) {

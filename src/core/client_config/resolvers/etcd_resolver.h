@@ -36,7 +36,7 @@
 
 #include "src/core/client_config/resolver_factory.h"
 
-/** Create a etcd resolver factory */
+/** Creates an etcd resolver factory */
 grpc_resolver_factory *grpc_etcd_resolver_factory_create(void);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_ETCD_RESOLVER_H */

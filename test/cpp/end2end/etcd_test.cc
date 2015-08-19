@@ -86,7 +86,8 @@ class EtcdTest : public ::testing::Test {
     RegisterService("/test");
 
     // Register service instance /test/1 in etcd
-    string value = "{\"host\":\"localhost\",\"port\":\"" + to_string(port1) + "\"}";
+    string value =
+        "{\"host\":\"localhost\",\"port\":\"" + to_string(port1) + "\"}";
     RegisterInstance("/test/1", value);
 
     // Register service instance /test/2 in etcd
@@ -94,9 +95,9 @@ class EtcdTest : public ::testing::Test {
     RegisterInstance("/test/2", value);
   }
 
-  // Require etcd server running beforehand
+  // Requires etcd server running
   void SetUpEtcd() {
-    // Find etcd server address in environment
+    // Finds etcd server address in environment
     // Default is localhost:2379
     etcd_address_ = "localhost:2379";
     char* addr = gpr_getenv("GRPC_ETCD_SERVER_TEST");
@@ -124,17 +125,21 @@ class EtcdTest : public ::testing::Test {
     return server;
   }
 
-  static void on_http_response(void *arg, const grpc_httpcli_response *response) {
+  static void on_http_response(void* arg,
+                               const grpc_httpcli_response* response) {
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
     http_done = 1;
     grpc_pollset_kick(&pollset, NULL);
     gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
   }
 
-  static void send_http_request(const string& method, const string& path, const string& host, const string& body) {
-    GPR_ASSERT(method == "GET" || method == "DELETE" || method == "PUT" || method == "POST");
+  static void send_http_request(const string& method, const string& path,
+                                const string& host, const string& body) {
+    GPR_ASSERT(method == "GET" || method == "DELETE" || method == "PUT" ||
+               method == "POST");
     grpc_httpcli_request request;
-    grpc_httpcli_header hdr = {(char*)"Content-Type", (char*)"application/x-www-form-urlencoded"};
+    grpc_httpcli_header hdr = {(char*)"Content-Type",
+                               (char*)"application/x-www-form-urlencoded"};
     memset(&request, 0, sizeof(request));
     request.host = gpr_strdup(host.c_str());
     request.path = gpr_strdup(path.c_str());
@@ -143,21 +148,30 @@ class EtcdTest : public ::testing::Test {
     http_done = 0;
 
     if (method == "GET") {
-      grpc_httpcli_get(&context, &pollset, &request, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
+      grpc_httpcli_get(&context, &pollset, &request,
+                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response,
+                       NULL);
     } else if (method == "DELETE") {
-      grpc_httpcli_delete(&context, &pollset, &request, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
+      grpc_httpcli_delete(&context, &pollset, &request,
+                          GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15),
+                          on_http_response, NULL);
     } else if (method == "PUT") {
-      grpc_httpcli_put(&context, &pollset, &request, body.c_str(), body.size(), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
+      grpc_httpcli_put(&context, &pollset, &request, body.c_str(), body.size(),
+                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response,
+                       NULL);
     } else if (method == "POST") {
-      grpc_httpcli_post(&context, &pollset, &request, body.c_str(), body.size(), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response, NULL);
+      grpc_httpcli_post(&context, &pollset, &request, body.c_str(), body.size(),
+                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(15), on_http_response,
+                        NULL);
     } else {
       gpr_log(GPR_ERROR, "HTTP method not recognized: %s", method.c_str());
     }
-    
+
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
     while (http_done == 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&pollset, &worker, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
+      grpc_pollset_work(&pollset, &worker,
+                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
     }
     gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
     gpr_free(request.host);
@@ -182,13 +196,11 @@ class EtcdTest : public ::testing::Test {
   }
 
   void ChangeEtcdState() {
-    /*server2_->Shutdown();
-    DeleteInstance("/test/2");*/
+    server2_->Shutdown();
+    DeleteInstance("/test/2");
   }
 
-  static void destroy_pollset(void *ignored) { 
-    grpc_pollset_destroy(&pollset); 
-  }
+  static void destroy_pollset(void* ignored) { grpc_pollset_destroy(&pollset); }
 
   void TearDown() GRPC_OVERRIDE {
     server1_->Shutdown();
@@ -241,7 +253,7 @@ TEST_F(EtcdTest, EtcdStateChangeTwoRpc) {
   EXPECT_TRUE(s1.ok());
 
   // Etcd state changes
-  gpr_log(GPR_DEBUG, "Etcd state change"); 
+  gpr_log(GPR_DEBUG, "Etcd state change");
   ChangeEtcdState();
   // Waits for re-resolving addresses
   sleep(1);

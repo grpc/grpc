@@ -31,6 +31,17 @@
  *
  */
 
+/** Support etcd as alternative name system in addition to DNS
+ *  etcd name in gRPC is represented as a URI:
+ *  etcd://host:port/path/service/instance
+ *
+ *  Where etcd is the name system scheme
+ *  host:port is the address of an etcd server
+ *  /path/service/instance is the etcd name to be resolved
+ *
+ *  Refer doc/naming.md for more details
+ */
+
 #ifndef GRPC_GRPC_ETCD_H
 #define GRPC_GRPC_ETCD_H
 
@@ -38,7 +49,7 @@
 extern "C" {
 #endif
 
-/** Register etcd name resolver in grpc */
+/** Registers etcd name resolver in grpc */
 void grpc_etcd_register();
 
 #ifdef __cplusplus
