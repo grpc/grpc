@@ -65,8 +65,6 @@ DECLARE_string(default_service_account);
 DECLARE_string(service_account_key_file);
 DECLARE_string(oauth_scope);
 
-using grpc::testing::CompressionType;
-
 namespace grpc {
 namespace testing {
 
@@ -140,20 +138,6 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
   } else {
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots);
-  }
-}
-
-CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
-    grpc_compression_algorithm algorithm) {
-  switch (algorithm) {
-    case GRPC_COMPRESS_NONE:
-      return CompressionType::NONE;
-    case GRPC_COMPRESS_GZIP:
-      return CompressionType::GZIP;
-    case GRPC_COMPRESS_DEFLATE:
-      return CompressionType::DEFLATE;
-    default:
-      GPR_ASSERT(false);
   }
 }
 
