@@ -187,21 +187,22 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 
 static grpc_server* CreateServer(
     int max_message_size, const grpc_compression_options& compression_options) {
+  grpc_arg args[2];
+  size_t args_idx = 0;
   if (max_message_size > 0) {
-    grpc_arg args[2];
-    args[0].type = GRPC_ARG_INTEGER;
-    args[0].key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
-    args[0].value.integer = max_message_size;
-
-    args[1].type = GRPC_ARG_INTEGER;
-    args[1].key = const_cast<char*>(GRPC_COMPRESSION_ALGORITHM_STATE_ARG);
-    args[1].value.integer = compression_options.enabled_algorithms_bitset;
-
-    grpc_channel_args channel_args = {2, args};
-    return grpc_server_create(&channel_args, nullptr);
-  } else {
-    return grpc_server_create(nullptr, nullptr);
+    args[args_idx].type = GRPC_ARG_INTEGER;
+    args[args_idx].key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
+    args[args_idx].value.integer = max_message_size;
+    args_idx++;
   }
+
+  args[args_idx].type = GRPC_ARG_INTEGER;
+  args[args_idx].key = const_cast<char*>(GRPC_COMPRESSION_ALGORITHM_STATE_ARG);
+  args[args_idx].value.integer = compression_options.enabled_algorithms_bitset;
+  args_idx++;
+
+  grpc_channel_args channel_args = {args_idx, args};
+  return grpc_server_create(&channel_args, nullptr);
 }
 
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
