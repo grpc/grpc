@@ -1573,7 +1573,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   const grpc_op *op;
   grpc_ioreq *req;
   void (*finish_func)(grpc_call *, int, void *) = finish_batch;
-  GPR_ASSERT(!reserved);
+
+  if (reserved != NULL) return GRPC_CALL_ERROR;
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
 
@@ -1588,6 +1589,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   /* rewrite batch ops into ioreq ops */
   for (in = 0, out = 0; in < nops; in++) {
     op = &ops[in];
+    if (op->reserved != NULL) return GRPC_CALL_ERROR;
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         /* Flag validation: currently allow no flags */
