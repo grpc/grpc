@@ -67,6 +67,20 @@ const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
 const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
+
+CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
+    grpc_compression_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_COMPRESS_NONE:
+      return CompressionType::NONE;
+    case GRPC_COMPRESS_GZIP:
+      return CompressionType::GZIP;
+    case GRPC_COMPRESS_DEFLATE:
+      return CompressionType::DEFLATE;
+    default:
+      GPR_ASSERT(false);
+  }
+}
 }  // namespace
 
 InteropClient::InteropClient(std::shared_ptr<ChannelInterface> channel)

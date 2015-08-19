@@ -592,8 +592,7 @@
       "external_deps": [
         "zookeeper"
       ],
-      "secure": "no",
-      "vs_project_guid": "{F14EBEC1-DC43-45D3-8A7D-1A47072EFE50}"
+      "secure": "no"
     },
     {
       "name": "reconnect_server",
