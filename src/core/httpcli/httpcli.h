@@ -128,9 +128,9 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
 void grpc_httpcli_delete(grpc_httpcli_context *context, grpc_pollset *pollset,
-                      const grpc_httpcli_request *request,
-                      gpr_timespec deadline,
-                      grpc_httpcli_response_cb on_response, void *user_data);
+                         const grpc_httpcli_request *request,
+                         gpr_timespec deadline,
+                         grpc_httpcli_response_cb on_response, void *user_data);
 
 /* Asynchronously perform a HTTP PUT.
    'context' specifies the http context under which to do the post
@@ -148,10 +148,10 @@ void grpc_httpcli_delete(grpc_httpcli_context *context, grpc_pollset *pollset,
      supplied pointer to pass to said call)
    Does not support ?var1=val1&var2=val2 in the path. */
 void grpc_httpcli_put(grpc_httpcli_context *context, grpc_pollset *pollset,
-                       const grpc_httpcli_request *request,
-                       const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline,
-                       grpc_httpcli_response_cb on_response, void *user_data);
+                      const grpc_httpcli_request *request,
+                      const char *body_bytes, size_t body_size,
+                      gpr_timespec deadline,
+                      grpc_httpcli_response_cb on_response, void *user_data);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
@@ -179,16 +179,6 @@ typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request *request,
                                          gpr_timespec deadline,
                                          grpc_httpcli_response_cb on_response,
                                          void *user_data);
-typedef int (*grpc_httpcli_delete_override)(const grpc_httpcli_request *request,
-                                         gpr_timespec deadline,
-                                         grpc_httpcli_response_cb on_response,
-                                         void *user_data);
-typedef int (*grpc_httpcli_put_override)(const grpc_httpcli_request *request,
-                                          const char *body_bytes,
-                                          size_t body_size,
-                                          gpr_timespec deadline,
-                                          grpc_httpcli_response_cb on_response,
-                                          void *user_data);
 typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
                                           const char *body_bytes,
                                           size_t body_size,
@@ -196,9 +186,7 @@ typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
                                           grpc_httpcli_response_cb on_response,
                                           void *user_data);
 
-void grpc_httpcli_set_override(grpc_httpcli_get_override http_get,
-                               grpc_httpcli_delete_override http_delete,
-                               grpc_httpcli_put_override http_put,
-                               grpc_httpcli_post_override http_post);
+void grpc_httpcli_set_override(grpc_httpcli_get_override get,
+                               grpc_httpcli_post_override post);
 
 #endif /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */

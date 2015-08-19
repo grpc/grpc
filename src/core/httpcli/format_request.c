@@ -64,7 +64,8 @@ static void fill_common_header(const grpc_httpcli_request *request,
   }
 }
 
-gpr_slice grpc_httpcli_format_request_without_body(const char* method, const grpc_httpcli_request *request) {
+static gpr_slice grpc_httpcli_format_request(
+    const char *method, const grpc_httpcli_request *request) {
   gpr_strvec out;
   char *flat;
   size_t flat_len;
@@ -80,9 +81,9 @@ gpr_slice grpc_httpcli_format_request_without_body(const char* method, const grp
   return gpr_slice_new(flat, flat_len, gpr_free);
 }
 
-gpr_slice grpc_httpcli_format_request_with_body(const char* method, const grpc_httpcli_request *request,
-                                           const char *body_bytes,
-                                           size_t body_size) {
+static gpr_slice grpc_httpcli_format_request_with_body(
+    const char *method, const grpc_httpcli_request *request,
+    const char *body_bytes, size_t body_size) {
   gpr_strvec out;
   char *tmp;
   size_t out_len;
@@ -101,7 +102,9 @@ gpr_slice grpc_httpcli_format_request_with_body(const char* method, const grpc_h
       }
     }
     if (!has_content_type) {
-      gpr_strvec_add(&out, gpr_strdup("Content-Type: application/x-www-form-urlencoded\r\n"));
+      gpr_strvec_add(
+          &out,
+          gpr_strdup("Content-Type: application/x-www-form-urlencoded\r\n"));
     }
     gpr_asprintf(&tmp, "Content-Length: %lu\r\n", (unsigned long)body_size);
     gpr_strvec_add(&out, tmp);
@@ -117,4 +120,27 @@ gpr_slice grpc_httpcli_format_request_with_body(const char* method, const grpc_h
   }
 
   return gpr_slice_new(tmp, out_len, gpr_free);
+}
+
+gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request) {
+  return grpc_httpcli_format_request("GET ", request);
+}
+
+gpr_slice grpc_httpcli_format_delete_request(
+    const grpc_httpcli_request *request) {
+  return grpc_httpcli_format_request("DELETE ", request);
+}
+
+gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
+                                           const char *body_bytes,
+                                           size_t body_size) {
+  return grpc_httpcli_format_request_with_body("POST ", request, body_bytes,
+                                               body_size);
+}
+
+gpr_slice grpc_httpcli_format_put_request(const grpc_httpcli_request *request,
+                                          const char *body_bytes,
+                                          size_t body_size) {
+  return grpc_httpcli_format_request_with_body("PUT ", request, body_bytes,
+                                               body_size);
 }
