@@ -5,11 +5,10 @@ Alpha : Ready for early adopters
 
 ## PREREQUISITES
 - `node`: This requires `node` to be installed. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
-- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
+- [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 ## INSTALLATION
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
-Run the following command to install gRPC Node.js.
+On Mac OS X, install [homebrew][]. Run the following command to install gRPC Node.js.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
 ```
@@ -88,5 +87,4 @@ ServerCredentials
 An object with factory methods for creating credential objects for servers.
 
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install

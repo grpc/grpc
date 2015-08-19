@@ -15,19 +15,29 @@ wiki pages:
  $ make 
  $ sudo make install
 
+OR, on Linux (Debian):
+
+ $ sudo apt-get install libgrpc-dev
+
+ Note: you will need to add the Debian 'unstable' distribution to your source
+ file first. Example: Add the following line to your `/etc/apt/sources.list`
+ file.
+
+ deb http://ftp.us.debian.org/debian unstable main contrib non-free
+
 You don't need anything else than GNU Make, gcc and autotools. Under a Debian
 or Ubuntu system, this should boil down to the following packages:
 
-  $ apt-get install build-essential autoconf libtool
+ $ apt-get install build-essential autoconf libtool
 
 Building the python wrapper requires the following:
 
-  # apt-get install python-all-dev python-virtualenv
+ $ apt-get install python-all-dev python-virtualenv
 
 If you want to install in a different directory than the default /usr/lib, you can
 override it on the command line:
 
-  # make install prefix=/opt
+ $ make install prefix=/opt
 
 
 *******************************

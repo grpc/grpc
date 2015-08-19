@@ -9,12 +9,11 @@ Alpha : Ready for early adopters
 PREREQUISITES
 -------------
 - Python 2.7, virtualenv, pip
-- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
+- [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 INSTALLATION
 -------------
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
-Run the following command to install gRPC Python.
+On Mac OS X, install [homebrew][]. Run the following command to install gRPC Python.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s python
 ```
@@ -60,7 +59,6 @@ $ ../../tools/distrib/python/submit.py
 ```
 
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
