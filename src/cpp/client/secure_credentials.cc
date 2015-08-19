@@ -33,18 +33,18 @@
 
 #include <grpc/support/log.h>
 
+#include <grpc++/channel.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/impl/grpc_library.h>
-#include "src/cpp/client/channel.h"
 #include "src/cpp/client/secure_credentials.h"
 
 namespace grpc {
 
-std::shared_ptr<grpc::ChannelInterface> SecureCredentials::CreateChannel(
+std::shared_ptr<grpc::Channel> SecureCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
-  return std::shared_ptr<ChannelInterface>(new Channel(
+  return std::shared_ptr<Channel>(new Channel(
       args.GetSslTargetNameOverride(),
       grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
 }

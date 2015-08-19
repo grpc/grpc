@@ -48,7 +48,7 @@ namespace grpc {
 namespace examples {
 namespace pubsub {
 
-Subscriber::Subscriber(std::shared_ptr<ChannelInterface> channel)
+Subscriber::Subscriber(std::shared_ptr<Channel> channel)
     : stub_(SubscriberService::NewStub(channel)) {}
 
 void Subscriber::Shutdown() { stub_.reset(); }

@@ -108,10 +108,10 @@
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\channel_arguments.h">
+    <ClInclude Include="..\..\include\grpc++\channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\channel_interface.h">
+    <ClInclude Include="..\..\include\grpc++\channel_arguments.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\client_context.h">
@@ -229,9 +229,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\server\secure_server_credentials.h">
       <Filter>src\cpp\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\cpp\client\channel.h">
-      <Filter>src\cpp\client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\common\create_auth_context.h">
       <Filter>src\cpp\common</Filter>
