@@ -49,11 +49,14 @@ namespace Grpc.Core.Tests
         public void AsciiEntry()
         {
             var entry = new Metadata.Entry("ABC", "XYZ");
+            Assert.IsFalse(entry.IsBinary);
             Assert.AreEqual("abc", entry.Key);  // key is in lowercase.
             Assert.AreEqual("XYZ", entry.Value);
             CollectionAssert.AreEqual(new[] { (byte)'X', (byte)'Y', (byte)'Z' }, entry.ValueBytes);
 
             Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc-bin", "xyz"));
+
+            Assert.AreEqual("[Entry: key=abc, value=XYZ]", entry.ToString());
         }
 
         [Test]
@@ -61,11 +64,14 @@ namespace Grpc.Core.Tests
         {
             var bytes = new byte[] { 1, 2, 3 };
             var entry = new Metadata.Entry("ABC-BIN", bytes);
+            Assert.IsTrue(entry.IsBinary);
             Assert.AreEqual("abc-bin", entry.Key);  // key is in lowercase.
             Assert.Throws(typeof(InvalidOperationException), () => { var v = entry.Value; });
             CollectionAssert.AreEqual(bytes, entry.ValueBytes);
 
             Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc", bytes));
+
+            Assert.AreEqual("[Entry: key=abc-bin, valueBytes=System.Byte[]]", entry.ToString());
         }
 
         [Test]
@@ -94,6 +100,7 @@ namespace Grpc.Core.Tests
         {
             var bytes = new byte[] { (byte)'X', (byte)'y' };
             var entry = Metadata.Entry.CreateUnsafe("abc", bytes);
+            Assert.IsFalse(entry.IsBinary);
             Assert.AreEqual("abc", entry.Key);
             Assert.AreEqual("Xy", entry.Value);
             CollectionAssert.AreEqual(bytes, entry.ValueBytes);
@@ -104,6 +111,7 @@ namespace Grpc.Core.Tests
         {
             var bytes = new byte[] { 1, 2, 3 };
             var entry = Metadata.Entry.CreateUnsafe("abc-bin", bytes);
+            Assert.IsTrue(entry.IsBinary);
             Assert.AreEqual("abc-bin", entry.Key);
             Assert.Throws(typeof(InvalidOperationException), () => { var v = entry.Value; });
             CollectionAssert.AreEqual(bytes, entry.ValueBytes);
