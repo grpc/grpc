@@ -170,4 +170,4 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
+#endif /* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

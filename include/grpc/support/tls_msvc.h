@@ -42,10 +42,14 @@ struct gpr_msvc_thread_local {
 };
 
 #define GPR_TLS_DECL(name) \
-    static __declspec(thread) struct gpr_msvc_thread_local name = {0}
+  static __declspec(thread) struct gpr_msvc_thread_local name = {0}
 
-#define gpr_tls_init(tls) do {} while (0)
-#define gpr_tls_destroy(tls) do {} while (0)
+#define gpr_tls_init(tls) \
+  do {                    \
+  } while (0)
+#define gpr_tls_destroy(tls) \
+  do {                       \
+  } while (0)
 #define gpr_tls_set(tls, new_value) (((tls)->value) = (new_value))
 #define gpr_tls_get(tls) ((tls)->value)
 

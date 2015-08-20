@@ -69,8 +69,9 @@ struct grpc_completion_queue {
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
 };
 
-grpc_completion_queue *grpc_completion_queue_create(void) {
+grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   grpc_completion_queue *cc = gpr_malloc(sizeof(grpc_completion_queue));
+  GPR_ASSERT(!reserved);
   memset(cc, 0, sizeof(*cc));
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->pending_events, 1);
@@ -166,9 +167,10 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
 }
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
-                                      gpr_timespec deadline) {
+                                      gpr_timespec deadline, void *reserved) {
   grpc_event ret;
   grpc_pollset_worker worker;
+  GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
@@ -232,11 +234,12 @@ static void del_plucker(grpc_completion_queue *cc, void *tag,
 }
 
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
-                                       gpr_timespec deadline) {
+                                       gpr_timespec deadline, void *reserved) {
   grpc_event ret;
   grpc_cq_completion *c;
   grpc_cq_completion *prev;
   grpc_pollset_worker worker;
+  GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
 
@@ -268,8 +271,9 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       break;
     }
     if (!add_plucker(cc, tag, &worker)) {
-      gpr_log(GPR_DEBUG, 
-              "Too many outstanding grpc_completion_queue_pluck calls: maximum is %d",
+      gpr_log(GPR_DEBUG,
+              "Too many outstanding grpc_completion_queue_pluck calls: maximum "
+              "is %d",
               GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
       memset(&ret, 0, sizeof(ret));

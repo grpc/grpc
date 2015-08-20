@@ -51,8 +51,10 @@
 #include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
 
-#include "server.h"
+#include "completion_queue.h"
 #include "credentials.h"
+#include "server.h"
+#include "timeval.h"
 
 zend_class_entry *grpc_ce_channel;
 
@@ -62,7 +64,6 @@ void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
   if (channel->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapped);
   }
-  efree(channel->target);
   efree(channel);
 }
 
@@ -139,9 +140,6 @@ PHP_METHOD(Channel, __construct) {
   HashTable *array_hash;
   zval **creds_obj = NULL;
   wrapped_grpc_credentials *creds = NULL;
-  zval **override_obj;
-  char *override;
-  int override_len;
   /* "s|a" == 1 string, 1 optional array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &target,
                             &target_length, &args_array) == FAILURE) {
@@ -149,10 +147,8 @@ PHP_METHOD(Channel, __construct) {
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-  override = target;
-  override_len = target_length;
   if (args_array == NULL) {
-    channel->wrapped = grpc_insecure_channel_create(target, NULL);
+    channel->wrapped = grpc_insecure_channel_create(target, NULL, NULL);
   } else {
     array_hash = Z_ARRVAL_P(args_array);
     if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
@@ -167,22 +163,9 @@ PHP_METHOD(Channel, __construct) {
           *creds_obj TSRMLS_CC);
       zend_hash_del(array_hash, "credentials", 12);
     }
-    if (zend_hash_find(array_hash, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                       sizeof(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-                       (void **)&override_obj) == SUCCESS) {
-      if (Z_TYPE_PP(override_obj) != IS_STRING) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
-                             " must be a string",
-                             1 TSRMLS_CC);
-        return;
-      }
-      override = Z_STRVAL_PP(override_obj);
-      override_len = Z_STRLEN_PP(override_obj);
-    }
     php_grpc_read_args_array(args_array, &args);
     if (creds == NULL) {
-      channel->wrapped = grpc_insecure_channel_create(target, &args);
+      channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
     } else {
       gpr_log(GPR_DEBUG, "Initialized secure channel");
       channel->wrapped =
@@ -190,8 +173,6 @@ PHP_METHOD(Channel, __construct) {
     }
     efree(args.args);
   }
-  channel->target = ecalloc(override_len + 1, sizeof(char));
-  memcpy(channel->target, override, override_len);
 }
 
 /**
@@ -202,6 +183,59 @@ PHP_METHOD(Channel, getTarget) {
   wrapped_grpc_channel *channel =
       (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
   RETURN_STRING(grpc_channel_get_target(channel->wrapped), 1);
+}
+
+/**
+ * Get the connectivity state of the channel
+ * @param bool (optional) try to connect on the channel
+ * @return long The grpc connectivity state
+ */
+PHP_METHOD(Channel, getConnectivityState) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  bool try_to_connect;
+  /* "|b" == 1 optional bool */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &try_to_connect) ==
+      FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "getConnectivityState expects a bool", 1 TSRMLS_CC);
+    return;
+  }
+  RETURN_LONG(grpc_channel_check_connectivity_state(channel->wrapped,
+                                                    (int)try_to_connect));
+}
+
+/**
+ * Watch the connectivity state of the channel until it changed
+ * @param long The previous connectivity state of the channel
+ * @param Timeval The deadline this function should wait until
+ * @return bool If the connectivity state changes from last_state
+ *              before deadline
+ */
+PHP_METHOD(Channel, watchConnectivityState) {
+  wrapped_grpc_channel *channel =
+      (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  long last_state;
+  zval *deadline_obj;
+  /* "lO" == 1 long 1 object */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lO",
+          &last_state, &deadline_obj, grpc_ce_timeval) == FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+        "watchConnectivityState expects 1 long 1 timeval",
+        1 TSRMLS_CC);
+    return;
+  }
+
+  wrapped_grpc_timeval *deadline =
+      (wrapped_grpc_timeval *)zend_object_store_get_object(
+          deadline_obj TSRMLS_CC);
+  grpc_channel_watch_connectivity_state(
+      channel->wrapped, (grpc_connectivity_state)last_state,
+      deadline->wrapped, completion_queue, NULL);
+  grpc_event event = grpc_completion_queue_pluck(
+      completion_queue, NULL,
+      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  RETURN_BOOL(event.success);
 }
 
 /**
@@ -219,6 +253,8 @@ PHP_METHOD(Channel, close) {
 static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Channel, getTarget, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, getConnectivityState, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Channel, watchConnectivityState, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
     PHP_FE_END};
 

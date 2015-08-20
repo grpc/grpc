@@ -712,7 +712,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   chand->server = NULL;
   chand->channel = NULL;
   chand->path_key = grpc_mdstr_from_string(metadata_context, ":path", 0);
-  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority", 0);
+  chand->authority_key =
+      grpc_mdstr_from_string(metadata_context, ":authority", 0);
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
@@ -761,8 +762,10 @@ static const grpc_channel_filter server_surface_filter = {
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,
-                                           grpc_completion_queue *cq) {
+                                           grpc_completion_queue *cq,
+                                           void *reserved) {
   size_t i, n;
+  GPR_ASSERT(!reserved);
   for (i = 0; i < server->cq_count; i++) {
     if (server->cqs[i] == cq) return;
   }
@@ -971,6 +974,11 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   grpc_transport_perform_op(transport, &op);
 }
 
+void done_published_shutdown(void *done_arg, grpc_cq_completion *storage) {
+  (void) done_arg;
+  gpr_free(storage);
+}
+
 void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag) {
   listener *l;
@@ -982,6 +990,12 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
   grpc_cq_begin_op(cq);
+  if (server->shutdown_published) {
+    grpc_cq_end_op(cq, tag, 1, done_published_shutdown, NULL,
+                   gpr_malloc(sizeof(grpc_cq_completion)));
+    gpr_mu_unlock(&server->mu_global);
+    return;
+  }
   server->shutdown_tags =
       gpr_realloc(server->shutdown_tags,
                   sizeof(shutdown_tag) * (server->num_shutdown_tags + 1));
@@ -1131,6 +1145,7 @@ grpc_call_error grpc_server_request_call(
     return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
   }
   grpc_cq_begin_op(cq_for_notification);
+  details->reserved = NULL;
   rc->type = BATCH_CALL;
   rc->server = server;
   rc->tag = tag;

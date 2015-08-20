@@ -121,6 +121,10 @@ class PropagationOptions {
   gpr_uint32 propagate_;
 };
 
+namespace testing {
+class InteropClientContextInspector;
+}  // namespace testing
+
 class ClientContext {
  public:
   ClientContext();
@@ -181,7 +185,9 @@ class ClientContext {
 
   // Get and set census context
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
-  struct census_context* census_context() const { return census_context_; }
+  struct census_context* census_context() const {
+    return census_context_;
+  }
 
   void TryCancel();
 
@@ -190,6 +196,7 @@ class ClientContext {
   ClientContext(const ClientContext&);
   ClientContext& operator=(const ClientContext&);
 
+  friend class ::grpc::testing::InteropClientContextInspector;
   friend class CallOpClientRecvStatus;
   friend class CallOpRecvInitialMetadata;
   friend class Channel;

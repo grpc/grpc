@@ -55,8 +55,7 @@ typedef struct fullstack_secure_fixture_data {
 } fullstack_secure_fixture_data;
 
 static const grpc_metadata *find_metadata(const grpc_metadata *md,
-                                          size_t md_count,
-                                          const char *key,
+                                          size_t md_count, const char *key,
                                           const char *value) {
   size_t i;
   for (i = 0; i < md_count; i++) {
@@ -105,7 +104,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create(NULL);
 
   return f;
 }
@@ -126,8 +125,8 @@ static void chttp2_init_server_secure_fullstack(
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args);
-  grpc_server_register_completion_queue(f->server, f->cq);
+  f->server = grpc_server_create(server_args, NULL);
+  grpc_server_register_completion_queue(f->server, f->cq, NULL);
   GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
                                                server_creds));
   grpc_server_credentials_release(server_creds);

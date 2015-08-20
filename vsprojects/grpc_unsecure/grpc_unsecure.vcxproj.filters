@@ -184,6 +184,9 @@
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\udp_server.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -549,6 +552,9 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\udp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">

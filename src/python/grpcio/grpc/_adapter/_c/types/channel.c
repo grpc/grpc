@@ -108,7 +108,7 @@ Channel *pygrpc_Channel_new(
   if (creds) {
     self->c_chan = grpc_secure_channel_create(creds->c_creds, target, &c_args);
   } else {
-    self->c_chan = grpc_insecure_channel_create(target, &c_args);
+    self->c_chan = grpc_insecure_channel_create(target, &c_args, NULL);
   }
   pygrpc_discard_channel_args(c_args);
   return self;
@@ -133,7 +133,7 @@ Call *pygrpc_Channel_create_call(
   call = pygrpc_Call_new_empty(cq);
   call->c_call = grpc_channel_create_call(
       self->c_chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq->c_cq, method, host,
-      pygrpc_cast_double_to_gpr_timespec(deadline));
+      pygrpc_cast_double_to_gpr_timespec(deadline), NULL);
   return call;
 }
 
