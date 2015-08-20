@@ -36,4 +36,10 @@
 
 #include <grpc/grpc.h>
 
-const char *grpc_version_string(void) { return "0.11.0.0"; }
+#include "src/core/surface/api_trace.h"
+
+const char *grpc_version_string(void) {
+  GRPC_API_TRACE("grpc_version_string(void)", 0, ());
+  return "0.11.0.0";
+}
+
