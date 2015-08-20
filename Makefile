@@ -4606,7 +4606,6 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
-    src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
@@ -4644,7 +4643,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
-    include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
@@ -4849,7 +4847,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
-    src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
@@ -4887,7 +4884,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
-    include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
