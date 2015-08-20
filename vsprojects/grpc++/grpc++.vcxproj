@@ -258,6 +258,7 @@
     <ClInclude Include="..\..\src\cpp\client\secure_credentials.h" />
     <ClInclude Include="..\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="..\..\src\cpp\server\secure_server_credentials.h" />
+    <ClInclude Include="..\..\src\cpp\client\create_channel_internal.h" />
     <ClInclude Include="..\..\src\cpp\common\create_auth_context.h" />
   </ItemGroup>
   <ItemGroup>
@@ -280,6 +281,8 @@
     <ClCompile Include="..\..\src\cpp\client\client_context.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\create_channel_internal.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\credentials.cc">
     </ClCompile>

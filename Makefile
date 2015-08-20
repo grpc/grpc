@@ -4603,6 +4603,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
+    src/cpp/client/create_channel_internal.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
@@ -4844,6 +4845,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
+    src/cpp/client/create_channel_internal.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \

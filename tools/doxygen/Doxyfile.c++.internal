@@ -803,6 +803,7 @@ include/grpc++/time.h \
 src/cpp/client/secure_credentials.h \
 src/cpp/common/secure_auth_context.h \
 src/cpp/server/secure_server_credentials.h \
+src/cpp/client/create_channel_internal.h \
 src/cpp/common/create_auth_context.h \
 src/cpp/client/secure_channel_arguments.cc \
 src/cpp/client/secure_credentials.cc \
@@ -814,6 +815,7 @@ src/cpp/client/channel.cc \
 src/cpp/client/channel_arguments.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/create_channel.cc \
+src/cpp/client/create_channel_internal.cc \
 src/cpp/client/credentials.cc \
 src/cpp/client/generic_stub.cc \
 src/cpp/client/insecure_credentials.cc \

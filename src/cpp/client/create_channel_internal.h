@@ -31,30 +31,21 @@
  *
  */
 
+#ifndef GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H
+#define GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H
+
 #include <memory>
-#include <sstream>
 
-#include <grpc++/channel.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/create_channel.h>
+#include <grpc++/config.h>
 
-#include "src/cpp/client/create_channel_internal.h"
+struct grpc_channel;
 
 namespace grpc {
-class ChannelArguments;
+class Channel;
 
-std::shared_ptr<Channel> CreateChannel(
-    const grpc::string& target, const std::shared_ptr<Credentials>& creds,
-    const ChannelArguments& args) {
-  ChannelArguments cp_args = args;
-  std::ostringstream user_agent_prefix;
-  user_agent_prefix << "grpc-c++/" << grpc_version_string();
-  cp_args.SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING,
-                    user_agent_prefix.str());
-  return creds
-             ? creds->CreateChannel(target, cp_args)
-             : CreateChannelInternal("", grpc_lame_client_channel_create(
-                                             NULL, GRPC_STATUS_INVALID_ARGUMENT,
-                                             "Invalid credentials."));
-}
+std::shared_ptr<Channel> CreateChannelInternal(const grpc::string& host,
+                                               grpc_channel* c_channel);
+
 }  // namespace grpc
+
+#endif  // GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H

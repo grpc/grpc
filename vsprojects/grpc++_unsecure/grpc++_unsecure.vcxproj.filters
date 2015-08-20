@@ -16,6 +16,9 @@
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\create_channel_internal.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -200,6 +203,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\cpp\client\create_channel_internal.h">
+      <Filter>src\cpp\client</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cpp\common\create_auth_context.h">
       <Filter>src\cpp\common</Filter>
     </ClInclude>

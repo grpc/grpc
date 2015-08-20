@@ -69,8 +69,6 @@ class Channel GRPC_FINAL : public GrpcLibrary,
                            public CallHook,
                            public std::enable_shared_from_this<Channel> {
  public:
-  explicit Channel(grpc_channel* c_channel);
-  Channel(const grpc::string& host, grpc_channel* c_channel);
   ~Channel();
 
   // Get the current channel state. If the channel is in IDLE and try_to_connect
@@ -115,6 +113,10 @@ class Channel GRPC_FINAL : public GrpcLibrary,
                                   const InputMessage& request,
                                   OutputMessage* result);
   friend class ::grpc::RpcMethod;
+  friend std::shared_ptr<Channel> CreateChannelInternal(
+      const grpc::string& host, grpc_channel* c_channel);
+
+  Channel(const grpc::string& host, grpc_channel* c_channel);
 
   Call CreateCall(const RpcMethod& method, ClientContext* context,
                   CompletionQueue* cq);
