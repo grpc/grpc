@@ -103,7 +103,7 @@ static gpr_slice grpc_httpcli_format_request_with_body(
     if (!has_content_type) {
       gpr_strvec_add(
           &out,
-          gpr_strdup("Content-Type: application/x-www-form-urlencoded\r\n"));
+          gpr_strdup("Content-Type: text/plain\r\n"));
     }
     gpr_asprintf(&tmp, "Content-Length: %lu\r\n", (unsigned long)body_size);
     gpr_strvec_add(&out, tmp);
