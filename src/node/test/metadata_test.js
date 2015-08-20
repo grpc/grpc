@@ -59,6 +59,19 @@ describe('Metadata', function() {
         metadata.set('key-bin', new Buffer('value'));
       });
     });
+    it('Rejects invalid keys', function() {
+      assert.throws(function() {
+        metadata.set('key$', 'value');
+      });
+      assert.throws(function() {
+        metadata.set('', 'value');
+      });
+    });
+    it('Rejects values with non-ASCII characters', function() {
+      assert.throws(function() {
+        metadata.set('key', 'résumé');
+      });
+    });
     it('Saves values that can be retrieved', function() {
       metadata.set('key', 'value');
       assert.deepEqual(metadata.get('key'), ['value']);
@@ -90,6 +103,14 @@ describe('Metadata', function() {
       });
       assert.doesNotThrow(function() {
         metadata.add('key-bin', new Buffer('value'));
+      });
+    });
+    it('Rejects invalid keys', function() {
+      assert.throws(function() {
+        metadata.add('key$', 'value');
+      });
+      assert.throws(function() {
+        metadata.add('', 'value');
       });
     });
     it('Saves values that can be retrieved', function() {
