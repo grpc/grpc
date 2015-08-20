@@ -359,7 +359,7 @@ describe('Other conditions', function() {
     test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
-    trailer_metadata.add('trailer_present', 'yes');
+    trailer_metadata.add('trailer-present', 'yes');
     server.addProtoService(test_service, {
       unary: function(call, cb) {
         var req = call.request;
@@ -514,7 +514,7 @@ describe('Other conditions', function() {
         assert.ifError(err);
       });
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -523,7 +523,7 @@ describe('Other conditions', function() {
         assert(err);
       });
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -535,7 +535,7 @@ describe('Other conditions', function() {
       call.write({error: false});
       call.end();
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -547,7 +547,7 @@ describe('Other conditions', function() {
       call.write({error: true});
       call.end();
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -556,7 +556,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('status', function(status) {
         assert.strictEqual(status.code, grpc.status.OK);
-        assert.deepEqual(status.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -564,7 +564,7 @@ describe('Other conditions', function() {
       var call = client.serverStream({error: true});
       call.on('data', function(){});
       call.on('error', function(error) {
-        assert.deepEqual(error.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(error.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -576,7 +576,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('status', function(status) {
         assert.strictEqual(status.code, grpc.status.OK);
-        assert.deepEqual(status.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -587,7 +587,7 @@ describe('Other conditions', function() {
       call.end();
       call.on('data', function(){});
       call.on('error', function(error) {
-        assert.deepEqual(error.metadata.get('trailer_present'), ['yes']);
+        assert.deepEqual(error.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });

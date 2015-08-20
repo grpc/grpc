@@ -49,10 +49,14 @@ function Metadata() {
 }
 
 function normalizeKey(key) {
-  return _.deburr(key).toLowerCase();
+  return key.toLowerCase();
 }
 
 function validate(key, value) {
+  if (!(/^[a-z\d-]+$/.test(key))) {
+    throw new Error('Metadata keys must be nonempty strings containing only ' +
+        'alphanumeric characters and hyphens');
+  }
   if (_.endsWith(key, '-bin')) {
     if (!(value instanceof Buffer)) {
       throw new Error('keys that end with \'-bin\' must have Buffer values');
@@ -61,6 +65,10 @@ function validate(key, value) {
     if (!_.isString(value)) {
       throw new Error(
           'keys that don\'t end with \'-bin\' must have String values');
+    }
+    if (!(/^[\x20-\x7E]*$/.test(value))) {
+      throw new Error('Metadata string values can only contain printable ' +
+          'ASCII characters and space');
     }
   }
 }
