@@ -989,13 +989,12 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
     } else {
       (*vars)["StreamingType"] = "BIDI_STREAMING";
     }
-    printer->Print(
-        *vars,
-        ", rpcmethod_$Method$_("
-        "$prefix$$Service$_method_names[$Idx$], "
-        "::grpc::RpcMethod::$StreamingType$, "
-        "channel->RegisterMethod($prefix$$Service$_method_names[$Idx$])"
-        ")\n");
+    printer->Print(*vars,
+                   ", rpcmethod_$Method$_("
+                   "$prefix$$Service$_method_names[$Idx$], "
+                   "::grpc::RpcMethod::$StreamingType$, "
+                   "channel"
+                   ")\n");
   }
   printer->Print("{}\n\n");
   printer->Outdent();
