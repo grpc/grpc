@@ -1135,6 +1135,7 @@ grpc_call_error grpc_server_request_call(
     return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
   }
   grpc_cq_begin_op(cq_for_notification);
+  details->reserved = NULL;
   rc->type = BATCH_CALL;
   rc->server = server;
   rc->tag = tag;

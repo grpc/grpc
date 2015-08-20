@@ -235,7 +235,7 @@ NAN_METHOD(Server::RequestCall) {
       new struct tag(new NanCallback(args[0].As<Function>()), ops.release(),
                      shared_ptr<Resources>(nullptr)));
   if (error != GRPC_CALL_OK) {
-    return NanThrowError("requestCall failed", error);
+    return NanThrowError(nanErrorWithCode("requestCall failed", error));
   }
   CompletionQueueAsyncWorker::Next();
   NanReturnUndefined();

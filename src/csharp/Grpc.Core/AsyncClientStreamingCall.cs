@@ -89,6 +89,24 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Gets the call status if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Status GetStatus()
+        {
+            return getStatusFunc();
+        }
+
+        /// <summary>
+        /// Gets the call trailing metadata if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Metadata GetTrailers()
+        {
+            return getTrailersFunc();
+        }
+
+        /// <summary>
         /// Provides means to cleanup after the call.
         /// If the call has already finished normally (request stream has been completed and call result has been received), doesn't do anything.
         /// Otherwise, requests cancellation of the call which should terminate all pending async operations associated with the call.

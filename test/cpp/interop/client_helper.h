@@ -39,8 +39,6 @@
 #include <grpc++/config.h>
 #include <grpc++/channel_interface.h>
 
-#include "test/proto/messages.grpc.pb.h"
-
 namespace grpc {
 namespace testing {
 
@@ -50,10 +48,6 @@ grpc::string GetOauth2AccessToken();
 
 std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     const grpc::string& test_case);
-
-grpc::testing::CompressionType
-GetInteropCompressionTypeFromCompressionAlgorithm(
-    grpc_compression_algorithm algorithm);
 
 class InteropClientContextInspector {
  public:
