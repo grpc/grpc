@@ -112,7 +112,6 @@ grpc::string GetHeaderPrologue(const grpc::protobuf::FileDescriptor *file,
 grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params) {
   grpc::string temp =
-      "#include <grpc++/impl/internal_stub.h>\n"
       "#include <grpc++/impl/rpc_method.h>\n"
       "#include <grpc++/impl/proto_utils.h>\n"
       "#include <grpc++/impl/service_type.h>\n"
@@ -554,8 +553,8 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(
-      "class Stub GRPC_FINAL : public StubInterface,"
-      " public ::grpc::InternalStub {\n public:\n");
+      "class Stub GRPC_FINAL : public StubInterface"
+      " {\n public:\n");
   printer->Indent();
   printer->Print("Stub(const std::shared_ptr< ::grpc::Channel>& channel);\n");
   for (int i = 0; i < service->method_count(); ++i) {
@@ -564,6 +563,7 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
   printer->Outdent();
   printer->Print("\n private:\n");
   printer->Indent();
+  printer->Print("std::shared_ptr< ::grpc::Channel> channel_;\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i), vars, false);
   }
@@ -737,7 +737,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::ClientContext* context, "
                    "const $Request$& request, $Response$* response) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::BlockingUnaryCall(channel(), "
+                   "  return ::grpc::BlockingUnaryCall(channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context, request, response);\n"
                    "}\n\n");
@@ -750,7 +750,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "  return new "
                    "::grpc::ClientAsyncResponseReader< $Response$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request);\n"
                    "}\n\n");
@@ -761,7 +761,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::ClientContext* context, $Response$* response) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientWriter< $Request$>("
-                   "channel(), "
+                   "channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context, response);\n"
                    "}\n\n");
@@ -772,7 +772,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientAsyncWriter< $Request$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, response, tag);\n"
                    "}\n\n");
@@ -784,7 +784,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
         "::grpc::ClientContext* context, const $Request$& request) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientReader< $Response$>("
-                   "channel(), "
+                   "channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context, request);\n"
                    "}\n\n");
@@ -795,7 +795,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientAsyncReader< $Response$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request, tag);\n"
                    "}\n\n");
@@ -807,7 +807,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "  return new ::grpc::ClientReaderWriter< "
                    "$Request$, $Response$>("
-                   "channel(), "
+                   "channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context);\n"
                    "}\n\n");
@@ -819,7 +819,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "  return new "
                    "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, tag);\n"
                    "}\n\n");
@@ -975,7 +975,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
                  "$ns$$Service$::Stub::Stub(const std::shared_ptr< "
                  "::grpc::Channel>& channel)\n");
   printer->Indent();
-  printer->Print(": ::grpc::InternalStub(channel)");
+  printer->Print(": channel_(channel)");
   for (int i = 0; i < service->method_count(); ++i) {
     const grpc::protobuf::MethodDescriptor *method = service->method(i);
     (*vars)["Method"] = method->name();
