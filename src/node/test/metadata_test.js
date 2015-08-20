@@ -135,10 +135,10 @@ describe('Metadata', function() {
       metadata.remove('key');
       assert.deepEqual(metadata.get('key'), []);
     });
-    it('does not normalize keys', function() {
+    it('Normalizes keys', function() {
       metadata.add('key', 'value');
       metadata.remove('KEY');
-      assert.deepEqual(metadata.get('key'), ['value']);
+      assert.deepEqual(metadata.get('key'), []);
     });
   });
   describe('#get', function() {
@@ -150,8 +150,8 @@ describe('Metadata', function() {
     it('gets all values associated with a key', function() {
       assert.deepEqual(metadata.get('key'), ['value1', 'value2']);
     });
-    it('does not normalize keys', function() {
-      assert.deepEqual(metadata.get('KEY'), []);
+    it('Normalizes keys', function() {
+      assert.deepEqual(metadata.get('KEY'), ['value1', 'value2']);
     });
     it('returns an empty list for non-existent keys', function() {
       assert.deepEqual(metadata.get('non-existent-key'), []);
