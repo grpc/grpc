@@ -77,12 +77,15 @@ typedef enum {
 } grpc_arg_type;
 
 /** A single argument... each argument has a key and a value
+
     A note on naming keys:
       Keys are namespaced into groups, usually grouped by library, and are
       keys for module XYZ are named XYZ.key1, XYZ.key2, etc. Module names must
       be restricted to the regex [A-Za-z][_A-Za-z0-9]{,15}.
       Key names must be restricted to the regex [A-Za-z][_A-Za-z0-9]{,47}.
+
     GRPC core library keys are prefixed by grpc.
+
     Library authors are strongly encouraged to \#define symbolic constants for
     their keys so that it's possible to change them in the future. */
 typedef struct {
@@ -100,6 +103,7 @@ typedef struct {
 } grpc_arg;
 
 /** An array of arguments that can be passed around.
+
     Used to set optional channel-level configuration.
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
@@ -220,6 +224,7 @@ typedef enum grpc_completion_type {
 } grpc_completion_type;
 
 /** The result of an operation.
+
     Returned by a completion queue when the operation started with tag. */
 typedef struct grpc_event {
   /** The type of the completion. */
@@ -345,16 +350,19 @@ typedef struct grpc_op {
           status_details may be reallocated to a size larger than
           *status_details_capacity, in which case *status_details_capacity will
           be updated with the new array capacity.
+
           Pre-allocating space:
           size_t my_capacity = 8;
           char *my_details = gpr_malloc(my_capacity);
           x.status_details = &my_details;
           x.status_details_capacity = &my_capacity;
+
           Not pre-allocating space:
           size_t my_capacity = 0;
           char *my_details = NULL;
           x.status_details = &my_details;
           x.status_details_capacity = &my_capacity;
+
           After the call:
           gpr_free(my_details); */
       char **status_details;
@@ -369,6 +377,7 @@ typedef struct grpc_op {
 } grpc_op;
 
 /** Registers a plugin to be initialized and destroyed with the library.
+
     The \a init and \a destroy functions will be invoked as part of
     \a grpc_init() and \a grpc_shutdown(), respectively.
     Note that these functions can be invoked an arbitrary number of times
@@ -398,6 +407,7 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
       GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
 
 /** Initialize the grpc library.
+
     It is not safe to call any other grpc functions before calling this.
     (To avoid overhead, little checking is done, and some things may work. We
     do not warrant that they will continue to do so in future revisions of this
@@ -405,6 +415,7 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 void grpc_init(void);
 
 /** Shut down the grpc library.
+
     No memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.
     Prior to calling, all application owned grpc objects must have been
@@ -419,8 +430,10 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved);
 
 /** Blocks until an event is available, the completion queue is being shut down,
     or deadline is reached.
+
     Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
     otherwise a grpc_event describing the event that occurred.
+
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
@@ -428,10 +441,13 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
 
 /** Blocks until an event with tag 'tag' is available, the completion queue is
     being shutdown or deadline is reached.
+
     Returns a grpc_event with type GRPC_QUEUE_TIMEOUT on timeout,
     otherwise a grpc_event describing the event that occurred.
+
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue.
+
     Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
     concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
@@ -445,6 +461,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
     drained then grpc_completion_queue_next will start to produce
     GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call
     grpc_completion_queue_destroy.
+
     After calling this function applications should ensure that no
     NEW work is added to be published on this completion queue. */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
@@ -507,6 +524,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
     call is communicating with. The string is in the uri format accepted by
     grpc_channel_create.
     The returned string should be disposed of with gpr_free().
+
     WARNING: this value is never authenticated or subject to any security
     related code. It must not be used for any authentication related
     functionality. Instead, use grpc_auth_context. */
@@ -643,9 +661,11 @@ void grpc_server_cancel_all_calls(grpc_server *server);
 void grpc_server_destroy(grpc_server *server);
 
 /** Enable or disable a tracer.
+
     Tracers (usually controlled by the environment variable GRPC_TRACE)
     allow printf-style debugging on GRPC internals, and are useful for
     tracking down problems in the field.
+
     Use of this function is not strictly thread-safe, but the
     thread-safety issues raised by it should not be of concern. */
 int grpc_tracer_set_enabled(const char *name, int enabled);
