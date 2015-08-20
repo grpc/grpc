@@ -66,6 +66,7 @@ typedef struct {
   size_t header_idx;
   /* was the last frame emitted a header? (if yes, we'll need a CONTINUATION */
   gpr_uint8 last_was_header;
+  gpr_uint8 seen_regular_header;
   /* output stream id */
   gpr_uint32 stream_id;
   gpr_slice_buffer *output;
@@ -361,6 +362,16 @@ static grpc_mdelem *hpack_enc(grpc_chttp2_hpack_compressor *c,
   gpr_uint32 indices_key;
   int should_add_elem;
 
+  if (GPR_SLICE_LENGTH(elem->key->slice) > 0) {
+    if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
+      st->seen_regular_header = 1;
+    } else if (st->seen_regular_header != 0) { /* reserved header */
+      gpr_log(GPR_ERROR,
+              "Reserved header (colon-prefixed) happening after regular ones.");
+      abort();
+    }
+  }
+
   inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
 
   /* is this elem currently in the decoders table? */
@@ -566,6 +577,7 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
 
   st.cur_frame_type = NONE;
   st.last_was_header = 0;
+  st.seen_regular_header = 0;
   st.stream_id = stream_id;
   st.output = output;
 
