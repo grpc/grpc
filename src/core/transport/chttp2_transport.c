@@ -116,7 +116,7 @@ static void close_from_api(grpc_chttp2_transport_global *transport_global,
 static void add_to_pollset_locked(grpc_chttp2_transport *t,
                                   grpc_pollset *pollset);
 static void add_to_pollset_set_locked(grpc_chttp2_transport *t,
-                                  grpc_pollset_set *pollset_set);
+                                      grpc_pollset_set *pollset_set);
 
 /** Start new streams that have been created if we can */
 static void maybe_start_some_streams(
@@ -368,11 +368,10 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     s->global.outgoing_window =
         t->global.settings[GRPC_PEER_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-    s->global.max_recv_bytes = 
-        s->parsing.incoming_window = 
+    s->global.max_recv_bytes = s->parsing.incoming_window =
         s->global.incoming_window =
-        t->global.settings[GRPC_SENT_SETTINGS]
-                          [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+            t->global.settings[GRPC_SENT_SETTINGS]
+                              [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->parsing_stream_map, s->global.id, s);
     s->global.in_stream_map = 1;
@@ -580,7 +579,7 @@ static void maybe_start_some_streams(
     stream_global->incoming_window =
         transport_global->settings[GRPC_SENT_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-    stream_global->max_recv_bytes = 
+    stream_global->max_recv_bytes =
         GPR_MAX(stream_global->incoming_window, stream_global->max_recv_bytes);
     grpc_chttp2_stream_map_add(
         &TRANSPORT_FROM_GLOBAL(transport_global)->new_stream_map,
@@ -590,7 +589,6 @@ static void maybe_start_some_streams(
     grpc_chttp2_list_add_incoming_window_updated(transport_global,
                                                  stream_global);
     grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
-
   }
   /* cancel out streams that will never be started */
   while (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID &&
@@ -648,12 +646,14 @@ static void perform_stream_op_locked(
     stream_global->publish_sopb->nops = 0;
     stream_global->publish_state = op->recv_state;
     if (stream_global->max_recv_bytes < op->max_recv_bytes) {
-      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("op", transport_global, stream_global,
-          max_recv_bytes, op->max_recv_bytes - stream_global->max_recv_bytes);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "op", transport_global, stream_global, max_recv_bytes,
+          op->max_recv_bytes - stream_global->max_recv_bytes);
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
           "op", transport_global, stream_global, unannounced_incoming_window,
           op->max_recv_bytes - stream_global->max_recv_bytes);
-      stream_global->unannounced_incoming_window += op->max_recv_bytes - stream_global->max_recv_bytes;
+      stream_global->unannounced_incoming_window +=
+          op->max_recv_bytes - stream_global->max_recv_bytes;
       stream_global->max_recv_bytes = op->max_recv_bytes;
     }
     grpc_chttp2_incoming_metadata_live_op_buffer_end(
@@ -1175,7 +1175,7 @@ static void add_to_pollset_locked(grpc_chttp2_transport *t,
 }
 
 static void add_to_pollset_set_locked(grpc_chttp2_transport *t,
-                                  grpc_pollset_set *pollset_set) {
+                                      grpc_pollset_set *pollset_set) {
   if (t->ep) {
     grpc_endpoint_add_to_pollset_set(t->ep, pollset_set);
   }

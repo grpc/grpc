@@ -67,14 +67,10 @@ class WriteOptions {
   WriteOptions(const WriteOptions& other) : flags_(other.flags_) {}
 
   /// Clear all flags.
-  inline void Clear() {
-    flags_ = 0;
-  }
+  inline void Clear() { flags_ = 0; }
 
   /// Returns raw flags bitset.
-  inline gpr_uint32 flags() const {
-    return flags_;
-  }
+  inline gpr_uint32 flags() const { return flags_; }
 
   /// Sets flag for the disabling of compression for the next message write.
   ///
@@ -122,9 +118,7 @@ class WriteOptions {
   /// not go out on the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
-  inline bool get_buffer_hint() const {
-    return GetBit(GRPC_WRITE_BUFFER_HINT);
-  }
+  inline bool get_buffer_hint() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
 
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
@@ -132,17 +126,11 @@ class WriteOptions {
   }
 
  private:
-  void SetBit(const gpr_int32 mask) {
-    flags_ |= mask;
-  }
+  void SetBit(const gpr_int32 mask) { flags_ |= mask; }
 
-  void ClearBit(const gpr_int32 mask) {
-    flags_ &= ~mask;
-  }
+  void ClearBit(const gpr_int32 mask) { flags_ &= ~mask; }
 
-  bool GetBit(const gpr_int32 mask) const {
-    return flags_ & mask;
-  }
+  bool GetBit(const gpr_int32 mask) const { return flags_ & mask; }
 
   gpr_uint32 flags_;
 };
@@ -173,6 +161,7 @@ class CallOpSendInitialMetadata {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->flags = 0;
+    op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
   }
@@ -206,6 +195,7 @@ class CallOpSendMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
+    op->reserved = NULL;
     op->data.send_message = send_buf_;
     // Flags are per-message: clear them after use.
     write_options_.Clear();
@@ -248,6 +238,7 @@ class CallOpRecvMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
+    op->reserved = NULL;
     op->data.recv_message = &recv_buf_;
   }
 
@@ -313,6 +304,7 @@ class CallOpGenericRecvMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
+    op->reserved = NULL;
     op->data.recv_message = &recv_buf_;
   }
 
@@ -350,6 +342,7 @@ class CallOpClientSendClose {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
     op->flags = 0;
+    op->reserved = NULL;
   }
   void FinishOp(bool* status, int max_message_size) { send_ = false; }
 
@@ -383,6 +376,7 @@ class CallOpServerSendStatus {
     op->data.send_status_from_server.status_details =
         send_status_details_.empty() ? nullptr : send_status_details_.c_str();
     op->flags = 0;
+    op->reserved = NULL;
   }
 
   void FinishOp(bool* status, int max_message_size) {
@@ -416,6 +410,7 @@ class CallOpRecvInitialMetadata {
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata = &recv_initial_metadata_arr_;
     op->flags = 0;
+    op->reserved = NULL;
   }
   void FinishOp(bool* status, int max_message_size) {
     if (recv_initial_metadata_ == nullptr) return;
@@ -453,6 +448,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.status_details_capacity =
         &status_details_capacity_;
     op->flags = 0;
+    op->reserved = NULL;
   }
 
   void FinishOp(bool* status, int max_message_size) {

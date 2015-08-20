@@ -48,9 +48,11 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/stream.h>
-#include "src/cpp/client/secure_credentials.h"
+
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
+
+#include "src/cpp/client/secure_credentials.h"
 
 DECLARE_bool(enable_ssl);
 DECLARE_bool(use_prod_roots);

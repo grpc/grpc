@@ -46,10 +46,10 @@
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
 
 #define GPR_SWAP(type, a, b) \
-  do {                   \
-    type x = a;          \
-    a = b;               \
-    b = x;               \
+  do {                       \
+    type x = a;              \
+    a = b;                   \
+    b = x;                   \
   } while (0)
 
 /** Set the \a n-th bit of \a i (a mutable pointer). */
@@ -72,4 +72,4 @@
     0x0f0f0f0f) %                                \
    255)
 
-#endif  /* GRPC_SUPPORT_USEFUL_H */
+#endif /* GRPC_SUPPORT_USEFUL_H */

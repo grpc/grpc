@@ -52,10 +52,12 @@ class InteropClient {
 
   void DoEmpty();
   void DoLargeUnary();
+  void DoLargeCompressedUnary();
   void DoPingPong();
   void DoHalfDuplex();
   void DoRequestStreaming();
   void DoResponseStreaming();
+  void DoResponseCompressedStreaming();
   void DoResponseStreamingWithSlowConsumer();
   void DoCancelAfterBegin();
   void DoCancelAfterFirstResponse();

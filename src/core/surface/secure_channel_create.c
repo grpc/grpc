@@ -200,13 +200,17 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
 
   if (grpc_find_security_connector_in_args(args) != NULL) {
     gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
-    return grpc_lame_client_channel_create(target);
+    return grpc_lame_client_channel_create(
+        target, GRPC_STATUS_INVALID_ARGUMENT,
+        "Security connector exists in channel args.");
   }
 
   if (grpc_credentials_create_security_connector(
           creds, target, args, NULL, &connector, &new_args_from_connector) !=
       GRPC_SECURITY_OK) {
-    return grpc_lame_client_channel_create(target);
+    return grpc_lame_client_channel_create(
+        target, GRPC_STATUS_INVALID_ARGUMENT,
+        "Failed to create security connector.");
   }
   mdctx = grpc_mdctx_create();
 

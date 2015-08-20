@@ -85,9 +85,7 @@ class WriterInterface {
   // Returns false when the stream has been closed.
   virtual bool Write(const W& msg, const WriteOptions& options) = 0;
 
-  inline bool Write(const W& msg) {
-    return Write(msg, WriteOptions());
-  }
+  inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
 };
 
 template <class R>
@@ -640,9 +638,8 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_ops_.ServerSendStatus(
-          ctx_->trailing_metadata_,
-          finish_ops_.SendMessage(msg));
+      finish_ops_.ServerSendStatus(ctx_->trailing_metadata_,
+                                   finish_ops_.SendMessage(msg));
     } else {
       finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }

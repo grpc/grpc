@@ -71,7 +71,7 @@ namespace Grpc.Core
         /// Creates a channel option with an integer value.
         /// </summary>
         /// <param name="name">Name.</param>
-        /// <param name="stringValue">String value.</param>
+        /// <param name="intValue">Integer value.</param>
         public ChannelOption(string name, int intValue)
         {
             this.type = OptionType.Integer;

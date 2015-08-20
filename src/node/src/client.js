@@ -79,13 +79,19 @@ function ClientWritableStream(call, serialize) {
  * implementation of a method needed for implementing stream.Writable.
  * @access private
  * @param {Buffer} chunk The chunk to write
- * @param {string} encoding Ignored
+ * @param {string} encoding Used to pass write flags
  * @param {function(Error=)} callback Called when the write is complete
  */
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
-  batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
+  var message = this.serialize(chunk);
+  if (_.isFinite(encoding)) {
+    /* Attach the encoding if it is a finite number. This is the closest we
+     * can get to checking that it is valid flags */
+    message.grpcWriteFlags = encoding;
+  }
+  batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, event) {
     if (err) {
       // Something has gone wrong. Stop writing by failing to call callback
@@ -216,14 +222,19 @@ ClientDuplexStream.prototype.getPeer = getPeer;
 function getCall(channel, method, options) {
   var deadline;
   var host;
+  var parent;
+  var propagate_flags;
   if (options) {
     deadline = options.deadline;
     host = options.host;
+    parent = _.get(options, 'parent.call');
+    propagate_flags = options.propagate_flags;
   }
   if (deadline === undefined) {
     deadline = Infinity;
   }
-  return new grpc.Call(channel, method, deadline, host);
+  return new grpc.Call(channel, method, deadline, host,
+                       parent, propagate_flags);
 }
 
 /**
@@ -268,8 +279,10 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         return;
       }
       var client_batch = {};
+      var message = serialize(argument);
+      message.grpcWriteFlags = options.flags;
       client_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
-      client_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      client_batch[grpc.opType.SEND_MESSAGE] = message;
       client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
       client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
       client_batch[grpc.opType.RECV_MESSAGE] = true;
@@ -402,9 +415,11 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
         return;
       }
       var start_batch = {};
+      var message = serialize(argument);
+      message.grpcWriteFlags = options.flags;
       start_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
       start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      start_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      start_batch[grpc.opType.SEND_MESSAGE] = message;
       start_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
       call.startBatch(start_batch, function(err, response) {
         if (err) {
@@ -557,6 +572,35 @@ exports.makeClientConstructor = function(methods, serviceName) {
     this.auth_uri = 'https://' + this.server_address + '/' + serviceName;
     this.updateMetadata = updateMetadata;
   }
+
+  /**
+   * Wait for the client to be ready. The callback will be called when the
+   * client has successfully connected to the server, and it will be called
+   * with an error if the attempt to connect to the server has unrecoverablly
+   * failed or if the deadline expires. This function will make the channel
+   * start connecting if it has not already done so.
+   * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
+   *     Infinity to wait forever.
+   * @param {function(Error)} callback The callback to call when done attempting
+   *     to connect.
+   */
+  Client.prototype.$waitForReady = function(deadline, callback) {
+    var self = this;
+    var checkState = function(err) {
+      if (err) {
+        callback(new Error('Failed to connect before the deadline'));
+      }
+      var new_state = self.channel.getConnectivityState(true);
+      if (new_state === grpc.connectivityState.READY) {
+        callback();
+      } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
+        callback(new Error('Failed to connect to server'));
+      } else {
+        self.channel.watchConnectivityState(new_state, deadline, checkState);
+      }
+    };
+    checkState();
+  };
 
   _.each(methods, function(attrs, name) {
     var method_type;
