@@ -102,6 +102,14 @@ namespace Grpc.Core
             }
         }
 
+        internal static int GetRefCount()
+        {
+            lock (staticLock)
+            {
+                return refCount;
+            }
+        }
+
         /// <summary>
         /// Gets application-wide logger used by gRPC.
         /// </summary>
