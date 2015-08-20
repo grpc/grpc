@@ -94,9 +94,6 @@ class Channel GRPC_FINAL : public GrpcLibrary,
     return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
   }
 
-  // Used by Stub only in generated code.
-  void* RegisterMethod(const char* method);
-
  private:
   template <class R>
   friend class ::grpc::ClientReader;
@@ -117,10 +114,12 @@ class Channel GRPC_FINAL : public GrpcLibrary,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
+  friend class ::grpc::RpcMethod;
 
   Call CreateCall(const RpcMethod& method, ClientContext* context,
                   CompletionQueue* cq);
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call);
+  void* RegisterMethod(const char* method);
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                gpr_timespec deadline, CompletionQueue* cq,
