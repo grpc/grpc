@@ -362,14 +362,13 @@ static grpc_mdelem *hpack_enc(grpc_chttp2_hpack_compressor *c,
   gpr_uint32 indices_key;
   int should_add_elem;
 
-  if (GPR_SLICE_LENGTH(elem->key->slice) > 0) {
-    if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
-      st->seen_regular_header = 1;
-    } else if (st->seen_regular_header != 0) { /* reserved header */
-      gpr_log(GPR_ERROR,
-              "Reserved header (colon-prefixed) happening after regular ones.");
-      abort();
-    }
+  GPR_ASSERT (GPR_SLICE_LENGTH(elem->key->slice) > 0);
+  if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
+    st->seen_regular_header = 1;
+  } else if (st->seen_regular_header != 0) { /* reserved header */
+    gpr_log(GPR_ERROR,
+            "Reserved header (colon-prefixed) happening after regular ones.");
+    abort();
   }
 
   inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
