@@ -66,6 +66,7 @@ typedef struct {
   size_t header_idx;
   /* was the last frame emitted a header? (if yes, we'll need a CONTINUATION */
   gpr_uint8 last_was_header;
+  /* have we seen a regular (non-colon-prefixed) header yet? */
   gpr_uint8 seen_regular_header;
   /* output stream id */
   gpr_uint32 stream_id;
