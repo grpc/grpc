@@ -39,7 +39,7 @@ var health = require('../health_check/health.js');
 
 var grpc = require('../');
 
-describe.only('Health Checking', function() {
+describe('Health Checking', function() {
   var statusMap = {
     '': {
       '': 'SERVING',
