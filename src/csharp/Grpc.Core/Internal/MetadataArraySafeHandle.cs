@@ -70,7 +70,8 @@ namespace Grpc.Core.Internal
             var metadataArray = grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
             for (int i = 0; i < metadata.Count; i++)
             {
-                grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, metadata[i].ValueBytes, new UIntPtr((ulong)metadata[i].ValueBytes.Length));
+                var valueBytes = metadata[i].GetSerializedValueUnsafe();
+                grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
             }
             return metadataArray;
         }
@@ -94,7 +95,7 @@ namespace Grpc.Core.Internal
                 string key = Marshal.PtrToStringAnsi(grpcsharp_metadata_array_get_key(metadataArray, index));
                 var bytes = new byte[grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
                 Marshal.Copy(grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
-                metadata.Add(new Metadata.Entry(key, bytes));
+                metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
             }
             return metadata;
         }

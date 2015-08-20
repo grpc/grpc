@@ -82,6 +82,7 @@
     <Compile Include="ResponseHeadersTest.cs" />
     <Compile Include="CompressionTest.cs" />
     <Compile Include="ContextPropagationTest.cs" />
+    <Compile Include="MetadataTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
