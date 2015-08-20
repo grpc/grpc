@@ -67,7 +67,9 @@ int grpc_compression_algorithm_parse(const char *name, size_t name_length,
                                      grpc_compression_algorithm *algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
- * algorithm.  Returns 1 upon success, 0 otherwise. */
+ * algorithm. Note that the string returned through \a name upon success is
+ * statically allocated and shouldn't be freed. Returns 1 upon success, 0
+ * otherwise. */
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     char **name);
 
