@@ -32,29 +32,46 @@
 #endregion
 
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core.Tests
 {
-    internal class DebugStats
+    public class ShutdownTest
     {
-        public readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
+        const string Host = "127.0.0.1";
 
-        /// <summary>
-        /// Checks the debug stats and take action for any inconsistency found.
-        /// </summary>
-        public void CheckOK()
+        MockServiceHelper helper;
+        Server server;
+        Channel channel;
+
+        [SetUp]
+        public void Init()
         {
-            var pendingBatchCompletions = PendingBatchCompletions.Count;
-            if (pendingBatchCompletions != 0)
-            {
-                DebugWarning(string.Format("Detected {0} pending batch completions.", pendingBatchCompletions));
-            }
+            helper = new MockServiceHelper(Host);
+            server = helper.GetServer();
+            server.Start();
+            channel = helper.GetChannel();
         }
 
-        private void DebugWarning(string message)
+        [Test]
+        public async Task AbandonedCall()
         {
-            throw new Exception("Shutdown check: " + message);
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                await requestStream.ToListAsync();
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall(new CallOptions(deadline: DateTime.UtcNow.AddMilliseconds(1))));
+
+            channel.ShutdownAsync().Wait();
+            server.ShutdownAsync().Wait();
         }
     }
 }

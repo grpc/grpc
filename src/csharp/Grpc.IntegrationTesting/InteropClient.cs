@@ -120,12 +120,10 @@ namespace Grpc.IntegrationTesting
                 };
             }
 
-            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions))
-            {
-                TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-                await RunTestCaseAsync(options.testCase, client);
-            }
-            GrpcEnvironment.Shutdown();
+            var channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions);
+            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
+            await RunTestCaseAsync(options.testCase, client);
+            channel.ShutdownAsync().Wait();
         }
 
         private async Task RunTestCaseAsync(string testCase, TestService.TestServiceClient client)
