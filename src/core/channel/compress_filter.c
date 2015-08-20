@@ -216,7 +216,7 @@ static void process_send_ops(grpc_call_element *elem,
                                   [calld->compression_algorithm]));
 
           /* convey supported compression algorithms */
-          grpc_metadata_batch_add_head(
+          grpc_metadata_batch_add_tail(
               &(sop->data.metadata), &calld->accept_encoding_storage,
               GRPC_MDELEM_REF(channeld->mdelem_accept_encoding));
 
