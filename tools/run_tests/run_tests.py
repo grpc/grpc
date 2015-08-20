@@ -123,20 +123,19 @@ class CLanguage(object):
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
     self.platform = platform_string()
-    with open('tools/run_tests/tests.json') as f:
-      js = json.load(f)
-      self.binaries = [tgt
-                       for tgt in js
-                       if tgt['language'] == test_lang and
-                          platform_string() in tgt['platforms']]
-      self.ci_binaries = [tgt
-                         for tgt in js
-                         if tgt['language'] == test_lang and
-                            platform_string() in tgt['ci_platforms']]
+    self.test_lang = test_lang
 
   def test_specs(self, config, travis):
     out = []
-    for target in (self.ci_binaries if travis else self.binaries):
+    with open('tools/run_tests/tests.json') as f:
+      js = json.load(f)
+      platforms_str = 'ci_platforms' if travis else 'platforms'
+      binaries = [tgt
+                  for tgt in js
+                  if tgt['language'] == self.test_lang and
+                      config.build_config not in tgt['exclude_configs'] and
+                      platform_string() in tgt[platforms_str]]
+    for target in binaries:
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
