@@ -359,6 +359,7 @@ describe('Other conditions', function() {
     test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
+    trailer_metadata.add('trailer_present', 'yes');
     server.addProtoService(test_service, {
       unary: function(call, cb) {
         var req = call.request;

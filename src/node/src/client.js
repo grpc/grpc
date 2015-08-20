@@ -294,12 +294,13 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
       client_batch[grpc.opType.RECV_MESSAGE] = true;
       client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(client_batch, function(err, response) {
+        response.status.metadata = Metadata._fromCoreRepresentation(
+              response.status.metadata);
         emitter.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
-          error.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
+          error.metadata = response.status.metadata;
           callback(error);
           return;
         } else {
@@ -371,12 +372,13 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
       client_batch[grpc.opType.RECV_MESSAGE] = true;
       client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(client_batch, function(err, response) {
+        response.status.metadata = Metadata._fromCoreRepresentation(
+              response.status.metadata);
         stream.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
-          error.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
+          error.metadata = response.status.metadata;
           callback(error);
           return;
         } else {
@@ -451,12 +453,13 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       var status_batch = {};
       status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(status_batch, function(err, response) {
+        response.status.metadata = Metadata._fromCoreRepresentation(
+              response.status.metadata);
         stream.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
-          error.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
+          error.metadata = response.status.metadata;
           stream.emit('error', error);
           return;
         } else {
@@ -522,12 +525,13 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
       var status_batch = {};
       status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(status_batch, function(err, response) {
+        response.status.metadata = Metadata._fromCoreRepresentation(
+              response.status.metadata);
         stream.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
-          error.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
+          error.metadata = response.status.metadata;
           stream.emit('error', error);
           return;
         } else {

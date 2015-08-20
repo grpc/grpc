@@ -167,7 +167,10 @@ function setUpWritable(stream, serialize) {
       batch[grpc.opType.SEND_INITIAL_METADATA] =
           (new Metadata())._getCoreRepresentation();
     }
-    stream.status.metadata = stream.status.metadata._getCoreRepresentation();
+
+    if (stream.status.metadata) {
+      stream.status.metadata = stream.status.metadata._getCoreRepresentation();
+    }
     batch[grpc.opType.SEND_STATUS_FROM_SERVER] = stream.status;
     stream.call.startBatch(batch, function(){});
   }
@@ -181,7 +184,7 @@ function setUpWritable(stream, serialize) {
   function setStatus(err) {
     var code = grpc.status.UNKNOWN;
     var details = 'Unknown Error';
-    var metadata = {};
+    var metadata = new Metadata();
     if (err.hasOwnProperty('message')) {
       details = err.message;
     }

@@ -139,7 +139,7 @@ Metadata.prototype.clone = function() {
   var copy = new Metadata();
   copy._internal_repr = _.cloneDeep(this._internal_repr);
   return copy;
-}
+};
 
 /**
  * Gets the metadata in the format used by interal code. Intended for internal
@@ -160,7 +160,9 @@ Metadata.prototype._getCoreRepresentation = function() {
  */
 Metadata._fromCoreRepresentation = function(metadata) {
   var newMetadata = new Metadata();
-  newMetadata._internal_repr = _.cloneDeep(metadata);
+  if (metadata) {
+    newMetadata._internal_repr = _.cloneDeep(metadata);
+  }
   return newMetadata;
 };
 
