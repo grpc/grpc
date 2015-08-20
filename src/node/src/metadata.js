@@ -48,12 +48,19 @@ function Metadata() {
   this._internal_repr = {};
 }
 
+function downcaseString(str) {
+  var capitals = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  var charMap = _.zipObject(capitals, lowercase);
+  return str.replace(/[A-Z]/g, _.curry(_.get)(charMap));
+}
+
 function normalizeKey(key) {
   if (!(/^[A-Za-z\d-]+$/.test(key))) {
     throw new Error('Metadata keys must be nonempty strings containing only ' +
         'alphanumeric characters and hyphens');
   }
-  return key.toLowerCase();
+  return downcaseString(key);
 }
 
 function validate(key, value) {
