@@ -135,7 +135,7 @@ namespace Grpc.Core.Tests
                 server = new Server
                 {
                     Services = { serviceDefinition },
-                    Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
+                    Ports = { { Host, ServerPort.PickUnused, ServerSecurityOptions.Insecure } }
                 };
             }
             return server;
@@ -148,7 +148,7 @@ namespace Grpc.Core.Tests
         {
             if (channel == null)
             {
-                channel = new Channel(Host, GetServer().Ports.Single().BoundPort, Credentials.Insecure);
+                channel = new Channel(Host, GetServer().Ports.Single().BoundPort, SecurityOptions.Insecure);
             }
             return channel;
         }

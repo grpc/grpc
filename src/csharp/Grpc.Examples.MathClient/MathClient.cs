@@ -39,7 +39,7 @@ namespace math
     {
         public static void Main(string[] args)
         {
-            using (Channel channel = new Channel("127.0.0.1", 23456, Credentials.Insecure))
+            using (Channel channel = new Channel("127.0.0.1", 23456, SecurityOptions.Insecure))
             {
                 Math.IMathClient client = new Math.MathClient(channel);
                 MathExamples.DivExample(client);

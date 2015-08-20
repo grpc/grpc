@@ -46,7 +46,7 @@ namespace math
             Server server = new Server
             {
                 Services = { Math.BindService(new MathServiceImpl()) },
-                Ports = { { Host, Port, ServerCredentials.Insecure } }
+                Ports = { { Host, Port, ServerSecurityOptions.Insecure } }
             };
             server.Start();
 

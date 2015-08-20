@@ -58,10 +58,10 @@ namespace math.Tests
             server = new Server
             {
                 Services = { Math.BindService(new MathServiceImpl()) },
-                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
+                Ports = { { Host, ServerPort.PickUnused, ServerSecurityOptions.Insecure } }
             };
             server.Start();
-            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, SecurityOptions.Insecure);
             client = Math.NewClient(channel);
         }
 

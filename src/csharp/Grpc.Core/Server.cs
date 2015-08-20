@@ -192,11 +192,11 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(serverPort.Credentials, "serverPort");
+                Preconditions.CheckNotNull(serverPort.SecurityOptions, "serverPort.SecurityOptions");
                 Preconditions.CheckState(!startRequested);
                 var address = string.Format("{0}:{1}", serverPort.Host, serverPort.Port);
                 int boundPort;
-                using (var nativeCredentials = serverPort.Credentials.ToNativeCredentials())
+                using (var nativeCredentials = serverPort.SecurityOptions.ToNativeCredentials())
                 {
                     if (nativeCredentials != null)
                     {
@@ -334,10 +334,10 @@ namespace Grpc.Core
             /// </summary>
             /// <param name="host">the host</param>
             /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
-            /// <param name="credentials">credentials to use to secure this port.</param>
-            public int Add(string host, int port, ServerCredentials credentials)
+            /// <param name="securityOptions">Options to use to secure this port.</param>
+            public int Add(string host, int port, ServerSecurityOptions securityOptions)
             {
-                return Add(new ServerPort(host, port, credentials));
+                return Add(new ServerPort(host, port, securityOptions));
             }
 
             public IEnumerator<ServerPort> GetEnumerator()
