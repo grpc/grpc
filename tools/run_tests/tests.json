@@ -1238,6 +1238,23 @@
     ], 
     "flaky": false, 
     "language": "c++", 
+    "name": "cxx_string_ref_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "cxx_time_test", 
     "platforms": [
       "linux", 

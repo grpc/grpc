@@ -91,6 +91,9 @@
     <ClCompile Include="..\..\src\cpp\util\status.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\util\string_ref.cc">
+      <Filter>src\cpp\util</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\time.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
@@ -208,6 +211,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\stream.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\string_ref.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\stub_options.h">
