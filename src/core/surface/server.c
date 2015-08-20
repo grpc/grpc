@@ -975,6 +975,11 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   grpc_transport_perform_op(transport, &op);
 }
 
+void done_published_shutdown(void *done_arg, grpc_cq_completion *storage) {
+  (void) done_arg;
+  gpr_free(storage);
+}
+
 void grpc_server_shutdown_and_notify(grpc_server *server,
                                      grpc_completion_queue *cq, void *tag) {
   listener *l;
@@ -986,6 +991,12 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
   grpc_cq_begin_op(cq);
+  if (server->shutdown_published) {
+    grpc_cq_end_op(cq, tag, 1, done_published_shutdown, NULL,
+                   gpr_malloc(sizeof(grpc_cq_completion)));
+    gpr_mu_unlock(&server->mu_global);
+    return;
+  }
   server->shutdown_tags =
       gpr_realloc(server->shutdown_tags,
                   sizeof(shutdown_tag) * (server->num_shutdown_tags + 1));
