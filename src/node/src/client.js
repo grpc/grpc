@@ -283,7 +283,9 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
       }
       var client_batch = {};
       var message = serialize(argument);
-      message.grpcWriteFlags = options.flags;
+      if (options) {
+        message.grpcWriteFlags = options.flags;
+      }
       client_batch[grpc.opType.SEND_INITIAL_METADATA] =
           metadata._getCoreRepresentation();
       client_batch[grpc.opType.SEND_MESSAGE] = message;
@@ -429,7 +431,9 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       }
       var start_batch = {};
       var message = serialize(argument);
-      message.grpcWriteFlags = options.flags;
+      if (options) {
+        message.grpcWriteFlags = options.flags;
+      }
       start_batch[grpc.opType.SEND_INITIAL_METADATA] =
           metadata._getCoreRepresentation();
       start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
