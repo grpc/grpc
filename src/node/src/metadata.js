@@ -102,21 +102,23 @@ Metadata.prototype.add = function(key, value) {
 };
 
 /**
- * Remove the given key and any associated values.
+ * Remove the given key and any associated values. Normalizes the key.
  * @param {String} key The key to remove
  */
 Metadata.prototype.remove = function(key) {
+  key = normalizeKey(key);
   if (Object.prototype.hasOwnProperty.call(this._internal_repr, key)) {
     delete this._internal_repr[key];
   }
 };
 
 /**
- * Gets a list of all values associated with the key.
+ * Gets a list of all values associated with the key. Normalizes the key.
  * @param {String} key The key to get
  * @return {Array.<String|Buffer>} The values associated with that key
  */
 Metadata.prototype.get = function(key) {
+  key = normalizeKey(key);
   if (Object.prototype.hasOwnProperty.call(this._internal_repr, key)) {
     return this._internal_repr[key];
   } else {
