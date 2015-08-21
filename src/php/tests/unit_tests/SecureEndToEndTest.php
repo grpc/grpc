@@ -40,13 +40,15 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
         file_get_contents(dirname(__FILE__) . '/../data/server1.key'),
         file_get_contents(dirname(__FILE__) . '/../data/server1.pem'));
     $this->server = new Grpc\Server();
-    $port = $this->server->addSecureHttp2Port('0.0.0.0:0',
+    $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
     $this->server->start();
+    $this->host_override = 'foo.test.google.fr';
     $this->channel = new Grpc\Channel(
-        'localhost:' . $port,
+        'localhost:' . $this->port,
         [
-            'grpc.ssl_target_name_override' => 'foo.test.google.fr',
+            'grpc.ssl_target_name_override' => $this->host_override,
+            'grpc.default_authority' => $this->host_override,
             'credentials' => $credentials
          ]);
   }
@@ -61,7 +63,8 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $status_text = 'xyz';
     $call = new Grpc\Call($this->channel,
                           'dummy_method',
-                          $deadline);
+                          $deadline,
+                          $this->host_override);
 
     $event = $call->startBatch([
         Grpc\OP_SEND_INITIAL_METADATA => [],
@@ -112,7 +115,8 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
 
     $call = new Grpc\Call($this->channel,
                           'dummy_method',
-                          $deadline);
+                          $deadline,
+                          $this->host_override);
 
     $event = $call->startBatch([
         Grpc\OP_SEND_INITIAL_METADATA => [],

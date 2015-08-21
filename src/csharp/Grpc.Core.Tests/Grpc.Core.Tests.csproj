@@ -64,6 +64,7 @@
       <Link>Version.cs</Link>
     </Compile>
     <Compile Include="ClientBaseTest.cs" />
+    <Compile Include="ShutdownTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClientServerTest.cs" />
     <Compile Include="ServerTest.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="ResponseHeadersTest.cs" />
     <Compile Include="CompressionTest.cs" />
     <Compile Include="ContextPropagationTest.cs" />
+    <Compile Include="MetadataTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
