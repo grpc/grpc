@@ -368,6 +368,11 @@ switch ($args['test_case']) {
   case 'jwt_token_creds':
     jwtTokenCreds($stub, $args);
     break;
+  case 'cancel_after_begin':
+    // Currently unimplementable with the current API design
+    // Specifically, in the ClientStreamingCall->start() method, the
+    // messages are sent immediately after metadata is sent. There is
+    // currently no way to cancel before messages are sent.
   default:
     exit(1);
 }
