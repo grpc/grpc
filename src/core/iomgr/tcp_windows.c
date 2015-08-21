@@ -169,7 +169,9 @@ static void on_read_cb(void *tcpp, int from_iocp) {
   cb->cb(cb->cb_arg, success);
 }
 
-static grpc_endpoint_op_status win_read(grpc_endpoint *ep, gpr_slice_buffer *read_slices, grpc_iomgr_closure *cb) {
+static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
+                                        gpr_slice_buffer *read_slices,
+                                        grpc_iomgr_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->read_info;
@@ -275,8 +277,8 @@ static void on_write(void *tcpp, int from_iocp) {
 
 /* Initiates a write. */
 static grpc_endpoint_op_status win_write(grpc_endpoint *ep,
-                                            gpr_slice_buffer *slices,
-                                            grpc_iomgr_closure *cb) {
+                                         gpr_slice_buffer *slices,
+                                         grpc_iomgr_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *socket = tcp->socket;
   grpc_winsocket_callback_info *info = &socket->write_info;
@@ -398,8 +400,8 @@ static char *win_get_peer(grpc_endpoint *ep) {
 }
 
 static grpc_endpoint_vtable vtable = {
-    win_read, win_write,   win_add_to_pollset, win_add_to_pollset_set,
-    win_shutdown,       win_destroy, win_get_peer};
+    win_read,     win_write,   win_add_to_pollset, win_add_to_pollset_set,
+    win_shutdown, win_destroy, win_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
