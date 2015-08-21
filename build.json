@@ -114,7 +114,7 @@
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/census/census_filter.h",
+        "src/core/census/grpc_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/client_channel.h",
@@ -216,8 +216,8 @@
         "src/core/transport/transport_impl.h"
       ],
       "src": [
-        "src/core/census/census_filter.c",
         "src/core/census/grpc_context.c",
+        "src/core/census/grpc_filter.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/client_channel.c",

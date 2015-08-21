@@ -225,7 +225,7 @@
     <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\census\census_filter.h" />
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
@@ -331,9 +331,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\census\census_filter.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\census\grpc_context.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
     </ClCompile>

@@ -64,10 +64,10 @@
     <ClCompile Include="..\..\src\core\tsi\transport_security.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\census\census_filter.c">
+    <ClCompile Include="..\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\census\grpc_context.c">
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
@@ -485,7 +485,7 @@
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\census\census_filter.h">
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
