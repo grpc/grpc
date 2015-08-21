@@ -577,6 +577,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "grpc_channel_args_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "grpc_channel_stack_test", 
     "platforms": [
       "linux", 
@@ -1538,6 +1556,7 @@
       "posix", 
       "windows"
     ], 
+    "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
     "name": "status_test", 
