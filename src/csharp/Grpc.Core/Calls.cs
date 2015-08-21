@@ -74,7 +74,7 @@ namespace Grpc.Core
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var asyncResult = asyncCall.UnaryCallAsync(req);
-            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
         /// <summary>

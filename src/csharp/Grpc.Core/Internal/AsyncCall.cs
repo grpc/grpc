@@ -56,6 +56,9 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
+        // Response headers set here once received.
+        TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
+
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
 
@@ -110,7 +113,7 @@ namespace Grpc.Core.Internal
                         bool success = (ev.success != 0);
                         try
                         {
-                            HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage());
+                            HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
                         }
                         catch (Exception e)
                         {
@@ -258,6 +261,17 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Get the task that completes once response headers are received.
+        /// </summary>
+        public Task<Metadata> ResponseHeadersAsync
+        {
+            get
+            {
+                return responseHeadersTcs.Task;
+            }
+        }
+
+        /// <summary>
         /// Gets the resulting status if the call has already finished.
         /// Throws InvalidOperationException otherwise.
         /// </summary>
@@ -371,7 +385,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage)
+        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
         {
             lock (myLock)
             {
@@ -383,18 +397,13 @@ namespace Grpc.Core.Internal
                 ReleaseResourcesIfPossible();
             }
 
-            if (!success)
-            {
-                var internalError = new Status(StatusCode.Internal, "Internal error occured.");
-                finishedStatus = new ClientSideStatus(internalError, null);
-                unaryResponseTcs.SetException(new RpcException(internalError));
-                return;
-            }
+            responseHeadersTcs.SetResult(responseHeaders);
 
             var status = receivedStatus.Status;
 
-            if (status.StatusCode != StatusCode.OK)
+            if (!success || status.StatusCode != StatusCode.OK)
             {
+
                 unaryResponseTcs.SetException(new RpcException(status));
                 return;
             }

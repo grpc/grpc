@@ -66,7 +66,7 @@ namespace Grpc.Core.Internal.Tests
         public void AsyncUnary_CompletionSuccess()
         {
             var resultTask = asyncCall.UnaryCallAsync("abc");
-            fakeCall.UnaryResponseClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()), new byte[] { 1, 2, 3 });
+            fakeCall.UnaryResponseClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()), new byte[] { 1, 2, 3 }, new Metadata());
             Assert.IsTrue(resultTask.IsCompleted);
             Assert.IsTrue(fakeCall.IsDisposed);
             Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal.Tests
         public void AsyncUnary_CompletionFailure()
         {
             var resultTask = asyncCall.UnaryCallAsync("abc");
-            fakeCall.UnaryResponseClientHandler(false, new ClientSideStatus(), null);
+            fakeCall.UnaryResponseClientHandler(false, new ClientSideStatus(new Status(StatusCode.Internal, ""), null), new byte[] { 1, 2, 3 }, new Metadata());
 
             Assert.IsTrue(resultTask.IsCompleted);
             Assert.IsTrue(fakeCall.IsDisposed);

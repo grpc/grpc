@@ -74,6 +74,25 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ResponseHeadersAsync_UnaryCall()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                return "PASS";
+            });
+
+            var call = Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "");
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            Assert.AreEqual(headers.Count, responseHeaders.Count);
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            Assert.AreEqual("abcdefg", responseHeaders[0].Value);
+
+            Assert.AreEqual("PASS", await call.ResponseAsync);
+        }
+
+        [Test]
         public void WriteResponseHeaders_NullNotAllowed()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
