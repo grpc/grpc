@@ -40,6 +40,8 @@ namespace Grpc.Core.Internal
 
     internal delegate void ReceivedMessageHandler(bool success, byte[] receivedMessage);
 
+    internal delegate void ReceivedResponseHeadersHandler(bool success, Metadata responseHeaders);
+
     internal delegate void SendCompletionHandler(bool success);
 
     internal delegate void ReceivedCloseOnServerHandler(bool success, bool cancelled);
@@ -66,6 +68,8 @@ namespace Grpc.Core.Internal
         void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray);
 
         void StartReceiveMessage(ReceivedMessageHandler callback);
+
+        void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback);
 
         void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray);
 

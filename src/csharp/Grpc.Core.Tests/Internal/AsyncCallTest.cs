@@ -137,6 +137,12 @@ namespace Grpc.Core.Internal.Tests
                 set;
             }
 
+            public ReceivedResponseHeadersHandler ReceivedResponseHeadersHandler
+            {
+                get;
+                set;
+            }
+
             public SendCompletionHandler SendCompletionHandler
             {
                 get;
@@ -204,6 +210,11 @@ namespace Grpc.Core.Internal.Tests
             public void StartReceiveMessage(ReceivedMessageHandler callback)
             {
                 ReceivedMessageHandler = callback;
+            }
+
+            public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
+            {
+                ReceivedResponseHeadersHandler = callback;
             }
 
             public void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray)
