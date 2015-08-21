@@ -60,9 +60,9 @@ int main(void) {
 
   clear();
   for (i = 'a'; i <= 'z'; i++) legal(i);
-  for (i = 'A'; i <= 'Z'; i++) legal(i);
   for (i = '0'; i <= '9'; i++) legal(i);
   legal('-');
+  legal('_');
   dump();
 
   clear();
