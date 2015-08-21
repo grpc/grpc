@@ -240,6 +240,18 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gen_legal_metadata_characters", 
+    "src": [
+      "tools/codegen/core/gen_legal_metadata_characters.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util"
     ], 
     "headers": [], 

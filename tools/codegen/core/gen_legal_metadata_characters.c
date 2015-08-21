@@ -31,35 +31,43 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
-#define GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
+/* generates constant table for metadata.c */
 
-#include "src/core/channel/channel_stack.h"
+#include <stdio.h>
+#include <string.h>
 
-#define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "grpc-internal-encoding-request"
+static unsigned char legal_bits[256 / 8];
 
-/** Compression filter for outgoing data.
- *
- * See <grpc/compression.h> for the available compression settings.
- *
- * Compression settings may come from:
- *  - Channel configuration, as established at channel creation time.
- *  - The metadata accompanying the outgoing data to be compressed. This is
- *    taken as a request only. We may choose not to honor it. The metadata key
- *    is given by \a GRPC_COMPRESS_REQUEST_ALGORITHM_KEY.
- *
- * Compression can be disabled for concrete messages (for instance in order to
- * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
- * the BEGIN_MESSAGE flags.
- *
- * The attempted compression mechanism is added to the resulting initial
- * metadata under the'grpc-encoding' key.
- *
- * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
- * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
- * aforementioned 'grpc-encoding' metadata value, data will pass through
- * uncompressed. */
+static void legal(int x) {
+  int byte = x / 8;
+  int bit = x % 8;
+  legal_bits[byte] |= 1 << bit;
+}
 
-extern const grpc_channel_filter grpc_compress_filter;
+static void dump(void) {
+  int i;
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */
+  printf("static const gpr_uint8 legal_header_bits[256/8] = ");
+  for (i = 0; i < 256 / 8; i++)
+    printf("%c 0x%02x", i ? ',' : '{', legal_bits[i]);
+  printf(" };\n");
+}
+
+static void clear(void) { memset(legal_bits, 0, sizeof(legal_bits)); }
+
+int main(void) {
+  int i;
+
+  clear();
+  for (i = 'a'; i <= 'z'; i++) legal(i);
+  for (i = 'A'; i <= 'Z'; i++) legal(i);
+  for (i = '0'; i <= '9'; i++) legal(i);
+  legal('-');
+  dump();
+
+  clear();
+  for (i = 32; i <= 126; i++) legal(i);
+  dump();
+
+  return 0;
+}
