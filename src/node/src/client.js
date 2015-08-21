@@ -32,7 +32,7 @@
  */
 
 /**
- * Server module
+ * Client module
  * @module
  */
 
@@ -272,7 +272,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     emitter.getPeer = function getPeer() {
       return call.getPeer();
     };
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
+    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -340,7 +340,7 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
       metadata = {};
     }
     var stream = new ClientWritableStream(call, serialize);
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
+    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -410,7 +410,7 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       metadata = {};
     }
     var stream = new ClientReadableStream(call, deserialize);
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
+    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -482,7 +482,7 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
       metadata = {};
     }
     var stream = new ClientDuplexStream(call, serialize, deserialize);
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
+    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -572,9 +572,9 @@ exports.makeClientConstructor = function(methods, serviceName) {
     this.$channel = new grpc.Channel(address, credentials, options);
     // Remove the optional DNS scheme, trailing port, and trailing backslash
     address = address.replace(/^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$/, '$2');
-    this.$server_address = address;
-    this.$auth_uri = 'https://' + this.server_address + '/' + serviceName;
-    this.$updateMetadata = updateMetadata;
+    this.$_server_address = address;
+    this.$_auth_uri = 'https://' + this.server_address + '/' + serviceName;
+    this.$_updateMetadata = updateMetadata;
   }
 
   /**
