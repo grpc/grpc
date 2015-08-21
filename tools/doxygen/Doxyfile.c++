@@ -760,21 +760,13 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = include/grpc++/async_generic_service.h \
-include/grpc++/async_unary_call.h \
-include/grpc++/auth_context.h \
-include/grpc++/byte_buffer.h \
-include/grpc++/channel.h \
-include/grpc++/channel_arguments.h \
+INPUT                  = include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
-include/grpc++/config.h \
-include/grpc++/config_protobuf.h \
 include/grpc++/create_channel.h \
 include/grpc++/credentials.h \
-include/grpc++/dynamic_thread_pool.h \
-include/grpc++/fixed_size_thread_pool.h \
-include/grpc++/generic_stub.h \
+include/grpc++/generic/async_generic_service.h \
+include/grpc++/generic/generic_stub.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/grpc_library.h \
@@ -793,13 +785,21 @@ include/grpc++/server.h \
 include/grpc++/server_builder.h \
 include/grpc++/server_context.h \
 include/grpc++/server_credentials.h \
-include/grpc++/slice.h \
-include/grpc++/status.h \
-include/grpc++/status_code_enum.h \
-include/grpc++/stream.h \
-include/grpc++/stub_options.h \
-include/grpc++/thread_pool_interface.h \
-include/grpc++/time.h
+include/grpc++/support/async_unary_call.h \
+include/grpc++/support/auth_context.h \
+include/grpc++/support/byte_buffer.h \
+include/grpc++/support/channel_arguments.h \
+include/grpc++/support/config.h \
+include/grpc++/support/config_protobuf.h \
+include/grpc++/support/dynamic_thread_pool.h \
+include/grpc++/support/fixed_size_thread_pool.h \
+include/grpc++/support/slice.h \
+include/grpc++/support/status.h \
+include/grpc++/support/status_code_enum.h \
+include/grpc++/support/stream.h \
+include/grpc++/support/stub_options.h \
+include/grpc++/support/thread_pool_interface.h \
+include/grpc++/support/time.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -31,24 +31,44 @@
  *
  */
 
-#ifndef GRPCXX_THREAD_POOL_INTERFACE_H
-#define GRPCXX_THREAD_POOL_INTERFACE_H
+#ifndef GRPCXX_SUPPORT_SLICE_H
+#define GRPCXX_SUPPORT_SLICE_H
 
-#include <functional>
+#include <grpc/support/slice.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
-// A thread pool interface for running callbacks.
-class ThreadPoolInterface {
+class Slice GRPC_FINAL {
  public:
-  virtual ~ThreadPoolInterface() {}
+  // construct empty slice
+  Slice();
+  // destructor - drops one ref
+  ~Slice();
+  // construct slice from grpc slice, adding a ref
+  enum AddRef { ADD_REF };
+  Slice(gpr_slice slice, AddRef);
+  // construct slice from grpc slice, stealing a ref
+  enum StealRef { STEAL_REF };
+  Slice(gpr_slice slice, StealRef);
+  // copy constructor - adds a ref
+  Slice(const Slice& other);
+  // assignment - ref count is unchanged
+  Slice& operator=(Slice other) {
+    std::swap(slice_, other.slice_);
+    return *this;
+  }
 
-  // Schedule the given callback for execution.
-  virtual void Add(const std::function<void()>& callback) = 0;
+  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
+  const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
+  const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
+
+ private:
+  friend class ByteBuffer;
+
+  gpr_slice slice_;
 };
-
-ThreadPoolInterface* CreateDefaultThreadPool();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_THREAD_POOL_INTERFACE_H
+#endif  // GRPCXX_SUPPORT_SLICE_H

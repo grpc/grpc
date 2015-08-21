@@ -31,10 +31,10 @@
  *
  */
 
-#ifndef GRPCXX_TIME_H
-#define GRPCXX_TIME_H
+#ifndef GRPCXX_SUPPORT_TIME_H
+#define GRPCXX_SUPPORT_TIME_H
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
@@ -107,4 +107,4 @@ class TimePoint<std::chrono::system_clock::time_point> {
 
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
-#endif  // GRPCXX_TIME_H
+#endif  // GRPCXX_SUPPORT_TIME_H

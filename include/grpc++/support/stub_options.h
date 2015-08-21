@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_STUB_OPTIONS_H
-#define GRPCXX_STUB_OPTIONS_H
+#ifndef GRPCXX_SUPPORT_STUB_OPTIONS_H
+#define GRPCXX_SUPPORT_STUB_OPTIONS_H
 
 namespace grpc {
 
@@ -40,4 +40,4 @@ class StubOptions {};
 
 }  // namespace grpc
 
-#endif  // GRPCXX_STUB_OPTIONS_H
+#endif  // GRPCXX_SUPPORT_STUB_OPTIONS_H

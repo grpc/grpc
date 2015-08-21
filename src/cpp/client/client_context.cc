@@ -38,7 +38,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc++/credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"

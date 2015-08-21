@@ -31,17 +31,17 @@
  *
  */
 
-#ifndef GRPCXX_STREAM_H
-#define GRPCXX_STREAM_H
+#ifndef GRPCXX_SUPPORT_STREAM_H
+#define GRPCXX_SUPPORT_STREAM_H
 
+#include <grpc/support/log.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/server_context.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/service_type.h>
-#include <grpc++/status.h>
-#include <grpc/support/log.h>
+#include <grpc++/server_context.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 
@@ -773,4 +773,4 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
 
 }  // namespace grpc
 
-#endif  // GRPCXX_STREAM_H
+#endif  // GRPCXX_SUPPORT_STREAM_H

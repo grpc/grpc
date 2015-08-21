@@ -38,8 +38,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc++/impl/serialization_traits.h>
-#include <grpc++/config_protobuf.h>
-#include <grpc++/status.h>
+#include <grpc++/support/config_protobuf.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 

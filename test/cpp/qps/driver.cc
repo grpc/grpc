@@ -31,24 +31,24 @@
  *
  */
 
-#include "test/cpp/qps/driver.h"
-#include "src/core/support/env.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/host_port.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/stream.h>
+#include <unistd.h>
 #include <list>
 #include <thread>
 #include <deque>
 #include <vector>
-#include <unistd.h>
-#include "test/cpp/qps/histogram.h"
-#include "test/cpp/qps/qps_worker.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/host_port.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+
+#include "src/core/support/env.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/histogram.h"
+#include "test/cpp/qps/qps_worker.h"
 
 using std::list;
 using std::thread;

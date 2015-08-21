@@ -42,10 +42,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc++/auth_context.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-#include <grpc++/time.h>
+#include <grpc++/support/auth_context.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/time.h>
 
 struct census_context;
 

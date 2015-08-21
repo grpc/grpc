@@ -37,8 +37,7 @@
 #include <map>
 
 #include <grpc++/channel.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 namespace testing {
