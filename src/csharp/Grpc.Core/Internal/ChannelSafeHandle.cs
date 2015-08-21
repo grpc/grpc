@@ -68,11 +68,17 @@ namespace Grpc.Core.Internal
 
         public static ChannelSafeHandle CreateInsecure(string target, ChannelArgsSafeHandle channelArgs)
         {
+            // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
+            // Doing so would make object finalizer crash if we end up abandoning the handle.
+            GrpcEnvironment.GrpcNativeInit();
             return grpcsharp_insecure_channel_create(target, channelArgs);
         }
 
         public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
         {
+            // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
+            // Doing so would make object finalizer crash if we end up abandoning the handle.
+            GrpcEnvironment.GrpcNativeInit();
             return grpcsharp_secure_channel_create(credentials, target, channelArgs);
         }
 
@@ -107,6 +113,7 @@ namespace Grpc.Core.Internal
         protected override bool ReleaseHandle()
         {
             grpcsharp_channel_destroy(handle);
+            GrpcEnvironment.GrpcNativeShutdown();
             return true;
         }
     }

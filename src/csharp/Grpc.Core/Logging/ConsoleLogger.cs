@@ -51,7 +51,19 @@ namespace Grpc.Core.Logging
         private ConsoleLogger(Type forType)
         {
             this.forType = forType;
-            this.forTypeString = forType != null ? forType.FullName + " " : "";
+            if (forType != null)
+            {
+                var namespaceStr = forType.Namespace ?? "";
+                if (namespaceStr.Length > 0)
+                {
+                     namespaceStr += ".";
+                }
+                this.forTypeString = namespaceStr + forType.Name + " ";
+            }
+            else
+            {
+                this.forTypeString = "";
+            }
         }
  
         /// <summary>
