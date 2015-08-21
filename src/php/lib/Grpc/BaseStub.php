@@ -110,10 +110,10 @@ class BaseStub {
   }
 
   private function _checkConnectivityState($new_state) {
-    if ($new_state == Grpc\CHANNEL_READY) {
+    if ($new_state == \Grpc\CHANNEL_READY) {
       return true;
     }
-    if ($new_state == Grpc\CHANNEL_FATAL_ERROR) {
+    if ($new_state == \Grpc\CHANNEL_FATAL_FAILURE) {
       throw new Exception('Failed to connect to server');
     }
     return false;

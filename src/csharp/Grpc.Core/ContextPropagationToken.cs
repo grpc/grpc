@@ -132,7 +132,6 @@ namespace Grpc.Core
         bool propagateDeadline;
         bool propagateCancellation;
 
-
         /// <summary>
         /// Creates new context propagation options.
         /// </summary>

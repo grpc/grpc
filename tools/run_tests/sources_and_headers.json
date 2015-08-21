@@ -122,6 +122,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "compression_test", 
+    "src": [
+      "test/core/compression/compression_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "dualstack_socket_test", 
     "src": [
       "test/core/end2end/dualstack_socket_test.c"
@@ -1604,6 +1618,23 @@
     "name": "server_crash_test_client", 
     "src": [
       "test/cpp/end2end/server_crash_test_client.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "grpc_zookeeper"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "shutdown_test", 
+    "src": [
+      "test/cpp/end2end/shutdown_test.cc"
     ]
   }, 
   {
@@ -13432,7 +13463,9 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "test/cpp/interop/client_helper.h"
+      "test/cpp/interop/client_helper.h", 
+      "test/proto/messages.grpc.pb.h", 
+      "test/proto/messages.pb.h"
     ], 
     "language": "c++", 
     "name": "interop_client_helper", 
