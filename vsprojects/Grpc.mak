@@ -183,6 +183,14 @@ gen_hpack_tables: gen_hpack_tables.exe
 	echo Running gen_hpack_tables
 	$(OUT_DIR)\gen_hpack_tables.exe
 
+gen_legal_metadata_characters.exe: build_gpr build_grpc $(OUT_DIR)
+	echo Building gen_legal_metadata_characters
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\tools\codegen\core\gen_legal_metadata_characters.c 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\gen_legal_metadata_characters.exe" Debug\gpr.lib Debug\grpc.lib $(LIBS) $(OUT_DIR)\gen_legal_metadata_characters.obj 
+gen_legal_metadata_characters: gen_legal_metadata_characters.exe
+	echo Running gen_legal_metadata_characters
+	$(OUT_DIR)\gen_legal_metadata_characters.exe
+
 gpr_cmdline_test.exe: build_gpr_test_util build_gpr $(OUT_DIR)
 	echo Building gpr_cmdline_test
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\core\support\cmdline_test.c 

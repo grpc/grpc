@@ -793,6 +793,7 @@ fling_server: $(BINDIR)/$(CONFIG)/fling_server
 fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
+gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
 gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
 gpr_file_test: $(BINDIR)/$(CONFIG)/gpr_file_test
@@ -3386,7 +3387,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 
 tools_cxx: privatelibs_cxx
 
@@ -7118,6 +7119,35 @@ deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_LEGAL_METADATA_CHARACTERS_SRC = \
+    tools/codegen/core/gen_legal_metadata_characters.c \
+
+GEN_LEGAL_METADATA_CHARACTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_LEGAL_METADATA_CHARACTERS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_legal_metadata_characters.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+deps_gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
 endif
 endif
 
