@@ -54,5 +54,6 @@ module GRPC
     LOGGER = NoopLogger.new
   end
 
-  include DefaultLogger unless method_defined?(:logger)
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend DefaultLogger unless methods.include?(:logger)
 end

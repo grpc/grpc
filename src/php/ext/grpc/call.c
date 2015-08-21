@@ -216,13 +216,18 @@ PHP_METHOD(Call, __construct) {
   char *method;
   int method_len;
   zval *deadline_obj;
-  /* "OsO" == 1 Object, 1 string, 1 Object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO", &channel_obj,
-                            grpc_ce_channel, &method, &method_len,
-                            &deadline_obj, grpc_ce_timeval) == FAILURE) {
+  char *host_override = NULL;
+  int host_override_len = 0;
+  /* "OsO|s" == 1 Object, 1 string, 1 Object, 1 optional string */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO|s",
+                            &channel_obj, grpc_ce_channel,
+                            &method, &method_len,
+                            &deadline_obj, grpc_ce_timeval,
+                            &host_override, &host_override_len)
+      == FAILURE) {
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
-        "Call expects a Channel, a String, and a Timeval",
+        "Call expects a Channel, a String, a Timeval and an optional String",
         1 TSRMLS_CC);
     return;
   }
@@ -241,7 +246,7 @@ PHP_METHOD(Call, __construct) {
           deadline_obj TSRMLS_CC);
   call->wrapped = grpc_channel_create_call(
       channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
-      channel->target, deadline->wrapped, NULL);
+      host_override, deadline->wrapped, NULL);
 }
 
 /**
@@ -273,7 +278,6 @@ PHP_METHOD(Call, startBatch) {
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
-  grpc_event event;
   zval *result;
   char *message_str;
   size_t message_len;
@@ -409,14 +413,8 @@ PHP_METHOD(Call, startBatch) {
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
-                                      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  if (!event.success) {
-    zend_throw_exception(spl_ce_LogicException,
-                         "The batch failed for some reason",
-                         1 TSRMLS_CC);
-    goto cleanup;
-  }
+  grpc_completion_queue_pluck(completion_queue, call->wrapped,
+                              gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
