@@ -1074,12 +1074,12 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
     t->parsing_active = 1;
     /* merge stream lists */
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
-      &t->parsing_stream_map);
+                                     &t->parsing_stream_map);
     grpc_chttp2_prepare_to_read(&t->global, &t->parsing);
     gpr_mu_unlock(&t->mu);
     for (; i < t->read_buffer.count &&
-      grpc_chttp2_perform_read(&t->parsing, t->read_buffer.slices[i]);
-      i++)
+           grpc_chttp2_perform_read(&t->parsing, t->read_buffer.slices[i]);
+         i++)
       ;
     gpr_mu_lock(&t->mu);
     if (i != t->read_buffer.count) {
@@ -1087,12 +1087,12 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
     }
     /* merge stream lists */
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
-      &t->parsing_stream_map);
+                                     &t->parsing_stream_map);
     t->global.concurrent_stream_count =
-      grpc_chttp2_stream_map_size(&t->parsing_stream_map);
+        grpc_chttp2_stream_map_size(&t->parsing_stream_map);
     if (t->parsing.initial_window_update != 0) {
       grpc_chttp2_stream_map_for_each(&t->parsing_stream_map,
-        update_global_window, t);
+                                      update_global_window, t);
       t->parsing.initial_window_update = 0;
     }
     /* handle higher level things */
@@ -1102,8 +1102,7 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
   if (!*success || i != t->read_buffer.count) {
     drop_connection(t);
     read_error_locked(t);
-  }
-  else {
+  } else {
     keep_reading = 1;
   }
   gpr_slice_buffer_reset_and_unref(&t->read_buffer);
@@ -1111,17 +1110,16 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
 
   if (keep_reading) {
     switch (grpc_endpoint_read(t->ep, &t->read_buffer, &t->recv_data)) {
-    case GRPC_ENDPOINT_DONE:
-      *success = 1;
-      return 1;
-    case GRPC_ENDPOINT_ERROR:
-      *success = 0;
-      return 1;
-    case GRPC_ENDPOINT_PENDING:
-      return 0;
+      case GRPC_ENDPOINT_DONE:
+        *success = 1;
+        return 1;
+      case GRPC_ENDPOINT_ERROR:
+        *success = 0;
+        return 1;
+      case GRPC_ENDPOINT_PENDING:
+        return 0;
     }
-  }
-  else {
+  } else {
     UNREF_TRANSPORT(t, "recv_data");
     return 0;
   }
@@ -1133,7 +1131,8 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
 static void recv_data(void *tp, int success) {
   grpc_chttp2_transport *t = tp;
 
-  while (recv_data_loop(t, &success));
+  while (recv_data_loop(t, &success))
+    ;
 }
 
 /*
