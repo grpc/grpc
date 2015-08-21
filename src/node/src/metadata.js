@@ -49,7 +49,7 @@ function Metadata() {
 }
 
 function normalizeKey(key) {
-  if (!(/^[A-Za-z\d-]+$/.test(key))) {
+  if (!(/^[A-Za-z\d_-]+$/.test(key))) {
     throw new Error('Metadata keys must be nonempty strings containing only ' +
         'alphanumeric characters and hyphens');
   }
