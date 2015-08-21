@@ -5,4 +5,5 @@ test-results
 packages
 Grpc.v12.suo
 TestResult.xml
+/TestResults
 *.nupkg

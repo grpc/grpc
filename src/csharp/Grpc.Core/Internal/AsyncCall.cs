@@ -199,6 +199,7 @@ namespace Grpc.Core.Internal
                 {
                     call.StartServerStreaming(HandleFinished, payload, metadataArray, GetWriteFlagsForCall());
                 }
+                call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
             }
         }
 
@@ -219,6 +220,7 @@ namespace Grpc.Core.Internal
                 {
                     call.StartDuplexStreaming(HandleFinished, metadataArray);
                 }
+                call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
             }
         }
 
@@ -360,6 +362,14 @@ namespace Grpc.Core.Internal
         {
             var writeOptions = details.Options.WriteOptions;
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
+        }
+
+        /// <summary>
+        /// Handles receive status completion for calls with streaming response.
+        /// </summary>
+        private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
+        {
+            responseHeadersTcs.SetResult(responseHeaders);
         }
 
         /// <summary>

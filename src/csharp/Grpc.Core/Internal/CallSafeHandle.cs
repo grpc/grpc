@@ -87,6 +87,10 @@ namespace Grpc.Core.Internal
             BatchContextSafeHandle ctx);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_recv_initial_metadata(CallSafeHandle call,
+            BatchContextSafeHandle ctx);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_start_serverside(CallSafeHandle call,
             BatchContextSafeHandle ctx);
 
@@ -170,6 +174,13 @@ namespace Grpc.Core.Internal
             var ctx = BatchContextSafeHandle.Create();
             completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedMessage()));
             grpcsharp_call_recv_message(this, ctx).CheckOk();
+        }
+
+        public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
+        {
+            var ctx = BatchContextSafeHandle.Create();
+            completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedInitialMetadata()));
+            grpcsharp_call_recv_initial_metadata(this, ctx).CheckOk();
         }
 
         public void StartServerSide(ReceivedCloseOnServerHandler callback)
