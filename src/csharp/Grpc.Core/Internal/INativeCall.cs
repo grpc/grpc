@@ -31,6 +31,7 @@
 #endregion
 
 using System;
+
 namespace Grpc.Core.Internal
 {
     internal delegate void UnaryResponseClientHandler(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);

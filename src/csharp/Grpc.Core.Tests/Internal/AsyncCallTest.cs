@@ -33,9 +33,10 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+
 using Grpc.Core.Internal;
 using NUnit.Framework;
-using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal.Tests
 {
@@ -87,38 +88,8 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
         }
 
-
-        //[Test]
-        //public void Duplex_ReceiveEarlyClose()
-        //{
-        //    asyncCall.StartDuplexStreamingCall();
-
-        //    fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(new Status(StatusCode.DeadlineExceeded, ""), null));
-
-        //    // TODO: start read...
-        //    Assert.IsTrue(fakeCall.IsDisposed);
-        //}
-
-        //[Test]
-        //public void Duplex_ReceiveEarlyCloseWithRead()
-        //{
-        //    asyncCall.StartDuplexStreamingCall();
-
-        //    fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(new Status(StatusCode.DeadlineExceeded, ""), null));
-
-        //    var taskSource = new AsyncCompletionTaskSource<string>();
-        //    asyncCall.StartReadMessage(taskSource.CompletionDelegate);
-
-        //    fakeCall.ReceivedMessageHandler(true, new byte[] { 1 } );
-
-        //    // TODO: start read...
-        //    Assert.IsTrue(fakeCall.IsDisposed);
-        //}
-        
-
         internal class FakeNativeCall : INativeCall
         {
-
             public UnaryResponseClientHandler UnaryResponseClientHandler
             {
                 get;
@@ -247,8 +218,5 @@ namespace Grpc.Core.Internal.Tests
                 IsDisposed = true;
             }
         }
-
     }
-
-    
 }

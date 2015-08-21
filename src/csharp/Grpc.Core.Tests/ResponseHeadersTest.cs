@@ -125,7 +125,7 @@ namespace Grpc.Core.Tests
             var responseHeaders = await call.ResponseHeadersAsync;
 
             Assert.AreEqual("ascii-header", responseHeaders[0].Key);
-            CollectionAssert.AreEqual(new [] { "PASS" }, await call.ResponseStream.ToListAsync());
+            CollectionAssert.AreEqual(new[] { "PASS" }, await call.ResponseStream.ToListAsync());
         }
 
         [Test]

@@ -344,7 +344,6 @@ namespace Grpc.Core.Internal
                 details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value));
         }
 
-
         // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
         private void RegisterCancellationCallback()
         {
