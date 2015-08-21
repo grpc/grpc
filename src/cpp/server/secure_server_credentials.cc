@@ -35,8 +35,8 @@
 
 namespace grpc {
 
-int SecureServerCredentials::AddPortToServer(
-    const grpc::string& addr, grpc_server* server) {
+int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
+                                             grpc_server* server) {
   return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
 }
 

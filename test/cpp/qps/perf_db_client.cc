@@ -44,9 +44,7 @@ void PerfDbClient::setConfigs(const ClientConfig& client_config,
 }
 
 // sets the QPS
-void PerfDbClient::setQps(double qps) {
-  qps_ = qps;
-}
+void PerfDbClient::setQps(double qps) { qps_ = qps; }
 
 // sets the QPS per core
 void PerfDbClient::setQpsPerCore(double qps_per_core) {
@@ -54,10 +52,8 @@ void PerfDbClient::setQpsPerCore(double qps_per_core) {
 }
 
 // sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
-void PerfDbClient::setLatencies(double perc_lat_50,
-                                double perc_lat_90,
-                                double perc_lat_95,
-                                double perc_lat_99,
+void PerfDbClient::setLatencies(double perc_lat_50, double perc_lat_90,
+                                double perc_lat_95, double perc_lat_99,
                                 double perc_lat_99_point_9) {
   perc_lat_50_ = perc_lat_50;
   perc_lat_90_ = perc_lat_90;
@@ -68,7 +64,8 @@ void PerfDbClient::setLatencies(double perc_lat_50,
 
 // sets the server and client, user and system times
 void PerfDbClient::setTimes(double server_system_time, double server_user_time,
-                            double client_system_time, double client_user_time) {
+                            double client_system_time,
+                            double client_user_time) {
   server_system_time_ = server_system_time;
   server_user_time_ = server_user_time;
   client_system_time_ = client_system_time;

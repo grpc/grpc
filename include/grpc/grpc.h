@@ -378,20 +378,13 @@ typedef struct grpc_op {
 
 /** Registers a plugin to be initialized and destroyed with the library.
 
-    The \a init and \a destroy functions will be invoked as part of 
-    \a grpc_init() and \a grpc_shutdown(), respectively. 
+    The \a init and \a destroy functions will be invoked as part of
+    \a grpc_init() and \a grpc_shutdown(), respectively.
     Note that these functions can be invoked an arbitrary number of times
     (and hence so will \a init and \a destroy).
-    It is safe to pass NULL to either argument. Plugins are destroyed in 
+    It is safe to pass NULL to either argument. Plugins are destroyed in
     the reverse order they were initialized. */
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
-
-/** Frees the memory used by all the plugin information.
-
-    While grpc_init and grpc_shutdown can be called multiple times, the plugins
-    won't be unregistered and their memory cleaned up unless you call that
-    function. Using atexit(grpc_unregister_all_plugins) is a valid method. */
-void grpc_unregister_all_plugins();
 
 /* Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
@@ -561,7 +554,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
                                            void *reserved);
 
 /** Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(const char *target);
+grpc_channel *grpc_lame_client_channel_create(const char *target,
+                                              grpc_status_code error_code,
+                                              const char *error_message);
 
 /** Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);
@@ -627,8 +622,7 @@ grpc_call_error grpc_server_request_registered_call(
     be specified with args. If no additional configuration is needed, args can
     be NULL. See grpc_channel_args for more. The data in 'args' need only live
     through the invocation of this function. */
-grpc_server *grpc_server_create(const grpc_channel_args *args,
-                                void *reserved);
+grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved);
 
 /** Register a completion queue with the server. Must be done for any
     notification completion queue that is passed to grpc_server_request_*_call

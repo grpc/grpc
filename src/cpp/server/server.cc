@@ -90,6 +90,26 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     return mrd;
   }
 
+  static bool AsyncWait(CompletionQueue* cq, SyncRequest** req, bool* ok,
+                        gpr_timespec deadline) {
+    void* tag = nullptr;
+    *ok = false;
+    switch (cq->AsyncNext(&tag, ok, deadline)) {
+      case CompletionQueue::TIMEOUT:
+        *req = nullptr;
+        return true;
+      case CompletionQueue::SHUTDOWN:
+        *req = nullptr;
+        return false;
+      case CompletionQueue::GOT_EVENT:
+        *req = static_cast<SyncRequest*>(tag);
+        GPR_ASSERT((*req)->in_flight_);
+        return true;
+    }
+    gpr_log(GPR_ERROR, "Should never reach here");
+    abort();
+  }
+
   void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
 
   void TeardownRequest() {
@@ -230,18 +250,17 @@ Server::~Server() {
   delete sync_methods_;
 }
 
-bool Server::RegisterService(const grpc::string *host, RpcService* service) {
+bool Server::RegisterService(const grpc::string* host, RpcService* service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
     RpcServiceMethod* method = service->GetMethod(i);
-    void* tag = grpc_server_register_method(
-        server_, method->name(), host ? host->c_str() : nullptr);
+    void* tag = grpc_server_register_method(server_, method->name(),
+                                            host ? host->c_str() : nullptr);
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
       return false;
     }
-    SyncRequest request(method, tag);
-    sync_methods_->emplace_back(request);
+    sync_methods_->emplace_back(method, tag);
   }
   return true;
 }
@@ -286,7 +305,10 @@ bool Server::Start() {
   if (!has_generic_service_) {
     unknown_method_.reset(new RpcServiceMethod(
         "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-    sync_methods_->emplace_back(unknown_method_.get(), nullptr);
+    // Use of emplace_back with just constructor arguments is not accepted here
+    // by gcc-4.4 because it can't match the anonymous nullptr with a proper
+    // constructor implicitly. Construct the object and use push_back.
+    sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
   }
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
@@ -301,12 +323,27 @@ bool Server::Start() {
   return true;
 }
 
-void Server::Shutdown() {
+void Server::ShutdownInternal(gpr_timespec deadline) {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
+    // Spin, eating requests until the completion queue is completely shutdown.
+    // If the deadline expires then cancel anything that's pending and keep
+    // spinning forever until the work is actually drained.
+    // Since nothing else needs to touch state guarded by mu_, holding it 
+    // through this loop is fine.
+    SyncRequest* request;
+    bool ok;
+    while (SyncRequest::AsyncWait(&cq_, &request, &ok, deadline)) {
+      if (request == NULL) {  // deadline expired
+        grpc_server_cancel_all_calls(server_);
+        deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+      } else if (ok) {
+        SyncRequest::CallData call_data(this, request);
+      }
+    }
 
     // Wait for running callbacks to finish.
     while (num_running_cb_ != 0) {
