@@ -1538,6 +1538,7 @@
       "posix", 
       "windows"
     ], 
+    "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
     "name": "status_test", 
