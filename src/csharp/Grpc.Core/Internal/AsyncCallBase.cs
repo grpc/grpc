@@ -189,15 +189,15 @@ namespace Grpc.Core.Internal
 
         private void ReleaseResources()
         {
-            OnReleaseResources();
             if (call != null)
             {
                 call.Dispose();
             }
             disposed = true;
+            OnAfterReleaseResources();
         }
 
-        protected virtual void OnReleaseResources()
+        protected virtual void OnAfterReleaseResources()
         {
         }
 
@@ -212,7 +212,7 @@ namespace Grpc.Core.Internal
             Preconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
         }
 
-        protected void CheckReadingAllowed()
+        protected virtual void CheckReadingAllowed()
         {
             Preconditions.CheckState(started);
             Preconditions.CheckState(!disposed);
