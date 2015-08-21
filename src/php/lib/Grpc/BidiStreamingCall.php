@@ -86,7 +86,7 @@ class BidiStreamingCall extends AbstractCall {
   public function getStatus() {
     $status_event = $this->call->startBatch([
         OP_RECV_STATUS_ON_CLIENT => true
-                                              ]);
+    ]);
     return $status_event->status;
   }
 }

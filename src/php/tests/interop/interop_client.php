@@ -270,6 +270,29 @@ function cancelAfterFirstResponse($stub) {
              'Call status was not CANCELLED');
 }
 
+/**
+ * Run the cancel_after_begin test.
+ * Passes when run against the Node server as of 2015-08-21
+ * @param $stub Stub object that has service methods
+ */
+function cancelAfterBegin($stub) {
+  $request = new grpc\testing\StreamingInputCallRequest();
+  $payload = new grpc\testing\Payload();
+  $payload->setBody(str_repeat("\0", 8));
+  $request->setPayload($payload);
+
+  $requests = array($request);
+  $call = $stub->StreamingInputCall($requests);
+  $call->cancel();
+  hardAssert($call->getStatus()->code === Grpc\STATUS_CANCELLED,
+             'Call status was not CANCELLED');
+}
+
+/**
+ * Run the timeout_on_sleeping_server test.
+ * Passes when run against the Node server as of 2015-08-21
+ * @param $stub Stub object that has service methods
+ */
 function timeoutOnSleepingServer($stub) {
   $call = $stub->FullDuplexCall(array('timeout' => 1000));
   $request = new grpc\testing\StreamingOutputCallRequest();
@@ -332,11 +355,7 @@ if (in_array($args['test_case'], array(
   $opts['update_metadata'] = $auth->getUpdateMetadataFunc();
 }
 
-$internal_stub = new Grpc\BaseStub($server_address, $opts);
-hardAssert(is_string($internal_stub->getTarget()),
-           'Unexpected target URI value');
-
-$stub = new grpc\testing\TestServiceClient($internal_stub);
+$stub = new grpc\testing\TestServiceClient($server_address, $opts);
 
 echo "Connecting to $server_address\n";
 echo "Running test case $args[test_case]\n";
@@ -359,6 +378,9 @@ switch ($args['test_case']) {
     break;
   case 'cancel_after_first_response':
     cancelAfterFirstResponse($stub);
+    break;
+  case 'cancel_after_begin':
+    cancelAfterBegin($stub);
     break;
   case 'timeout_on_sleeping_server':
     timeoutOnSleepingServer($stub);
