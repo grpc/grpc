@@ -43,31 +43,37 @@ namespace Grpc.Core.Tests
         [Test]
         public void InitializeAndShutdownGrpcEnvironment()
         {
-            var env = GrpcEnvironment.GetInstance();
+            var env = GrpcEnvironment.AddRef();
             Assert.IsNotNull(env.CompletionQueue);
-            GrpcEnvironment.Shutdown();
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void SubsequentInvocations()
         {
-            var env1 = GrpcEnvironment.GetInstance();
-            var env2 = GrpcEnvironment.GetInstance();
+            var env1 = GrpcEnvironment.AddRef();
+            var env2 = GrpcEnvironment.AddRef();
             Assert.IsTrue(object.ReferenceEquals(env1, env2));
-            GrpcEnvironment.Shutdown();
-            GrpcEnvironment.Shutdown();
+            GrpcEnvironment.Release();
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void InitializeAfterShutdown()
         {
-            var env1 = GrpcEnvironment.GetInstance();
-            GrpcEnvironment.Shutdown();
+            var env1 = GrpcEnvironment.AddRef();
+            GrpcEnvironment.Release();
 
-            var env2 = GrpcEnvironment.GetInstance();
-            GrpcEnvironment.Shutdown();
+            var env2 = GrpcEnvironment.AddRef();
+            GrpcEnvironment.Release();
 
             Assert.IsFalse(object.ReferenceEquals(env1, env2));
+        }
+
+        [Test]
+        public void ReleaseWithoutAddRef()
+        {
+            Assert.Throws(typeof(InvalidOperationException), () => GrpcEnvironment.Release());
         }
 
         [Test]
