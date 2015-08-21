@@ -42,7 +42,7 @@
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
-#include <grpc++/support/stream.h>
+#include <grpc++/support/sync_stream.h>
 
 namespace grpc {
 class ServerContext;

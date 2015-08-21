@@ -34,8 +34,8 @@
 #ifndef GRPCXX_GENERIC_GENERIC_STUB_H
 #define GRPCXX_GENERIC_GENERIC_STUB_H
 
+#include <grpc++/support/async_stream.h>
 #include <grpc++/support/byte_buffer.h>
-#include <grpc++/support/stream.h>
 
 namespace grpc {
 
