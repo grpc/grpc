@@ -44,7 +44,6 @@
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_connector.h"
 #include "src/core/security/security_context.h"
-#include "src/core/security/secure_transport_setup.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
@@ -121,10 +120,9 @@ static int remove_tcp_from_list_locked(grpc_server_secure_state *state,
   return -1;
 }
 
-static void on_secure_transport_setup_done(void *statep,
-                                           grpc_security_status status,
-                                           grpc_endpoint *wrapped_endpoint,
-                                           grpc_endpoint *secure_endpoint) {
+static void on_secure_handshake_done(void *statep, grpc_security_status status,
+                                     grpc_endpoint *wrapped_endpoint,
+                                     grpc_endpoint *secure_endpoint) {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
   grpc_mdctx *mdctx;
@@ -163,8 +161,8 @@ static void on_accept(void *statep, grpc_endpoint *tcp) {
   node->next = state->handshaking_tcp_endpoints;
   state->handshaking_tcp_endpoints = node;
   gpr_mu_unlock(&state->mu);
-  grpc_setup_secure_transport(state->sc, tcp, on_secure_transport_setup_done,
-                              state);
+  grpc_security_connector_do_handshake(state->sc, tcp, on_secure_handshake_done,
+                                       state);
 }
 
 /* Server callback: start listening on our ports */

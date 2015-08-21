@@ -63,10 +63,17 @@ typedef struct grpc_security_connector grpc_security_connector;
 typedef void (*grpc_security_check_cb)(void *user_data,
                                        grpc_security_status status);
 
+
+/* Ownership of the secure_endpoint is transfered. */
+typedef void (*grpc_security_handshake_done_cb)(
+    void *user_data, grpc_security_status status,
+    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint);
+
 typedef struct {
   void (*destroy)(grpc_security_connector *sc);
-  grpc_security_status (*create_handshaker)(grpc_security_connector *sc,
-                                            tsi_handshaker **handshaker);
+  void (*do_handshake)(grpc_security_connector *sc,
+                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_security_handshake_done_cb cb, void *user_data);
   grpc_security_status (*check_peer)(grpc_security_connector *sc, tsi_peer peer,
                                      grpc_security_check_cb cb,
                                      void *user_data);
@@ -77,6 +84,7 @@ struct grpc_security_connector {
   gpr_refcount refcount;
   int is_client_side;
   const char *url_scheme;
+  tsi_handshaker *handshaker;
   grpc_auth_context *auth_context; /* Populated after the peer is checked. */
 };
 
@@ -100,9 +108,11 @@ grpc_security_connector *grpc_security_connector_ref(
 void grpc_security_connector_unref(grpc_security_connector *policy);
 #endif
 
-/* Handshake creation. */
-grpc_security_status grpc_security_connector_create_handshaker(
-    grpc_security_connector *sc, tsi_handshaker **handshaker);
+/* Handshake. */
+void grpc_security_connector_do_handshake(grpc_security_connector *connector,
+                                          grpc_endpoint *nonsecure_endpoint,
+                                          grpc_security_handshake_done_cb cb,
+                                          void *user_data);
 
 /* Check the peer.
    Implementations can choose to check the peer either synchronously or

@@ -46,7 +46,6 @@
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
-#include "src/core/security/secure_transport_setup.h"
 #include "src/core/surface/channel.h"
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -74,14 +73,13 @@ static void connector_unref(grpc_connector *con) {
   }
 }
 
-static void on_secure_transport_setup_done(void *arg,
-                                           grpc_security_status status,
-                                           grpc_endpoint *wrapped_endpoint,
-                                           grpc_endpoint *secure_endpoint) {
+static void on_secure_handshake_done(void *arg, grpc_security_status status,
+                                     grpc_endpoint *wrapped_endpoint,
+                                     grpc_endpoint *secure_endpoint) {
   connector *c = arg;
   grpc_iomgr_closure *notify;
   if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
+    gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
   } else {
     c->result->transport = grpc_create_chttp2_transport(
@@ -101,8 +99,8 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   connector *c = arg;
   grpc_iomgr_closure *notify;
   if (tcp != NULL) {
-    grpc_setup_secure_transport(&c->security_connector->base, tcp,
-                                on_secure_transport_setup_done, c);
+    grpc_security_connector_do_handshake(&c->security_connector->base, tcp,
+                                         on_secure_handshake_done, c);
   } else {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;
