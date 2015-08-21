@@ -63,4 +63,16 @@ class ClientStreamingCall extends AbstractCall {
     $this->metadata = $event->metadata;
     return array($this->deserializeResponse($event->message), $event->status);
   }
+
+  /**
+   * Wait for the server to send the status, and return it.
+   * @return object The status object, with integer $code, string $details,
+   *     and array $metadata members
+   */
+  public function getStatus() {
+    $status_event = $this->call->startBatch([
+        OP_RECV_STATUS_ON_CLIENT => true
+    ]);
+    return $status_event->status;
+  }
 }
