@@ -185,7 +185,6 @@ namespace Grpc.Core
             return Marshal.PtrToStringAnsi(ptr);
         }
 
-
         internal static void GrpcNativeInit()
         {
             grpcsharp_init();
