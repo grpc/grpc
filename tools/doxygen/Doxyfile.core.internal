@@ -855,6 +855,7 @@ src/core/json/json_writer.h \
 src/core/profiling/timers.h \
 src/core/statistics/census_interface.h \
 src/core/statistics/census_rpc_stats.h \
+src/core/surface/api_trace.h \
 src/core/surface/byte_buffer_queue.h \
 src/core/surface/call.h \
 src/core/surface/channel.h \
@@ -1009,7 +1010,6 @@ src/core/surface/metadata_array.c \
 src/core/surface/server.c \
 src/core/surface/server_chttp2.c \
 src/core/surface/server_create.c \
-src/core/surface/surface_trace.c \
 src/core/surface/version.c \
 src/core/transport/chttp2/alpn.c \
 src/core/transport/chttp2/bin_encoder.c \

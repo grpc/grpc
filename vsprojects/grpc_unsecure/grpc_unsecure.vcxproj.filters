@@ -271,9 +271,6 @@
     <ClCompile Include="..\..\src\core\surface\server_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\surface_trace.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\version.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -589,6 +586,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h">
       <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\api_trace.h">
+      <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
       <Filter>src\core\surface</Filter>
