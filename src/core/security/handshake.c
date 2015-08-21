@@ -44,6 +44,7 @@
 
 typedef struct {
   grpc_security_connector *connector;
+  tsi_handshaker *handshaker;
   unsigned char *handshake_buffer;
   size_t handshake_buffer_size;
   grpc_endpoint *wrapped_endpoint;
@@ -77,6 +78,8 @@ static void security_handshake_done(grpc_security_handshake *h,
   }
   if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
   gpr_slice_buffer_destroy(&h->left_overs);
+  tsi_handshaker_destroy(h->handshaker);
+  GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
   gpr_free(h);
 }
 
@@ -89,8 +92,8 @@ static void on_peer_checked(void *user_data, grpc_security_status status) {
     security_handshake_done(h, 0);
     return;
   }
-  result = tsi_handshaker_create_frame_protector(h->connector->handshaker, NULL,
-                                                 &protector);
+  result =
+      tsi_handshaker_create_frame_protector(h->handshaker, NULL, &protector);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Frame protector creation failed with error %s.",
             tsi_result_to_string(result));
@@ -107,8 +110,7 @@ static void on_peer_checked(void *user_data, grpc_security_status status) {
 static void check_peer(grpc_security_handshake *h) {
   grpc_security_status peer_status;
   tsi_peer peer;
-  tsi_result result =
-      tsi_handshaker_extract_peer(h->connector->handshaker, &peer);
+  tsi_result result = tsi_handshaker_extract_peer(h->handshaker, &peer);
 
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Peer extraction failed with error %s",
@@ -136,7 +138,7 @@ static void send_handshake_bytes_to_peer(grpc_security_handshake *h) {
   do {
     size_t to_send_size = h->handshake_buffer_size - offset;
     result = tsi_handshaker_get_bytes_to_send_to_peer(
-        h->connector->handshaker, h->handshake_buffer + offset, &to_send_size);
+        h->handshaker, h->handshake_buffer + offset, &to_send_size);
     offset += to_send_size;
     if (result == TSI_INCOMPLETE_DATA) {
       h->handshake_buffer_size *= 2;
@@ -193,12 +195,11 @@ static void on_handshake_data_received_from_peer(
   for (i = 0; i < nslices; i++) {
     consumed_slice_size = GPR_SLICE_LENGTH(slices[i]);
     result = tsi_handshaker_process_bytes_from_peer(
-        h->connector->handshaker, GPR_SLICE_START_PTR(slices[i]),
-        &consumed_slice_size);
-    if (!tsi_handshaker_is_in_progress(h->connector->handshaker)) break;
+        h->handshaker, GPR_SLICE_START_PTR(slices[i]), &consumed_slice_size);
+    if (!tsi_handshaker_is_in_progress(h->handshaker)) break;
   }
 
-  if (tsi_handshaker_is_in_progress(h->connector->handshaker)) {
+  if (tsi_handshaker_is_in_progress(h->handshaker)) {
     /* We may need more data. */
     if (result == TSI_INCOMPLETE_DATA) {
       /* TODO(klempner,jboeuf): This should probably use the client setup
@@ -258,7 +259,7 @@ static void on_handshake_data_sent_to_peer(void *handshake,
   }
 
   /* We may be done. */
-  if (tsi_handshaker_is_in_progress(h->connector->handshaker)) {
+  if (tsi_handshaker_is_in_progress(h->handshaker)) {
     /* TODO(klempner,jboeuf): This should probably use the client setup
        deadline */
     grpc_endpoint_notify_on_read(
@@ -268,13 +269,15 @@ static void on_handshake_data_sent_to_peer(void *handshake,
   }
 }
 
-void grpc_do_security_handshake(grpc_security_connector *connector,
+void grpc_do_security_handshake(tsi_handshaker *handshaker,
+                                grpc_security_connector *connector,
                                 grpc_endpoint *nonsecure_endpoint,
                                 grpc_security_handshake_done_cb cb,
                                 void *user_data) {
   grpc_security_handshake *h = gpr_malloc(sizeof(grpc_security_handshake));
   memset(h, 0, sizeof(grpc_security_handshake));
-  h->connector = connector;
+  h->handshaker = handshaker;
+  h->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "handshake");
   h->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   h->handshake_buffer = gpr_malloc(h->handshake_buffer_size);
   h->wrapped_endpoint = nonsecure_endpoint;

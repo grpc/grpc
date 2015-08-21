@@ -222,13 +222,11 @@ typedef struct {
 static void fake_channel_destroy(grpc_security_connector *sc) {
   grpc_channel_security_connector *c = (grpc_channel_security_connector *)sc;
   grpc_credentials_unref(c->request_metadata_creds);
-  tsi_handshaker_destroy(sc->handshaker);
   GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
 
 static void fake_server_destroy(grpc_security_connector *sc) {
-  tsi_handshaker_destroy(sc->handshaker);
   GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
   gpr_free(sc);
 }
@@ -286,18 +284,16 @@ static void fake_channel_do_handshake(grpc_security_connector *sc,
                                       grpc_endpoint *nonsecure_endpoint,
                                       grpc_security_handshake_done_cb cb,
                                       void *user_data) {
-  tsi_handshaker_destroy(sc->handshaker);
-  sc->handshaker = tsi_create_fake_handshaker(1);
-  grpc_do_security_handshake(sc, nonsecure_endpoint, cb, user_data);
+  grpc_do_security_handshake(tsi_create_fake_handshaker(1), sc,
+                             nonsecure_endpoint, cb, user_data);
 }
 
 static void fake_server_do_handshake(grpc_security_connector *sc,
                                      grpc_endpoint *nonsecure_endpoint,
                                      grpc_security_handshake_done_cb cb,
                                      void *user_data) {
-  tsi_handshaker_destroy(sc->handshaker);
-  sc->handshaker = tsi_create_fake_handshaker(0);
-  grpc_do_security_handshake(sc, nonsecure_endpoint, cb, user_data);
+  grpc_do_security_handshake(tsi_create_fake_handshaker(0), sc,
+                             nonsecure_endpoint, cb, user_data);
 }
 
 static grpc_security_connector_vtable fake_channel_vtable = {
@@ -358,7 +354,6 @@ static void ssl_channel_destroy(grpc_security_connector *sc) {
   if (c->overridden_target_name != NULL) gpr_free(c->overridden_target_name);
   tsi_peer_destruct(&c->peer);
   GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
-  tsi_handshaker_destroy(sc->handshaker);
   gpr_free(sc);
 }
 
@@ -369,7 +364,6 @@ static void ssl_server_destroy(grpc_security_connector *sc) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
   GRPC_AUTH_CONTEXT_UNREF(sc->auth_context, "connector");
-  tsi_handshaker_destroy(sc->handshaker);
   gpr_free(sc);
 }
 
@@ -378,8 +372,6 @@ static grpc_security_status ssl_create_handshaker(
     const char *peer_name, tsi_handshaker **handshaker) {
   tsi_result result = TSI_OK;
   if (handshaker_factory == NULL) return GRPC_SECURITY_ERROR;
-  tsi_handshaker_destroy(*handshaker);
-  *handshaker = NULL;
   result = tsi_ssl_handshaker_factory_create_handshaker(
       handshaker_factory, is_client ? peer_name : NULL, handshaker);
   if (result != TSI_OK) {
@@ -396,15 +388,17 @@ static void ssl_channel_do_handshake(grpc_security_connector *sc,
                                      void *user_data) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
+  tsi_handshaker *handshaker;
   grpc_security_status status = ssl_create_handshaker(
       c->handshaker_factory, 1,
       c->overridden_target_name != NULL ? c->overridden_target_name
                                         : c->target_name,
-      &sc->handshaker);
+      &handshaker);
   if (status != GRPC_SECURITY_OK) {
     cb(user_data, status, nonsecure_endpoint, NULL);
   } else {
-    grpc_do_security_handshake(sc, nonsecure_endpoint, cb, user_data);
+    grpc_do_security_handshake(handshaker, sc, nonsecure_endpoint, cb,
+                               user_data);
   }
 }
 
@@ -414,12 +408,14 @@ static void ssl_server_do_handshake(grpc_security_connector *sc,
                                     void *user_data) {
   grpc_ssl_server_security_connector *c =
       (grpc_ssl_server_security_connector *)sc;
+  tsi_handshaker *handshaker;
   grpc_security_status status =
-      ssl_create_handshaker(c->handshaker_factory, 0, NULL, &sc->handshaker);
+      ssl_create_handshaker(c->handshaker_factory, 0, NULL, &handshaker);
   if (status != GRPC_SECURITY_OK) {
     cb(user_data, status, nonsecure_endpoint, NULL);
   } else {
-    grpc_do_security_handshake(sc, nonsecure_endpoint, cb, user_data);
+    grpc_do_security_handshake(handshaker, sc, nonsecure_endpoint, cb,
+                               user_data);
   }
 }
 
