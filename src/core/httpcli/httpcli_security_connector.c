@@ -55,7 +55,6 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
-  tsi_handshaker_destroy(sc->handshaker);
   gpr_free(sc);
 }
 
@@ -65,20 +64,20 @@ static void httpcli_ssl_do_handshake(
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_result result = TSI_OK;
+  tsi_handshaker *handshaker;
   if (c->handshaker_factory == NULL) {
     cb(user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
     return;
   }
-  tsi_handshaker_destroy(sc->handshaker);
-  sc->handshaker = NULL;
   result = tsi_ssl_handshaker_factory_create_handshaker(
-      c->handshaker_factory, c->secure_peer_name, &sc->handshaker);
+      c->handshaker_factory, c->secure_peer_name, &handshaker);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
             tsi_result_to_string(result));
     cb(user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
   } else {
-    grpc_do_security_handshake(sc, nonsecure_endpoint, cb, user_data);
+    grpc_do_security_handshake(handshaker, sc, nonsecure_endpoint, cb,
+                               user_data);
   }
 }
 

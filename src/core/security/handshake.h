@@ -38,8 +38,9 @@
 #include "src/core/security/security_connector.h"
 
 
-/* Calls the callback upon completion. */
-void grpc_do_security_handshake(grpc_security_connector *connector,
+/* Calls the callback upon completion. Takes owership of handshaker. */
+void grpc_do_security_handshake(tsi_handshaker *handshaker,
+                                grpc_security_connector *connector,
                                 grpc_endpoint *nonsecure_endpoint,
                                 grpc_security_handshake_done_cb cb,
                                 void *user_data);
