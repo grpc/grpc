@@ -84,7 +84,6 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t);
 
 /* forward declarations of various callbacks that we'll build closures around */
 static void writing_action(void *t, int iomgr_success_ignored);
-static void reading_action(void *t, int iomgr_success_ignored);
 
 /** Set a transport level setting, and push it to our peer */
 static void push_setting(grpc_chttp2_transport *t, grpc_chttp2_setting_id id,
@@ -249,7 +248,6 @@ static void init_transport(grpc_chttp2_transport *t,
   gpr_slice_buffer_init(&t->writing.outbuf);
   grpc_chttp2_hpack_compressor_init(&t->writing.hpack_compressor, mdctx);
   grpc_iomgr_closure_init(&t->writing_action, writing_action, t);
-  grpc_iomgr_closure_init(&t->reading_action, reading_action, t);
 
   gpr_slice_buffer_init(&t->parsing.qbuf);
   grpc_chttp2_goaway_parser_init(&t->parsing.goaway_parser);
@@ -1065,10 +1063,9 @@ static void read_error_locked(grpc_chttp2_transport *t) {
 }
 
 /* tcp read callback */
-static void recv_data(void *tp, int success) {
-  grpc_chttp2_transport *t = tp;
+static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
   size_t i;
-  int unref = 0;
+  int keep_reading = 0;
 
   lock(t);
   i = 0;
@@ -1077,12 +1074,12 @@ static void recv_data(void *tp, int success) {
     t->parsing_active = 1;
     /* merge stream lists */
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
-                                     &t->parsing_stream_map);
+      &t->parsing_stream_map);
     grpc_chttp2_prepare_to_read(&t->global, &t->parsing);
     gpr_mu_unlock(&t->mu);
     for (; i < t->read_buffer.count &&
-           grpc_chttp2_perform_read(&t->parsing, t->read_buffer.slices[i]);
-         i++)
+      grpc_chttp2_perform_read(&t->parsing, t->read_buffer.slices[i]);
+      i++)
       ;
     gpr_mu_lock(&t->mu);
     if (i != t->read_buffer.count) {
@@ -1090,48 +1087,53 @@ static void recv_data(void *tp, int success) {
     }
     /* merge stream lists */
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
-                                     &t->parsing_stream_map);
+      &t->parsing_stream_map);
     t->global.concurrent_stream_count =
-        grpc_chttp2_stream_map_size(&t->parsing_stream_map);
+      grpc_chttp2_stream_map_size(&t->parsing_stream_map);
     if (t->parsing.initial_window_update != 0) {
       grpc_chttp2_stream_map_for_each(&t->parsing_stream_map,
-                                      update_global_window, t);
+        update_global_window, t);
       t->parsing.initial_window_update = 0;
     }
     /* handle higher level things */
     grpc_chttp2_publish_reads(&t->global, &t->parsing);
     t->parsing_active = 0;
   }
-  if (!success) {
+  if (!*success || i != t->read_buffer.count) {
     drop_connection(t);
     read_error_locked(t);
-    unref = 1;
-  } else if (i == t->read_buffer.count) {
-    grpc_chttp2_schedule_closure(&t->global, &t->reading_action, 1);
-  } else {
-    read_error_locked(t);
-    unref = 1;
+  }
+  else {
+    keep_reading = 1;
   }
   gpr_slice_buffer_reset_and_unref(&t->read_buffer);
   unlock(t);
 
-  if (unref) {
-    UNREF_TRANSPORT(t, "recv_data");
+  if (keep_reading) {
+    switch (grpc_endpoint_read(t->ep, &t->read_buffer, &t->recv_data)) {
+    case GRPC_ENDPOINT_DONE:
+      *success = 1;
+      return 1;
+    case GRPC_ENDPOINT_ERROR:
+      *success = 0;
+      return 1;
+    case GRPC_ENDPOINT_PENDING:
+      return 0;
+    }
   }
+  else {
+    UNREF_TRANSPORT(t, "recv_data");
+    return 0;
+  }
+
+  gpr_log(GPR_ERROR, "should never reach here");
+  abort();
 }
 
-static void reading_action(void *pt, int iomgr_success_ignored) {
-  grpc_chttp2_transport *t = pt;
-  switch (grpc_endpoint_read(t->ep, &t->read_buffer, &t->recv_data)) {
-    case GRPC_ENDPOINT_DONE:
-      recv_data(t, 1);
-      break;
-    case GRPC_ENDPOINT_ERROR:
-      recv_data(t, 0);
-      break;
-    case GRPC_ENDPOINT_PENDING:
-      break;
-  }
+static void recv_data(void *tp, int success) {
+  grpc_chttp2_transport *t = tp;
+
+  while (recv_data_loop(t, &success));
 }
 
 /*

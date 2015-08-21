@@ -331,8 +331,6 @@ struct grpc_chttp2_transport {
 
   /** closure to execute writing */
   grpc_iomgr_closure writing_action;
-  /** closure to start reading from the endpoint */
-  grpc_iomgr_closure reading_action;
   /** closure to finish reading from the endpoint */
   grpc_iomgr_closure recv_data;
 
