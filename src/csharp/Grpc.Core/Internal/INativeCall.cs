@@ -33,8 +33,9 @@
 using System;
 namespace Grpc.Core.Internal
 {
-    internal delegate void UnaryResponseClientHandler(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage);
+    internal delegate void UnaryResponseClientHandler(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders);
 
+    // Received status for streaming response calls.
     internal delegate void ReceivedStatusOnClientHandler(bool success, ClientSideStatus receivedStatus);
 
     internal delegate void ReceivedMessageHandler(bool success, byte[] receivedMessage);
