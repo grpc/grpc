@@ -238,6 +238,7 @@
     <ClInclude Include="..\..\include\grpc++\server_builder.h" />
     <ClInclude Include="..\..\include\grpc++\server_context.h" />
     <ClInclude Include="..\..\include\grpc++\server_credentials.h" />
+    <ClInclude Include="..\..\include\grpc++\support\async_stream.h" />
     <ClInclude Include="..\..\include\grpc++\support\async_unary_call.h" />
     <ClInclude Include="..\..\include\grpc++\support\auth_context.h" />
     <ClInclude Include="..\..\include\grpc++\support\byte_buffer.h" />
@@ -249,8 +250,8 @@
     <ClInclude Include="..\..\include\grpc++\support\slice.h" />
     <ClInclude Include="..\..\include\grpc++\support\status.h" />
     <ClInclude Include="..\..\include\grpc++\support\status_code_enum.h" />
-    <ClInclude Include="..\..\include\grpc++\support\stream.h" />
     <ClInclude Include="..\..\include\grpc++\support\stub_options.h" />
+    <ClInclude Include="..\..\include\grpc++\support\sync_stream.h" />
     <ClInclude Include="..\..\include\grpc++\support\thread_pool_interface.h" />
     <ClInclude Include="..\..\include\grpc++\support\time.h" />
   </ItemGroup>

@@ -171,6 +171,9 @@
     <ClInclude Include="..\..\include\grpc++\server_credentials.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\async_stream.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\support\async_unary_call.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
@@ -204,10 +207,10 @@
     <ClInclude Include="..\..\include\grpc++\support\status_code_enum.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\support\stream.h">
+    <ClInclude Include="..\..\include\grpc++\support\stub_options.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\support\stub_options.h">
+    <ClInclude Include="..\..\include\grpc++\support\sync_stream.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\support\thread_pool_interface.h">

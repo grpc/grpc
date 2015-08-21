@@ -785,6 +785,7 @@ include/grpc++/server.h \
 include/grpc++/server_builder.h \
 include/grpc++/server_context.h \
 include/grpc++/server_credentials.h \
+include/grpc++/support/async_stream.h \
 include/grpc++/support/async_unary_call.h \
 include/grpc++/support/auth_context.h \
 include/grpc++/support/byte_buffer.h \
@@ -796,8 +797,8 @@ include/grpc++/support/fixed_size_thread_pool.h \
 include/grpc++/support/slice.h \
 include/grpc++/support/status.h \
 include/grpc++/support/status_code_enum.h \
-include/grpc++/support/stream.h \
 include/grpc++/support/stub_options.h \
+include/grpc++/support/sync_stream.h \
 include/grpc++/support/thread_pool_interface.h \
 include/grpc++/support/time.h
 
