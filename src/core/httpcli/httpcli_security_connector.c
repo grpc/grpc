@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-#include "src/core/security/secure_transport_setup.h"
+#include "src/core/security/handshake.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -55,23 +55,31 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
+  tsi_handshaker_destroy(sc->handshaker);
   gpr_free(sc);
 }
 
-static grpc_security_status httpcli_ssl_create_handshaker(
-    grpc_security_connector *sc, tsi_handshaker **handshaker) {
+static void httpcli_ssl_do_handshake(
+    grpc_security_connector *sc, grpc_endpoint *nonsecure_endpoint,
+    grpc_security_handshake_done_cb cb, void *user_data) {
   grpc_httpcli_ssl_channel_security_connector *c =
       (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_result result = TSI_OK;
-  if (c->handshaker_factory == NULL) return GRPC_SECURITY_ERROR;
+  if (c->handshaker_factory == NULL) {
+    cb(user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
+    return;
+  }
+  tsi_handshaker_destroy(sc->handshaker);
+  sc->handshaker = NULL;
   result = tsi_ssl_handshaker_factory_create_handshaker(
-      c->handshaker_factory, c->secure_peer_name, handshaker);
+      c->handshaker_factory, c->secure_peer_name, &sc->handshaker);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
             tsi_result_to_string(result));
-    return GRPC_SECURITY_ERROR;
+    cb(user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
+  } else {
+    grpc_do_security_handshake(sc, nonsecure_endpoint, cb, user_data);
   }
-  return GRPC_SECURITY_OK;
 }
 
 static grpc_security_status httpcli_ssl_check_peer(grpc_security_connector *sc,
@@ -94,7 +102,7 @@ static grpc_security_status httpcli_ssl_check_peer(grpc_security_connector *sc,
 }
 
 static grpc_security_connector_vtable httpcli_ssl_vtable = {
-    httpcli_ssl_destroy, httpcli_ssl_create_handshaker, httpcli_ssl_check_peer};
+    httpcli_ssl_destroy, httpcli_ssl_do_handshake, httpcli_ssl_check_peer};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
@@ -169,8 +177,8 @@ static void ssl_handshake(void *arg, grpc_endpoint *tcp, const char *host,
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
                  pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
-  grpc_setup_secure_transport(&sc->base, tcp, on_secure_transport_setup_done,
-                              c);
+  grpc_security_connector_do_handshake(&sc->base, tcp,
+                                       on_secure_transport_setup_done, c);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

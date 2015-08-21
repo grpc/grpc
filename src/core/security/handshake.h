@@ -31,23 +31,17 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H
-#define GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H
+#ifndef GRPC_INTERNAL_CORE_SECURITY_HANDSHAKE_H
+#define GRPC_INTERNAL_CORE_SECURITY_HANDSHAKE_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/security/security_connector.h"
 
-/* --- Secure transport setup --- */
-
-/* Ownership of the secure_endpoint is transfered. */
-typedef void (*grpc_secure_transport_setup_done_cb)(
-    void *user_data, grpc_security_status status,
-    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint);
 
 /* Calls the callback upon completion. */
-void grpc_setup_secure_transport(grpc_security_connector *connector,
-                                 grpc_endpoint *nonsecure_endpoint,
-                                 grpc_secure_transport_setup_done_cb cb,
-                                 void *user_data);
+void grpc_do_security_handshake(grpc_security_connector *connector,
+                                grpc_endpoint *nonsecure_endpoint,
+                                grpc_security_handshake_done_cb cb,
+                                void *user_data);
 
-#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_HANDSHAKE_H */

@@ -4067,10 +4067,10 @@ LIBGRPC_SRC = \
     src/core/security/credentials_posix.c \
     src/core/security/credentials_win32.c \
     src/core/security/google_default_credentials.c \
+    src/core/security/handshake.c \
     src/core/security/json_token.c \
     src/core/security/jwt_verifier.c \
     src/core/security/secure_endpoint.c \
-    src/core/security/secure_transport_setup.c \
     src/core/security/security_connector.c \
     src/core/security/security_context.c \
     src/core/security/server_auth_filter.c \
@@ -20637,10 +20637,10 @@ src/core/security/credentials_metadata.c: $(OPENSSL_DEP)
 src/core/security/credentials_posix.c: $(OPENSSL_DEP)
 src/core/security/credentials_win32.c: $(OPENSSL_DEP)
 src/core/security/google_default_credentials.c: $(OPENSSL_DEP)
+src/core/security/handshake.c: $(OPENSSL_DEP)
 src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/jwt_verifier.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
-src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
 src/core/security/security_connector.c: $(OPENSSL_DEP)
 src/core/security/security_context.c: $(OPENSSL_DEP)
 src/core/security/server_auth_filter.c: $(OPENSSL_DEP)
