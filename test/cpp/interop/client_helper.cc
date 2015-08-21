@@ -33,26 +33,23 @@
 
 #include "test/cpp/interop/client_helper.h"
 
+#include <unistd.h>
+
 #include <fstream>
 #include <memory>
 #include <sstream>
-
-#include <unistd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
-#include <grpc++/channel_arguments.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/stream.h>
-
-#include "test/core/security/oauth2_utils.h"
-#include "test/cpp/util/create_test_channel.h"
 
 #include "src/cpp/client/secure_credentials.h"
+#include "test/core/security/oauth2_utils.h"
+#include "test/cpp/util/create_test_channel.h"
 
 DECLARE_bool(enable_ssl);
 DECLARE_bool(use_prod_roots);

@@ -37,9 +37,9 @@
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc++/config.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/config.h>
 
 struct grpc_channel;
 

@@ -31,17 +31,17 @@
  *
  */
 
-#ifndef GRPCXX_ASYNC_UNARY_CALL_H
-#define GRPCXX_ASYNC_UNARY_CALL_H
+#ifndef GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
+#define GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H
 
+#include <grpc/support/log.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/server_context.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/service_type.h>
-#include <grpc++/status.h>
-#include <grpc/support/log.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 
@@ -152,4 +152,4 @@ class ServerAsyncResponseWriter GRPC_FINAL
 
 }  // namespace grpc
 
-#endif  // GRPCXX_ASYNC_UNARY_CALL_H
+#endif  // GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H

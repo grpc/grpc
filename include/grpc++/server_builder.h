@@ -37,7 +37,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 

@@ -31,37 +31,34 @@
  *
  */
 
-#ifndef GRPCXX_FIXED_SIZE_THREAD_POOL_H
-#define GRPCXX_FIXED_SIZE_THREAD_POOL_H
+#ifndef GRPCXX_SUPPORT_STATUS_H
+#define GRPCXX_SUPPORT_STATUS_H
 
-#include <grpc++/config.h>
-
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
-
-#include <queue>
-#include <vector>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status_code_enum.h>
 
 namespace grpc {
 
-class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
+class Status {
  public:
-  explicit FixedSizeThreadPool(int num_threads);
-  ~FixedSizeThreadPool();
+  Status() : code_(StatusCode::OK) {}
+  Status(StatusCode code, const grpc::string& details)
+      : code_(code), details_(details) {}
 
-  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
+  // Pre-defined special status objects.
+  static const Status& OK;
+  static const Status& CANCELLED;
+
+  StatusCode error_code() const { return code_; }
+  grpc::string error_message() const { return details_; }
+
+  bool ok() const { return code_ == StatusCode::OK; }
 
  private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread*> threads_;
-
-  void ThreadFunc();
+  StatusCode code_;
+  grpc::string details_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_FIXED_SIZE_THREAD_POOL_H
+#endif  // GRPCXX_SUPPORT_STATUS_H

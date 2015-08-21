@@ -31,48 +31,86 @@
  *
  */
 
-#ifndef GRPCXX_ASYNC_GENERIC_SERVICE_H
-#define GRPCXX_ASYNC_GENERIC_SERVICE_H
+#ifndef GRPCXX_SUPPORT_CONFIG_H
+#define GRPCXX_SUPPORT_CONFIG_H
 
-#include <grpc++/byte_buffer.h>
-#include <grpc++/stream.h>
+#if !defined(GRPC_NO_AUTODETECT_PLATFORM)
 
-struct grpc_server;
+#ifdef _MSC_VER
+// Visual Studio 2010 is 1600.
+#if _MSC_VER < 1600
+#error "gRPC is only supported with Visual Studio starting at 2010"
+// Visual Studio 2013 is 1800.
+#elif _MSC_VER < 1800
+#define GRPC_CXX0X_NO_FINAL 1
+#define GRPC_CXX0X_NO_OVERRIDE 1
+#define GRPC_CXX0X_NO_CHRONO 1
+#define GRPC_CXX0X_NO_THREAD 1
+#endif
+#endif  // Visual Studio
+
+#ifndef __clang__
+#ifdef __GNUC__
+// nullptr was added in gcc 4.6
+#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
+#define GRPC_CXX0X_NO_NULLPTR 1
+#endif
+// final and override were added in gcc 4.7
+#if (__GNUC__ * 100 + __GNUC_MINOR__ < 407)
+#define GRPC_CXX0X_NO_FINAL 1
+#define GRPC_CXX0X_NO_OVERRIDE 1
+#endif
+#endif
+#endif
+
+#endif
+
+#ifdef GRPC_CXX0X_NO_FINAL
+#define GRPC_FINAL
+#else
+#define GRPC_FINAL final
+#endif
+
+#ifdef GRPC_CXX0X_NO_OVERRIDE
+#define GRPC_OVERRIDE
+#else
+#define GRPC_OVERRIDE override
+#endif
+
+#ifdef GRPC_CXX0X_NO_NULLPTR
+#include <memory>
+namespace grpc {
+const class {
+ public:
+  template <class T>
+  operator T *() const {
+    return static_cast<T *>(0);
+  }
+  template <class T>
+  operator std::unique_ptr<T>() const {
+    return std::unique_ptr<T>(static_cast<T *>(0));
+  }
+  template <class T>
+  operator std::shared_ptr<T>() const {
+    return std::shared_ptr<T>(static_cast<T *>(0));
+  }
+  operator bool() const { return false; }
+
+ private:
+  void operator&() const = delete;
+} nullptr = {};
+}
+#endif
+
+#ifndef GRPC_CUSTOM_STRING
+#include <string>
+#define GRPC_CUSTOM_STRING std::string
+#endif
 
 namespace grpc {
 
-typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
-    GenericServerAsyncReaderWriter;
-
-class GenericServerContext GRPC_FINAL : public ServerContext {
- public:
-  const grpc::string& method() const { return method_; }
-  const grpc::string& host() const { return host_; }
-
- private:
-  friend class Server;
-
-  grpc::string method_;
-  grpc::string host_;
-};
-
-class AsyncGenericService GRPC_FINAL {
- public:
-  // TODO(yangg) Once we can add multiple completion queues to the server
-  // in c core, add a CompletionQueue* argument to the ctor here.
-  // TODO(yangg) support methods list.
-  AsyncGenericService(const grpc::string& methods) : server_(nullptr) {}
-
-  void RequestCall(GenericServerContext* ctx,
-                   GenericServerAsyncReaderWriter* reader_writer,
-                   CompletionQueue* call_cq,
-                   ServerCompletionQueue* notification_cq, void* tag);
-
- private:
-  friend class Server;
-  Server* server_;
-};
+typedef GRPC_CUSTOM_STRING string;
 
 }  // namespace grpc
 
-#endif  // GRPCXX_ASYNC_GENERIC_SERVICE_H
+#endif  // GRPCXX_SUPPORT_CONFIG_H

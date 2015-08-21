@@ -31,11 +31,12 @@
  *
  */
 
+#include <grpc++/support/fixed_size_thread_pool.h>
+
 #include <condition_variable>
 #include <functional>
 #include <mutex>
 
-#include <grpc++/fixed_size_thread_pool.h>
 #include <gtest/gtest.h>
 
 namespace grpc {

@@ -31,11 +31,12 @@
  *
  */
 
+#include <grpc++/support/dynamic_thread_pool.h>
+
 #include <condition_variable>
 #include <functional>
 #include <mutex>
 
-#include <grpc++/dynamic_thread_pool.h>
 #include <gtest/gtest.h>
 
 namespace grpc {

@@ -33,32 +33,26 @@
 
 #include <memory>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <grpc++/impl/proto_utils.h>
-#include <grpc++/async_generic_service.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/byte_buffer.h>
-#include <grpc++/channel_arguments.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/generic_stub.h>
+#include <grpc++/generic/async_generic_service.h>
+#include <grpc++/generic/generic_stub.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/slice.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
+#include <grpc++/support/slice.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/echo.grpc.pb.h"
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;

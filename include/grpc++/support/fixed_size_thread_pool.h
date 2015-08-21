@@ -31,74 +31,36 @@
  *
  */
 
-#ifndef GRPCXX_BYTE_BUFFER_H
-#define GRPCXX_BYTE_BUFFER_H
+#ifndef GRPCXX_SUPPORT_FIXED_SIZE_THREAD_POOL_H
+#define GRPCXX_SUPPORT_FIXED_SIZE_THREAD_POOL_H
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/support/log.h>
-#include <grpc++/config.h>
-#include <grpc++/slice.h>
-#include <grpc++/status.h>
-#include <grpc++/impl/serialization_traits.h>
-
+#include <queue>
 #include <vector>
+
+#include <grpc++/impl/sync.h>
+#include <grpc++/impl/thd.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/thread_pool_interface.h>
 
 namespace grpc {
 
-class ByteBuffer GRPC_FINAL {
+class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
  public:
-  ByteBuffer() : buffer_(nullptr) {}
+  explicit FixedSizeThreadPool(int num_threads);
+  ~FixedSizeThreadPool();
 
-  ByteBuffer(const Slice* slices, size_t nslices);
-
-  ~ByteBuffer() {
-    if (buffer_) {
-      grpc_byte_buffer_destroy(buffer_);
-    }
-  }
-
-  void Dump(std::vector<Slice>* slices) const;
-
-  void Clear();
-  size_t Length() const;
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
 
  private:
-  friend class SerializationTraits<ByteBuffer, void>;
+  grpc::mutex mu_;
+  grpc::condition_variable cv_;
+  bool shutdown_;
+  std::queue<std::function<void()>> callbacks_;
+  std::vector<grpc::thread*> threads_;
 
-  ByteBuffer(const ByteBuffer&);
-  ByteBuffer& operator=(const ByteBuffer&);
-
-  // takes ownership
-  void set_buffer(grpc_byte_buffer* buf) {
-    if (buffer_) {
-      gpr_log(GPR_ERROR, "Overriding existing buffer");
-      Clear();
-    }
-    buffer_ = buf;
-  }
-
-  grpc_byte_buffer* buffer() const { return buffer_; }
-
-  grpc_byte_buffer* buffer_;
-};
-
-template <>
-class SerializationTraits<ByteBuffer, void> {
- public:
-  static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest,
-                            int max_message_size) {
-    dest->set_buffer(byte_buffer);
-    return Status::OK;
-  }
-  static Status Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer,
-                          bool* own_buffer) {
-    *buffer = source.buffer();
-    *own_buffer = false;
-    return Status::OK;
-  }
+  void ThreadFunc();
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_BYTE_BUFFER_H
+#endif  // GRPCXX_SUPPORT_FIXED_SIZE_THREAD_POOL_H

@@ -34,18 +34,17 @@
 #ifndef GRPCXX_IMPL_CALL_H
 #define GRPCXX_IMPL_CALL_H
 
-#include <grpc/support/alloc.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-#include <grpc++/impl/serialization_traits.h>
-
 #include <functional>
 #include <memory>
 #include <map>
+#include <cstring>
 
-#include <string.h>
+#include <grpc/support/alloc.h>
+#include <grpc++/client_context.h>
+#include <grpc++/completion_queue.h>
+#include <grpc++/impl/serialization_traits.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 struct grpc_call;
 struct grpc_op;

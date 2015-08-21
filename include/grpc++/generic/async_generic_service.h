@@ -31,44 +31,48 @@
  *
  */
 
-#ifndef GRPCXX_SLICE_H
-#define GRPCXX_SLICE_H
+#ifndef GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
+#define GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
 
-#include <grpc/support/slice.h>
-#include <grpc++/config.h>
+#include <grpc++/support/byte_buffer.h>
+#include <grpc++/support/stream.h>
+
+struct grpc_server;
 
 namespace grpc {
 
-class Slice GRPC_FINAL {
- public:
-  // construct empty slice
-  Slice();
-  // destructor - drops one ref
-  ~Slice();
-  // construct slice from grpc slice, adding a ref
-  enum AddRef { ADD_REF };
-  Slice(gpr_slice slice, AddRef);
-  // construct slice from grpc slice, stealing a ref
-  enum StealRef { STEAL_REF };
-  Slice(gpr_slice slice, StealRef);
-  // copy constructor - adds a ref
-  Slice(const Slice& other);
-  // assignment - ref count is unchanged
-  Slice& operator=(Slice other) {
-    std::swap(slice_, other.slice_);
-    return *this;
-  }
+typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
+    GenericServerAsyncReaderWriter;
 
-  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
-  const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
-  const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
+class GenericServerContext GRPC_FINAL : public ServerContext {
+ public:
+  const grpc::string& method() const { return method_; }
+  const grpc::string& host() const { return host_; }
 
  private:
-  friend class ByteBuffer;
+  friend class Server;
 
-  gpr_slice slice_;
+  grpc::string method_;
+  grpc::string host_;
+};
+
+class AsyncGenericService GRPC_FINAL {
+ public:
+  // TODO(yangg) Once we can add multiple completion queues to the server
+  // in c core, add a CompletionQueue* argument to the ctor here.
+  // TODO(yangg) support methods list.
+  AsyncGenericService(const grpc::string& methods) : server_(nullptr) {}
+
+  void RequestCall(GenericServerContext* ctx,
+                   GenericServerAsyncReaderWriter* reader_writer,
+                   CompletionQueue* call_cq,
+                   ServerCompletionQueue* notification_cq, void* tag);
+
+ private:
+  friend class Server;
+  Server* server_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SLICE_H
+#endif  // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
