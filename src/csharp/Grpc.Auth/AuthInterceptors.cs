@@ -34,27 +34,51 @@
 using System;
 using System.Threading;
 
-namespace Grpc.Core.Internal
+using Google.Apis.Auth.OAuth2;
+using Grpc.Core;
+using Grpc.Core.Utils;
+
+namespace Grpc.Auth
 {
-    internal class DebugStats
+    /// <summary>
+    /// Factory methods to create authorization interceptors.
+    /// </summary>
+    public static class AuthInterceptors
     {
-        public readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
+        private const string AuthorizationHeader = "Authorization";
+        private const string Schema = "Bearer";
 
         /// <summary>
-        /// Checks the debug stats and take action for any inconsistency found.
+        /// Creates interceptor that will obtain access token from any credential type that implements
+        /// <c>ITokenAccess</c>. (e.g. <c>GoogleCredential</c>).
         /// </summary>
-        public void CheckOK()
+        public static HeaderInterceptor FromCredential(ITokenAccess credential)
         {
-            var pendingBatchCompletions = PendingBatchCompletions.Count;
-            if (pendingBatchCompletions != 0)
+            return new HeaderInterceptor((method, authUri, metadata) =>
             {
-                DebugWarning(string.Format("Detected {0} pending batch completions.", pendingBatchCompletions));
-            }
+                // TODO(jtattermusch): Rethink synchronous wait to obtain the result.
+                var accessToken = credential.GetAccessTokenForRequestAsync(authUri, CancellationToken.None)
+                        .ConfigureAwait(false).GetAwaiter().GetResult();
+                metadata.Add(CreateBearerTokenHeader(accessToken));
+            });
         }
 
-        private void DebugWarning(string message)
+        /// <summary>
+        /// Creates OAuth2 interceptor that will use given access token as authorization.
+        /// </summary>
+        /// <param name="accessToken">OAuth2 access token.</param>
+        public static HeaderInterceptor FromAccessToken(string accessToken)
         {
-            throw new Exception("Shutdown check: " + message);
+            Preconditions.CheckNotNull(accessToken);
+            return new HeaderInterceptor((method, authUri, metadata) =>
+            {
+                metadata.Add(CreateBearerTokenHeader(accessToken));
+            });
+        }
+
+        private static Metadata.Entry CreateBearerTokenHeader(string accessToken)
+        {
+            return new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken);
         }
     }
 }

@@ -64,7 +64,6 @@ void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
   if (channel->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapped);
   }
-  efree(channel->target);
   efree(channel);
 }
 
@@ -141,9 +140,6 @@ PHP_METHOD(Channel, __construct) {
   HashTable *array_hash;
   zval **creds_obj = NULL;
   wrapped_grpc_credentials *creds = NULL;
-  zval **override_obj;
-  char *override;
-  int override_len;
   /* "s|a" == 1 string, 1 optional array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &target,
                             &target_length, &args_array) == FAILURE) {
@@ -151,8 +147,6 @@ PHP_METHOD(Channel, __construct) {
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-  override = target;
-  override_len = target_length;
   if (args_array == NULL) {
     channel->wrapped = grpc_insecure_channel_create(target, NULL, NULL);
   } else {
@@ -169,19 +163,6 @@ PHP_METHOD(Channel, __construct) {
           *creds_obj TSRMLS_CC);
       zend_hash_del(array_hash, "credentials", 12);
     }
-    if (zend_hash_find(array_hash, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                       sizeof(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-                       (void **)&override_obj) == SUCCESS) {
-      if (Z_TYPE_PP(override_obj) != IS_STRING) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
-                             " must be a string",
-                             1 TSRMLS_CC);
-        return;
-      }
-      override = Z_STRVAL_PP(override_obj);
-      override_len = Z_STRLEN_PP(override_obj);
-    }
     php_grpc_read_args_array(args_array, &args);
     if (creds == NULL) {
       channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
@@ -192,8 +173,6 @@ PHP_METHOD(Channel, __construct) {
     }
     efree(args.args);
   }
-  channel->target = ecalloc(override_len + 1, sizeof(char));
-  memcpy(channel->target, override, override_len);
 }
 
 /**

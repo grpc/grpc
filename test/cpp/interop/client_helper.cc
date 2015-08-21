@@ -52,7 +52,6 @@
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
 
-#include "src/core/surface/call.h"
 #include "src/cpp/client/secure_credentials.h"
 
 DECLARE_bool(enable_ssl);
@@ -139,19 +138,6 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots);
   }
-}
-
-InteropClientContextInspector::InteropClientContextInspector(
-    const ::grpc::ClientContext& context)
-    : context_(context) {}
-
-grpc_compression_algorithm
-InteropClientContextInspector::GetCallCompressionAlgorithm() const {
-  return grpc_call_get_compression_algorithm(context_.call_);
-}
-
-gpr_uint32 InteropClientContextInspector::GetMessageFlags() const {
-  return grpc_call_get_message_flags(context_.call_);
 }
 
 }  // namespace testing

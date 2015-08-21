@@ -45,17 +45,13 @@ function HealthImplementation(statusMap) {
   this.statusMap = _.clone(statusMap);
 }
 
-HealthImplementation.prototype.setStatus = function(host, service, status) {
-  if (!this.statusMap[host]) {
-    this.statusMap[host] = {};
-  }
-  this.statusMap[host][service] = status;
+HealthImplementation.prototype.setStatus = function(service, status) {
+  this.statusMap[service] = status;
 };
 
 HealthImplementation.prototype.check = function(call, callback){
-  var host = call.request.host;
   var service = call.request.service;
-  var status = _.get(this.statusMap, [host, service], null);
+  var status = _.get(this.statusMap, service, null);
   if (status === null) {
     callback({code:grpc.status.NOT_FOUND});
   } else {
