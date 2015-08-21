@@ -61,19 +61,17 @@ namespace Grpc.Core.Internal
         protected bool disposed;
 
         protected bool started;
-        protected bool errorOccured;
         protected bool cancelRequested;
 
         protected AsyncCompletionDelegate<object> sendCompletionDelegate;  // Completion of a pending send or sendclose if not null.
         protected AsyncCompletionDelegate<TRead> readCompletionDelegate;  // Completion of a pending send or sendclose if not null.
 
-        protected bool readingDone;
-        protected bool halfcloseRequested;
-        protected bool halfclosed;
+        protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
+        protected bool halfcloseRequested;  // True if send close have been initiated.
         protected bool finished;  // True if close has been received from the peer.
 
         protected bool initialMetadataSent;
-        protected long streamingWritesCounter;
+        protected long streamingWritesCounter;  // Number of streaming send operations started so far.
 
         public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer, GrpcEnvironment environment)
         {
@@ -161,16 +159,6 @@ namespace Grpc.Core.Internal
             }
         }
 
-        // TODO(jtattermusch): find more fitting name for this method.
-        /// <summary>
-        /// Default behavior just completes the read observer, but more sofisticated behavior might be required
-        /// by subclasses.
-        /// </summary>
-        protected virtual void ProcessLastRead(AsyncCompletionDelegate<TRead> completionDelegate)
-        {
-            FireCompletion(completionDelegate, default(TRead), null);
-        }
-
         /// <summary>
         /// If there are no more pending actions and no new actions can be started, releases
         /// the underlying native resources.
@@ -179,7 +167,7 @@ namespace Grpc.Core.Internal
         {
             if (!disposed && call != null)
             {
-                bool noMoreSendCompletions = halfclosed || ((cancelRequested || finished) && sendCompletionDelegate == null);
+                bool noMoreSendCompletions = sendCompletionDelegate == null && (halfcloseRequested || cancelRequested || finished);
                 if (noMoreSendCompletions && readingDone && finished)
                 {
                     ReleaseResources();
@@ -206,7 +194,6 @@ namespace Grpc.Core.Internal
         protected void CheckSendingAllowed()
         {
             Preconditions.CheckState(started);
-            Preconditions.CheckState(!errorOccured);
             CheckNotCancelled();
             Preconditions.CheckState(!disposed);
 
@@ -218,7 +205,6 @@ namespace Grpc.Core.Internal
         protected virtual void CheckReadingAllowed()
         {
             Preconditions.CheckState(started);
-            Preconditions.CheckState(!errorOccured);
             Preconditions.CheckState(!disposed);
 
             Preconditions.CheckState(!readingDone, "Stream has already been closed.");
@@ -312,7 +298,6 @@ namespace Grpc.Core.Internal
             AsyncCompletionDelegate<object> origCompletionDelegate = null;
             lock (myLock)
             {
-                halfclosed = true;
                 origCompletionDelegate = sendCompletionDelegate;
                 sendCompletionDelegate = null;
 
@@ -338,15 +323,11 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 origCompletionDelegate = readCompletionDelegate;
-                if (receivedMessage != null)
+                readCompletionDelegate = null;
+
+                if (receivedMessage == null)
                 {
-                    readCompletionDelegate = null;
-                }
-                else
-                {
-                    // This was the last read. Keeping the readCompletionDelegate
-                    // to be either fired by this handler or by client-side finished
-                    // handler.
+                    // This was the last read.
                     readingDone = true;
                 }
 
@@ -365,7 +346,7 @@ namespace Grpc.Core.Internal
             }
             else
             {
-                ProcessLastRead(origCompletionDelegate);
+                FireCompletion(origCompletionDelegate, default(TRead), null);
             }
         }
     }

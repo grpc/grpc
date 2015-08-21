@@ -56,13 +56,14 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
+        // Indicates that steaming call has finished.
+        TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
+
         // Response headers set here once received.
         TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
 
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
-
-        bool readObserverCompleted;  // True if readObserver has already been completed.
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
             : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer, callDetails.Channel.Environment)
@@ -74,8 +75,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// This constructor should only be used for testing.
         /// </summary>
-        public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails, INativeCall injectedNativeCall)
-            : this(callDetails)
+        public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails, INativeCall injectedNativeCall) : this(callDetails)
         {
             this.injectedNativeCall = injectedNativeCall;
         }
@@ -192,7 +192,6 @@ namespace Grpc.Core.Internal
                 Initialize(environment.CompletionQueue);
 
                 halfcloseRequested = true;
-                halfclosed = true;  // halfclose not confirmed yet, but it will be once finishedHandler is called.
 
                 byte[] payload = UnsafeSerialize(msg);
 
@@ -261,6 +260,17 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Get the task that completes once if streaming call finishes with ok status and throws RpcException with given status otherwise.
+        /// </summary>
+        public Task StreamingCallFinishedTask
+        {
+            get
+            {
+                return streamingCallFinishedTcs.Task;
+            }
+        }
+
+        /// <summary>
         /// Get the task that completes once response headers are received.
         /// </summary>
         public Task<Metadata> ResponseHeadersAsync
@@ -302,36 +312,6 @@ namespace Grpc.Core.Internal
             get
             {
                 return this.details;
-            }
-        }
-
-        /// <summary>
-        /// On client-side, we only fire readCompletionDelegate once all messages have been read 
-        /// and status has been received.
-        /// </summary>
-        protected override void ProcessLastRead(AsyncCompletionDelegate<TResponse> completionDelegate)
-        {
-            if (completionDelegate != null && readingDone && finishedStatus.HasValue)
-            {
-                bool shouldComplete;
-                lock (myLock)
-                {
-                    shouldComplete = !readObserverCompleted;
-                    readObserverCompleted = true;
-                }
-
-                if (shouldComplete)
-                {
-                    var status = finishedStatus.Value.Status;
-                    if (status.StatusCode != StatusCode.OK)
-                    {
-                        FireCompletion(completionDelegate, default(TResponse), new RpcException(status));
-                    }
-                    else
-                    {
-                        FireCompletion(completionDelegate, default(TResponse), null);
-                    }
-                }
             }
         }
 
@@ -392,8 +372,6 @@ namespace Grpc.Core.Internal
                 finished = true;
                 finishedStatus = receivedStatus;
 
-                halfclosed = true;
-
                 ReleaseResourcesIfPossible();
             }
 
@@ -403,7 +381,6 @@ namespace Grpc.Core.Internal
 
             if (!success || status.StatusCode != StatusCode.OK)
             {
-
                 unaryResponseTcs.SetException(new RpcException(status));
                 return;
             }
@@ -420,18 +397,23 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinished(bool success, ClientSideStatus receivedStatus)
         {
-            AsyncCompletionDelegate<TResponse> origReadCompletionDelegate = null;
             lock (myLock)
             {
                 finished = true;
                 finishedStatus = receivedStatus;
 
-                origReadCompletionDelegate = readCompletionDelegate;
-
                 ReleaseResourcesIfPossible();
             }
 
-            ProcessLastRead(origReadCompletionDelegate);
+            var status = receivedStatus.Status;
+
+            if (!success || status.StatusCode != StatusCode.OK)
+            {
+                streamingCallFinishedTcs.SetException(new RpcException(status));
+                return;
+            }
+
+            streamingCallFinishedTcs.SetResult(null);
         }
     }
 }
