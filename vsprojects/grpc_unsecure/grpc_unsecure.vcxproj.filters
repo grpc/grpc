@@ -4,10 +4,10 @@
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\census\census_filter.c">
+    <ClCompile Include="..\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\census\grpc_context.c">
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
@@ -383,7 +383,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\census\census_filter.h">
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">

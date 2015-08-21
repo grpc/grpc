@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/census/census_filter.h"
+#include "src/core/census/grpc_filter.h"
 
 #include <stdio.h>
 #include <string.h>
