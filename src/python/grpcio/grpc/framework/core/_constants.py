@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Private constants for the package."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from grpc.framework.interfaces.base import base
+from grpc.framework.interfaces.links import links
 
-ROOT=`pwd`
-GRPCIO_TEST=$ROOT/src/python/grpcio_test
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-source "python"$PYVER"_virtual_environment"/bin/activate
+TICKET_SUBSCRIPTION_FOR_BASE_SUBSCRIPTION_KIND = {
+    base.Subscription.Kind.NONE: links.Ticket.Subscription.NONE,
+    base.Subscription.Kind.TERMINATION_ONLY:
+        links.Ticket.Subscription.TERMINATION,
+    base.Subscription.Kind.FULL: links.Ticket.Subscription.FULL,
+    }
 
-# TODO(atash): These tests don't currently run under py.test and thus don't
-# appear under the coverage report. Find a way to get these tests to work with
-# py.test (or find another tool or *something*) that's acceptable to the rest of
-# the team...
-"python"$PYVER -m grpc_test._core_over_links_base_interface_test
-"python"$PYVER -m grpc_test.framework.core._base_interface_test
+# Mapping from abortive operation outcome to ticket termination to be
+# sent to the other side of the operation, or None to indicate that no
+# ticket should be sent to the other side in the event of such an
+# outcome.
+ABORTION_OUTCOME_TO_TICKET_TERMINATION = {
+    base.Outcome.CANCELLED: links.Ticket.Termination.CANCELLATION,
+    base.Outcome.EXPIRED: links.Ticket.Termination.EXPIRATION,
+    base.Outcome.LOCAL_SHUTDOWN: links.Ticket.Termination.SHUTDOWN,
+    base.Outcome.REMOTE_SHUTDOWN: None,
+    base.Outcome.RECEPTION_FAILURE: links.Ticket.Termination.RECEPTION_FAILURE,
+    base.Outcome.TRANSMISSION_FAILURE: None,
+    base.Outcome.LOCAL_FAILURE: links.Ticket.Termination.LOCAL_FAILURE,
+    base.Outcome.REMOTE_FAILURE: links.Ticket.Termination.REMOTE_FAILURE,
+}
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml"
+INTERNAL_ERROR_LOG_MESSAGE = ':-( RPC Framework (Core) internal error! )-:'
+TERMINATION_CALLBACK_EXCEPTION_LOG_MESSAGE = (
+    'Exception calling termination callback!')

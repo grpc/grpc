@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,36 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Entry points into the ticket-exchange-based base layer implementation."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+# base and links are referenced from specification in this module.
+from grpc.framework.core import _end
+from grpc.framework.interfaces.base import base  # pylint: disable=unused-import
+from grpc.framework.interfaces.links import links  # pylint: disable=unused-import
 
-ROOT=`pwd`
-GRPCIO_TEST=$ROOT/src/python/grpcio_test
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-source "python"$PYVER"_virtual_environment"/bin/activate
 
-# TODO(atash): These tests don't currently run under py.test and thus don't
-# appear under the coverage report. Find a way to get these tests to work with
-# py.test (or find another tool or *something*) that's acceptable to the rest of
-# the team...
-"python"$PYVER -m grpc_test._core_over_links_base_interface_test
-"python"$PYVER -m grpc_test.framework.core._base_interface_test
+def invocation_end_link():
+  """Creates a base.End-links.Link suitable for operation invocation.
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml"
+  Returns:
+    An object that is both a base.End and a links.Link, that supports operation
+      invocation, and that translates operation invocation into ticket exchange.
+  """
+  return _end.serviceless_end_link()
+
+
+def service_end_link(servicer, default_timeout, maximum_timeout):
+  """Creates a base.End-links.Link suitable for operation service.
+
+  Args:
+    servicer: A base.Servicer for servicing operations.
+    default_timeout: A length of time in seconds to be used as the default
+      time alloted for a single operation.
+    maximum_timeout: A length of time in seconds to be used as the maximum
+      time alloted for a single operation.
+
+  Returns:
+    An object that is both a base.End and a links.Link and that services
+      operations that arrive at it through ticket exchange.
+  """
+  return _end.serviceful_end_link(servicer, default_timeout, maximum_timeout)
