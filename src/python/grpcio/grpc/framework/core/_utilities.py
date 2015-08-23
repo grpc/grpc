@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,23 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Package-internal utilities."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import collections
 
-ROOT=`pwd`
-GRPCIO_TEST=$ROOT/src/python/grpcio_test
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-source "python"$PYVER"_virtual_environment"/bin/activate
 
-# TODO(atash): These tests don't currently run under py.test and thus don't
-# appear under the coverage report. Find a way to get these tests to work with
-# py.test (or find another tool or *something*) that's acceptable to the rest of
-# the team...
-"python"$PYVER -m grpc_test._core_over_links_base_interface_test
-"python"$PYVER -m grpc_test.framework.core._base_interface_test
+class ServicerPackage(
+    collections.namedtuple(
+        'ServicerPackage', ('servicer', 'default_timeout', 'maximum_timeout'))):
+  """A trivial bundle class.
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml"
+  Attributes:
+    servicer: A base.Servicer.
+    default_timeout: A float indicating the length of time in seconds to allow
+      for an operation invoked without a timeout.
+    maximum_timeout: A float indicating the maximum length of time in seconds to
+      allow for an operation.
+  """
