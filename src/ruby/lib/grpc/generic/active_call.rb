@@ -59,7 +59,7 @@ module GRPC
     include Core::CallOps
     extend Forwardable
     attr_reader(:deadline)
-    def_delegators :@call, :cancel, :metadata
+    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=
 
     # client_invoke begins a client invocation.
     #
@@ -484,6 +484,7 @@ module GRPC
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.
     Operation = view_class(:cancel, :cancelled, :deadline, :execute,
-                           :metadata, :status, :start_call, :wait)
+                           :metadata, :status, :start_call, :wait, :write_flag,
+                           :write_flag=)
   end
 end
