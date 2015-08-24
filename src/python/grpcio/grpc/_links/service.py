@@ -40,6 +40,19 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
 from grpc.framework.interfaces.links import links
 
+_TERMINATION_KIND_TO_CODE = {
+    links.Ticket.Termination.COMPLETION: _intermediary_low.Code.OK,
+    links.Ticket.Termination.CANCELLATION: _intermediary_low.Code.CANCELLED,
+    links.Ticket.Termination.EXPIRATION:
+        _intermediary_low.Code.DEADLINE_EXCEEDED,
+    links.Ticket.Termination.SHUTDOWN: _intermediary_low.Code.UNAVAILABLE,
+    links.Ticket.Termination.RECEPTION_FAILURE: _intermediary_low.Code.INTERNAL,
+    links.Ticket.Termination.TRANSMISSION_FAILURE:
+        _intermediary_low.Code.INTERNAL,
+    links.Ticket.Termination.LOCAL_FAILURE: _intermediary_low.Code.UNKNOWN,
+    links.Ticket.Termination.REMOTE_FAILURE: _intermediary_low.Code.UNKNOWN,
+}
+
 
 @enum.unique
 class _Read(enum.Enum):
@@ -91,6 +104,15 @@ class _RPCState(object):
 def _metadatafy(call, metadata):
   for metadata_key, metadata_value in metadata:
     call.add_metadata(metadata_key, metadata_value)
+
+
+def _status(termination_kind, code, details):
+  effective_details = b'' if details is None else details
+  if code is None:
+    effective_code = _TERMINATION_KIND_TO_CODE[termination_kind]
+  else:
+    effective_code = code
+  return _intermediary_low.Status(effective_code, effective_details)
 
 
 class _Kernel(object):
@@ -170,8 +192,10 @@ class _Kernel(object):
     if rpc_state.high_write is _HighWrite.CLOSED:
       if rpc_state.terminal_metadata is not None:
         _metadatafy(call, rpc_state.terminal_metadata)
-      call.status(
-          _intermediary_low.Status(rpc_state.code, rpc_state.message), call)
+      status = _status(
+          links.Ticket.Termination.COMPLETION, rpc_state.code,
+          rpc_state.message)
+      call.status(status, call)
       rpc_state.low_write = _LowWrite.CLOSED
     else:
       ticket = links.Ticket(
@@ -279,14 +303,17 @@ class _Kernel(object):
         if rpc_state.low_write is _LowWrite.OPEN:
           if rpc_state.terminal_metadata is not None:
             _metadatafy(call, rpc_state.terminal_metadata)
-          status = _intermediary_low.Status(
-              _intermediary_low.Code.OK
-              if rpc_state.code is None else rpc_state.code,
-              '' if rpc_state.message is None else rpc_state.message)
+          status = _status(
+              links.Ticket.Termination.COMPLETION, rpc_state.code,
+              rpc_state.message)
           call.status(status, call)
           rpc_state.low_write = _LowWrite.CLOSED
       elif ticket.termination is not None:
-        call.cancel()
+        if rpc_state.terminal_metadata is not None:
+          _metadatafy(call, rpc_state.terminal_metadata)
+        status = _status(
+            ticket.termination, rpc_state.code, rpc_state.message)
+        call.status(status, call)
         self._rpc_states.pop(call, None)
 
   def add_port(self, port, server_credentials):
