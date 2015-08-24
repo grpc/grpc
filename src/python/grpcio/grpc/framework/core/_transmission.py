@@ -107,7 +107,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
           return links.Ticket(
               self._operation_id, self._lowest_unused_sequence_number, None,
               None, None, None, None, None, None, None, None, None,
-              termination)
+              termination, None)
 
     action = False
     # TODO(nathaniel): Support other subscriptions.
@@ -144,7 +144,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
       ticket = links.Ticket(
           self._operation_id, self._lowest_unused_sequence_number, None, None,
           local_subscription, timeout, allowance, initial_metadata, payload,
-          terminal_metadata, code, message, termination)
+          terminal_metadata, code, message, termination, None)
       self._lowest_unused_sequence_number += 1
       return ticket
     else:
@@ -191,7 +191,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
     ticket = links.Ticket(
         self._operation_id, 0, group, method, subscription, timeout, allowance,
         initial_metadata, payload, terminal_metadata, code, message,
-        termination)
+        termination, None)
     self._lowest_unused_sequence_number = 1
     self._transmit(ticket)
 
@@ -236,7 +236,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
         ticket = links.Ticket(
             self._operation_id, self._lowest_unused_sequence_number, None, None,
             None, None, allowance, effective_initial_metadata, ticket_payload,
-            terminal_metadata, code, message, termination)
+            terminal_metadata, code, message, termination, None)
         self._lowest_unused_sequence_number += 1
         self._transmit(ticket)
 
@@ -247,7 +247,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
     else:
       ticket = links.Ticket(
           self._operation_id, self._lowest_unused_sequence_number, None, None,
-          None, timeout, None, None, None, None, None, None, None)
+          None, timeout, None, None, None, None, None, None, None, None)
       self._lowest_unused_sequence_number += 1
       self._transmit(ticket)
 
@@ -268,7 +268,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
       ticket = links.Ticket(
           self._operation_id, self._lowest_unused_sequence_number, None, None,
           None, None, None, None, payload, terminal_metadata, code, message,
-          termination)
+          termination, None)
       self._lowest_unused_sequence_number += 1
       self._transmit(ticket)
 
@@ -290,5 +290,5 @@ class TransmissionManager(_interfaces.TransmissionManager):
           ticket = links.Ticket(
               self._operation_id, self._lowest_unused_sequence_number, None,
               None, None, None, None, None, None, None, None, None,
-              termination)
+              termination, None)
           self._transmit(ticket)
