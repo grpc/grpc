@@ -31,52 +31,38 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_DYNAMIC_THREAD_POOL_H
-#define GRPCXX_SUPPORT_DYNAMIC_THREAD_POOL_H
+#ifndef GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
+#define GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
 
-#include <list>
-#include <memory>
-#include <queue>
+#include <grpc++/config.h>
 
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
-#include <grpc++/support/config.h>
-#include <grpc++/support/thread_pool_interface.h>
+
+#include <queue>
+#include <vector>
+
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
+class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
  public:
-  explicit DynamicThreadPool(int reserve_threads);
-  ~DynamicThreadPool();
+  explicit FixedSizeThreadPool(int num_threads);
+  ~FixedSizeThreadPool();
 
   void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
 
  private:
-  class DynamicThread {
-   public:
-    DynamicThread(DynamicThreadPool* pool);
-    ~DynamicThread();
-
-   private:
-    DynamicThreadPool* pool_;
-    std::unique_ptr<grpc::thread> thd_;
-    void ThreadFunc();
-  };
   grpc::mutex mu_;
   grpc::condition_variable cv_;
-  grpc::condition_variable shutdown_cv_;
   bool shutdown_;
   std::queue<std::function<void()>> callbacks_;
-  int reserve_threads_;
-  int nthreads_;
-  int threads_waiting_;
-  std::list<DynamicThread*> dead_threads_;
+  std::vector<grpc::thread*> threads_;
 
   void ThreadFunc();
-  static void ReapThreads(std::list<DynamicThread*>* tlist);
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SUPPORT_DYNAMIC_THREAD_POOL_H
+#endif  // GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H

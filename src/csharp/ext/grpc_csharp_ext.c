@@ -595,7 +595,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
     grpc_call *call, grpcsharp_batch_context *ctx, const char *send_buffer,
     size_t send_buffer_len, grpc_metadata_array *initial_metadata, gpr_uint32 write_flags) {
   /* TODO: don't use magic number */
-  grpc_op ops[5];
+  grpc_op ops[4];
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
                                 initial_metadata);
@@ -615,23 +615,18 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[2].flags = 0;
   ops[2].reserved = NULL;
 
-  ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
-  ops[3].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
-  ops[3].flags = 0;
-  ops[3].reserved = NULL;
-
-  ops[4].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  ops[4].data.recv_status_on_client.trailing_metadata =
+  ops[3].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  ops[3].data.recv_status_on_client.trailing_metadata =
       &(ctx->recv_status_on_client.trailing_metadata);
-  ops[4].data.recv_status_on_client.status =
+  ops[3].data.recv_status_on_client.status =
       &(ctx->recv_status_on_client.status);
   /* not using preallocation for status_details */
-  ops[4].data.recv_status_on_client.status_details =
+  ops[3].data.recv_status_on_client.status_details =
       &(ctx->recv_status_on_client.status_details);
-  ops[4].data.recv_status_on_client.status_details_capacity =
+  ops[3].data.recv_status_on_client.status_details_capacity =
       &(ctx->recv_status_on_client.status_details_capacity);
-  ops[4].flags = 0;
-  ops[4].reserved = NULL;
+  ops[3].flags = 0;
+  ops[3].reserved = NULL;
 
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
@@ -642,7 +637,7 @@ grpcsharp_call_start_duplex_streaming(grpc_call *call,
                                       grpcsharp_batch_context *ctx,
                                       grpc_metadata_array *initial_metadata) {
   /* TODO: don't use magic number */
-  grpc_op ops[3];
+  grpc_op ops[2];
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
                                 initial_metadata);
@@ -652,26 +647,34 @@ grpcsharp_call_start_duplex_streaming(grpc_call *call,
   ops[0].flags = 0;
   ops[0].reserved = NULL;
 
-  ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
-  ops[1].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+  ops[1].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  ops[1].data.recv_status_on_client.trailing_metadata =
+      &(ctx->recv_status_on_client.trailing_metadata);
+  ops[1].data.recv_status_on_client.status =
+      &(ctx->recv_status_on_client.status);
+  /* not using preallocation for status_details */
+  ops[1].data.recv_status_on_client.status_details =
+      &(ctx->recv_status_on_client.status_details);
+  ops[1].data.recv_status_on_client.status_details_capacity =
+      &(ctx->recv_status_on_client.status_details_capacity);
   ops[1].flags = 0;
   ops[1].reserved = NULL;
 
-  ops[2].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  ops[2].data.recv_status_on_client.trailing_metadata =
-      &(ctx->recv_status_on_client.trailing_metadata);
-  ops[2].data.recv_status_on_client.status =
-      &(ctx->recv_status_on_client.status);
-  /* not using preallocation for status_details */
-  ops[2].data.recv_status_on_client.status_details =
-      &(ctx->recv_status_on_client.status_details);
-  ops[2].data.recv_status_on_client.status_details_capacity =
-      &(ctx->recv_status_on_client.status_details_capacity);
-  ops[2].flags = 0;
-  ops[2].reserved = NULL;
-
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
                                NULL);
+}
+
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
+	grpc_call *call, grpcsharp_batch_context *ctx) {
+	/* TODO: don't use magic number */
+	grpc_op ops[1];
+	ops[0].op = GRPC_OP_RECV_INITIAL_METADATA;
+	ops[0].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
+	ops[0].flags = 0;
+	ops[0].reserved = NULL;
+
+	return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx,
+		NULL);
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE

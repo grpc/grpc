@@ -101,7 +101,7 @@ class _Kernel(object):
     else:
       ticket = links.Ticket(
           operation_id, rpc_state.sequence_number, None, None, None, None, 1,
-          None, None, None, None, None, None)
+          None, None, None, None, None, None, None)
       rpc_state.sequence_number += 1
       self._relay.add_value(ticket)
       rpc_state.low_write = _LowWrite.OPEN
@@ -118,7 +118,7 @@ class _Kernel(object):
       ticket = links.Ticket(
           operation_id, rpc_state.sequence_number, None, None, None, None, None,
           None, rpc_state.response_deserializer(event.bytes), None, None, None,
-          None)
+          None, None)
       rpc_state.sequence_number += 1
       self._relay.add_value(ticket)
 
@@ -129,7 +129,7 @@ class _Kernel(object):
     ticket = links.Ticket(
         operation_id, rpc_state.sequence_number, None, None,
         links.Ticket.Subscription.FULL, None, None, event.metadata, None, None,
-        None, None, None)
+        None, None, None, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -146,7 +146,7 @@ class _Kernel(object):
     ticket = links.Ticket(
         operation_id, rpc_state.sequence_number, None, None, None, None, None,
         None, None, event.metadata, event.status.code, event.status.details,
-        termination)
+        termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
