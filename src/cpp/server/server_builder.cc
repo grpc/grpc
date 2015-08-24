@@ -99,12 +99,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
-  // Async services only, create a thread pool to handle requests to unknown
-  // services.
-  if (!thread_pool_ && !generic_service_ && !async_services_.empty()) {
-    thread_pool_ = new FixedSizeThreadPool(1);
-    thread_pool_owned = true;
-  }
   std::unique_ptr<Server> server(
       new Server(thread_pool_, thread_pool_owned, max_message_size_));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
@@ -134,7 +128,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
-  if (!server->Start()) {
+  if (!server->Start(&cqs_[0], cqs_.size())) {
     return nullptr;
   }
   return server;
