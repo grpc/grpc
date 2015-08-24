@@ -35,7 +35,6 @@
 
 #include <cassert>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -47,6 +46,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/host_port.h>
 #include <grpc++/client_context.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/status.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -143,14 +143,14 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
   };
 
   bool TryAcquireInstance() {
-    std::lock_guard<std::mutex> g(mu_);
+    grpc::lock_guard<grpc::mutex> g(mu_);
     if (acquired_) return false;
     acquired_ = true;
     return true;
   }
 
   void ReleaseInstance() {
-    std::lock_guard<std::mutex> g(mu_);
+    grpc::lock_guard<grpc::mutex> g(mu_);
     GPR_ASSERT(acquired_);
     acquired_ = false;
   }
@@ -214,7 +214,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
 
   const int server_port_;
 
-  std::mutex mu_;
+  grpc::mutex mu_;
   bool acquired_;
 };
 

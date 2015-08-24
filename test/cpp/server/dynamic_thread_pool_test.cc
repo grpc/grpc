@@ -31,11 +31,10 @@
  *
  */
 
-#include <condition_variable>
 #include <functional>
-#include <mutex>
 
 #include <grpc++/dynamic_thread_pool.h>
+#include <grpc++/impl/sync.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -48,21 +47,21 @@ class DynamicThreadPoolTest : public ::testing::Test {
   DynamicThreadPool thread_pool_;
 };
 
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
+void Callback(grpc::mutex* mu, grpc::condition_variable* cv, bool* done) {
+  grpc::unique_lock<grpc::mutex> lock(*mu);
   *done = true;
   cv->notify_all();
 }
 
 TEST_F(DynamicThreadPoolTest, Add) {
-  std::mutex mu;
-  std::condition_variable cv;
+  grpc::mutex mu;
+  grpc::condition_variable cv;
   bool done = false;
   std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
   thread_pool_.Add(callback);
 
   // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
+  grpc::unique_lock<grpc::mutex> lock(mu);
   while (!done) {
     cv.wait(lock);
   }

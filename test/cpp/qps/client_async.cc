@@ -36,7 +36,6 @@
 #include <functional>
 #include <list>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -48,6 +47,7 @@
 #include <gflags/gflags.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/client_context.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/util/create_test_channel.h"
@@ -156,7 +156,7 @@ class AsyncClient : public Client {
       std::function<ClientRpcContext*(int, TestService::Stub*,
                                       const SimpleRequest&)> setup_ctx)
       : Client(config),
-        channel_lock_(new std::mutex[config.client_channels()]),
+        channel_lock_(new grpc::mutex[config.client_channels()]),
         contexts_(config.client_channels()),
         max_outstanding_per_channel_(config.outstanding_rpcs_per_channel()),
         channel_count_(config.client_channels()),
@@ -258,7 +258,7 @@ class AsyncClient : public Client {
           // Put the clone_ctx in the list of idle contexts for this channel
           // Under lock
           int ch = clone_ctx->channel_id();
-          std::lock_guard<std::mutex> g(channel_lock_[ch]);
+          grpc::lock_guard<grpc::mutex> g(channel_lock_[ch]);
           contexts_[ch].push_front(clone_ctx);
         }
         // delete the old version
@@ -277,7 +277,7 @@ class AsyncClient : public Client {
         bool can_issue = false;
         ClientRpcContext* ctx = nullptr;
         {
-          std::lock_guard<std::mutex> g(channel_lock_[channel_attempt]);
+          grpc::lock_guard<grpc::mutex> g(channel_lock_[channel_attempt]);
           if (!contexts_[channel_attempt].empty()) {
             // Get an idle context from the front of the list
             ctx = *(contexts_[channel_attempt].begin());
@@ -337,7 +337,7 @@ class AsyncClient : public Client {
   std::vector<boolean> issue_allowed_;  // may this thread attempt to issue
   std::vector<grpc_time> next_issue_;   // when should it issue?
 
-  std::mutex*
+  grpc::mutex*
       channel_lock_;  // a vector, but avoid std::vector for old compilers
   std::vector<context_list> contexts_;  // per-channel list of idle contexts
   int max_outstanding_per_channel_;
