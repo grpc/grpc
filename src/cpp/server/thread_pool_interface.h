@@ -31,37 +31,24 @@
  *
  */
 
-#ifndef GRPCXX_FIXED_SIZE_THREAD_POOL_H
-#define GRPCXX_FIXED_SIZE_THREAD_POOL_H
+#ifndef GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H
+#define GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H
 
-#include <grpc++/config.h>
-
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
-
-#include <queue>
-#include <vector>
+#include <functional>
 
 namespace grpc {
 
-class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
+// A thread pool interface for running callbacks.
+class ThreadPoolInterface {
  public:
-  explicit FixedSizeThreadPool(int num_threads);
-  ~FixedSizeThreadPool();
+  virtual ~ThreadPoolInterface() {}
 
-  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
-
- private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread*> threads_;
-
-  void ThreadFunc();
+  // Schedule the given callback for execution.
+  virtual void Add(const std::function<void()>& callback) = 0;
 };
+
+ThreadPoolInterface* CreateDefaultThreadPool();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_FIXED_SIZE_THREAD_POOL_H
+#endif  // GRPC_INTERNAL_CPP_THREAD_POOL_INTERFACE_H

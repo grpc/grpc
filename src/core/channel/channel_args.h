@@ -70,9 +70,12 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
 /** Sets the support for the given compression algorithm. By default, all
  * compression algorithms are enabled. It's an error to disable an algorithm set
  * by grpc_channel_args_set_compression_algorithm.
- * */
+ *
+ * Returns an instance will the updated algorithm states. The \a a pointer is
+ * modified to point to the returned instance (which may be different from the
+ * input value of \a a). */
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args *a,
+    grpc_channel_args **a,
     grpc_compression_algorithm algorithm,
     int enabled);
 
