@@ -31,47 +31,38 @@
  *
  */
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
+#ifndef GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
+#define GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
 
-#include <grpc++/fixed_size_thread_pool.h>
-#include <gtest/gtest.h>
+#include <grpc++/config.h>
+
+#include <grpc++/impl/sync.h>
+#include <grpc++/impl/thd.h>
+
+#include <queue>
+#include <vector>
+
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-class FixedSizeThreadPoolTest : public ::testing::Test {
+class FixedSizeThreadPool GRPC_FINAL : public ThreadPoolInterface {
  public:
-  FixedSizeThreadPoolTest() : thread_pool_(4) {}
+  explicit FixedSizeThreadPool(int num_threads);
+  ~FixedSizeThreadPool();
 
- protected:
-  FixedSizeThreadPool thread_pool_;
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
+
+ private:
+  grpc::mutex mu_;
+  grpc::condition_variable cv_;
+  bool shutdown_;
+  std::queue<std::function<void()>> callbacks_;
+  std::vector<grpc::thread*> threads_;
+
+  void ThreadFunc();
 };
-
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
-  *done = true;
-  cv->notify_all();
-}
-
-TEST_F(FixedSizeThreadPoolTest, Add) {
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.Add(callback);
-
-  // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
-  }
-}
 
 }  // namespace grpc
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  return result;
-}
+#endif  // GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
