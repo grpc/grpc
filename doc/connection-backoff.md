@@ -44,3 +44,12 @@ different jitter logic.
 Alternate implementations must ensure that connection backoffs started at the
 same time disperse, and must not attempt connections substantially more often
 than the above algorithm.
+
+## Reset Backoff
+
+The back off should be reset to INITIAL_BACKOFF at some time point, so that the
+reconnecting behavior is consistent no matter the connection is a newly started
+one or a previously disconnected one.
+
+We choose to reset the Backoff when the SETTINGS frame is received, at that time
+point, we know for sure that this connection was accepted by the server.

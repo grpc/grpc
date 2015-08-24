@@ -120,12 +120,10 @@ namespace Grpc.IntegrationTesting
                 };
             }
 
-            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions))
-            {
-                TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-                await RunTestCaseAsync(options.testCase, client);
-            }
-            GrpcEnvironment.Shutdown();
+            var channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions);
+            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
+            await RunTestCaseAsync(options.testCase, client);
+            channel.ShutdownAsync().Wait();
         }
 
         private async Task RunTestCaseAsync(string testCase, TestService.TestServiceClient client)
@@ -170,6 +168,9 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "cancel_after_first_response":
                     await RunCancelAfterFirstResponseAsync(client);
+                    break;
+                case "timeout_on_sleeping_server":
+                    await RunTimeoutOnSleepingServerAsync(client);
                     break;
                 case "benchmark_empty_unary":
                     RunBenchmarkEmptyUnary(client);
@@ -456,6 +457,29 @@ namespace Grpc.IntegrationTesting
 
                 var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunTimeoutOnSleepingServerAsync(TestService.ITestServiceClient client)
+        {
+            Console.WriteLine("running timeout_on_sleeping_server");
+
+            var deadline = DateTime.UtcNow.AddMilliseconds(1);
+            using (var call = client.FullDuplexCall(deadline: deadline))
+            {
+                try
+                {
+                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
+                        .SetPayload(CreateZerosPayload(27182)).Build());
+                }
+                catch (InvalidOperationException)
+                {
+                    // Deadline was reached before write has started. Eat the exception and continue.
+                }
+
+                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+                Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
         }

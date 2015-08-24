@@ -134,7 +134,7 @@ namespace Grpc.Core.Internal
         }
 
         // Gets data of server_rpc_new completion.
-        public ServerRpcNew GetServerRpcNew()
+        public ServerRpcNew GetServerRpcNew(Server server)
         {
             var call = grpcsharp_batch_context_server_rpc_new_call(this);
 
@@ -145,7 +145,7 @@ namespace Grpc.Core.Internal
             IntPtr metadataArrayPtr = grpcsharp_batch_context_server_rpc_new_request_metadata(this);
             var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
 
-            return new ServerRpcNew(call, method, host, deadline, metadata);
+            return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
         // Gets data of receive_close_on_server completion.
@@ -198,19 +198,29 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal struct ServerRpcNew
     {
+        readonly Server server;
         readonly CallSafeHandle call;
         readonly string method;
         readonly string host;
         readonly Timespec deadline;
         readonly Metadata requestMetadata;
 
-        public ServerRpcNew(CallSafeHandle call, string method, string host, Timespec deadline, Metadata requestMetadata)
+        public ServerRpcNew(Server server, CallSafeHandle call, string method, string host, Timespec deadline, Metadata requestMetadata)
         {
+            this.server = server;
             this.call = call;
             this.method = method;
             this.host = host;
             this.deadline = deadline;
             this.requestMetadata = requestMetadata;
+        }
+
+        public Server Server
+        {
+            get
+            {
+                return this.server;
+            }
         }
 
         public CallSafeHandle Call
